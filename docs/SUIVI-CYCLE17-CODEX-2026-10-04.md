@@ -2579,3 +2579,106 @@ Le heartbeat existant conserve sa borne09/10 23:58:30 Paris et prend ce
 suivi canonique comme repère. Les validations ordinaires déjà données ne
 sont pas redemandées ; une nouvelle frontière de sécurité n'est pas
 déduite de ce lot préparatoire.
+
+## Lot 76 : sonde Seatbelt native, témoin vert et composition refusée
+
+Reprise sur HEAD `84377b89fa6a71a5d94895730edb14a55ab8f8bb`, branche
+`codex/cycle-17`. Agents et processus ciblés contrôlés avant les deux
+invocations ; aucune campagne Chrome concurrente détectée dans ces
+instantanés. Les neuf documents préexistants conservent leurs empreintes.
+Budget canonique PASS `1e96ab` ; le premier contrôle `d076e0` était un
+refus du verrou hors des writable roots, pas un épuisement du budget.
+
+Diagnostic distinct de G1/ROOT15 : deux fichiers synthétiques, policies
+deny-default limitées aux deux témoins, sans nouveau grant G1,
+lookup, réseau ou IOKit. Le cas compiled précompile
+la policy intérieure en mémoire avant OUTER. Il refuse un confinement
+ambient, garde seulement ses FD0/1/2 et attend une barrière FD0 bornée.
+Libproc relit les naissances, statuts et filiation ; ready/release/ACK
+portent le nonce et la birth exacte. Un seul enfant direct par cas,
+HOME/TMPDIR synthétiques, logs exclusifs privés, clôture PID attribué
+seulement. L'héritage parent-enfant et le réseau ne sont pas mesurés.
+
+Le premier build MAIN `c75e34` est rouge : closefrom non déclaré dans
+l'unité SDK sous C11/-Werror. La correction Darwin utilise uniquement
+PROC_PIDLISTFDS du PID propre, capacité fixe 256, refus de saturation,
+doubles FD ou erreur ; deux snapshots ne sont pas une observation atomique.
+Le C corrigé désactivé compile `a85504`, puis sa dérivation active
+`069399` compile et lie. Le build désactivé ne prouvait pas les branches
+actives. SHA du C actif `8de3afdd…ff4f38`, binaire arm64
+`e18b1564…b5ecb5`, 35 976 octets ; aucun code produit changé.
+Le premier essai statique via le shim Apple avait lancé xcrun/xcodebuild
+avant de refuser son output non vide ; ce rouge reste conservé, sans
+prétendre qu'aucun outil système n'avait été exécuté.
+
+Rejeux MAIN avec Python UV physique -I/-B : 67 tests statiques C
+`559b50` et 31 doubles contrôleur v3 `99fbae`, PASS distincts.
+Les 27 et 10 tests préparatoires sont conservés séparément, sans addition
+comme nouvelles mesures natives. Les reçus du runner Shared4 gardent leur
+acteur historique codé en dur ; les invocations MAIN sont distinguées.
+Les v1/v2 du contrôleur restent non consommables. V3 ferme quatre défauts
+revus : adoption seulement après PID/PPID/UID/PGID/exécutable/statut,
+grâce TERM interne permettant KILL revérifié, temps contrôlé après rehash
+juste avant release, ACK compact octet-exact avec entiers stricts.
+Les tests sur doubles ne deviennent pas une calibration FULL.
+
+Revue indépendante des sources activées et du runner avant mesure,
+puis relecture indépendante des deux bruts après mesure. Le manifeste
+runtime ferme dix références, sans auto-hash ni objet créant un GO.
+MAIN lance aussi le parent sous env-i avec HOME/TMPDIR privés et -I/-B.
+Mac réellement observé : macOS26.6.2, build25G83, arm64 (`453e60`).
+
+| Mesure MAIN | Résultat observé | Fermeture |
+| --- | --- | --- |
+| baseline `92cff2` | OUTER rc0 ; A lu correctement ; B open EPERM1 | PID42163/owner42155, ACK exact, wait0/reaped, sources/manifeste inchangés, aucun signal |
+| compiled-alpha `9f13c6` | OUTER identique ; sandbox_apply rc-1/errno1 ; A encore lisible, B refusé ; inner_api_refused, exit86 | PID42744/owner42735, ACK exact, wait86/reaped, sources/manifeste inchangés, aucun signal ; clean=false conservé |
+
+Chaque trace contient 31 événements réels, sans faute, et stderr est vide.
+La série s'arrête au premier rouge. compiled-beta/source-alpha/source-beta
+ne sont pas lancés ; seulement deux dossiers cas existent. Les deux handles
+directs sont reapés. Le scan ciblé post-lot `90000d` est vide ; il ne
+démontre pas une absence globale ni la fermeture des processus historiques
+ROOT15 non attribués. La revue ne convertit pas les intervalles de trace en
+durée totale du cleanup non enregistrée.
+
+Ce refus empirique vaut pour cette sonde et ces policies sur ce Mac.
+Il ne prouve pas une impossibilité universelle, la cause kernel exacte
+ou le chemin de sandbox du Chrome154. La lecture arm64 des imports
+dans la seule copie QA relève sandbox_apply et sandbox_init_with_parameters
+sur les trois helpers ; un import n'est pas une exécution.
+[Chromium main](https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/seatbelt_exec.cc)
+applique une policy sérialisée au helper lorsque seatbelt-client la requiert ;
+ce source n'est pas une parité vérifiée du binaire local.
+
+Suite sûre : préciser un diagnostic d'héritage parent-enfant, avec naissance
+et fermeture réelles, en gardant G1 inchangé et sans répéter cette série.
+Les confirmations QA ordinaires déjà données ne sont pas redemandées.
+Une exception Chrome hors de Seatbelt externe perdrait la garantie G1 sur
+cet arbre ; un Chrome QA à policy unique serait un nouvel instrument.
+Ces deux frontières demanderaient une décision de sécurité ciblée et une
+requalification, jamais un GO déduit. Aucun broker ou patch n'est lancé.
+
+Preuves canoniques : `qualification/RPC-lot76-seatbelt-composition-20261009/`,
+168 fichiers propres plus MANIFEST embarqué. Une seule TAR.GZ réellement
+créée MAIN `062d16`, 169 membres rehashés sans extraction, sources inchangées,
+218 399 octets, SHA `b071dfbf…d3abff4`. Les trois artefacts sont copiés
+byte-exacts dans le dépôt, rehash MAIN `548a53`. Les revues préparatoires,
+baseline verte, composition rouge, sources, préimages et premiers refus
+sont conservés ; SDK, binaires et journal système complet exclus. Les
+identités archivées restent historiques, pas des bindings runtime vivants.
+
+Usage enregistré une seule fois MAIN `cd976f` :76 lots, plancher
+30 259 333 tokens conservé ; ajouts tokens/durée non mesurés, pas une
+consommation ou facturation nulle. Budget post-lot `299018` réellement PASS,
+limites inchangées. Aucun reset du goal bloqué, de l'état ou des compteurs.
+Statut courant `b0c925` : CALIBRATE, cinq calibrations expirées, zéro ronde
+FULL ; aucun passage DISCOVER/plateau, bump, tag, release ou publication.
+
+Heartbeat existant mis à jour par l'outil du produit, réponse réelle
+« Updated automation in the app », ACTIVE et persistance relue `23d2ec`.
+Même chat, cadence et échéance09/10 23:58:30 Paris ; le nouveau repère
+LOT76 et la prochaine analyse d'héritage sont ajoutés sans nouvelle campagne
+ou extension d'autorité. Aucun nouveau réveil exécuté n'est revendiqué.
+L'assertion secteur temporaire reste séparée. Les portes du workflow
+release-therese demeurent fermées ; aucune conclusion de livraison n'est
+déduite de ce diagnostic synthétique.

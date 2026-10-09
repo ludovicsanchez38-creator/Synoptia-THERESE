@@ -1,0 +1,2873 @@
+{
+  "FULL": false,
+  "files": [
+    {
+      "bytes": 1062,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/FIRST-STATIC-ATTEMPT.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507193650751863,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516515,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507193650751863,
+        "st_nlink": 1,
+        "st_size": 1062,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/FIRST-STATIC-ATTEMPT.md",
+      "sha256": "112aa1130da8c2ca2c7f58373a667aa762c67f09a6780aedd23ebfcaaa544107"
+    },
+    {
+      "bytes": 6044,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507458372434392,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517037,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507458372434392,
+        "st_nlink": 1,
+        "st_size": 6044,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/INDEX.json",
+      "sha256": "868ddf53ed9b672138f15d46803a3b2ef338665b529dcc1583520e4ea2f81358"
+    },
+    {
+      "bytes": 7829,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507319131272176,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516741,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507319131272176,
+        "st_nlink": 1,
+        "st_size": 7829,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/README.md",
+      "sha256": "9d6668a8f5a700ec64a0cec62511d18f05a568b871ec1865849e360a11560e63"
+    },
+    {
+      "bytes": 344,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/first-static-returned-output.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507193667802636,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516516,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507193667802636,
+        "st_nlink": 1,
+        "st_size": 344,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/first-static-returned-output.log",
+      "sha256": "c6f31d7181f90a5b46490ec75ece01d5d5199a6500e4305ceb849e9f4c9034f6"
+    },
+    {
+      "bytes": 2869,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/freeze_index.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507319150794998,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516742,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507319150794998,
+        "st_nlink": 1,
+        "st_size": 2869,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/freeze_index.py",
+      "sha256": "750b469c901fbf1b884dbed8399fd2444e58956f6e31e9159ed7e1cdc658a572"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/policies/alpha.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791506973092194538,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377515827,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791506973092194538,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/policies/alpha.sb",
+      "sha256": "527fb33ebcd79bcd5d63401872a08443ab0f863795255fcceafbccfd24498c42"
+    },
+    {
+      "bytes": 197,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/policies/beta.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791506973106004754,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377515828,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791506973106004754,
+        "st_nlink": 1,
+        "st_size": 197,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/policies/beta.sb",
+      "sha256": "3175a069065a4ea84d3091729075375d5ad694ba80e19d4a3e4b9675f0b08b85"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/policies/outer.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791506973078242905,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377515826,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791506973078242905,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/policies/outer.sb",
+      "sha256": "c48ff0ae64a849ee6e38c9b1f28ebe94d9cb6bf042c3f425f0d3bbe30be0b484"
+    },
+    {
+      "bytes": 6545,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/prepare_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507050222299737,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516191,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507050222299737,
+        "st_nlink": 1,
+        "st_size": 6545,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/prepare_static.py",
+      "sha256": "a138982e9c2920967f45f8ad5eea05f917d3a24177b3f427ff369b3008a5e748"
+    },
+    {
+      "bytes": 9178,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/probe.c",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507050201442538,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377515824,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507050201442538,
+        "st_nlink": 1,
+        "st_size": 9178,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/probe.c",
+      "sha256": "b71127838473d82069d634e77b2b6738e34be4fe96a8e48618d2773480f8bd65"
+    },
+    {
+      "bytes": 3515,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/run_static_tests.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507118828455340,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516374,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507118828455340,
+        "st_nlink": 1,
+        "st_size": 3515,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/run_static_tests.py",
+      "sha256": "e8aada4523084beb24d8e5b76d8c6bfc99711638f618ccaf6331b55d092b5add"
+    },
+    {
+      "bytes": 5605,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/test_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507118808305718,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516373,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507118808305718,
+        "st_nlink": 1,
+        "st_size": 5605,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/test_static.py",
+      "sha256": "4d217d9e5b55c4ffb181ed238cc53d8c96c73f2a0960c9facf429d7fb07c5af2"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/witnesses/a.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791506973148539937,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377515830,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791506973148539937,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/witnesses/a.txt",
+      "sha256": "949fcaafb5efcc39e8e9e18f61d1dfc7821b38a806eb875f2862fc26d7437054"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-static-SW4LGL/witnesses/b.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791506973162496569,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377515831,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791506973162496569,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-static-SW4LGL/witnesses/b.txt",
+      "sha256": "a0dd8eb73b985a5000c52fbd2ad7744fd1653d924a14296653c845474af82e6a"
+    },
+    {
+      "bytes": 2138,
+      "member": "therese-c17-seatbelt-gate-static-g307jq/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507546535438654,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517190,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507546535438654,
+        "st_nlink": 1,
+        "st_size": 2138,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-gate-static-g307jq/INDEX.json",
+      "sha256": "42bb2c11920d4f16f3f66055a71e72d13a6cde9c6f711fee759e055aa666f801"
+    },
+    {
+      "bytes": 2987,
+      "member": "therese-c17-seatbelt-gate-static-g307jq/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507532524982215,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517167,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507532524982215,
+        "st_nlink": 1,
+        "st_size": 2987,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-gate-static-g307jq/README.md",
+      "sha256": "228804fd113ddfe081970bfb656722a6fc9eb551b225ea15589d37a4bd0e1219"
+    },
+    {
+      "bytes": 3813,
+      "member": "therese-c17-seatbelt-gate-static-g307jq/gate_contract.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507476918965227,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517020,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507476918965227,
+        "st_nlink": 1,
+        "st_size": 3813,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-gate-static-g307jq/gate_contract.py",
+      "sha256": "baa049e300d57004a3ede373000a8b0b6d445910436644b03db50e7b092c6c96"
+    },
+    {
+      "bytes": 3782,
+      "member": "therese-c17-seatbelt-gate-static-g307jq/test_gate_contract.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507476939325472,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517021,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507476939325472,
+        "st_nlink": 1,
+        "st_size": 3782,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-gate-static-g307jq/test_gate_contract.py",
+      "sha256": "4e7332ae70de8180c1e5d4882782bd10ad36c833cd11c2e5259323772f8d3351"
+    },
+    {
+      "bytes": 1119,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/FIRST-FREEZE-REFUSAL.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508238940604706,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518659,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508238940604706,
+        "st_nlink": 1,
+        "st_size": 1119,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/FIRST-FREEZE-REFUSAL.md",
+      "sha256": "d16f04a40910f3769c0f5051d3fc5015fd866ebd15e36cd955c7f15c52cb9c58"
+    },
+    {
+      "bytes": 13793,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508260522699407,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518906,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508260522699407,
+        "st_nlink": 1,
+        "st_size": 13793,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/INDEX.json",
+      "sha256": "dfb24d421838cb818099129ccbf22670d0233f17e8b89cacafee3f8bbe40af6d"
+    },
+    {
+      "bytes": 7406,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508238957000419,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518480,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508238957000419,
+        "st_nlink": 1,
+        "st_size": 7406,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/README.md",
+      "sha256": "57f7501ce61d8b27ab65935480e75cd20b866add27036a8565d627c687c6dbd1"
+    },
+    {
+      "bytes": 3807,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/prepare_static.py.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103384497624,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518474,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103384497624,
+        "st_nlink": 1,
+        "st_size": 3807,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/prepare_static.py.direct.diff",
+      "sha256": "2774f4a2ab5d48d8ab3b7d3d4109dbbcef2eaeb5e759066a9250c4c7135c0912"
+    },
+    {
+      "bytes": 3807,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/prepare_static.py.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103398430967,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518475,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103398430967,
+        "st_nlink": 1,
+        "st_size": 3807,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/prepare_static.py.inverse.diff",
+      "sha256": "ca24cee14c612b497036dbc9eb673afcb63482d55099d3b34ebcb2ca8ebe3646"
+    },
+    {
+      "bytes": 10956,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/probe.c.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103356595522,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518472,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103356595522,
+        "st_nlink": 1,
+        "st_size": 10956,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/probe.c.direct.diff",
+      "sha256": "f2d0c7ebe203be9a52254346224788891c5974a955a9fc16e099604fb21a87a3"
+    },
+    {
+      "bytes": 10956,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/probe.c.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103370619406,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518473,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103370619406,
+        "st_nlink": 1,
+        "st_size": 10956,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/probe.c.inverse.diff",
+      "sha256": "3b53e3cde08e9035e8cd36113bc1eacdccb4cd708f76c3f80d8f963582ad33da"
+    },
+    {
+      "bytes": 646,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/run_static_tests.py.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103439645705,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518478,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103439645705,
+        "st_nlink": 1,
+        "st_size": 646,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/run_static_tests.py.direct.diff",
+      "sha256": "c43c331bb7409b955651de07af3abc3c55860b0492bd05993de4b4ca5ad2caa8"
+    },
+    {
+      "bytes": 646,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/run_static_tests.py.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103453795880,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518479,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103453795880,
+        "st_nlink": 1,
+        "st_size": 646,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/run_static_tests.py.inverse.diff",
+      "sha256": "8901b7d0e455346ef1f74f0f82840ca00d733c18423bf0cb3277c037ca8b8f19"
+    },
+    {
+      "bytes": 5849,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/test_static.py.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103412334976,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518476,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103412334976,
+        "st_nlink": 1,
+        "st_size": 5849,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/test_static.py.direct.diff",
+      "sha256": "f3d48261707a0ef90b672792a5f82876330cd63c35c964c6f1dc6cfed074eb61"
+    },
+    {
+      "bytes": 5849,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/diffs/test_static.py.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508103426141319,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518477,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508103426141319,
+        "st_nlink": 1,
+        "st_size": 5849,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/diffs/test_static.py.inverse.diff",
+      "sha256": "b81b7533f6a755686a0cef852b85737724b7b659f3f5fa9edde111857180ead5"
+    },
+    {
+      "bytes": 7657,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/freeze_index.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508260458571139,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518592,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508260458571139,
+        "st_nlink": 1,
+        "st_size": 7657,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/freeze_index.py",
+      "sha256": "e3fb4b4555b6d7a600f90d05a8d3bdf85140634178e1fe3ae5895afad4418953"
+    },
+    {
+      "bytes": 5455,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/gate_fragment.c.inc",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507897926455501,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517959,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507897926455501,
+        "st_nlink": 1,
+        "st_size": 5455,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/gate_fragment.c.inc",
+      "sha256": "910bbbd3e5940008903dfc27e690ff2a0555d9510a5d28c9f62292458608062f"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/policies/alpha.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782329841084,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517807,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782329841084,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/policies/alpha.sb",
+      "sha256": "527fb33ebcd79bcd5d63401872a08443ab0f863795255fcceafbccfd24498c42"
+    },
+    {
+      "bytes": 197,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/policies/beta.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782357089812,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517809,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782357089812,
+        "st_nlink": 1,
+        "st_size": 197,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/policies/beta.sb",
+      "sha256": "3175a069065a4ea84d3091729075375d5ad694ba80e19d4a3e4b9675f0b08b85"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/policies/outer.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782302443189,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517805,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782302443189,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/policies/outer.sb",
+      "sha256": "c48ff0ae64a849ee6e38c9b1f28ebe94d9cb6bf042c3f425f0d3bbe30be0b484"
+    },
+    {
+      "bytes": 4879,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/freeze_index-before-diff-parser.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508189377132787,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518658,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508189377132787,
+        "st_nlink": 1,
+        "st_size": 4879,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/freeze_index-before-diff-parser.py",
+      "sha256": "770249985cf578e4cf3fc2eded72c05410e03e5c20005b2b9d52fdff92707df6"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/policies/alpha.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782316146532,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517806,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782316146532,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/policies/alpha.sb",
+      "sha256": "527fb33ebcd79bcd5d63401872a08443ab0f863795255fcceafbccfd24498c42"
+    },
+    {
+      "bytes": 197,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/policies/beta.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782343613677,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517808,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782343613677,
+        "st_nlink": 1,
+        "st_size": 197,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/policies/beta.sb",
+      "sha256": "3175a069065a4ea84d3091729075375d5ad694ba80e19d4a3e4b9675f0b08b85"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/policies/outer.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782261237951,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517803,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782261237951,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/policies/outer.sb",
+      "sha256": "c48ff0ae64a849ee6e38c9b1f28ebe94d9cb6bf042c3f425f0d3bbe30be0b484"
+    },
+    {
+      "bytes": 6545,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/prepare_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782153698283,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517796,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782153698283,
+        "st_nlink": 1,
+        "st_size": 6545,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/prepare_static.py",
+      "sha256": "a138982e9c2920967f45f8ad5eea05f917d3a24177b3f427ff369b3008a5e748"
+    },
+    {
+      "bytes": 9178,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/probe.c",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782126044847,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517794,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782126044847,
+        "st_nlink": 1,
+        "st_size": 9178,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/probe.c",
+      "sha256": "b71127838473d82069d634e77b2b6738e34be4fe96a8e48618d2773480f8bd65"
+    },
+    {
+      "bytes": 3515,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/run_static_tests.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782207610700,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517800,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782207610700,
+        "st_nlink": 1,
+        "st_size": 3515,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/run_static_tests.py",
+      "sha256": "e8aada4523084beb24d8e5b76d8c6bfc99711638f618ccaf6331b55d092b5add"
+    },
+    {
+      "bytes": 5605,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/test_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782180911262,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517798,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782180911262,
+        "st_nlink": 1,
+        "st_size": 5605,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/test_static.py",
+      "sha256": "4d217d9e5b55c4ffb181ed238cc53d8c96c73f2a0960c9facf429d7fb07c5af2"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/witnesses/a.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782399253423,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517811,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782399253423,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/witnesses/a.txt",
+      "sha256": "949fcaafb5efcc39e8e9e18f61d1dfc7821b38a806eb875f2862fc26d7437054"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/preimages/witnesses/b.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782453805505,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517814,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782453805505,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/preimages/witnesses/b.txt",
+      "sha256": "a0dd8eb73b985a5000c52fbd2ad7744fd1653d924a14296653c845474af82e6a"
+    },
+    {
+      "bytes": 8628,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/prepare_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507939209550674,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517797,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507939209550674,
+        "st_nlink": 1,
+        "st_size": 8628,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/prepare_static.py",
+      "sha256": "69343596e8324dd5d23cadbb15d0c33bf379e9b8e96037c7db10c32eb7b4bc0c"
+    },
+    {
+      "bytes": 15274,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/probe.c",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507989573444781,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517795,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507989573444781,
+        "st_nlink": 1,
+        "st_size": 15274,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/probe.c",
+      "sha256": "a3d7d57544f5216923c044c90cab17d1ba072527e9395781f27e0ab6c0358dc4"
+    },
+    {
+      "bytes": 3538,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/run_static_tests.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507989590333201,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517801,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507989590333201,
+        "st_nlink": 1,
+        "st_size": 3538,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/run_static_tests.py",
+      "sha256": "e8e0534076d262cdccac595a5889fdb551ac38467668f5b37cf930007a58fff7"
+    },
+    {
+      "bytes": 11001,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/test_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507989606157664,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517799,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507989606157664,
+        "st_nlink": 1,
+        "st_size": 11001,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/test_static.py",
+      "sha256": "cea83b793016b69c94914c1da02fb413841d851c6a1a7c1803bfe0c43c3a2495"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/witnesses/a.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782440156912,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517813,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782440156912,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/witnesses/a.txt",
+      "sha256": "949fcaafb5efcc39e8e9e18f61d1dfc7821b38a806eb875f2862fc26d7437054"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-gated-J4B04K/witnesses/b.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507782467441307,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517815,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507782467441307,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-gated-J4B04K/witnesses/b.txt",
+      "sha256": "a0dd8eb73b985a5000c52fbd2ad7744fd1653d924a14296653c845474af82e6a"
+    },
+    {
+      "bytes": 13994,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508273453991,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519392,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508273453991,
+        "st_nlink": 1,
+        "st_size": 13994,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/INDEX.json",
+      "sha256": "df09a6d68abb3b56b7984113f3efe3019725c3aa8fbb91180278d1e170672a7e"
+    },
+    {
+      "bytes": 4234,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508210362429,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519391,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508210362429,
+        "st_nlink": 1,
+        "st_size": 4234,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/README.md",
+      "sha256": "7f21c8a462d0cfc93df03074c768fbd9457451ce6b76a77a02072932f9d9ec0a"
+    },
+    {
+      "bytes": 2218,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/prepare_static.py.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508111222908,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519384,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508111222908,
+        "st_nlink": 1,
+        "st_size": 2218,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/prepare_static.py.direct.diff",
+      "sha256": "e62448bb5f735c21976268967268c429526070aef6286d597ff57c10b073855c"
+    },
+    {
+      "bytes": 2218,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/prepare_static.py.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508125075459,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519385,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508125075459,
+        "st_nlink": 1,
+        "st_size": 2218,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/prepare_static.py.inverse.diff",
+      "sha256": "40f0b4dd8fa30f252480f35c2ad69226fa361de508da971571227ce4ae70913b"
+    },
+    {
+      "bytes": 2679,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/probe.c.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508084259304,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519382,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508084259304,
+        "st_nlink": 1,
+        "st_size": 2679,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/probe.c.direct.diff",
+      "sha256": "ebbdb78044e3cd9127b5228769d1c3d80846a3fb550301f0ef670022d771a3c7"
+    },
+    {
+      "bytes": 2679,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/probe.c.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508097908481,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519383,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508097908481,
+        "st_nlink": 1,
+        "st_size": 2679,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/probe.c.inverse.diff",
+      "sha256": "99168064d98f25997abbf58b7393385f9536f86f423e9c934aedc27c08df8e6e"
+    },
+    {
+      "bytes": 686,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/run_static_tests.py.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508165619949,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519388,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508165619949,
+        "st_nlink": 1,
+        "st_size": 686,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/run_static_tests.py.direct.diff",
+      "sha256": "24bf431a00dde9554e3dfaf2ab5ec5898f32cf8257ed0c8921dc59f5b8daadae"
+    },
+    {
+      "bytes": 686,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/run_static_tests.py.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508178963210,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519389,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508178963210,
+        "st_nlink": 1,
+        "st_size": 686,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/run_static_tests.py.inverse.diff",
+      "sha256": "82f216088b7cc15b37268bcef49b3c348f2a85db472fe0904d7352f8bc027b36"
+    },
+    {
+      "bytes": 3148,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/test_static.py.direct.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508138601512,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519386,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508138601512,
+        "st_nlink": 1,
+        "st_size": 3148,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/test_static.py.direct.diff",
+      "sha256": "27af0a6cde6bf1146543187963cae8381ec2824723d46080008a55edbf7380e8"
+    },
+    {
+      "bytes": 3148,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/diffs/test_static.py.inverse.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508152218605,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519387,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508152218605,
+        "st_nlink": 1,
+        "st_size": 3148,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/diffs/test_static.py.inverse.diff",
+      "sha256": "a6b20cb9ebc79ded84f10324a836673e9665239cc3833a3346b5e3be22971b4a"
+    },
+    {
+      "bytes": 1394,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/fd_fragment.c.inc",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404695013625,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519199,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404695013625,
+        "st_nlink": 1,
+        "st_size": 1394,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/fd_fragment.c.inc",
+      "sha256": "112f0a4a797ee3e68436b2f4c3a67572b89030971dd15596d4053e12fe7beb90"
+    },
+    {
+      "bytes": 8177,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/freeze_index.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508508192319137,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519390,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508508192319137,
+        "st_nlink": 1,
+        "st_size": 8177,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/freeze_index.py",
+      "sha256": "4dae2eb985097288b88503c3bc83cbe05d199b8dbc06073573899b154c6d2999"
+    },
+    {
+      "bytes": 5455,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/gate_fragment.c.inc",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404343145731,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519183,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404343145731,
+        "st_nlink": 1,
+        "st_size": 5455,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/gate_fragment.c.inc",
+      "sha256": "910bbbd3e5940008903dfc27e690ff2a0555d9510a5d28c9f62292458608062f"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/policies/alpha.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404454396057,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519189,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404454396057,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/policies/alpha.sb",
+      "sha256": "527fb33ebcd79bcd5d63401872a08443ab0f863795255fcceafbccfd24498c42"
+    },
+    {
+      "bytes": 197,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/policies/beta.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404482027618,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519191,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404482027618,
+        "st_nlink": 1,
+        "st_size": 197,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/policies/beta.sb",
+      "sha256": "3175a069065a4ea84d3091729075375d5ad694ba80e19d4a3e4b9675f0b08b85"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/policies/outer.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404398576020,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519186,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404398576020,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/policies/outer.sb",
+      "sha256": "c48ff0ae64a849ee6e38c9b1f28ebe94d9cb6bf042c3f425f0d3bbe30be0b484"
+    },
+    {
+      "bytes": 5455,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/gate_fragment.c.inc",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404357054407,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519184,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404357054407,
+        "st_nlink": 1,
+        "st_size": 5455,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/gate_fragment.c.inc",
+      "sha256": "910bbbd3e5940008903dfc27e690ff2a0555d9510a5d28c9f62292458608062f"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/policies/alpha.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404468257900,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519190,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404468257900,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/policies/alpha.sb",
+      "sha256": "527fb33ebcd79bcd5d63401872a08443ab0f863795255fcceafbccfd24498c42"
+    },
+    {
+      "bytes": 197,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/policies/beta.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404495952544,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519192,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404495952544,
+        "st_nlink": 1,
+        "st_size": 197,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/policies/beta.sb",
+      "sha256": "3175a069065a4ea84d3091729075375d5ad694ba80e19d4a3e4b9675f0b08b85"
+    },
+    {
+      "bytes": 167,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/policies/outer.sb",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404440409214,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519188,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404440409214,
+        "st_nlink": 1,
+        "st_size": 167,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/policies/outer.sb",
+      "sha256": "c48ff0ae64a849ee6e38c9b1f28ebe94d9cb6bf042c3f425f0d3bbe30be0b484"
+    },
+    {
+      "bytes": 8628,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/prepare_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404272888102,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519177,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404272888102,
+        "st_nlink": 1,
+        "st_size": 8628,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/prepare_static.py",
+      "sha256": "69343596e8324dd5d23cadbb15d0c33bf379e9b8e96037c7db10c32eb7b4bc0c"
+    },
+    {
+      "bytes": 15274,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/probe.c",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404245365749,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519175,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404245365749,
+        "st_nlink": 1,
+        "st_size": 15274,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/probe.c",
+      "sha256": "a3d7d57544f5216923c044c90cab17d1ba072527e9395781f27e0ab6c0358dc4"
+    },
+    {
+      "bytes": 3538,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/run_static_tests.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404329009639,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519182,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404329009639,
+        "st_nlink": 1,
+        "st_size": 3538,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/run_static_tests.py",
+      "sha256": "e8e0534076d262cdccac595a5889fdb551ac38467668f5b37cf930007a58fff7"
+    },
+    {
+      "bytes": 11001,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/test_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404301117287,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519179,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404301117287,
+        "st_nlink": 1,
+        "st_size": 11001,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/test_static.py",
+      "sha256": "cea83b793016b69c94914c1da02fb413841d851c6a1a7c1803bfe0c43c3a2495"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/witnesses/a.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404579735767,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519196,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404579735767,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/witnesses/a.txt",
+      "sha256": "949fcaafb5efcc39e8e9e18f61d1dfc7821b38a806eb875f2862fc26d7437054"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/preimages/witnesses/b.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404609452531,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519198,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404609452531,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/preimages/witnesses/b.txt",
+      "sha256": "a0dd8eb73b985a5000c52fbd2ad7744fd1653d924a14296653c845474af82e6a"
+    },
+    {
+      "bytes": 9228,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/prepare_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404713356166,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519176,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404713356166,
+        "st_nlink": 1,
+        "st_size": 9228,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/prepare_static.py",
+      "sha256": "dd4a6b67a4ea609bb37e2c12f595f850808e48eebf66b6fd666db611eff69cc5"
+    },
+    {
+      "bytes": 16661,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/probe.c",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404680497242,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519173,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404680497242,
+        "st_nlink": 1,
+        "st_size": 16661,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/probe.c",
+      "sha256": "d9c161e71b6d4323f5d63ad5ddc566099edb1576b1fecaeaa908b5322abb8ca9"
+    },
+    {
+      "bytes": 3559,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/run_static_tests.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404743973428,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519181,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404743973428,
+        "st_nlink": 1,
+        "st_size": 3559,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/run_static_tests.py",
+      "sha256": "99d7e2e68a2f422a8c13172e7f5c287c2abad94e8b0072048e8f91f35e10bce3"
+    },
+    {
+      "bytes": 13232,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/test_static.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404728843297,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519178,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404728843297,
+        "st_nlink": 1,
+        "st_size": 13232,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/test_static.py",
+      "sha256": "3c04041663b9e5e396d6e734226a42a042f3579d05ee9919342c27ccb853c336"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/witnesses/a.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404537121949,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519194,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404537121949,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/witnesses/a.txt",
+      "sha256": "949fcaafb5efcc39e8e9e18f61d1dfc7821b38a806eb875f2862fc26d7437054"
+    },
+    {
+      "bytes": 25,
+      "member": "therese-c17-seatbelt-composition-fds-0dUJdL/witnesses/b.txt",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508404595441814,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519197,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508404595441814,
+        "st_nlink": 1,
+        "st_size": 25,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-composition-fds-0dUJdL/witnesses/b.txt",
+      "sha256": "a0dd8eb73b985a5000c52fbd2ad7744fd1653d924a14296653c845474af82e6a"
+    },
+    {
+      "bytes": 2703,
+      "member": "therese-c17-seatbelt-controller-SQOoCx/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508572942702355,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519591,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508572942702355,
+        "st_nlink": 1,
+        "st_size": 2703,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-SQOoCx/INDEX.json",
+      "sha256": "00a90727737f74e3a92c097ae434a652df4fad093fe53a05b2a2ff1dad297270"
+    },
+    {
+      "bytes": 4676,
+      "member": "therese-c17-seatbelt-controller-SQOoCx/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508540234480163,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518263,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508540234480163,
+        "st_nlink": 1,
+        "st_size": 4676,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-SQOoCx/README.md",
+      "sha256": "20e0f0499fb9f1aecc824bdba473c30194cee84b9e95b33ca7c7fd33e3294b19"
+    },
+    {
+      "bytes": 15132,
+      "member": "therese-c17-seatbelt-controller-SQOoCx/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508094052285688,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517822,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508094052285688,
+        "st_nlink": 1,
+        "st_size": 15132,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-SQOoCx/controller.py",
+      "sha256": "5ee62f1b0b2ced07a58d5c6249020520eb88e271e32b02433ab41a9ce850cfcd"
+    },
+    {
+      "bytes": 9766,
+      "member": "therese-c17-seatbelt-controller-SQOoCx/native_port.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508401716853103,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517979,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508401716853103,
+        "st_nlink": 1,
+        "st_size": 9766,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-SQOoCx/native_port.py",
+      "sha256": "4e5be42288d4015884f4a8252ce9d856eb7264699125182b52ba37c96fe8d7ae"
+    },
+    {
+      "bytes": 13042,
+      "member": "therese-c17-seatbelt-controller-SQOoCx/test_controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508170695859912,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518090,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508170695859912,
+        "st_nlink": 1,
+        "st_size": 13042,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-SQOoCx/test_controller.py",
+      "sha256": "2e01637d340ba6d23d6efb34af4eee8fe05dabb2fc4099ac2fab9d8464e0272e"
+    },
+    {
+      "bytes": 4236,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508825777671210,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520285,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508825777671210,
+        "st_nlink": 1,
+        "st_size": 4236,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/INDEX.json",
+      "sha256": "5c21052dfe0ca9f14c72ea8dcaa3042939a400933465ccc212965b3f90520128"
+    },
+    {
+      "bytes": 5354,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508749419140950,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519877,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508749419140950,
+        "st_nlink": 1,
+        "st_size": 5354,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/README.md",
+      "sha256": "192d06a9791a07a0a18cd398b73d6108dd6a931995d99db3ca3a29260fd949b6"
+    },
+    {
+      "bytes": 15457,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508727680424445,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519874,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508727680424445,
+        "st_nlink": 1,
+        "st_size": 15457,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/controller.py",
+      "sha256": "9ddf39395af619384aa9dee8353d07e8dee4e5d663c0d554628246e58f49d24d"
+    },
+    {
+      "bytes": 1593,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/diffs/README.md.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508766626112238,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519995,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508766626112238,
+        "st_nlink": 1,
+        "st_size": 1593,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/diffs/README.md.diff",
+      "sha256": "aa1fbb48ef3e7b8dbb8b66e8df717e24ee6ab4727c16d88ba34b902edd44df3b"
+    },
+    {
+      "bytes": 1593,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/diffs/README.md.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508766715150824,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519996,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508766715150824,
+        "st_nlink": 1,
+        "st_size": 1593,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/diffs/README.md.inverse",
+      "sha256": "c556b6767a32ddd899f6f0f3b8832e8d2c89920684015e2d6efddc459468f5b3"
+    },
+    {
+      "bytes": 1080,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/diffs/controller.py.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508766359162731,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519990,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508766359162731,
+        "st_nlink": 1,
+        "st_size": 1080,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/diffs/controller.py.diff",
+      "sha256": "d3e2b2736fe8abcbe396d1835b5154965b0512b6f7d8a3e46d8e48fbe9753015"
+    },
+    {
+      "bytes": 1080,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/diffs/controller.py.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508766427949114,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519991,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508766427949114,
+        "st_nlink": 1,
+        "st_size": 1080,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/diffs/controller.py.inverse",
+      "sha256": "54f5f174b4e5fbed8f4b7d3b01e29e3ecc05531bf303eb58acbe12a55188cff3"
+    },
+    {
+      "bytes": 1739,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/diffs/test_controller.py.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508766495392082,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519992,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508766495392082,
+        "st_nlink": 1,
+        "st_size": 1739,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/diffs/test_controller.py.diff",
+      "sha256": "ca75800b28c58473f4e7c4aeac623e1a59871cd2f136fe4ac6f6ed693d682364"
+    },
+    {
+      "bytes": 1739,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/diffs/test_controller.py.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508766559939850,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519993,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508766559939850,
+        "st_nlink": 1,
+        "st_size": 1739,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/diffs/test_controller.py.inverse",
+      "sha256": "15437e1713d58cf644793bbb27e0a59733d5f352fd2d20793112a90bfac47a7a"
+    },
+    {
+      "bytes": 9766,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/native_port.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508712440217479,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519875,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508401716853103,
+        "st_nlink": 1,
+        "st_size": 9766,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/native_port.py",
+      "sha256": "4e5be42288d4015884f4a8252ce9d856eb7264699125182b52ba37c96fe8d7ae"
+    },
+    {
+      "bytes": 4676,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/preimages/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508759450588851,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519973,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508540234480163,
+        "st_nlink": 1,
+        "st_size": 4676,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/preimages/README.md",
+      "sha256": "20e0f0499fb9f1aecc824bdba473c30194cee84b9e95b33ca7c7fd33e3294b19"
+    },
+    {
+      "bytes": 15132,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/preimages/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508717590803429,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519887,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508094052285688,
+        "st_nlink": 1,
+        "st_size": 15132,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/preimages/controller.py",
+      "sha256": "5ee62f1b0b2ced07a58d5c6249020520eb88e271e32b02433ab41a9ce850cfcd"
+    },
+    {
+      "bytes": 13042,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/preimages/test_controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508717591309553,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519888,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508170695859912,
+        "st_nlink": 1,
+        "st_size": 13042,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/preimages/test_controller.py",
+      "sha256": "2e01637d340ba6d23d6efb34af4eee8fe05dabb2fc4099ac2fab9d8464e0272e"
+    },
+    {
+      "bytes": 14323,
+      "member": "therese-c17-seatbelt-controller-v2-eOcvBz/test_controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508740388706024,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519876,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508740388706024,
+        "st_nlink": 1,
+        "st_size": 14323,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v2-eOcvBz/test_controller.py",
+      "sha256": "50150849c72cbaa7b082b90b042edc3f65d39c019f15eccd1faf3263be132831"
+    },
+    {
+      "bytes": 1047,
+      "member": "therese-c17-seatbelt-independent-review-uh0VHhL8/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508013775937874,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518280,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508013775937874,
+        "st_nlink": 1,
+        "st_size": 1047,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-independent-review-uh0VHhL8/INDEX.json",
+      "sha256": "9364de5e023b4d510ed7fe585b4f75a1eefdb9a47a31f032bdc16a06a0448713"
+    },
+    {
+      "bytes": 18060,
+      "member": "therese-c17-seatbelt-independent-review-uh0VHhL8/REVIEW.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507990103419596,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518235,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507990103419596,
+        "st_nlink": 1,
+        "st_size": 18060,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-independent-review-uh0VHhL8/REVIEW.json",
+      "sha256": "84a70dded2272e46c9c1379a77fad6470e4c9259c9e4ff63b36d8a8730826e65"
+    },
+    {
+      "bytes": 4505,
+      "member": "therese-c17-composition-pure-jluYAe/receipt.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507198504987826,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516523,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507198504987826,
+        "st_nlink": 1,
+        "st_size": 4505,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-jluYAe/receipt.json",
+      "sha256": "13a703511ad2862321f35a86104a47c1affd688184bd7c877e4336a2557e05ab"
+    },
+    {
+      "bytes": 3019,
+      "member": "therese-c17-composition-pure-jluYAe/returned-test-output.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507198504776161,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377516522,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507198504776161,
+        "st_nlink": 1,
+        "st_size": 3019,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-jluYAe/returned-test-output.log",
+      "sha256": "6f8013a80dd4c9f7e32c521cdabd8cb1afb300ccc45ff3db1b1bbf9a1f594f43"
+    },
+    {
+      "bytes": 4917,
+      "member": "therese-c17-composition-pure-aJEHtg/receipt.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507998871600255,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518250,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507998871600255,
+        "st_nlink": 1,
+        "st_size": 4917,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-aJEHtg/receipt.json",
+      "sha256": "911f1333d27b5f1c8ae9c59fab0db1b530675c1420ba7361785eac086d2e89e2"
+    },
+    {
+      "bytes": 5581,
+      "member": "therese-c17-composition-pure-aJEHtg/returned-test-output.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507998871405880,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377518249,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507998871405880,
+        "st_nlink": 1,
+        "st_size": 5581,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-aJEHtg/returned-test-output.log",
+      "sha256": "80df48bb3bb9b231fd47bec2cbde0888159c4e8ec44e1058d8b8c49e2a0e4660"
+    },
+    {
+      "bytes": 5295,
+      "member": "therese-c17-composition-pure-yZeo1X/receipt.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508413921022599,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519226,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508413921022599,
+        "st_nlink": 1,
+        "st_size": 5295,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-yZeo1X/receipt.json",
+      "sha256": "5d55614d802af917931a178c1d158c5b1b32f2a3b5b6d4a920fc7c5b85828fee"
+    },
+    {
+      "bytes": 6713,
+      "member": "therese-c17-composition-pure-yZeo1X/returned-test-output.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508413920819724,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519225,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508413920819724,
+        "st_nlink": 1,
+        "st_size": 6713,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-yZeo1X/returned-test-output.log",
+      "sha256": "f70fef7a5f5820d72282c666e79ee3c36f20e2494e026aa02bdd0dbe8e6b7832"
+    },
+    {
+      "bytes": 1972,
+      "member": "therese-c17-seatbelt-compile-disabled-a29bPs/compile-failure.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508430473878318,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519266,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508430473878318,
+        "st_nlink": 1,
+        "st_size": 1972,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-compile-disabled-a29bPs/compile-failure.json",
+      "sha256": "bd32504e808bc5c3e1ada81a0e0b8166c22826a3aa5d5ca747a70094032d980d"
+    },
+    {
+      "bytes": 4945,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509135727615591,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520963,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509135727615591,
+        "st_nlink": 1,
+        "st_size": 4945,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/INDEX.json",
+      "sha256": "f7097bd71f509b4ff676650bfb6e9ede27603322c9cfa6d819d20c27add8b3db"
+    },
+    {
+      "bytes": 6219,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509079556858459,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520399,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509079556858459,
+        "st_nlink": 1,
+        "st_size": 6219,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/README.md",
+      "sha256": "c91ccba72d6bb4caec63bed2fb7a2aea1c135b7c0fcc05acc9440ed910f96c88"
+    },
+    {
+      "bytes": 15955,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509031756665701,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520396,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509031756665701,
+        "st_nlink": 1,
+        "st_size": 15955,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/controller.py",
+      "sha256": "e84fbd2c9d4bafc1478f4ad7a7eff1f8fb0b0c3474fd23b1a50961ad9fd9031f"
+    },
+    {
+      "bytes": 2263,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/diffs/README.md.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509099393956644,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520879,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509099393956644,
+        "st_nlink": 1,
+        "st_size": 2263,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/diffs/README.md.diff",
+      "sha256": "b4aee73351bd9f6e542cf0d7ef1ac17fffe0419b42697b01dcfde925fdf89356"
+    },
+    {
+      "bytes": 2263,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/diffs/README.md.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509099458345653,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520880,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509099458345653,
+        "st_nlink": 1,
+        "st_size": 2263,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/diffs/README.md.inverse",
+      "sha256": "c7e21860e52cbbf4f4fd60c6637a5b0ae87a7cac278b1fa55ab1b03cf6f32fa3"
+    },
+    {
+      "bytes": 2523,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/diffs/controller.py.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509098988276344,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520872,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509098988276344,
+        "st_nlink": 1,
+        "st_size": 2523,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/diffs/controller.py.diff",
+      "sha256": "bfc4b73e3ed2d769f611cb0771ab0f064a76ba0a5fa6aaea15ada2a62579471d"
+    },
+    {
+      "bytes": 2523,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/diffs/controller.py.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509099084786025,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520873,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509099084786025,
+        "st_nlink": 1,
+        "st_size": 2523,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/diffs/controller.py.inverse",
+      "sha256": "14de8de467d1c72612e6eeb97b559f722c5fbf54f64787ea1769702bb6fc6557"
+    },
+    {
+      "bytes": 3616,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/diffs/test_controller.py.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509099151251808,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520874,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509099151251808,
+        "st_nlink": 1,
+        "st_size": 3616,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/diffs/test_controller.py.diff",
+      "sha256": "9c5d6feebb4449248f24d11a6c66862b9e1547911a8627ec3892ec38e71effed"
+    },
+    {
+      "bytes": 3616,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/diffs/test_controller.py.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509099258542018,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520878,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509099258542018,
+        "st_nlink": 1,
+        "st_size": 3616,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/diffs/test_controller.py.inverse",
+      "sha256": "0639daff976b4d99c44671770ae0d8a2a0b364c8e957b8016720bb6087fe947f"
+    },
+    {
+      "bytes": 9766,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/native_port.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508875600406434,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520397,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508401716853103,
+        "st_nlink": 1,
+        "st_size": 9766,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/native_port.py",
+      "sha256": "4e5be42288d4015884f4a8252ce9d856eb7264699125182b52ba37c96fe8d7ae"
+    },
+    {
+      "bytes": 5354,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/preimages/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508881117924803,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520414,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508749419140950,
+        "st_nlink": 1,
+        "st_size": 5354,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/preimages/README.md",
+      "sha256": "192d06a9791a07a0a18cd398b73d6108dd6a931995d99db3ca3a29260fd949b6"
+    },
+    {
+      "bytes": 15457,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/preimages/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508881116992208,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520412,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508727680424445,
+        "st_nlink": 1,
+        "st_size": 15457,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/preimages/controller.py",
+      "sha256": "9ddf39395af619384aa9dee8353d07e8dee4e5d663c0d554628246e58f49d24d"
+    },
+    {
+      "bytes": 14323,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/preimages/test_controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508881117472463,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520413,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508740388706024,
+        "st_nlink": 1,
+        "st_size": 14323,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/preimages/test_controller.py",
+      "sha256": "50150849c72cbaa7b082b90b042edc3f65d39c019f15eccd1faf3263be132831"
+    },
+    {
+      "bytes": 16236,
+      "member": "therese-c17-seatbelt-controller-v3-9nfpdk/test_controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509031776394191,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520398,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509031776394191,
+        "st_nlink": 1,
+        "st_size": 16236,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-controller-v3-9nfpdk/test_controller.py",
+      "sha256": "4f52b681a018f9fc688230f79571887b9e18ce78ebaf9574292de4a13580a13e"
+    },
+    {
+      "bytes": 693,
+      "member": "therese-c17-controller-v3-independent-review-aj7fDdbf/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509318343718008,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521347,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509318343718008,
+        "st_nlink": 1,
+        "st_size": 693,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-controller-v3-independent-review-aj7fDdbf/INDEX.json",
+      "sha256": "f389d8526be2445af40d0596b9f32325785fa19576e7bae44fd1ddfeeae2f5f5"
+    },
+    {
+      "bytes": 8526,
+      "member": "therese-c17-controller-v3-independent-review-aj7fDdbf/REVIEW.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509303088474263,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521308,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509303088474263,
+        "st_nlink": 1,
+        "st_size": 8526,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-controller-v3-independent-review-aj7fDdbf/REVIEW.json",
+      "sha256": "0a7ded7d1a8f767cddc45c1a68aa6997e0ccae51f45ed74f3bdf1f6db7fea4e6"
+    },
+    {
+      "bytes": 5300,
+      "member": "therese-c17-composition-pure-main-TUsw7p/receipt.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508584563065327,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519611,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508584563065327,
+        "st_nlink": 1,
+        "st_size": 5300,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-main-TUsw7p/receipt.json",
+      "sha256": "9ef8dda49f5faeda361f9be740390ab82213bb32975c27882912c1b2aee6266e"
+    },
+    {
+      "bytes": 6713,
+      "member": "therese-c17-composition-pure-main-TUsw7p/returned-test-output.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508584562843410,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519610,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508584562843410,
+        "st_nlink": 1,
+        "st_size": 6713,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-main-TUsw7p/returned-test-output.log",
+      "sha256": "f70fef7a5f5820d72282c666e79ee3c36f20e2494e026aa02bdd0dbe8e6b7832"
+    },
+    {
+      "bytes": 4511,
+      "member": "therese-c17-composition-pure-main-gevGCF/receipt.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507700011939163,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517621,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507700011939163,
+        "st_nlink": 1,
+        "st_size": 4511,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-main-gevGCF/receipt.json",
+      "sha256": "11eb013cbf997af8784e4994eb957a7d6a9e1ff95f838cf48db2178fec077756"
+    },
+    {
+      "bytes": 3019,
+      "member": "therese-c17-composition-pure-main-gevGCF/returned-test-output.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791507700011731039,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377517620,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791507700011731039,
+        "st_nlink": 1,
+        "st_size": 3019,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-composition-pure-main-gevGCF/returned-test-output.log",
+      "sha256": "6f8013a80dd4c9f7e32c521cdabd8cb1afb300ccc45ff3db1b1bbf9a1f594f43"
+    },
+    {
+      "bytes": 1664,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/compile-disabled.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508754588000983,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377519964,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508754588000983,
+        "st_nlink": 1,
+        "st_size": 1664,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/compile-disabled.json",
+      "sha256": "b562d243522a5d1c893ba7075998f42cd0c8612071379ee00817f0cf4fffe64d"
+    },
+    {
+      "bytes": 1383,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/compile-enabled.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509239717699943,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521163,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509239717699943,
+        "st_nlink": 1,
+        "st_size": 1383,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/compile-enabled.json",
+      "sha256": "ef1e7e46a498f604ac7fcece7e7af36d91e3b30560fc6f8161169843d5eb405c"
+    },
+    {
+      "bytes": 773,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/controller-v3-main-pure.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509303463326921,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521309,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509303463326921,
+        "st_nlink": 1,
+        "st_size": 773,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/controller-v3-main-pure.json",
+      "sha256": "94fa31bec99af2db66de5d210f72fc465250eba103c2fd08b465a1c4ba01c171"
+    },
+    {
+      "bytes": 6728,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/chrome-qa-static-imports.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509370641727629,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521474,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509370641727629,
+        "st_nlink": 1,
+        "st_size": 6728,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/chrome-qa-static-imports.json",
+      "sha256": "f1c53366738e226d965e68d9f6b2b5927c37db5b06f24401f848134ecd3ce61c"
+    },
+    {
+      "bytes": 16733,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/probe-native.c",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791508792134751182,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520069,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508792134751182,
+        "st_nlink": 1,
+        "st_size": 16733,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/probe-native.c",
+      "sha256": "8de3afdd3eccc89c65e60b11794f35866c95d3ebed95afb322f5cbc8ecff4f38"
+    },
+    {
+      "bytes": 17216,
+      "member": "therese-c17-seatbelt-archive-plan-WdNZFx/preimages/archive_selected-before-ownfiles.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509540716763474,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521994,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509540716763474,
+        "st_nlink": 1,
+        "st_size": 17216,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-archive-plan-WdNZFx/preimages/archive_selected-before-ownfiles.py",
+      "sha256": "9e81b0f2a7bb96563a6686b868fc38389af925ccff0c47b1831c1eaccf9045a9"
+    },
+    {
+      "bytes": 5988,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/ACTIVATION-INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509728657616247,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523098,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509728657616247,
+        "st_nlink": 1,
+        "st_size": 5988,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/ACTIVATION-INDEX.json",
+      "sha256": "24c572b04a188465d26d0bc12c4f1b55861d24ca8a4eb527924e7820e57b64df"
+    },
+    {
+      "bytes": 3931,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/ACTIVATION-README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509641108580278,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377522904,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509641108580278,
+        "st_nlink": 1,
+        "st_size": 3931,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/ACTIVATION-README.md",
+      "sha256": "f10595f87111c2696ed5c39598eaf09eb7dd22d272b402494c6d18cfdc67794e"
+    },
+    {
+      "bytes": 2253,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/NATIVE-SOURCES.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509618473484661,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521863,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509599656396214,
+        "st_nlink": 1,
+        "st_size": 2253,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/NATIVE-SOURCES.json",
+      "sha256": "6397231d40713a4cc838799edd65f3b54c16b2f010398f1cfc7a748462c45f4e"
+    },
+    {
+      "bytes": 1826,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/PREPARATION-RECEIPT.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509707359580793,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523066,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509707359580793,
+        "st_nlink": 1,
+        "st_size": 1826,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/PREPARATION-RECEIPT.json",
+      "sha256": "3cf94292164ff892deac8ac17948295dfd9513379d0f419cafe8eabd82c34d4a"
+    },
+    {
+      "bytes": 2749,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/SERIES-CLOSURE.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791510088063242390,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377534257,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791510088063242390,
+        "st_nlink": 1,
+        "st_size": 2749,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/SERIES-CLOSURE.json",
+      "sha256": "dc3210449490a904a145b66dceb2122ab954a19b1891b92c7a294cd6f2ab525e"
+    },
+    {
+      "bytes": 3102,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/result.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509790045193413,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523213,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509790045193413,
+        "st_nlink": 1,
+        "st_size": 3102,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/result.json",
+      "sha256": "16c7171362c292fd02b03d5505057cfc2dcf9489952e630ffed996e189dfbb21"
+    },
+    {
+      "bytes": 0,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/stderr.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509789632275552,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523208,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509789632262427,
+        "st_nlink": 1,
+        "st_size": 0,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 895,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/stdout.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509790031155413,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523207,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509790031155413,
+        "st_nlink": 1,
+        "st_size": 895,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/stdout.log",
+      "sha256": "ca629595cacafabf19a47f8d52fd00bf4d034becc9686ddd8f392bd22b86efc6"
+    },
+    {
+      "bytes": 2760,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/trace.jsonl",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509790044094381,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523206,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509790044094381,
+        "st_nlink": 1,
+        "st_size": 2760,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/baseline/trace.jsonl",
+      "sha256": "bce28f203dac57e1ba9e5ffcf5ff87d0a2317cb4d829a7d799220027188388dc"
+    },
+    {
+      "bytes": 3148,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/result.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509957626944902,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523551,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509957626944902,
+        "st_nlink": 1,
+        "st_size": 3148,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/result.json",
+      "sha256": "a518c922dfb0e810d37df601c59c2e7d149fa77a018d35565f7a99ff417f3563"
+    },
+    {
+      "bytes": 0,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/stderr.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509957598178450,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523550,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509957598166784,
+        "st_nlink": 1,
+        "st_size": 0,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1616,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/stdout.log",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509957623149353,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523549,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509957623149353,
+        "st_nlink": 1,
+        "st_size": 1616,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/stdout.log",
+      "sha256": "11f39130304c29e82a883bc9740e0c81712a7aca0a75dccb851fdbfb8788ed83"
+    },
+    {
+      "bytes": 2770,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/trace.jsonl",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509957626399615,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523548,
+        "st_mode": 33152,
+        "st_mtime_ns": 1791509957626399615,
+        "st_nlink": 1,
+        "st_size": 2770,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/cases/compiled-alpha/trace.jsonl",
+      "sha256": "444803c78ace3e0022f307b4a0b98f462a1ee78ac632329a411701d764ccafdc"
+    },
+    {
+      "bytes": 16055,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509363593329842,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521374,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509363593329842,
+        "st_nlink": 1,
+        "st_size": 16055,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/controller.py",
+      "sha256": "5712da7b51a66abe179089ba205f85c6048318636e5735187f8ad1ec9aabef73"
+    },
+    {
+      "bytes": 2925,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/diffs/controller.py.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509676585667987,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523000,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509676585667987,
+        "st_nlink": 1,
+        "st_size": 2925,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/diffs/controller.py.diff",
+      "sha256": "e5108317d034a234610dfb581136e99a0024c4ee71fd9ecd50b356d3df9afcdd"
+    },
+    {
+      "bytes": 2925,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/diffs/controller.py.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509676655015744,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523001,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509676655015744,
+        "st_nlink": 1,
+        "st_size": 2925,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/diffs/controller.py.inverse",
+      "sha256": "a70efc64f7e75a36b4df249782d9978b00ed3d84b574f290f4b40667f4e440b2"
+    },
+    {
+      "bytes": 7408,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/diffs/native_port.py.diff",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509676727505972,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523002,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509676727505972,
+        "st_nlink": 1,
+        "st_size": 7408,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/diffs/native_port.py.diff",
+      "sha256": "227bab73732c405b549477075ff8ffaf9a1ddb98f0e23989c2822d9c72205527"
+    },
+    {
+      "bytes": 7408,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/diffs/native_port.py.inverse",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509676795552199,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523003,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509676795552199,
+        "st_nlink": 1,
+        "st_size": 7408,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/diffs/native_port.py.inverse",
+      "sha256": "a5942be043f16f21aaedcb10da8a5b0adf792336b14b91c462c8e1b04442e0a6"
+    },
+    {
+      "bytes": 975,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/environment-observation.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509534897984434,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521979,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509534897984434,
+        "st_nlink": 1,
+        "st_size": 975,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/environment-observation.json",
+      "sha256": "eb64d375645ce3a643c3432e18f2aba58ae5974a0d06215ff01c1901437c7ea1"
+    },
+    {
+      "bytes": 10555,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/native_main.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509592887333980,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521820,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509592887333980,
+        "st_nlink": 1,
+        "st_size": 10555,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/native_main.py",
+      "sha256": "8be2cafb056490a6ca5e1f7135a92f5e580572400e55dcd32ffb24c1a8633699"
+    },
+    {
+      "bytes": 12036,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/native_port.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509396835797683,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377521375,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509396835797683,
+        "st_nlink": 1,
+        "st_size": 12036,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/native_port.py",
+      "sha256": "33b0761556b2d640f278d5bde50825ac0c97a66e3bb941adb65f9f16d347280f"
+    },
+    {
+      "bytes": 15955,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/preimages/controller.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509655405070986,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377522954,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509031756665701,
+        "st_nlink": 1,
+        "st_size": 15955,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/preimages/controller.py",
+      "sha256": "e84fbd2c9d4bafc1478f4ad7a7eff1f8fb0b0c3474fd23b1a50961ad9fd9031f"
+    },
+    {
+      "bytes": 9766,
+      "member": "therese-c17-seatbelt-native-main-FDuCgC/preimages/native_port.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509655406566265,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377522955,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791508401716853103,
+        "st_nlink": 1,
+        "st_size": 9766,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/preimages/native_port.py",
+      "sha256": "4e5be42288d4015884f4a8252ce9d856eb7264699125182b52ba37c96fe8d7ae"
+    },
+    {
+      "bytes": 732,
+      "member": "therese-c17-seatbelt-activation-independent-review-mmQxVrFl/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509841765803054,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523295,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509841765803054,
+        "st_nlink": 1,
+        "st_size": 732,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-activation-independent-review-mmQxVrFl/INDEX.json",
+      "sha256": "76c0c21950864a2ef9bf09d63638e1e191212a7e106a3ce73b31af28e9a08318"
+    },
+    {
+      "bytes": 9431,
+      "member": "therese-c17-seatbelt-activation-independent-review-mmQxVrFl/REVIEW.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509817015573920,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523257,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509817015573920,
+        "st_nlink": 1,
+        "st_size": 9431,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-activation-independent-review-mmQxVrFl/REVIEW.json",
+      "sha256": "119c3bcaad5c4419ee346c5719efb423dd66f67ca6e9d05a9c80a29a2e7764ed"
+    },
+    {
+      "bytes": 832,
+      "member": "therese-c17-seatbelt-baseline-independent-review-yI535RBJ/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509955239284064,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523539,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509955239284064,
+        "st_nlink": 1,
+        "st_size": 832,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-baseline-independent-review-yI535RBJ/INDEX.json",
+      "sha256": "8d6f892d9a32990eab41a73aa9bd40c58335867814e68982426f8ed8a7c8344e"
+    },
+    {
+      "bytes": 9682,
+      "member": "therese-c17-seatbelt-baseline-independent-review-yI535RBJ/REVIEW.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791509955152158216,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377523538,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791509955152158216,
+        "st_nlink": 1,
+        "st_size": 9682,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-baseline-independent-review-yI535RBJ/REVIEW.json",
+      "sha256": "508ec23a3d258e2bc1b7f470afde9d920fa72431aa61129781fc6a688c1005a6"
+    },
+    {
+      "bytes": 831,
+      "member": "therese-c17-seatbelt-compiled-alpha-red-review-AQAYnAQ5/INDEX.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791510111642937419,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377534302,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791510111642937419,
+        "st_nlink": 1,
+        "st_size": 831,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-compiled-alpha-red-review-AQAYnAQ5/INDEX.json",
+      "sha256": "feb7726a5bed67f996b7190a87c6829fb3f1570cb22588c6fd94f2e7e8bac129"
+    },
+    {
+      "bytes": 10795,
+      "member": "therese-c17-seatbelt-compiled-alpha-red-review-AQAYnAQ5/REVIEW.json",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791510111548157930,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377534301,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791510111548157930,
+        "st_nlink": 1,
+        "st_size": 10795,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-compiled-alpha-red-review-AQAYnAQ5/REVIEW.json",
+      "sha256": "ff589edb76d7f0d15e533ddc3798b8c12ed8a5bbd113dc30dfc785152abcb1ef"
+    },
+    {
+      "bytes": 19257,
+      "member": "therese-c17-seatbelt-archive-plan-WdNZFx/preimages/archive_selected-before-closure.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791510261382682684,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377534617,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791510261382682684,
+        "st_nlink": 1,
+        "st_size": 19257,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-archive-plan-WdNZFx/preimages/archive_selected-before-closure.py",
+      "sha256": "4af920c0ed36e0ab0d87f089ea18cd7271b3cbc388904428faff3e1c82d17d42"
+    },
+    {
+      "bytes": 23304,
+      "member": "therese-c17-seatbelt-archive-plan-WdNZFx/archive_selected.py",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791510261415508517,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520735,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791510261415508517,
+        "st_nlink": 1,
+        "st_size": 23304,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-archive-plan-WdNZFx/archive_selected.py",
+      "sha256": "b23bd57bd5e7e49dad79fbfc04e6614c5d625c3b1c0bd144daa1c2ecedeed85d"
+    },
+    {
+      "bytes": 3111,
+      "member": "therese-c17-seatbelt-archive-plan-WdNZFx/README.md",
+      "observed_original_stat": {
+        "st_ctime_ns": 1791510261433409399,
+        "st_dev": 16777233,
+        "st_gid": 0,
+        "st_ino": 377520736,
+        "st_mode": 33188,
+        "st_mtime_ns": 1791510261433409399,
+        "st_nlink": 1,
+        "st_size": 3111,
+        "st_uid": 501
+      },
+      "original": "/private/tmp/therese-c17-seatbelt-archive-plan-WdNZFx/README.md",
+      "sha256": "dd9508aa882127477d44d30bf06680720ac82075142ae33b1b13512ee3a8e6f2"
+    }
+  ],
+  "historical_non_consumable_controllers": [
+    "SQOoCx",
+    "eOcvBz"
+  ],
+  "native_closure_ref": {
+    "bytes": 2749,
+    "path": "/private/tmp/therese-c17-seatbelt-native-main-FDuCgC/SERIES-CLOSURE.json",
+    "sha256": "dc3210449490a904a145b66dceb2122ab954a19b1891b92c7a294cd6f2ab525e"
+  },
+  "qualification_created_by_archive": false,
+  "schema": "c17-seatbelt-selected-archive-manifest-v1",
+  "scope": "sources_and_evidence_archival_only"
+}
