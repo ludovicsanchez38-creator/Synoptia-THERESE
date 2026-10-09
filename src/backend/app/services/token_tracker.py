@@ -9,7 +9,7 @@ import logging
 import os
 from collections import deque
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +29,21 @@ class PalierPrompt:
     entree: float
     sortie: float
     source: str
+
+
+@dataclass(frozen=True)
+class PromotionTarif:
+    """Tarif soldé entre deux dates. ``fin`` est exclusive.
+
+    ``fin`` absente : aucune date de fin écrite, la promo reste.
+    """
+
+    entree: float
+    sortie: float
+    debut: date
+    fin: date | None
+    source: str
+
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +102,7 @@ TOKEN_PRICES = {
     "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
     # Mistral (alias evergreen)
     "mistral-medium-3-5": {"input": 1.50, "output": 7.50},
-    # M1, 09/10/2026 : prix barré. La promo de lancement (0,68 / 2,09,
-    # deux semaines dès le 6 octobre) n'est pas appliquée.
+    # M1 : tarif barré, hors promotion. Le soldé vit dans PROMOTIONS.
     "mistral-large-4": {"input": 1.36, "output": 4.18},
     # Cycle 6 (D184, relevé docs.mistral.ai/inference/pricing le 10/09/2026)
     "mistral-medium-latest": {"input": 1.50, "output": 7.50},
@@ -137,6 +151,21 @@ PALIERS_PROMPT: dict[str, tuple[PalierPrompt, ...]] = {
             sortie=12.00,
             source="https://docs.x.ai/developers/pricing",
         ),
+    ),
+}
+
+
+# Promotions datées. ``fin`` exclusive. None : pas de date de fin écrite.
+# Mistral Large 4 : changelog du 6 octobre 2026, « deux semaines à partir
+# du 6 octobre », sans jour calendaire écrit. Lecture retenue : du 6 inclus
+# au 20 octobre 2026 exclu (quatorze jours, minuit UTC).
+PROMOTIONS: dict[str, PromotionTarif] = {
+    "mistral-large-4": PromotionTarif(
+        entree=0.68,
+        sortie=2.09,
+        debut=date(2026, 10, 6),
+        fin=date(2026, 10, 20),
+        source="https://docs.mistral.ai/resources/changelogs",
     ),
 }
 
@@ -324,13 +353,17 @@ class TokenTracker:
             self._month_cost = 0.0
             self._current_month = month
 
+    @staticmethod
+    def _present_en_grille(nom: str) -> bool:
+        return nom in TOKEN_PRICES or nom in PALIERS_PROMPT or nom in PROMOTIONS
+
     def _cle_grille(self, model: str) -> str:
         """Identifiant de la grille, préfixe OpenRouter retiré s'il le faut."""
-        if model in TOKEN_PRICES or model in PALIERS_PROMPT:
+        if self._present_en_grille(model):
             return model
         if "/" in model:
             reste = model.split("/", 1)[1]
-            if reste in TOKEN_PRICES or reste in PALIERS_PROMPT:
+            if self._present_en_grille(reste):
                 return reste
         return model
 
@@ -349,7 +382,7 @@ class TokenTracker:
         Le palier franchi remplace le couple court pour toute la requête.
         """
         cle = self._cle_grille(model)
-        retenu = TOKEN_PRICES.get(cle, TOKEN_PRICES["default"])
+        retenu = self._appliquer_promotion(cle, TOKEN_PRICES.get(cle, TOKEN_PRICES["default"]))
         for palier in PALIERS_PROMPT.get(cle, ()):
             franchi = (
                 jetons_prompt >= palier.seuil if palier.inclus else jetons_prompt > palier.seuil
@@ -357,6 +390,20 @@ class TokenTracker:
             if franchi:
                 retenu = {"input": palier.entree, "output": palier.sortie}
         return retenu
+
+    def _appliquer_promotion(
+        self, cle: str, prix: dict[str, float]
+    ) -> dict[str, float]:
+        """Remplace le couple barré pendant la fenêtre, sinon le laisse."""
+        promo = PROMOTIONS.get(cle)
+        if promo is None:
+            return prix
+        jour = datetime.now(UTC).date()
+        if jour < promo.debut:
+            return prix
+        if promo.fin is not None and jour >= promo.fin:
+            return prix
+        return {"input": promo.entree, "output": promo.sortie}
 
     def tarif_connu(self, model: str) -> bool:
         """Dit si la grille tarife vraiment ce modele (B-190).

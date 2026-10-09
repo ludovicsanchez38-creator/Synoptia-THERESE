@@ -4,6 +4,8 @@ Les chiffres viennent des fiches citées dans
 docs/plans/2026-10-09-c18-m1-modeles.md. Aucun appel réseau.
 """
 
+from datetime import date, datetime
+
 import httpx
 import pytest
 from app.services.modeles_catalogue import (
@@ -190,6 +192,17 @@ class TestCatalogueM1:
         assert resoudre_effort("mistral-large-4", "high", "mistral") is None
 
 
+def _figer_le_jour(monkeypatch: pytest.MonkeyPatch, jour: date) -> None:
+    """Fige l'horloge du compteur. La promo dépend du jour, pas du hasard."""
+
+    class _Horloge(datetime):
+        @classmethod
+        def now(cls, tz=None):  # noqa: ANN001
+            return datetime(jour.year, jour.month, jour.day, tzinfo=tz)
+
+    monkeypatch.setattr("app.services.token_tracker.datetime", _Horloge)
+
+
 def _traceur_isole() -> TokenTracker:
     """Hors singleton : pas de lecture du fichier d'usage du processus."""
     traceur = object.__new__(TokenTracker)
@@ -266,8 +279,65 @@ class TestPaliersDeLongueurM1:
         assert "docs.x.ai" in paliers["grok-4.7"][0].source
 
 
+class TestPromoMistralLarge4:
+    """0,68 / 2,09 du 6 octobre inclus au 20 octobre exclu, puis 1,36 / 4,18.
+
+    Le changelog dit « deux semaines à partir du 6 octobre », sans heure
+    ni jour calendaire écrit. La fin retenue est le 20 octobre 2026, UTC.
+    """
+
+    def test_la_promo_couvre_le_6_octobre_et_la_veille_reste_au_tarif_barre(
+        self, monkeypatch,
+    ):
+        traceur = _traceur_isole()
+        _figer_le_jour(monkeypatch, date(2026, 10, 5))
+        assert traceur.estimate_cost("mistral-large-4", 1_000_000, 1_000_000) == pytest.approx(
+            1.36 + 4.18
+        )
+        _figer_le_jour(monkeypatch, date(2026, 10, 6))
+        assert traceur.estimate_cost("mistral-large-4", 1_000_000, 1_000_000) == pytest.approx(
+            0.68 + 2.09
+        )
+
+    def test_la_promo_tient_le_19_et_retombe_le_20(self, monkeypatch):
+        traceur = _traceur_isole()
+        _figer_le_jour(monkeypatch, date(2026, 10, 19))
+        assert traceur.estimate_cost("mistral-large-4", 1_000_000, 0) == pytest.approx(0.68)
+        _figer_le_jour(monkeypatch, date(2026, 10, 20))
+        assert traceur.estimate_cost("mistral-large-4", 1_000_000, 0) == pytest.approx(1.36)
+
+    def test_le_budget_voit_la_promo_avant_d_autoriser(self, monkeypatch):
+        _figer_le_jour(monkeypatch, date(2026, 10, 9))
+        traceur = _traceur_isole()
+        traceur.set_limits(TokenLimits(
+            max_input_tokens=10_000_000,
+            max_output_tokens=10_000_000,
+            daily_input_limit=100_000_000,
+            daily_output_limit=100_000_000,
+            monthly_budget_eur=1.00,
+            warn_at_percentage=80,
+        ))
+        # Tarif barré : 1,36 USD, au-dessus du budget. Promo : 0,68 USD, en dessous.
+        resultat = traceur.check_limits(
+            input_tokens=1_000_000, output_tokens=0, model="mistral-large-4",
+        )
+        assert resultat["allowed"] is True, resultat
+
+    def test_la_promo_cite_le_changelog(self):
+        import app.services.token_tracker as module
+
+        promos = getattr(module, "PROMOTIONS", None)
+        assert promos is not None
+        promo = promos["mistral-large-4"]
+        assert promo.debut == date(2026, 10, 6)
+        assert promo.fin == date(2026, 10, 20)
+        assert "docs.mistral.ai" in promo.source
+
+
 class TestTarifsM1:
-    def test_les_prix_documentes_ne_sont_ni_absents_ni_nuls(self):
+    def test_les_prix_documentes_ne_sont_ni_absents_ni_nuls(self, monkeypatch):
+        # Hors promo : le couple de la grille est le tarif barré, pas le soldé.
+        _figer_le_jour(monkeypatch, date(2026, 10, 20))
         traceur = object.__new__(TokenTracker)
         for modele, prix in TARIFS.items():
             assert TOKEN_PRICES.get(modele) == prix
