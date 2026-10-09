@@ -16,7 +16,7 @@ from app.services.providers.base import LLMConfig, LLMProvider, ToolCall, ToolRe
 from app.services.providers.gemini import GeminiProvider
 from app.services.providers.grok import GrokProvider
 from app.services.providers.mistral import MistralProvider
-from app.services.token_tracker import TOKEN_PRICES, TokenTracker
+from app.services.token_tracker import TOKEN_PRICES, TokenLimits, TokenTracker
 
 from tests.test_anthropic_blocs_de_reflexion import _flux, _outil, _reflexion, _sse
 from tests.test_provider_tools import _collect, _FakeClient
@@ -190,14 +190,93 @@ class TestCatalogueM1:
         assert resoudre_effort("mistral-large-4", "high", "mistral") is None
 
 
+def _traceur_isole() -> TokenTracker:
+    """Hors singleton : pas de lecture du fichier d'usage du processus."""
+    traceur = object.__new__(TokenTracker)
+    traceur._initialized = False
+    traceur.__init__()
+    return traceur
+
+
+class TestPaliersDeLongueurM1:
+    """Haiku 5.5 et Grok 4.7 : le palier long couvre toute la requête."""
+
+    def test_haiku_55_reste_court_a_100_000_jetons_de_prompt(self):
+        cout = _traceur_isole().estimate_cost("claude-haiku-5-5", 100_000, 1_000_000)
+        assert cout == pytest.approx(100_000 / 1_000_000 * 0.10 + 0.50)
+
+    def test_haiku_55_bascule_toute_la_requete_au_dela_de_100_000(self):
+        cout = _traceur_isole().estimate_cost("claude-haiku-5-5", 100_001, 1_000_000)
+        assert cout == pytest.approx(100_001 / 1_000_000 * 0.50 + 2.50)
+
+    def test_haiku_55_prefixe_prend_le_meme_palier(self):
+        cout = _traceur_isole().estimate_cost(
+            "anthropic/claude-haiku-5-5", 100_001, 0,
+        )
+        assert cout == pytest.approx(100_001 / 1_000_000 * 0.50)
+
+    def test_grok_47_reste_a_2_6_sous_200_000(self):
+        cout = _traceur_isole().estimate_cost("grok-4.7", 199_999, 1_000_000)
+        assert cout == pytest.approx(199_999 / 1_000_000 * 2.00 + 6.00)
+
+    def test_grok_47_bascule_toute_la_requete_des_200_000(self):
+        cout = _traceur_isole().estimate_cost("grok-4.7", 200_000, 1_000_000)
+        assert cout == pytest.approx(200_000 / 1_000_000 * 4.00 + 12.00)
+
+    def test_un_modele_sans_palier_ne_change_pas_a_un_million(self):
+        cout = _traceur_isole().estimate_cost("claude-sonnet-5-5", 1_000_000, 1_000_000)
+        assert cout == pytest.approx(12.00)
+
+    def test_le_budget_voit_le_palier_long_avant_d_autoriser(self):
+        traceur = _traceur_isole()
+        traceur.set_limits(TokenLimits(
+            max_input_tokens=10_000_000,
+            max_output_tokens=10_000_000,
+            daily_input_limit=100_000_000,
+            daily_output_limit=100_000_000,
+            monthly_budget_eur=0.03,
+            warn_at_percentage=80,
+        ))
+        # Tarif court : 0,010 USD, sous le budget. Tarif long : 0,050 USD, au-dessus.
+        resultat = traceur.check_limits(
+            input_tokens=100_001, output_tokens=0, model="claude-haiku-5-5",
+        )
+        assert resultat["allowed"] is False, resultat
+
+        traceur.set_limits(TokenLimits(
+            max_input_tokens=10_000_000,
+            max_output_tokens=10_000_000,
+            daily_input_limit=100_000_000,
+            daily_output_limit=100_000_000,
+            monthly_budget_eur=0.60,
+            warn_at_percentage=80,
+        ))
+        # Grok court : 0,40 USD. Grok long : 0,80 USD.
+        grok = traceur.check_limits(
+            input_tokens=200_000, output_tokens=0, model="grok-4.7",
+        )
+        assert grok["allowed"] is False, grok
+
+    def test_les_paliers_citent_leur_fiche(self):
+        import app.services.token_tracker as module
+
+        paliers = getattr(module, "PALIERS_PROMPT", None)
+        assert paliers is not None
+        assert "haiku-5-5" in paliers["claude-haiku-5-5"][0].source
+        assert "docs.x.ai" in paliers["grok-4.7"][0].source
+
+
 class TestTarifsM1:
     def test_les_prix_documentes_ne_sont_ni_absents_ni_nuls(self):
         traceur = object.__new__(TokenTracker)
         for modele, prix in TARIFS.items():
             assert TOKEN_PRICES.get(modele) == prix
             assert traceur.tarif_connu(modele) is True
-            cout = traceur.estimate_cost(modele, 1_000_000, 1_000_000)
-            assert cout == pytest.approx(prix["input"] + prix["output"])
+            # 1 000 jetons : sous tous les seuils. L'ancien contrôle à un
+            # million figeait le palier court pour Haiku 5.5 et Grok 4.7,
+            # qui est le défaut corrigé. Le palier long a sa propre classe.
+            cout = traceur.estimate_cost(modele, 1_000, 1_000)
+            assert cout == pytest.approx((prix["input"] + prix["output"]) / 1_000)
             assert cout > 0
 
 

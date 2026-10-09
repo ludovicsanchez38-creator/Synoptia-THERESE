@@ -13,6 +13,23 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+
+@dataclass(frozen=True)
+class PalierPrompt:
+    """Tarif de toute la requête quand le prompt franchit un seuil.
+
+    ``inclus`` vrai : le seuil compte (Grok 4.7, « dès 200 000 »).
+    ``inclus`` faux : le palier commence au jeton suivant (Haiku 5.5,
+    « au-delà de 100 000 »). Plusieurs paliers se lisent du seuil le
+    plus bas au plus haut : le dernier franchi l'emporte.
+    """
+
+    seuil: int
+    inclus: bool
+    entree: float
+    sortie: float
+    source: str
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,9 +46,8 @@ TOKEN_PRICES = {
     # Cycle 6 (D184, relevé platform.claude.com/docs/en/about-claude/pricing le 10/09/2026)
     "claude-fable-5": {"input": 10.00, "output": 50.00},
     "claude-sonnet-5": {"input": 2.00, "output": 10.00},
-    # M1, 09/10/2026 (platform.claude.com, vues d'ensemble). Haiku : palier
-    # court seulement (<= 100 k). Le palier long (0,50 / 2,50) n'est pas
-    # appliqué : le compteur n'a qu'un couple de prix.
+    # M1, 09/10/2026 (platform.claude.com, vues d'ensemble). Haiku : ce
+    # couple est le palier court (<= 100 k). Au-delà, PALIERS_PROMPT.
     "claude-fable-5-1": {"input": 10.00, "output": 50.00},
     "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
     "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
@@ -87,7 +103,7 @@ TOKEN_PRICES = {
     # Grok (juin 2026)
     # < 200k tokens de prompt (le cas Board/chat)
     "grok-4.6": {"input": 2.00, "output": 6.00},
-    # M1, 09/10/2026 : palier < 200 k. Au-delà (4 / 12) non appliqué.
+    # M1 : couple court (< 200 k). Dès 200 k, PALIERS_PROMPT applique 4 / 12.
     "grok-4.7": {"input": 2.00, "output": 6.00},
     "grok-4.5": {"input": 2.00, "output": 6.00},  # relevé docs.x.ai/docs/models le 10/09/2026 (< 200k)
     "grok-4.3": {"input": 1.25, "output": 2.50},
@@ -98,6 +114,30 @@ TOKEN_PRICES = {
     "deepseek-v4-flash": {"input": 0.14, "output": 0.28},
     # Ollama (local, no cost) + fallback
     "default": {"input": 0.0, "output": 0.0},
+}
+
+
+# Paliers de longueur de prompt. Le lot M2 peut en ajouter sans nouveau code.
+# Le tarif du palier remplace le couple court pour l'entrée ET la sortie.
+PALIERS_PROMPT: dict[str, tuple[PalierPrompt, ...]] = {
+    "claude-haiku-5-5": (
+        PalierPrompt(
+            seuil=100_000,
+            inclus=False,
+            entree=0.50,
+            sortie=2.50,
+            source="https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+        ),
+    ),
+    "grok-4.7": (
+        PalierPrompt(
+            seuil=200_000,
+            inclus=True,
+            entree=4.00,
+            sortie=12.00,
+            source="https://docs.x.ai/developers/pricing",
+        ),
+    ),
 }
 
 
@@ -284,6 +324,16 @@ class TokenTracker:
             self._month_cost = 0.0
             self._current_month = month
 
+    def _cle_grille(self, model: str) -> str:
+        """Identifiant de la grille, préfixe OpenRouter retiré s'il le faut."""
+        if model in TOKEN_PRICES or model in PALIERS_PROMPT:
+            return model
+        if "/" in model:
+            reste = model.split("/", 1)[1]
+            if reste in TOKEN_PRICES or reste in PALIERS_PROMPT:
+                return reste
+        return model
+
     def _prix_pour(self, model: str) -> dict[str, float] | None:
         """Cherche le tarif d'un modele dans la grille, sinon None.
 
@@ -291,11 +341,22 @@ class TokenTracker:
         (B-190) : un drapeau calcule a part finirait par contredire le
         montant qu'il accompagne, notamment sur le prefixe OpenRouter.
         """
-        prices = TOKEN_PRICES.get(model)
-        if prices is None and "/" in model:
-            # OpenRouter : "anthropic/claude-sonnet-4-6" → "claude-sonnet-4-6"
-            prices = TOKEN_PRICES.get(model.split("/", 1)[1])
-        return prices
+        return TOKEN_PRICES.get(self._cle_grille(model))
+
+    def _tarif_pour(self, model: str, jetons_prompt: int) -> dict[str, float]:
+        """Couple entrée/sortie applicable, palier de longueur compris.
+
+        Le palier franchi remplace le couple court pour toute la requête.
+        """
+        cle = self._cle_grille(model)
+        retenu = TOKEN_PRICES.get(cle, TOKEN_PRICES["default"])
+        for palier in PALIERS_PROMPT.get(cle, ()):
+            franchi = (
+                jetons_prompt >= palier.seuil if palier.inclus else jetons_prompt > palier.seuil
+            )
+            if franchi:
+                retenu = {"input": palier.entree, "output": palier.sortie}
+        return retenu
 
     def tarif_connu(self, model: str) -> bool:
         """Dit si la grille tarife vraiment ce modele (B-190).
@@ -319,9 +380,7 @@ class TokenTracker:
         fournisseurs - le nom `cost_eur` des champs reste historique, cf.
         revue Soso 0.48.1 finding S2-4).
         """
-        prices = self._prix_pour(model)
-        if prices is None:
-            prices = TOKEN_PRICES["default"]
+        prices = self._tarif_pour(model, input_tokens)
         input_cost = (input_tokens / 1_000_000) * prices["input"]
         output_cost = (output_tokens / 1_000_000) * prices["output"]
         return input_cost + output_cost
