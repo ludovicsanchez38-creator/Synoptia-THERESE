@@ -34,6 +34,7 @@ import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
 import { messageDErreurDuFlux } from '../../lib/messageDErreurDuFlux';
 import { inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
+import { DECORATIONS } from '../../lib/catalogueModeles';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, annulerTraitement, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
@@ -1510,6 +1511,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 }
               >
                 {traitementLocal ? 'local' : 'cloud'}
+              </span>
+            )}
+            {DECORATIONS[currentModel]?.badge === 'Préversion' && (
+              <span className="text-xs px-1.5 py-0.5 rounded-sm bg-[var(--color-warning-tint)] text-warning">
+                Préversion
               </span>
             )}
             {currentEffort && LIBELLES_EFFORT[currentEffort] && (
