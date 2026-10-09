@@ -2371,3 +2371,136 @@ de whitespace/ligne EOF sur 50 bruts archivés. MAIN `cb9372` les joint tous
 altérerait les preuves. Le check séparé des sept fichiers éditoriaux et
 scripts hors bruts est réellement vert `9848a4`. Aucune preuve brute n'est
 modifiée et aucune permission, assertion ou gate native n'est assouplie.
+
+## Lot 74 : source QA physique, micro Mach vert et ROOT15 rouge sandbox
+
+Source QA neuve construite réellement MAIN `76dedc` / `15ec50`, code0,
+HEAD historique `91e0b942bfb24bfb77890960b2c4b97d04cbb750`, INDEX
+`894b59d7…`. Les 26 commandes terminent en0 ; 4821 fichiers Git, trois
+packs physiques sans hardlink, inventaires Python/Node et quatre locks
+compatibles. Les dépendances physiques représentent environ1,15Go ; ce
+payload, le checkout et Chrome.app ne sont pas archivés dans ce lot.
+La recette v2 exige l'allowlist documentaire externe `6729e235…`, relue
+sur les 1242 chemins/blobs du HEAD. Aucun filtre arbitraire ou ancien
+résultat n'est adopté comme admission. Les huit entrées FULL sont relues
+dans la revue `08532330…` ; aucun adaptateur ou constructeur A/B exécuté.
+Un futur commit documentaire changera le HEAD du dépôt sans retargeter
+ces preuves de source QA historique.
+
+Archive de source réelle MAIN `456a13`, code0 : 95 membres fermés,
+32 592 096 octets de sources et 6 963 011 octets gzip, SHA
+`bab6b66a868bb7d361e32f3d8a389bbaf588ae0edee1f153ffb7cd5d3a174a68`.
+Relecture indépendante puis MAIN `77a08c` : ordre, CRC, contenu et SHA
+de chaque membre conformes, sans extraction. Le premier refus de
+métadonnées de sélection `f656fb`, code86, reste conservé ; la correction
+porte seulement la borne des références avant sélection, pas les
+limites des fichiers ou archives admis.
+
+Micro Mach : le premier compileur `46a06f` refuse l'ancienne API dépréciée
+avec Werror. Le gel séparé receive `d91a1603…` conserve ce rouge et ne
+change que la libération du droit RECEIVE via mach_port_mod_refs.
+MAIN rejoue40 tests purs, compile puis lance le microcanari réel
+`6550df` : reçu `d04beebe…`, portée uniquement exact_mach_register.
+Baseline propre refusée1100, candidat propre admis0, nom du parent et
+suffixe refusés1100, cleanup et deux feuilles terminés sans taint.
+Revue indépendante `61c7e353…` :26 refs de gel,21 pins,10 refs natives
+et six paires de publication identiques. Ce vert n'est ni une admission
+Chrome ni une qualification de l'espace Mach global, FULL ou release.
+
+WRAPPER15 `770af201…` porte uniquement le nom OWN dérivé après naissance
+réelle recroisée, argv template distinct de l'argv effectif et gate
+getpid/PPID/UID/PGID exacte. Pas de mach-lookup supplémentaire. Rejeu MAIN
+38 purs `8df2e6`, reçu `4d5f5187…`, préparation indépendante relue.
+ROOT15 neuf `9c1f0418…`, construction `1aa05c` / `54d0fe`, SQL36 lu et
+revu hors racine. Préflight SDK MAIN `ec1cc9` rouge sur un pointeur de
+premier test historique, sans natif. Le successeur history `69b0fade…`
+joint exactement cette préimage et ce rouge, sans ignore-missing :
+88 purs auteur PASS, pas un rejeu MAIN. Préflight MAIN `ba6de5` /
+`a82d3f`, reçu `bb31d944…`, 5085 références réellement vérifiées.
+
+Natif MAIN `1ca95b`, session48169, terminal `fa672b`, code86. Résultat
+`a2cb37382bbf4f64de44ab21525e78eccf73ed06c553f1ac2898cbb5a2b0840d` :
+sept ACK sur quinze et six reçus feuilles, aucun parent final complet,
+sources inchangées et RPC fermé, mais passed/owned_shutdown/clean faux,
+taint vrai. Chrome14738 sort en-5 ; timeout/interruption/signaux contrôleur
+absents. Le fatal de son registre OWN disparaît et DevTools17594 est
+annoncé, mais l'admission CDP double-scan ne se termine pas. Le septième
+ACK refuse avant naissance feuille : « CDP changé entre scans globaux ».
+Le post-checker MAIN `195d24` / `6bd46e`, reçu `fbaae339…`, vérifie5124
+références et préserve les booléens rouges : structure seulement.
+
+Le stderr complet `e7f2eb47…` conserve le lookup parent14738 refusé1100,
+les erreurs EPERM de sandbox des helpers, les exits GPU6 puis le fatal
+GPU inutilisable. Collecte ciblée MAIN `ebdf04` / `199d5c`, reçu
+`162ced71…`,234 événements : six forbidden-sandbox-reinit nomment les
+PID des helpers enregistrés. Quatre timestamps kernel précèdent toutefois
+leurs births libproc de16,347 à23,293ms. Le supplément indépendant
+`a3b922` refuse réellement la jointure temporelle ; son rouge et sa
+préimage restent conservés. Les événements sont joints par PID/fenêtre,
+sans tolérance inventée ni preuve de chronologie kernel après birth.
+Le log système complet reste privé ; seuls ces six refus et le lookup
+distinct sont sélectionnés pour l'archive publique du lot.
+
+Revue de clôture indépendante `2e478bd9…`,259 références physiques
+inchangées :37 paires de publication, quinze signaux uniques backend/Vite
+attribués, douze scans QA vides, Session fermée et handlers restaurés,
+cleanup des identités connues borné. Crashpad14881 et lookup14909 ne sont
+pas au ledger : aucune adoption ou terminaison individuelle garantie.
+Les trois scans actuels MAIN `374799` / `35db54` / `edc051` sont vides
+après le terminal ; cela ne supprime pas le taint et ne prouve pas une
+capture exhaustive des descendants courts.
+
+FULLv4 `57ec05c3…` prépare le raccord OWN aux quatorze auxiliaires A/B,
+77 purs auteur PASS, zéro rejeu MAIN, construction ou admission. Revue
+indépendante `9adada1f…`,137 pins identiques, delta borné et préparation
+seulement. Ce gel et sa revue restent séparés, non archivés partiellement
+dans LOT74. ROOT15 rouge bloque leur usage natif. Il faut examiner le
+design de confinement, pas ajouter aveuglément des lookups ou des droits
+de chemin. Aucun retrait de G1, no-sandbox, single-process, bypass GPU,
+VM/UTM ou profil personnel n'est utilisé. Une nouvelle frontière de
+sécurité ne serait pas autorisée par la seule préparation documentaire.
+
+Archivage LOT74 : préparateur final `9ead71cd…`, plan `2b43270e…`,
+inspection réelle `e8e328`, sélection297 fichiers /14 568 266 octets,
+digest `bcf84da4132f8d65202a911bfe9156441eb2f0cd97ce2ae9509fd063549ce5c4`.
+Son option execute refuse par conception. Exécuteur MAIN séparé relu,
+sans mutation des gels : première exécution `825584`, code1 avant toute
+émission, car le vrai checkout est un worktree et .git un fichier. La
+préimage, le compte rendu interprété de ce refus et la première revue
+sont conservés. Correctif worktree exact et pin du récit relus dans
+`feb8ee35…` ; aucune protection ou sélection abaissée. Le contrôle
+automatique des permissions expire ensuite avant exécution, destination
+toujours absente ; son unique retry autorisé aboutit réellement MAIN
+`ec3d2b`, code0 :30 archives,310 membres,8 153 159 octets compressés,
+neuf copies de métadonnées, manifeste
+`70dfab4954a1f562c58b9b35cf9d59eedbfb3867ca02153f58f67ebcc43d6116`.
+Sources avant/après identiques, CRC/ordre/metadata et contenus des TAR
+relus par l'exécuteur. Revue indépendante des copies `61980e`, code0,
+et rejeu MAIN `53aea0`, code0 :30 TAR/310 membres/neuf copies exacts,
+avec MANIFEST,receipt et une seule annexe README épinglée,42 fichiers.
+Lecteur readonly `1fd1d3c9…`, sans extraction ou suivi des origines.
+Son premier refus `03b9e5` comparait les stat_result entiers, atime inclus ;
+le champ réellement changé n'est pas démontré par le retour. Le contrôle
+suivant compare les champs d'identité/contenu, hors atime. Son second
+refus `1fba93` signale le README ajouté après émission par MAIN ; cette
+seule annexe est ensuite admise avec SHA/taille exacts. Ces deux refus,
+préimages et lecteur final sont copiés byte-exacts dans le dossier séparé
+`RPC-lot74-copy-review-20261009/`, contrôle MAIN `81c390`, sans changer
+MANIFEST ou inventer une qualification native.
+Le dossier canonique est `RPC-lot74-20261009/`, sans source/runtime live.
+L'exception unique de l'archive95, les rouges et leur clôture sont
+conservés, journal système privé complet exclu. Les copies ne deviennent
+pas des identités ou autorisations runtime vivantes.
+
+Usage LOT74 déjà enregistré MAIN `d111c2` :74 lots, plancher30 259 333
+tokens conservé ; ajouts de tokens/durée non mesurés, pas une consommation
+ou facturation nulle. Contrôle budget courant MAIN `b6c3e5` PASS, bornes
+inchangées. Aucun reset du goal bloqué, état ou coupe-circuit.
+Heartbeat produit mis à jour, retour réel « Updated automation », ACTIVE
+et persistance relue MAIN `fc1ef5` : même cadence et échéance09/10 23:58:30
+Paris, nouveau repère ROOT15 et arrêt des relances inchangées. Aucun
+nouveau réveil exécuté n'est encore revendiqué. L'assertion secteur
+temporaire du lot72 reste distincte de cette reprise planifiée.
+
+État CALIBRATE, zéro ronde FULL propre, aucune release ni publication.
+Ne pas redemander les validations ordinaires déjà données par Ludo.

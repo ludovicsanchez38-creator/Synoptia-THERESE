@@ -1,0 +1,84 @@
+{
+  "schema": "c17-lot74-independent-preparation-review-index-v1",
+  "actor": "/root/cycle17_gate_review",
+  "status": "archive_preparation_reviewed_only",
+  "subject_index_sha256": "9ead71cd06729ce41d0f484fbae990494ece954c06606e88307420ee183887a9",
+  "executor_sha256": "f20c1a846a6435344b50e1b4dd421484f11d60320a7410d068d3fea2adef5673",
+  "selected_files": 297,
+  "selected_bytes": 14568266,
+  "selection_sha256": "bcf84da4132f8d65202a911bfe9156441eb2f0cd97ce2ae9509fd063549ce5c4",
+  "review_outcome": "favorable_exact_worktree_corrective_documentary_preparation_only",
+  "native_executed": false,
+  "FULL": false,
+  "release": false,
+  "G1_imported": false,
+  "archive_created_by_reviewer": false,
+  "review_is_human_GO": false,
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-CKdpN70p/REVIEW.md",
+      "sha256": "140b6be55825108b2ee6aa5149b97004539f490cfd88d02f3e7a0e899b486ce0",
+      "bytes": 2708
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-CKdpN70p/observations.json",
+      "sha256": "45605a467fc0dfef4e7772c0855f0435bd1542ddf61ea7b40ed6fbbe017046f3",
+      "bytes": 1550
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-FT9Uh8wm/INDEX.json",
+      "sha256": "c4edf25be8f52de9cbd9b03e3249165cb828dd9a5a78218be069b4d014ca6fae",
+      "bytes": 2510
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-FT9Uh8wm/REVIEW.md",
+      "sha256": "de4b6d24642f6c7d7947b242b07b47fef6ba483c2cb5bba494f4732b613827fd",
+      "bytes": 4556
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-FT9Uh8wm/observations.json",
+      "sha256": "2e4a0bc1f627046ac73a5b2904c37799ea3bbac9190f0875342fa41dab3187e7",
+      "bytes": 1420
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/INDEX.json",
+      "sha256": "9ead71cd06729ce41d0f484fbae990494ece954c06606e88307420ee183887a9",
+      "bytes": 3911
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/PLAN.json",
+      "sha256": "2b43270ea021a5dec1d67cc2d45ecfd7396b7784aad7815660d6cd1cfac5ea99",
+      "bytes": 12619
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/archive_lot74.py",
+      "sha256": "4938b04f6c44f4dfacd6e1de9a9f54bb6cc88bf627ae2bcab324dd79aa7c461c",
+      "bytes": 22710
+    },
+    {
+      "path": "/Users/synoptia/Documents/Codex/2026-09-04/on/archive-lot74-reviewed.py",
+      "sha256": "f20c1a846a6435344b50e1b4dd421484f11d60320a7410d068d3fea2adef5673",
+      "bytes": 11634
+    },
+    {
+      "path": "/Users/synoptia/Documents/Codex/2026-09-04/on/archive-lot74-reviewed-before-worktree.py",
+      "sha256": "b4aa19d2c95d3f9563559e0ed6ed8cd2cffb6095a04963e50f588e2283da3eb0",
+      "bytes": 9869
+    },
+    {
+      "path": "/Users/synoptia/Documents/Codex/2026-09-04/on/ARCHIVE-LOT74-PREMIER-REFUS.md",
+      "sha256": "eb860e2311ba1ae94be6485d90b225bce977ef6dd41fce24e4984d8d439536fd",
+      "bytes": 1159
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.git",
+      "sha256": "c16434f66cb01be42e5c32d5e7b2ec3f54c77f952a26e32d603a72377fe5c9e8",
+      "bytes": 104
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE/.git/worktrees/Synoptia-THERESE-c15-codex/HEAD",
+      "sha256": "f201815216dcb1ebbd2c54cc7992d244e0511373f6ce7e54106ecb1cfae8935f",
+      "bytes": 31
+    }
+  ]
+}

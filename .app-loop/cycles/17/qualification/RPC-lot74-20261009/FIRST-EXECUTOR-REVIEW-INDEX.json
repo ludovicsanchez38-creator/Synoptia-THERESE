@@ -1,0 +1,64 @@
+{
+  "schema": "c17-lot74-independent-preparation-review-index-v1",
+  "actor": "/root/cycle17_gate_review",
+  "status": "archive_preparation_reviewed_only",
+  "subject_index_sha256": "9ead71cd06729ce41d0f484fbae990494ece954c06606e88307420ee183887a9",
+  "executor_sha256": "b4aa19d2c95d3f9563559e0ed6ed8cd2cffb6095a04963e50f588e2283da3eb0",
+  "selected_files": 297,
+  "selected_bytes": 14568266,
+  "selection_sha256": "bcf84da4132f8d65202a911bfe9156441eb2f0cd97ce2ae9509fd063549ce5c4",
+  "review_outcome": "favorable_exact_documentary_preparation_only",
+  "native_executed": false,
+  "FULL": false,
+  "release": false,
+  "G1_imported": false,
+  "archive_created_by_reviewer": false,
+  "review_is_human_GO": false,
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/INDEX.json",
+      "sha256": "9ead71cd06729ce41d0f484fbae990494ece954c06606e88307420ee183887a9",
+      "bytes": 3911
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/PLAN.json",
+      "sha256": "2b43270ea021a5dec1d67cc2d45ecfd7396b7784aad7815660d6cd1cfac5ea99",
+      "bytes": 12619
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/archive_lot74.py",
+      "sha256": "4938b04f6c44f4dfacd6e1de9a9f54bb6cc88bf627ae2bcab324dd79aa7c461c",
+      "bytes": 22710
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/ROOT15-SELECTED-REFS.json",
+      "sha256": "409746eb7dd2f1baf21a212a5a63cc8ff0afb13c5b25c65b2cd4b652e929de64",
+      "bytes": 15635
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/ROOT15-SYSTEM-SELECTED.json",
+      "sha256": "5cba398fa1da83313b201c75894e07ff22f633ebd6ec3369e93b5e1fc4555143",
+      "bytes": 2461
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-final-qY7yoXIY/README.md",
+      "sha256": "a0f46b2ece419c00596a515893ddaca91264fa7101a8cf87097e662bec125378",
+      "bytes": 2336
+    },
+    {
+      "path": "/Users/synoptia/Documents/Codex/2026-09-04/on/archive-lot74-reviewed.py",
+      "sha256": "b4aa19d2c95d3f9563559e0ed6ed8cd2cffb6095a04963e50f588e2283da3eb0",
+      "bytes": 9869
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-FT9Uh8wm/REVIEW.md",
+      "sha256": "de4b6d24642f6c7d7947b242b07b47fef6ba483c2cb5bba494f4732b613827fd",
+      "bytes": 4556
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot74-review-FT9Uh8wm/observations.json",
+      "sha256": "2e4a0bc1f627046ac73a5b2904c37799ea3bbac9190f0875342fa41dab3187e7",
+      "bytes": 1420
+    }
+  ]
+}

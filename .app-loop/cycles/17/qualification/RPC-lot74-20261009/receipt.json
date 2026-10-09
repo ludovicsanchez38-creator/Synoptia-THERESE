@@ -1,0 +1,22 @@
+{
+  "FULL": false,
+  "archives": 30,
+  "compressed_bytes": 8153159,
+  "manifest": {
+    "bytes": 250732,
+    "ctime_ns": 1791504349802237110,
+    "dev": 16777233,
+    "ino": 377507942,
+    "mtime_ns": 1791504349802237110,
+    "nlink": 1,
+    "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot74-20261009/MANIFEST.json",
+    "sha256": "70dfab4954a1f562c58b9b35cf9d59eedbfb3867ca02153f58f67ebcc43d6116"
+  },
+  "members": 310,
+  "native": false,
+  "release": false,
+  "schema": "c17-lot74-MAIN-archive-receipt-v1",
+  "selection_sha256": "bcf84da4132f8d65202a911bfe9156441eb2f0cd97ce2ae9509fd063549ce5c4",
+  "sources_unchanged": true,
+  "status": "archive_created_and_verified"
+}

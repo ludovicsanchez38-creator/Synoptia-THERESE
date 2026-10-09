@@ -1,0 +1,31 @@
+{
+  "schema": "c17-lot74-independent-preparation-observations-v1",
+  "actor": "/root/cycle17_gate_review",
+  "status": "archive_preparation_reviewed_only",
+  "actual_FS_reader_calls": [
+    {"tool_chunk": "2055e1", "exit_code": 0, "scope": "Selection and publication FS-only independent reader, not controller execution"},
+    {"tool_chunk": "107bd0", "exit_code": 0, "scope": "Existing 95-member source TAR inspection, no extraction or emission"},
+    {"tool_chunk": "91a0cb", "exit_code": 0, "scope": "Executor exact physical hash and stat only"}
+  ],
+  "selected_files": 297,
+  "selected_bytes": 14568266,
+  "prepared_selection_sha256": "bcf84da4132f8d65202a911bfe9156441eb2f0cd97ce2ae9509fd063549ce5c4",
+  "controller_local_refs_exact": 12,
+  "forward_inverse_diff_pairs_exact": 2,
+  "publication_pairs_nlink2_exact": 15,
+  "source_gzip_sha256": "bab6b66a868bb7d361e32f3d8a389bbaf588ae0edee1f153ffb7cd5d3a174a68",
+  "source_gzip_bytes": 6963011,
+  "source_gzip_internal_members": 95,
+  "source_gzip_uncompressed_bytes": 32665600,
+  "source_gzip_content_bytes": 32592096,
+  "system_full_stdout_payload_excluded": true,
+  "system_minimal_events_exact": 7,
+  "native_ROOT15_RED_preserved": true,
+  "first_analytical_RED_preserved": true,
+  "archive_created_by_reviewer": false,
+  "controller_or_executor_run_by_reviewer": false,
+  "native_executed": false,
+  "G1_imported": false,
+  "FULL": false,
+  "release": false
+}
