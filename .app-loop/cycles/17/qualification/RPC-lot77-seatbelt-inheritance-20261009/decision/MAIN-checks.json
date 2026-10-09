@@ -1,0 +1,32 @@
+{
+  "schema": "c17-lot77-readonly-decision-MAIN-checks-v1",
+  "actor": "/root",
+  "scope": "documentary historical reference verification only; no native or runtime guard change",
+  "initial_red": {
+    "tool": "539247",
+    "exit": 1,
+    "error": "metadata ROOT15_ACK7: universal nlink1 assumption was wrong for historical publication",
+    "all_refs_verified": false
+  },
+  "observation": {
+    "tool": "656612",
+    "UID": 501,
+    "ACK_nlink": 2,
+    "bytes": 1884,
+    "protocol_source_read_tools": [
+      "10e43e",
+      "87417b"
+    ],
+    "protocol": "exclusive-pending-fsync-hardlink-v1"
+  },
+  "corrected_documentary_check": {
+    "tool": "154d1b",
+    "exit": 0,
+    "output": "{\"schema\":\"c17-readonly-decision-MAIN-ref-recheck-v2\",\"actor\":\"/root\",\"checked\":22,\"all_refs_exact\":true,\"regular_canonical_UID501\":true,\"nlink1_count\":21,\"historical_RPC_ACK7_nlink2\":\"/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-072dfa421584cc1b6797218f1e7e4040.json\",\"previous_check_red\":\"539247: assumption nlink1 invalid for historical committed hardlink ACK; preserved\",\"protocol_source_read_tool\":\"10e43e\",\"native_guard_modified\":false,\"native_executed\":false,\"FULL\":false}\n"
+  },
+  "NOTE_SHA": "981473e638ebc225d8baccf975005345041ae90a845521ccbc34d31d57223f27",
+  "INDEX_SHA": "dc4c2ee1fed32b5ec20fd16185376ee2ba291d3408a654310e204f8e58784295",
+  "native_guard_modified": false,
+  "FULL": false,
+  "release": false
+}

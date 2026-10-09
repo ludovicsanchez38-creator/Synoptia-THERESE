@@ -2786,3 +2786,25 @@ Suite sûre : analyse statique des designs et options précises de frontière
 Chrome, G1 conservé. Pas de répétition des séries closes. Une exception
 Chrome ou un nouvel instrument réclamera une décision de sécurité ciblée,
 jamais inférée du GO général. Les portes release-therese restent fermées.
+
+### Complément documentaire du lot 77 : options de frontière Chrome
+
+La fiche canonique est désormais
+`.app-loop/cycles/17/qualification/RPC-lot77-seatbelt-inheritance-20261009/decision/DECISION.md`.
+Elle distingue maintien G1, étude d'une politique initiale unique par type et
+Chrome externe via CDP. Aucun remplacement équivalent n'est démontré : la
+protection du browser parent et des helpers reste à résoudre. L'étude statique
+reste autorisée ; activer un nouvel instrument ou une exception nécessite une
+décision ciblée, sans retirer G1, la sandbox Chromium ou les gardes GPU.
+
+Fiche SHA `981473e6…`, INDEX `dc4c2ee1…` ; revue indépendante documentaire
+`REVIEW.json`, SHA `3253f2e0…`,22 références rehashées. Contrôle MAIN
+`154d1b` conforme. Le refus initial `539247` est conservé : il supposait
+nlink1 pour toutes les pièces, alors que l'ACK7 historique RPC possède les
+deux liens du protocole pending/fsync/hardlink. Stat `d0641a` : ACK et pending
+partagent inode, UID501 et nlink2. Aucune garde runtime n'a été modifiée.
+
+Ces quatre fichiers sont un complément séparé, pas des membres ajoutés à la
+TAR originale `f724cb3a…`, restée inchangée. Aucune exécution native, nouvelle
+calibration, ronde FULL ou release ; aucun second enregistrement d'usage pour
+ce complément du même lot. Les neuf documents préexistants sont préservés.

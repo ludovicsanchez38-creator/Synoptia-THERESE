@@ -1,0 +1,149 @@
+{
+  "schema": "c17-chrome-boundary-readonly-decision-note-v1",
+  "actor": "/root/shared4_execution",
+  "status": "analysis_only_not_execution_authority",
+  "observed_input_time_utc": "2026-10-09 02:44:04 UTC",
+  "native_executed_by_this_author": false,
+  "main_native_results_are_inputs_only": true,
+  "G1_imported": false,
+  "profile_changed": false,
+  "runtime_admission_created": false,
+  "FULL": false,
+  "product_rounds_validated": 0,
+  "files": {
+    "DECISION.md": {
+      "path": "/private/tmp/therese-c17-chrome-boundary-decision-8JtqM5/DECISION.md",
+      "sha256": "981473e638ebc225d8baccf975005345041ae90a845521ccbc34d31d57223f27",
+      "bytes": 8336
+    }
+  },
+  "input_refs": {
+    "LOT77_series_closure": {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/SERIES-CLOSURE.json",
+      "sha256": "bd14097a0cfe1f21206e03cc7b1bffa443ac4c72c4844fea6921a74a79d570e1",
+      "bytes": 6401
+    },
+    "LOT77_baseline_result": {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/result.json",
+      "sha256": "c67b830ca54c5c14c4cd3398ca65e9ba31030aa1cf23db84cb10a471ad469f86",
+      "bytes": 4054
+    },
+    "LOT77_baseline_stdout": {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stdout.log",
+      "sha256": "1345c250c6f6f856890da4a7e64d008f174aa59c49072903e37ce576536dd503",
+      "bytes": 1978
+    },
+    "LOT77_compiled_alpha_result": {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/result.json",
+      "sha256": "5620a6a20bce42e42a3b57cd2ffb1cd0cfa35bf3c436b44e797081c47865ed12",
+      "bytes": 4130
+    },
+    "LOT77_compiled_alpha_stdout": {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stdout.log",
+      "sha256": "4bba9f465a7837a9bfa7e363933dd0f8d6c6d76d135fe25bfe7e57185d56d0a4",
+      "bytes": 2529
+    },
+    "ROOT15_result": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/wrapper-canary-result.json",
+      "sha256": "a2cb37382bbf4f64de44ab21525e78eccf73ed06c553f1ac2898cbb5a2b0840d",
+      "bytes": 2778
+    },
+    "ROOT15_G1": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/runtime_session.py",
+      "sha256": "5ef9d9c23f5018f202fdab1ba29278fb391258f764bcf5d3aef0067a107913e0",
+      "bytes": 193433
+    },
+    "ROOT15_profile": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/chrome.sb",
+      "sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "bytes": 2568
+    },
+    "ROOT15_stderr": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/auxiliary/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/stderr.log",
+      "sha256": "e7f2eb473c20a5c4caf45d02f5627f7cc7084700095172b78bdc63ce92d044b3",
+      "bytes": 6605
+    },
+    "ROOT15_ACK7": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-072dfa421584cc1b6797218f1e7e4040.json",
+      "sha256": "f4b73b8e4e132c2e8fe18f9cf60c3eed478587058877ce31b0e919dd55837d13",
+      "bytes": 1884
+    },
+    "ROOT15_service_start": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/service-start.json",
+      "sha256": "c55af7884ee38e2a8077805ca69f682168e4c6af584d5ffb92590a5c44dd3806",
+      "bytes": 13684
+    },
+    "ROOT15_Chrome_receipt": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "sha256": "4fdb049dd3c3b94f52739ac80b746eaa285ecdf979ab598273037062666b6086",
+      "bytes": 261632
+    },
+    "ROOT15_Session_close": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/ledger/session-close-1.json",
+      "sha256": "b49d6dcf556c08e8c7c8ea8052d53407c6d65bb2fcd488f41c6728e7e759b199",
+      "bytes": 209931
+    },
+    "ROOT15_ports_absence": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/ledger/ports-absence-3.json",
+      "sha256": "1d28cd1e98a0981ef2f8ae2184b95528127cfcbd17ffcc1af700edbf745e90dd",
+      "bytes": 7819
+    },
+    "ROOT15_CDP_client": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/auxiliary-ports/runtime/aux_node.mjs",
+      "sha256": "5ab672b0eac6f518a9880b2fd6e5327d5994bef0bfe6110861bd469a36d29023",
+      "bytes": 11677
+    },
+    "FULL_v4_index": {
+      "path": "/private/tmp/therese-c17-full-physical-builder-v4-Diccb9/INDEX.json",
+      "sha256": "57ec05c305304cb1fee6d42590ab581efd6750990d257d7eef1bf980c9314e4a",
+      "bytes": 42497
+    },
+    "FULL_v4_builder": {
+      "path": "/private/tmp/therese-c17-full-physical-builder-v4-Diccb9/build_full_round.py",
+      "sha256": "fb0fa7077fbdb20a875937e0dc32766b20c050d042bc656b19d90388b4cf9b14",
+      "bytes": 62619
+    },
+    "FULL_v4_profile": {
+      "path": "/private/tmp/therese-c17-full-physical-builder-v4-Diccb9/fixtures/chrome-candidate.sb",
+      "sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "bytes": 2568
+    },
+    "FULL_v4_limits": {
+      "path": "/private/tmp/therese-c17-full-physical-builder-v4-Diccb9/README.md",
+      "sha256": "50e0043fbdf1189bef9ca2563d3abc832b1d7cbee8ba0b2ea042147e4aad9372",
+      "bytes": 5439
+    },
+    "FULL_v4_G1_preimage": {
+      "path": "/private/tmp/therese-c17-full-composite-9I2loX52/candidate/g1/runtime_session.py",
+      "sha256": "ee7fe3d2e5a63054ecf5d39add783783d4efc77008da90926f6f61852db59c38",
+      "bytes": 205755
+    },
+    "FULL_v4_auxiliary_table_preimage": {
+      "path": "/private/tmp/therese-c17-full-composite-9I2loX52/candidate/g1/ab_auxiliary_table.py",
+      "sha256": "84e164e06b914952264e0c1d9b96ed2a8b8c8eaf73f62e18f85c7fe1eaae0152",
+      "bytes": 3295
+    }
+  },
+  "scope_of_hash_checks": "Only these 21 literal input files and the note; no recursive dependency graph or new runtime/source qualification.",
+  "web_sources": {
+    "branch": "Chromium main read during this audit; not matched to local Chrome154",
+    "urls": [
+      "https://raw.githubusercontent.com/chromium/chromium/main/chrome/app/chrome_exe_main_mac.cc",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/seatbelt_exec.cc",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/sandbox_serializer.cc",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/seatbelt.cc",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/sandbox_serializer_unittest.cc",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/policy/mac/sandbox_mac.mm",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/policy/mac/common.sb",
+      "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/policy/mac/gpu.sb"
+    ],
+    "local_kernel_version_parity_proved": false
+  },
+  "decision": {
+    "current": "retain existing closed G1 boundary; no new Chrome launch",
+    "possible_preparation_only": "read-only single initial policy design study already in scope; exact candidate/version/guard deltas require review and targeted authority before activation",
+    "MAIN_identity_not_Unix_root": "actor /root, UID501; no administrative elevation",
+    "same_UID_broker_CDP_equivalence": false,
+    "browser_parent_policy_first_protection_resolved": false
+  }
+}
