@@ -2808,3 +2808,72 @@ Ces quatre fichiers sont un complément séparé, pas des membres ajoutés à la
 TAR originale `f724cb3a…`, restée inchangée. Aucune exécution native, nouvelle
 calibration, ronde FULL ou release ; aucun second enregistrement d'usage pour
 ce complément du même lot. Les neuf documents préexistants sont préservés.
+
+## 9 octobre : LOT78, matrice documentaire Chrome/G1, sans admission
+
+Reprise sur HEAD `1ae44e5e`, même branche Codex. Agents vérifiés avant le
+travail ; snapshot QA ciblé `a83dcc` vide, pas une absence exhaustive ni une
+adoption d'anciens PID. Budget réel `383655` PASS. État lu `144f32` : active,
+CALIBRATE, zéro ronde et 23 transitions forcées historiques. Les neuf documents
+préexistants restent byte-exacts ; aucun reset de l'état ou du goal bloqué.
+
+Preuves canoniques :
+`.app-loop/cycles/17/qualification/RPC-lot78-chrome-boundary-matrix-20261009/README.md`.
+L'analyse détaille toutes les 21 expressions du profil ROOT15, dont 19 allow,
+et 24 groupes de gardes G1 sélectionnées. Couverture textuelle, pas compilation
+SBPL, preuve noyau ou revue exhaustive de G1. Inventaires lexicaux MAIN et
+Shared concordants, fragments physiques et IDs vérifiés. Le profil accorde
+déjà fork/exec/sysctl sans filtre, lectures système et écritures des arbres
+QA ; l'allowlist initiale ne doit pas être décrite comme interdiction de
+tous exec internes ou de toute lecture hors QA. Aucun nouveau droit proposé.
+
+Trois lacunes de conception restent ouvertes : browser lui-même protégé,
+politique initiale héritée puis seconde application interne par les helpers,
+et FD/canaux préouverts ou transmis. Une politique par type, un broker même
+UID501, HOME/TMP redirigés ou CDP ne prouvent pas une frontière équivalente.
+MAIN `/root` est l'acteur protocolaire, pas UID0. Aucun hook équivalent établi
+sur Chrome154 inchangé ; aucune architecture sélectionnée ou activée.
+
+Rapport Chromium v2 SHA `b2c6df6f…`, INDEX `cae4a030…`. Préimage v1 conservée
+avec ses imprécisions corrigées sur UID et ancre posix_spawnp. Sources main
+mouvantes et table M128, pas code apparié au build QA. Metadata QA relue
+`67a054` : 154.0.8037.99, sans lancement Chrome. Page tag inaccessible et
+recherche officielle vide ne signifient ni tag absent ni parité établie.
+Forum Apple App Sandbox distinct de l'API privée et de la cause kernel exacte.
+
+Matrice SHA `bd9b2b46…`, INDEX `c038543e…` ; vérification auteur `8dbcd1`
+textuelle seulement. Oracles tous non exécutés. Mach exige un témoin publié
+et un contrôle positif réel avant de qualifier un refus causal. IOKit causal
+non défini/non exécutable dans ce périmètre, pas classe imaginaire sondée.
+Revue indépendante SHA `965a0d2d…`, INDEX `f2ae46f9…`, 26 fichiers littéraux
+uniques rehashés avant/après ; aucun défaut documentaire bloquant trouvé,
+aucune admission ou autorité runtime créée.
+
+MAIN `07f2e4` confirme 13 copies canoniques et 26 entrées de la revue, inventaires
+21/19 et 24 IDs G cohérents, neuf documents préexistants inchangés. Script
+de comparaison conservé, aucun import G1/produit ou appel sandbox/libproc.
+Une tentative inline `549cb2` échoue en SyntaxError avant évaluation ; échec
+préparatoire conservé, pas essai natif. La première copie avait échoué sur
+la création de parents hors writable roots ; accès documentaire exact au
+lot et au suivi accordé ensuite, sans permission Chrome ou modification G1.
+
+ROOT15 reste rouge, 7/15 ACK, Chrome−5/GPU fatal ; la réserve des quatre
+timestamps kernel légèrement pré-birth reste entière. LOT76/77 clos au premier
+rouge, sans rejouer. Mach micro et FULLv4 statique sans admission. Bornes
+CDP 5/startup 50/cleanup 8 inchangées, aucun signal ou lancement natif dans LOT78.
+Snapshot QA final `0b178d` vide, mêmes limites de portée qu'au début.
+
+Usage enregistré une seule fois `866be5` : 78 lots GPT, plancher 30 259 333 tokens
+et 472 s conservés ; ajouts tokens/durée non mesurés, pas consommation nulle.
+Budget post-lot `71d10f` PASS. État réel `7292a4` : cinq calibrations expirées,
+zéro ronde FULL et diversité dégradée. `ab8a6c` indique CALIBRATE, sans créer
+de permission pour une frontière Chrome nouvelle. Portes release-therese
+fermées, aucun bump/tag/publication ou installation.
+
+Heartbeat existant mis à jour par le produit avec le repère LOT78. Persistance
+`c9c295` byte-exacte : ACTIVE, même chat/cadence/échéance 09/10 23:58:30 Paris ;
+ce contrôle ne prouve pas un nouveau réveil. Suite sûre : choisir une question
+synthétique nouvelle sur exec ou FD, préparer source/oracles et revue avant
+toute activation, ou préciser un delta de frontière réellement implémentable.
+Chrome hors G1 ou nouvel instrument exige toujours une décision ciblée ; la
+matrice documentaire ne fournit ni ce GO ni un candidat opérationnel admis.

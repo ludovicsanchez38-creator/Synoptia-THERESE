@@ -1,0 +1,119 @@
+{
+  "schema": "c17-lot78-main-lexical-inventory-v1",
+  "actor": "/root",
+  "tool_chunk": "581971",
+  "scope": "lexical_top_level_inventory_not_SBPL_compilation_or_effect",
+  "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/chrome.sb",
+  "sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+  "count": 21,
+  "allow_count": 19,
+  "forms": [
+    {
+      "start_line": 1,
+      "end_line": 1,
+      "text": "(version 1)"
+    },
+    {
+      "start_line": 2,
+      "end_line": 2,
+      "text": "(deny default)"
+    },
+    {
+      "start_line": 4,
+      "end_line": 4,
+      "text": "(allow process-fork process-exec sysctl-read)"
+    },
+    {
+      "start_line": 5,
+      "end_line": 10,
+      "text": "(allow file-read* file-map-executable\n  (subpath \"/System\") (subpath \"/usr\") (subpath \"/bin\") (subpath \"/sbin\")\n  (subpath \"/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app\")\n  (subpath (param \"AUXILIARY_ROOT\")) (subpath (param \"HOME_ROOT\")) (subpath (param \"TMP_ROOT\"))\n  (literal \"/dev/null\") (literal \"/dev/urandom\") (literal \"/dev/random\")\n  (literal \"/private/etc/localtime\") (subpath \"/private/var/db/timezone\"))"
+    },
+    {
+      "start_line": 11,
+      "end_line": 12,
+      "text": "(allow file-read-metadata (literal \"/\") (literal \"/Applications\") (literal \"/private\") (literal \"/private/tmp\")\n  (literal \"/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja\"))"
+    },
+    {
+      "start_line": 13,
+      "end_line": 14,
+      "text": "(allow file-read-metadata (literal \"/etc\") (literal \"/tmp\") (literal \"/var\")\n  (literal (param \"QA_ROOT\")))"
+    },
+    {
+      "start_line": 15,
+      "end_line": 17,
+      "text": "(allow mach-lookup\n  (global-name \"com.apple.coreservices.launchservicesd\")\n  (global-name \"com.apple.windowserver.active\"))"
+    },
+    {
+      "start_line": 18,
+      "end_line": 19,
+      "text": "(allow file-read-data (literal \"/\") (literal \"/private/tmp\")\n  (literal (param \"QA_ROOT\")))"
+    },
+    {
+      "start_line": 20,
+      "end_line": 21,
+      "text": "(allow file-write* (subpath (param \"AUXILIARY_ROOT\")) (subpath (param \"HOME_ROOT\"))\n  (subpath (param \"TMP_ROOT\")) (literal \"/dev/null\"))"
+    },
+    {
+      "start_line": 22,
+      "end_line": 22,
+      "text": "(allow signal (target self) (target children))"
+    },
+    {
+      "start_line": 23,
+      "end_line": 23,
+      "text": "(allow network-bind network-inbound (local ip \"localhost:17594\"))"
+    },
+    {
+      "start_line": 24,
+      "end_line": 24,
+      "text": "(allow network-outbound (remote ip \"localhost:17593\") (remote ip \"localhost:5173\"))"
+    },
+    {
+      "start_line": 27,
+      "end_line": 27,
+      "text": "(allow system-socket (socket-domain AF_UNIX))"
+    },
+    {
+      "start_line": 28,
+      "end_line": 28,
+      "text": "(allow network-bind (local unix-socket (subpath (param \"TMP_ROOT\"))))"
+    },
+    {
+      "start_line": 31,
+      "end_line": 31,
+      "text": "(allow iokit-open-user-client (iokit-user-client-class \"RootDomainUserClient\"))"
+    },
+    {
+      "start_line": 35,
+      "end_line": 35,
+      "text": "(allow mach-lookup (global-name \"com.apple.CARenderServer\"))"
+    },
+    {
+      "start_line": 36,
+      "end_line": 36,
+      "text": "(allow iokit-open-user-client (iokit-user-client-class \"IOSurfaceRootUserClient\"))"
+    },
+    {
+      "start_line": 37,
+      "end_line": 37,
+      "text": "(allow iokit-open-user-client (iokit-user-client-class \"AGXDeviceUserClient\"))"
+    },
+    {
+      "start_line": 38,
+      "end_line": 38,
+      "text": "(allow file-read-metadata (literal (param \"AUXILIARY_PARENT\")))"
+    },
+    {
+      "start_line": 39,
+      "end_line": 39,
+      "text": "(allow mach-lookup (global-name \"com.apple.bsd.dirhelper\"))"
+    },
+    {
+      "start_line": 40,
+      "end_line": 40,
+      "text": "(allow mach-register (global-name (param \"OWN_RENDEZVOUS_SERVICE\")))"
+    }
+  ],
+  "SBPL_compiled": false,
+  "native_effect_proved": false
+}

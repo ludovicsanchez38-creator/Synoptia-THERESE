@@ -1,0 +1,35 @@
+{
+  "schema": "c17-lot78-main-version-source-attempt-v1",
+  "actor": "/root",
+  "scope": "read_only_QA_bundle_metadata_and_primary_web_not_binary_code_parity",
+  "observed_at_utc": "2026-10-09 03:13:09 UTC",
+  "bundle_metadata": {
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Info.plist",
+    "key": "CFBundleShortVersionString",
+    "value": "154.0.8037.99",
+    "tool_chunk": "67a054",
+    "exit_code": 0,
+    "meaning": "version metadata only; no Chrome launch"
+  },
+  "source_attempts": [
+    {
+      "url": "https://chromium.googlesource.com/chromium/src/+/refs/tags/154.0.8037.99/chrome/app/chrome_exe_main_mac.cc",
+      "tool_result": "URL not accessible via this tool",
+      "meaning": "neither absent_tag_proof nor exact_source_read"
+    },
+    {
+      "query": "\"154.0.8037.99\" Chromium source",
+      "domains": [
+        "chromium.googlesource.com",
+        "chromium.org",
+        "chromereleases.googleblog.com"
+      ],
+      "tool_result": "Empty search results",
+      "meaning": "not evidence of absence"
+    }
+  ],
+  "chrome_154_source_parity_proved": false,
+  "native_Chrome_executed": false,
+  "G1_changed": false,
+  "FULL": false
+}

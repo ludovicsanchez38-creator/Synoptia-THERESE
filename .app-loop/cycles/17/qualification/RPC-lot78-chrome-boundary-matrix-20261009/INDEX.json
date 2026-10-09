@@ -1,0 +1,142 @@
+{
+  "schema": "c17-lot78-canonical-documentary-index-v1",
+  "actor": "/root",
+  "status": "closed_documentary_lot_no_runtime_admission",
+  "branch": "codex/cycle-17",
+  "starting_HEAD": "1ae44e5ee39f4eb32c8e5b807b94e8cc81a39863",
+  "starting_HEAD_check_chunk": "aa5f2b",
+  "ROOT15_admission_HEAD_unchanged": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "sources": {
+    "matrix_actor": "/root/shared4_execution",
+    "chromium_actor": "/root/environment_routes",
+    "independent_reviewer": "/root/cycle17_gate_review"
+  },
+  "files": {
+    "chromium-v1/REPORT.md": {
+      "sha256": "320f75d0092df34b063ee7c6ff8d75759ef0c934ea2a94273f9271bf92532201",
+      "bytes": 4674
+    },
+    "chromium-v1/INDEX.json": {
+      "sha256": "65d9ea9c163edad9d4e3a60c6e632b8817f275718e3edefc05c4526ca875a5ce",
+      "bytes": 817
+    },
+    "chromium/REPORT.md": {
+      "sha256": "b2c6df6fd1745a519a105d36cf6353593f93d9b591a84dddfa52f1e4bba49dea",
+      "bytes": 5236
+    },
+    "chromium/INDEX.json": {
+      "sha256": "cae4a030ee4a32b620c4ef36529f304c5cd94d1bf0f18bdaa00694988453ceb6",
+      "bytes": 1622
+    },
+    "MAIN-source-checks.json": {
+      "sha256": "1361489befc59023a6809d233da5a842273d5c3ad841f17c0860eafb243e4e87",
+      "bytes": 8839
+    },
+    "MAIN-profile-inventory.json": {
+      "sha256": "e794e2fd4e5588ce9dffee48493bcb9aa27ade071650b8e2cdc39d5869f1f74c",
+      "bytes": 4085
+    },
+    "MAIN-version-source-attempt.json": {
+      "sha256": "4c777d837745e39f22996e8a89c5556936349d02d337f9909c68fd00437fdcd7",
+      "bytes": 1202
+    },
+    "matrix/MATRIX.md": {
+      "sha256": "bd9b2b46cb00776231d698866bd674c20f407b0f43d97fe98a0724d6178f3db8",
+      "bytes": 31800
+    },
+    "matrix/PROFILE-INVENTORY.json": {
+      "sha256": "081a66dc9bb01f1626c05ed2aed3b6ce357cfa98b1c92e17a6cf68da29562973",
+      "bytes": 8881
+    },
+    "matrix/TEXT-CHECK.json": {
+      "sha256": "2b90b309bc7fd7975addb86ca55e463d374211c7c446bad0d41f0bfbf4cfd4be",
+      "bytes": 6367
+    },
+    "matrix/INDEX.json": {
+      "sha256": "c038543e42046bfb1deaa9bbb10ff3c46e743a90113509df7c18a51d725f079e",
+      "bytes": 6755
+    },
+    "review/REVIEW.json": {
+      "sha256": "965a0d2db08781ba2f51a3e3626b6aedf582456ce02bea759de5b33b7cdf2b56",
+      "bytes": 19343
+    },
+    "review/INDEX.json": {
+      "sha256": "f2ae46f9b8031737bf406eda98c4a02978b556cfecf6ce38b97a374f989588f2",
+      "bytes": 1274
+    },
+    "README.md": {
+      "sha256": "bdb77f414aabda6871d5c00b82f7569231156cba377b5441ffaa4b05ee65b5ac",
+      "bytes": 7075
+    },
+    "AUTOMATION-UPDATE.json": {
+      "sha256": "57ac3cb47c507b2f6bffdd40f7aa621406ffe23b4960820fb3d7b900bc3ea85a",
+      "bytes": 813
+    },
+    "MAIN-final-text-copy-check.json": {
+      "sha256": "13d1d095e38bbb37e7b46a3a220bb4ef3a9fa9001563e6f50adf04a4ed620b0b",
+      "bytes": 13100
+    },
+    "verify-lot78.mjs": {
+      "sha256": "430573156b269192e163175c41136bfd53dc781e4bfe8fcd8389d6ef8f500371",
+      "bytes": 4587
+    }
+  },
+  "file_count": 17,
+  "canonical_copy_check_chunk": "07f2e4",
+  "own_member_pins_and_relative_links_chunk": "e339a1",
+  "independent_ref_count": 26,
+  "refs_scope": "17 own members only; source INDEXes preserve original absolute provenance; 26 input refs are not a newly archived whole runtime, not portable LIVE authority or an exhaustive reference graph",
+  "textual_inventory": {
+    "profile_expressions": 21,
+    "allow_expressions": 19,
+    "selected_guard_groups": 24,
+    "whole_G1_semantics_exhaustive": false,
+    "SBPL_compiled": false,
+    "oracles_executed": false
+  },
+  "review": {
+    "documentary_blocking_defect_found": false,
+    "runtime_equivalence_proved": false,
+    "editorial_follow_and_readme_review": "current-turn independent agent message; no second frozen receipt or QA round"
+  },
+  "outcomes": {
+    "ROOT15_red_retained": true,
+    "LOT76_LOT77_first_red_retained": true,
+    "kernel_four_prebirth_timestamps_reservation_retained": true,
+    "Chrome154_source_pairing": false,
+    "FD_browser_helper_design_gaps_closed": false
+  },
+  "loop": {
+    "record_chunk": "866be5",
+    "one_logical_lot_recorded": true,
+    "gpt_calls": 78,
+    "token_floor": 30259333,
+    "duration_floor_seconds": 472,
+    "additional_tokens_duration_unmeasured": true,
+    "budget_check_chunk": "71d10f",
+    "budget_check": "PASS",
+    "status_chunk": "7292a4",
+    "phase": "CALIBRATE",
+    "five_calibrations_expired": true,
+    "product_rounds": 0,
+    "forced_transitions": 23,
+    "goal_remains_blocked_not_reset": true
+  },
+  "automation": {
+    "persisted_check_chunk": "c9c295",
+    "status": "ACTIVE",
+    "same_thread_schedule_deadline": true,
+    "new_wakeup_proved": false
+  },
+  "QA": {
+    "final_process_snapshot_chunk": "0b178d",
+    "targeted_only": true,
+    "signal_sent": false,
+    "compiler_or_native_probe_started": false,
+    "Chrome_launched": false,
+    "guard_or_profile_changed": false,
+    "authority_created": false,
+    "FULL": false,
+    "release": false
+  }
+}

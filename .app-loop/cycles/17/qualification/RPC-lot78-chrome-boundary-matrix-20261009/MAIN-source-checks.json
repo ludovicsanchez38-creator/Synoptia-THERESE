@@ -1,0 +1,271 @@
+{
+  "schema": "c17-lot78-main-source-checks-v1",
+  "actor": "/root",
+  "scope": "read_only_source_study_not_runtime_admission",
+  "observed_at_utc": "2026-10-09 03:08:31 UTC",
+  "start": {
+    "head": "1ae44e5ee39f4eb32c8e5b807b94e8cc81a39863",
+    "tracking_head_same": true,
+    "branch": "codex/cycle-17",
+    "state_snapshot": {
+      "tool_chunk": "144f32",
+      "sha256_at_read": "3de457806bf02643d1129d0690352c13baf9224fd47bf7ec949f1bd59e595223",
+      "bytes": 210150,
+      "status": "active",
+      "phase": "CALIBRATE",
+      "cycle": 17,
+      "zero_bug_rounds": 0,
+      "forced_transitions": 23
+    },
+    "budget_snapshot": {
+      "tool_chunk": "8fec7c",
+      "sha256_at_read": "4f90e606675b2ae46ae23cd6188f593f460af69a5dfc000a3059610ba05a2da3",
+      "calls": 77,
+      "token_floor": 30259333,
+      "duration_floor_seconds": 472,
+      "check_chunk": "383655",
+      "check": "PASS",
+      "not_provider_bill": true
+    },
+    "process_snapshot": {
+      "chunk": "a83dcc",
+      "exit_code": 1,
+      "stdout": "",
+      "scope": "targeted_pgrep_snapshot_not_exhaustive",
+      "no_signal_sent": true
+    },
+    "dirty_documents_snapshot": {
+      "chunk": "227891",
+      "count": 9,
+      "unchanged_compared_with_predecessor": true
+    },
+    "goal_status_read": "blocked_not_reset"
+  },
+  "local_refs": [
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/chrome.sb",
+      "sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "bytes": 2568,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/runtime_session.py",
+      "sha256": "5ef9d9c23f5018f202fdab1ba29278fb391258f764bcf5d3aef0067a107913e0",
+      "bytes": 193433,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/wrapper-canary-result.json",
+      "sha256": "a2cb37382bbf4f64de44ab21525e78eccf73ed06c553f1ac2898cbb5a2b0840d",
+      "bytes": 2778,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/result.json",
+      "sha256": "c67b830ca54c5c14c4cd3398ca65e9ba31030aa1cf23db84cb10a471ad469f86",
+      "bytes": 4054,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/result.json",
+      "sha256": "5620a6a20bce42e42a3b57cd2ffb1cd0cfa35bf3c436b44e797081c47865ed12",
+      "bytes": 4130,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stdout.log",
+      "sha256": "1345c250c6f6f856890da4a7e64d008f174aa59c49072903e37ce576536dd503",
+      "bytes": 1978,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stdout.log",
+      "sha256": "4bba9f465a7837a9bfa7e363933dd0f8d6c6d76d135fe25bfe7e57185d56d0a4",
+      "bytes": 2529,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot77-seatbelt-inheritance-20261009/decision/DECISION.md",
+      "sha256": "981473e638ebc225d8baccf975005345041ae90a845521ccbc34d31d57223f27",
+      "bytes": 8336,
+      "uid": 501,
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot77-seatbelt-inheritance-20261009/decision/INDEX.json",
+      "sha256": "dc4c2ee1fed32b5ec20fd16185376ee2ba291d3408a654310e204f8e58784295",
+      "bytes": 7690,
+      "uid": 501,
+      "nlink": 1
+    }
+  ],
+  "read_scopes": [
+    {
+      "source": "ROOT15 g1/chrome.sb",
+      "scope": "entire_profile",
+      "chunk": "e45eae"
+    },
+    {
+      "source": "ROOT15 g1/runtime_session.py",
+      "scope": "selected_bodies_only",
+      "ranges": [
+        [
+          235,
+          499
+        ],
+        [
+          1222,
+          1322
+        ],
+        [
+          1840,
+          1965
+        ],
+        [
+          2446,
+          2645
+        ]
+      ],
+      "chunks": [
+        "451b6d",
+        "794df3",
+        "a52ef9",
+        "e66c89"
+      ]
+    },
+    {
+      "source": "ROOT15 wrapper-canary-result.json",
+      "scope": "entire_result",
+      "chunk": "9e8c33"
+    },
+    {
+      "source": "LOT77 result/stdout two cases",
+      "scope": "entire_results_and_stdout_not_all_traces",
+      "chunks": [
+        "ae81a3",
+        "5216bd",
+        "6e53f8",
+        "dc1afd"
+      ]
+    },
+    {
+      "source": "LOT77 canonical decision",
+      "scope": "entire_note",
+      "chunk": "e4e3ab"
+    }
+  ],
+  "web_reads": [
+    {
+      "url": "https://developer.apple.com/forums/thread/706390",
+      "selected_lines_zero_based": [
+        85,
+        98
+      ],
+      "primary": true,
+      "scope": "App_Sandbox_entitlements_not_Chrome_private_API_proof",
+      "claim": "Dans le scénario App Sandbox décrit, l’enfant hérite et ne peut pas initialiser une sandbox différente. Les remèdes génériques ne sont ni appliqués ni proposés comme contournements G1."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/content/browser/child_process_launcher_helper_mac.cc",
+      "selected_lines_zero_based": [
+        91,
+        187
+      ],
+      "primary": true,
+      "scope": "moving_main_not_Chrome154_parity",
+      "claim": "La politique du helper est préparée puis communiquée via FD après lancement."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/base/process/launch_mac.cc",
+      "selected_lines_zero_based": [
+        243,
+        422
+      ],
+      "primary": true,
+      "scope": "moving_main_not_Chrome154_parity",
+      "claim": "Ce corps LaunchProcess utilise posix_spawnp ; ne prouve pas l’exécution de ce chemin dans ROOT15."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/chrome/app/chrome_exe_main_mac.cc",
+      "selected_lines_zero_based": [
+        140,
+        211
+      ],
+      "primary": true,
+      "scope": "moving_main_not_Chrome154_parity",
+      "claim": "Le chemin SeatbeltExecServer est conditionné par HELPER_EXECUTABLE et sandbox_required, avant dlopen."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/seatbelt_exec.cc",
+      "selected_lines_zero_based": [
+        79,
+        185
+      ],
+      "primary": true,
+      "scope": "moving_main_not_Chrome154_parity",
+      "claim": "Le switch seatbelt-client déclenche lecture et application de la politique sérialisée."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/README.md",
+      "selected_lines_zero_based": [
+        0,
+        74
+      ],
+      "primary": true,
+      "scope": "source_design_not_runtime_proof",
+      "claim": "Seatbelt et App Sandbox sont distingués ; les FD déjà ouverts demandent une analyse séparée des règles de chemins."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/docs/security/process-sandboxes-by-platform.md",
+      "selected_lines_zero_based": [
+        0,
+        57
+      ],
+      "primary": true,
+      "scope": "table_last_updated_M128_not_Chrome154_inventory",
+      "claim": "Le modèle documenté liste le browser non sandboxé par Chromium ; ne qualifie pas la surcouche G1."
+    }
+  ],
+  "preserved_read_errors": [
+    {
+      "chunk": "cf5b38",
+      "kind": "budget_status_output_truncated",
+      "conclusion": "not_used_as_exhaustive_budget_history"
+    },
+    {
+      "chunk": "de9f8d",
+      "kind": "TypeError_wrong_budget_shape_cycle",
+      "conclusion": "script_expected_cycle_but_file_has_cycles; corrected_read_8fec7c; no_state_mutation"
+    },
+    {
+      "web_page": "https://developer.apple.com/forums/tags/notarization/?page=6&sortBy=oldest&sortOrder=DESC",
+      "kind": "current_tag_page_no_matching_title",
+      "conclusion": "precise_primary_thread_resolved_by_link; search_snippet_not_current_page_proof"
+    }
+  ],
+  "execution": {
+    "native_executed": false,
+    "Chrome": false,
+    "FULL": false,
+    "compile": false,
+    "profile_changed": false,
+    "guard_changed": false,
+    "new_instrument_activated": false,
+    "human_GO_created": false,
+    "release": false,
+    "calibration_recorded": false,
+    "rounds": 0
+  },
+  "limits": [
+    "Rehash confirms literal named files, not semantic execution or transitive completeness.",
+    "No policy-first sequence protects browser and helpers equivalently yet.",
+    "Existing ROOT15 red flags and LOT76/77 red observations remain unchanged."
+  ]
+}

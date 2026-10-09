@@ -1,0 +1,462 @@
+{
+  "schema": "c17-lot78-independent-source-review-v1",
+  "actor": "/root/cycle17_gate_review",
+  "observed_at_utc": "2026-10-09 03:23:05 UTC",
+  "status": "reviewed_documentary_only_no_runtime_admission",
+  "subject_indexes": [
+    {
+      "path": "/private/tmp/therese-c17-lot78-restrictions-matrix-xkNsZZ/INDEX.json",
+      "sha256": "c038543e42046bfb1deaa9bbb10ff3c46e743a90113509df7c18a51d725f079e",
+      "bytes": 6755,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-chromium-source-v2-Fv62OB/INDEX.json",
+      "sha256": "cae4a030ee4a32b620c4ef36529f304c5cd94d1bf0f18bdaa00694988453ceb6",
+      "bytes": 1622,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    }
+  ],
+  "verdict": {
+    "documentary_blocking_defect_found": false,
+    "source_analysis_consistent_with_examined_evidence": true,
+    "boundary_equivalence_established": false,
+    "stock_Chrome154_policy_first_hook_established": false,
+    "runtime_admission": false,
+    "native_qualification": false,
+    "FULL": false,
+    "release": false
+  },
+  "method": {
+    "scope": "Lectures FS et sources primaires ; comparaison littérale ciblée, aucun graphe récursif adopté.",
+    "complete_documents_read": [
+      "MATRIX.md",
+      "PROFILE-INVENTORY.json",
+      "TEXT-CHECK.json",
+      "INDEX.json Shared4",
+      "REPORT.md et INDEX.json Environment v1/v2",
+      "MAIN-source-checks.json",
+      "MAIN-profile-inventory.json",
+      "MAIN-version-source-attempt.json",
+      "ROOT15 runtime_launch_gate.py",
+      "ROOT15 chrome.sb",
+      "ROOT15 wrapper-canary-result.json",
+      "LOT77 résultats/stdout des deux cas et décision canonique"
+    ],
+    "G1_read_scope": "Corps sélectionnés seulement ; recroisements supplémentaires LOT78 DarwinLedger235–381, effective/gate/sandbox1222–1320, start1825–1978 et stop2292–2420. Pas revue exhaustive des193433octets G1, transportRPC, framework ni helpers Chromium.",
+    "CDP_client_read_scope": "aux_node.mjs createAux/observation/connexion sélectionnés, pas tout le bundle Node.",
+    "system_log_scope": "Reçu diagnostic lu ; SHA de stdout complet vérifié, six messages forbidden-sandbox-reinit sélectionnés. Pas lecture sémantique exhaustive de234événements ni nouveau logshow.",
+    "checked_literal_unique_files": 26,
+    "matrix_literal_refs_checked": 14,
+    "transitive_ref_graph_checked": false,
+    "profile_inventory": {
+      "top_level_expressions": 21,
+      "allow_expressions": 19,
+      "deny_expressions": 1,
+      "version_expressions": 1,
+      "selected_G1_groups": 24,
+      "compared_with_MAIN": true,
+      "literal_fragments_equal_physical_profile": true,
+      "SBPL_semantics_proved": false
+    },
+    "author_text_check": {
+      "tool_chunk": "8dbcd1",
+      "recorded_exit_code": 0,
+      "recorded_before_after_pins": 11,
+      "before_after_equality_verified": true,
+      "reexecuted_by_this_reviewer": false
+    }
+  },
+  "observations": [
+    {
+      "id": "authority",
+      "text": "L'étude statique entre dans le diagnostic QA autorisé. Ni rapport, INDEX, JSON, agent ou copie documentaire ne crée une autorité runtime. Modifier substantiellement G1/la frontière browser ou activer un nouvel instrument exige une décision de sécurité réelle et ciblée ; ce reçu ne la produit pas."
+    },
+    {
+      "id": "UID",
+      "text": "MAIN /root est une identité de protocole ; propriétaire QA Unix501, pas UID0. Un broker même UID n'impose pas par lui-même une restriction noyau sur fichiers/réseau/IPC."
+    },
+    {
+      "id": "G1-profile",
+      "text": "La matrice21/19 correspond littéralement au profil physique1684af7c. Elle reconnaît process-fork/process-exec/sysctl-read sans filtre, lectures système et écritures QA par arbres plus larges que deux sinks ; aucune interdiction générale fictive n'est déduite de l'allowlist initiale."
+    },
+    {
+      "id": "G1-ledger",
+      "text": "Attribution par snapshots/filiation/birth réelle et signaux PID recontrôlés ne constituent ni une interception atomique de toute création hostile, ni une primitive kill conditionnée à une birth. Helpers très courts, reparentage, FD/canaux transmis restent des limites. Les services Apple Mach/IOKit ne sont pas des descendants G1."
+    },
+    {
+      "id": "CDP",
+      "text": "Nonces/identités/listener scans/endpoint17594/ACK et fermeture relient une commande au browser observé. Ils ne remplacent pas la politique noyau de fichiers/réseau, ne prouvent pas GPU sain ni protection du browser. CDP5/start50/cleanup8 restent distincts et non élargis."
+    },
+    {
+      "id": "upstream-permissions",
+      "text": "Les règles Chromium main common/GPU ne sont pas des droits G1 autorisés à importer. Métadonnées plus larges, extensions/FD, préférences, caches, Mach/XPC et classes IOKit sont des surfaces différentes, non preuve de composition ou d'équivalence."
+    },
+    {
+      "id": "oracles",
+      "text": "Les oracles de la matrice ne sont pas exécutés. Un refus causal requiert une ressource témoin existante et un contrôle positif hors sandbox ; nom Mach/classe imaginaire absent ne suffit pas. Les trois oracles IOKit restent explicitement non définis/non exécutables dans ce périmètre, mutations de pin textuelles seulement."
+    },
+    {
+      "id": "Apple",
+      "text": "Le forum Apple706390 traite App Sandbox/entitlements et _libsecinit_appsandbox. Il ne prouve pas à lui seul le chemin Seatbelt privé de Chrome154, une loi universelle de noyau ou une solution applicable à G1 ; ses remèdes ne sont pas adoptés."
+    },
+    {
+      "id": "Chromium",
+      "text": "Les sources primaires main montrent un browser ordinairement privilégié/non sandboxé par Chromium, un chemin HELPER_EXECUTABLE avant framework et un lancement macOS posix_spawnp suivi de transmission/application de politique. Le flag sandbox_required concerne le receveur ; il n'est pas une protection du browser. Certaines classes sont explicitement non sandboxées dans la tableM128 ; pas de couverture automatique de tous helpers."
+    },
+    {
+      "id": "version",
+      "text": "Les ancres main sont mouvantes et la table plateformes est datéeM128. La metadataQA154.0.8037.99 est une observation MAIN ; source exacte de ce build non appariée. Page tag inaccessible et recherche vide ne prouvent pas tag absent. Le lien launch_mac main373 est recroisé via miroir officiel brut après refus d'accès Gitiles par l'outil."
+    },
+    {
+      "id": "FD",
+      "text": "Le README Chromium indique les capacités de FD ouverts avant politique. close_fds à la frontière initiale G1 ne prouve pas fermeture des canaux que Chromium pourra ouvrir/transmettre ensuite. Une politique tardive ne révoque pas automatiquement ces capacités."
+    },
+    {
+      "id": "design-gap",
+      "text": "Policy-first par type ne résout pas seule browser OUTER hérité puis secondapply du helper. Aucun hook établi sur Chrome154 inchangé ne protège browser et tous helpers dès leur frontière tout en conservant l'initialisation interne. Absence de surface documentée examinée n'est pas une impossibilité générale ; aucune architecture de remplacement n'est sélectionnée ou activée ici."
+    }
+  ],
+  "historical_native_evidence": {
+    "ROOT15": {
+      "result_sha256": "a2cb37382bbf4f64de44ab21525e78eccf73ed06c553f1ac2898cbb5a2b0840d",
+      "runner_exit": 86,
+      "observed_ACK": 7,
+      "expected_ACK": 15,
+      "source_unchanged": true,
+      "RPC_transport_closed": true,
+      "passed": false,
+      "owned_shutdown_proved": false,
+      "stage_refs": {},
+      "round_A_or_B": false,
+      "FULL": false
+    },
+    "LOT77": {
+      "baseline": "Vert pour seul fork synthétique parent/enfant et deux témoins A/B.",
+      "compiled_alpha": "Rouge sandbox_apply=-1/errno1(EPERM), code86, témoins A lisible/Brefusé inchangés ; réapage enfant puis parent et série arrêtée.",
+      "fork_is_not_exec_or_posix_spawn": true,
+      "universal_kernel_cause_proved": false,
+      "Chrome154_inheritance_qualified": false
+    },
+    "ROOT15_system_messages": {
+      "selected_count": 6,
+      "helper_PIDs_from_message": [
+        14904,
+        14903,
+        14915,
+        14945,
+        14942,
+        14944
+      ],
+      "reported_event_processID": 0,
+      "event_processID_meaning": "Émetteur système/kernel, pas adoption PID0 comme helper.",
+      "Paris_window": "2026-10-09 01:30:26.086101–01:30:26.398756+0200",
+      "message": "deny(1) forbidden-sandbox-reinit",
+      "join_scope": "PID nommé recroisé dans les identités birth du reçu diagnostic ; attribution primaire G1 non réauditée exhaustivement LOT78.",
+      "stderr_only_PID14909_adopted": false,
+      "precise_Chrome154_API_or_universal_kernel_cause_proved": false
+    },
+    "MAIN_snapshots": "État/budget/processus du MAIN-source-checks restent observations historiques explicitement nommées, non références LIVE adoptées ni facture fournisseur."
+  },
+  "primary_sources": [
+    {
+      "url": "https://developer.apple.com/forums/thread/706390",
+      "scope": "App Sandbox précis, pas chemin privé Chrome154"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/chrome/app/chrome_exe_main_mac.cc",
+      "scope": "HELPER_EXECUTABLE/InitializeSandbox avant dlopen, main non apparié"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/content/browser/child_process_launcher_helper_mac.cc",
+      "scope": "Type, FD, lancement, SendPolicy ; branches conditionnelles"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/base/process/launch_mac.cc",
+      "scope": "posix_spawnp373–376, main non apparié"
+    },
+    {
+      "url": "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/process-sandboxes-by-platform.md",
+      "scope": "TableM128 et browser non sandboxé par Chromium"
+    },
+    {
+      "url": "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/ipc-reviews.md",
+      "scope": "Modèle browser privilégié/broker, pas frontière G1"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/mac/README.md",
+      "scope": "Seatbelt distinct App Sandbox, FD préouverts"
+    },
+    {
+      "url": "https://chromium.googlesource.com/chromium/src/+/HEAD/sandbox/mac/seatbelt_sandbox_design.md",
+      "scope": "Design/helper avant Framework, doc datée non appariée"
+    },
+    {
+      "url": "https://chromium.googlesource.com/chromium/src/+/refs/heads/main/sandbox/mac/seatbelt_exec.h",
+      "scope": "Receveur et flag sandbox_required"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/policy/mac/common.sb",
+      "scope": "Droits amont différents examinés, jamais importés"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chromium/chromium/main/sandbox/policy/mac/gpu.sb",
+      "scope": "Droits GPU/Mach/IOKit examinés partiellement, jamais importés"
+    }
+  ],
+  "execution": {
+    "compiler_or_native_probe_started": false,
+    "native_sandbox_or_libproc_API_called": false,
+    "Chrome_or_QA_process_launched": false,
+    "G1_or_product_imported": false,
+    "process_scan_or_signal": false,
+    "sandbox_oracle_or_test_suite_executed": false,
+    "existing_source_profile_guard_repo_state_or_authority_modified": false,
+    "runtime_admission_or_human_GO_created": false,
+    "FULL": false,
+    "release": false,
+    "rounds_validated": 0
+  },
+  "source_refs": [
+    {
+      "bytes": 31800,
+      "path": "/private/tmp/therese-c17-lot78-restrictions-matrix-xkNsZZ/MATRIX.md",
+      "sha256": "bd9b2b46cb00776231d698866bd674c20f407b0f43d97fe98a0724d6178f3db8",
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "bytes": 8881,
+      "path": "/private/tmp/therese-c17-lot78-restrictions-matrix-xkNsZZ/PROFILE-INVENTORY.json",
+      "sha256": "081a66dc9bb01f1626c05ed2aed3b6ce357cfa98b1c92e17a6cf68da29562973",
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "bytes": 6367,
+      "path": "/private/tmp/therese-c17-lot78-restrictions-matrix-xkNsZZ/TEXT-CHECK.json",
+      "sha256": "2b90b309bc7fd7975addb86ca55e463d374211c7c446bad0d41f0bfbf4cfd4be",
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot77-seatbelt-inheritance-20261009/decision/DECISION.md",
+      "sha256": "981473e638ebc225d8baccf975005345041ae90a845521ccbc34d31d57223f27",
+      "bytes": 8336,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot77-seatbelt-inheritance-20261009/decision/INDEX.json",
+      "sha256": "dc4c2ee1fed32b5ec20fd16185376ee2ba291d3408a654310e204f8e58784295",
+      "bytes": 7690,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/chrome.sb",
+      "sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "bytes": 2568,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/runtime_session.py",
+      "sha256": "5ef9d9c23f5018f202fdab1ba29278fb391258f764bcf5d3aef0067a107913e0",
+      "bytes": 193433,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/runtime_launch_gate.py",
+      "sha256": "caca6bc8390beeeba871041f97db02a6b2d5ff94ac9d92f7a58c1e297781a595",
+      "bytes": 5074,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/wrapper-canary-result.json",
+      "sha256": "a2cb37382bbf4f64de44ab21525e78eccf73ed06c553f1ac2898cbb5a2b0840d",
+      "bytes": 2778,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/SERIES-CLOSURE.json",
+      "sha256": "bd14097a0cfe1f21206e03cc7b1bffa443ac4c72c4844fea6921a74a79d570e1",
+      "bytes": 6401,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/result.json",
+      "sha256": "c67b830ca54c5c14c4cd3398ca65e9ba31030aa1cf23db84cb10a471ad469f86",
+      "bytes": 4054,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stdout.log",
+      "sha256": "1345c250c6f6f856890da4a7e64d008f174aa59c49072903e37ce576536dd503",
+      "bytes": 1978,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/result.json",
+      "sha256": "5620a6a20bce42e42a3b57cd2ffb1cd0cfa35bf3c436b44e797081c47865ed12",
+      "bytes": 4130,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stdout.log",
+      "sha256": "4bba9f465a7837a9bfa7e363933dd0f8d6c6d76d135fe25bfe7e57185d56d0a4",
+      "bytes": 2529,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/auxiliary/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/stderr.log",
+      "sha256": "e7f2eb473c20a5c4caf45d02f5627f7cc7084700095172b78bdc63ce92d044b3",
+      "bytes": 6605,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-chromium-source-v2-Fv62OB/REPORT.md",
+      "sha256": "b2c6df6fd1745a519a105d36cf6353593f93d9b591a84dddfa52f1e4bba49dea",
+      "bytes": 5236,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-restrictions-matrix-xkNsZZ/INDEX.json",
+      "sha256": "c038543e42046bfb1deaa9bbb10ff3c46e743a90113509df7c18a51d725f079e",
+      "bytes": 6755,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-chromium-source-v2-Fv62OB/INDEX.json",
+      "sha256": "cae4a030ee4a32b620c4ef36529f304c5cd94d1bf0f18bdaa00694988453ceb6",
+      "bytes": 1622,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-chromium-source-L42MfI/REPORT.md",
+      "sha256": "320f75d0092df34b063ee7c6ff8d75759ef0c934ea2a94273f9271bf92532201",
+      "bytes": 4674,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-chromium-source-L42MfI/INDEX.json",
+      "sha256": "65d9ea9c163edad9d4e3a60c6e632b8817f275718e3edefc05c4526ca875a5ce",
+      "bytes": 817,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-boundary-main-bZRbS2q4/MAIN-source-checks.json",
+      "sha256": "1361489befc59023a6809d233da5a842273d5c3ad841f17c0860eafb243e4e87",
+      "bytes": 8839,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-boundary-main-bZRbS2q4/MAIN-profile-inventory.json",
+      "sha256": "e794e2fd4e5588ce9dffee48493bcb9aa27ade071650b8e2cdc39d5869f1f74c",
+      "bytes": 4085,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-boundary-main-bZRbS2q4/MAIN-version-source-attempt.json",
+      "sha256": "4c777d837745e39f22996e8a89c5556936349d02d337f9909c68fd00437fdcd7",
+      "bytes": 1202,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-root15-chrome14738-log-QS4RpE/receipt.json",
+      "sha256": "162ced7181e05550bc86e83cdfd54314e7ae0e478ac71402effef9575fee7621",
+      "bytes": 4029,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-root15-chrome14738-log-QS4RpE/stdout.json",
+      "sha256": "a76d3cb12e1d656be075250bdcfa1288f6530696479dfa38ff73887a2fbacec0",
+      "bytes": 237034,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/auxiliary-ports/runtime/aux_node.mjs",
+      "sha256": "5ab672b0eac6f518a9880b2fd6e5327d5994bef0bfe6110861bd469a36d29023",
+      "bytes": 11677,
+      "uid": 501,
+      "gid": 0,
+      "mode": "600",
+      "nlink": 1
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "c17-lot78-chromium-source-review-v1",
+  "scope": "source_only_no_runtime_no_admission",
+  "report": {
+    "path": "/private/tmp/therese-c17-lot78-chromium-source-L42MfI/REPORT.md",
+    "sha256": "320f75d0092df34b063ee7c6ff8d75759ef0c934ea2a94273f9271bf92532201",
+    "bytes": 4674
+  },
+  "local_evidence": [
+    "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/runtime_session.py",
+    "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/chrome.sb",
+    "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/auxiliary/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/stderr.log"
+  ],
+  "qualification": {
+    "chrome_154_code_parity": false,
+    "runtime_test_executed": false,
+    "g1_or_full_admitted": false
+  }
+}

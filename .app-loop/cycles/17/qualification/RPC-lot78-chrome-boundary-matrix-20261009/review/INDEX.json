@@ -1,0 +1,40 @@
+{
+  "schema": "c17-lot78-independent-source-review-index-v1",
+  "actor": "/root/cycle17_gate_review",
+  "status": "closed_documentary_review_not_admission",
+  "review": {
+    "path": "/private/tmp/therese-c17-lot78-independent-review-ORWQAzzd/REVIEW.json",
+    "sha256": "965a0d2db08781ba2f51a3e3626b6aedf582456ce02bea759de5b33b7cdf2b56",
+    "bytes": 19343
+  },
+  "subject_indexes": [
+    {
+      "path": "/private/tmp/therese-c17-lot78-restrictions-matrix-xkNsZZ/INDEX.json",
+      "sha256": "c038543e42046bfb1deaa9bbb10ff3c46e743a90113509df7c18a51d725f079e",
+      "bytes": 6755,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-lot78-chromium-source-v2-Fv62OB/INDEX.json",
+      "sha256": "cae4a030ee4a32b620c4ef36529f304c5cd94d1bf0f18bdaa00694988453ceb6",
+      "bytes": 1622,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    }
+  ],
+  "checked_unique_literal_refs": 26,
+  "source_refs_before_after_equal": true,
+  "recursive_ref_graph_adopted": false,
+  "SBPL_semantics_or_native_equivalence_proved": false,
+  "native_executed": false,
+  "runtime_admission_created": false,
+  "human_GO_created": false,
+  "FULL": false,
+  "release": false,
+  "rounds_validated": 0
+}

@@ -1,0 +1,255 @@
+{
+  "schema": "c17-lot78-root15-profile-textual-inventory-v1",
+  "actor": "/root/shared4_execution",
+  "scope": "textual_inventory_not_SBPL_semantics_or_kernel_qualification",
+  "profile_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-9c1f04187dd24519b220372284a739c9/g1/chrome.sb",
+    "sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+    "bytes": 2568
+  },
+  "top_level_count": 21,
+  "allow_count": 19,
+  "deny_count": 1,
+  "version_count": 1,
+  "expressions": [
+    {
+      "matrix_id": "P01",
+      "start_line": 1,
+      "end_line": 1,
+      "form": "version",
+      "operations_named": [],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(version 1)"
+    },
+    {
+      "matrix_id": "P02",
+      "start_line": 2,
+      "end_line": 2,
+      "form": "deny",
+      "operations_named": [
+        "default"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(deny default)"
+    },
+    {
+      "matrix_id": "P03",
+      "start_line": 4,
+      "end_line": 4,
+      "form": "allow",
+      "operations_named": [
+        "process-fork",
+        "process-exec",
+        "sysctl-read"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow process-fork process-exec sysctl-read)"
+    },
+    {
+      "matrix_id": "P04",
+      "start_line": 5,
+      "end_line": 10,
+      "form": "allow",
+      "operations_named": [
+        "file-read*",
+        "file-map-executable"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow file-read* file-map-executable\n  (subpath \"/System\") (subpath \"/usr\") (subpath \"/bin\") (subpath \"/sbin\")\n  (subpath \"/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app\")\n  (subpath (param \"AUXILIARY_ROOT\")) (subpath (param \"HOME_ROOT\")) (subpath (param \"TMP_ROOT\"))\n  (literal \"/dev/null\") (literal \"/dev/urandom\") (literal \"/dev/random\")\n  (literal \"/private/etc/localtime\") (subpath \"/private/var/db/timezone\"))"
+    },
+    {
+      "matrix_id": "P05",
+      "start_line": 11,
+      "end_line": 12,
+      "form": "allow",
+      "operations_named": [
+        "file-read-metadata"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow file-read-metadata (literal \"/\") (literal \"/Applications\") (literal \"/private\") (literal \"/private/tmp\")\n  (literal \"/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja\"))"
+    },
+    {
+      "matrix_id": "P06",
+      "start_line": 13,
+      "end_line": 14,
+      "form": "allow",
+      "operations_named": [
+        "file-read-metadata"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow file-read-metadata (literal \"/etc\") (literal \"/tmp\") (literal \"/var\")\n  (literal (param \"QA_ROOT\")))"
+    },
+    {
+      "matrix_id": "P07",
+      "start_line": 15,
+      "end_line": 17,
+      "form": "allow",
+      "operations_named": [
+        "mach-lookup"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow mach-lookup\n  (global-name \"com.apple.coreservices.launchservicesd\")\n  (global-name \"com.apple.windowserver.active\"))"
+    },
+    {
+      "matrix_id": "P08",
+      "start_line": 18,
+      "end_line": 19,
+      "form": "allow",
+      "operations_named": [
+        "file-read-data"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow file-read-data (literal \"/\") (literal \"/private/tmp\")\n  (literal (param \"QA_ROOT\")))"
+    },
+    {
+      "matrix_id": "P09",
+      "start_line": 20,
+      "end_line": 21,
+      "form": "allow",
+      "operations_named": [
+        "file-write*"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow file-write* (subpath (param \"AUXILIARY_ROOT\")) (subpath (param \"HOME_ROOT\"))\n  (subpath (param \"TMP_ROOT\")) (literal \"/dev/null\"))"
+    },
+    {
+      "matrix_id": "P10",
+      "start_line": 22,
+      "end_line": 22,
+      "form": "allow",
+      "operations_named": [
+        "signal"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow signal (target self) (target children))"
+    },
+    {
+      "matrix_id": "P11",
+      "start_line": 23,
+      "end_line": 23,
+      "form": "allow",
+      "operations_named": [
+        "network-bind",
+        "network-inbound"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow network-bind network-inbound (local ip \"localhost:17594\"))"
+    },
+    {
+      "matrix_id": "P12",
+      "start_line": 24,
+      "end_line": 24,
+      "form": "allow",
+      "operations_named": [
+        "network-outbound"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow network-outbound (remote ip \"localhost:17593\") (remote ip \"localhost:5173\"))"
+    },
+    {
+      "matrix_id": "P13",
+      "start_line": 27,
+      "end_line": 27,
+      "form": "allow",
+      "operations_named": [
+        "system-socket"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow system-socket (socket-domain AF_UNIX))"
+    },
+    {
+      "matrix_id": "P14",
+      "start_line": 28,
+      "end_line": 28,
+      "form": "allow",
+      "operations_named": [
+        "network-bind"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow network-bind (local unix-socket (subpath (param \"TMP_ROOT\"))))"
+    },
+    {
+      "matrix_id": "P15",
+      "start_line": 31,
+      "end_line": 31,
+      "form": "allow",
+      "operations_named": [
+        "iokit-open-user-client"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow iokit-open-user-client (iokit-user-client-class \"RootDomainUserClient\"))"
+    },
+    {
+      "matrix_id": "P16",
+      "start_line": 35,
+      "end_line": 35,
+      "form": "allow",
+      "operations_named": [
+        "mach-lookup"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow mach-lookup (global-name \"com.apple.CARenderServer\"))"
+    },
+    {
+      "matrix_id": "P17",
+      "start_line": 36,
+      "end_line": 36,
+      "form": "allow",
+      "operations_named": [
+        "iokit-open-user-client"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow iokit-open-user-client (iokit-user-client-class \"IOSurfaceRootUserClient\"))"
+    },
+    {
+      "matrix_id": "P18",
+      "start_line": 37,
+      "end_line": 37,
+      "form": "allow",
+      "operations_named": [
+        "iokit-open-user-client"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow iokit-open-user-client (iokit-user-client-class \"AGXDeviceUserClient\"))"
+    },
+    {
+      "matrix_id": "P19",
+      "start_line": 38,
+      "end_line": 38,
+      "form": "allow",
+      "operations_named": [
+        "file-read-metadata"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow file-read-metadata (literal (param \"AUXILIARY_PARENT\")))"
+    },
+    {
+      "matrix_id": "P20",
+      "start_line": 39,
+      "end_line": 39,
+      "form": "allow",
+      "operations_named": [
+        "mach-lookup"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow mach-lookup (global-name \"com.apple.bsd.dirhelper\"))"
+    },
+    {
+      "matrix_id": "P21",
+      "start_line": 40,
+      "end_line": 40,
+      "form": "allow",
+      "operations_named": [
+        "mach-register"
+      ],
+      "source_sha256": "1684af7c288e86b3e5fa47ebde5fa598ba2d619f50c904f899d50b396f8e2453",
+      "literal_source": "(allow mach-register (global-name (param \"OWN_RENDEZVOUS_SERVICE\")))"
+    }
+  ],
+  "operations_are_named_tokens_not_wildcard_expansion": true,
+  "comments_are_not_permissions": true,
+  "native_oracles_executed": false,
+  "sandbox_parser_or_compiler_used": false,
+  "G1_imported": false,
+  "FULL": false
+}
