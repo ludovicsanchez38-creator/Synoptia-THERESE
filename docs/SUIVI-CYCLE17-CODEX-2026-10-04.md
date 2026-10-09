@@ -2967,3 +2967,89 @@ Suite sûre : rejeter ou préciser un candidat concret protégeant browser/helpe
 et capacités préouvertes, ou préparer un diagnostic synthétique différent.
 Ne pas rejouer LOT79 inchangé ; aucun contournement G1/Chromium/GPU. ROOT15,
 LOT76/77 et FULLv4 restent dans leur état antérieur, non promus par ce lot.
+
+
+## 9 octobre : LOT80, B-1684 corrigé localement, puis arrêt demandé pour passation
+
+Reprise sur HEAD `3dd046bf`, branche `codex/cycle-17`. Agents clos et snapshot QA
+ciblé `d46aac` vide avant le lot ; le premier `ps` sandboxé était refusé.
+Budget `7f2aec` PASS. État/budget initiaux byte-exacts au post-LOT79, sept
+références physiques de son INDEX revérifiées. Aucun ROOT15/LOT76/77/79 rejoué.
+Les neuf documents préexistants sont toujours byte-exacts au contrôle `df9588`.
+
+Preuves du lot :
+`.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/README.md`.
+Triage ciblé du registre réel : 1 773 entrées, 1 383 fixed, 294 deferred,
+96 rejected, zéro pending. Ce n'est pas une requalification de tout le backlog.
+B-1684 reste présent au code : une erreur de lecture du réglage tombait sur
+`return True`. La route de réglages confirme True si préférence absente ;
+le service conserve aussi True si valeur vide, divergence antérieure non changée.
+Une anonymisation réelle n'a pas été observée : les lectures suivantes auraient
+encore dû réussir. Aucune nouvelle règle de conservation ou décision démo.
+
+Test préparé relu par Environment avant exécution, deux fonctions produit
+intégrales extraites par AST, session/Preference/select simulés en mémoire.
+La sentinelle de suite arrête le positif avant la lecture des contacts.
+MAIN `91463a` rouge : 14 méthodes, 11 assertions échouées, zéro erreur.
+Correctif minimal : False dans le seul handler Exception ; docstring/commentaires,
+True final et reste du module inchangés. `cfcbb8` : 14/14 vert.
+Copie de sabotage privée, seul retour False remis à True : `250dec`, mêmes
+11 assertions rouges sans erreur. Produit jamais saboté par cette copie ;
+dernier vert `a49ae8`, mêmes 14 méthodes, pas 28 cas nouveaux.
+Ruff 0.16.10 existant, sans installation/cache : `369f9c` PASS ;
+`b42775` diffcheck PASS. Ancien chemin Ruff/PATH indisponible, cache existant trouvé.
+
+Sabotage ouvert `08f243` puis clos rouge `88a15b` par le script canonique.
+Sa console dit « verrou retiré » mais le verrou zéro octet antérieur est
+physiquement toujours là `0593b3`, conformément à lock_was_present ; ne pas l'effacer.
+B-1684 mis à jour `f5b180` avec preuve et tentative 1, statut deferred conservé.
+Revue Gate figée : douze références avant/après inchangées, reconstruction
+byte-exacte préimage/corrigé/mutant, AST hors docstring et seul retour inchangé,
+résultats physiques joints aux bruts. Avis favorable local uniquement.
+SHA REVIEW.json `91a21c5d…`, REVIEW.md `0ee45a60…`.
+Aucune DB physique, Qdrant, purge réelle, UI, calibration complète, ronde ou
+conformité réglementaire prouvée. Le succès mémoire n'admet pas test_runner/FULL.
+
+Piste Chrome réellement nouvelle : MAIN `527335` relit les deux Info.plist QA
+physiques de la copie RoZmwsja, SHA `9f98b0da…` (18 856 B) et `22704169…`
+(1 075 B). Version 154.0.8037.99, SCMRevision commune
+`45889d77830582727fe00dbfd614bcb7aac35caa-refs/branch-heads/8037@{#1675}`.
+Gate les joint aux inventaires source-before/copy-after historiques exacts.
+C'est une déclaration de révision, pas un checkout, des flags de build ou une
+preuve de source appariée. Aucun nouvel appel codesign, Chrome ou natif.
+Une future recherche primaire doit viser ce commit exact ; main/M128 et l'ancien
+tag inaccessible ne tranchent pas sa disponibilité. Source/binaire et frontière
+G1 restent non qualifiés. ROOT15 rouge et réserve kernel restent entiers.
+
+Deux pistes de lecture Shared conservées dans PISTES-SHARED.md : B-1612,
+décorations des modèles frais absentes alors qu'elles existent au repli, et
+B-1678, recherche brute distincte des valeurs démo affichées. Pas de test ou de
+correctif de ces pistes ; ne pas les présenter comme bugs reproduits ni arbitrer
+les choix démo réservés à Ludo. Les modèles/offres réellement accessibles ne
+sont pas attestés par cette lecture.
+
+Usage `573634` enregistré une fois : 80 lots GPT, planchers 30 259 333 tokens
+et 472 s conservés ; ajouts tokens/durée non mesurés, pas consommation nulle.
+Budget `330975` PASS, statut `b24243` CALIBRATE, cinq expirés, zéro ronde,
+diversité dégradée, 23 transitions forcées historiques. Au moment de la pause,
+le compteur natif get_goal indique 30 396 493 tokens/55 290 s ; il diffère du
+plancher du registre, ce n'est pas une mesure de facturation. Aucun reset.
+
+Ludo a interrompu : « Alors laisse tomber documente tout et je vais demander
+a claude de prendre le relai. » Plus de test, analyse ou correctif après cet arrêt,
+seulement archivage, vérification documentaire et passation.
+La tentative d'update ACTIVE cellule902 avait expiré à la revue d'autorisation ;
+la persistance était restée ACTIVE sans LOT80. Aucun succès inventé.
+Update PAUSED ensuite confirmé par le produit et par lecture exacte du TOML,
+updated_at `1791528936491`, même chat/cadence/échéance, prompt marqué archive et
+reprise soumise à une nouvelle demande. Objectif natif paused sur demande de Ludo.
+Boucle canonique `44207c` paused ; `e1da50` confirme STOP présent, phase et
+portes conservées. Pins locaux `52ba2d` : state SHA `727724b8…`,
+budget `147faf28…`, bugs `5b8abd82…`. Aucun nouveau lot à lancer.
+
+Snapshot QA final ciblé `34c71c` vide, aucun processus QA détenu restant,
+aucun signal envoyé et aucune adoption de PID ; pas audit global des processus.
+Pas de bump, tag, publication, landing/updater/Discord, installation ou message
+externe. Le workflow release-therese reste intégralement obligatoire ; publication
+non atteinte. Point d'entrée de reprise documentaire :
+`docs/PASSATION-CLAUDE-CYCLE17-2026-10-09.md`. Cette passation n'est pas un nouveau GO.

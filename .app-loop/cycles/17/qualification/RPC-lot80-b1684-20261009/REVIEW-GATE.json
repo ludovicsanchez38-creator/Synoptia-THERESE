@@ -1,0 +1,287 @@
+{
+  "schema": "c17-b1684-independent-local-corrective-review-v1",
+  "actor": "/root/cycle17_gate_review",
+  "created_at_utc": "2026-10-09T06:51:57Z",
+  "subject": "B-1684 : erreur de lecture du réglage de purge",
+  "status": "local_corrective_source_and_memory_unit_evidence_reviewed_only",
+  "decision": {
+    "source_blocking_findings": [],
+    "local_corrective_review": "favorable",
+    "B1684_qualification_status": "deferred_pending_qualification",
+    "CALIBRATE_admitted": false,
+    "FULL_admitted": false,
+    "release_admitted": false
+  },
+  "review_actions": {
+    "complete_source_and_test_read": true,
+    "complete_preimage_and_mutant_read": true,
+    "complete_recorded_outputs_read": true,
+    "filesystem_refs_hashed": 12,
+    "ast_parsed_without_product_execution": true,
+    "tests_replayed_by_reviewer": false,
+    "product_imported_by_reviewer": false,
+    "QA_or_native_launched_by_reviewer": false,
+    "repo_mutated_by_reviewer": false,
+    "network_used": false
+  },
+  "physical_refs": [
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/src/backend/app/services/rgpd_auto.py",
+      "sha256": "c5fdf5c4ee1fbbf6eb854e7a7e631818cd94a97160127f80fe9a506e0dea2892",
+      "bytes": 14442,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
+      "sha256": "c755e7e1abebce3b569ca69f80a5d297da21b56989488965a830cf221f50c70b",
+      "bytes": 8771,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-tests-receipt.json",
+      "sha256": "a92b6282215b673e9b144d8bd5a0637416762745daa6f8f930acf605ea910f0d",
+      "bytes": 42259,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/rgpd_auto-before.txt",
+      "sha256": "698c3501064039594c6743a2e463188921180ec9f2cca75fe6eb0df6b7009042",
+      "bytes": 14182,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/rgpd_auto-mutant.txt",
+      "sha256": "52ac43f3fca0c532349715c2dfbbbfd250623cece70df72e71b7124dc5feb05d",
+      "bytes": 14441,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/rgpd_auto-before.py",
+      "sha256": "698c3501064039594c6743a2e463188921180ec9f2cca75fe6eb0df6b7009042",
+      "bytes": 14182,
+      "uid": 501,
+      "gid": 20,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/rgpd_auto-mutant.txt",
+      "sha256": "52ac43f3fca0c532349715c2dfbbbfd250623cece70df72e71b7124dc5feb05d",
+      "bytes": 14441,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/runner.py",
+      "sha256": "dc2abf88adbe8643b749c7f1c46be05d5db31117fedf0be3c2e2ef407e41ca96",
+      "bytes": 1089,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/red-result.json",
+      "sha256": "154adeab77378ef48992d4d617cb27d3e573a6f0ee8ef4e728250efa83d1b9b2",
+      "bytes": 411,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/green-result.json",
+      "sha256": "52515df2026df4fda3faeb608620f49866db1517a21fa7c70a93354b30f7e93a",
+      "bytes": 409,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/sabotage-result.json",
+      "sha256": "f03146583f82b08f9aa2f1a1fbbb51ed6448899e39e05137a92ec8b9e6d20bdd",
+      "bytes": 375,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    },
+    {
+      "path": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/final-green-result.json",
+      "sha256": "52515df2026df4fda3faeb608620f49866db1517a21fa7c70a93354b30f7e93a",
+      "bytes": 409,
+      "uid": 501,
+      "gid": 0,
+      "mode": "644",
+      "nlink": 1
+    }
+  ],
+  "physical_checks": {
+    "pins_before_at_utc": "2026-10-09T06:45:31Z",
+    "pins_after_at_utc": "2026-10-09T06:51:57Z",
+    "pins_before_after_equal": true,
+    "regular_canonical_refs": true,
+    "canonical_before_equals_private_preimage": true,
+    "canonical_mutant_equals_private_mutant": true,
+    "AST_analysis_tool": "08fd25",
+    "AST_analysis_exit_code": 0,
+    "initial_pins_tool": "cd8173",
+    "final_pins_tool": "5b76bc"
+  },
+  "structural_checks": {
+    "byte_reconstruction_exact": true,
+    "mutant_only_exception_false_to_true": true,
+    "entire_module_ast_unchanged_except_is_purge_enabled": true,
+    "function_ast_only_docstring_and_exception_return_false": true,
+    "test_method_count": 14,
+    "test_methods": [
+      "test_panne_construction_ferme",
+      "test_panne_entree_ferme",
+      "test_panne_requete_ferme",
+      "test_panne_resultat_ferme",
+      "test_panne_sortie_ferme_meme_apres_valeur_true",
+      "test_preference_absente_garde_le_defaut_active",
+      "test_valeur_vide_garde_le_defaut_active",
+      "test_valeurs_explicitement_activees",
+      "test_valeurs_explicitement_desactivees",
+      "test_valeur_illisible_ferme",
+      "test_panne_arrete_la_campagne_avant_toute_suite",
+      "test_desactivation_arrete_la_campagne",
+      "test_temoin_positif_le_chemin_active_atteint_la_suite",
+      "test_annulation_n_est_pas_convertie_en_activation"
+    ],
+    "product_imported": false,
+    "tests_executed": false
+  },
+  "behavioral_analysis": [
+    "Seul changement exécutable : return False dans le handler Exception de _is_purge_enabled. Docstring et commentaires précisent la différence entre réglage absent et lecture échouée.",
+    "Le chemin effectivement absent ou vide conserve return True ; les valeurs explicites conservent leurs règles. Le reste du module, y compris auto_purge_expired_contacts, est inchangé en AST et en octets hors transformation exacte.",
+    "Le garde initial de auto_purge_expired_contacts renvoie les deux compteurs zéro avant la rétention et toute suite de campagne lorsque _is_purge_enabled renvoie False.",
+    "Les témoins exécutent les deux vrais corps AST entiers dans un namespace isolé. Preference, session, sélection et résultats sont des doubles ; la suite est une AsyncMock sentinelle, pas une DB ou une campagne réelle.",
+    "Les cinq points construction, entrée, requête, résultat et sortie sont refusés ; la sortie est testée même après lecture d'une valeur true. Le témoin positif atteint la suite ; la désactivation l'évite. L'annulation asyncio n'est pas convertie en activation.",
+    "Le mutant privé ne diffère du corrigé que par False devenu True dans ce handler. Les 11 échecs du rouge et du mutant sont cinq sous-tests de campagne, cinq assertions individuelles et une valeur illisible, pas 11 erreurs d'import ni 11 méthodes distinctes.",
+    "Les deux passages verts sont deux invocations de la même suite de 14 méthodes, pas 28 cas nouveaux."
+  ],
+  "recorded_executions": {
+    "receipt_schema": "c17-lot80-b1684-unit-receipts-v1",
+    "recorded_actor": "/root",
+    "instrument_scope": "two entire product functions extracted by AST, preference/session in memory; not DB, UI, complete test_runner calibration or FULL",
+    "embedded_raw_equals_local_result": true,
+    "cases": {
+      "red": {
+        "chunk_id": "91463a",
+        "exit_code": 1,
+        "result": {
+          "tests": 14,
+          "failures": 11,
+          "errors": 0,
+          "skipped": 0,
+          "successful": false,
+          "source": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/src/backend/app/services/rgpd_auto.py",
+          "test": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
+          "fullRuntime": false,
+          "DB": false,
+          "Chrome": false,
+          "FULL": false
+        },
+        "output_utf8_bytes": 18086,
+        "output_sha256": "c6b8730592e00e056300b38a4da97c080d41cb9c0ed21872e287652375648d72"
+      },
+      "green": {
+        "chunk_id": "cfcbb8",
+        "exit_code": 0,
+        "result": {
+          "tests": 14,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "successful": true,
+          "source": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/src/backend/app/services/rgpd_auto.py",
+          "test": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
+          "fullRuntime": false,
+          "DB": false,
+          "Chrome": false,
+          "FULL": false
+        },
+        "output_utf8_bytes": 2206,
+        "output_sha256": "1f7abeb787e88486a8e3882dde614298bbb851354d197ee7f2aacdf66a7d8af6"
+      },
+      "sabotage": {
+        "chunk_id": "250dec",
+        "exit_code": 1,
+        "result": {
+          "tests": 14,
+          "failures": 11,
+          "errors": 0,
+          "skipped": 0,
+          "successful": false,
+          "source": "/private/tmp/therese-c17-b1684-main-W0Jz0RRv/rgpd_auto-mutant.txt",
+          "test": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
+          "fullRuntime": false,
+          "DB": false,
+          "Chrome": false,
+          "FULL": false
+        },
+        "output_utf8_bytes": 17870,
+        "output_sha256": "b99f7c09985c3f4a937c6a11adb5326a7f681ac444f06263a6dff3a9458abc93"
+      },
+      "finalGreen": {
+        "chunk_id": "a49ae8",
+        "exit_code": 0,
+        "result": {
+          "tests": 14,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "successful": true,
+          "source": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/src/backend/app/services/rgpd_auto.py",
+          "test": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
+          "fullRuntime": false,
+          "DB": false,
+          "Chrome": false,
+          "FULL": false
+        },
+        "output_utf8_bytes": 2206,
+        "output_sha256": "3ca52247c2532d1043fb78d2d1c413c9ced792c339fa65b89fdf59883bb7200f"
+      }
+    }
+  },
+  "other_checks_reported_by_parent_not_raw_replayed_here": [
+    {
+      "tool": "369f9c",
+      "kind": "ruff",
+      "exit_code": 0,
+      "reported_output": "All checks passed"
+    },
+    {
+      "tool": "b42775",
+      "kind": "diffcheck",
+      "exit_code": 0
+    }
+  ],
+  "limits": [
+    "Interprétation indépendante d'un correctif local et de reçus MAIN déjà exécutés ; aucune nouvelle exécution des tests par le relecteur.",
+    "Pas de preuve de DB, Qdrant, purge réelle, interface utilisateur, test_runner complet, calibration, deux rondes indépendantes ou conformité réglementaire.",
+    "Le chemin source écrit dans le résultat rouge désigne un fichier ensuite corrigé ; la préimage conservée et rehashée reste explicitement historique, jamais la définition physique courante.",
+    "Aucune adoption des succès unitaires en admission CALIBRATE, G1, FULL ou release. B-1684 demeure différé en attente de qualification.",
+    "Cette revue ne modifie aucun rouge, reçu MAIN, source produit, test, état ou budget."
+  ]
+}

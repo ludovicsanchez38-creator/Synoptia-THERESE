@@ -1,0 +1,13 @@
+{
+  "schema": "c17-lot80-chrome-plist-read-v1",
+  "actor": "/root",
+  "read": {
+    "chunk_id": "527335",
+    "wall_time_seconds": 0.000010667,
+    "exit_code": 0,
+    "original_token_count": 289,
+    "output": "[\n  {\n    \"path\": \"/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Info.plist\",\n    \"bytes\": 18856,\n    \"sha256\": \"9f98b0da3cced7d981b77b8560e80947f36b81fd263bae538b83829990598f0a\",\n    \"values\": {\n      \"CFBundleShortVersionString\": \"154.0.8037.99\",\n      \"CFBundleVersion\": \"8037.99\",\n      \"DTSDKBuild\": \"25F70\",\n      \"DTSDKName\": \"macosx26.5\",\n      \"DTXcode\": \"2660\",\n      \"DTXcodeBuild\": \"17F113\",\n      \"SCMRevision\": \"45889d77830582727fe00dbfd614bcb7aac35caa-refs/branch-heads/8037@{#1675}\"\n    }\n  },\n  {\n    \"path\": \"/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.99/Resources/Info.plist\",\n    \"bytes\": 1075,\n    \"sha256\": \"22704169f56339329269238b8bca5b745e169e81857d8c9e9207c4f770995138\",\n    \"values\": {\n      \"CFBundleShortVersionString\": \"154.0.8037.99\",\n      \"CFBundleVersion\": \"8037.99\",\n      \"DTSDKBuild\": \"25F70\",\n      \"DTSDKName\": \"macosx26.5\",\n      \"DTXcode\": \"2660\",\n      \"DTXcodeBuild\": \"17F113\",\n      \"SCMRevision\": \"45889d77830582727fe00dbfd614bcb7aac35caa-refs/branch-heads/8037@{#1675}\"\n    }\n  }\n]\n"
+  },
+  "scope": "Read-only exact QA Info.plist metadata, not checkout/build flags/source parity, kernel causality, runtime qualification or authorization. Gate local before/copy correspondence described in canonical follow-up; raw historical pins remain historical.",
+  "noNativeLaunch": true
+}

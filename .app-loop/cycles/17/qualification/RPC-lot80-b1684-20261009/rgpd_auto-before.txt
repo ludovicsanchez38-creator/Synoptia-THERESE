@@ -76,7 +76,7 @@ async def _get_purge_retention_months() -> int:
 
 
 async def _is_purge_enabled() -> bool:
-    """Vérifie le réglage ; une erreur de lecture n'autorise aucune purge."""
+    """Vérifie si la purge automatique est activée."""
     try:
         from app.models.entities import Preference
 
@@ -89,10 +89,7 @@ async def _is_purge_enabled() -> bool:
                 return pref.value.lower() in ("true", "1", "yes")
     except Exception as e:
         logger.debug(f"Préférence rgpd_purge_enabled non disponible: {e}")
-        # B-1684 : ne pas confondre un réglage absent et une lecture en échec.
-        # L'erreur pourrait masquer une désactivation enregistrée par l'utilisateur.
-        return False
-    # Réglage réellement absent ou vide : conserver le défaut activé.
+    # Par défaut activé
     return True
 
 

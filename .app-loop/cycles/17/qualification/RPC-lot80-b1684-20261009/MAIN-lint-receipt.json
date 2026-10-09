@@ -1,0 +1,35 @@
+{
+  "schema": "c17-lot80-lint-v1",
+  "actor": "/root",
+  "ruffInitial": {
+    "chunk_id": "624cb6",
+    "wall_time_seconds": 1.000916708,
+    "session_id": 42393,
+    "original_token_count": 0,
+    "output": ""
+  },
+  "ruffFinal": {
+    "chunk_id": "369f9c",
+    "wall_time_seconds": 0.000016375,
+    "exit_code": 0,
+    "original_token_count": 5,
+    "output": "All checks passed!\n"
+  },
+  "version": {
+    "chunk_id": "6b7bf5",
+    "exit_code": 0,
+    "output": "ruff 0.16.10\n"
+  },
+  "diffCheck": {
+    "chunk_id": "b42775",
+    "exit_code": 0,
+    "output": ""
+  },
+  "unavailablePathsChecked": [
+    "/private/tmp/therese-c15-release-deps-YnizMm/venv/bin/ruff",
+    "PATH ruff"
+  ],
+  "resolvedExistingBinary": "/Users/synoptia/.cache/uv/archive-v0/nYRBNldQpsCh2v_0/ruff-0.16.10.data/scripts/ruff",
+  "noInstall": true,
+  "noCache": true
+}

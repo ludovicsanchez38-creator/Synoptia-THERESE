@@ -1,0 +1,40 @@
+{
+  "schema": "c17-lot80-loop-post-v1",
+  "actor": "/root",
+  "bugUpdate": {
+    "chunk_id": "f5b180",
+    "wall_time_seconds": 0.000008125,
+    "exit_code": 0,
+    "original_token_count": 8,
+    "output": "B-1684: deferred | attempts=1\n"
+  },
+  "usage": {
+    "chunk_id": "573634",
+    "wall_time_seconds": 0.000006167,
+    "exit_code": 0,
+    "original_token_count": 8,
+    "output": "gpt: calls=80 tokens=30259333\n"
+  },
+  "budget": {
+    "chunk_id": "330975",
+    "wall_time_seconds": 0.000006291,
+    "exit_code": 0,
+    "original_token_count": 4,
+    "output": "Budget: PASS\n"
+  },
+  "status": {
+    "chunk_id": "b24243",
+    "wall_time_seconds": 0.000007125,
+    "exit_code": 0,
+    "original_token_count": 142,
+    "output": "Repository: /Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex\nStatus: active | STOP file: no\nCycle: 17 | Phase: CALIBRATE\nCalibrated: no\nCalibration problems: test_runner: expired, runtime_ui: expired, visual_capture: expired, network_capture: expired, logs: expired\nZero-bug rounds: 0\nRelease workflow: /release-therese\nModel diversity: degraded\nBugs: deferred=294, fixed=1383, rejected=96\nProposals: accepted=137, deferred=15, rejected=10\nModels: claude=quota_exhausted, gpt=available, grok=unavailable\nBudget: within limits\nTransitions forcées : 23\n"
+  },
+  "additionalTokensAndDuration": "unmeasured, zero additions preserve floors, not zero actual consumption",
+  "B1684Status": "deferred",
+  "goal": "blocked",
+  "noReset": true,
+  "noForcedTransition": true,
+  "noCalibration": true,
+  "noRound": true,
+  "noRelease": true
+}

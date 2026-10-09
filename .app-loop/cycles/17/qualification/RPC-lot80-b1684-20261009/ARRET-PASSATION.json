@@ -1,0 +1,63 @@
+{
+  "schema": "c17-lot80-handoff-stop-v1",
+  "userRequest": "Alors laisse tomber documente tout et je vais demander a claude de prendre le relai.",
+  "oldActivePromptUpdate": {
+    "content": [
+      {
+        "type": "text",
+        "text": "The automatic permission approval review did not finish before its deadline. Do not assume the action is unsafe based on the timeout alone. You may retry once, or ask the user for guidance or explicit approval."
+      }
+    ],
+    "isError": true
+  },
+  "oldUpdatePersistence": "Read after failure: ACTIVE, LOT80 absent, updated_at1791524922958",
+  "pauseTool": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Updated automation in the app."
+      },
+      {
+        "type": "text",
+        "text": "{\"automationId\":\"th-r-se-cycle-17-reprise-nocturne\",\"mode\":\"update\",\"status\":\"PAUSED\"}"
+      }
+    ],
+    "isError": false
+  },
+  "pausePersistence": {
+    "status": "PAUSED",
+    "id": "th-r-se-cycle-17-reprise-nocturne",
+    "updated_at": 1791528936491,
+    "rruleUnchanged": true,
+    "threadUnchanged": true,
+    "promptByteExact": true
+  },
+  "loopPause": {
+    "chunk_id": "44207c",
+    "wall_time_seconds": 0.000005917,
+    "exit_code": 0,
+    "original_token_count": 5,
+    "output": "Loop status: paused\n"
+  },
+  "pausedStatus": {
+    "chunk_id": "e1da50",
+    "wall_time_seconds": 0.000005833,
+    "exit_code": 0,
+    "original_token_count": 142,
+    "output": "Repository: /Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex\nStatus: paused | STOP file: yes\nCycle: 17 | Phase: CALIBRATE\nCalibrated: no\nCalibration problems: test_runner: expired, runtime_ui: expired, visual_capture: expired, network_capture: expired, logs: expired\nZero-bug rounds: 0\nRelease workflow: /release-therese\nModel diversity: degraded\nBugs: deferred=294, fixed=1383, rejected=96\nProposals: accepted=137, deferred=15, rejected=10\nModels: claude=quota_exhausted, gpt=available, grok=unavailable\nBudget: within limits\nTransitions forcées : 23\n"
+  },
+  "goalStatus": "paused",
+  "goalAtPause": {
+    "tokensUsed": 30396493,
+    "timeUsedSeconds": 55290
+  },
+  "ownedQAProcessesAfterClose": [],
+  "targetedProcessSnapshot": {
+    "chunk_id": "34c71c",
+    "exit_code": 1,
+    "output": "",
+    "scope": "targeted command matching; not an exhaustive global process audit; no prior PID adoption or external signal"
+  },
+  "noNewQA": true,
+  "noNewRelease": true
+}

@@ -91,7 +91,7 @@ async def _is_purge_enabled() -> bool:
         logger.debug(f"Préférence rgpd_purge_enabled non disponible: {e}")
         # B-1684 : ne pas confondre un réglage absent et une lecture en échec.
         # L'erreur pourrait masquer une désactivation enregistrée par l'utilisateur.
-        return False
+        return True
     # Réglage réellement absent ou vide : conserver le défaut activé.
     return True
 

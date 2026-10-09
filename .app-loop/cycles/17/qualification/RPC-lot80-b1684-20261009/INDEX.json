@@ -1,0 +1,104 @@
+{
+  "schema": "c17-lot80-canonical-index-v1",
+  "files": [
+    {
+      "name": "ARRET-PASSATION.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/ARRET-PASSATION.json",
+      "bytes": 2447,
+      "sha256": "2ed4b2c8f1194954a7f970b6373e439294e114066c06a78efe1d1a3739778b4e"
+    },
+    {
+      "name": "CHROME-SCM-READ.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/CHROME-SCM-READ.json",
+      "bytes": 1775,
+      "sha256": "0312fc2ebb72cbfb1375f22040fb2b28ed1b72f318f4f3d7060dbde2ead2a507"
+    },
+    {
+      "name": "MAIN-lint-receipt.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-lint-receipt.json",
+      "bytes": 847,
+      "sha256": "68b9882302a9d19e013d58e324b677451ca3e0c4d4e6c555f0ec3bdd3266edeb"
+    },
+    {
+      "name": "MAIN-loop-post-receipt.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-loop-post-receipt.json",
+      "bytes": 1597,
+      "sha256": "7c8b6b5e26e8daf8b3a58f35231d17272a3ef922461509b5f114cff019ba619d"
+    },
+    {
+      "name": "MAIN-tests-receipt.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-tests-receipt.json",
+      "bytes": 42259,
+      "sha256": "a92b6282215b673e9b144d8bd5a0637416762745daa6f8f930acf605ea910f0d"
+    },
+    {
+      "name": "PISTES-SHARED.md",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/PISTES-SHARED.md",
+      "bytes": 5833,
+      "sha256": "44291e1d2499905bc2d0dcb06ff8cc7fe1f0bd511ebb64f8f2c21d4bd47775ec"
+    },
+    {
+      "name": "README.md",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/README.md",
+      "bytes": 933,
+      "sha256": "d4d64531a0c7dc9f2a9cdd39fa5819518d17973b6a421416281e5a7504124e71"
+    },
+    {
+      "name": "REVIEW-ENVIRONMENT.md",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/REVIEW-ENVIRONMENT.md",
+      "bytes": 3948,
+      "sha256": "b1be0c4726e5ac398d0c9ed9d3e03de62fac8a03ef6307d74def6295c1d0eade"
+    },
+    {
+      "name": "REVIEW-GATE.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/REVIEW-GATE.json",
+      "bytes": 11897,
+      "sha256": "91a21c5d81e5dc1503674134aae53ddf6405ea7f3e0e3ab51d1a1c732c5c1122"
+    },
+    {
+      "name": "REVIEW-GATE.md",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/REVIEW-GATE.md",
+      "bytes": 3105,
+      "sha256": "0ee45a60d7bddca44f4c061163dd4f71c9f0856651f171360a6aae8f999cf832"
+    },
+    {
+      "name": "rgpd_auto-before.txt",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/rgpd_auto-before.txt",
+      "bytes": 14182,
+      "sha256": "698c3501064039594c6743a2e463188921180ec9f2cca75fe6eb0df6b7009042"
+    },
+    {
+      "name": "rgpd_auto-mutant.txt",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/rgpd_auto-mutant.txt",
+      "bytes": 14441,
+      "sha256": "52ac43f3fca0c532349715c2dfbbbfd250623cece70df72e71b7124dc5feb05d"
+    },
+    {
+      "name": "runner.py",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/runner.py",
+      "bytes": 1089,
+      "sha256": "dc2abf88adbe8643b749c7f1c46be05d5db31117fedf0be3c2e2ef407e41ca96"
+    }
+  ],
+  "sources": [
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/src/backend/app/services/rgpd_auto.py",
+      "bytes": 14442,
+      "sha256": "c5fdf5c4ee1fbbf6eb854e7a7e631818cd94a97160127f80fe9a506e0dea2892"
+    },
+    {
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
+      "bytes": 8771,
+      "sha256": "c755e7e1abebce3b569ca69f80a5d297da21b56989488965a830cf221f50c70b"
+    }
+  ],
+  "goal": "paused",
+  "loop": "paused",
+  "automation": "PAUSED",
+  "B1684": "deferred",
+  "memoryOnlyCorrective": true,
+  "ChromeQualified": false,
+  "FULL": false,
+  "release": false,
+  "noAuthorityTransferred": true
+}
