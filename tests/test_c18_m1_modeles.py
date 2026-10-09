@@ -567,6 +567,27 @@ async def test_mistral_large_4_fait_un_tour_doutil():
     assert "reasoning_effort" not in client.last_request["json"]
 
 
+@pytest.mark.asyncio
+async def test_la_config_expose_leffort_reellement_transmis(client):
+    """La puce lit effort_resolu : None pour Large 4, la valeur émise sinon."""
+    mistral = await client.post(
+        "/api/config/llm",
+        json={"provider": "mistral", "model": "mistral-large-4", "effort": "high"},
+    )
+    assert mistral.status_code == 200
+    assert mistral.json()["effort"] == "high"
+    assert mistral.json().get("effort_resolu", "ABSENT") is None
+
+    haiku = await client.post(
+        "/api/config/llm",
+        json={"provider": "anthropic", "model": "claude-haiku-5-5", "effort": "high"},
+    )
+    assert haiku.status_code == 200
+    assert haiku.json().get("effort_resolu", "ABSENT") == "high"
+    relu = await client.get("/api/config/llm")
+    assert relu.json().get("effort_resolu", "ABSENT") == "high"
+
+
 def test_les_agents_recoivent_les_modeles_a_outils_documentes():
     from app.services.agents.config import AVAILABLE_MODELS, AgentConfig
 

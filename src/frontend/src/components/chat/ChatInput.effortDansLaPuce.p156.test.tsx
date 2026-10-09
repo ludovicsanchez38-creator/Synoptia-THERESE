@@ -60,7 +60,7 @@ describe('P-156 : la puce du modèle dit l’effort choisi', () => {
   });
 
   it('effort élevé : la puce le dit', async () => {
-    apiMocks.getLLMConfig.mockResolvedValue({ provider: 'ollama', model: 'qwen3:8b', available_models: ['qwen3:8b'], available: true, effort: 'high' });
+    apiMocks.getLLMConfig.mockResolvedValue({ provider: 'ollama', model: 'qwen3:8b', available_models: ['qwen3:8b'], available: true, effort: 'high', effort_resolu: 'high' });
     render(<ChatInput />);
     expect(await screen.findByText('effort élevé')).toBeInTheDocument();
   });

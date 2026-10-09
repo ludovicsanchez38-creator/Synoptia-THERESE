@@ -1515,6 +1515,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         available_models=available_models,
         available=config_available,
         effort=config.effort,
+        effort_resolu=config.effort_resolu,
         base_url=config.base_url if config.provider != LLMProvider_module.OLLAMA else None,
     )
 
@@ -1719,6 +1720,7 @@ async def set_llm_config(
         available_models=post_available_models,
         available=config_available,
         effort=effective_effort,
+        effort_resolu=config.effort_resolu,
         base_url=base_url if provider != LLMProvider.OLLAMA else None,
     )
 

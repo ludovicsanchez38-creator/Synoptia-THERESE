@@ -233,6 +233,8 @@ export interface LLMConfig {
   /** Disponibilité réelle du modèle actif : clé cloud présente ou Ollama opérationnel. */
   available?: boolean;
   effort?: string | null;
+  /** Valeur réellement envoyée au modèle. null : le réglage n'est pas appliqué. */
+  effort_resolu?: string | null;
   /** Adresse personnalisée du fournisseur courant (Qwen : espace de travail). */
   base_url?: string | null;
 }

@@ -925,6 +925,9 @@ class LLMConfigResponse(BaseModel):
     available_models: list[str] = []
     available: bool = False
     effort: str | None = None  # Effort de raisonnement courant (None = Auto)
+    # Valeur réellement envoyée au modèle. None : demandé, mais ce modèle
+    # ne le reçoit pas. Absent du réglage Auto (effort est déjà None).
+    effort_resolu: str | None = None
     base_url: str | None = None  # Adresse personnalisee (Qwen : espace de travail)
 
 

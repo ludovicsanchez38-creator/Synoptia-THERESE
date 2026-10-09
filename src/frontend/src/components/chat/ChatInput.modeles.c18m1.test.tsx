@@ -57,17 +57,33 @@ describe('puce du modèle, lot M1', () => {
     useAccessibilityStore.setState({ showKeyboardHints: true });
   });
 
-  it('Mistral Large 4 se voit en préversion, avec l’effort élevé', async () => {
+  it('Mistral Large 4 se voit en préversion, et le réglage d’effort n’est pas appliqué', async () => {
     apiMocks.getLLMConfig.mockResolvedValue({
       provider: 'mistral',
       model: 'mistral-large-4',
       available_models: ['mistral-medium-3-5', 'mistral-large-4'],
       available: true,
       effort: 'high',
+      effort_resolu: null,
     });
     render(<ChatInput />);
     expect(await screen.findByRole('option', { name: 'mistral-large-4' })).toBeInTheDocument();
     expect(await screen.findByText('Préversion')).toBeInTheDocument();
-    expect(screen.getByText('effort élevé')).toBeInTheDocument();
+    expect(screen.getByText('réglage non appliqué à ce modèle')).toBeInTheDocument();
+    expect(screen.queryByText('effort élevé')).not.toBeInTheDocument();
+  });
+
+  it('affiche l’effort transmis, pas le réglage demandé', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({
+      provider: 'grok',
+      model: 'grok-4.7',
+      available_models: ['grok-4.7'],
+      available: true,
+      effort: 'max',
+      effort_resolu: 'xhigh',
+    });
+    render(<ChatInput />);
+    expect(await screen.findByText('effort très élevé')).toBeInTheDocument();
+    expect(screen.queryByText('effort maximal')).not.toBeInTheDocument();
   });
 });

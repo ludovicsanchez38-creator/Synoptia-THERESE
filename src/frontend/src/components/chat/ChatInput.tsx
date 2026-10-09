@@ -114,7 +114,19 @@ const LIBELLES_EFFORT: Record<string, string> = {
   medium: 'effort moyen',
   high: 'effort élevé',
   max: 'effort maximal',
+  xhigh: 'effort très élevé',
 };
+
+/** Ce que la puce dit : l'effort transmis, ou que le réglage ne part pas. */
+function libelleEffortPuce(
+  effortDemande: string | null,
+  effortResolu: string | null | undefined,
+): string | null {
+  if (!effortDemande || effortDemande === 'auto') return null;
+  if (effortResolu === undefined) return LIBELLES_EFFORT[effortDemande] ?? null;
+  if (!effortResolu) return 'réglage non appliqué à ce modèle';
+  return LIBELLES_EFFORT[effortResolu] ?? LIBELLES_EFFORT[effortResolu.toLowerCase()] ?? null;
+}
 
 export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands, demandeDeFocus = 0 }: ChatInputProps) {
   const [input, setInput] = useState('');
@@ -201,6 +213,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   // P-156 : l'effort choisi dans Paramètres se lit dans la puce du modèle.
   const [currentEffort, setCurrentEffort] = useState<string | null>(null);
+  const [effortResolu, setEffortResolu] = useState<string | null | undefined>(undefined);
   const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
   const [modelChangeError, setModelChangeError] = useState<string | null>(null);
   const [failedModel, setFailedModel] = useState<string | null>(null);
@@ -210,6 +223,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // B-1174 : même règle que la bulle (B-1156) : Ollama Cloud part chez ollama.com.
   const ollamaCloud = currentProvider === 'ollama' && !!currentModel && estModeleOllamaCloud(currentModel);
   const traitementLocal = currentProvider === 'ollama' && !ollamaCloud;
+  const texteEffort = libelleEffortPuce(currentEffort, effortResolu);
 
   const loadLLMConfig = useCallback(() => {
     getLLMConfig()
@@ -225,6 +239,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         setAvailableModels(cfg.available_models || []);
         setModelAvailable(cfg.available !== false);
         setCurrentEffort(cfg.effort ?? null);
+        setEffortResolu(cfg.effort_resolu);
       })
       .catch(() => setModelAvailable(false));
   }, []);
@@ -1518,12 +1533,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 Préversion
               </span>
             )}
-            {currentEffort && LIBELLES_EFFORT[currentEffort] && (
+            {texteEffort && (
               <span
                 className="text-xs text-text-muted"
-                title="Effort de raisonnement demandé dans Paramètres, appliqué si le modèle le prend en charge"
+                title={
+                  texteEffort === 'réglage non appliqué à ce modèle'
+                    ? 'Ce réglage d’effort n’est pas envoyé à ce modèle'
+                    : 'Effort de raisonnement envoyé à ce modèle'
+                }
               >
-                {LIBELLES_EFFORT[currentEffort]}
+                {texteEffort}
               </span>
             )}
           </div>
