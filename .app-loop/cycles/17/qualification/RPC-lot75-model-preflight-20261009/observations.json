@@ -1,0 +1,21 @@
+{
+  "scope": "construction_payloads_synthetiques_uniquement",
+  "network_or_provider_calls": 0,
+  "http_client_created": false,
+  "source_sha256": {
+    "src/backend/app/services/providers/base.py": "7deb0b16f2fbe7ba04cb6a5c4b988d35a11d8961a48faefbacdc33c7e6b06578",
+    "src/backend/app/services/providers/anthropic.py": "3951c1f4cc4432ee809f68bd7c9de45f00be4ac83b51a729bb092bbb908f3901",
+    "src/backend/app/services/providers/openai.py": "f1e4ec99d5777f0e0de2b583cb83de9c775dfa0e933bcf2e429b7206f8bb9fa7",
+    "src/backend/app/services/modeles_catalogue.py": "db33eb0b8381da77495a162a2b82f02b82c84149b3c98c88755eca03a0a55a89"
+  },
+  "sources_unchanged": true,
+  "observations": {
+    "haiku_5_5_temperature": 0.7,
+    "sonnet_5_5_temperature_absente": true,
+    "gpt_6_1_sol_tools_effort": "none",
+    "gpt_6_1_sol_endpoint": "https://api.openai.com/v1/chat/completions",
+    "gpt_4o_temperature_temoin": 0.7
+  },
+  "api_compatibility_verified": false,
+  "native_or_release_qualified": false
+}

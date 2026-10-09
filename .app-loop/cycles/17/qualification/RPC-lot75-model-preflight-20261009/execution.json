@@ -1,0 +1,14 @@
+{
+  "type": "retour_outil_observe_pas_qualification",
+  "tool_chunk_id": "9179ab",
+  "exit_code": 0,
+  "observations_file": "observations.json",
+  "script_file": "preflight_modeles.py",
+  "script_sha256": "b6183181dc0c7c8884a8116ad5df0fdd72595d0937989555fa82376b983e29aa",
+  "source_head_at_execution": "5f2b8ce7141a0f96ec8ea67f417409afb4c03da7",
+  "first_workspace_run_chunk_id": "9fa64a",
+  "independent_review": "statique uniquement, environnement_routes, sans rejeu ni appel API",
+  "qualification_api": false,
+  "qualification_native": false,
+  "limits": "Builders et quatre empreintes seulement; pas de garantie générale de filesystem/profils ni de test HTTP/UI."
+}

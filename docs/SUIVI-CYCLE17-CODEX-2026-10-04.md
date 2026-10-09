@@ -2504,3 +2504,78 @@ temporaire du lot72 reste distincte de cette reprise planifiée.
 
 État CALIBRATE, zéro ronde FULL propre, aucune release ni publication.
 Ne pas redemander les validations ordinaires déjà données par Ludo.
+
+## Lot 75 : préparation de la prochaine boucle modèles, sans intégration
+
+Repérage demandé par Ludo, effectué sur HEAD
+`5f2b8ce7141a0f96ec8ea67f417409afb4c03da7` et les documentations officielles
+consultées ce09/10. Aucun des cinq identifiants n'est présent dans les
+listes backend, frontend, agents, tarifs et effort inspectées. Une fiche
+officielle ne prouve pas leur disponibilité sur les comptes de Ludo.
+
+| Modèle | Identifiant documenté et source primaire | Point à vérifier avant ajout |
+| --- | --- | --- |
+| Sonnet 5.5 | `claude-sonnet-5-5`, [fiche Anthropic](https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5) | Effort, blocs de réflexion et continuation après outils. Le préfixe actuel retire déjà temperature. |
+| Haiku 5.5 | `claude-haiku-5-5`, [migration Anthropic](https://platform.claude.com/docs/en/models/haiku-5-5/migration-guide) | Omettre les paramètres de sampling ; le code actuel transmettrait le défaut temperature0.7. |
+| GPT 6.1 Sol | `gpt-6.1-sol`, [fiche OpenAI](https://developers.openai.com/api/docs/models/gpt-6.1-sol) | Les outils exigent Responses ; none/minimal ne sont pas supportés. Adapter le transport et la politique d'effort. |
+| Grok 4.7 | `grok-4.7`, [fiche xAI](https://docs.x.ai/developers/grok-4-7) | Vérifier efforts, flux d'outils, contexte et compatibilité du transport réellement choisi. |
+| Mistral Large 4 | `mistral-large-4`, [fiche Mistral](https://docs.mistral.ai/models/mistral-large-4-0) et [changelog](https://docs.mistral.ai/resources/changelogs) | Public Preview. Ne pas déduire l'ID du slug large-4-0 ni supposer un alias d'effort. |
+
+Contrôle MAIN `9fa64a`, code0, puis copie byte-exacte et rejeu canonique
+`9179ab`, code0 : quatre constructions de payloads synthétiques avec
+client=None, aucune méthode de transport appelée. Haiku5.5 contient
+temperature0.7 ; Sonnet5.5 ne la contient pas ; GPT6.1 contient tools et
+reasoning_effort=none sur /v1/chat/completions ; GPT4o garde0.7 en témoin.
+La comparaison aux deux guides officiels établit une incompatibilité
+conditionnelle à un ajout naïf, pas un HTTP400 réellement reproduit ni
+un bug actuellement exposé par le catalogue. Aucun identifiant ajouté.
+
+Dossier canonique `RPC-lot75-model-preflight-20261009/` :
+preflight_modeles.py, observations.json (stdout réel recopié) et
+execution.json (repères d'exécution, pas une admission). Script SHA
+`b6183181dc0c7c8884a8116ad5df0fdd72595d0937989555fa82376b983e29aa`.
+Les quatre empreintes base/Anthropic/OpenAI/catalogue sont identiques
+avant/après. Relecture indépendante environment_routes : portée locale
+conforme. Le hook d'audit bloque les sockets, sous-processus et ouvertures
+usuelles en écriture ; il n'est pas une frontière système générale.
+Les quatre empreintes ne certifient pas tous les fichiers importés ou
+les profils. Ce contrôle ne valide ni API, UI, Responses ou nouveau modèle.
+
+Points d'intégration : modeles_catalogue.py est la source des listes et
+fenêtres ; les routes config/LLM en dérivent. catalogueModeles.ts porte
+le repli/décorations ; agents/config.py a une liste indépendante réservée
+aux modèles à outils ; token_tracker.py et effortOpenAI.ts ont leurs
+propres tables/politiques. Ne pas promouvoir un nouveau modèle en tête
+sans vérifier l'effet sur défauts, replis et Board. Fournir un contexte
+explicite plutôt que reprendre silencieusement le défaut fournisseur.
+Le tarif inconnu reste marqué tel quel, pas présenté comme gratuit.
+
+Suite hors ligne préparée pour la prochaine boucle :
+
+1. Tests catalogue/API/repli UI : identifiants uniques, ordre/frontier
+   inchangés sans décision, contexte explicite et modèles anciens conservés.
+2. Payload Haiku sans sampling ; Sonnet avec flux de blocs et continuation
+   d'outils ; Grok avec efforts et outils simulés.
+3. GPT6.1 : transport Responses à outils avec parité des événements,
+   historique, usage et annulation ; ne pas le proposer comme agent
+   compatible avant ce raccord, ni contourner par effort none ou retrait
+   silencieux des outils. Vérifier aussi le chemin sans outils.
+4. Parité d'effort UI/backend et explication affichée ; tarifs officiels
+   et éventuels seuils de contexte à intégrer ou marquer non estimables.
+5. Après vérifications adaptées, intégration cohérente et qualification
+   runtime dans un nouveau lot autorisé. La qualification FULL/release
+   actuelle reste bloquée par ROOT15, pas par ces microtests.
+
+Usage enregistré une seule fois MAIN `cae33a` :75 lots, plancher
+30 259 333 tokens inchangé ; ajouts tokens/durée non mesurés, pas une
+consommation ou facturation nulle. Budget pré-lot `4b79e5` PASS.
+Le contrôle automatique des permissions expire avant le contrôle post-lot,
+sans exécution ; son unique retry autorisé `0f9c1e` donne réellement PASS.
+Pas de reset du goal bloqué, des limites, de l'échéance ou du compteur.
+
+Aucun changement produit, requête fournisseur, version, tag, release,
+publication ou relance Chrome. CALIBRATE reste à zéro ronde FULL propre.
+Le heartbeat existant conserve sa borne09/10 23:58:30 Paris et prend ce
+suivi canonique comme repère. Les validations ordinaires déjà données ne
+sont pas redemandées ; une nouvelle frontière de sécurité n'est pas
+déduite de ce lot préparatoire.
