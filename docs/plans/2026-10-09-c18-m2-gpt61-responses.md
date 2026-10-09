@@ -36,9 +36,9 @@ Guide raisonnement, lu le 09/10/2026 :
   (Chat Completions).
 - `reasoning.mode` (`standard` / `pro`) existe. Non branché ici : le lot ne
   le demande pas, et le défaut documenté est `standard` quand on omet le champ.
-- Rejouer les items de raisonnement est recommandé pour les outils. Non
-  branché : le tour actuel ne les porte pas (`ToolTurn` n'a pas
-  `encrypted_content`). La fiche ne dit pas que l'appel échoue sans eux.
+- Rejouer les items de raisonnement est recommandé pour les outils.
+  Le code le fait : les éléments `reasoning`, `function_call` et `message`
+  reçus dans le tour repartent tels quels avec le résultat d'outil.
 
 Flux et outils, lus le 09/10/2026 :
 
@@ -66,14 +66,14 @@ Flux et outils, lus le 09/10/2026 :
 1. `gpt-6-sol` reste la tête OpenAI. `gpt-6.1-sol` entre après `gpt-6-luna`,
    avant `gpt-5.6-sol`. Le Board lit la tête : il ne change pas.
    Promouvoir `gpt-6.1-sol` est une question pour Ludo, pas un choix de ce lot.
-2. Le transport Responses ne s'applique qu'aux modèles qui l'exigent pour
-   les outils. Ensemble explicite : `gpt-6.1-sol` seul.
+2. Le transport Responses s'applique aux modèles qui l'exigent pour les
+   outils. Ensemble explicite : `gpt-6.1-sol` et `gpt-6-astra`.
    `gpt-6-sol`, `gpt-6-luna` et la famille 5.x restent sur
    `/v1/chat/completions`, y compris la neutralisation `reasoning_effort=none`
    quand des outils sont présents (contrat du 30/08/2026).
-3. GPT-6 Astra est dans la phrase du guide (« function calling » refusé sur
-   Chat Completions) mais déjà servi. Le migrer changerait un modèle en
-   place. Question pour Ludo. Ce lot ne le migre pas.
+3. GPT-6 Astra est migré. Le guide raisonnement dit que Chat Completions
+   refuse le function calling pour Astra et pour GPT-6.1 Sol, et que `none`
+   renvoie HTTP 400. Correctif retenu (B-1774), pas une question ouverte.
 4. Sans outils, `gpt-6.1-sol` reste sur Chat Completions, chemin documenté.
    L'effort résolu (`low` … `max`, `xhigh` compris) part dans
    `reasoning_effort`. `none` et `minimal` ne partent pas : la fiche du
@@ -82,9 +82,11 @@ Flux et outils, lus le 09/10/2026 :
    passer » les outils.
 5. Avec outils, `POST /v1/responses` (ou `{base}/responses` si une base est
    configurée, en retirant un suffixe `/chat/completions` déjà collé).
-   Corps : `model`, `input`, `stream: true`, `max_output_tokens` (le plafond
-   déjà porté par la config, pas 128 000 imposés : la fiche donne le maximum
-   accepté, pas le défaut à demander), `tools` aplatis, `tool_choice: "auto"`
+   Corps : `model`, `input`, `stream: true`, `max_output_tokens` borné au
+   maximum publié de 128 000 (une config plus haute est ramenée ; une config
+   plus basse part telle quelle). Le même plafond borne `max_completion_tokens`
+   sur Chat Completions, quand il n'y a pas d'outils. `tools` aplatis,
+   `tool_choice: "auto"`
    (champ présent sur l'objet Response de la référence), `reasoning.effort`
    seulement si le catalogue a résolu une valeur. Pas de repli vers Chat
    Completions, pas de second essai qui retire l'effort.
@@ -110,8 +112,10 @@ Flux et outils, lus le 09/10/2026 :
    - usage : `response.completed` → `type: done`, `stop_reason` `tool_calls`
      si un appel a été émis, sinon `stop`, jetons `input_tokens` /
      `output_tokens` (absents → `None`) ;
-   - coupure du flux sans `response.completed` : un `done` de filet, comme
-     Chat Completions quand `[DONE]` manque ;
+   - `response.incomplete` : `type: done`, `stop_reason` `incomplete`. Le chat
+     l'affiche et le garde : « Réponse coupée… ». Ce n'est pas une fin normale ;
+   - coupure du flux sans `response.completed` ni `response.incomplete` :
+     un `done` de filet, comme Chat Completions quand `[DONE]` manque ;
    - annulation : fermer le générateur sort du `async with client.stream`
      et ferme la requête. Même mécanisme que le chemin actuel. Pas d'événement
      serveur `response.cancelled` inventé ;
@@ -122,11 +126,11 @@ Flux et outils, lus le 09/10/2026 :
      429 déjà écrite, le reste → « Requête refusée par le service d'IA. »
      Le message brut du fournisseur va au journal, pas à l'écran.
 9. Tarif : `TOKEN_PRICES["gpt-6.1-sol"] = {input: 2.00, output: 10.00}`,
-   le standard de la fiche. Le palier >272k, le cache, Fast, Flex, Batch,
-   Ultrafast et le régional ne sont pas dans ce compteur (il n'a que
-   entrée / sortie standard, comme `gpt-6-sol`). On ne les code pas à moitié.
-   Le tarif standard est connu : `tarif_connu` est vrai. Un modèle sans
-   fiche resterait hors grille, jamais à 0 en silence.
+   le standard de la fiche. Au-delà de 272 000 jetons d'entrée, le palier
+   (2× l'entrée, 1,5× la sortie) s'applique à chaque appel fournisseur, puis
+   les coûts s'additionnent. Le cache, Fast, Flex, Batch, Ultrafast et le
+   régional ne sont pas dans ce compteur. `tarif_connu` est vrai. Un modèle
+   sans fiche resterait hors grille, jamais à 0 en silence.
 10. Écran : repli OpenAI, nom « GPT-6.1 Sol », sans badge « Recommandé »
     ni « préversion » (la fiche ne dit pas préversion). La mention qui
     annonce « l'effort est désactivé dès qu'une conversation utilise des
@@ -139,5 +143,6 @@ Flux et outils, lus le 09/10/2026 :
 
 ## Hors de ce lot
 
-Accès réel du compte, `reasoning.mode=pro`, rejeu des items de raisonnement,
-`previous_response_id`, migration de GPT-6 Astra, promotion en tête de liste.
+Accès réel du compte, `reasoning.mode=pro`, `previous_response_id`,
+promotion de `gpt-6.1-sol` en tête de liste. La migration d'Astra et le
+rejeu du raisonnement sont dans le code.

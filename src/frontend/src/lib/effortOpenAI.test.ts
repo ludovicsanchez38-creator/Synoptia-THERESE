@@ -2,19 +2,26 @@
 import { describe, expect, it } from 'vitest';
 
 import temoins from './effortOpenAI.temoins.json';
-import { effortConserveAvecOutils, effortTransmisSansOutils, modeleOpenAIRaisonnant } from './effortOpenAI';
+import {
+  effortConserveAvecOutils,
+  effortTransmisSansOutils,
+  familleDeParametres,
+  modeleOpenAIRaisonnant,
+} from './effortOpenAI';
 
 describe('effortOpenAI (P-045)', () => {
-  it.each(Object.entries(temoins.temoins))('%s → famille raisonnante : %s', (modele, attendu) => {
-    // B-1774 : Astra exige Responses pour les outils (none y est un 400).
-    // Le témoin reste vrai pour _uses_max_completion_tokens ; l'écran ne
-    // doit plus dire que l'effort est coupé.
-    if (modele.toLowerCase() === 'gpt-6-astra') {
+  it.each(Object.entries(temoins.temoins))('%s → famille de paramètres : %s', (modele, attendu) => {
+    expect(familleDeParametres(modele)).toBe(attendu);
+  });
+
+  it('le transport avec outils est un autre prédicat, Astra compris', () => {
+    for (const modele of temoins.transport_avec_outils) {
       expect(effortConserveAvecOutils(modele)).toBe(true);
+      expect(familleDeParametres(modele)).toBe(true);
       expect(modeleOpenAIRaisonnant(modele)).toBe(false);
-      return;
     }
-    expect(modeleOpenAIRaisonnant(modele)).toBe(attendu);
+    expect(effortConserveAvecOutils('gpt-6-sol')).toBe(false);
+    expect(modeleOpenAIRaisonnant('gpt-6-sol')).toBe(true);
   });
 
   it('seuls les GPT-5.6 reçoivent l’effort sans outils, comme le catalogue backend', () => {

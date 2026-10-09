@@ -3,8 +3,10 @@
  * et o-series d'OpenAI refuse les outils de fonction dès qu'un effort de
  * raisonnement s'applique ; le backend (`providers/openai.py`,
  * `_uses_max_completion_tokens`) pose alors l'effort à « none » pour ce
- * message, sans le dire à l'écran. Même prédicat ici, prouvé égal par des
- * témoins partagés (`effortOpenAI.temoins.json`, test de parité pytest).
+ * message, sans le dire à l'écran. Deux prédicats ici, prouvés par des
+ * témoins partagés (`effortOpenAI.temoins.json`, test de parité pytest) :
+ * la famille de paramètres (`familleDeParametres`, Astra compris) et le
+ * transport avec outils (`effortConserveAvecOutils`).
  */
 /** Ces modèles gardent l'effort choisi quand des outils sont là : leurs
  * appels passent par Responses, qui accepte l'effort. gpt-6.1-sol refuse
@@ -21,13 +23,19 @@ export function effortXhighPropose(modele: string): boolean {
   return modele.trim().toLowerCase() === 'gpt-6.1-sol';
 }
 
+/** Famille qui envoie max_completion_tokens. Astra y reste, témoin compris.
+ * Ce n'est pas le transport : les outils d'Astra passent par Responses. */
+export function familleDeParametres(modele: string): boolean {
+  const m = modele.toLowerCase();
+  return m.startsWith('gpt-6') || m.startsWith('gpt-5') || m.startsWith('o1') || m.startsWith('o3') || m.startsWith('o4');
+}
+
 export function modeleOpenAIRaisonnant(modele: string): boolean {
   const m = modele.toLowerCase();
-  // P-c18-m2 : gpt-6.1-sol ne neutralise pas l'effort (transport Responses).
+  // L'écran dit que l'effort est coupé seulement si les outils restent sur
+  // Chat Completions. Responses conserve l'effort : le prédicat est faux.
   if (effortConserveAvecOutils(m)) return false;
-  // P-057 : la famille GPT-6 suit la même règle que GPT-5, sauf les modèles
-  // dont les outils passent par Responses (effort conservé, plus haut).
-  return m.startsWith('gpt-6') || m.startsWith('gpt-5') || m.startsWith('o1') || m.startsWith('o3') || m.startsWith('o4');
+  return familleDeParametres(m);
 }
 
 /** Sans outils, l'effort n'est transmis qu'aux modèles dont le support est
