@@ -19,6 +19,7 @@ from .base import (
     ToolResult,
     ToolTurn,
     message_erreur_http,
+    plafond_sortie_a_envoyer,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,10 +97,11 @@ class OpenAIProvider(BaseProvider):
             "stream_options": {"include_usage": True},
         }
 
-        if _uses_max_completion_tokens(self.config.model):
-            request_body["max_completion_tokens"] = self.config.max_tokens
-        else:
-            request_body["max_tokens"] = self.config.max_tokens
+        plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
+        if plafond is not None and _uses_max_completion_tokens(self.config.model):
+            request_body["max_completion_tokens"] = plafond
+        elif plafond is not None:
+            request_body["max_tokens"] = plafond
 
         # Le réglage reste utile là où il est accepté : on ne le retire que
         # pour les modèles qui le refusent.

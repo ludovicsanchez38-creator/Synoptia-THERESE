@@ -167,11 +167,15 @@ class TestCatalogueM1:
 
         assert fenetre_de_contexte("grok", "grok-4.7") == 500_000
         assert fenetre_de_contexte("grok", "grok-4.6") == 131_072
-        assert LLMConfig(LLMProvider.GROK, "grok-4.7").max_tokens == 4096
+        # Ces deux lignes disaient max_tokens == 4096 dans « plafonds
+        # documentés ». 4096 n'est pas sourcé : c'est le défaut produit.
+        from app.services.modeles_catalogue import limite_sortie_fournisseur
+        from app.services.providers.base import LIMITE_SORTIE_PRODUIT
 
-        assert fenetre_de_contexte("mistral", "mistral-large-4") == 1_000_000
-        assert fenetre_de_contexte("mistral", "mistral-medium-3-5") == 256_000
-        assert LLMConfig(LLMProvider.MISTRAL, "mistral-large-4").max_tokens == 4096
+        assert limite_sortie_fournisseur("grok-4.7") is None
+        assert limite_sortie_fournisseur("mistral-large-4") is None
+        assert LLMConfig(LLMProvider.GROK, "grok-4.7").max_tokens == LIMITE_SORTIE_PRODUIT
+        assert LLMConfig(LLMProvider.MISTRAL, "mistral-large-4").max_tokens == LIMITE_SORTIE_PRODUIT
 
         assert fenetre_de_contexte("gemini", "gemini-3.8-flash") == 1_048_576
         assert fenetre_de_contexte("gemini", "gemini-3.7-flash") == 1_000_000
@@ -348,6 +352,45 @@ class TestTarifsM1:
             cout = traceur.estimate_cost(modele, 1_000, 1_000)
             assert cout == pytest.approx((prix["input"] + prix["output"]) / 1_000)
             assert cout > 0
+
+
+def _corps(provider, config):
+    return provider(config, _client())._build_request_body(
+        [{"role": "user", "content": "salut"}],
+    )
+
+
+def test_grok_47_et_mistral_large_4_omettent_un_plafond_non_source():
+    """Pas de limite fournisseur chiffrée : le transport n'envoie pas 4096."""
+    import app.services.modeles_catalogue as catalogue
+    import app.services.providers.base as base
+
+    grok = _corps(
+        GrokProvider, LLMConfig(LLMProvider.GROK, "grok-4.7", api_key="x"),
+    )
+    mistral = _corps(
+        MistralProvider, LLMConfig(LLMProvider.MISTRAL, "mistral-large-4", api_key="m"),
+    )
+    assert "max_tokens" not in grok
+    assert "max_completion_tokens" not in grok
+    assert "max_tokens" not in mistral
+
+    limite = getattr(catalogue, "limite_sortie_fournisseur", None)
+    assert limite is not None
+    assert limite("grok-4.7") is None
+    assert limite("mistral-large-4") is None
+    assert getattr(base, "LIMITE_SORTIE_PRODUIT", None) == 4096
+    assert LLMConfig(LLMProvider.GROK, "grok-4.7").max_tokens == base.LIMITE_SORTIE_PRODUIT
+
+    force = _corps(
+        GrokProvider,
+        LLMConfig(LLMProvider.GROK, "grok-4.7", api_key="x", max_tokens=8000),
+    )
+    assert force["max_tokens"] == 8000
+    ancien = _corps(
+        GrokProvider, LLMConfig(LLMProvider.GROK, "grok-4.6", api_key="x"),
+    )
+    assert ancien["max_tokens"] == 4096
 
 
 def test_grok_47_envoie_leffort_xhigh_et_les_outils():

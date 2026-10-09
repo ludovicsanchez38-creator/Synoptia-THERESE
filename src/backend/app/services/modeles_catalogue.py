@@ -46,6 +46,10 @@ class FicheModele:
     max_tokens_recommande: int | None = None
     #: Fenêtre de contexte propre au modèle quand elle diffère de celle du fournisseur.
     context_window: int | None = None
+    #: Plafond de sortie chiffré par le fournisseur. None : non sourcé.
+    limite_sortie_fournisseur: int | None = None
+    #: L'API accepte d'omettre max_tokens et le fournisseur ne chiffre pas de plafond.
+    omettre_max_tokens: bool = False
 
 
 @dataclass(frozen=True)
@@ -221,8 +225,11 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "mistral-medium-latest": FicheModele(effort=_EFFORT_MISTRAL_MEDIUM),
             # Large 4 : contexte 1 M. La page raisonnement cite
             # mistral-large-4-0, pas cet identifiant : aucun effort envoyé.
-            # Sortie max non documentée.
-            "mistral-large-4": FicheModele(context_window=1_000_000),
+            # Sortie non chiffrée : on n'invente pas de plafond fournisseur.
+            # Chat Completions accepte l'absence de max_tokens.
+            "mistral-large-4": FicheModele(
+                context_window=1_000_000, omettre_max_tokens=True,
+            ),
         },
     ),
     "grok": FicheFournisseur(
@@ -241,9 +248,14 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # xhigh disponible depuis 4.6 (high = DÉFAUT, pas le max).
             "grok-4.6": FicheModele(effort=_EFFORT_GROK_46),
             # 4.7 : low/medium/high/xhigh. Pas de valeur API « max ».
-            # Sortie « No text output limit » : aucun plafond inventé.
+            # Sortie « No text output limit » : aucun plafond fournisseur.
+            # Chat Completions accepte l'absence de max_tokens.
             # Contexte 500 000. Fast hors API publique, non ajouté.
-            "grok-4.7": FicheModele(effort=_EFFORT_GROK_46, context_window=500_000),
+            "grok-4.7": FicheModele(
+                effort=_EFFORT_GROK_46,
+                context_window=500_000,
+                omettre_max_tokens=True,
+            ),
             # Plafond high sur 4.5 (contrat 0.31 conservé).
             "grok-4.5": FicheModele(effort=_EFFORT_GROK_45),
         },
@@ -379,6 +391,22 @@ def resoudre_effort(
 def max_tokens_recommande(modele: str) -> int | None:
     fiche = _FICHES_PAR_MODELE.get(modele)
     return fiche.max_tokens_recommande if fiche else None
+
+
+def limite_sortie_fournisseur(modele: str) -> int | None:
+    """Plafond de sortie publié par le fournisseur, ou None s'il n'est pas chiffré."""
+    fiche = _FICHES_PAR_MODELE.get(modele)
+    if fiche is None:
+        return None
+    return fiche.limite_sortie_fournisseur
+
+
+def omettre_plafond_par_defaut(modele: str) -> bool:
+    """Vrai quand l'API accepte d'omettre max_tokens et qu'aucun plafond n'est sourcé."""
+    fiche = _FICHES_PAR_MODELE.get(modele)
+    if fiche is None or fiche.limite_sortie_fournisseur is not None:
+        return False
+    return fiche.omettre_max_tokens
 
 
 def fenetre_de_contexte(provider: str, model: str | None) -> int:

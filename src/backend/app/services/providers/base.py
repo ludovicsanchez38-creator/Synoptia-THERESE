@@ -65,13 +65,31 @@ def adresse_fournisseur_valide(adresse: str) -> bool:
     return True
 
 
+#: Défaut de sortie choisi par THÉRÈSE. Ce n'est pas un plafond fournisseur.
+LIMITE_SORTIE_PRODUIT = 4096
+
+
+def plafond_sortie_a_envoyer(modele: str, max_tokens: int) -> int | None:
+    """Valeur à écrire dans la requête, ou None pour omettre le paramètre.
+
+    On omet quand le fournisseur ne chiffre pas de plafond, que son API
+    accepte l'absence du paramètre, et que la valeur est encore le défaut
+    produit. Un plafond choisi explicitement part tout de même.
+    """
+    from app.services.modeles_catalogue import omettre_plafond_par_defaut
+
+    if omettre_plafond_par_defaut(modele) and max_tokens == LIMITE_SORTIE_PRODUIT:
+        return None
+    return max_tokens
+
+
 @dataclass
 class LLMConfig:
     """LLM configuration."""
 
     provider: LLMProvider
     model: str
-    max_tokens: int = 4096
+    max_tokens: int = LIMITE_SORTIE_PRODUIT
     temperature: float = 0.7
     context_window: int = 128000
     api_key: str | None = None
@@ -99,7 +117,7 @@ class LLMConfig:
         # défaut suit la recommandation du catalogue ; un plafond explicite
         # (autre que le défaut) l'emporte.
         recommande = max_tokens_recommande(self.model)
-        if self.max_tokens == 4096 and recommande and recommande > self.max_tokens:
+        if self.max_tokens == LIMITE_SORTIE_PRODUIT and recommande and recommande > self.max_tokens:
             self.max_tokens = recommande
 
 

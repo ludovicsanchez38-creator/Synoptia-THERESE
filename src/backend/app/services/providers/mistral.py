@@ -23,6 +23,7 @@ from .base import (
     ToolResult,
     ToolTurn,
     message_erreur_http,
+    plafond_sortie_a_envoyer,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,6 @@ class MistralProvider(BaseProvider):
     ) -> dict:
         request_body: dict = {
             "model": self.config.model,
-            "max_tokens": self.config.max_tokens,
             "temperature": self.config.temperature,
             "messages": messages,
             "stream": True,
@@ -67,6 +67,9 @@ class MistralProvider(BaseProvider):
             # n'est pas envoyé du tout par l'API en streaming.
             "stream_options": {"include_usage": True},
         }
+        plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
+        if plafond is not None:
+            request_body["max_tokens"] = plafond
         if tools:
             request_body["tools"] = tools
             request_body["tool_choice"] = "auto"
