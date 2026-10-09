@@ -586,6 +586,27 @@ class TestTransport:
         assert not any(e.type == "done" for e in evenements)
 
     @pytest.mark.asyncio
+    async def test_refus_transmet_le_texte_du_delta(self):
+        """response.refusal.delta est le texte du refus. L'ignorer laisse
+        une réponse vide qui se termine par done/stop."""
+        client = _Client([
+            _ligne({"type": "response.refusal.delta", "delta": "Je ne peux pas "}),
+            _ligne({"type": "response.refusal.delta", "delta": "aider sur ce point."}),
+            _ligne({
+                "type": "response.completed",
+                "response": {
+                    "status": "completed",
+                    "usage": {"input_tokens": 4, "output_tokens": 6},
+                },
+            }),
+        ])
+        evenements = await _collecter(_provider(client).stream(None, MESSAGES, [OUTIL]))
+        assert [e.content for e in evenements if e.type == "text"] == [
+            "Je ne peux pas ",
+            "aider sur ce point.",
+        ]
+
+    @pytest.mark.asyncio
     async def test_erreur_sse_ne_fuite_pas_et_compte_une_panne_serveur(self):
         from app.services.llm import _is_provider_outage
 

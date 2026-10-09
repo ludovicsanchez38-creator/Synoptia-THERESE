@@ -527,7 +527,12 @@ class OpenAIProvider(BaseProvider):
                 if event is None:
                     continue
                 type_evenement = event.get("type")
-                if type_evenement == "response.output_text.delta":
+                if type_evenement in (
+                    "response.output_text.delta",
+                    "response.refusal.delta",
+                ):
+                    # Le refus est du texte : l'ignorer laisse une réponse vide
+                    # qui se termine quand même par done/stop.
                     if delta := event.get("delta"):
                         yield StreamEvent(type="text", content=delta)
                 elif type_evenement == "response.output_item.added":
