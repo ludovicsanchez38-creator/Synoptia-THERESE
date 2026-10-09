@@ -142,7 +142,9 @@ class TestCliquetMypy:
         # 26/09/2026 (cycle 13) : le dossier des sauvegardes annoté (-> Path)
         # retire six erreurs et en révèle trois (une variable de boucle servait
         # de fichier ouvert puis de chemin), renommée : 937 à froid sur le Mac.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "937"
+        # 09/10/2026 (cycle 18) : le chantier des derniers modèles retire une
+        # erreur, 936 mesuré sur le runner.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "936"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
