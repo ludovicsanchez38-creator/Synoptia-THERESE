@@ -599,6 +599,7 @@ class TokenTracker:
         model: str | None = None,
         *,
         local: bool = False,
+        taille_message: int | None = None,
     ) -> dict:
         """
         Check if a request would exceed limits (US-ESC-03).
@@ -652,10 +653,12 @@ class TokenTracker:
                     f"({projected_daily_output:,} / {self._limits.daily_output_limit:,} tokens)"
                 )
 
-        # Check per-message limits
-        if input_tokens > self._limits.max_input_tokens:
+        # Le plafond de taille vise le message, pas l'historique. Sans
+        # taille séparée, on retombe sur l'entrée entière (budget, palier).
+        jetons_message = input_tokens if taille_message is None else taille_message
+        if jetons_message > self._limits.max_input_tokens:
             result["errors"].append(
-                f"Message trop long: {input_tokens} tokens "
+                f"Message trop long: {jetons_message} tokens "
                 f"(limite: {self._limits.max_input_tokens})"
             )
             result["allowed"] = False

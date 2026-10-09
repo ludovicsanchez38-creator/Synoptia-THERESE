@@ -1390,6 +1390,29 @@ def _jetons_du_prompt_prepare(contexte: Any) -> int:
     return int(total())
 
 
+def _jetons_du_dernier_message(contexte: Any) -> int:
+    """Taille du dernier message. Le plafond de 8 000 ne voit que ça."""
+    messages = getattr(contexte, "messages", None) or []
+    if not messages:
+        return 0
+    contenu = getattr(messages[-1], "content", "") or ""
+    estimer = getattr(contexte, "estimate_tokens", None)
+    if not callable(estimer):
+        return len(contenu) // 4
+    return int(estimer(contenu))
+
+
+def _controle_du_prompt(llm_service: Any, contexte: Any, jetons: int | None = None) -> dict:
+    """Budget et palier sur le prompt entier, taille sur le dernier message."""
+    return get_token_tracker().check_limits(
+        _jetons_du_prompt_prepare(contexte) if jetons is None else jetons,
+        None,
+        model=llm_service.config.model,
+        local=llm_service.config.provider == LLMProvider.OLLAMA,
+        taille_message=_jetons_du_dernier_message(contexte),
+    )
+
+
 def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
     """Mémorise un appel fournisseur, sans additionner les prompts d'abord.
 
@@ -2047,13 +2070,9 @@ async def send_message(
         _passes_que_le_fournisseur_garde(messages), context
     )
 
-    # B-482 : le budget voit le prompt préparé, pas le dernier message seul.
-    verdict_plafonds = get_token_tracker().check_limits(
-        _jetons_du_prompt_prepare(context),
-        None,
-        model=llm_service.config.model,
-        local=llm_service.config.provider == LLMProvider.OLLAMA,
-    )
+    # B-482 : le budget voit le prompt préparé. Le plafond de taille, lui,
+    # ne vise que le dernier message.
+    verdict_plafonds = _controle_du_prompt(llm_service, context)
     if not verdict_plafonds["allowed"]:
         return ChatResponse(
             id="",
@@ -2873,12 +2892,8 @@ async def _do_stream_response(
     tool_outcomes: list[tuple[str, str, bool]] = []
 
     # B-482 / B-486 : les plafonds s'appliquent AVANT l'appel au modèle.
-    verdict_plafonds = get_token_tracker().check_limits(
-        _jetons_du_prompt_prepare(context),
-        None,
-        model=llm_service.config.model,
-        local=llm_service.config.provider == LLMProvider.OLLAMA,
-    )
+    # La taille du message et le coût du prompt préparé sont deux mesures.
+    verdict_plafonds = _controle_du_prompt(llm_service, context)
     if not verdict_plafonds["allowed"]:
         yield f"data: {json.dumps({'type': 'error', 'content': 'Désolée : ' + ' '.join(verdict_plafonds['errors'])}, ensure_ascii=False)}\n\n"
         return
