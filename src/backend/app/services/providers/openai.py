@@ -150,6 +150,7 @@ def _outils_vers_responses(tools: list[dict[Any, Any]]) -> list[dict[str, Any]]:
             entree: dict[str, Any] = {
                 "type": "function",
                 "name": fonction.get("name") or "",
+                "strict": False,
             }
             if fonction.get("description"):
                 entree["description"] = fonction["description"]

@@ -272,6 +272,8 @@ class TestTransport:
             "name": "meteo",
             "description": "Le temps qu'il fait",
             "parameters": OUTIL["function"]["parameters"],
+            # L'omission laissait Responses tenter le mode strict.
+            "strict": False,
         }]
         assert corps["tool_choice"] == "auto"
         assert corps["max_output_tokens"] == 4096
@@ -584,6 +586,21 @@ class TestTransport:
         assert "clé" in (erreurs[0].content or "").lower()
         assert "sk-secret" not in (erreurs[0].content or "")
         assert not any(e.type == "done" for e in evenements)
+
+    @pytest.mark.asyncio
+    async def test_outil_a_argument_facultatif_reste_hors_mode_strict(self):
+        """Responses tenterait le mode strict si le champ est omis.
+        web_search.max_results est facultatif : on envoie strict false."""
+        from app.services.web_search import WEB_SEARCH_TOOL
+
+        client = _Client(_flux_texte())
+        await _collecter(_provider(client).stream(None, MESSAGES, [WEB_SEARCH_TOOL]))
+        outil = client.requests[0]["json"]["tools"][0]
+        assert outil["name"] == "web_search"
+        assert outil["strict"] is False
+        parametres = outil["parameters"]
+        assert "max_results" in parametres["properties"]
+        assert "max_results" not in parametres.get("required", [])
 
     @pytest.mark.asyncio
     async def test_refus_transmet_le_texte_du_delta(self):
