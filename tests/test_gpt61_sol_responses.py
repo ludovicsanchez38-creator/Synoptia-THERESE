@@ -384,6 +384,83 @@ class TestTransport:
         assert [e.content for e in suite if e.type == "text"] == ["Bonjour", " Manosque"]
 
     @pytest.mark.asyncio
+    async def test_continuation_rejoue_les_elements_de_raisonnement(self):
+        """Le guide function-calling exige de rejouer les items de raisonnement."""
+        raisonnement = {
+            "type": "reasoning",
+            "id": "rs_1",
+            "encrypted_content": "chiffre-opaque",
+            "summary": [],
+        }
+        appel_complet = {
+            "type": "function_call",
+            "id": "fc_1",
+            "call_id": "call_meteo",
+            "name": "meteo",
+            "arguments": '{"ville":"Manosque"}',
+            "status": "completed",
+        }
+        raisonnement_ancien = {
+            "type": "reasoning",
+            "id": "rs_ancien",
+            "encrypted_content": "ancien-chiffre",
+            "summary": [],
+        }
+        client = _Client([
+            _ligne({
+                "type": "response.output_item.done",
+                "output_index": 0,
+                "item": raisonnement,
+            }),
+            _ligne({
+                "type": "response.output_item.done",
+                "output_index": 1,
+                "item": appel_complet,
+            }),
+            _ligne({
+                "type": "response.completed",
+                "response": {
+                    "status": "completed",
+                    "usage": {"input_tokens": 3, "output_tokens": 2},
+                },
+            }),
+        ])
+        fournisseur = _provider(client)
+        premier = await _collecter(fournisseur.stream(None, list(MESSAGES), [OUTIL]))
+        emis = [e for e in premier if e.type == "tool_call"]
+        assert len(emis) == 1
+        assert emis[0].assistant_content_brut == [raisonnement, appel_complet]
+
+        client._lignes = _flux_texte()
+        await _collecter(fournisseur.continue_with_tool_results(
+            None,
+            list(MESSAGES),
+            "",
+            [emis[0].tool_call],
+            [ToolResult(tool_call_id="call_meteo", result="grand soleil")],
+            tools=[OUTIL],
+            assistant_content_brut=emis[0].assistant_content_brut,
+            prior_turns=[ToolTurn(
+                assistant_content="",
+                tool_calls=[ToolCall(id="call_ancien", name="agenda", arguments={"jour": "lundi"})],
+                tool_results=[ToolResult(tool_call_id="call_ancien", result="rien")],
+                assistant_content_brut=[raisonnement_ancien],
+            )],
+        ))
+        entrees = client.requests[1]["json"]["input"]
+        assert entrees[2] == raisonnement_ancien
+        assert entrees[3]["type"] == "function_call"
+        assert entrees[3]["call_id"] == "call_ancien"
+        assert entrees[4]["type"] == "function_call_output"
+        assert entrees[5] == raisonnement
+        assert entrees[6] == appel_complet
+        assert entrees[7] == {
+            "type": "function_call_output",
+            "call_id": "call_meteo",
+            "output": "grand soleil",
+        }
+
+    @pytest.mark.asyncio
     async def test_base_personnalisee_pointe_responses(self):
         client = _Client(_flux_texte())
         fournisseur = _provider(client)

@@ -67,6 +67,21 @@ def _bloc_chat_vers_responses(bloc: Any) -> Any:
     return bloc
 
 
+# Items de sortie à rejouer tels quels avec les résultats d'outils.
+# Le guide function-calling (09/10/2026) : les éléments de raisonnement
+# reviennent avec les function_call, sinon le tour suivant les perd.
+_TYPES_SORTIE_A_REJOUER = frozenset({"reasoning", "function_call", "message"})
+
+
+def _elements_a_rejouer(contenu: Any) -> list[dict[str, Any]]:
+    if not isinstance(contenu, list):
+        return []
+    return [
+        element for element in contenu
+        if isinstance(element, dict) and element.get("type") in _TYPES_SORTIE_A_REJOUER
+    ]
+
+
 def _contenu_message_responses(contenu: Any) -> Any:
     """Une chaîne reste une chaîne. Une liste de blocs est traduite."""
     if contenu is None:
@@ -93,7 +108,16 @@ def _messages_vers_input_responses(messages: list[dict[Any, Any]]) -> list[dict[
             continue
         appels = msg.get("tool_calls")
         if role == "assistant" and appels:
+            rejoues = _elements_a_rejouer(msg.get("content"))
+            items.extend(rejoues)
+            deja = {
+                element.get("call_id")
+                for element in rejoues
+                if element.get("type") == "function_call"
+            }
             for appel in appels:
+                if (appel.get("id") or "") in deja:
+                    continue
                 fonction = appel.get("function") or {}
                 items.append({
                     "type": "function_call",
@@ -463,6 +487,7 @@ class OpenAIProvider(BaseProvider):
     ) -> AsyncGenerator[StreamEvent, None]:
         """Un flux Responses. Lève HTTPStatusError avant le premier jeton."""
         appels: dict[int, dict[str, str]] = {}
+        elements_du_tour: list[dict[str, Any]] = []
         input_tokens: int | None = None
         output_tokens: int | None = None
         pending_stop: str | None = None
@@ -494,9 +519,16 @@ class OpenAIProvider(BaseProvider):
                 elif type_evenement == "response.function_call_arguments.delta":
                     self._ajouter_delta_responses(appels, event)
                 elif type_evenement == "response.output_item.done":
+                    item = event.get("item")
+                    if isinstance(item, dict) and item.get("type"):
+                        elements_du_tour.append(item)
                     appel = self._appel_termine_responses(appels, event)
                     if appel is not None:
-                        yield StreamEvent(type="tool_call", tool_call=appel)
+                        yield StreamEvent(
+                            type="tool_call",
+                            tool_call=appel,
+                            assistant_content_brut=list(elements_du_tour),
+                        )
                         pending_stop = "tool_calls"
                 elif type_evenement == "response.completed":
                     usage = (event.get("response") or {}).get("usage") or {}
@@ -664,9 +696,19 @@ class OpenAIProvider(BaseProvider):
         # avant le tour courant, sinon le modèle re-demande le même outil.
         for turn in prior_turns or []:
             self._append_openai_tool_turn(
-                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+                messages,
+                turn.assistant_content,
+                turn.tool_calls,
+                turn.tool_results,
+                assistant_content_brut=turn.assistant_content_brut,
             )
-        self._append_openai_tool_turn(messages, assistant_content, tool_calls, tool_results)
+        self._append_openai_tool_turn(
+            messages,
+            assistant_content,
+            tool_calls,
+            tool_results,
+            assistant_content_brut=assistant_content_brut,
+        )
 
         async for event in self.stream(system_prompt, messages, tools):
             yield event
