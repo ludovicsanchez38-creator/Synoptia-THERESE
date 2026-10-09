@@ -1344,6 +1344,40 @@ def _taille_fenetre_fournisseur(contexte: Any, fenetre: list[Any]) -> int:
     return len(conversation) + 1
 
 
+_MOTIFS_REPONSE_COUPEE = frozenset({
+    "incomplete",
+    "max_tokens",
+    "model_context_window_exceeded",
+})
+
+
+def _phrase_arret(stop_reason: str | None) -> str | None:
+    """Annonce visible d'une fin qui n'est pas une réponse terminée.
+
+    OpenAI ``incomplete``, Anthropic ``max_tokens`` et
+    ``model_context_window_exceeded`` : la réponse est coupée.
+    Anthropic ``refusal`` : le modèle a refusé.
+    """
+    if stop_reason in _MOTIFS_REPONSE_COUPEE:
+        return (
+            "Réponse coupée : le modèle s'est arrêté avant d'avoir fini. "
+            "Tu peux lui demander de poursuivre."
+        )
+    if stop_reason == "refusal":
+        return "Le modèle a refusé de répondre à cette demande."
+    return None
+
+
+def _suffixe_arret(deja_ecrit: str, stop_reason: str | None) -> str:
+    """Texte à coller au message, vide si la fin est ordinaire."""
+    phrase = _phrase_arret(stop_reason)
+    if not phrase:
+        return ""
+    if deja_ecrit and not deja_ecrit.endswith("\n"):
+        return "\n\n" + phrase
+    return phrase
+
+
 def _jetons_du_prompt_prepare(contexte: Any) -> int:
     """Jetons estimés du prompt réellement envoyé, après préparation.
 
@@ -2876,6 +2910,29 @@ async def _do_stream_response(
             elif event.type == "done":
                 _noter_usage_d_appel(usage_totals, event)
 
+                # Une coupe ou un refus n'est pas une réponse terminée.
+                # L'annonce part dans le même texte que le client affiche
+                # et que l'historique conserve. Un tour d'outils continue.
+                suite_arret = ""
+                if not (
+                    tool_calls_collected
+                    and event.stop_reason in ("tool_calls", "tool_use")
+                ):
+                    suite_arret = _suffixe_arret(full_content, event.stop_reason)
+                if suite_arret:
+                    full_content += suite_arret
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            StreamChunk(
+                                type="text",
+                                content=suite_arret,
+                                conversation_id=conversation_id,
+                            ).model_dump()
+                        )
+                        + "\n\n"
+                    )
+
                 # Check if we have tool calls to execute
                 if tool_calls_collected and event.stop_reason in ("tool_calls", "tool_use"):
                     # Execute tools and continue
@@ -3720,6 +3777,26 @@ async def _execute_tools_and_continue(
                     ],
                 ):
                     yield nested_event
+            else:
+                # Dernier tour : une coupe ou un refus reste visible.
+                # Le parent range les chunks texte dans le message sauvé.
+                suite_arret = _suffixe_arret(
+                    f"{assistant_content}{continued_content}",
+                    event.stop_reason,
+                )
+                if suite_arret:
+                    continued_content += suite_arret
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            StreamChunk(
+                                type="text",
+                                content=suite_arret,
+                                conversation_id=conversation_id,
+                            ).model_dump()
+                        )
+                        + "\n\n"
+                    )
 
         elif event.type == "error":
             # B-1181 : même traduction qu'au premier tour (B-1155).
