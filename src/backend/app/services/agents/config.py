@@ -59,7 +59,7 @@ AVAILABLE_MODELS = [
     {"id": "grok-4.3", "name": "Grok 4.3", "provider": "grok"},
     # Mistral. Large 4 : function calling documenté sur Chat Completions
     # (docs.mistral.ai/models/mistral-large-4), donc éligible aux outils.
-    {"id": "mistral-medium-latest", "name": "Mistral Medium 3.5", "provider": "mistral"},
+    {"id": "mistral-medium-3-5", "name": "Mistral Medium 3.5", "provider": "mistral"},
     {"id": "mistral-large-4", "name": "Mistral Large 4", "provider": "mistral"},
     {"id": "mistral-large-latest", "name": "Mistral Large", "provider": "mistral"},
     {"id": "codestral-2508", "name": "Codestral", "provider": "mistral"},

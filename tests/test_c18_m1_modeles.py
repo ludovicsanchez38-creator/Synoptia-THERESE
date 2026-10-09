@@ -641,4 +641,6 @@ def test_les_agents_recoivent_les_modeles_a_outils_documentes():
     assert premiers["gemini"] == "gemini-3.8-flash"
     assert premiers["openai"] == "gpt-6-sol"
     assert premiers["anthropic"] == "claude-opus-5-5"
+    assert premiers["mistral"] == "mistral-medium-3-5"
+    assert par_id["mistral-medium-3-5"]["name"] == "Mistral Medium 3.5"
     assert AgentConfig(id="a", name="a", description="a").default_model == "claude-sonnet-4-6"
