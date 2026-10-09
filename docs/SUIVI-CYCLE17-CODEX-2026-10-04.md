@@ -2877,3 +2877,93 @@ synthétique nouvelle sur exec ou FD, préparer source/oracles et revue avant
 toute activation, ou préciser un delta de frontière réellement implémentable.
 Chrome hors G1 ou nouvel instrument exige toujours une décision ciblée ; la
 matrice documentaire ne fournit ni ce GO ni un candidat opérationnel admis.
+
+## 9 octobre : LOT79, FD préouvert mesuré, sans admission Chrome/FULL
+
+Reprise sur HEAD `5f2da0df`, même branche `codex/cycle-17`. Agents et processus
+vérifiés avant la campagne unique. Snapshots QA ciblés `65e8d7`, `e1a47f`,
+`d0b895` et final `88a8b8` vides : portée ciblée, pas absence globale ni adoption
+d'anciens PID. Budget réel `44bce1` PASS ; état initial `bf2f91` identique au
+repère précédent, CALIBRATE, zéro ronde. Les neuf documents préexistants sont
+byte-exacts au contrôle MAIN final `8565c4`. Goal bloqué conservé, aucun reset.
+
+Preuves canoniques :
+`.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/README.md`.
+Question distincte de LOT76/77 : dans un processus synthétique direct, un FD B
+ouvert avant une seule première OUTER reste-t-il lisible quand un nouvel open B
+est refusé ? Deux cas seulement, baseline sans politique puis OUTER après lecture
+physique du reçu baseline effectivement propre et réapé. Aucune issue présumée.
+
+Préparation figée : C désactivé, PLAN, contrôleur/port/runner désactivés,
+préimage LOT76 et diffs inverses exacts. MAIN confirme réellement 22 tests C
+textuels/mutants `1bb98b`, 19 tests Python purs `f0ee8d` et syntaxe C `16e0d5`
+avec SDK explicite. Ces tests ne sont pas des mesures noyau. Revue indépendante
+préparatoire SHA `af2a89b2…`, INDEX `1488b7fc…` : 28 fichiers physiques inchangés,
+aucun bloqueur déterministe trouvé ; ni admission ni exécution par le relecteur.
+
+Quatre copies natives distinctes : seuls flags, commentaires/docstrings et
+wrapper `_drive` à type NativePort local exact changent. Alias `controller`
+chargé depuis les octets épinglés ; politique, timer et oracles inchangés.
+Compilation réelle `255608` clang/SDK explicite, sans erreur : binaire 52 760 B,
+SHA `20d75e63…`. AST Python `199435` PASS sans import local. Manifeste fermé de
+huit pièces SHA `6c240aa8…`, dérivation `a08e43b6…`. Revue d'activation SHA
+`597a593c…`, INDEX `b0b09d28…`, entièrement lue avant lancement. MAIN `8207ad`
+confirme les pins avec stat bigint strict avant/après, sans tolérance.
+
+Baseline réelle `dbb980`, owner 91453, enfant 91463, birth
+`1791524186.054216` : aucune OUTER appliquée, A et B ouverts/lus exactement,
+B retenu sur FD0 en lecture seule/CLOEXEC, 25 octets exacts, close0 puis
+F_GETFD−1/EBADF9. Reçu lu entièrement avant de lancer le second cas.
+
+OUTER réelle `858862`, owner 91599, enfant 91608, birth
+`1791524224.687953` : première et seule OUTER rc0, A fresh lit 25 octets,
+B fresh échoue EPERM avant et après la fermeture. Pourtant le B préouvert sur
+FD0 garde son identité et pread(offset0) lit encore les 25 octets exacts.
+Fermeture unique close0 puis F_GETFD−1/EBADF9 immédiatement, avant toute nouvelle
+ouverture ou sortie selon le C figé. Observation locale, pas règle générale de
+révocation ni mesure sur les FD/canaux de Chrome.
+
+Chaque cas : 15 lignes stdout fermées, 38 événements trace, stderr vide,
+ready/ACK joints aux six champs de naissance/filiation et au nonce réel,
+identités/exe relus après rehash et avant libération. Deux wait/reap réels
+retour0, zéro signal externe, sources/manifeste inchangés. Timer propre C10,
+gate5, mesure5/global10 et cleanup8 conservés ; fenêtres monotoniques observées
+respectées, aucune garantie hard realtime ou atomicité same-UID prétendue.
+Contrôle MAIN FS `74e536` conforme ; revue indépendante des bruts SHA
+`2e5b315e…`, INDEX `53d2f420…`, 23 pins relus deux fois avec ns exactes strictes,
+28 pins préparés inchangés. La conformité de ces mesures reste distincte d'une
+qualification de sécurité. Les floats historiques de la revue d'activation
+ne sont pas corrigés rétroactivement ; la réserve kernel ROOT15 reste entière.
+
+Échecs préparatoires conservés : syntaxe clang sans sysroot `6b71e3`, limites
+de lecture des documents préexistants `8a98e6`/`50f819`, alias SDK `9e300a`,
+verrou budget hors writable roots `8ae02a` puis PASS, vue produit interrompue
+sans résultat cellule787. Le helper FS `27fee9` échouait sur l'ordre des clés
+JSON, corrigé en comparaison structurelle avec préimage et reçu rouge gardés.
+Aucune source native ou mesure relancée pour ce correctif documentaire.
+TAR `388d49` ne pouvait ouvrir sa sortie, confirmée absente `b36c71` ; archivage
+scopé `682882` ensuite clos, sans déduire de permission Chrome/G1.
+
+Archive SHA `c0fa5fde…`, 112 082 B : 59 membres littéraux, noms et contenus tous
+revérifiés sans extraction sur disque, sources après archive identiques.
+Sources préparées/activées, trois revues indépendantes, bruts, préimages,
+tests et scripts de contrôle conservés. Binaire, SDK, HOME/TMP, profil personnel
+et neuf documents préexistants exclus. Manifeste et reçus post-lot séparés,
+pas de membres ajoutés rétroactivement à cette TAR figée.
+
+Usage `fe658c` enregistré une fois : 79 lots GPT, planchers 30 259 333 tokens
+et 472 s préservés ; ajouts tokens/durée non mesurés, pas consommation nulle.
+Budget post-lot `05e583` PASS ; état réel `c71c27` : cinq calibrations expirées,
+zéro ronde FULL, diversité dégradée, 23 transitions forcées historiques.
+`bd559d` demande CALIBRATE ; son texte ne crée aucune autorisation de changer
+la frontière Chrome. Aucune calibration, ronde, bump, tag, release ou installation.
+
+Heartbeat existant mis à jour via le produit avec LOT79 ; persistance `8e1962`
+exacte, ACTIVE, même chat/cadence/échéance 09/10 23:58:30 Paris. Cela ne prouve
+pas un nouveau réveil après mise à jour. Compte rendu préparatoire d'Environment :
+aucun delta Chrome stock équivalent établi ni bug produit confirmé dans les seules
+pièces LOT77/78 examinées. Ce n'est pas une revue de tout le backlog.
+Suite sûre : rejeter ou préciser un candidat concret protégeant browser/helpers
+et capacités préouvertes, ou préparer un diagnostic synthétique différent.
+Ne pas rejouer LOT79 inchangé ; aucun contournement G1/Chromium/GPU. ROOT15,
+LOT76/77 et FULLv4 restent dans leur état antérieur, non promus par ce lot.

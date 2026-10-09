@@ -1,0 +1,37 @@
+{
+  "schema": "c17-lot79-loop-post-receipt-v1",
+  "actor": "/root",
+  "usage": {
+    "chunk_id": "fe658c",
+    "wall_time_seconds": 0.000005459,
+    "exit_code": 0,
+    "original_token_count": 8,
+    "output": "gpt: calls=79 tokens=30259333\n"
+  },
+  "budget": {
+    "chunk_id": "05e583",
+    "wall_time_seconds": 0.000005959,
+    "exit_code": 0,
+    "original_token_count": 4,
+    "output": "Budget: PASS\n"
+  },
+  "status": {
+    "chunk_id": "c71c27",
+    "wall_time_seconds": 0.00000525,
+    "exit_code": 0,
+    "original_token_count": 142,
+    "output": "Repository: /Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex\nStatus: active | STOP file: no\nCycle: 17 | Phase: CALIBRATE\nCalibrated: no\nCalibration problems: test_runner: expired, runtime_ui: expired, visual_capture: expired, network_capture: expired, logs: expired\nZero-bug rounds: 0\nRelease workflow: /release-therese\nModel diversity: degraded\nBugs: deferred=294, fixed=1383, rejected=96\nProposals: accepted=137, deferred=15, rejected=10\nModels: claude=quota_exhausted, gpt=available, grok=unavailable\nBudget: within limits\nTransitions forcées : 23\n"
+  },
+  "stateAndBudgetRead": {
+    "chunk_id": "96a7f8",
+    "wall_time_seconds": 0.000006166,
+    "exit_code": 0,
+    "original_token_count": 189,
+    "output": "{\"name\":\"state.json\",\"bytes\":210178,\"sha256\":\"d03b68637940d126ef1f016df2f3f4772e67ec2e6cadab5b6fcb6a651d88f82d\",\"status\":\"active\",\"cycle\":17,\"phase\":\"CALIBRATE\",\"rounds\":0,\"cycle17Keys\":null,\"cycle17Summary\":null}\n{\"name\":\"budget.json\",\"bytes\":134732,\"sha256\":\"a64e21fe3347c49d05eb56a0e209a17706c4f51ccb5697c7b4e389592e4f2a7e\",\"limits\":{\"max_calls\":{\"claude\":300,\"grok\":38,\"gpt\":150},\"max_tokens\":{\"claude\":0,\"grok\":0,\"gpt\":0},\"max_total_tokens\":0,\"max_wall_minutes\":7544},\"cycle17Keys\":[\"started_at\",\"usage\",\"events\"],\"cycle17Summary\":{\"started_at\":\"2026-10-04T16:14:30+00:00\",\"usage\":{\"claude\":{\"calls\":0,\"tokens\":0,\"duration_seconds\":0},\"grok\":{\"calls\":0,\"tokens\":0,\"duration_seconds\":0},\"gpt\":{\"calls\":79,\"tokens\":30259333,\"duration_seconds\":472}}}}\n"
+  },
+  "addedTokenAndDurationMeasurements": "unmeasured, zero additions preserve existing floors; not zero actual consumption",
+  "logicalLots79": true,
+  "noReset": true,
+  "noForcedTransition": true,
+  "goalStillBlocked": true
+}

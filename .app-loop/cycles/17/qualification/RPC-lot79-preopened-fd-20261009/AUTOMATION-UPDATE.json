@@ -1,0 +1,31 @@
+{
+  "schema": "c17-lot79-heartbeat-update-proof-v1",
+  "actor": "/root",
+  "automation_id": "th-r-se-cycle-17-reprise-nocturne",
+  "productResult": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Updated automation in the app."
+      },
+      {
+        "type": "text",
+        "text": "{\"automationId\":\"th-r-se-cycle-17-reprise-nocturne\",\"mode\":\"update\",\"status\":\"ACTIVE\"}"
+      }
+    ],
+    "isError": false
+  },
+  "persistedReadTool": "8e1962",
+  "exactPromptEqual": true,
+  "sameKind": true,
+  "sameName": true,
+  "sameThread": true,
+  "sameSchedule": true,
+  "status": "ACTIVE",
+  "deadlineEuropeParis": "2026-10-09 23:58:30",
+  "updated_at": 1791524922958,
+  "newWakeAfterUpdateProved": false,
+  "newQAAuthorityCreated": false,
+  "documentation": "https://learn.chatgpt.com/docs/automations?surface=app",
+  "skillInfluence": "product tool update of existing bounded heartbeat; same deadline and permissions"
+}

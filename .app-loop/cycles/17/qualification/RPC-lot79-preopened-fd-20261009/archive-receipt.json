@@ -1,0 +1,21 @@
+{
+  "schema": "c17-lot79-archive-receipt-v1",
+  "actor": "/root",
+  "tool": "682882",
+  "exitCode": 0,
+  "archiveRef": {
+    "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/preopened-fd-sources-and-evidence.tar.gz",
+    "bytes": 112082,
+    "sha256": "c0fa5fde56e8164fcd22d0d6ea6d0253d746d5286a89c131f4f00f5fa81ca2c4"
+  },
+  "membersChecked": 59,
+  "exactLiteralNames": true,
+  "allMemberContentsMatch": true,
+  "sourceAfterPinsEqual": true,
+  "extractionToDisk": false,
+  "priorArchiveWriteFailure": "388d49 preserved separately",
+  "actualNativeExecutionsInThisLot": 2,
+  "ChromeQualified": false,
+  "FULL": false,
+  "release": false
+}

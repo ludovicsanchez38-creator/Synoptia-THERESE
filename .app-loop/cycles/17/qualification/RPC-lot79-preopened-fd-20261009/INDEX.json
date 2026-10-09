@@ -1,0 +1,54 @@
+{
+  "schema": "c17-lot79-canonical-index-v1",
+  "actor": "/root",
+  "files": [
+    {
+      "name": "README.md",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/README.md",
+      "bytes": 737,
+      "sha256": "2ce4512168d771b720227c4f2634d43c9a280d2243ac2b1e3dc2a1a13e14aeb7"
+    },
+    {
+      "name": "MANIFEST.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/MANIFEST.json",
+      "bytes": 15303,
+      "sha256": "08ce8b6abe6b5499f0c88471de4cd5034a0a8f07f4b5d01b7a59dfaf05453f35"
+    },
+    {
+      "name": "archive-receipt.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/archive-receipt.json",
+      "bytes": 729,
+      "sha256": "fa37579f4454e8e633644439a8f5a576e9a5e89d22be88eb50d3bed93cad5965"
+    },
+    {
+      "name": "MAIN-archive-write-failure.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/MAIN-archive-write-failure.json",
+      "bytes": 4789,
+      "sha256": "b553a08e63e67d75a1654e2c5f3d9fa5f0d9acf9d4eee19973eab453132453f2"
+    },
+    {
+      "name": "MAIN-loop-post-receipt.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/MAIN-loop-post-receipt.json",
+      "bytes": 2391,
+      "sha256": "de5a0ec5bcc4b2bb5f0c085ad3392d3216d1e834cf41270a2e9d1ea9df2f1972"
+    },
+    {
+      "name": "AUTOMATION-UPDATE.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/AUTOMATION-UPDATE.json",
+      "bytes": 948,
+      "sha256": "7975eb4c4fee3e3a0bb039f4033c47e7fff3138b09614bd2f75946e07f594674"
+    },
+    {
+      "name": "preopened-fd-sources-and-evidence.tar.gz",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot79-preopened-fd-20261009/preopened-fd-sources-and-evidence.tar.gz",
+      "bytes": 112082,
+      "sha256": "c0fa5fde56e8164fcd22d0d6ea6d0253d746d5286a89c131f4f00f5fa81ca2c4"
+    }
+  ],
+  "archiveMembers": 59,
+  "archiveIsProvenanceNotAdmission": true,
+  "QAProcessesOwnedAfterClose": [],
+  "ChromeQualified": false,
+  "FULL": false,
+  "release": false
+}
