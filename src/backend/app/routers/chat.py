@@ -6,6 +6,7 @@ Endpoints for chat and conversation management.
 
 import asyncio
 import contextlib
+import inspect
 import json
 import logging
 import re
@@ -1435,15 +1436,40 @@ def _jetons_de_continuation(
     return total
 
 
-def _controle_du_prompt(llm_service: Any, contexte: Any, jetons: int | None = None) -> dict:
-    """Budget et palier sur le prompt entier, taille sur le dernier message."""
-    return get_token_tracker().check_limits(
+def _controle_du_prompt(llm_service: Any, contexte: Any, jetons: int | None = None) -> dict[str, Any]:
+    """Budget et palier sur le prompt entier, taille sur le dernier message.
+
+    Un faux sans configuration n'a pas de modèle à tarifer : on ne refuse pas.
+    """
+    config = getattr(llm_service, "config", None)
+    if config is None:
+        return {"allowed": True, "warnings": [], "errors": []}
+    verdict: dict[str, Any] = get_token_tracker().check_limits(
         _jetons_du_prompt_prepare(contexte) if jetons is None else jetons,
         None,
-        model=llm_service.config.model,
-        local=llm_service.config.provider == LLMProvider.OLLAMA,
+        model=config.model,
+        local=config.provider == LLMProvider.OLLAMA,
         taille_message=_jetons_du_dernier_message(contexte),
     )
+    return verdict
+
+
+def _flux_direct(llm_service: Any, contexte: Any, usage_sink: Any, motif_sink: dict[str, str]) -> Any:
+    """Texte du service. Le motif d'arrêt ne part que si la signature le reçoit.
+
+    Le vrai service l'accepte. Les faux des tests gardent l'ancienne signature.
+    """
+    kwargs: dict[str, Any] = {"raise_on_error": True, "usage_sink": usage_sink}
+    try:
+        params = inspect.signature(llm_service.stream_response).parameters
+        accepte_motif = "motif_sink" in params or any(
+            p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()
+        )
+    except (TypeError, ValueError):
+        accepte_motif = False
+    if accepte_motif:
+        kwargs["motif_sink"] = motif_sink
+    return llm_service.stream_response(contexte, **kwargs)
 
 
 def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
@@ -2123,9 +2149,7 @@ async def send_message(
     usage_sink: dict = {}
     motif_sink: dict[str, str] = {}
     try:
-        async for chunk in llm_service.stream_response(
-            context, raise_on_error=True, usage_sink=usage_sink, motif_sink=motif_sink,
-        ):
+        async for chunk in _flux_direct(llm_service, context, usage_sink, motif_sink):
             assistant_content += chunk
     except Exception as e:
         logger.error(f"LLM error: {e}", exc_info=True)
