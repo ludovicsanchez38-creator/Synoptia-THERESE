@@ -13,6 +13,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+
+@dataclass(frozen=True)
+class PalierTarif:
+    """Multiplicateurs sur toute la requête au-delà du seuil d'entrée.
+
+    Nom commun avec le lot M1 (`PalierTarif`, `PALIERS_TARIF`) : la fusion
+    reprend ces deux noms. Le seuil est exclusif (« plus de N jetons »).
+    """
+
+    seuil_entree: int
+    multiplicateur_entree: float
+    multiplicateur_sortie: float
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,8 +56,9 @@ TOKEN_PRICES = {
     "gpt-6-sol": {"input": 2.00, "output": 10.00},
     "gpt-6-luna": {"input": 0.10, "output": 0.50},
     # gpt-6.1-sol : fiche developers.openai.com/api/docs/models/gpt-6.1-sol
-    # le 09/10/2026, tarif texte standard (2 $ / 10 $). Le palier >272k, le
-    # cache, Fast, Flex, Batch, Ultrafast et le régional ne sont pas ici.
+    # le 09/10/2026, tarif texte standard (2 $ / 10 $). Le palier >272k est
+    # dans PALIERS_TARIF. Cache, Fast, Flex, Batch, Ultrafast et régional
+    # ne sont pas ici.
     "gpt-6.1-sol": {"input": 2.00, "output": 10.00},
     "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
     "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
@@ -89,6 +103,16 @@ TOKEN_PRICES = {
     "deepseek-v4-flash": {"input": 0.14, "output": 0.28},
     # Ollama (local, no cost) + fallback
     "default": {"input": 0.0, "output": 0.0},
+}
+
+# Fiche gpt-6.1-sol (09/10/2026) : au-delà de 272 000 jetons d'entrée,
+# 2× l'entrée et 1,5× la sortie, sur toute la requête.
+PALIERS_TARIF: dict[str, PalierTarif] = {
+    "gpt-6.1-sol": PalierTarif(
+        seuil_entree=272_000,
+        multiplicateur_entree=2.0,
+        multiplicateur_sortie=1.5,
+    ),
 }
 
 
@@ -313,8 +337,14 @@ class TokenTracker:
         prices = self._prix_pour(model)
         if prices is None:
             prices = TOKEN_PRICES["default"]
-        input_cost = (input_tokens / 1_000_000) * prices["input"]
-        output_cost = (output_tokens / 1_000_000) * prices["output"]
+        mult_entree = 1.0
+        mult_sortie = 1.0
+        palier = PALIERS_TARIF.get(model)
+        if palier is not None and input_tokens > palier.seuil_entree:
+            mult_entree = palier.multiplicateur_entree
+            mult_sortie = palier.multiplicateur_sortie
+        input_cost = (input_tokens / 1_000_000) * prices["input"] * mult_entree
+        output_cost = (output_tokens / 1_000_000) * prices["output"] * mult_sortie
         return input_cost + output_cost
 
     def record_usage(

@@ -224,6 +224,23 @@ class TestTarif:
             42 / 1_000_000 * 2.00 + 7 / 1_000_000 * 10.00
         )
 
+    def test_palier_au_dela_de_272_000_jetons_entree(self):
+        """Fiche : plus de 272 k jetons d'entrée, 2× l'entrée et 1,5× la sortie."""
+        from app.services import token_tracker
+
+        palier = getattr(token_tracker, "PALIERS_TARIF", {}).get(MODELE)
+        assert palier is not None
+        assert palier.seuil_entree == 272_000
+        assert palier.multiplicateur_entree == 2
+        assert palier.multiplicateur_sortie == 1.5
+        traceur = object.__new__(token_tracker.TokenTracker)
+        assert traceur.estimate_cost(MODELE, 272_000, 1_000) == pytest.approx(
+            272_000 / 1_000_000 * 2.00 + 1_000 / 1_000_000 * 10.00
+        )
+        assert traceur.estimate_cost(MODELE, 272_001, 1_000) == pytest.approx(
+            272_001 / 1_000_000 * 2.00 * 2 + 1_000 / 1_000_000 * 10.00 * 1.5
+        )
+
 
 class TestTransport:
     @pytest.mark.asyncio
