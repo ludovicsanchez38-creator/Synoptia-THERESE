@@ -15,20 +15,38 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class PalierPrompt:
-    """Tarif de toute la requête quand le prompt franchit un seuil.
+class PalierTarif:
+    """Un palier de longueur, appliqué à toute la requête.
 
-    ``inclus`` vrai : le seuil compte (Grok 4.7, « dès 200 000 »).
-    ``inclus`` faux : le palier commence au jeton suivant (Haiku 5.5,
-    « au-delà de 100 000 »). Plusieurs paliers se lisent du seuil le
-    plus bas au plus haut : le dernier franchi l'emporte.
+    Mécanisme unique des lots M1 et M2. Les nombres ne sont écrits qu'ici.
+
+    Couple absolu (Haiku 5.5, Grok 4.7) : ``entree`` et ``sortie``
+    (USD / 1M) remplacent le tarif court. ``inclus`` vrai : le seuil
+    compte (Grok 4.7, « dès 200 000 »). ``inclus`` faux : le palier
+    commence au jeton suivant (Haiku 5.5, « au-delà de 100 000 »).
+
+    Multiplicateurs (gpt-6.1-sol) : ``multiplicateur_entree`` et
+    ``multiplicateur_sortie`` s'appliquent au tarif court quand
+    ``entree`` est absent. Le seuil est exclusif (« plus de 272 000 »).
+    ``seuil_entree`` est le nom lu par le lot M2.
+
+    Plusieurs paliers se lisent du seuil le plus bas au plus haut :
+    le dernier franchi l'emporte. ``PALIERS_TARIF`` en porte un par
+    modèle. ``PALIERS_PROMPT`` est la même donnée lue comme une suite.
     """
 
-    seuil: int
-    inclus: bool
-    entree: float
-    sortie: float
-    source: str
+    seuil_entree: int
+    multiplicateur_entree: float = 1.0
+    multiplicateur_sortie: float = 1.0
+    inclus: bool = False
+    entree: float | None = None
+    sortie: float | None = None
+    source: str = ""
+
+    @property
+    def seuil(self) -> int:
+        """Même entier que ``seuil_entree`` (lecture du lot M1)."""
+        return self.seuil_entree
 
 
 @dataclass(frozen=True)
@@ -62,7 +80,7 @@ TOKEN_PRICES = {
     "claude-fable-5": {"input": 10.00, "output": 50.00},
     "claude-sonnet-5": {"input": 2.00, "output": 10.00},
     # M1, 09/10/2026 (platform.claude.com, vues d'ensemble). Haiku : ce
-    # couple est le palier court (<= 100 k). Au-delà, PALIERS_PROMPT.
+    # couple est le palier court (<= 100 k). Au-delà, PALIERS_TARIF.
     "claude-fable-5-1": {"input": 10.00, "output": 50.00},
     "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
     "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
@@ -79,6 +97,11 @@ TOKEN_PRICES = {
     # P-122 : relevé developers.openai.com/api/docs/pricing le 25/09/2026 (standard, contexte court).
     "gpt-6-sol": {"input": 2.00, "output": 10.00},
     "gpt-6-luna": {"input": 0.10, "output": 0.50},
+    # gpt-6.1-sol : fiche developers.openai.com/api/docs/models/gpt-6.1-sol
+    # le 09/10/2026, tarif texte standard (2 $ / 10 $). Le palier >272k est
+    # dans PALIERS_TARIF. Cache, Fast, Flex, Batch, Ultrafast et régional
+    # ne sont pas ici.
+    "gpt-6.1-sol": {"input": 2.00, "output": 10.00},
     "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
     "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
     "gpt-5.6-luna": {"input": 0.20, "output": 1.20},
@@ -117,7 +140,7 @@ TOKEN_PRICES = {
     # Grok (juin 2026)
     # < 200k tokens de prompt (le cas Board/chat)
     "grok-4.6": {"input": 2.00, "output": 6.00},
-    # M1 : couple court (< 200 k). Dès 200 k, PALIERS_PROMPT applique 4 / 12.
+    # M1 : couple court (< 200 k). Dès 200 k, PALIERS_TARIF applique 4 / 12.
     "grok-4.7": {"input": 2.00, "output": 6.00},
     "grok-4.5": {"input": 2.00, "output": 6.00},  # relevé docs.x.ai/docs/models le 10/09/2026 (< 200k)
     "grok-4.3": {"input": 1.25, "output": 2.50},
@@ -130,28 +153,36 @@ TOKEN_PRICES = {
     "default": {"input": 0.0, "output": 0.0},
 }
 
+# Paliers de longueur. Un seul registre : couple absolu ou multiplicateurs.
+# Fiches du 09/10/2026. Le dernier seuil franchi l'emporte.
+PALIERS_TARIF: dict[str, PalierTarif] = {
+    "claude-haiku-5-5": PalierTarif(
+        seuil_entree=100_000,
+        inclus=False,
+        entree=0.50,
+        sortie=2.50,
+        source="https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+    ),
+    "grok-4.7": PalierTarif(
+        seuil_entree=200_000,
+        inclus=True,
+        entree=4.00,
+        sortie=12.00,
+        source="https://docs.x.ai/developers/pricing",
+    ),
+    # gpt-6.1-sol : au-delà de 272 000 jetons d'entrée, 2× l'entrée et
+    # 1,5× la sortie, sur toute la requête.
+    "gpt-6.1-sol": PalierTarif(
+        seuil_entree=272_000,
+        multiplicateur_entree=2.0,
+        multiplicateur_sortie=1.5,
+        source="https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    ),
+}
 
-# Paliers de longueur de prompt. Le lot M2 peut en ajouter sans nouveau code.
-# Le tarif du palier remplace le couple court pour l'entrée ET la sortie.
-PALIERS_PROMPT: dict[str, tuple[PalierPrompt, ...]] = {
-    "claude-haiku-5-5": (
-        PalierPrompt(
-            seuil=100_000,
-            inclus=False,
-            entree=0.50,
-            sortie=2.50,
-            source="https://platform.claude.com/docs/en/models/haiku-5-5/overview",
-        ),
-    ),
-    "grok-4.7": (
-        PalierPrompt(
-            seuil=200_000,
-            inclus=True,
-            entree=4.00,
-            sortie=12.00,
-            source="https://docs.x.ai/developers/pricing",
-        ),
-    ),
+# Même registre, lu comme une suite (le lot M1 indexe ``[0]``).
+PALIERS_PROMPT: dict[str, tuple[PalierTarif, ...]] = {
+    cle: (palier,) for cle, palier in PALIERS_TARIF.items()
 }
 
 
@@ -355,7 +386,7 @@ class TokenTracker:
 
     @staticmethod
     def _present_en_grille(nom: str) -> bool:
-        return nom in TOKEN_PRICES or nom in PALIERS_PROMPT or nom in PROMOTIONS
+        return nom in TOKEN_PRICES or nom in PALIERS_TARIF or nom in PROMOTIONS
 
     def _cle_grille(self, model: str) -> str:
         """Identifiant de la grille, préfixe OpenRouter retiré s'il le faut."""
@@ -385,10 +416,19 @@ class TokenTracker:
         retenu = self._appliquer_promotion(cle, TOKEN_PRICES.get(cle, TOKEN_PRICES["default"]))
         for palier in PALIERS_PROMPT.get(cle, ()):
             franchi = (
-                jetons_prompt >= palier.seuil if palier.inclus else jetons_prompt > palier.seuil
+                jetons_prompt >= palier.seuil_entree
+                if palier.inclus
+                else jetons_prompt > palier.seuil_entree
             )
-            if franchi:
+            if not franchi:
+                continue
+            if palier.entree is not None and palier.sortie is not None:
                 retenu = {"input": palier.entree, "output": palier.sortie}
+            else:
+                retenu = {
+                    "input": retenu["input"] * palier.multiplicateur_entree,
+                    "output": retenu["output"] * palier.multiplicateur_sortie,
+                }
         return retenu
 
     def _appliquer_promotion(

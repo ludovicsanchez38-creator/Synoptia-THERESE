@@ -159,7 +159,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'openai',
     name: 'GPT (OpenAI)',
-    description: 'GPT-6 (Sol, Astra, Luna) et 5.6 - Polyvalent et puissant',
+    description: 'GPT-6.1 Sol, GPT-6 (Sol, Astra, Luna) et 5.6 - Polyvalent et puissant',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
@@ -169,6 +169,8 @@ export const FOURNISSEURS: FournisseurConfig[] = [
       { id: 'gpt-6-sol', name: 'GPT-6 Sol', badge: 'Recommandé' },
       { id: 'gpt-6-astra', name: 'GPT-6 Astra', badge: 'Frontier' },
       { id: 'gpt-6-luna', name: 'GPT-6 Luna', badge: 'Rapide' },
+      // P-c18-m2 : pas en tête, pas de badge. La fiche ne dit pas « préversion ».
+      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol' },
       // GPT-5.6 : GA du 09/07/2026 - trois variantes, six niveaux d'effort.
       { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' },
       { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', badge: 'Équilibré' },

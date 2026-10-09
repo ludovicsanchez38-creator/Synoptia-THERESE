@@ -147,6 +147,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gpt-6-sol",         # Code et agents, génération 6 (recommandé)
             "gpt-6-astra",       # Puissance maximale, plus cher (P-057, Ludo 09/09/2026 ; contexte 1 050 000, sortie 128 000)
             "gpt-6-luna",        # Le plus économique de la génération 6
+            # P-c18-m2 (09/10/2026) : après la tête. Les outils exigent Responses.
+            "gpt-6.1-sol",
             "gpt-5.6-sol",       # Génération précédente
             "gpt-5.6-terra",     # Équilibre intelligence/coût
             "gpt-5.6-luna",      # Le plus économique de la génération 5.6
@@ -162,6 +164,9 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # documentés (25/09/2026) : transmis tels quels.
             "gpt-6-sol": FicheModele(effort=TEL_QUEL, context_window=1_050_000),
             "gpt-6-luna": FicheModele(effort=TEL_QUEL, context_window=1_050_000),
+            # gpt-6.1-sol (fiche du 09/10/2026) : low, medium, high, xhigh, max.
+            # none et minimal sont refusés : absents de la table, donc jamais émis.
+            "gpt-6.1-sol": FicheModele(effort=_EFFORT_GPT6, context_window=1_050_000),
             # Fiches 5.6 : none/low/medium/high/xhigh/max, transmis tel quel.
             "gpt-5.6-sol": FicheModele(effort=TEL_QUEL),
             "gpt-5.6-terra": FicheModele(effort=TEL_QUEL),

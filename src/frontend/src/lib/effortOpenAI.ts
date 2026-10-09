@@ -6,16 +6,34 @@
  * message, sans le dire à l'écran. Même prédicat ici, prouvé égal par des
  * témoins partagés (`effortOpenAI.temoins.json`, test de parité pytest).
  */
+/** Ces modèles gardent l'effort choisi quand des outils sont là : leurs
+ * appels passent par Responses, qui accepte l'effort. gpt-6.1-sol refuse
+ * none et minimal (fiche du 09/10/2026). gpt-6-astra exige Responses pour
+ * les outils et refuse none (guides du 09/10/2026, B-1774). */
+const EFFORT_CONSERVE_AVEC_OUTILS = new Set(['gpt-6.1-sol', 'gpt-6-astra']);
+
+export function effortConserveAvecOutils(modele: string): boolean {
+  return EFFORT_CONSERVE_AVEC_OUTILS.has(modele.toLowerCase());
+}
+
+/** Fiche gpt-6.1-sol : xhigh est un palier à part, entre élevé et maximal. */
+export function effortXhighPropose(modele: string): boolean {
+  return modele.trim().toLowerCase() === 'gpt-6.1-sol';
+}
+
 export function modeleOpenAIRaisonnant(modele: string): boolean {
   const m = modele.toLowerCase();
-  // P-057 (0.70.0) : la famille GPT-6 (gpt-6-astra) suit la même règle que GPT-5.
+  // P-c18-m2 : gpt-6.1-sol ne neutralise pas l'effort (transport Responses).
+  if (effortConserveAvecOutils(m)) return false;
+  // P-057 : la famille GPT-6 suit la même règle que GPT-5, sauf les modèles
+  // dont les outils passent par Responses (effort conservé, plus haut).
   return m.startsWith('gpt-6') || m.startsWith('gpt-5') || m.startsWith('o1') || m.startsWith('o3') || m.startsWith('o4');
 }
 
 /** Sans outils, l'effort n'est transmis qu'aux modèles dont le support est
  * vérifié dans le catalogue backend (fiches GPT-5.6 « tel quel »). */
 // P-122 (25/09/2026) : gpt-6-sol et gpt-6-luna, même contrat que gpt-6-astra.
-const EFFORT_TRANSMIS_SANS_OUTILS = new Set(['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+const EFFORT_TRANSMIS_SANS_OUTILS = new Set(['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna', 'gpt-6.1-sol', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
 
 export function effortTransmisSansOutils(modele: string): boolean {
   return EFFORT_TRANSMIS_SANS_OUTILS.has(modele.toLowerCase());

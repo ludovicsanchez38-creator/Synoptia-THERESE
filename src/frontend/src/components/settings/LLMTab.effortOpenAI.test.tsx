@@ -1,5 +1,5 @@
 /** P-045 (lecteur c4-R11, B-594) : l'effort choisi est neutralisé pour les GPT-5/o-series dès qu'un outil est fourni ; l'écran doit le dire, sans surpromettre. */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const apiMocks = vi.hoisted(() => ({ getLLMConfig: vi.fn(), setLLMConfig: vi.fn() }));
@@ -26,6 +26,34 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     render(<EffortSelector selectedProvider="openai" selectedModel="gpt-5.5" />);
     const mention = await screen.findByTestId('effort-mention-outils');
     expect(mention).toHaveTextContent(/n.est pas transmis à ce modèle/i);
+  });
+
+  it('gpt-6.1-sol propose très élevé, un autre modèle non', async () => {
+    const { unmount } = render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6.1-sol" />);
+    await screen.findByLabelText('Effort de raisonnement');
+    expect(screen.getByRole('option', { name: /Très élevé/ })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Effort de raisonnement'), { target: { value: 'xhigh' } });
+    await waitFor(() => {
+      expect(apiMocks.setLLMConfig).toHaveBeenCalledWith('openai', 'gpt-6.1-sol', 'xhigh');
+    });
+    unmount();
+    render(<EffortSelector selectedProvider="openai" selectedModel="gpt-5.6-luna" />);
+    await screen.findByLabelText('Effort de raisonnement');
+    expect(screen.queryByRole('option', { name: /Très élevé/ })).toBeNull();
+  });
+
+  it('gpt-6.1-sol : l’effort reste quand la conversation utilise des outils', async () => {
+    render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6.1-sol" />);
+    const mention = await screen.findByTestId('effort-mention-conserve');
+    expect(mention).toHaveTextContent(/Avec des outils, l'effort que tu choisis est conservé pour ce modèle/);
+    expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
+  });
+
+  it('gpt-6-astra : l’effort reste quand la conversation utilise des outils', async () => {
+    render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6-astra" />);
+    const mention = await screen.findByTestId('effort-mention-conserve');
+    expect(mention).toHaveTextContent(/Avec des outils, l'effort que tu choisis est conservé pour ce modèle/);
+    expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
   });
 
   it('anthropic, ou gpt-4.1 : aucune mention', async () => {
