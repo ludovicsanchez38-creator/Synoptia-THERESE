@@ -472,6 +472,20 @@ class TokenTracker:
         output_cost = (output_tokens / 1_000_000) * prices["output"]
         return input_cost + output_cost
 
+    def cout_des_appels(
+        self,
+        model: str,
+        appels: list[tuple[int, int]],
+    ) -> float:
+        """Somme des coûts, chaque appel avec sa propre longueur de prompt.
+
+        Le palier porte sur une requête fournisseur, pas sur le total de
+        plusieurs tours d'outils.
+        """
+        return sum(
+            self.estimate_cost(model, entree, sortie) for entree, sortie in appels
+        )
+
     def record_usage(
         self,
         conversation_id: str,
@@ -481,6 +495,7 @@ class TokenTracker:
         output_tokens: int,
         context_truncated: bool = False,
         truncated_messages: int = 0,
+        appels: list[tuple[int, int]] | None = None,
     ) -> TokenUsageRecord:
         """
         Record token usage for a request (US-ESC-04).
@@ -488,7 +503,10 @@ class TokenTracker:
         self._reset_daily_if_needed()
         self._reset_monthly_if_needed()
 
-        cost = self.estimate_cost(model, input_tokens, output_tokens)
+        if appels:
+            cost = self.cout_des_appels(model, appels)
+        else:
+            cost = self.estimate_cost(model, input_tokens, output_tokens)
 
         record = TokenUsageRecord(
             timestamp=datetime.now(UTC),

@@ -1344,6 +1344,34 @@ def _taille_fenetre_fournisseur(contexte: Any, fenetre: list[Any]) -> int:
     return len(conversation) + 1
 
 
+def _jetons_du_prompt_prepare(contexte: Any) -> int:
+    """Jetons estimés du prompt réellement envoyé, après préparation.
+
+    Le contrôle de budget s'appuie sur cette fenêtre, pas sur le dernier
+    message seul : un historique long change de palier tarifaire.
+    """
+    total = getattr(contexte, "total_tokens", None)
+    if not callable(total):
+        return 0
+    return int(total())
+
+
+def _noter_usage_d_appel(usage_totals: dict, event: Any) -> None:
+    """Mémorise un appel fournisseur, sans additionner les prompts d'abord.
+
+    ``appels`` garde chaque couple (entrée, sortie). Le coût se calcule
+    ensuite appel par appel. Un tour sans usage réel bascule l'estimation.
+    """
+    entree = getattr(event, "input_tokens", None)
+    sortie = getattr(event, "output_tokens", None)
+    if entree is None or sortie is None:
+        usage_totals["estimated"] = True
+        return
+    usage_totals["input_tokens"] += entree
+    usage_totals["output_tokens"] += sortie
+    usage_totals["appels"].append((entree, sortie))
+
+
 def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
     """Lit la fenêtre réellement rendue par prepare_context.
 
@@ -1980,9 +2008,14 @@ async def send_message(
             f"{actions_context}\n\n{memory_context}" if memory_context else actions_context
         )
 
-    # B-482 / B-486 : les plafonds s'appliquent AVANT l'appel au modèle.
+    context = llm_service.prepare_context(messages, memory_context=memory_context)
+    bilan_contexte = bilan_depuis_fenetre(
+        _passes_que_le_fournisseur_garde(messages), context
+    )
+
+    # B-482 : le budget voit le prompt préparé, pas le dernier message seul.
     verdict_plafonds = get_token_tracker().check_limits(
-        len(llm_user_message.split()) * 2,
+        _jetons_du_prompt_prepare(context),
         None,
         model=llm_service.config.model,
         local=llm_service.config.provider == LLMProvider.OLLAMA,
@@ -1995,11 +2028,6 @@ async def send_message(
             created_at=datetime.now(UTC),
         )
     avertissements_plafonds = verdict_plafonds["warnings"] or None
-
-    context = llm_service.prepare_context(messages, memory_context=memory_context)
-    bilan_contexte = bilan_depuis_fenetre(
-        _passes_que_le_fournisseur_garde(messages), context
-    )
 
     # Collect full response (non-streaming)
     # raise_on_error=True : sans ça, un StreamEvent(type="error") d'un provider
@@ -2799,7 +2827,12 @@ async def _do_stream_response(
     # tour = un appel API = son propre usage). "estimated" passe à True dès
     # qu'un tour n'a pas fourni l'usage réel (provider pas encore migré) - on
     # bascule alors sur l'estimation globale plutôt que de mélanger réel+estimé.
-    usage_totals = {"input_tokens": 0, "output_tokens": 0, "estimated": False}
+    usage_totals = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "estimated": False,
+        "appels": [],
+    }
     # BUG-124 : résultats réels des outils exécutés (tous tours confondus). Filet
     # quand un modèle faible enchaîne des outils sans jamais produire de texte :
     # on remonte alors le résultat plutôt qu'une réponse vide et muette.
@@ -2807,7 +2840,7 @@ async def _do_stream_response(
 
     # B-482 / B-486 : les plafonds s'appliquent AVANT l'appel au modèle.
     verdict_plafonds = get_token_tracker().check_limits(
-        len(user_message.split()) * 2,
+        _jetons_du_prompt_prepare(context),
         None,
         model=llm_service.config.model,
         local=llm_service.config.provider == LLMProvider.OLLAMA,
@@ -2841,11 +2874,7 @@ async def _do_stream_response(
                     assistant_brut_collected = event.assistant_content_brut
 
             elif event.type == "done":
-                if event.input_tokens is not None and event.output_tokens is not None:
-                    usage_totals["input_tokens"] += event.input_tokens
-                    usage_totals["output_tokens"] += event.output_tokens
-                else:
-                    usage_totals["estimated"] = True
+                _noter_usage_d_appel(usage_totals, event)
 
                 # Check if we have tool calls to execute
                 if tool_calls_collected and event.stop_reason in ("tool_calls", "tool_use"):
@@ -2991,9 +3020,11 @@ async def _do_stream_response(
     if usage_totals["estimated"] or usage_totals["input_tokens"] == 0:
         input_tokens = len(user_message.split()) * 2
         output_tokens = len(full_content.split()) * 2
+        appels = None
     else:
         input_tokens = usage_totals["input_tokens"]
         output_tokens = usage_totals["output_tokens"]
+        appels = usage_totals["appels"]
 
     usage_record = token_tracker.record_usage(
         conversation_id=conversation_id,
@@ -3001,6 +3032,7 @@ async def _do_stream_response(
         provider=fournisseur,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        appels=appels,
     )
     # Revue 30/08 : coller l'usage mesuré AVANT le finish_stream du
     # finally (annulation / déconnexion). L'estimation mot×2 du tracker
@@ -3633,11 +3665,7 @@ async def _execute_tools_and_continue(
 
         elif event.type == "done":
             if usage_totals is not None:
-                if event.input_tokens is not None and event.output_tokens is not None:
-                    usage_totals["input_tokens"] += event.input_tokens
-                    usage_totals["output_tokens"] += event.output_tokens
-                else:
-                    usage_totals["estimated"] = True
+                _noter_usage_d_appel(usage_totals, event)
 
             # Check if more tools need to be called
             # BUG-121 : si une action sensible attend confirmation, on NE relance
