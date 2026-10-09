@@ -3015,6 +3015,7 @@ async def _do_stream_response(
                 # Check if we have tool calls to execute
                 if tool_calls_collected and event.stop_reason in ("tool_calls", "tool_use"):
                     # Execute tools and continue
+                    echec_suite: dict[str, bool] = {}
                     async for continued_event in _execute_tools_and_continue(
                         llm_service,
                         mcp_service,
@@ -3029,6 +3030,7 @@ async def _do_stream_response(
                         tool_outcomes=tool_outcomes,
                         contexte=contexte,
                         assistant_content_brut=assistant_brut_collected,
+                        echec_suite=echec_suite,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -3039,6 +3041,11 @@ async def _do_stream_response(
                             except json.JSONDecodeError:
                                 pass
                         yield continued_event
+                    # Un budget refusé ne termine que le générateur de
+                    # continuation. Sans ce retour, le parent finalise
+                    # quand même (repli, message, done de succès).
+                    if echec_suite.get("refus"):
+                        return
 
             elif event.type == "error":
                 # B-1155 : « API error: 529 » (forme gardée pour le disjoncteur)
@@ -3383,6 +3390,7 @@ async def _execute_tools_and_continue(
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
     contexte: ContexteExecution | None = None,
     assistant_content_brut: list[Any] | None = None,
+    echec_suite: dict[str, bool] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -3779,6 +3787,8 @@ async def _execute_tools_and_continue(
         ),
     )
     if not verdict_suite["allowed"]:
+        if echec_suite is not None:
+            echec_suite["refus"] = True
         yield (
             "data: "
             + json.dumps(
@@ -3850,6 +3860,7 @@ async def _execute_tools_and_continue(
                     usage_totals=usage_totals,
                     tool_outcomes=tool_outcomes,
                     contexte=contexte,
+                    echec_suite=echec_suite,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.
@@ -3879,6 +3890,8 @@ async def _execute_tools_and_continue(
                     ],
                 ):
                     yield nested_event
+                if echec_suite and echec_suite.get("refus"):
+                    return
             else:
                 # Dernier tour : une coupe ou un refus reste visible.
                 # Le parent range les chunks texte dans le message sauvé.

@@ -6,6 +6,7 @@ peut franchir un palier, et donc le budget, avant la continuation.
 
 from __future__ import annotations
 
+import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -98,3 +99,12 @@ class TestBudgetAvantContinuation:
         assert "Message trop long" not in reponse.text
         assert service.continuation is False
         assert "Suite envoyee." not in reponse.text
+        evenements = [
+            json.loads(ligne.removeprefix("data: "))
+            for ligne in reponse.text.splitlines()
+            if ligne.startswith("data: ")
+        ]
+        types = [e.get("type") for e in evenements]
+        assert "error" in types, types
+        assert "done" not in types, types
+        assert types[-1] == "error", types
