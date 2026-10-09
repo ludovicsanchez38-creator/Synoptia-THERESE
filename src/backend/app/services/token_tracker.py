@@ -67,6 +67,9 @@ class PromotionTarif:
     """Tarif soldé entre deux dates. ``fin`` est exclusive.
 
     ``fin`` absente : aucune date de fin écrite, la promo reste.
+    ``hypothese`` : la source ne publie pas cette heure de fin. ``lecture``
+    dit comment elle a été retenue. Le tarif publié est à revérifier
+    au basculement.
     """
 
     entree: float
@@ -74,6 +77,8 @@ class PromotionTarif:
     debut: date
     fin: date | None
     source: str
+    hypothese: bool = False
+    lecture: str = ""
 
 
 logger = logging.getLogger(__name__)
@@ -215,9 +220,11 @@ BASCULES_TARIF: dict[str, BasculeTarif] = {
 
 
 # Promotions datées. ``fin`` exclusive. None : pas de date de fin écrite.
-# Mistral Large 4 : changelog du 6 octobre 2026, « deux semaines à partir
-# du 6 octobre », sans jour calendaire écrit. Lecture retenue : du 6 inclus
-# au 20 octobre 2026 exclu (quatorze jours, minuit UTC).
+# Mistral Large 4 : le changelog du 6 octobre 2026 dit « deux semaines à
+# partir du 6 octobre » et n'écrit ni jour calendaire ni heure de fin.
+# Hypothèse de lecture, pas une heure publiée : du 6 octobre 2026 inclus
+# au 20 octobre 2026 à 00 h UTC exclu (quatorze jours). À revérifier sur
+# le tarif publié au basculement. Les montants soldés ne changent pas.
 PROMOTIONS: dict[str, PromotionTarif] = {
     "mistral-large-4": PromotionTarif(
         entree=0.68,
@@ -225,6 +232,12 @@ PROMOTIONS: dict[str, PromotionTarif] = {
         debut=date(2026, 10, 6),
         fin=date(2026, 10, 20),
         source="https://docs.mistral.ai/resources/changelogs",
+        hypothese=True,
+        lecture=(
+            "Hypothèse de lecture : le changelog dit « deux semaines » à partir "
+            "du 6 octobre 2026, sans heure de fin. On retient le 20 octobre 2026 "
+            "à 00 h UTC, fin exclusive. À revérifier sur le tarif publié au basculement."
+        ),
     ),
 }
 

@@ -338,6 +338,21 @@ class TestPromoMistralLarge4:
         assert promo.fin == date(2026, 10, 20)
         assert "docs.mistral.ai" in promo.source
 
+    def test_la_fin_du_20_octobre_est_une_hypothese_de_lecture(self):
+        """Le changelog dit « deux semaines », sans heure de fin.
+
+        Le 20 octobre à minuit UTC est une lecture, pas une heure publiée.
+        Les dates ne bougent pas. Le tarif publié sera à revérifier ce jour-là.
+        """
+        import app.services.token_tracker as module
+
+        promo = module.PROMOTIONS["mistral-large-4"]
+        assert promo.hypothese is True
+        assert promo.fin == date(2026, 10, 20)
+        assert "hypothèse" in (promo.lecture or "").lower() or "hypothese" in (
+            promo.lecture or ""
+        ).lower()
+
 
 class TestTarifsM1:
     def test_les_prix_documentes_ne_sont_ni_absents_ni_nuls(self, monkeypatch):
