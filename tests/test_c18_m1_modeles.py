@@ -68,9 +68,9 @@ ANCIENS = {
 TETES = {
     "anthropic": "claude-opus-5-5",
     "openai": "gpt-6-sol",
-    "gemini": "gemini-3.7-flash",
+    "gemini": "gemini-3.8-flash",
     "mistral": "mistral-medium-3-5",
-    "grok": "grok-4.6",
+    "grok": "grok-4.7",
 }
 
 ORDRE = {
@@ -89,16 +89,16 @@ ORDRE = {
         "claude-sonnet-4-6",
     ),
     "grok": (
-        "grok-4.6",
         "grok-4.7",
+        "grok-4.6",
         "grok-4.5",
         "grok-4.3",
         "grok-4.20-0309-reasoning",
         "grok-4.20-0309-non-reasoning",
     ),
     "gemini": (
-        "gemini-3.7-flash",
         "gemini-3.8-flash",
+        "gemini-3.7-flash",
         "gemini-3.1-pro-preview",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
@@ -143,7 +143,8 @@ def _garder_ordre(liste: list[str], anciens: tuple[str, ...]) -> tuple[str, ...]
 
 
 class TestCatalogueM1:
-    def test_tetes_inchangees_et_anciens_conserves_dans_le_meme_ordre(self):
+    def test_tetes_decidees_et_anciens_conserves_dans_le_meme_ordre(self):
+        """Grok 4.7 et Gemini 3.8 Flash sont têtes. Les anciens gardent leur ordre."""
         for fournisseur, tete in TETES.items():
             liste = modeles_ordonnes(fournisseur)
             assert liste[0] == tete
@@ -620,4 +621,11 @@ def test_les_agents_recoivent_les_modeles_a_outils_documentes():
     assert par_id["mistral-large-4"].get("recommended") is not True
     assert "grok-4.7-fast" not in par_id
     assert sum(1 for m in AVAILABLE_MODELS if m.get("recommended")) == 1
+    premiers = {}
+    for modele in AVAILABLE_MODELS:
+        premiers.setdefault(modele["provider"], modele["id"])
+    assert premiers["grok"] == "grok-4.7"
+    assert premiers["gemini"] == "gemini-3.8-flash"
+    assert premiers["openai"] == "gpt-6-sol"
+    assert premiers["anthropic"] == "claude-opus-5-5"
     assert AgentConfig(id="a", name="a", description="a").default_model == "claude-sonnet-4-6"

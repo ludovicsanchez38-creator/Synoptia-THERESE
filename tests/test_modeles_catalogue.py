@@ -24,9 +24,11 @@ class TestLesFrontiers:
         attendus = {
             "anthropic": "claude-opus-5-5",
             "openai": "gpt-6-sol",
-            "gemini": "gemini-3.7-flash",
+            # Passe 3 : Grok 4.7 et Gemini 3.8 Flash sont les têtes.
+            # Le test figeait grok-4.6 et gemini-3.7-flash.
+            "gemini": "gemini-3.8-flash",
             "mistral": "mistral-medium-3-5",
-            "grok": "grok-4.6",
+            "grok": "grok-4.7",
         }
         for fournisseur, frontier in attendus.items():
             assert cat.frontier(fournisseur) == frontier, (

@@ -109,7 +109,7 @@ class TestLaSonde:
 
         client = FauxClient({
             "generativelanguage.googleapis.com": _reponse(
-                {"models": [{"name": "models/gemini-3.7-flash"}]}
+                {"models": [{"name": "models/gemini-3.8-flash"}]}
             ),
         })
         await board_module.sonder_catalogue(client=client)

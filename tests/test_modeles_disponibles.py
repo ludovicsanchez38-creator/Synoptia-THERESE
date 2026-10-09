@@ -77,7 +77,8 @@ class TestLesGenerationsCourantesSontProposees:
         for fournisseur, attendu in [
             ("anthropic", "claude-opus-5-5"),  # P-122
             ("openai", "gpt-6-sol"),  # P-122
-            ("grok", "grok-4.6"),
+            ("grok", "grok-4.7"),
+            ("gemini", "gemini-3.8-flash"),
         ]:
             proposes = await _available_models_for(fournisseur)
             assert proposes[0] == attendu, (

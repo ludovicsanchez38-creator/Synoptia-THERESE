@@ -180,8 +180,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("GEMINI_API_KEY", "GOOGLE_API_KEY"),
         context_window=1000000,
         modeles=(
-            "gemini-3.7-flash",           # Tête inchangée (recommandé)
-            "gemini-3.8-flash",           # Flash suivant, 09/10/2026
+            "gemini-3.8-flash",           # Tête Google, 09/10/2026
+            "gemini-3.7-flash",           # Génération précédente
             "gemini-3.1-pro-preview",     # Le seul Pro récent
             "gemini-3.6-flash",
             "gemini-3.5-flash",
@@ -242,8 +242,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("XAI_API_KEY",),
         context_window=131072,
         modeles=(
-            "grok-4.6",                      # Tête inchangée (recommandé)
-            "grok-4.7",                      # 09/10/2026, juste après la tête
+            "grok-4.7",                      # Tête xAI, 09/10/2026
+            "grok-4.6",                      # Génération précédente
             "grok-4.5",                      # Génération précédente
             "grok-4.3",                      # Économique, très grand contexte
             "grok-4.20-0309-reasoning",      # Raisonnement long

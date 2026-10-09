@@ -52,8 +52,8 @@ export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   'claude-fable-5-1': { name: 'Claude Fable 5.1', badge: 'Le plus capable' },
   'claude-sonnet-5-5': { name: 'Claude Sonnet 5.5', badge: 'Équilibré' },
   'claude-haiku-5-5': { name: 'Claude Haiku 5.5', badge: 'Rapide' },
-  'grok-4.7': { name: 'Grok 4.7' },
-  'gemini-3.8-flash': { name: 'Gemini 3.8 Flash' },
+  'grok-4.7': { name: 'Grok 4.7', badge: 'Recommandé' },
+  'gemini-3.8-flash': { name: 'Gemini 3.8 Flash', badge: 'Recommandé' },
   'mistral-large-4': { name: 'Mistral Large 4', badge: 'Préversion' },
 };
 
@@ -188,9 +188,9 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPlaceholder: 'AIza...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
     models: [
+      { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', badge: 'Recommandé' },
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', badge: 'Flagship' },
-      { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash' },
-      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', badge: 'Recommandé' },
+      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash' },
       { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
       { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', badge: 'Économique' },
     ],
@@ -223,9 +223,9 @@ export const FOURNISSEURS: FournisseurConfig[] = [
       // ATTENTION : l'ID API est grok-4.5 avec un POINT (grok-4-5 -> 404).
       // B-753 : grok-4.5 était lui aussi déclaré deux fois - même clé React,
       // même ligne servie en double. La première déclaration fait foi.
+      { id: 'grok-4.7', name: 'Grok 4.7', badge: 'Recommandé' },
       { id: 'grok-4.5', name: 'Grok 4.5', badge: 'Flagship' },
-      { id: 'grok-4.7', name: 'Grok 4.7' },
-      { id: 'grok-4.6', name: 'Grok 4.6', badge: 'Recommandé' },
+      { id: 'grok-4.6', name: 'Grok 4.6' },
       { id: 'grok-4.3', name: 'Grok 4.3' },
       { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
       { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },

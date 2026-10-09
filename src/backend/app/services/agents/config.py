@@ -46,11 +46,13 @@ AVAILABLE_MODELS = [
     {"id": "gpt-5.6-luna", "name": "GPT-5.6 Luna", "provider": "openai"},
     {"id": "gpt-5.5", "name": "GPT-5.5", "provider": "openai"},
     # Google
+    # Tête Google (catalogue et Board). Opus reste le seul recommandé global.
     {"id": "gemini-3.8-flash", "name": "Gemini 3.8 Flash", "provider": "gemini"},
     {"id": "gemini-3.7-flash", "name": "Gemini 3.7 Flash", "provider": "gemini"},
     {"id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro (préversion)", "provider": "gemini"},
     {"id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash", "provider": "gemini"},
     # xAI
+    # Tête xAI (catalogue et Board).
     {"id": "grok-4.7", "name": "Grok 4.7", "provider": "grok"},
     {"id": "grok-4.6", "name": "Grok 4.6", "provider": "grok"},
     {"id": "grok-4.5", "name": "Grok 4.5", "provider": "grok"},
