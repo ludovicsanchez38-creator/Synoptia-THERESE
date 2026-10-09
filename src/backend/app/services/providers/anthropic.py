@@ -28,13 +28,17 @@ ANTHROPIC_VERSION = "2023-06-01"
 
 # Familles de modèles qui REFUSENT les paramètres de sampling (temperature,
 # top_p, top_k -> 400 API). Vérifié le 10/07/2026 : Fable 5, Sonnet 5 et
-# Opus 4.7/4.8 les ont retirés ; Opus 4.6 / Sonnet 4.6 / Haiku les acceptent.
+# Opus 4.7/4.8 les ont retirés ; Opus 4.6 / Sonnet 4.6 / Haiku 4.5 les
+# acceptent. Haiku 5.5 (guide de migration, 09/10/2026) les refuse aussi :
+# le préfixe est l'identifiant entier, pas « claude-haiku », sinon Haiku 4.5
+# perdrait temperature.
 _NO_SAMPLING_PREFIXES = (
     "claude-fable-5",
     "claude-sonnet-5",
     "claude-opus-5",
     "claude-opus-4-7",
     "claude-opus-4-8",
+    "claude-haiku-5-5",
 )
 
 # 0.48 : la table _EFFORT_PREFIXES a disparu - la politique d'effort vit

@@ -233,6 +233,29 @@ def test_mistral_large_4_n_envoie_pas_deffort():
     assert corps["model"] == "mistral-large-4"
 
 
+def test_haiku_55_n_envoie_ni_temperature_ni_top_p_ni_top_k():
+    """Guide de migration Haiku 5.5 : retirer temperature, top_p et top_k.
+
+    Le code n'envoie déjà pas top_p ni top_k. Il envoyait encore 0,7.
+    """
+    config = LLMConfig(LLMProvider.ANTHROPIC, "claude-haiku-5-5", api_key="k", effort="medium")
+    corps = AnthropicProvider(config, _client())._build_request_body(
+        "sys", [{"role": "user", "content": "salut"}], None,
+    )
+    assert "temperature" not in corps, corps.get("temperature")
+    assert "top_p" not in corps
+    assert "top_k" not in corps
+    assert corps["output_config"] == {"effort": "medium"}
+
+
+def test_haiku_45_garde_sa_temperature():
+    config = LLMConfig(LLMProvider.ANTHROPIC, "claude-haiku-4-5-20251001", api_key="k")
+    corps = AnthropicProvider(config, _client())._build_request_body(
+        "sys", [{"role": "user", "content": "salut"}], None,
+    )
+    assert corps["temperature"] == 0.7
+
+
 def test_sonnet_55_envoie_leffort_sans_echantillonnage_ni_tool_choice():
     config = LLMConfig(LLMProvider.ANTHROPIC, "claude-sonnet-5-5", api_key="k", effort="high")
     corps = AnthropicProvider(config, _client())._build_request_body(
