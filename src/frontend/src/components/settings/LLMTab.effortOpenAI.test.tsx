@@ -28,6 +28,13 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     expect(mention).toHaveTextContent(/n.est pas transmis à ce modèle/i);
   });
 
+  it('gpt-6.1-sol : l’effort reste quand la conversation utilise des outils', async () => {
+    render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6.1-sol" />);
+    const mention = await screen.findByTestId('effort-mention-conserve');
+    expect(mention).toHaveTextContent(/Avec des outils, l'effort que tu choisis est conservé pour ce modèle/);
+    expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
+  });
+
   it('anthropic, ou gpt-4.1 : aucune mention', async () => {
     const { unmount } = render(<EffortSelector selectedProvider="anthropic" selectedModel="claude-sonnet-4-6" />);
     await screen.findByLabelText('Effort de raisonnement');

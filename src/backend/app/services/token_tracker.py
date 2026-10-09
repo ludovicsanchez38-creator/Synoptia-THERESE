@@ -42,6 +42,10 @@ TOKEN_PRICES = {
     # P-122 : relevé developers.openai.com/api/docs/pricing le 25/09/2026 (standard, contexte court).
     "gpt-6-sol": {"input": 2.00, "output": 10.00},
     "gpt-6-luna": {"input": 0.10, "output": 0.50},
+    # gpt-6.1-sol : fiche developers.openai.com/api/docs/models/gpt-6.1-sol
+    # le 09/10/2026, tarif texte standard (2 $ / 10 $). Le palier >272k, le
+    # cache, Fast, Flex, Batch, Ultrafast et le régional ne sont pas ici.
+    "gpt-6.1-sol": {"input": 2.00, "output": 10.00},
     "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
     "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
     "gpt-5.6-luna": {"input": 0.20, "output": 1.20},

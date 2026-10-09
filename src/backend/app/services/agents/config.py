@@ -35,6 +35,9 @@ AVAILABLE_MODELS = [
     # `v1/chat/completions`, le point d'appel utilisé ici.
     {"id": "gpt-6-sol", "name": "GPT-6 Sol", "provider": "openai"},
     {"id": "gpt-6-luna", "name": "GPT-6 Luna", "provider": "openai"},
+    # P-c18-m2 : outils via Responses (tests/test_gpt61_sol_responses.py).
+    # Pas en tête : le défaut des agents reste celui d'agent.json.
+    {"id": "gpt-6.1-sol", "name": "GPT-6.1 Sol", "provider": "openai"},
     {"id": "gpt-5.6-sol", "name": "GPT-5.6 Sol", "provider": "openai"},
     {"id": "gpt-5.6-terra", "name": "GPT-5.6 Terra", "provider": "openai"},
     {"id": "gpt-5.6-luna", "name": "GPT-5.6 Luna", "provider": "openai"},

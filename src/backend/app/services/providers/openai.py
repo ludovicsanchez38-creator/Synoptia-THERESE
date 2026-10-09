@@ -14,6 +14,7 @@ import httpx
 
 from .base import (
     BaseProvider,
+    LLMProvider,
     StreamEvent,
     ToolCall,
     ToolResult,
@@ -24,6 +25,93 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+
+# Fiche gpt-6.1-sol (09/10/2026) : les outils exigent Responses.
+# Chat Completions reste le chemin sans outils. Astra est cité par le guide
+# raisonnement mais déjà servi : ce lot ne le migre pas.
+_MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol"})
+
+
+def _outils_via_responses(model: str) -> bool:
+    return model.lower() in _MODELES_OUTILS_RESPONSES
+
+
+def _arguments_outil(brut: Any) -> dict[str, Any]:
+    if isinstance(brut, dict):
+        return brut
+    if not isinstance(brut, str) or not brut:
+        return {}
+    try:
+        lu = json.loads(brut)
+    except json.JSONDecodeError:
+        return {}
+    return lu if isinstance(lu, dict) else {}
+
+
+def _messages_vers_input_responses(messages: list[dict[Any, Any]]) -> list[dict[str, Any]]:
+    """Traduit le transcript Chat déjà construit vers les items Responses."""
+    items: list[dict[str, Any]] = []
+    for msg in messages:
+        role = msg.get("role")
+        if role == "tool":
+            sortie = msg.get("content")
+            if not isinstance(sortie, str):
+                sortie = json.dumps(sortie) if sortie is not None else ""
+            items.append({
+                "type": "function_call_output",
+                "call_id": msg.get("tool_call_id") or "",
+                "output": sortie,
+            })
+            continue
+        appels = msg.get("tool_calls")
+        if role == "assistant" and appels:
+            for appel in appels:
+                fonction = appel.get("function") or {}
+                items.append({
+                    "type": "function_call",
+                    "call_id": appel.get("id") or "",
+                    "name": fonction.get("name") or "",
+                    "arguments": fonction.get("arguments") or "{}",
+                })
+            continue
+        if role in ("user", "assistant", "system", "developer"):
+            contenu = msg.get("content")
+            items.append({"role": role, "content": "" if contenu is None else contenu})
+    return items
+
+
+def _outils_vers_responses(tools: list[dict[Any, Any]]) -> list[dict[str, Any]]:
+    convertis: list[dict[str, Any]] = []
+    for outil in tools:
+        fonction = outil.get("function")
+        if outil.get("type") == "function" and isinstance(fonction, dict):
+            entree: dict[str, Any] = {
+                "type": "function",
+                "name": fonction.get("name") or "",
+            }
+            if fonction.get("description"):
+                entree["description"] = fonction["description"]
+            if "parameters" in fonction:
+                entree["parameters"] = fonction["parameters"]
+            convertis.append(entree)
+        else:
+            convertis.append(outil)
+    return convertis
+
+
+def _message_erreur_flux_responses(event: dict[Any, Any]) -> str:
+    """Phrase d'écran. Le message brut du fournisseur n'y entre pas."""
+    erreur: dict[Any, Any] = {}
+    if event.get("type") == "response.failed":
+        reponse = event.get("response") or {}
+        erreur = reponse.get("error") or {}
+    code = erreur.get("code") or event.get("code")
+    if code == "server_error":
+        return "API error: 500"
+    if code == "rate_limit_exceeded":
+        return message_erreur_http(LLMProvider.OPENAI, 429)
+    return "Requête refusée par le service d'IA."
 
 
 def _refuse_le_sampling(model: str) -> bool:
@@ -81,6 +169,36 @@ class OpenAIProvider(BaseProvider):
             return base
         return f"{base}/chat/completions"
 
+    def url_responses(self) -> str:
+        """Responses : la base configurée, sinon l'adresse officielle."""
+        base: str | None = getattr(self.config, "base_url", None)
+        if not base:
+            return OPENAI_RESPONSES_URL
+        base = base.rstrip("/")
+        for suffixe in ("/chat/completions", "/responses"):
+            if base.endswith(suffixe):
+                base = base[: -len(suffixe)]
+                break
+        return f"{base}/responses"
+
+    def _corps_responses(
+        self,
+        messages: list[dict[Any, Any]],
+        tools: list[dict[Any, Any]] | None,
+    ) -> dict[str, Any]:
+        corps: dict[str, Any] = {
+            "model": self.config.model,
+            "input": _messages_vers_input_responses(messages),
+            "stream": True,
+            "max_output_tokens": self.config.max_tokens,
+        }
+        if self.config.effort_resolu:
+            corps["reasoning"] = {"effort": self.config.effort_resolu}
+        if tools:
+            corps["tools"] = _outils_vers_responses(tools)
+            corps["tool_choice"] = "auto"
+        return corps
+
     def _build_request_body(
         self,
         messages: list[dict],
@@ -133,7 +251,11 @@ class OpenAIProvider(BaseProvider):
         #
         # L'arbitrage : les outils sont le produit, le raisonnement est un
         # réglage. Sans outil, l'effort demandé part normalement.
-        if tools and _uses_max_completion_tokens(self.config.model):
+        if (
+            tools
+            and _uses_max_completion_tokens(self.config.model)
+            and not _outils_via_responses(self.config.model)
+        ):
             if request_body.get("reasoning_effort") not in (None, "none"):
                 logger.info(
                     "%s : effort %s neutralisé pour ce message, les outils et le "
@@ -305,6 +427,122 @@ class OpenAIProvider(BaseProvider):
                 output_tokens=output_tokens,
             )
 
+    async def _lire_flux_responses(
+        self,
+        messages: list[dict[Any, Any]],
+        tools: list[dict[Any, Any]] | None,
+    ) -> AsyncGenerator[StreamEvent, None]:
+        """Un flux Responses. Lève HTTPStatusError avant le premier jeton."""
+        appels: dict[int, dict[str, str]] = {}
+        input_tokens: int | None = None
+        output_tokens: int | None = None
+        pending_stop: str | None = None
+        done_emitted = False
+        erreur_emise = False
+
+        async with self.client.stream(
+            "POST",
+            self.url_responses(),
+            headers={
+                "Authorization": f"Bearer {self.config.api_key}",
+                "Content-Type": "application/json",
+            },
+            json=self._corps_responses(messages, tools),
+        ) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if line.startswith("data: ") and line[6:].strip() == "[DONE]":
+                    break
+                event = self._parse_sse_line(line)
+                if event is None:
+                    continue
+                type_evenement = event.get("type")
+                if type_evenement == "response.output_text.delta":
+                    if delta := event.get("delta"):
+                        yield StreamEvent(type="text", content=delta)
+                elif type_evenement == "response.output_item.added":
+                    self._noter_appel_responses(appels, event)
+                elif type_evenement == "response.function_call_arguments.delta":
+                    self._ajouter_delta_responses(appels, event)
+                elif type_evenement == "response.output_item.done":
+                    appel = self._appel_termine_responses(appels, event)
+                    if appel is not None:
+                        yield StreamEvent(type="tool_call", tool_call=appel)
+                        pending_stop = "tool_calls"
+                elif type_evenement == "response.completed":
+                    usage = (event.get("response") or {}).get("usage") or {}
+                    input_tokens = usage.get("input_tokens", input_tokens)
+                    output_tokens = usage.get("output_tokens", output_tokens)
+                    yield StreamEvent(
+                        type="done",
+                        stop_reason=pending_stop or "stop",
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                    )
+                    done_emitted = True
+                    break
+                elif type_evenement in ("error", "response.error", "response.failed"):
+                    logger.warning(
+                        "Réponse OpenAI en erreur (%s) : %s",
+                        type_evenement,
+                        str(event.get("message") or event)[:500],
+                    )
+                    yield StreamEvent(
+                        type="error",
+                        content=_message_erreur_flux_responses(event),
+                    )
+                    erreur_emise = True
+                    break
+
+        if not done_emitted and not erreur_emise:
+            yield StreamEvent(
+                type="done",
+                stop_reason=pending_stop or "stop",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+    @staticmethod
+    def _noter_appel_responses(
+        appels: dict[int, dict[str, str]], event: dict[Any, Any],
+    ) -> None:
+        item = event.get("item") or {}
+        if item.get("type") != "function_call":
+            return
+        index = event.get("output_index", 0)
+        appels[index] = {
+            "id": item.get("call_id") or "",
+            "name": item.get("name") or "",
+            "arguments": item.get("arguments") or "",
+        }
+
+    @staticmethod
+    def _ajouter_delta_responses(
+        appels: dict[int, dict[str, str]], event: dict[Any, Any],
+    ) -> None:
+        index = event.get("output_index", 0)
+        if index not in appels:
+            appels[index] = {"id": "", "name": "", "arguments": ""}
+        if delta := event.get("delta"):
+            appels[index]["arguments"] += delta
+
+    @staticmethod
+    def _appel_termine_responses(
+        appels: dict[int, dict[str, str]],
+        event: dict[Any, Any],
+    ) -> ToolCall | None:
+        item = event.get("item") or {}
+        if item.get("type") != "function_call":
+            return None
+        index = event.get("output_index", 0)
+        connu = appels.get(index, {})
+        brut = item.get("arguments") or connu.get("arguments") or ""
+        return ToolCall(
+            id=item.get("call_id") or connu.get("id") or "",
+            name=item.get("name") or connu.get("name") or "",
+            arguments=_arguments_outil(brut),
+        )
+
     async def stream(
         self,
         system_prompt: str | None,
@@ -312,11 +550,20 @@ class OpenAIProvider(BaseProvider):
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Stream from OpenAI API with tool support."""
-        request_body = self._build_request_body(messages, tools)
+        if tools and _outils_via_responses(self.config.model):
+            source = self._lire_flux_responses(messages, tools)
+        else:
+            source = self._stream_request(self._build_request_body(messages, tools))
 
         try:
-            async for event in self._stream_request(request_body):
-                yield event
+            try:
+                async for event in source:
+                    yield event
+            finally:
+                # Fermer le générateur interne : aclose du flux extérieur
+                # n'atteint pas le `async with` imbriqué (la requête resterait
+                # ouverte après Annuler).
+                await source.aclose()
         except httpx.HTTPStatusError as e:
             # Le corps porte la raison du refus — « temperature does not
             # support 0.7 with this model » pour le 400 du 28/08 — et le log

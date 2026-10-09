@@ -14,7 +14,7 @@ import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
-import { effortTransmisSansOutils, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
+import { effortConserveAvecOutils, effortTransmisSansOutils, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
 
 // Configuration des providers LLM - catalogue centralisé (dette 0.43.4) :
 // la liste statique vit dans lib/catalogueModeles, la liste dynamique vient
@@ -719,7 +719,13 @@ export function EffortSelector({
   // conversation utilise des outils. L'écran le dit, sans promettre que
   // l'effort passe sans outils sur un modèle non pris en charge.
   const mentionOutils = selectedProvider === 'openai' && modeleOpenAIRaisonnant(selectedModel);
+  const conserveEffort = selectedProvider === 'openai' && effortConserveAvecOutils(selectedModel);
   const effortSansOutils = effortTransmisSansOutils(selectedModel);
+  const decritPar = [
+    'llm-effort-aide',
+    mentionOutils ? 'llm-effort-outils' : '',
+    conserveEffort ? 'llm-effort-conserve' : '',
+  ].filter(Boolean).join(' ');
 
   return (
     <>
@@ -735,13 +741,18 @@ export function EffortSelector({
           /* Deux valeurs, dans cet ordre, et JAMAIS `undefined` : l'aide
              ci-dessous décrit le champ en toutes circonstances, la mention ne
              s'y ajoute que lorsqu'elle est rendue. */
-          aria-describedby={mentionOutils ? 'llm-effort-aide llm-effort-outils' : 'llm-effort-aide'}
+          aria-describedby={decritPar}
           onChange={(e) => void handleChange(e.target.value)}
         />
         <p id="llm-effort-aide" className="col-start-1 text-sm text-text-muted">
           Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5,
           modèles Ollama « thinking »). Auto laisse le modèle décider.
         </p>
+        {conserveEffort && (
+          <p id="llm-effort-conserve" data-testid="effort-mention-conserve" className="col-span-2 mt-2 text-sm text-text-muted">
+            Avec des outils, l'effort que tu choisis est conservé pour ce modèle.
+          </p>
+        )}
         {mentionOutils && (
           <p id="llm-effort-outils" data-testid="effort-mention-outils" className="col-span-2 mt-2 text-sm text-text-muted">
             Dans THÉRÈSE, l'effort est désactivé pour ce modèle dès qu'une conversation utilise des outils :
