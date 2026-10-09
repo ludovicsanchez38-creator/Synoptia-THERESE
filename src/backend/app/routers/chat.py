@@ -2149,7 +2149,9 @@ async def send_message(
     usage_sink: dict = {}
     motif_sink: dict[str, str] = {}
     try:
-        async for chunk in _flux_direct(llm_service, context, usage_sink, motif_sink):
+        async for chunk in _flux_direct(
+            llm_service, context, usage_sink=usage_sink, motif_sink=motif_sink,
+        ):
             assistant_content += chunk
     except Exception as e:
         logger.error(f"LLM error: {e}", exc_info=True)
