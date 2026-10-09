@@ -101,7 +101,8 @@ describe('B-225 - inspecter un fournisseur ne perd pas le modèle choisi', () =>
       target: { value: 'mistral-small-latest' },
     });
     await waitFor(() =>
-      expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalledWith('mistral', 'mistral-small-latest'),
+      // Le changement de modèle transmet désormais l’effort, Auto en l’absence de réglage.
+      expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalledWith('mistral', 'mistral-small-latest', 'auto'),
     );
 
     fireEvent.click(screen.getByRole('button', { name: /GPT \(OpenAI\)/ }));

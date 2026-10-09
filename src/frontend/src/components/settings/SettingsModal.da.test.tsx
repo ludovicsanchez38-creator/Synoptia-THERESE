@@ -544,3 +544,36 @@ describe('lot 9, garde 9 : les noms accessibles suivent le lexique', () => {
     expect(violations()).toEqual([]);
   });
 });
+
+describe('changement de modèle : effort proposé', () => {
+  it('revient à Auto si le nouveau modèle ne propose pas Très élevé, et l’affiche', async () => {
+    const api = await import('../../services/api');
+    let model = 'gpt-6.1-sol';
+    let effort = 'xhigh';
+    vi.mocked(api.getLLMConfig).mockImplementation(async () => ({
+      provider: 'openai', model, effort, available_models: [],
+    }) as never);
+    vi.mocked(api.setLLMConfig).mockImplementation(async (_provider, nextModel, nextEffort) => {
+      model = nextModel;
+      effort = nextEffort ?? effort;
+      return { provider: 'openai', model, effort, available_models: [] } as never;
+    });
+
+    await ouvrir('ai');
+    const modelSelect = screen.getByLabelText('Modèle');
+    const effortSelect = screen.getByLabelText('Effort de raisonnement');
+    await waitFor(() => expect(effortSelect).toHaveValue('xhigh'));
+
+    fireEvent.change(modelSelect, { target: { value: 'gpt-5.6-luna' } });
+
+    await waitFor(() => expect(api.setLLMConfig).toHaveBeenCalledWith('openai', 'gpt-5.6-luna', 'auto'));
+    await waitFor(() => expect(modelSelect).toHaveValue('gpt-5.6-luna'));
+    await waitFor(() => expect(effortSelect).toHaveValue('auto'));
+    expect(screen.queryByRole('option', { name: /Très élevé/ })).toBeNull();
+
+    fireEvent.change(modelSelect, { target: { value: 'gpt-6.1-sol' } });
+    await waitFor(() => expect(api.setLLMConfig).toHaveBeenLastCalledWith('openai', 'gpt-6.1-sol', 'auto'));
+    await waitFor(() => expect(modelSelect).toHaveValue('gpt-6.1-sol'));
+    await waitFor(() => expect(effortSelect).toHaveValue('auto'));
+  });
+});

@@ -691,7 +691,7 @@ export function EffortSelector({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [selectedProvider, selectedModel]);
 
   async function handleChange(value: string) {
     // B-1160 : sans modèle, l'effort partait avec un modèle vide.

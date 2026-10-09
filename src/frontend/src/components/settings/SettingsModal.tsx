@@ -8,6 +8,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
+import type { LLMEffort } from '../../services/api/config';
 
 // Composants des onglets
 import { ProfileTab, ProfileFormData } from './ProfileTab';
@@ -20,6 +21,7 @@ import { AccessibilityTab } from './AccessibilityTab';
 import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
+import { effortXhighPropose } from '../../lib/effortOpenAI';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
@@ -555,18 +557,18 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
   }
 
   async function handleSelectModel(modelId: string) {
-    const previousModel = selectedModel;
-    setSelectedModel(modelId);
     setError(null);
     setOperationStatus('Enregistrement du modèle IA…');
     setRetryOperation(null);
     try {
-      await api.setLLMConfig(selectedProvider, modelId);
+      const effort = (await api.getLLMConfig()).effort as LLMEffort | null;
+      const nouvelEffort = effort === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : effort ?? 'auto';
+      await api.setLLMConfig(selectedProvider, modelId, nouvelEffort);
+      setSelectedModel(modelId);
       modelesParFournisseur.current[selectedProvider] = modelId;
       window.dispatchEvent(new Event('therese:llm-config-changed'));
       setOperationStatus('Modèle IA enregistré.');
     } catch (err) {
-      setSelectedModel(previousModel);
       setOperationStatus(null);
       setError(err instanceof Error ? err.message : 'Le modèle IA n’a pas pu être enregistré.');
       setRetryOperation(() => () => void handleSelectModel(modelId));
