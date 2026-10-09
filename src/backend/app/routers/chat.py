@@ -1390,7 +1390,7 @@ def _jetons_du_prompt_prepare(contexte: Any) -> int:
     return int(total())
 
 
-def _noter_usage_d_appel(usage_totals: dict, event: Any) -> None:
+def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
     """Mémorise un appel fournisseur, sans additionner les prompts d'abord.
 
     ``appels`` garde chaque couple (entrée, sortie). Le coût se calcule
@@ -2861,7 +2861,7 @@ async def _do_stream_response(
     # tour = un appel API = son propre usage). "estimated" passe à True dès
     # qu'un tour n'a pas fourni l'usage réel (provider pas encore migré) - on
     # bascule alors sur l'estimation globale plutôt que de mélanger réel+estimé.
-    usage_totals = {
+    usage_totals: dict[str, Any] = {
         "input_tokens": 0,
         "output_tokens": 0,
         "estimated": False,
@@ -3300,7 +3300,7 @@ async def _execute_tools_and_continue(
     remaining_iterations: int,
     session: AsyncSession | None = None,
     prior_turns: list[ToolTurn] | None = None,
-    usage_totals: dict | None = None,
+    usage_totals: dict[str, Any] | None = None,
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
     contexte: ContexteExecution | None = None,
     assistant_content_brut: list[Any] | None = None,

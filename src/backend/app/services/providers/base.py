@@ -84,7 +84,7 @@ def plafond_sortie_a_envoyer(modele: str, max_tokens: int) -> int | None:
     if omettre_plafond_par_defaut(modele) and max_tokens == LIMITE_SORTIE_PRODUIT:
         return None
     publie = limite_sortie_fournisseur(modele)
-    if publie is not None and max_tokens > publie:
+    if isinstance(publie, int) and max_tokens > publie:
         return publie
     return max_tokens
 
