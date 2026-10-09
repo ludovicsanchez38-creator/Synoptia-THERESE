@@ -211,6 +211,12 @@ class TestCatalogue:
         assert resoudre_effort(MODELE, "high", "openai") == "high"
         assert resoudre_effort(MODELE, effort, "openai") is None
 
+    def test_le_reglage_accepte_l_effort_xhigh(self):
+        from app.models.schemas import LLMConfigUpdate
+
+        maj = LLMConfigUpdate(provider="openai", model=MODELE, effort="xhigh")
+        assert maj.effort == "xhigh"
+
 
 class TestTarif:
     def test_standard_connu_et_cout_des_jetons_du_flux(self):

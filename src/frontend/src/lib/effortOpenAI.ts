@@ -15,6 +15,11 @@ export function effortConserveAvecOutils(modele: string): boolean {
   return EFFORT_CONSERVE_AVEC_OUTILS.has(modele.toLowerCase());
 }
 
+/** Fiche gpt-6.1-sol : xhigh est un palier à part, entre élevé et maximal. */
+export function effortXhighPropose(modele: string): boolean {
+  return modele.trim().toLowerCase() === 'gpt-6.1-sol';
+}
+
 export function modeleOpenAIRaisonnant(modele: string): boolean {
   const m = modele.toLowerCase();
   // P-c18-m2 : gpt-6.1-sol ne neutralise pas l'effort (transport Responses).

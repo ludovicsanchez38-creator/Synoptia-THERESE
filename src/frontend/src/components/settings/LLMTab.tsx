@@ -14,7 +14,7 @@ import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
-import { effortConserveAvecOutils, effortTransmisSansOutils, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
+import { effortConserveAvecOutils, effortTransmisSansOutils, effortXhighPropose, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
 
 // Configuration des providers LLM - catalogue centralisé (dette 0.43.4) :
 // la liste statique vit dans lib/catalogueModeles, la liste dynamique vient
@@ -657,6 +657,11 @@ const EFFORT_OPTIONS = [
   { value: 'max', label: 'Maximal - le plus lent, le plus fiable' },
 ] as const;
 
+const OPTION_XHIGH = {
+  value: 'xhigh',
+  label: 'Très élevé - recherche et tâches longues',
+};
+
 export function EffortSelector({
   selectedProvider,
   selectedModel,
@@ -721,8 +726,17 @@ export function EffortSelector({
   const mentionOutils = selectedProvider === 'openai' && modeleOpenAIRaisonnant(selectedModel);
   const conserveEffort = selectedProvider === 'openai' && effortConserveAvecOutils(selectedModel);
   const effortSansOutils = effortTransmisSansOutils(selectedModel);
+  const proposeXhigh = effortXhighPropose(selectedModel);
+  const optionsEffort = proposeXhigh
+    ? [
+        ...EFFORT_OPTIONS.filter((opt) => opt.value !== 'max'),
+        OPTION_XHIGH,
+        EFFORT_OPTIONS[EFFORT_OPTIONS.length - 1],
+      ]
+    : EFFORT_OPTIONS;
   const decritPar = [
     'llm-effort-aide',
+    proposeXhigh ? 'llm-effort-xhigh' : '',
     mentionOutils ? 'llm-effort-outils' : '',
     conserveEffort ? 'llm-effort-conserve' : '',
   ].filter(Boolean).join(' ');
@@ -737,7 +751,7 @@ export function EffortSelector({
           id="llm-effort"
           value={effort}
           disabled={saving || !selectedModel}
-          options={EFFORT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+          options={optionsEffort.map((opt) => ({ value: opt.value, label: opt.label }))}
           /* Deux valeurs, dans cet ordre, et JAMAIS `undefined` : l'aide
              ci-dessous décrit le champ en toutes circonstances, la mention ne
              s'y ajoute que lorsqu'elle est rendue. */
@@ -748,6 +762,11 @@ export function EffortSelector({
           Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5,
           modèles Ollama « thinking »). Auto laisse le modèle décider.
         </p>
+        {proposeXhigh && (
+          <p id="llm-effort-xhigh" className="col-span-2 mt-2 text-sm text-text-muted">
+            Très élevé est proposé pour ce modèle, entre élevé et maximal.
+          </p>
+        )}
         {conserveEffort && (
           <p id="llm-effort-conserve" data-testid="effort-mention-conserve" className="col-span-2 mt-2 text-sm text-text-muted">
             Avec des outils, l'effort que tu choisis est conservé pour ce modèle.

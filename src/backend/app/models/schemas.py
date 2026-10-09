@@ -914,7 +914,7 @@ class LLMConfigUpdate(BaseModel):
     base_url: str | None = None
     # Effort de raisonnement (10/07/2026) : auto = defaut serveur (rien
     # d'envoye). None = ne pas toucher au reglage existant.
-    effort: Literal["auto", "low", "medium", "high", "max"] | None = None
+    effort: Literal["auto", "low", "medium", "high", "xhigh", "max"] | None = None
 
 
 class LLMConfigResponse(BaseModel):

@@ -269,7 +269,7 @@ export async function getLLMConfig(): Promise<LLMConfig> {
   });
 }
 
-export type LLMEffort = 'auto' | 'low' | 'medium' | 'high' | 'max';
+export type LLMEffort = 'auto' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export async function setLLMConfig(
   provider: LLMProvider,
