@@ -26,10 +26,13 @@ AVAILABLE_MODELS = [
     # P-122 (25/09/2026) : Opus 5.5, GPT-6 Sol et Luna, relevés aux sources.
     {"id": "claude-opus-5-5", "name": "Claude Opus 5.5", "provider": "anthropic", "recommended": True},
     {"id": "claude-opus-5", "name": "Claude Opus 5", "provider": "anthropic"},
+    {"id": "claude-fable-5-1", "name": "Claude Fable 5.1", "provider": "anthropic"},
     {"id": "claude-fable-5", "name": "Claude Fable 5", "provider": "anthropic"},
+    {"id": "claude-sonnet-5-5", "name": "Claude Sonnet 5.5", "provider": "anthropic"},
     {"id": "claude-sonnet-5", "name": "Claude Sonnet 5", "provider": "anthropic"},
     {"id": "claude-opus-4-8", "name": "Claude Opus 4.8", "provider": "anthropic"},
     {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic"},
+    {"id": "claude-haiku-5-5", "name": "Claude Haiku 5.5", "provider": "anthropic"},
     {"id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5", "provider": "anthropic"},
     # OpenAI. gpt-5.3-codex est écarté : sa fiche indique qu'il refuse
     # `v1/chat/completions`, le point d'appel utilisé ici.
@@ -40,10 +43,12 @@ AVAILABLE_MODELS = [
     {"id": "gpt-5.6-luna", "name": "GPT-5.6 Luna", "provider": "openai"},
     {"id": "gpt-5.5", "name": "GPT-5.5", "provider": "openai"},
     # Google
+    {"id": "gemini-3.8-flash", "name": "Gemini 3.8 Flash", "provider": "gemini"},
     {"id": "gemini-3.7-flash", "name": "Gemini 3.7 Flash", "provider": "gemini"},
     {"id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro (préversion)", "provider": "gemini"},
     {"id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash", "provider": "gemini"},
     # xAI
+    {"id": "grok-4.7", "name": "Grok 4.7", "provider": "grok"},
     {"id": "grok-4.6", "name": "Grok 4.6", "provider": "grok"},
     {"id": "grok-4.5", "name": "Grok 4.5", "provider": "grok"},
     {"id": "grok-4.3", "name": "Grok 4.3", "provider": "grok"},

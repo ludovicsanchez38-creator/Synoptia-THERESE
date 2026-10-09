@@ -81,10 +81,13 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # P-122 (Ludo, 25/09/2026) : « start with Claude Opus 5.5 for most
             # workloads » (platform.claude.com, relevé le 25/09/2026).
             "claude-opus-5-5",               # Le plus polyvalent (recommandé)
-            "claude-fable-5",                # Puissance maximale, plus lent
+            "claude-fable-5-1",              # Puissance maximale (fiche du 09/10/2026)
+            "claude-fable-5",                # Génération précédente, toujours servie
             "claude-opus-5",                 # Génération précédente
-            "claude-sonnet-5",               # Équilibre vitesse/intelligence
-            "claude-haiku-4-5-20251001",     # Le plus rapide
+            "claude-sonnet-5-5",             # Équilibre vitesse/intelligence
+            "claude-sonnet-5",               # Génération précédente
+            "claude-haiku-5-5",              # Le plus rapide
+            "claude-haiku-4-5-20251001",     # Génération précédente
             "claude-opus-4-8",               # Génération précédente
             "claude-opus-4-7",
             "claude-opus-4-6",
@@ -102,6 +105,24 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # doc effort du 25/08 : opus-5 accepte low..max, défaut high).
             "claude-opus-5": FicheModele(
                 effort=_EFFORT_ANTHROPIC, max_tokens_recommande=64000
+            ),
+            # Fable 5.1, Sonnet 5.5, Haiku 5.5 (09/10/2026) : cinq niveaux,
+            # contexte 1 M, sortie synchrone 128 k. Le défaut documenté
+            # (high, high, medium) n'est pas forcé : Auto n'envoie rien.
+            "claude-fable-5-1": FicheModele(
+                effort=_EFFORT_ANTHROPIC_OPUS_55,
+                max_tokens_recommande=128_000,
+                context_window=1_000_000,
+            ),
+            "claude-sonnet-5-5": FicheModele(
+                effort=_EFFORT_ANTHROPIC_OPUS_55,
+                max_tokens_recommande=128_000,
+                context_window=1_000_000,
+            ),
+            "claude-haiku-5-5": FicheModele(
+                effort=_EFFORT_ANTHROPIC_OPUS_55,
+                max_tokens_recommande=128_000,
+                context_window=1_000_000,
             ),
             "claude-fable-5": _ANTHROPIC_EFFORT_OK,
             "claude-sonnet-5": _ANTHROPIC_EFFORT_OK,
@@ -150,7 +171,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("GEMINI_API_KEY", "GOOGLE_API_KEY"),
         context_window=1000000,
         modeles=(
-            "gemini-3.7-flash",           # Le plus récent (recommandé)
+            "gemini-3.7-flash",           # Tête inchangée (recommandé)
+            "gemini-3.8-flash",           # Flash suivant, 09/10/2026
             "gemini-3.1-pro-preview",     # Le seul Pro récent
             "gemini-3.6-flash",
             "gemini-3.5-flash",
@@ -161,6 +183,13 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         fiches={
             # thinkingLevel : Gemini 3+ seulement (erreur API sur les 2.x),
             # MAJUSCULES sur generateContent, pas de xhigh sur 3.7-flash.
+            # 3.8 (09/10/2026) : low/medium/high, minimal = erreur, sortie 65 536,
+            # contexte 1 048 576. max logique -> HIGH, jamais MINIMAL.
+            "gemini-3.8-flash": FicheModele(
+                effort=_EFFORT_GEMINI_3,
+                max_tokens_recommande=65_536,
+                context_window=1_048_576,
+            ),
             "gemini-3.7-flash": FicheModele(effort=_EFFORT_GEMINI_3),
             "gemini-3.6-flash": FicheModele(effort=_EFFORT_GEMINI_3),
             "gemini-3.5-flash": FicheModele(effort=_EFFORT_GEMINI_3),
@@ -177,6 +206,7 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # ID ÉPINGLÉ en tête : un alias -latest bouge silencieusement
             # et aveuglerait la sonde de dérive (design 0.48).
             "mistral-medium-3-5",     # Vaisseau amiral (recommandé)
+            "mistral-large-4",        # Préversion publique, 09/10/2026
             "mistral-medium-latest",  # Pointeur perpétuel (choix utilisateur)
             "mistral-large-latest",   # Grand modèle, pointeur à jour
             "mistral-large-2512",     # Version figée, Apache 2.0
@@ -189,7 +219,10 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # Page Reasoning : seuls high/none documentés pour medium-3-5.
             "mistral-medium-3-5": FicheModele(effort=_EFFORT_MISTRAL_MEDIUM),
             "mistral-medium-latest": FicheModele(effort=_EFFORT_MISTRAL_MEDIUM),
-            # Les autres : non documenté - rien n'est envoyé.
+            # Large 4 : contexte 1 M. La page raisonnement cite
+            # mistral-large-4-0, pas cet identifiant : aucun effort envoyé.
+            # Sortie max non documentée.
+            "mistral-large-4": FicheModele(context_window=1_000_000),
         },
     ),
     "grok": FicheFournisseur(
@@ -197,7 +230,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("XAI_API_KEY",),
         context_window=131072,
         modeles=(
-            "grok-4.6",                      # Le plus intelligent (recommandé)
+            "grok-4.6",                      # Tête inchangée (recommandé)
+            "grok-4.7",                      # 09/10/2026, juste après la tête
             "grok-4.5",                      # Génération précédente
             "grok-4.3",                      # Économique, très grand contexte
             "grok-4.20-0309-reasoning",      # Raisonnement long
@@ -206,6 +240,10 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         fiches={
             # xhigh disponible depuis 4.6 (high = DÉFAUT, pas le max).
             "grok-4.6": FicheModele(effort=_EFFORT_GROK_46),
+            # 4.7 : low/medium/high/xhigh. Pas de valeur API « max ».
+            # Sortie « No text output limit » : aucun plafond inventé.
+            # Contexte 500 000. Fast hors API publique, non ajouté.
+            "grok-4.7": FicheModele(effort=_EFFORT_GROK_46, context_window=500_000),
             # Plafond high sur 4.5 (contrat 0.31 conservé).
             "grok-4.5": FicheModele(effort=_EFFORT_GROK_45),
         },

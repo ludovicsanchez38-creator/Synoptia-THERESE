@@ -41,7 +41,10 @@ def test_opus_5_5_prend_la_tete_d_anthropic_avec_sa_fiche():
 
     anthropic = CATALOGUE["anthropic"]
     assert anthropic.modeles[0] == "claude-opus-5-5"
-    assert anthropic.modeles[1] == "claude-fable-5", "la puissance maximale juste après"
+    # M1 (09/10/2026) : Fable 5.1 prend la place « puissance maximale ».
+    # Fable 5 reste servi, juste après. La tête ne bouge pas.
+    assert anthropic.modeles[1] == "claude-fable-5-1", "la puissance maximale juste après"
+    assert anthropic.modeles[2] == "claude-fable-5", "Fable 5 reste disponible"
     assert "claude-opus-5" in anthropic.modeles, "ajouter n'est pas remplacer"
     for effort in NIVEAUX:
         assert resoudre_effort("claude-opus-5-5", effort, "anthropic") == effort, effort

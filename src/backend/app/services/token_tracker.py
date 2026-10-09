@@ -29,6 +29,12 @@ TOKEN_PRICES = {
     # Cycle 6 (D184, relevé platform.claude.com/docs/en/about-claude/pricing le 10/09/2026)
     "claude-fable-5": {"input": 10.00, "output": 50.00},
     "claude-sonnet-5": {"input": 2.00, "output": 10.00},
+    # M1, 09/10/2026 (platform.claude.com, vues d'ensemble). Haiku : palier
+    # court seulement (<= 100 k). Le palier long (0,50 / 2,50) n'est pas
+    # appliqué : le compteur n'a qu'un couple de prix.
+    "claude-fable-5-1": {"input": 10.00, "output": 50.00},
+    "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
+    "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
     "claude-opus-4-7": {"input": 5.00, "output": 25.00},
     "claude-opus-4-6": {"input": 5.00, "output": 25.00},
     "claude-opus-5": {"input": 5.00, "output": 25.00},
@@ -53,6 +59,8 @@ TOKEN_PRICES = {
     # Gemini (juin 2026)
     # Tarif en vigueur jusqu'au 31/12/2026 (puis 1.50/7.50 annoncés)
     "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
+    # M1, 09/10/2026 : palier payant jusqu'au 31/12/2026 (puis 1,50 / 7,50).
+    "gemini-3.8-flash": {"input": 0.75, "output": 3.75},
     # Cycle 6 (D184, relevé ai.google.dev/gemini-api/docs/pricing le 10/09/2026, prompts <= 200k)
     "gemini-3.6-flash": {"input": 0.75, "output": 3.75},
     "gemini-3.5-flash-lite": {"input": 0.30, "output": 2.50},
@@ -63,6 +71,9 @@ TOKEN_PRICES = {
     "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
     # Mistral (alias evergreen)
     "mistral-medium-3-5": {"input": 1.50, "output": 7.50},
+    # M1, 09/10/2026 : prix barré. La promo de lancement (0,68 / 2,09,
+    # deux semaines dès le 6 octobre) n'est pas appliquée.
+    "mistral-large-4": {"input": 1.36, "output": 4.18},
     # Cycle 6 (D184, relevé docs.mistral.ai/inference/pricing le 10/09/2026)
     "mistral-medium-latest": {"input": 1.50, "output": 7.50},
     "mistral-large-2512": {"input": 0.50, "output": 1.50},
@@ -76,6 +87,8 @@ TOKEN_PRICES = {
     # Grok (juin 2026)
     # < 200k tokens de prompt (le cas Board/chat)
     "grok-4.6": {"input": 2.00, "output": 6.00},
+    # M1, 09/10/2026 : palier < 200 k. Au-delà (4 / 12) non appliqué.
+    "grok-4.7": {"input": 2.00, "output": 6.00},
     "grok-4.5": {"input": 2.00, "output": 6.00},  # relevé docs.x.ai/docs/models le 10/09/2026 (< 200k)
     "grok-4.3": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-reasoning": {"input": 1.25, "output": 2.50},
