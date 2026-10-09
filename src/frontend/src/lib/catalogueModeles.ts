@@ -202,10 +202,12 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPlaceholder: '...',
     consoleUrl: 'https://console.mistral.ai/api-keys',
     models: [
+      // ID épinglé, le même que le catalogue. L'alias -latest peut changer de modèle.
+      { id: 'mistral-medium-3-5', name: 'Mistral Medium 3.5', badge: 'Équilibré' },
       { id: 'mistral-large-latest', name: 'Mistral Large 3', badge: 'Flagship' },
       { id: 'mistral-large-4', name: 'Mistral Large 4', badge: 'Préversion' },
-      // Medium 3.5 (avril 2026) : meilleur équilibre coût-performance Mistral.
-      { id: 'mistral-medium-latest', name: 'Mistral Medium 3.5', badge: 'Équilibré' },
+      // L'alias reste proposé : un choix déjà enregistré ne doit pas être réécrit.
+      { id: 'mistral-medium-latest', name: 'Mistral Medium' },
       { id: 'mistral-small-latest', name: 'Mistral Small 4', badge: 'Économique' },
       { id: 'mistral-large-2512', name: 'Mistral Large 3 (fixé)', badge: 'Stable' },
       { id: 'codestral-latest', name: 'Codestral', badge: 'Coding' },

@@ -41,7 +41,7 @@ describe('sélecteur des réglages, lot M1', () => {
     );
     const select = await screen.findByLabelText('Modèle');
     const libelles = Array.from(select.querySelectorAll('option')).map((o) => o.textContent);
-    expect(libelles[0]).toBe('Mistral Large 3 (Flagship)');
+    expect(libelles[0]).toBe('Mistral Medium 3.5 (Équilibré)');
     expect(libelles).toContain('Mistral Large 4 (Préversion)');
   });
 });

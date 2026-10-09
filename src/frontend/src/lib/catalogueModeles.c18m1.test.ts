@@ -25,7 +25,7 @@ describe('repli et décoration des modèles du 9 octobre', () => {
   it('garde la tête de chaque liste de repli', () => {
     expect(modeles('anthropic')[0].id).toBe('claude-opus-5-5');
     expect(modeles('gemini')[0].id).toBe('gemini-3.8-flash');
-    expect(modeles('mistral')[0].id).toBe('mistral-large-latest');
+    expect(modeles('mistral')[0].id).toBe('mistral-medium-3-5');
     expect(modeles('grok')[0].id).toBe('grok-4.7');
     expect(modeles('openai')[0].id).toBe('gpt-6-sol');
   });
