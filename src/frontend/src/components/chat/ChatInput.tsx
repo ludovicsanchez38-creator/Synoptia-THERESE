@@ -1517,6 +1517,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             {availableModels.length > 1 ? (
               <select
                 aria-label="Modèle de conversation"
+                aria-describedby={DECORATIONS[currentModel]?.badge === 'Préversion' ? 'chat-model-preview' : undefined}
                 value={currentModel}
                 onChange={(e) => handleModelChange(e.target.value)}
                 className="min-h-9 text-sm font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan-ink transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
@@ -1524,7 +1525,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               >
                 {availableModels.map((m) => (
                   <option key={m} value={m}>
-                    {m}
+                    {DECORATIONS[m]?.badge === 'Préversion' ? `${m} (préversion)` : m}
                   </option>
                 ))}
               </select>
@@ -1550,7 +1551,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               </span>
             )}
             {DECORATIONS[currentModel]?.badge === 'Préversion' && (
-              <span className="text-xs px-1.5 py-0.5 rounded-sm bg-[var(--color-warning-tint)] text-warning">
+              <span id="chat-model-preview" className="text-xs px-1.5 py-0.5 rounded-sm bg-[var(--color-warning-tint)] text-warning">
                 Préversion
               </span>
             )}

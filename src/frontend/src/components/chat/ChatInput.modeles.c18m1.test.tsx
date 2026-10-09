@@ -67,8 +67,12 @@ describe('puce du modèle, lot M1', () => {
       effort_resolu: null,
     });
     render(<ChatInput />);
-    expect(await screen.findByRole('option', { name: 'mistral-large-4' })).toBeInTheDocument();
-    expect(await screen.findByText('Préversion')).toBeInTheDocument();
+    const option = await screen.findByRole('option', { name: 'mistral-large-4 (préversion)' });
+    expect(option).toHaveTextContent('mistral-large-4 (préversion)');
+    const select = screen.getByRole('combobox', { name: 'Modèle de conversation' });
+    const badge = screen.getByText('Préversion');
+    expect(select).toHaveAttribute('aria-describedby', badge.id);
+    expect(select).toHaveAccessibleDescription('Préversion');
     expect(screen.getByText('réglage non appliqué à ce modèle')).toBeInTheDocument();
     expect(screen.queryByText('effort élevé')).not.toBeInTheDocument();
   });
