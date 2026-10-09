@@ -915,6 +915,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         enable_grounding: bool = True,
         raise_on_error: bool = False,
         usage_sink: dict[str, int] | None = None,
+        motif_sink: dict[str, str] | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream response (text only, backward compat).
 
@@ -931,6 +932,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         disponible - ce générateur ne yield que du texte, donc pas d'autre moyen
         pour l'appelant de récupérer cette info après la boucle (dette 14/06,
         usage estimé ~2 tokens/mot au lieu du réel).
+
+        motif_sink : même effet de bord pour le stop_reason du done. La voie
+        directe s'en sert pour annoncer une coupe ou un refus.
         """
         async for event in self.stream_response_with_tools(context, tools, enable_grounding=enable_grounding):
             if event.type == "text" and event.content:
@@ -959,11 +963,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 raise ErreurPourEcran(
                     message_fournisseur_pour_ecran(event.content or "Erreur du fournisseur LLM")
                 )
-            elif event.type == "done" and usage_sink is not None:
-                if event.input_tokens is not None:
-                    usage_sink["input_tokens"] = event.input_tokens
-                if event.output_tokens is not None:
-                    usage_sink["output_tokens"] = event.output_tokens
+            elif event.type == "done":
+                if usage_sink is not None:
+                    if event.input_tokens is not None:
+                        usage_sink["input_tokens"] = event.input_tokens
+                    if event.output_tokens is not None:
+                        usage_sink["output_tokens"] = event.output_tokens
+                if motif_sink is not None and event.stop_reason:
+                    motif_sink["stop_reason"] = event.stop_reason
 
     async def stream_response_with_tools(
         self,

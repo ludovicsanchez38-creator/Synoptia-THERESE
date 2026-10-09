@@ -2121,8 +2121,11 @@ async def send_message(
     # jamais (message assistant VIDE renvoyé au lieu d'une erreur). Rapport Syn 14/06.
     assistant_content = ""
     usage_sink: dict = {}
+    motif_sink: dict[str, str] = {}
     try:
-        async for chunk in llm_service.stream_response(context, raise_on_error=True, usage_sink=usage_sink):
+        async for chunk in llm_service.stream_response(
+            context, raise_on_error=True, usage_sink=usage_sink, motif_sink=motif_sink,
+        ):
             assistant_content += chunk
     except Exception as e:
         logger.error(f"LLM error: {e}", exc_info=True)
@@ -2132,6 +2135,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
+    # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
+    assistant_content += _suffixe_arret(assistant_content, motif_sink.get("stop_reason"))
 
     # Confirmations des directives inline en tête de réponse (vérité d'exécution)
     if inline_preamble:
