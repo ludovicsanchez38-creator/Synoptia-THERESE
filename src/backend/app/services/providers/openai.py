@@ -26,7 +26,6 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
-OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 
 # Outils via Responses (fiches lues le 09/10/2026) :
 # - gpt-6.1-sol : « Use the Responses API for tool calling ».
@@ -232,10 +231,15 @@ class OpenAIProvider(BaseProvider):
         return f"{base}/chat/completions"
 
     def url_responses(self) -> str:
-        """Responses : la base configurée, sinon l'adresse officielle."""
+        """Responses : la base configurée, sinon la même base que ``url_effective``.
+
+        Sans ``base_url``, le repli part de ``self.API_URL`` (pas de l'adresse
+        OpenAI en dur). Un héritier dont l'identifiant ressemble à un modèle
+        OpenAI ne doit pas viser api.openai.com.
+        """
         base: str | None = getattr(self.config, "base_url", None)
         if not base:
-            return OPENAI_RESPONSES_URL
+            base = self.API_URL
         base = base.rstrip("/")
         for suffixe in ("/chat/completions", "/responses"):
             if base.endswith(suffixe):
@@ -637,7 +641,14 @@ class OpenAIProvider(BaseProvider):
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Stream from OpenAI API with tool support."""
-        if tools and _outils_via_responses(self.config.model):
+        # Responses n'existe que chez OpenAI. Grok, GLM, Kimi, MiniMax et Qwen
+        # héritent de cette méthode : un identifiant personnalisé du catalogue
+        # OpenAI ne doit pas y envoyer leur clé.
+        if (
+            tools
+            and self.config.provider == LLMProvider.OPENAI
+            and _outils_via_responses(self.config.model)
+        ):
             source = self._lire_flux_responses(messages, tools)
         else:
             source = self._stream_request(self._build_request_body(messages, tools))

@@ -18,6 +18,11 @@ import json
 import httpx
 import pytest
 from app.services.providers.base import LLMConfig, LLMProvider, ToolCall, ToolResult, ToolTurn
+from app.services.providers.glm import GLMProvider
+from app.services.providers.grok import GrokProvider
+from app.services.providers.kimi import KimiProvider
+from app.services.providers.minimax import MiniMaxProvider
+from app.services.providers.qwen import QwenProvider
 
 MODELE = "gpt-6.1-sol"
 OUTIL = {
@@ -609,3 +614,50 @@ class TestTransport:
         assert len(trouve) == 1
         assert trouve[0]["provider"] == "openai"
         assert trouve[0].get("recommended") is not True
+
+
+class TestResponsesReserveAOpenAI:
+    """Un héritier (Grok, GLM, Kimi, MiniMax, Qwen) ne parle jamais à OpenAI.
+
+    Le basculement Responses ne regarde que le nom du modèle. Un identifiant
+    personnalisé « gpt-6.1-sol » ou « gpt-6-astra » sur un autre fournisseur
+    enverrait la clé de ce fournisseur à api.openai.com.
+    """
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("type_fournisseur", "fournisseur", "adresse"),
+        [
+            (GrokProvider, LLMProvider.GROK, "https://api.x.ai/v1/chat/completions"),
+            (GLMProvider, LLMProvider.GLM, "https://api.z.ai/api/paas/v4/chat/completions"),
+            (KimiProvider, LLMProvider.KIMI, "https://api.moonshot.ai/v1/chat/completions"),
+            (MiniMaxProvider, LLMProvider.MINIMAX, "https://api.minimax.io/v1/chat/completions"),
+            (
+                QwenProvider,
+                LLMProvider.QWEN,
+                "https://{EspaceDeTravail}.ap-southeast-1.maas.aliyuncs.com"
+                "/compatible-mode/v1/chat/completions",
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("modele", ["gpt-6.1-sol", "gpt-6-astra"])
+    async def test_un_heritier_garde_sa_cle_et_son_adresse(
+        self, type_fournisseur, fournisseur, adresse, modele,
+    ):
+        client = _Client(["data: [DONE]"])
+        config = LLMConfig(
+            provider=fournisseur,
+            model=modele,
+            api_key=f"cle-{fournisseur.value}",
+        )
+        instance = type_fournisseur(config, client)
+        await _collecter(instance.stream(None, MESSAGES, [OUTIL]))
+
+        assert client.requests, "aucun appel enregistré"
+        for appel in client.requests:
+            assert "api.openai.com" not in appel["url"], appel["url"]
+            assert appel["url"] == adresse, appel["url"]
+            assert appel["headers"]["Authorization"] == f"Bearer cle-{fournisseur.value}"
+        repli = instance.url_responses()
+        assert "api.openai.com" not in repli, repli
+        assert repli == adresse.removesuffix("/chat/completions") + "/responses"
