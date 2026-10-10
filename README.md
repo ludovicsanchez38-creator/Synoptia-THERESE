@@ -152,7 +152,7 @@ Voir [SECURITY.md](SECURITY.md) pour la politique de sécurité et le signalemen
 
 ## Licence
 
-[AGPL-3.0](LICENSE) - Synoptïa (Ludovic Sanchez)
+[AGPL-3.0](LICENSE) - Copyright (C) 2026 Synoptïa - Ludovic Sanchez <ludo@synoptia.fr>
 
 THÉRÈSE est un logiciel libre. Tu peux l'utiliser, le modifier et le redistribuer sous les termes de la licence AGPL-3.0. Si tu modifies THÉRÈSE et que des utilisateurs y accèdent (y compris via un réseau), tu dois publier ton code source modifié.
 
