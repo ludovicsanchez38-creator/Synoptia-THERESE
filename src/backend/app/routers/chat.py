@@ -65,7 +65,7 @@ from app.services.slash_commands import (
     parse_inline_commands,
     parse_slash_command,
 )
-from app.services.token_tracker import detect_uncertainty, get_token_tracker
+from app.services.token_tracker import TokenUsageRecord, detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     _base_tool_name,
     bloc_outils_sous_confirmation,
@@ -1486,6 +1486,34 @@ def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
     usage_totals["input_tokens"] += entree
     usage_totals["output_tokens"] += sortie
     usage_totals["appels"].append((entree, sortie))
+
+
+def _enregistrer_usage_du_tour(
+    conversation_id: str,
+    user_message: str,
+    full_content: str,
+    llm_service: LLMService,
+    usage_totals: dict[str, Any],
+) -> tuple[int, int, TokenUsageRecord]:
+    """Conserve le coût des appels effectués, même si leur suite est refusée."""
+    fournisseur, modele = _attribution(llm_service)
+    if usage_totals["estimated"] or usage_totals["input_tokens"] == 0:
+        input_tokens = len(user_message.split()) * 2
+        output_tokens = len(full_content.split()) * 2
+        appels = None
+    else:
+        input_tokens = usage_totals["input_tokens"]
+        output_tokens = usage_totals["output_tokens"]
+        appels = usage_totals["appels"]
+    record = get_token_tracker().record_usage(
+        conversation_id=conversation_id,
+        model=modele,
+        provider=fournisseur,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        appels=appels,
+    )
+    return input_tokens, output_tokens, record
 
 
 def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
@@ -3040,12 +3068,21 @@ async def _do_stream_response(
                                     full_content += event_data.get("content", "")
                             except json.JSONDecodeError:
                                 pass
+                        if echec_suite.get("refus"):
+                            # B-1793 : l'erreur ferme le flux côté client.
+                            # Compter les appels déjà faits AVANT de l'émettre,
+                            # sans poursuivre vers un done de succès.
+                            _enregistrer_usage_du_tour(
+                                conversation_id, user_message, full_content,
+                                llm_service, usage_totals,
+                            )
+                            if not usage_totals["estimated"]:
+                                stream_metrics.record_output_tokens(
+                                    int(usage_totals["output_tokens"])
+                                )
+                            yield continued_event
+                            return
                         yield continued_event
-                    # Un budget refusé ne termine que le générateur de
-                    # continuation. Sans ce retour, le parent finalise
-                    # quand même (repli, message, done de succès).
-                    if echec_suite.get("refus"):
-                        return
 
             elif event.type == "error":
                 # B-1155 : « API error: 529 » (forme gardée pour le disjoncteur)
@@ -3156,26 +3193,10 @@ async def _do_stream_response(
     # garde d'annulation. Les tokens ont réellement été consommés chez le
     # fournisseur, que l'utilisateur ait annulé ou non — les escamoter
     # fausserait le coût affiché dans Réglages.
-    token_tracker = get_token_tracker()
-
     # Usage réel accumulé sur tous les tours d'outils (dette 14/06/2026), sinon
     # estimation ~1 mot = 2 tokens en filet (providers pas encore migrés).
-    if usage_totals["estimated"] or usage_totals["input_tokens"] == 0:
-        input_tokens = len(user_message.split()) * 2
-        output_tokens = len(full_content.split()) * 2
-        appels = None
-    else:
-        input_tokens = usage_totals["input_tokens"]
-        output_tokens = usage_totals["output_tokens"]
-        appels = usage_totals["appels"]
-
-    usage_record = token_tracker.record_usage(
-        conversation_id=conversation_id,
-        model=modele,
-        provider=fournisseur,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        appels=appels,
+    input_tokens, output_tokens, usage_record = _enregistrer_usage_du_tour(
+        conversation_id, user_message, full_content, llm_service, usage_totals,
     )
     # Revue 30/08 : coller l'usage mesuré AVANT le finish_stream du
     # finally (annulation / déconnexion). L'estimation mot×2 du tracker

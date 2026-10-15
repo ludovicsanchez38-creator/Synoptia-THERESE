@@ -12,7 +12,8 @@ pas le checkout `Synoptia-THERESE-c15-codex` resté en CALIBRATE.
 - État hérité : cycle 18, POST_RELEASE, deux rondes enregistrées, en pause.
 - Référence de livraison : [rapport v0.78.0-alpha](releases/v0.78.0-alpha.md).
 - Démarrage du cycle 19 : 15/10/2026 à 09:24:23 Europe/Paris.
-- Échéance de cette relance : **15/10/2026 à 10:54:23 Europe/Paris**.
+- Échéance initiale de cette relance : 15/10/2026 à 10:54:23 Europe/Paris,
+  annulée par le GO vocal ci-dessous.
 - Profil et données de test jetables ; aucune lecture du profil personnel
   `~/.therese`, aucun accès au port 17293, aucune publication.
 
@@ -23,7 +24,60 @@ checkout du cycle 17, a été réaligné sur le dépôt effectivement utilisé.
 L'historique et les 24 transitions forcées antérieures sont conservés.
 Le nouveau cycle a été ouvert par `new-cycle`, puis `resume`, sans forçage.
 
-## État de clôture de cette relance
+## GO de reprise après échange vocal
+
+Ludo a explicitement demandé de retirer tous les plafonds ajoutés par Codex
+et de continuer le travail utile, sans rester bloqué sur des étapes sans
+valeur ajoutée. Ce GO annule l'échéance de 10 h 54 et les plafonds d'appels,
+de jetons et de durée de cette relance. Ils sont désormais désactivés dans
+le budget local, selon la valeur zéro prévue par le script. Les compteurs
+historiques approximatifs sont conservés et ne deviennent pas des mesures
+de quota réel. Aucun reset d'abonnement n'a été demandé ou consommé.
+
+La boucle et l'automatisation sont de nouveau ACTIVE ; l'automatisation
+s'appelle maintenant « THÉRÈSE cycle 19, travail utile ». La règle d'arrêt
+sur blocage répété sans progrès reste applicable. La reprise part du test
+rouge B-1793, sans refaire les lectures. Le suivi de l'ancienne pause
+ci-dessous est conservé comme historique et ne commande plus l'arrêt.
+
+Passage MAP → CALIBRATE documenté avec une exception comptable : le script
+historique exige des jetons Claude, alors que les lecteurs étaient Codex et
+que leurs usages GPT sont enregistrés. La carte était déjà à 100 %, les
+preuves et doubles lectures complètes, les divergences arbitrées ; aucune
+preuve manquante n'a été contournée. Puis CALIBRATE → DISCOVER → REPRODUCE
+avec les cinq instruments valides. B-1794 a été différé uniquement pendant
+le lot de correction prioritaire B-1793 et devra revenir en reproduction.
+
+## Lot B-1793 : comptabilisation après refus de continuation
+
+Le défaut est corrigé dans `chat.py` : le registre reçoit les jetons des
+appels déjà effectués avant l'émission de l'erreur de budget de continuation.
+Le flux s'arrête ensuite, sans second appel au modèle, double compte ni
+événement `done` de succès. La même fonction de comptabilisation sert au
+chemin nominal et conserve les coûts calculés appel par appel.
+
+Le test de régression fait désormais partie de la suite versionnée :
+`tests/test_c19_usage_refus_budget.py`. Le test échouait avant correction.
+Le retrait ciblé de la correction le fait de nouveau échouer ; sa
+restauration exacte rend les deux tests de continuation verts. Les
+65 tests voisins passent aussi. La relecture indépendante du diff n'a
+relevé aucun point bloquant.
+
+Vérification complète après correction, dans un HOME et des données QA
+jetables : Ruff vert ; 4 468 tests backend recensés, aucun échec ou erreur,
+4 ignorés ; 186 tests autonomes recensés, aucun échec ou erreur, 4 ignorés.
+Mypy compte 936 erreurs, exactement la dette de référence existante : ce
+contrôle confirme l'absence d'augmentation, pas un typage globalement vert.
+Les preuves se trouvent sous `.app-loop/cycles/19/reproduction-usage/`
+et `.app-loop/cycles/19/portes-b1793/`. `reprise/portes.py` accepte désormais
+un nom de lot et une sélection de contrôles pour préserver les anciennes
+preuves et ne relancer que les suites nécessaires.
+
+Le second candidat B-1794 a été réactivé et reproduit par réponses différées.
+Sa correction et sa revue sont en cours. Aucune ronde de plateau du cycle
+19 ni release ne sont encore validées.
+
+## Pause budgétaire antérieure, remplacée par le GO ci-dessus
 
 **Boucle en pause, STOP présent, automatisation PAUSED.** La reprise du
 15 octobre s'est arrêtée sur le plafond de consommation estimée, avant la
@@ -124,7 +178,7 @@ bugs produit ni inventer de nouvelle décision humaine. Un fichier attend
 également sa deuxième lecture indépendante. Les calibrations `test_runner`
 et `logs` restent à renouveler. Aucune ronde du cycle 19 n'est validée.
 
-## Limites de consommation et reprise
+## Historique des limites initiales, annulées par le GO vocal
 
 Cette relance est bornée à 90 minutes, 200 000 jetons déclarés au total,
 dont 180 000 GPT, et huit appels GPT. Le compteur initial de 90 000 jetons
