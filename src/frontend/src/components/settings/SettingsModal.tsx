@@ -113,6 +113,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
   // fournisseur. Une ref et non un état : `handleSelectProvider` est asynchrone
   // et lirait une valeur périmée dans sa fermeture.
   const modelesParFournisseur = useRef<Partial<Record<api.LLMProvider, string>>>({});
+  const dernierChoixLLM = useRef(0);
+  const enregistrementLLM = useRef<Promise<void>>(Promise.resolve());
+  const configurationLLMEnregistree = useRef<{ provider: api.LLMProvider; model: string } | null>(null);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [corruptedKeys, setCorruptedKeys] = useState<string[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -286,6 +289,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
       setSelectedProvider(loadedProvider);
       setSelectedModel(resolvedModel);
       modelesParFournisseur.current[loadedProvider] = resolvedModel;
+      configurationLLMEnregistree.current = { provider: loadedProvider, model: resolvedModel };
       setStats(statsData);
       setProfile(profileData);
       setWorkingDir(workingDirData?.path || null);
@@ -503,9 +507,37 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
     }
   }
 
+  /** B-1794 : ignorer les lectures dépassées et terminer les POST dans l'ordre. */
+  async function enregistrerChoixLLM(
+    choix: number, provider: api.LLMProvider, model: string, effort?: LLMEffort,
+  ): Promise<boolean> {
+    const enregistrement = enregistrementLLM.current.then(async () => {
+      if (choix !== dernierChoixLLM.current) return false;
+      await api.setLLMConfig(provider, model, effort);
+      modelesParFournisseur.current[provider] = model;
+      configurationLLMEnregistree.current = { provider, model };
+      window.dispatchEvent(new Event('therese:llm-config-changed'));
+      return choix === dernierChoixLLM.current;
+    });
+    // Un refus n'empêche pas d'enregistrer le prochain choix.
+    enregistrementLLM.current = enregistrement.then(() => undefined, () => undefined);
+    return enregistrement;
+  }
+
+  async function retablirConfigurationLLM(choix: number): Promise<boolean> {
+    // Une ancienne sauvegarde peut réussir pendant que la dernière lecture échoue.
+    await enregistrementLLM.current;
+    if (choix !== dernierChoixLLM.current) return false;
+    const configuration = configurationLLMEnregistree.current;
+    if (configuration) {
+      setSelectedProvider(configuration.provider);
+      setSelectedModel(configuration.model);
+    }
+    return true;
+  }
+
   async function handleSelectProvider(provider: api.LLMProvider) {
-    const previousProvider = selectedProvider;
-    const previousModel = selectedModel;
+    const choix = ++dernierChoixLLM.current;
     setSelectedProvider(provider);
     // Hors du `if (defaultModel)` plus bas, et avant tout le reste : changer
     // de fournisseur n'est jamais un refus de clé. `defaultModel` est vide
@@ -542,13 +574,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
       setOperationStatus('Enregistrement du fournisseur IA…');
       setRetryOperation(null);
       try {
-        await api.setLLMConfig(provider, defaultModel);
-        modelesParFournisseur.current[provider] = defaultModel;
-        window.dispatchEvent(new Event('therese:llm-config-changed'));
+        if (!await enregistrerChoixLLM(choix, provider, defaultModel)) return;
         setOperationStatus('Fournisseur IA enregistré.');
       } catch (err) {
-        setSelectedProvider(previousProvider);
-        setSelectedModel(previousModel);
+        if (!await retablirConfigurationLLM(choix)) return;
         setOperationStatus(null);
         setError(err instanceof Error ? err.message : 'Le fournisseur IA n’a pas pu être enregistré.');
         setRetryOperation(() => () => void handleSelectProvider(provider));
@@ -557,18 +586,18 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
   }
 
   async function handleSelectModel(modelId: string) {
+    const choix = ++dernierChoixLLM.current;
     setError(null);
     setOperationStatus('Enregistrement du modèle IA…');
     setRetryOperation(null);
     try {
       const effort = (await api.getLLMConfig()).effort as LLMEffort | null;
       const nouvelEffort = effort === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : effort ?? 'auto';
-      await api.setLLMConfig(selectedProvider, modelId, nouvelEffort);
+      if (!await enregistrerChoixLLM(choix, selectedProvider, modelId, nouvelEffort)) return;
       setSelectedModel(modelId);
-      modelesParFournisseur.current[selectedProvider] = modelId;
-      window.dispatchEvent(new Event('therese:llm-config-changed'));
       setOperationStatus('Modèle IA enregistré.');
     } catch (err) {
+      if (!await retablirConfigurationLLM(choix)) return;
       setOperationStatus(null);
       setError(err instanceof Error ? err.message : 'Le modèle IA n’a pas pu être enregistré.');
       setRetryOperation(() => () => void handleSelectModel(modelId));

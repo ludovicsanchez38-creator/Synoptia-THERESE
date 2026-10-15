@@ -73,9 +73,45 @@ et `.app-loop/cycles/19/portes-b1793/`. `reprise/portes.py` accepte désormais
 un nom de lot et une sélection de contrôles pour préserver les anciennes
 preuves et ne relancer que les suites nécessaires.
 
-Le second candidat B-1794 a été réactivé et reproduit par réponses différées.
-Sa correction et sa revue sont en cours. Aucune ronde de plateau du cycle
-19 ni release ne sont encore validées.
+Le correctif B-1793 a été commité et poussé sur `codex/cycle-19` dans
+`1f31c26a`. La route est bien montée dans le moteur de production
+(`main.py`, routeur `/api/chat`).
+
+## Lot B-1794 : ordre des choix de modèle et de fournisseur
+
+Le candidat a été réactivé et reproduit : deux lectures de configuration
+résolues dans l'ordre inverse remettaient l'ancien modèle choisi. Le
+correctif ignore les lectures dépassées et sérialise les écritures. Les
+choix de fournisseur et de modèle utilisent la même file de sauvegarde.
+
+La première revue a trouvé un cas supplémentaire : si une sauvegarde
+réussit puis que le choix suivant échoue, l'interface doit afficher la
+dernière configuration réellement enregistrée. Trois tests ont reproduit
+ce cas (refus de lecture, refus d'écriture, fournisseur intermédiaire
+jamais sauvegardé). La correction conserve désormais chaque sauvegarde
+réussie, puis rétablit cette configuration après un échec du dernier choix.
+La revue indépendante a levé sa réserve après ce complément.
+
+Les 102 tests voisins des réglages passent. La suite frontend complète
+après complément compte **3 466 tests, tous verts** ; TypeScript et ESLint
+passent également. Les preuves se trouvent dans
+`.app-loop/cycles/19/reproduction-modele/` et `portes-b1794-revu/`.
+Les rapports cartographiques des quatre fichiers changés sont actualisés :
+validation à **100 %, 2 140 / 2 140**, aucune erreur de preuve ou lecture
+indépendante manquante. Les 73 transitions critiques héritées sont revérifiées
+contre les tests C19, avec les deux nouvelles garanties : 75 / 75.
+
+La couverture écran exhaustive est en cours sur la pile jetable hors ligne,
+via `python3 .app-loop/cycles/19/reprise/demarrage.py --mode couverture`.
+Ce mode réutilise le même lancement que le smoke et l'instrument versionné
+`tests/couverture/couverture-ecran.mjs`. Son reçu, ses journaux et captures
+sont séparés dans `.app-loop/cycles/19/couverture-ecran/` ; il ferme les
+serveurs détenus à la fin. Pendant ce passage, ne pas lancer de seconde
+campagne sur les mêmes ports et ne pas modifier les sources servies.
+
+B-1794 reste ouvert jusqu'au dernier sabotage contrôlé après l'arrêt de
+cette pile, pour ne pas perturber les mesures en cours. Aucun plateau du
+cycle 19 ni release n'est encore validé.
 
 ## Pause budgétaire antérieure, remplacée par le GO ci-dessus
 
