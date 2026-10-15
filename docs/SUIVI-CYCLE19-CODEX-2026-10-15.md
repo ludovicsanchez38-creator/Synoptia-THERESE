@@ -5,6 +5,14 @@ Claude, en évitant les tentatives répétées qui ont consommé les quotas lors
 du cycle 17. Le présent cycle reprend le dépôt principal après le cycle 18,
 pas le checkout `Synoptia-THERESE-c15-codex` resté en CALIBRATE.
 
+**État courant : cycle 19 validé sur deux rondes indépendantes, en
+HUMAN_GATE, boucle et automatisation PAUSED avant publication.** Deux
+correctifs sont committés et poussés sur `codex/cycle-19` : `1f31c26a`
+(comptabilisation des jetons) et `41a438a8` (ordre des choix IA).
+Les plafonds ajoutés par Codex restent désactivés ; cette pause correspond
+au GO précis de publication demandé par Ludo, pas à une enveloppe estimée.
+Aucun processus QA n'est conservé. Aucune version n'a été publiée.
+
 ## Base et périmètre
 
 - Dépôt : `/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE`.
@@ -34,7 +42,7 @@ le budget local, selon la valeur zéro prévue par le script. Les compteurs
 historiques approximatifs sont conservés et ne deviennent pas des mesures
 de quota réel. Aucun reset d'abonnement n'a été demandé ou consommé.
 
-La boucle et l'automatisation sont de nouveau ACTIVE ; l'automatisation
+La boucle et l'automatisation avaient été remises ACTIVE ; l'automatisation
 s'appelle maintenant « THÉRÈSE cycle 19, travail utile ». La règle d'arrêt
 sur blocage répété sans progrès reste applicable. La reprise part du test
 rouge B-1793, sans refaire les lectures. Le suivi de l'ancienne pause
@@ -46,7 +54,7 @@ que leurs usages GPT sont enregistrés. La carte était déjà à 100 %, les
 preuves et doubles lectures complètes, les divergences arbitrées ; aucune
 preuve manquante n'a été contournée. Puis CALIBRATE → DISCOVER → REPRODUCE
 avec les cinq instruments valides. B-1794 a été différé uniquement pendant
-le lot de correction prioritaire B-1793 et devra revenir en reproduction.
+le lot de correction prioritaire B-1793, puis repris et corrigé ci-dessous.
 
 ## Lot B-1793 : comptabilisation après refus de continuation
 
@@ -101,7 +109,7 @@ validation à **100 %, 2 140 / 2 140**, aucune erreur de preuve ou lecture
 indépendante manquante. Les 73 transitions critiques héritées sont revérifiées
 contre les tests C19, avec les deux nouvelles garanties : 75 / 75.
 
-La couverture écran exhaustive est en cours sur la pile jetable hors ligne,
+La couverture écran a été exécutée sur la pile jetable hors ligne,
 via `python3 .app-loop/cycles/19/reprise/demarrage.py --mode couverture`.
 Ce mode réutilise le même lancement que le smoke et l'instrument versionné
 `tests/couverture/couverture-ecran.mjs`. Son reçu, ses journaux et captures
@@ -109,9 +117,65 @@ sont séparés dans `.app-loop/cycles/19/couverture-ecran/` ; il ferme les
 serveurs détenus à la fin. Pendant ce passage, ne pas lancer de seconde
 campagne sur les mêmes ports et ne pas modifier les sources servies.
 
-B-1794 reste ouvert jusqu'au dernier sabotage contrôlé après l'arrêt de
-cette pile, pour ne pas perturber les mesures en cours. Aucun plateau du
-cycle 19 ni release n'est encore validé.
+B-1794 a ensuite passé le sabotage contrôlé : le fichier antérieur remis
+temporairement fait échouer trois tests de course, puis la restauration
+exacte du correctif rend les neuf tests du fichier verts. Le bug est fermé.
+
+## Clôture de la validation et portail de publication
+
+`plateau-evaluate` a accepté les deux preuves C19, par agents distincts :
+`.app-loop/cycles/19/plateau-round-a.json` et `plateau-round-b.json`.
+Le compteur est à **2 / 2**, sans forçage de cette validation. Aucun bug
+`candidate`, `confirmed` ou `open` ne reste dans le registre. Les défauts
+historiques différés ne sont pas présentés comme corrigés.
+
+La ronde B a rejoué toutes les portes sur les sources inchangées :
+4 464 tests Python principaux réussis et 4 ignorés ; 182 tests autonomes
+réussis et 4 ignorés ; 3 466 tests frontend réussis. Ruff, TypeScript et
+ESLint passent. Les 26 avertissements ESLint et 936 erreurs mypy de référence
+restent explicitement visibles. Les 3 600 empreintes de fichiers suivis
+avant et après la ronde B sont identiques.
+
+Chaque passage écran couvre 21 écrans, deux largeurs (1 440 et 800 px) et
+deux thèmes, soit 84 captures. Les 199 entrées de gestes comprennent
+153 clics exercés et 46 non exercés : 11 contrôles déjà sélectionnés,
+15 actions sortantes ou à confirmer, 16 contrôles inactifs et 4 contrôles
+natifs. Ne pas présenter ce résultat comme 199 clics réels.
+
+Les trois signaux sont identiques entre A et B : deux débordements du
+pipeline acceptés parce que la suite des colonnes est annoncée, et un
+faux positif sur « Aujourd'hui ». Une sonde indépendante a réellement
+cliqué Période suivante puis Aujourd'hui : octobre → novembre → octobre,
+avec retour visuel au jour courant. Le tri neutre est conservé dans
+`couverture-ecran/triage-neutre.json`. Le contrôle transitoire de l'animation
+du calendrier est documenté et levé après stabilisation dans la ronde B.
+Aucune erreur console, réseau ou backend inexpliquée n'est retenue.
+
+Les avis visuels distinguent les captures produites des captures inspectées
+manuellement. Le contrôle porte sur Vite et le moteur hors ligne jetable,
+pas sur l'application Tauri packagée, les comptes externes ou des appels
+LLM réels. La suite séparée `tests/e2e` n'a pas été exécutée. Les relecteurs
+sont distincts, mais tous Codex : la diversité des moteurs reste dégradée.
+
+Le GAP_SCAN, réalisé après les deux rondes, ne trouve aucune proposition
+nouvelle attestée sur les parcours vérifiés. Le registre conserve ses
+162 décisions antérieures (137 acceptées, 15 différées, 10 refusées), sans
+réouverture ni nouvelle autorisation inventée. Preuve :
+`.app-loop/cycles/19/gap-scan/rapport.json`.
+
+Passages normaux ZERO_CHECK → GAP_SCAN → HUMAN_GATE, puis pause de la boucle
+et de l'automatisation `th-r-se-cycle-19-reprise-born-e`, confirmée PAUSED par
+l'application. Tous les processus QA possédés sont arrêtés et les ports
+1 420 / 17 393 fermés. Aucun changement de main, tag, release, installation
+ou publication. Le prochain acte est le workflow `release-therese` sur GO
+précis de Ludo ; un heartbeat ne doit pas franchir ce portail.
+
+Les scripts de reprise acceptent désormais des noms de lots séparés pour
+préserver les preuves : `portes.py --lot <nom>` et
+`demarrage.py --mode couverture --lot <nom>`. La procédure de sabotage
+`reprise/sabotage-modele.py` refuse de modifier la source si un port QA est
+encore occupé, puis restaure le fichier à l'identique. Ces scripts restent
+locaux et ignorés par Git, comme les autres preuves du cycle.
 
 ## Pause budgétaire antérieure, remplacée par le GO ci-dessus
 
