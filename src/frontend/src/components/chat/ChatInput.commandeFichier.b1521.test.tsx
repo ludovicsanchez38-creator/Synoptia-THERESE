@@ -75,6 +75,7 @@ describe('ChatInput - une commande de fichier est un envoi de document (B-1521)'
     await act(async () => { fireEvent.click(screen.getByTestId('chat-send-btn')); });
 
     const carte = await screen.findByTestId('chat-cloud-consent');
+    expect(carte).toHaveTextContent('Autoriser le premier envoi de documents à OpenAI');
     expect(carte).toHaveTextContent('contenu intégral des documents joints');
     expect(apiMocks.streamMessage).not.toHaveBeenCalled();
   });
