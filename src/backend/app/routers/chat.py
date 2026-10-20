@@ -2124,6 +2124,10 @@ async def send_message(
         )
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.system_prompt = (context.system_prompt or "") + (
+        "\nAucun outil de messagerie n'est disponible dans ce tour sans flux. "
+        "Tu peux rédiger un texte, mais ne propose ni lecture ni envoi de mail.\n"
+    )
     bilan_contexte = bilan_depuis_fenetre(
         _passes_que_le_fournisseur_garde(messages), context
     )
@@ -2851,7 +2855,9 @@ async def _do_stream_response(
         tools = MEMORY_TOOLS + tools
 
         # Add workspace tools (email, calendar)
-        tools = WORKSPACE_TOOLS + tools
+        from app.services.workspace_tools import outils_workspace_disponibles
+
+        tools = (await outils_workspace_disponibles(session, WORKSPACE_TOOLS)) + tools
 
         # Add web_search + browser tools for non-Gemini providers (if enabled).
         # BUG-141 : le browser n'est annoncé que si playwright est importable
@@ -2922,6 +2928,18 @@ async def _do_stream_response(
         # croyait exaucé, écrivait au passé composé et fabriquait un lien de
         # téléchargement mort — juste au-dessus de la carte qui le contredit.
         context.system_prompt += bloc_outils_sous_confirmation(tool_names)
+
+    noms_offerts = {t.get("function", {}).get("name", "") for t in tools}
+    if not noms_offerts.intersection({"read_emails", "search_emails", "summarize_emails", "send_email"}):
+        context.system_prompt = (context.system_prompt or "") + (
+            "\n## Messagerie disponible pour ce tour\n"
+            "Aucune boîte mail native n'est branchée ou accessible par les outils de ce tour. "
+            "Tu peux rédiger un texte de mail dans la conversation. Ne propose pas de lire "
+            "ni d'envoyer des mails sans outil réellement offert. Un connecteur externe "
+            "ne permet que les opérations explicitement présentes dans sa liste d'outils.\n"
+        )
+    elif "send_email" not in noms_offerts:
+        context.system_prompt = (context.system_prompt or "") + "\nLa messagerie est en lecture seule : ne propose pas d'envoyer des mails.\n"
 
     # BUG-160 : le modèle n'a aucun outil qui lise un fichier local, et la
     # consigne « ne dis jamais que tu ne peux pas SI un outil le permet »

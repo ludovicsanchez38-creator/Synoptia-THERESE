@@ -40,7 +40,7 @@ class _FournisseurPlusieursTours:
         self.charges.append(deepcopy(messages))
         yield StreamEvent(
             type="tool_call",
-            tool_call=ToolCall(id="lecture-a", name="search_emails", arguments={"query": "a"}),
+            tool_call=ToolCall(id="lecture-a", name="list_tasks", arguments={"status": "todo"}),
         )
         yield StreamEvent(type="done", stop_reason="tool_calls", input_tokens=3, output_tokens=2)
 
@@ -56,7 +56,7 @@ class _FournisseurPlusieursTours:
         if len(self.tours_precedents) == 1:
             yield StreamEvent(
                 type="tool_call",
-                tool_call=ToolCall(id="lecture-b", name="search_emails", arguments={"query": "b"}),
+                tool_call=ToolCall(id="lecture-b", name="list_tasks", arguments={"status": "in_progress"}),
             )
             yield StreamEvent(type="done", stop_reason="tool_calls", input_tokens=4, output_tokens=2)
         else:

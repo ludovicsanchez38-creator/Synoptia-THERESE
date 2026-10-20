@@ -36,7 +36,7 @@ class _Service:
     async def stream_response_with_tools(self, context, tools=None):
         yield StreamEvent(
             type="tool_call",
-            tool_call=ToolCall(id="c1", name="search_emails", arguments={"query": "a"}),
+            tool_call=ToolCall(id="c1", name="list_tasks", arguments={}),
         )
         yield StreamEvent(
             type="done", stop_reason="tool_calls", input_tokens=20, output_tokens=5,

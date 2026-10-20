@@ -1720,3 +1720,25 @@ async def _create_calendar_event(
     except Exception:
         logger.exception("Erreur creation evenement")
         return "Erreur lors de la création de l'événement. Le détail est au journal."
+
+
+async def outils_workspace_disponibles(
+    session: AsyncSession, offerts: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """R1-11 : annoncer les accès configurés, sans ouvrir de connexion réseau."""
+    from app.models.entities import EmailAccount
+
+    requete = select(EmailAccount).order_by(EmailAccount.created_at, EmailAccount.id)
+    compte_id = _compte_ecran.get()
+    if compte_id:
+        requete = requete.where(EmailAccount.id == compte_id)
+    compte = (await session.execute(requete.limit(1))).scalar_one_or_none()
+    lecture = bool(compte and (
+        (compte.provider == 'gmail' and (compte.access_token or compte.refresh_token))
+        or (compte.provider == 'imap' and compte.imap_host and compte.imap_password)
+    ))
+    envoi = bool(lecture and compte and (compte.provider == 'gmail' or compte.smtp_host))
+    sans_lecture = {'read_emails', 'search_emails', 'summarize_emails'} if not lecture else set()
+    sans_envoi = {'send_email'} if not envoi else set()
+    return [o for o in (WORKSPACE_TOOLS if offerts is None else offerts)
+            if o['function']['name'] not in sans_lecture | sans_envoi]

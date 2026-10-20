@@ -12,6 +12,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+from app.services.context import ContextWindow
 from httpx import AsyncClient
 
 
@@ -280,7 +281,7 @@ class TestActionEndpoint:
             config = _FakeConfig()
 
             def prepare_context(self, messages, memory_context=None):
-                return []
+                return ContextWindow(messages=list(messages), system_prompt="")
 
             async def stream_response_with_tools(self, context, tools=None):
                 yield StreamEvent(type="text", content="# Rapport\n\nContenu rédigé.")
@@ -332,7 +333,7 @@ class TestActionEndpoint:
             config = _FakeConfig()
 
             def prepare_context(self, messages, memory_context=None):
-                return []
+                return ContextWindow(messages=list(messages), system_prompt="")
 
             async def stream_response_with_tools(self, context, tools=None):
                 yield StreamEvent(type="done", stop_reason="end_turn")
@@ -386,7 +387,7 @@ class TestActionEndpoint:
             config = _FakeConfig()
 
             def prepare_context(self, messages, memory_context=None):
-                return []
+                return ContextWindow(messages=list(messages), system_prompt="")
 
             async def stream_response_with_tools(self, context, tools=None):
                 yield StreamEvent(type="text", content="# Annuaire\n\nContenu.")

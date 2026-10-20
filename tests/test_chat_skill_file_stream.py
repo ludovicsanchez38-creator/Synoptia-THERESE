@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.models.entities import Conversation
+from app.services.context import ContextWindow
 from app.services.providers.base import StreamEvent
 
 
@@ -33,7 +34,7 @@ class _FakeLLM:
     config = _FakeConfig()
 
     def prepare_context(self, messages, memory_context=None):
-        return []
+        return ContextWindow(messages=list(messages), system_prompt="")
 
     async def stream_response_with_tools(self, context, tools=None):
         yield StreamEvent(type="text", content="# Doc\n\nContenu du document.")
