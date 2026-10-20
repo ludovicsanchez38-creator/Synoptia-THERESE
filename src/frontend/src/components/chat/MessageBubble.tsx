@@ -1,3 +1,4 @@
+import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { texteContexteTransmis } from '../../lib/contexteTransmis';
 import { formaterCout } from '../../lib/coutAffiche';
@@ -18,7 +19,7 @@ import css from 'react-syntax-highlighter/dist/esm/languages/hljs/css';
 import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import sql from 'react-syntax-highlighter/dist/esm/languages/hljs/sql';
-import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, FileDown, Image as ImageIcon, Cpu, Cloud, ExternalLink } from 'lucide-react';
+import { User, Copy, Check, AlertCircle, Coins, Bookmark, Download, FileDown, Image as ImageIcon, Cpu, Cloud, ExternalLink } from 'lucide-react';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -355,7 +356,7 @@ export const MessageBubble = memo(function MessageBubble({
             : 'bg-accent-tint text-accent-cyan-ink shadow-[0_0_12px_rgba(34,211,238,0.2)]'
         )}
       >
-        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        {isUser ? <User className="w-4 h-4" /> : <CharacterPortrait index={0} className="h-8 w-8 rounded-md" />}
       </div>
 
       {/* Content with premium styling */}

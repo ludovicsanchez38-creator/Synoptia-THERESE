@@ -37,6 +37,7 @@ import { attendrePersistance, assurerConversationPersistee } from '../../lib/rat
 import { decorer, DECORATIONS } from '../../lib/catalogueModeles';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
+import { SelecteurModele } from './SelecteurModele';
 import { getWorkingDirectory } from '../../services/api/config';
 import { copyToWorkingDirectory } from '../../services/api/files';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, annulerTraitement, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
@@ -1544,20 +1545,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
             <Cpu className="w-3.5 h-3.5 text-accent-cyan-ink" />
             {availableModels.length > 1 ? (
-              <select
-                aria-label="Modèle de conversation"
-                aria-describedby={DECORATIONS[currentModel]?.badge === 'Préversion' ? 'chat-model-preview' : undefined}
-                value={currentModel}
-                onChange={(e) => handleModelChange(e.target.value)}
-                className="min-h-9 text-sm font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan-ink transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2322D3EE' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}
-              >
-                {availableModels.map((m) => (
-                  <option key={m} value={m}>
-                    {DECORATIONS[m]?.badge === 'Préversion' ? `${decorer([m])[0].name} (préversion)` : decorer([m])[0].name}
-                  </option>
-                ))}
-              </select>
+              <SelecteurModele modeles={availableModels} modele={currentModel}
+                onChange={(modele) => void handleModelChange(modele)}
+                description={DECORATIONS[currentModel]?.badge === 'Préversion' ? 'chat-model-preview' : undefined} />
             ) : (
               <span className="text-xs font-medium text-text">{decorer([currentModel])[0].name}</span>
             )}

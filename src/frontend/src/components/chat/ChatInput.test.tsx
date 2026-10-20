@@ -220,16 +220,18 @@ describe('ChatInput sans modèle', () => {
     apiMocks.setLLMConfig.mockRejectedValueOnce(new Error('Backend indisponible'));
     render(<ChatInput />);
 
-    const selector = await screen.findByLabelText('Modèle de conversation');
+    const boutonModele = await screen.findByRole('button', { name: 'Modèle de conversation' });
+    fireEvent.click(boutonModele);
+    const selector = screen.getByRole('listbox', { name: 'Choisir le modèle' });
     fireEvent.change(selector, { target: { value: 'modèle-b' } });
     expect(await screen.findByRole('alert')).toHaveTextContent('Changement de modèle non enregistré');
-    expect(selector).toHaveValue('modèle-a');
+    expect(boutonModele).toHaveTextContent('modèle-a');
 
     apiMocks.setLLMConfig.mockResolvedValueOnce({ provider: 'ollama', model: 'modèle-b', available_models: ['modèle-a', 'modèle-b'], available: true });
     apiMocks.getLLMConfig.mockResolvedValueOnce({ provider: 'ollama', model: 'modèle-b', available_models: ['modèle-a', 'modèle-b'], available: true });
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     await waitFor(() => expect(apiMocks.setLLMConfig).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(selector).toHaveValue('modèle-b'));
+    await waitFor(() => expect(boutonModele).toHaveTextContent('modèle-b'));
     expect(screen.queryByText(/Changement de modèle non enregistré/)).not.toBeInTheDocument();
   });
 
@@ -256,4 +258,17 @@ describe('ChatInput sans modèle', () => {
     await waitFor(() => expect(input).toHaveValue('Analyse cette preuve'));
     expect(screen.getByLabelText('Pièces jointes')).toHaveTextContent('Prêt');
   });
+  it('R1-12 : ouvre une liste de modèles défilante et rend le focus à Échap', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({ provider: 'ollama', model: 'local-0', available_models: Array.from({ length: 20 }, (_, i) => `local-${i}`), available: true });
+    render(<ChatInput />);
+    const bouton = await screen.findByRole('button', { name: 'Modèle de conversation' });
+    fireEvent.click(bouton);
+    const liste = await screen.findByRole('listbox', { name: 'Choisir le modèle' });
+    expect(liste.querySelectorAll('option')).toHaveLength(20);
+    expect(liste).toHaveAttribute('size', '8');
+    fireEvent.keyDown(liste, { key: 'Escape' });
+    await waitFor(() => expect(bouton).toHaveFocus());
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
 });

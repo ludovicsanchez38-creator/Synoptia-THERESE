@@ -449,3 +449,9 @@ describe("D2 : l'origine interne de l'app desktop est aussi interceptée", () =>
     expect(downloadSkillFileMock).not.toHaveBeenCalled();
   });
 });
+
+
+it('R1-12 : utilise le portrait de Thérèse commun aux parcours', () => {
+  const { container } = render(<MessageBubble message={makeMessage()} />);
+  expect(container.querySelector('[style*="therese-character-atlas-v1.png"]')).not.toBeNull();
+});

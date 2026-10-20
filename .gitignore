@@ -123,3 +123,7 @@ test-results/
 
 # Captures des campagnes personas (lourdes, hors dépôt ; les traces .md restent)
 docs/campagnes/*/captures/
+
+# Preuves locales de la recette R1, conservées dans le worktree
+/.recette-r1/
+/recette-r1-base/

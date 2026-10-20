@@ -2,7 +2,7 @@
  * Lot M1 : la puce du modèle dit « Préversion » pour Mistral Large 4,
  * et continue d'afficher l'effort choisi.
  */
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
@@ -67,9 +67,11 @@ describe('puce du modèle, lot M1', () => {
       effort_resolu: null,
     });
     render(<ChatInput />);
-    const option = await screen.findByRole('option', { name: 'mistral-large-4 (préversion)' });
-    expect(option).toHaveTextContent('mistral-large-4 (préversion)');
-    const select = screen.getByRole('combobox', { name: 'Modèle de conversation' });
+    const bouton = await screen.findByRole('button', { name: 'Modèle de conversation' });
+    fireEvent.click(bouton);
+    const option = await screen.findByRole('option', { name: 'Mistral Large 4 (préversion)' });
+    expect(option).toHaveTextContent('Mistral Large 4 (préversion)');
+    const select = bouton;
     const badge = screen.getByText('Préversion');
     expect(select).toHaveAttribute('aria-describedby', badge.id);
     expect(select).toHaveAccessibleDescription('Préversion');

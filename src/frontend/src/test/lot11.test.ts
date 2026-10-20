@@ -54,7 +54,7 @@ describe('lot 11 - accessibilité, jetons et robustesse frontend', () => {
   });
 
   it('B-415 : le sélecteur de modèle a une hauteur tactile', () => {
-    const src = lire('components/chat/ChatInput.tsx');
+    const src = lire('components/chat/SelecteurModele.tsx');
     const bloc = src.slice(src.indexOf('aria-label="Modèle de conversation"'), src.indexOf('aria-label="Modèle de conversation"') + 600);
     expect(bloc).toMatch(/min-h-9/);
   });

@@ -112,14 +112,14 @@ class TestActionRunner:
     def test_unknown_agent_raises(self):
         """Un agent_id inconnu leve une ValueError."""
         with pytest.raises(ValueError, match="Agent inconnu"):
-            asyncio.get_event_loop().run_until_complete(
+            asyncio.run(
                 ActionRunner.run("agent-inexistant")
             )
 
     def test_missing_required_param_raises(self):
         """Un parametre requis manquant leve une ValueError."""
         with pytest.raises(ValueError, match="Parametre requis manquant"):
-            asyncio.get_event_loop().run_until_complete(
+            asyncio.run(
                 ActionRunner.run("prep-rdv", params={})
             )
 

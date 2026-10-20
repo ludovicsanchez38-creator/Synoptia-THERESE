@@ -79,7 +79,8 @@ describe('la puce suit le changement de modèle', () => {
 
     render(<ChatInput />);
     expect(await screen.findByText('effort élevé')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Modèle de conversation'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Modèle de conversation' }));
+    fireEvent.change(screen.getByRole('listbox', { name: 'Choisir le modèle' }), {
       target: { value: 'grok-4.7' },
     });
     expect(await screen.findByText('effort très élevé')).toBeInTheDocument();

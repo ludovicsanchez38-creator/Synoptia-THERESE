@@ -32,6 +32,8 @@ describe('InvoiceForm : devises, TVA et saisie décimale', () => {
     await screen.findByLabelText('Prix HT ligne 1');
     const libelles = Array.from(document.querySelectorAll('option')).map((o) => o.textContent ?? '');
     expect(libelles.some((l) => l.includes('20'))).toBe(true);
+    const tva = screen.getByLabelText('TVA ligne 1') as HTMLSelectElement;
+    expect(tva.selectedOptions[0].textContent).toBe('20 %');
     expect(libelles.some((l) => l.includes('5,5') || l.includes('5.5'))).toBe(true);
   });
 

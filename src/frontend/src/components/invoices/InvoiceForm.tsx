@@ -48,11 +48,11 @@ interface InvoiceLineInputState {
 const arrondirAuCentime = auCentime;
 
 const TVA_RATES = [
-  { value: 20.0, label: '20% (normale)' },
-  { value: 10.0, label: '10% (intermédiaire)' },
-  { value: 5.5, label: '5,5% (réduite)' },
-  { value: 2.1, label: '2,1% (super réduite)' },
-  { value: 0.0, label: '0% (exonéré)' },
+  { value: 20.0, label: '20 %' },
+  { value: 10.0, label: '10 %' },
+  { value: 5.5, label: '5,5 %' },
+  { value: 2.1, label: '2,1 %' },
+  { value: 0.0, label: '0 %' },
 ];
 
 const CURRENCIES = [
