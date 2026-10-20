@@ -25,6 +25,21 @@ function value(argumentsValue: Record<string, unknown>, key: string): string {
   return String(argumentsValue[key] ?? '');
 }
 
+function dateDeConfirmation(raw: string, fuseau = 'Europe/Paris'): string {
+  if (!/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(raw)) return raw;
+  const dateSeule = raw.length === 10;
+  const sansFuseau = !dateSeule && !/(Z|[+-]\d{2}:?\d{2})$/.test(raw);
+  const date = new Date(dateSeule ? `${raw}T00:00:00Z` : sansFuseau ? `${raw}Z` : raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  try {
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      ...(!dateSeule ? { hour: '2-digit' as const, minute: '2-digit' as const } : {}),
+      timeZone: dateSeule || sansFuseau ? 'UTC' : fuseau,
+    }).format(date);
+  } catch { return raw; }
+}
+
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   if (!children) return null;
   return <div><dt className="inline text-text-muted">{label} : </dt><dd className="inline whitespace-pre-wrap text-text">{children}</dd></div>;
@@ -40,8 +55,8 @@ function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }
   return (
     <dl className="mb-3 space-y-1 text-xs text-text-muted">
       <Detail label="Événement">{value(args, 'summary')}</Detail>
-      <Detail label="Début">{value(args, 'start')}</Detail>
-      <Detail label="Fin">{value(args, 'end')}</Detail>
+      <Detail label="Début">{dateDeConfirmation(value(args, 'start'), value(args, 'timezone') || 'Europe/Paris')}</Detail>
+      <Detail label="Fin">{dateDeConfirmation(value(args, 'end'), value(args, 'timezone') || 'Europe/Paris')}</Detail>
       <Detail label="Fuseau">{value(args, 'timezone') || 'Europe/Paris'}</Detail>
       <Detail label="Calendrier">{value(destination, 'calendar_name') || 'Destination à vérifier'}</Detail>
       {/* Campagne cinq personas : Inès a validé « Séance Martin » en lisant
@@ -143,7 +158,9 @@ function GenericDetails({ confirmation }: { confirmation: PendingConfirmation })
         <Detail key={key} label={connecteur ? key : (LIBELLES_DES_ARGUMENTS[key] ?? key)}>
           {key === 'lines' && Array.isArray(raw)
             ? raw.map((line: Record<string, unknown>, i: number) => <div key={i}>{String(line.description ?? '')} — {String(line.quantity ?? 1)} × {String(line.unit_price_ht ?? 0)} HT ; TVA {String(line.tva_rate ?? 20)} %</div>)
-            : raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw)}
+            : raw == null ? '' : typeof raw === 'string'
+              ? !connecteur && ['due_date', 'issue_date', 'start', 'end'].includes(key) ? dateDeConfirmation(raw) : raw
+              : JSON.stringify(raw)}
         </Detail>
       ))}
     </dl>
