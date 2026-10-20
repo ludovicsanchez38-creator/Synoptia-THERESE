@@ -2041,8 +2041,7 @@ async def send_message(
     _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
         conversation.id, session
     )
-    # Même règle que les contacts et les projets : une pièce jointe sans dossier
-    # explicite reste dans SA conversation. Elle devenait `global` — donc
+    # Une pièce jointe sans dossier explicite reste dans SA conversation. Elle devenait `global` — donc
     # consultable depuis tous les dossiers — y compris déposée depuis une
     # conversation « Tous les projets » (revue de clôture).
     if _perimetre_conv == "project" and _perimetre_conv_id:
@@ -2707,8 +2706,7 @@ async def _do_stream_response(
     _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
         conversation_id, session
     )
-    # Même règle que les contacts et les projets : une pièce jointe sans dossier
-    # explicite reste dans SA conversation. Elle devenait `global` — donc
+    # Une pièce jointe sans dossier explicite reste dans SA conversation. Elle devenait `global` — donc
     # consultable depuis tous les dossiers — y compris déposée depuis une
     # conversation « Tous les projets » (revue de clôture).
     if _perimetre_conv == "project" and _perimetre_conv_id:

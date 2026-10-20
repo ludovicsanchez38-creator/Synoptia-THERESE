@@ -6,6 +6,7 @@ import {
   type PendingConfirmation,
 } from '../../stores/toolConfirmationStore';
 import { confirmTool } from '../../services/api/chat';
+import { useContactsStore } from '../../stores/contactsStore';
 import { useChatStore } from '../../stores/chatStore';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
@@ -180,6 +181,9 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
     try {
       const response = await confirmTool(confirmation.confirmation_id, approved);
       if (approved) {
+        if (toolName === 'create_contact') {
+          void useContactsStore.getState().fetchContacts().catch(() => undefined);
+        }
         const fichiers = response.skill_files ?? [];
         addMessage({
           role: 'assistant',

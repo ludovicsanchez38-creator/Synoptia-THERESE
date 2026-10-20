@@ -775,7 +775,7 @@ class TestUneCreationNEstJamaisPublieeSansLeVouloir:
     """
 
     @pytest.mark.asyncio
-    async def test_un_contact_cree_en_mode_transversal_reste_dans_sa_conversation(
+    async def test_un_contact_ajoute_au_carnet_est_partage_en_mode_transversal(
         self, db_session
     ):
         from app.models.entities import Contact
@@ -794,18 +794,14 @@ class TestUneCreationNEstJamaisPublieeSansLeVouloir:
         cree = (
             await db_session.execute(select(Contact).where(Contact.id == contact_id))
         ).scalar_one()
-        assert cree.scope == "conversation" and cree.scope_id == "conv-a", (
-            f"contact publié en {cree.scope} : il devient visible partout"
-        )
+        # R1-2 : l'ajout explicite à Contacts rejoint le carnet partagé.
+        assert cree.scope == "global" and cree.scope_id is None
 
-        # Et concrètement : introuvable depuis une autre conversation.
         ailleurs = await execute_memory_tool(
             "read_contact", {"query": "Léa"}, db_session,
             scope="global", conversation_id="conv-b",
         )
-        assert "0612345678" not in ailleurs, (
-            "le contact créé en mode transversal fuit vers une autre conversation"
-        )
+        assert "0612345678" in ailleurs
 
     @pytest.mark.asyncio
     async def test_un_projet_cree_en_mode_transversal_reste_dans_sa_conversation(

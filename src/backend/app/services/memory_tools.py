@@ -347,17 +347,10 @@ def _valeurs_non_appliquees(projet: Any, arguments: dict[str, Any]) -> list[str]
 def _perimetre_de_creation(
     scope: str | None, scope_id: str | None, conversation_id: str | None
 ) -> tuple[str, str | None]:
-    """Où ranger une entité créée depuis le chat.
+    """Range un projet dans le dossier choisi, sinon dans sa conversation.
 
-    Revue de clôture : tout ce qui n'était pas `project` devenait `global`,
-    donc PUBLIÉ PARTOUT. Depuis une conversation « Tous les projets », créer un
-    contact le rendait visible dans tous les dossiers et toutes les
-    conversations, sans que personne ne l'ait demandé.
-
-    Une création sans dossier explicite reste donc dans SA conversation —
-    même règle que les contacts suggérés par l'interface
-    (`EntitySuggestion.tsx`). L'utilisateur peut toujours la promouvoir
-    ensuite ; l'inverse n'est pas rattrapable.
+    Les contacts ajoutés au carnet suivent leur règle partagée distincte
+    (R1-2). Les projets ne sont pas promus automatiquement au carnet général.
     """
     if scope == "project" and scope_id:
         return "project", scope_id
@@ -644,9 +637,8 @@ async def execute_create_contact(
     async def _geste_contact() -> str:
         from app.models.database import get_session_context as _ctx
 
-        _perimetre_creation = _perimetre_de_creation(
-            scope, scope_id, conversation_id
-        )
+        # R1-2 : un ajout explicite au carnet est partagé, sauf dossier choisi.
+        _perimetre_creation = ("project", scope_id) if scope == "project" and scope_id else ("global", None)
         async with _ctx() as session_geste:
             contact = Contact(
                 first_name=first_name or None,
@@ -657,8 +649,7 @@ async def execute_create_contact(
                 address=arguments.get("address"),
                 notes=arguments.get("notes"),
                 last_interaction=datetime.now(UTC),
-                # Une entité créée depuis le chat appartient à son dossier,
-                # ou à défaut à SA conversation — jamais publiée partout.
+                # Le carnet partagé suit la même règle que le module Contacts.
                 scope=_perimetre_creation[0],
                 scope_id=_perimetre_creation[1],
             )

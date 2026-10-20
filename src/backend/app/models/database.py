@@ -354,6 +354,24 @@ def apply_adhoc_migrations(db_path) -> None:
     if not db_path or not _Path(str(db_path)).exists():
         return
     with closing(db_connect(db_path)) as conn:
+        # R1-2 : les anciens ajouts du chat rejoignent le carnet partagé.
+        # Les contacts rattachés explicitement à un projet sont conservés.
+        colonnes_contacts_r1 = {r[1] for r in conn.execute("PRAGMA table_info(contacts)")}
+        if {"scope", "scope_id"} <= colonnes_contacts_r1:
+            colonnes_conversations_r1 = {r[1] for r in conn.execute("PRAGMA table_info(conversations)")}
+            if {"id", "project_id", "memory_scope"} <= colonnes_conversations_r1:
+                # Les suggestions de l'ancienne UI ignoraient le projet choisi.
+                # Ce choix prime sur le défaut partagé, y compris à la reprise.
+                conn.execute("""
+                    UPDATE contacts SET scope='project', scope_id=(
+                        SELECT project_id FROM conversations WHERE id=contacts.scope_id
+                    ) WHERE scope='conversation' AND EXISTS (
+                        SELECT 1 FROM conversations WHERE id=contacts.scope_id
+                        AND memory_scope='project' AND project_id IS NOT NULL
+                    )
+                """)
+            conn.execute("UPDATE contacts SET scope='global', scope_id=NULL WHERE scope='conversation'")
+            conn.commit()
         cursor = conn.execute("PRAGMA table_info(invoices)")
         columns = [row[1] for row in cursor.fetchall()]
         if columns and "currency" not in columns:

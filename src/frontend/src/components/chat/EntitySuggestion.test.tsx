@@ -52,7 +52,7 @@ describe('EntitySuggestion', () => {
     );
   });
 
-  it('rattache le contact créé à la conversation courante (scope=conversation, L6 pastille)', async () => {
+  it('ajoute au carnet partagé le contact enregistré depuis une conversation', async () => {
     const createSpy = vi.fn().mockResolvedValue({ id: 'c9', first_name: 'Jean' });
     useContactsStore.setState({ createContact: createSpy });
     useChatStore.setState({ currentConversationId: 'conv-42' });
@@ -64,7 +64,7 @@ describe('EntitySuggestion', () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled());
     expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: 'conversation', scope_id: 'conv-42' })
+      expect.objectContaining({ scope: 'global' })
     );
   });
 
@@ -101,7 +101,16 @@ describe('EntitySuggestion', () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled());
     const arg = createSpy.mock.calls[0][0];
-    expect(arg.scope).toBeUndefined();
+    expect(arg.scope).toBe('global');
     expect(arg.scope_id).toBeUndefined();
   });
+  it('R1-2 : conserve le projet explicitement choisi', async () => {
+    const createSpy = vi.fn().mockResolvedValue({ id: 'c9' });
+    useContactsStore.setState({ createContact: createSpy });
+    useChatStore.setState({ currentConversationId: 'conv-projet', conversations: [{ id: 'conv-projet', title: 'Projet', messages: [], createdAt: new Date(), updatedAt: new Date(), projectId: 'projet-a', memoryScope: 'project' }] });
+    render(<EntitySuggestion contacts={[detected]} projects={[]} messageId="m1" onDismiss={vi.fn()} onSaved={vi.fn()} />);
+    fireEvent.click(await screen.findByTitle('Sauvegarder'));
+    await waitFor(() => expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ scope: 'project', scope_id: 'projet-a' })));
+  });
+
 });

@@ -132,10 +132,10 @@ export function EntitySuggestion({
     const lastName = nameParts.slice(1).join(' ') || null;
 
     // Via le store unique : le contact créé est immédiatement visible Mémoire ET CRM (P4).
-    // L6 (pastille de contexte) : on rattache le contact né dans le chat à sa
-    // conversation (scope=conversation). Il reste visible dans « Tout » (le listing
-    // par défaut ne filtre pas le scope) et alimente la pastille « N contacts liés ».
-    const conversationId = useChatStore.getState().currentConversationId;
+    // R1-2 : le carnet est partagé, sauf projet explicitement choisi.
+    const etatChat = useChatStore.getState();
+    const conversation = etatChat.conversations.find((c) => c.id === etatChat.currentConversationId);
+    const projet = conversation?.memoryScope === 'project' ? conversation.projectId : null;
     await useContactsStore.getState().createContact({
       first_name: firstName,
       last_name: lastName,
@@ -143,7 +143,8 @@ export function EntitySuggestion({
       email: contact.email,
       phone: contact.phone,
       notes: contact.role ? `Role: ${contact.role}` : null,
-      ...(conversationId ? { scope: 'conversation', scope_id: conversationId } : {}),
+      scope: projet ? 'project' : 'global',
+      ...(projet ? { scope_id: projet } : {}),
     });
 
     setRemainingContacts((prev) => prev.filter((c) => c.name !== contact.name));

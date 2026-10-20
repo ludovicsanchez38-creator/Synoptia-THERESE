@@ -19,6 +19,7 @@ from qdrant_client.models import (
     Filter,
     FilterSelector,
     IsEmptyCondition,
+    MatchAny,
     MatchValue,
     PayloadField,
     PointStruct,
@@ -31,6 +32,21 @@ logger = logging.getLogger(__name__)
 #: au démarrage. Un payload de ces types sans périmètre est un vestige : il est
 #: exclu des recherches cloisonnées jusqu'à son reclassement.
 TYPES_RECLASSES = ("file", "contact", "project")
+
+
+def _projets_des_contacts() -> dict[str, list[str]]:
+    """Le classement SQL migré est l'autorité pour les anciens vecteurs."""
+    from app.models.database import get_sync_connection
+    from sqlalchemy import text
+
+    groupes: dict[str, list[str]] = {}
+    with get_sync_connection() as conn:
+        lignes = conn.execute(text(
+            "SELECT id, scope_id FROM contacts WHERE scope='project' AND scope_id IS NOT NULL"
+        ))
+        for identifiant, projet_id in lignes:
+            groupes.setdefault(str(projet_id), []).append(str(identifiant))
+    return groupes
 
 
 class QdrantService:
@@ -118,6 +134,7 @@ class QdrantService:
                     f"le fichier {qdrant_dir / '.lock'} et réessaie."
                 ) from e
         self._ensure_collection()
+        self.promouvoir_contacts_conversation()
         self._initialized = True
         logger.info("Qdrant initialized successfully")
 
@@ -137,6 +154,34 @@ class QdrantService:
                 ),
             )
             logger.info(f"Collection {collection_name} created")
+
+    def promouvoir_contacts_conversation(self) -> None:
+        """R1-2 : même migration que SQL, sans réencoder les fiches."""
+        try:
+            projets = _projets_des_contacts()
+        except Exception:
+            # Une base indisponible ne doit jamais ouvrir les fiches de projet.
+            logger.warning("Migration des contacts vectoriels reportée : base indisponible")
+            return
+        for projet_id, contacts_ids in projets.items():
+            self.client.set_payload(
+                collection_name=settings.qdrant_collection,
+                payload={"scope": "project", "scope_id": projet_id},
+                points=FilterSelector(filter=Filter(must=[
+                    FieldCondition(key="type", match=MatchValue(value="contact")),
+                    FieldCondition(key="scope", match=MatchValue(value="conversation")),
+                    FieldCondition(key="entity_id", match=MatchAny(any=contacts_ids)),
+                ])),
+            )
+        # Seulement après les projets : les contacts restants sont généraux.
+        self.client.set_payload(
+            collection_name=settings.qdrant_collection,
+            payload={"scope": "global", "scope_id": None},
+            points=FilterSelector(filter=Filter(must=[
+                FieldCondition(key="type", match=MatchValue(value="contact")),
+                FieldCondition(key="scope", match=MatchValue(value="conversation")),
+            ])),
+        )
 
     def add_memory(
         self,

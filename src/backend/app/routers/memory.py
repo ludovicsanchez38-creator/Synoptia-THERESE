@@ -714,7 +714,7 @@ async def list_contacts(
         if include_global:
             query = query.where(
                 ((Contact.scope == scope) & (Contact.scope_id == scope_id))
-                | (Contact.scope == "global")
+                | (Contact.scope == "global") | Contact.scope.is_(None)
             )
         else:
             query = query.where(
@@ -750,8 +750,8 @@ async def create_contact(
         source=request.source,
         next_follow_up=request.next_follow_up,
         # Scope (L6) : rattachement conversation/projet (defaut global si non fourni)
-        scope=request.scope or "global",
-        scope_id=request.scope_id,
+        scope="project" if request.scope == "project" and request.scope_id else "global",
+        scope_id=request.scope_id if request.scope == "project" else None,
     )
     session.add(contact)
     await session.commit()
