@@ -56,7 +56,11 @@ def test_chaque_modele_du_catalogue_a_un_tarif():
         for modele in fiche.modeles
         if modele not in TOKEN_PRICES
     ]
-    assert not manquants, f"modèles du catalogue sans tarif (coût affiché 0,00) : {manquants}"
+    # R1-9 : Syn demande Argon sans inventer son prix. Cette seule exception
+    # doit rester explicitement inconnue, jamais présentée comme gratuite.
+    assert manquants == ["gemini/gemini-4-argon"], manquants
+    from app.services.token_tracker import get_token_tracker
+    assert get_token_tracker().tarif_connu("gemini-4-argon") is False
 
 
 @pytest.mark.parametrize(

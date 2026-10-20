@@ -24,6 +24,7 @@ comportement historique conservé, OpenRouter notamment).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from app.services.providers.base import LLMProvider
@@ -187,7 +188,9 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("GEMINI_API_KEY", "GOOGLE_API_KEY"),
         context_window=1000000,
         modeles=(
-            "gemini-3.8-flash",           # Tête Google, 09/10/2026
+            "gemini-3.8-flash",           # Défaut dont les capacités sont chiffrées ici
+            # Journal officiel API Gemini du 13/10/2026, vérifié par Syn.
+            "gemini-4-argon",             # Ajout proposé, sans changer le défaut
             "gemini-3.7-flash",           # Génération précédente
             "gemini-3.1-pro-preview",     # Le seul Pro récent
             "gemini-3.6-flash",
@@ -197,6 +200,9 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gemini-2.5-flash",
         ),
         fiches={
+            # Fenêtre prudente, à confirmer : aucune capacité chiffrée ni tarif
+            # Argon prouvés dans le dépôt. Effort non forcé ; sortie produit 4096.
+            "gemini-4-argon": FicheModele(context_window=32_000),
             # thinkingLevel : Gemini 3+ seulement (erreur API sur les 2.x),
             # MAJUSCULES sur generateContent, pas de xhigh sur 3.7-flash.
             # 3.8 (09/10/2026) : low/medium/high, minimal = erreur, sortie 65 536,
@@ -430,3 +436,19 @@ def fenetre_de_contexte(provider: str, model: str | None) -> int:
     fournisseur = CATALOGUE[provider]
     fiche = fournisseur.fiches.get(model or "")
     return fiche.context_window if fiche and fiche.context_window else fournisseur.context_window
+
+
+def libelle_modele(modele: str) -> str:
+    """Nom lisible dérivé de l'identifiant, partagé par les trois sélecteurs."""
+    texte = re.sub(r"-\d{8}$", "", modele)
+    texte = re.sub(r"(\d)-(\d)", r"\1.\2", texte)
+    morceaux = texte.replace("-", " ").split()
+    marques = {"gpt": "GPT", "glm": "GLM", "qwen": "Qwen", "grok": "Grok", "minimax": "MiniMax"}
+    rendu = " ".join(marques.get(m.lower(), m.capitalize()) for m in morceaux)
+    return rendu.replace("GPT ", "GPT-", 1) if modele.startswith("gpt-") else rendu
+
+
+def catalogue_pour_interface() -> dict[str, list[dict[str, str]]]:
+    """Snapshot hors ligne régénérable : aucune seconde liste maintenue à la main."""
+    return {nom: [{"id": modele, "name": libelle_modele(modele)} for modele in fiche.modeles]
+            for nom, fiche in CATALOGUE.items() if nom != "ollama"}

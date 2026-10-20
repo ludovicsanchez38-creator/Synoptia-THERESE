@@ -134,6 +134,7 @@ TOKEN_PRICES = {
     "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
     # M1, 09/10/2026 : couple payant d'avant la bascule. Dès le 01/01/2027
     # inclus, BASCULES_TARIF applique 1,50 / 7,50 (grille officielle).
+    # Gemini 4 Argon : tarif à confirmer, laissé absent pour tarif_connu=False.
     "gemini-3.8-flash": {"input": 0.75, "output": 3.75},
     # Cycle 6 (D184, relevé ai.google.dev/gemini-api/docs/pricing le 10/09/2026, prompts <= 200k)
     "gemini-3.6-flash": {"input": 0.75, "output": 3.75},

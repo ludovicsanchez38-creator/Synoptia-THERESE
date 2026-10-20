@@ -98,11 +98,11 @@ describe('B-225 - inspecter un fournisseur ne perd pas le modèle choisi', () =>
     await ouvrirOngletIA();
 
     fireEvent.change(screen.getByLabelText('Modèle'), {
-      target: { value: 'mistral-small-latest' },
+      target: { value: 'mistral-small-2603' },
     });
     await waitFor(() =>
       // Le changement de modèle transmet désormais l’effort, Auto en l’absence de réglage.
-      expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalledWith('mistral', 'mistral-small-latest', 'auto'),
+      expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalledWith('mistral', 'mistral-small-2603', 'auto'),
     );
 
     fireEvent.click(screen.getByRole('button', { name: /GPT \(OpenAI\)/ }));
@@ -115,6 +115,6 @@ describe('B-225 - inspecter un fournisseur ne perd pas le modèle choisi', () =>
       expect(vi.mocked(api.setLLMConfig).mock.calls.length).toBeGreaterThanOrEqual(3),
     );
     const envois = vi.mocked(api.setLLMConfig).mock.calls.map((appel) => [appel[0], appel[1]]);
-    expect(envois[envois.length - 1]).toEqual(['mistral', 'mistral-small-latest']);
+    expect(envois[envois.length - 1]).toEqual(['mistral', 'mistral-small-2603']);
   });
 });

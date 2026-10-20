@@ -85,7 +85,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   // même quand l'utilisateur venait de choisir un modèle à la main - un
   // reclassement silencieux, précisément ce qu'on corrige partout ailleurs.
   const modeleChoisiParLUtilisateur = useRef(false);
-  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
+  const [selectedModel, setSelectedModel] = useState(() => PROVIDERS.find((p) => p.id === (choixPrecedent ?? 'anthropic'))?.models[0]?.id ?? '');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});

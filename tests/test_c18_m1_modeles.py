@@ -97,7 +97,7 @@ ORDRE = {
         "grok-4.20-0309-non-reasoning",
     ),
     "gemini": (
-        "gemini-3.8-flash",
+        "gemini-3.8-flash", "gemini-4-argon",
         "gemini-3.7-flash",
         "gemini-3.1-pro-preview",
         "gemini-3.6-flash",

@@ -13,6 +13,7 @@
  * Les listes statiques des composants deviennent un REPLI hors-ligne : si la
  * route échoue, on affiche ce qu'on connaît plutôt qu'un sélecteur vide.
  */
+import catalogueGenere from './modelesCatalogue.generated.json';
 import { request } from '../services/api/core';
 import type { LLMProvider } from '../services/api/config';
 
@@ -54,13 +55,26 @@ export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   'claude-haiku-5-5': { name: 'Claude Haiku 5.5', badge: 'Rapide' },
   'grok-4.7': { name: 'Grok 4.7', badge: 'Recommandé' },
   'gemini-3.8-flash': { name: 'Gemini 3.8 Flash', badge: 'Recommandé' },
+  'mistral-medium-3-5': { name: 'Mistral Medium 3.5', badge: 'Équilibré' },
   'mistral-large-4': { name: 'Mistral Large 4', badge: 'Préversion' },
 };
 
 const cache = new Map<string, ModeleDecore[]>();
 
+const modelesGeneres = Object.values(catalogueGenere).flat();
+
 export function decorer(ids: string[]): ModeleDecore[] {
-  return ids.map((id) => ({ id, ...(DECORATIONS[id] ?? { name: id }) }));
+  return ids.map((id) => {
+    const defaut = Object.values(catalogueGenere).some((modeles) => modeles[0]?.id === id);
+    let badge = DECORATIONS[id]?.badge;
+    if (badge === 'Recommandé' && !defaut) badge = undefined;
+    if (defaut && !badge) badge = 'Recommandé';
+    return {
+      id,
+      name: modelesGeneres.find((m) => m.id === id)?.name ?? DECORATIONS[id]?.name ?? id,
+      ...(badge ? { badge } : {}),
+    };
+  });
 }
 
 /**
@@ -127,7 +141,7 @@ export interface FournisseurConfig {
   models: ModeleDecore[];
 }
 
-export const FOURNISSEURS: FournisseurConfig[] = [
+const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'anthropic',
     name: 'Claude (Anthropic)',
@@ -135,26 +149,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'sk-ant-',
     keyPlaceholder: 'sk-ant-...',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
-    models: [
-      // B-753 : un identifiant n'apparaît qu'UNE fois. `Select` pose
-      // `key={opt.value}` : `claude-fable-5` et `claude-sonnet-5` étaient
-      // déclarés deux fois, avec un second badge, et le sélecteur servait deux
-      // lignes identiques sous la même clé React. La première déclaration fait
-      // foi ; aucun modèle ne quitte le catalogue.
-      // Fable 5 : modèle frontier Anthropic (1M contexte). Thinking toujours
-      // actif, paramètres de sampling refusés - géré côté provider backend.
-      // P-122 (25/09/2026) : Opus 5.5 en tête, comme au catalogue du moteur.
-      { id: 'claude-opus-5-5', name: 'Claude Opus 5.5', badge: 'Recommandé' },
-      { id: 'claude-fable-5-1', name: 'Claude Fable 5.1', badge: 'Le plus capable' },
-      { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Frontier' },
-      { id: 'claude-opus-5', name: 'Claude Opus 5' },
-      { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5', badge: 'Équilibré' },
-      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Équilibré' },
-      { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Équilibré' },
-      { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5', badge: 'Rapide' },
-      { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', badge: 'Rapide' },
-    ],
+    models: [],
   },
   {
     id: 'openai',
@@ -163,37 +158,15 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
-    models: [
-      // P-122 (25/09/2026) : GPT-6 Sol en tête, comme au catalogue du moteur ;
-      // Astra (P-057) manquait au repli.
-      { id: 'gpt-6-sol', name: 'GPT-6 Sol', badge: 'Recommandé' },
-      { id: 'gpt-6-astra', name: 'GPT-6 Astra', badge: 'Frontier' },
-      { id: 'gpt-6-luna', name: 'GPT-6 Luna', badge: 'Rapide' },
-      // P-c18-m2 : pas en tête, pas de badge. La fiche ne dit pas « préversion ».
-      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol' },
-      // GPT-5.6 : GA du 09/07/2026 - trois variantes, six niveaux d'effort.
-      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' },
-      { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', badge: 'Équilibré' },
-      { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', badge: 'Flagship' },
-      { id: 'gpt-5.4', name: 'GPT-5.4' },
-      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini' },
-      { id: 'gpt-5.5-pro', name: 'GPT-5.5 pro', badge: 'Raisonnement' },
-    ],
+    models: [],
   },
   {
     id: 'gemini',
     name: 'Gemini (Google)',
-    description: 'Gemini 3.x - Lit de très longs documents',
+    description: 'Gemini 4 Argon et Gemini Flash - Documents et analyse',
     keyPlaceholder: 'AIza...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
-    models: [
-      { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', badge: 'Recommandé' },
-      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', badge: 'Flagship' },
-      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash' },
-      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', badge: 'Économique' },
-    ],
+    models: [],
   },
   {
     id: 'mistral',
@@ -201,37 +174,16 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     description: 'IA française souveraine',
     keyPlaceholder: '...',
     consoleUrl: 'https://console.mistral.ai/api-keys',
-    models: [
-      // ID épinglé, le même que le catalogue. L'alias -latest peut changer de modèle.
-      { id: 'mistral-medium-3-5', name: 'Mistral Medium 3.5', badge: 'Équilibré' },
-      { id: 'mistral-large-latest', name: 'Mistral Large 3', badge: 'Flagship' },
-      { id: 'mistral-large-4', name: 'Mistral Large 4', badge: 'Préversion' },
-      // L'alias reste proposé : un choix déjà enregistré ne doit pas être réécrit.
-      { id: 'mistral-medium-latest', name: 'Mistral Medium' },
-      { id: 'mistral-small-latest', name: 'Mistral Small 4', badge: 'Économique' },
-      { id: 'mistral-large-2512', name: 'Mistral Large 3 (fixé)', badge: 'Stable' },
-      { id: 'codestral-latest', name: 'Codestral', badge: 'Coding' },
-      { id: 'devstral-small-latest', name: 'Devstral Small', badge: 'Dev' },
-    ],
+    models: [],
   },
   {
     id: 'grok',
     name: 'Grok (xAI)',
-    description: 'Grok 4.5 - Lit de longs documents',
+    description: 'Pour analyser et rédiger avec les modèles Grok',
     keyPrefix: 'xai-',
     keyPlaceholder: 'xai-...',
     consoleUrl: 'https://console.x.ai',
-    models: [
-      // ATTENTION : l'ID API est grok-4.5 avec un POINT (grok-4-5 -> 404).
-      // B-753 : grok-4.5 était lui aussi déclaré deux fois - même clé React,
-      // même ligne servie en double. La première déclaration fait foi.
-      { id: 'grok-4.7', name: 'Grok 4.7', badge: 'Recommandé' },
-      { id: 'grok-4.5', name: 'Grok 4.5', badge: 'Flagship' },
-      { id: 'grok-4.6', name: 'Grok 4.6' },
-      { id: 'grok-4.3', name: 'Grok 4.3' },
-      { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
-      { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },
-    ],
+    models: [],
   },
   {
     id: 'openrouter',
@@ -240,15 +192,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'sk-or-',
     keyPlaceholder: 'sk-or-v1-...',
     consoleUrl: 'https://openrouter.ai/keys',
-    models: [
-      { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
-      { id: 'anthropic/claude-opus-5', name: 'Claude Opus 5', badge: 'Premium' },
-      { id: 'anthropic/claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
-      { id: 'google/gemini-3.1-pro', name: 'Gemini 3.1 Pro' },
-      { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-      { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
-    ],
+    models: [],
   },
   {
     id: 'perplexity',
@@ -257,12 +201,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'pplx-',
     keyPlaceholder: 'pplx-...',
     consoleUrl: 'https://www.perplexity.ai/settings/api',
-    models: [
-      { id: 'sonar-pro', name: 'Sonar Pro', badge: 'Recherche' },
-      { id: 'sonar', name: 'Sonar', badge: 'Rapide' },
-      { id: 'sonar-reasoning-pro', name: 'Sonar Reasoning Pro', badge: 'Raisonnement' },
-      { id: 'sonar-deep-research', name: 'Sonar Deep Research', badge: 'Recherche+' },
-    ],
+    models: [],
   },
   {
     id: 'deepseek',
@@ -271,10 +210,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.deepseek.com/api_keys',
-    models: [
-      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', badge: 'Flagship' },
-      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', badge: 'Rapide' },
-    ],
+    models: [],
   },
   {
     id: 'glm',
@@ -282,11 +218,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     description: 'GLM 5.3 - Conçu pour programmer et automatiser',
     keyPlaceholder: 'Clé API Z.ai...',
     consoleUrl: 'https://z.ai',
-    models: [
-      { id: 'glm-5.3', name: 'GLM 5.3', badge: 'Recommandé' },
-      { id: 'glm-5.2', name: 'GLM 5.2' },
-      { id: 'glm-4.7', name: 'GLM 4.7', badge: 'Économique' },
-    ],
+    models: [],
   },
   {
     id: 'kimi',
@@ -295,11 +227,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.moonshot.ai',
-    models: [
-      { id: 'kimi-k3', name: 'Kimi K3', badge: 'Recommandé' },
-      { id: 'kimi-k2.7-code', name: 'Kimi K2.7 Code', badge: 'Code' },
-      { id: 'kimi-k2.5', name: 'Kimi K2.5', badge: 'Économique' },
-    ],
+    models: [],
   },
   {
     id: 'qwen',
@@ -308,11 +236,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://modelstudio.console.alibabacloud.com',
-    models: [
-      { id: 'qwen3.8-max', name: 'Qwen 3.8 Max', badge: 'Recommandé' },
-      { id: 'qwen3.7-flash', name: 'Qwen 3.7 Flash', badge: 'Économique' },
-      { id: 'qwen3-coder-plus', name: 'Qwen 3 Coder Plus', badge: 'Code' },
-    ],
+    models: [],
   },
   {
     id: 'minimax',
@@ -320,11 +244,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     description: 'MiniMax M3 - Généraliste économique',
     keyPlaceholder: 'Clé API MiniMax...',
     consoleUrl: 'https://platform.minimax.io',
-    models: [
-      { id: 'MiniMax-M3', name: 'MiniMax M3', badge: 'Recommandé' },
-      { id: 'MiniMax-M2.7', name: 'MiniMax M2.7' },
-      { id: 'MiniMax-M2.5-highspeed', name: 'MiniMax M2.5 Rapide', badge: 'Économique' },
-    ],
+    models: [],
   },
   {
     id: 'infomaniak',
@@ -332,10 +252,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     description: 'IA souveraine suisse - serveurs en Suisse, RGPD',
     keyPlaceholder: 'Ton token API Infomaniak...',
     consoleUrl: 'https://www.infomaniak.com/fr/hebergement/ai-tools',
-    models: [
-      { id: 'mix', name: 'Mix', badge: 'Polyvalent' },
-      { id: 'mix-large', name: 'Mix Large', badge: 'Puissant' },
-    ],
+    models: [],
   },
   {
     id: 'ollama',
@@ -344,3 +261,10 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     models: [], // Chargé dynamiquement
   },
 ];
+
+
+/** Généré depuis services/modeles_catalogue.py, ordre et défaut compris. */
+export const FOURNISSEURS: FournisseurConfig[] = METADONNEES_FOURNISSEURS.map((f) => ({
+  ...f,
+  models: decorer((catalogueGenere[f.id as keyof typeof catalogueGenere] ?? []).map((m) => m.id)),
+}));

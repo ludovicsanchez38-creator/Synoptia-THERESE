@@ -107,3 +107,12 @@ describe("B-239 : l'écran dit d'où vient la clé", () => {
     expect(mention).not.toHaveTextContent(/environnement/i);
   });
 });
+
+it('R1-9 : propose le même défaut que le catalogue, même hors ligne', async () => {
+  poserOrigine('coffre');
+  apiMocks.getOllamaStatus.mockResolvedValue({ available: false, models: [] });
+  apiMocks.getSystemResources.mockResolvedValue(null);
+  catalogueMocks.chargerCatalogue.mockResolvedValue(null);
+  render(<LLMStep onNext={vi.fn()} onBack={vi.fn()} />);
+  expect(await screen.findByLabelText('Modèle')).toHaveValue('claude-opus-5-5');
+});

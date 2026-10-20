@@ -34,7 +34,7 @@ import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
 import { messageDErreurDuFlux } from '../../lib/messageDErreurDuFlux';
 import { inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
-import { DECORATIONS } from '../../lib/catalogueModeles';
+import { decorer, DECORATIONS } from '../../lib/catalogueModeles';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { getWorkingDirectory } from '../../services/api/config';
@@ -1554,12 +1554,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               >
                 {availableModels.map((m) => (
                   <option key={m} value={m}>
-                    {DECORATIONS[m]?.badge === 'Préversion' ? `${m} (préversion)` : m}
+                    {DECORATIONS[m]?.badge === 'Préversion' ? `${decorer([m])[0].name} (préversion)` : decorer([m])[0].name}
                   </option>
                 ))}
               </select>
             ) : (
-              <span className="text-xs font-medium text-text">{currentModel}</span>
+              <span className="text-xs font-medium text-text">{decorer([currentModel])[0].name}</span>
             )}
             {currentProvider && (
               <span
