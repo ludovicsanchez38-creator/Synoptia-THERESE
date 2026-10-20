@@ -37,6 +37,8 @@ import { attendrePersistance, assurerConversationPersistee } from '../../lib/rat
 import { DECORATIONS } from '../../lib/catalogueModeles';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
+import { getWorkingDirectory } from '../../services/api/config';
+import { copyToWorkingDirectory } from '../../services/api/files';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, annulerTraitement, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
 import { useAutosave } from '../../hooks/useAutosave';
@@ -83,6 +85,8 @@ interface PendingCloudConsent {
 interface AttachedFile extends DroppedFile {
   indexStatus: 'indexing' | 'ready' | 'error';
   indexError?: string;
+  outsideWorkspace?: boolean;
+  retryable?: boolean;
 }
 
 
@@ -364,6 +368,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               ...file,
               indexStatus: 'error',
               indexError: reason instanceof Error ? reason.message : 'Indexation impossible.',
+              outsideWorkspace: reason instanceof Error && reason.message.includes('hors des dossiers choisis'),
+              retryable: !(reason instanceof ApiError && [400, 403, 404, 413].includes(reason.status)) && !(reason instanceof Error && reason.message.includes('hors des dossiers choisis')),
             }
           : file
       )));
@@ -373,6 +379,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     }
   }, [currentConversationId, currentConversation]);
+
+  const confirmerCopie = useCallback(async (file: AttachedFile) => {
+    try {
+      const copie = await copyToWorkingDirectory(file.path);
+      attachedPathsRef.current.delete(file.path);
+      attachedPathsRef.current.add(copie.path);
+      setAttachedFiles((current) => current.map((f) => f.path === file.path
+        ? { ...f, path: copie.path, name: copie.path.split(/[\\/]/).pop() || f.name, outsideWorkspace: false, indexError: undefined, indexStatus: 'indexing' } : f));
+      await indexAttachment(copie.path);
+    } catch (reason) {
+      setAttachedFiles((current) => current.map((f) => f.path === file.path
+        ? { ...f, outsideWorkspace: false, retryable: false, indexError: reason instanceof Error ? reason.message : 'Copie impossible.' } : f));
+    }
+  }, [indexAttachment]);
 
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
     const newFiles = files.filter((file) => {
@@ -449,7 +469,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     if (isDisabled) return;
 
     try {
+      const dossier = await getWorkingDirectory().catch(() => null);
       const selected = await open({
+        defaultPath: dossier?.path || undefined,
         multiple: true,
         // Revue du 13/08/2026 : ces filtres étaient une TROISIÈME liste, encore
         // différente de celle du serveur et de celle de l'explorateur. Le
@@ -1464,7 +1486,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 )}
                 {file.indexStatus === 'ready' ? 'Prêt' : file.indexStatus === 'error' ? 'Échec' : 'Indexation en cours'}
               </span>
-              {file.indexStatus === 'error' && (
+              {file.indexStatus === 'error' && file.retryable !== false && !file.outsideWorkspace && (
                 <button
                   type="button"
                   onClick={() => void indexAttachment(file.path)}
@@ -1473,6 +1495,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 >
                   Réessayer
                 </button>
+              )}
+              {file.indexStatus === 'error' && file.outsideWorkspace && (
+                <div className="w-full text-xs text-text-muted">
+                  Une copie sera créée dans ton dossier de travail ; le fichier d’origine sera conservé.
+                  <button type="button" onClick={() => void confirmerCopie(file)} className="min-h-11 px-2 font-semibold text-accent-cyan-ink">Confirmer la copie dans le dossier de travail</button>
+                  <button type="button" onClick={() => removeFile(index)} className="min-h-11 px-2">Annuler</button>
+                </div>
               )}
               {file.indexStatus === 'error' && file.indexError && (
                 <span className="w-full px-1 text-xs text-error">

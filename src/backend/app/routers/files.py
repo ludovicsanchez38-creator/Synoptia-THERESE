@@ -580,3 +580,57 @@ async def upload_file(
         )
     except IndexationAbandonnee as e:
         raise HTTPException(status_code=409, detail=str(e))
+
+
+# R1-6 : une sélection extérieure reste refusée à l'indexation ; seul un
+# geste explicite de copie ouvre la lecture ponctuelle de ce fichier.
+from typing import Literal  # noqa: E402
+
+from pydantic import BaseModel  # noqa: E402
+
+
+class CopiePieceJointe(BaseModel):
+    path: str
+    confirmed: Literal[True]
+
+
+@router.post('/copy-to-working-directory')
+async def copier_piece_jointe(
+    request: CopiePieceJointe, session: AsyncSession = Depends(get_session),
+) -> dict[str, str]:
+    import stat
+    from uuid import uuid4
+
+    from app.models.entities import Preference
+    from app.services.path_security import validate_indexable_file
+
+    pref = (await session.execute(select(Preference).where(Preference.key == 'working_directory'))).scalar_one_or_none()
+    if not pref or not pref.value:
+        raise HTTPException(400, 'Choisis un dossier de travail dans Paramètres avant de copier ce fichier.')
+    destination_dir = Path(pref.value).expanduser().resolve()
+    if not destination_dir.is_dir():
+        raise HTTPException(400, 'Le dossier de travail est inaccessible. Choisis-en un autre dans Paramètres.')
+    try:
+        source = validate_indexable_file(request.path)
+    except (PermissionError, FileNotFoundError, ValueError) as erreur:
+        raise HTTPException(400, str(erreur)) from erreur
+
+    def copier() -> str:
+        # Jamais d'écrasement, y compris si un lien apparaît après la validation.
+        fd = os.open(source, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+        with os.fdopen(fd, 'rb') as entree:
+            if not stat.S_ISREG(os.fstat(entree.fileno()).st_mode):
+                raise ValueError('Choisis un fichier ordinaire.')
+            contenu = entree.read(MAX_INDEXABLE_SIZE + 1)
+            if len(contenu) > MAX_INDEXABLE_SIZE:
+                raise ValueError('Ce fichier dépasse la taille maximale de 50 Mo.')
+        destination = destination_dir / f'{source.stem}-{uuid4().hex[:8]}{source.suffix}'
+        with destination.open('xb') as sortie:
+            sortie.write(contenu)
+        return str(destination)
+
+    try:
+        chemin = await run_in_threadpool(copier)
+    except (OSError, ValueError) as erreur:
+        raise HTTPException(400, 'La copie a échoué. Vérifie l’accès au fichier et au dossier de travail.') from erreur
+    return {'path': chemin}

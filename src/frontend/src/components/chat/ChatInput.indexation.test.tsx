@@ -8,7 +8,8 @@
  * BUG-158 - L'état d'indexation doit se voir (indicateur animé) et l'échec
  * doit être lisible à l'écran, pas seulement pour les lecteurs d'écran.
  */
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useChatStore } from '../../stores/chatStore';
@@ -16,12 +17,17 @@ import { useStatusStore } from '../../stores/statusStore';
 import { ChatInput } from './ChatInput';
 
 const apiMocks = vi.hoisted(() => ({
+  getWorkingDirectory: vi.fn(),
+  copyToWorkingDirectory: vi.fn(),
   getLLMConfig: vi.fn(),
   setLLMConfig: vi.fn(),
   streamMessage: vi.fn(),
   streamDeepResearch: vi.fn(),
   indexFile: vi.fn(),
 }));
+
+vi.mock('../../services/api/config', () => ({ getWorkingDirectory: apiMocks.getWorkingDirectory }));
+vi.mock('../../services/api/files', () => ({ copyToWorkingDirectory: apiMocks.copyToWorkingDirectory }));
 
 const dropMock = vi.hoisted(() => ({ onDrop: null as null | ((files: unknown[]) => Promise<void>) }));
 
@@ -151,4 +157,36 @@ describe('ChatInput - indexation des pièces jointes', () => {
 
     expect(screen.queryByText(/Échec/)).toBeNull();
   });
+});
+
+
+it('R1-6 : un refus de périmètre propose une copie confirmée et aucun nouvel essai identique', async () => {
+  apiMocks.getLLMConfig.mockResolvedValue({ provider: 'ollama', model: 'local', available_models: ['local'] });
+  apiMocks.indexFile.mockRejectedValue(new Error('Ce fichier est hors des dossiers choisis.'));
+  render(<ChatInput />);
+  await joindreFichier();
+  expect(await screen.findByRole('button', { name: /Confirmer la copie dans le dossier de travail/ })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Réessayer l’indexation/ })).toBeNull();
+});
+
+
+it('R1-6 : ouvre le sélecteur dans le dossier de travail', async () => {
+  apiMocks.getWorkingDirectory.mockResolvedValue({ path: '/travail', exists: true });
+  vi.mocked(open).mockResolvedValueOnce(null);
+  render(<ChatInput />);
+  const bouton = screen.getByRole('button', { name: 'Joindre un fichier' });
+  await waitFor(() => expect(bouton).toBeEnabled());
+  fireEvent.click(bouton);
+  await waitFor(() => expect(open).toHaveBeenCalledWith(expect.objectContaining({ defaultPath: '/travail' })));
+});
+
+it('R1-6 : confirme la copie puis indexe le nouveau chemin', async () => {
+  apiMocks.copyToWorkingDirectory.mockResolvedValue({ path: '/travail/rapport-copie.pdf' });
+  apiMocks.indexFile.mockRejectedValueOnce(new Error('Ce fichier est hors des dossiers choisis.')).mockResolvedValueOnce(undefined);
+  render(<ChatInput />);
+  await joindreFichier();
+  expect(apiMocks.copyToWorkingDirectory).not.toHaveBeenCalled();
+  fireEvent.click(await screen.findByRole('button', { name: /Confirmer la copie dans le dossier de travail/ }));
+  await waitFor(() => expect(apiMocks.copyToWorkingDirectory).toHaveBeenCalledWith('/tmp/rapport.pdf'));
+  await waitFor(() => expect(apiMocks.indexFile).toHaveBeenLastCalledWith('/travail/rapport-copie.pdf', expect.any(AbortSignal), undefined, true));
 });

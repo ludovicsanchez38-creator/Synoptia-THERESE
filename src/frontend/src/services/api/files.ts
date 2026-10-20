@@ -119,3 +119,10 @@ export async function listProjectFiles(
   }
   return data;
 }
+
+/** Lecture ponctuelle d'une sélection extérieure, après confirmation de copie. */
+export async function copyToWorkingDirectory(path: string): Promise<{ path: string }> {
+  return request('/api/files/copy-to-working-directory', {
+    method: 'POST', body: JSON.stringify({ path, confirmed: true }),
+  });
+}
