@@ -97,7 +97,7 @@ class LLMConfig:
     model: str
     max_tokens: int = LIMITE_SORTIE_PRODUIT
     temperature: float = 0.7
-    context_window: int = 128000
+    context_window: int = 0  # 0 : résoudre depuis le catalogue du modèle
     api_key: str | None = None
     base_url: str | None = None
     # Effort de raisonnement (chantier 10/07/2026) : None = Auto (rien
@@ -113,7 +113,14 @@ class LLMConfig:
     def __post_init__(self) -> None:
         # Import local : modeles_catalogue importe LLMProvider d'ici -
         # l'import module-niveau serait un cycle.
-        from app.services.modeles_catalogue import max_tokens_recommande, resoudre_effort
+        from app.services.modeles_catalogue import (
+            fenetre_de_contexte,
+            max_tokens_recommande,
+            resoudre_effort,
+        )
+
+        if self.context_window == 0:
+            self.context_window = fenetre_de_contexte(self.provider.value, self.model)
 
         self.effort_resolu = resoudre_effort(
             self.model, self.effort, self.provider.value

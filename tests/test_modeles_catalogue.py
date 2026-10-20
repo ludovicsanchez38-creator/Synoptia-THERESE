@@ -205,7 +205,7 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
     def test_repli_par_cle_recoit_le_frontier(self, client, monkeypatch):
         """Sans préférence : première clé trouvée (anthropic) -> frontier."""
         from app.services.llm import LLMService
-        from app.services.modeles_catalogue import CATALOGUE, frontier
+        from app.services.modeles_catalogue import fenetre_de_contexte, frontier
 
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         for var in ("OPENAI_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY"):
@@ -213,11 +213,11 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
         config = LLMService()._default_config()
         assert config.provider.value == "anthropic"
         assert config.model == frontier("anthropic")
-        assert config.context_window == CATALOGUE["anthropic"].context_window
+        assert config.context_window == fenetre_de_contexte("anthropic", frontier("anthropic"))
 
     def test_circuit_breaker_derive_du_catalogue(self, client, monkeypatch):
         from app.services.llm import LLMService
-        from app.services.modeles_catalogue import CATALOGUE, frontier
+        from app.services.modeles_catalogue import fenetre_de_contexte, frontier
         from app.services.providers.base import LLMConfig, LLMProvider
 
         for var in (
@@ -237,7 +237,7 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
             c for c in fallbacks if c.provider is LLMProvider.OPENAI
         )
         assert openai_fb.model == frontier("openai")
-        assert openai_fb.context_window == CATALOGUE["openai"].context_window
+        assert openai_fb.context_window == fenetre_de_contexte("openai", frontier("openai"))
 
 
 class TestSabotageParPermutation:

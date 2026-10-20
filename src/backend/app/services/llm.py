@@ -649,7 +649,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             if cle:
                 provider_enum, modele, ctx_window = provider_configs[nom]
                 return LLMConfig(
-                    provider_enum, modele, api_key=cle, context_window=ctx_window
+                    provider_enum, modele, api_key=cle
                 )
         # BUG #69 v0.11.5 : ne PAS retomber silencieusement sur Ollama quand
         # l utilisateur a explicitement choisi un provider cloud. Sinon il
@@ -754,7 +754,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         2. Autres providers avec clé API valide
         3. Ollama local (toujours disponible en dernier recours)
         """
-        from app.services.modeles_catalogue import CATALOGUE
+        from app.services.modeles_catalogue import CATALOGUE, fenetre_de_contexte
         from app.services.providers import LLMConfig, LLMProvider
 
         # 0.48 : modèle/contexte dérivés du catalogue (frontier). L'ORDRE de
@@ -768,7 +768,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 nom,
                 CATALOGUE[nom].provider,
                 CATALOGUE[nom].modeles[0],
-                CATALOGUE[nom].context_window,
+                fenetre_de_contexte(nom, CATALOGUE[nom].modeles[0]),
             )
             for nom in _ordre_repli
         ]
@@ -1332,7 +1332,6 @@ def get_llm_service_for_provider(
         model=model,
         api_key=api_key,
         base_url=base_url,
-        context_window=context_window,
         effort=effort_override,
     )
     if max_tokens_override is not None:
