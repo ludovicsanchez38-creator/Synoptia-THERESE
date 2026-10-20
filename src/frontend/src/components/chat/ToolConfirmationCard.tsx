@@ -86,6 +86,8 @@ function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
 // B-1480 : les actions natives se confirment en français, comme le document
 // (B-1454). Une clé inconnue (outil de connecteur) garde son nom.
 const TITRES_DES_OUTILS: Record<string, string> = {
+  create_task: 'Confirmer la création de la tâche',
+  create_invoice: 'Confirmer le brouillon de facture ou de devis',
   create_contact: 'Confirmer la création du contact',
   create_project: 'Confirmer la création du projet',
   web_search: 'Confirmer la recherche sur le web',
@@ -93,6 +95,14 @@ const TITRES_DES_OUTILS: Record<string, string> = {
 };
 
 const LIBELLES_DES_ARGUMENTS: Record<string, string> = {
+  title: 'Titre',
+  due_date: 'Échéance',
+  priority: 'Priorité',
+  contact_id: 'Client',
+  document_type: 'Type de document',
+  currency: 'Devise',
+  tva_applicable: 'TVA applicable',
+  lines: 'Lignes du brouillon',
   first_name: 'Prénom',
   last_name: 'Nom',
   company: 'Entreprise',
@@ -131,7 +141,9 @@ function GenericDetails({ confirmation }: { confirmation: PendingConfirmation })
       {connecteur && <Detail label="Outil du connecteur">{confirmation.tool_name}</Detail>}
       {entries.map(([key, raw]) => (
         <Detail key={key} label={connecteur ? key : (LIBELLES_DES_ARGUMENTS[key] ?? key)}>
-          {raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw)}
+          {key === 'lines' && Array.isArray(raw)
+            ? raw.map((line: Record<string, unknown>, i: number) => <div key={i}>{String(line.description ?? '')} — {String(line.quantity ?? 1)} × {String(line.unit_price_ht ?? 0)} HT ; TVA {String(line.tva_rate ?? 20)} %</div>)
+            : raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw)}
         </Detail>
       ))}
     </dl>

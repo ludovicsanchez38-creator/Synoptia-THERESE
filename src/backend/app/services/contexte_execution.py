@@ -33,6 +33,9 @@ CLASSIFICATION_DES_OUTILS: dict[str, str] = {
     "create_project": MUTATION_LOCALE,
     "read_contact": LECTURE_SEULE,
     # Outils workspace
+    "list_tasks": LECTURE_SEULE,
+    "create_task": MUTATION_LOCALE,
+    "create_invoice": MUTATION_LOCALE,
     "read_emails": LECTURE_SEULE,
     "summarize_emails": LECTURE_SEULE,
     "send_email": MUTATION_EXTERNE,

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from app.services.contexte_execution import ContexteExecution
+from app.services.outils_metier import NOMS_OUTILS_METIER, OUTILS_METIER, executer_outil_metier
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -346,6 +347,7 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
 }
 
 WORKSPACE_TOOLS = [
+    *OUTILS_METIER,
     READ_EMAILS_TOOL,
     SUMMARIZE_EMAILS_TOOL,
     SEND_EMAIL_TOOL,
@@ -414,6 +416,8 @@ async def execute_workspace_tool(
     encore : un e-mail n'est rattaché à aucun dossier.
     """
     _dossier = await _dossier_de_la_conversation(conversation_id, session)
+    if tool_name in NOMS_OUTILS_METIER:
+        return str(await executer_outil_metier(tool_name, arguments, session, _dossier))
     if tool_name == "read_emails":
         return await _read_emails(arguments, session)
     elif tool_name == "summarize_emails":

@@ -2895,6 +2895,12 @@ async def _do_stream_response(
             capabilities += "- **list_calendar_events** : Consulter les evenements du calendrier.\n"
         if "create_calendar_event" in tool_names:
             capabilities += "- **create_calendar_event** : Creer un evenement dans le calendrier.\n"
+        if "list_tasks" in tool_names:
+            capabilities += "- **list_tasks** : Lire les tâches du module Tâches, distinctes de l'agenda.\n"
+        if "create_task" in tool_names:
+            capabilities += "- **create_task** : Préparer une tâche à confirmer ; ne pas la remplacer par un rendez-vous.\n"
+        if "create_invoice" in tool_names:
+            capabilities += "- **create_invoice** : Préparer un brouillon de facture ou de devis dans le module Devis et factures, à confirmer. Aucune émission ni envoi.\n"
         if "search_invoices" in tool_names:
             capabilities += "- **search_invoices** : Retrouver une facture, un devis ou un avoir LOCAL par sa reference (ex: FACT-2026-001) ou par client. Utilise-le des qu'une facture ou un devis est mentionne, AU LIEU de dire que tu ne peux pas les chercher, et ne propose JAMAIS de recreer un document existant. Il ne couvre QUE la facturation : ne l'utilise pas pour des fichiers ou des documents indexes. L'envoi d'une facture par email est impossible dans l'application, y compris depuis la vue Facturation : n'utilise pas send_email pour ca et n'affirme jamais un envoi. Le parcours reel est : telecharger le PDF, l'envoyer soi-meme, puis marquer le document « Envoyee » a la main.\n"
         if "invoice_totals" in tool_names:
@@ -2906,7 +2912,7 @@ async def _do_stream_response(
         if "read_contact" in tool_names:
             capabilities += "- **read_contact** : Lire une fiche de contact. Elle rend des COORDONNEES (des faits), un `etat_courant` (ce que l'application a enregistre, souvent vide) et des `traces` (ce qui a ete ecrit, date, sans garantie d'actualite). N'affirme QUE `etat_courant`. S'il est vide, dis-le et cite les traces avec leur date. Deux traces qui se contredisent : dis-le, ne tranche pas. Utilise-le AU LIEU d'inventer le contexte client.\n"
         if "generate_document" in tool_names:
-            capabilities += "- **generate_document** : Genere un VRAI fichier Word (docx), PowerPoint (pptx) ou Excel (xlsx) telechargeable. Utilise-le DES que l'utilisateur demande de creer/generer un document : appelle l'outil avec tout le contenu, ne redige PAS le document en clair dans le chat et ne fabrique jamais de lien.\n"
+            capabilities += "- **generate_document** : Genere un VRAI fichier Word (docx), PowerPoint (pptx) ou Excel (xlsx) telechargeable. Utilise-le pour un document dans ces formats Office : appelle l'outil avec tout le contenu, ne redige PAS le document en clair dans le chat et ne fabrique jamais de lien. Pour les factures et devis, utilise create_invoice s'il est propose ; ne les remplace pas par un Word ou Excel sans demande explicite.\n"
         mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", *MEMORY_TOOL_NAMES, *WORKSPACE_TOOL_NAMES)]
         if mcp_tools:
             capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
