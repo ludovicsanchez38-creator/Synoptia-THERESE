@@ -22,6 +22,7 @@ import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
 import { effortXhighPropose } from '../../lib/effortOpenAI';
+import { modeleParDefaut } from '../../lib/catalogueModeles';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
@@ -108,7 +109,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
 
   // Configuration LLM
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
-  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
+  const [selectedModel, setSelectedModel] = useState(() => modeleParDefaut('anthropic'));
   // B-225 : ce que l'utilisateur a réellement choisi, fournisseur par
   // fournisseur. Une ref et non un état : `handleSelectProvider` est asynchrone
   // et lirait une valeur périmée dans sa fermeture.
@@ -235,7 +236,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
     setLoading(true);
     const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
       loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [], sources: {} as Record<string, string> }),
-      loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] }),
+      loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: modeleParDefaut('anthropic'), available_models: [] }),
       loadSetting('préférences', api.getPreferences(), {}),
       loadSetting('statistiques', api.getStats(), null),
       loadSetting('profil', api.getProfile(), null),

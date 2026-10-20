@@ -440,6 +440,12 @@ def fenetre_de_contexte(provider: str, model: str | None) -> int:
 
 def libelle_modele(modele: str) -> str:
     """Nom lisible dérivé de l'identifiant, partagé par les trois sélecteurs."""
+    # OpenRouter reprend le nom natif quand le catalogue le connaît.
+    _, separateur, natif = modele.partition("/")
+    if separateur and any(
+        natif in fiche.modeles for nom, fiche in CATALOGUE.items() if nom != "openrouter"
+    ):
+        return libelle_modele(natif)
     texte = re.sub(r"-\d{8}$", "", modele)
     texte = re.sub(r"(\d)-(\d)", r"\1.\2", texte)
     morceaux = texte.replace("-", " ").split()

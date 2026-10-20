@@ -268,3 +268,8 @@ export const FOURNISSEURS: FournisseurConfig[] = METADONNEES_FOURNISSEURS.map((f
   ...f,
   models: decorer((catalogueGenere[f.id as keyof typeof catalogueGenere] ?? []).map((m) => m.id)),
 }));
+
+/** Tête du catalogue généré, partagée par la mise en route et les réglages. */
+export function modeleParDefaut(fournisseur: LLMProvider): string {
+  return FOURNISSEURS.find((p) => p.id === fournisseur)?.models[0]?.id ?? '';
+}
