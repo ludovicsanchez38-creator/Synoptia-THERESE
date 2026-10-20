@@ -15,6 +15,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ApiError } from '../../services/api/core';
 import { WorkingDirStep } from './WorkingDirStep';
 
 const apiMocks = vi.hoisted(() => ({
@@ -62,4 +63,14 @@ describe('WorkingDirStep — une panne de sélection est dite et annoncée', () 
     expect(alerte.textContent ?? '').not.toMatch(JARGON);
     expect(document.body.textContent ?? '').not.toMatch(JARGON);
   });
+});
+
+
+it('R1-8 : explique le refus du dossier personnel entier', async () => {
+  const bouton = await ouvrirLEtape();
+  vi.mocked(open).mockResolvedValueOnce('/Users/camille');
+  const raison = 'Choisis un dossier de travail dédié : ton dossier personnel entier est refusé.';
+  apiMocks.setWorkingDirectory.mockRejectedValueOnce(new ApiError(400, 'Bad Request', raison));
+  fireEvent.click(bouton);
+  expect((await screen.findByText(raison)).closest('[role=alert]')).not.toBeNull();
 });

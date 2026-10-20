@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { FolderOpen, Check, AlertCircle } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
+import { ApiError } from '../../services/api/core';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
@@ -77,7 +78,9 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
       // Le serveur refuse en anglais (« Path does not exist ») : c'est un
       // message de journal, pas un message d'écran.
       console.error('Enregistrement du dossier de travail impossible:', err);
-      setError('Ce dossier n’a pas pu être retenu. Vérifie qu’il existe toujours et qu’il t’est accessible, puis réessaie.');
+      setError(err instanceof ApiError && err.status === 400 && err.message.startsWith('Choisis un dossier de travail dédié')
+        ? err.message
+        : 'Ce dossier n’a pas pu être retenu. Vérifie qu’il existe toujours et qu’il t’est accessible, puis réessaie.');
     } finally {
       setSaving(false);
     }
