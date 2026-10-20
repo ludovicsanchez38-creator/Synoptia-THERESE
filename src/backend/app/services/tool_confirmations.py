@@ -11,6 +11,7 @@ Le stockage est volontairement en mémoire (durée de vie d'une confirmation =
 quelques secondes/minutes). Une confirmation perdue à un redémarrage est sans
 conséquence : l'action n'a tout simplement pas eu lieu (fail-safe).
 """
+import json
 import uuid
 from typing import Any
 
@@ -211,3 +212,45 @@ def canoniser_arguments(tool_name: str, arguments: dict[str, Any]) -> dict[str, 
                 canonises["body"] = valeur
                 break
     return canonises
+
+
+def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
+    """La confirmation alimente la bulle et l'aperçu, pas le modèle."""
+    try:
+        donnees = json.loads(resultat)
+    except (ValueError, TypeError):
+        return resultat
+    if isinstance(donnees, dict):
+        message = donnees.get("message")
+        if isinstance(message, str) and message.strip():
+            return message
+        erreur = donnees.get("error")
+        if isinstance(erreur, str) and erreur.strip():
+            return f"L'action n'a pas abouti : {erreur}"
+        if donnees.get("success") is False:
+            return "L'action n'a pas abouti. Vérifie les informations de la carte."
+    confirmations = {
+        "create_contact": "Contact créé.",
+        "create_project": "Projet créé.",
+        "create_task": "Tâche créée.",
+        "create_invoice": "Brouillon créé dans Devis et factures.",
+    }
+    if nom in confirmations:
+        return confirmations[nom]
+
+    def texte(valeur: Any) -> str:
+        if isinstance(valeur, dict):
+            return "; ".join(
+                f"{str(cle).replace('_', ' ').capitalize()} : {texte(contenu)}"
+                for cle, contenu in valeur.items() if cle != "success"
+            )
+        if isinstance(valeur, list):
+            return "; ".join(texte(element) for element in valeur)
+        if isinstance(valeur, bool):
+            return "oui" if valeur else "non"
+        return "non renseigné" if valeur is None else str(valeur)
+
+    # Les résultats de lecture d'un connecteur contiennent aussi des faits :
+    # les rendre lisibles plutôt que les remplacer par un simple accusé.
+    rendu = texte(donnees).strip()
+    return (rendu if rendu.endswith((".", "!", "?")) else rendu + ".") if rendu else "Action exécutée."

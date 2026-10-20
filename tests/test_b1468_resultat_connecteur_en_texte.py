@@ -18,7 +18,7 @@ from app.services.tool_confirmations import register_pending
      "Il est 22:41 à Paris."),
     ({"content": [{"type": "text", "text": "Ligne 1"}, {"type": "image", "data": "..."}, {"type": "text", "text": "Ligne 2"}]},
      "Ligne 1\nLigne 2"),
-    ({"heure": "22:41"}, '{"heure": "22:41"}'),
+    ({"heure": "22:41"}, "Heure : 22:41."),
     ("Déjà du texte", "Déjà du texte"),
 ])
 async def test_le_resultat_d_un_connecteur_revient_en_texte(client, monkeypatch, brut, attendu):

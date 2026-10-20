@@ -4018,6 +4018,9 @@ async def confirm_tool(
     # B-1448 : ce texte s'affiche à l'utilisatrice, pas au modèle.
     if tool_name == "generate_document":
         result = texte_du_document_pour_l_ecran(result)
+    from app.services.tool_confirmations import resultat_pour_l_ecran
+
+    result = resultat_pour_l_ecran(tool_name, result)
     payload: dict[str, Any] = {
         "status": "executed",
         "tool_name": tool_name,

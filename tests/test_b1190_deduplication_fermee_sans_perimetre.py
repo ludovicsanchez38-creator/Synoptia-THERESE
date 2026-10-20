@@ -14,8 +14,6 @@ Chemin atteignable : create_contact et create_project exigent une carte
 entre la carte et le clic « Confirmer » : (None, None).
 """
 
-import json
-
 import pytest
 
 
@@ -56,6 +54,9 @@ async def test_create_contact_confirme_apres_suppression_ne_revele_pas_l_homonym
     assert id_homonyme not in resultat and "already_existed" not in resultat, (
         f"conversation supprimée ({conv}) : create_contact rend {resultat}"
     )
+    contacts = (await client.get("/api/memory/contacts")).json()
+    assert len(contacts) == 2
+    assert len({c["id"] for c in contacts}) == 2
 
 
 @pytest.mark.asyncio
@@ -68,6 +69,8 @@ async def test_create_project_confirme_apres_suppression_ne_revele_pas_les_homon
     reponse = await client.post("/api/chat/confirm-tool", json={"confirmation_id": carte, "approved": True})
     resultat = reponse.json()["result"]
     assert "Plusieurs projets" not in resultat, f"create_project rend {resultat}"
+    projets = (await client.get("/api/memory/projects")).json()
+    assert sum(p["name"] == "Chantier confidentiel" for p in projets) == 3
 
 
 @pytest.mark.asyncio
@@ -81,4 +84,8 @@ async def test_temoin_conversation_libre_ferme(client):
     reponse = await client.post("/api/chat/confirm-tool", json={"confirmation_id": carte, "approved": True})
     resultat = reponse.json()["result"]
     assert id_homonyme not in resultat, resultat
-    assert json.loads(resultat).get("already_existed") is not True, resultat
+    assert "créé" in resultat, resultat
+    contacts = (await client.get("/api/memory/contacts")).json()
+    nouveaux = [c for c in contacts if c["id"] != id_homonyme]
+    assert len(nouveaux) == 1
+    assert nouveaux[0]["scope"] == "global"
