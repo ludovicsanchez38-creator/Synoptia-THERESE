@@ -539,7 +539,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # Garde-fous factuels (souveraineté + juridique + honnêteté données)
         guardrails = (
             f"{self.SOVEREIGNTY_BLOCK}\n\n{self.LEGAL_GUARDRAIL_BLOCK}\n\n"
-            f"{self.DATA_HONESTY_BLOCK}"
+            f"{self.DATA_HONESTY_BLOCK}\n\n"
+            "Tutoie l'utilisateur par défaut, sauf demande explicite de sa part "
+            "ou consigne personnelle contraire. Le registre d'un courrier destiné "
+            "à un tiers suit sa demande et son destinataire."
         )
 
         if not profile or not profile.name:
