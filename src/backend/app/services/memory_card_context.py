@@ -49,8 +49,8 @@ def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, A
         charge['system'] = system
     if suite:
         charge['continuation'] = suite
-    # Un octet UTF-8 = au plus un jeton, plus enveloppes et schémas sérialisés.
-    # La suite entière est comptée (résultats et tours précédents), jamais len/4.
+    # La suite entière est comptée (résultats et tours précédents).
+    # Hors Ollama, conserver le budget conservateur historique.
     def enveloppes_de(valeur: Any) -> int:
         if dataclasses.is_dataclass(valeur) and not isinstance(valeur, type):
             valeur = dataclasses.asdict(valeur)
@@ -62,7 +62,9 @@ def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, A
     enveloppes = len(messages) + len(tools or []) + enveloppes_de(suite)
     # Réserve pour le gabarit de chat local (rôles, séparateurs, outils).
     gabarit = 512 if nom == 'ollama' else 0
-    return len(_json(charge).encode('utf-8')) + ENVELOPPE * enveloppes + gabarit
+    from app.services.ollama_budget import estimer_jetons
+    contenu = estimer_jetons(_json(charge)) if nom == 'ollama' else len(_json(charge).encode('utf-8'))
+    return contenu + ENVELOPPE * enveloppes + gabarit
 
 
 def bloc_fiches(fiches: list[dict[str, Any]]) -> str:

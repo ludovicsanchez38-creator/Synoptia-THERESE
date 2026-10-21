@@ -11,7 +11,7 @@ import logging
 from typing import Any, AsyncGenerator
 
 import httpx
-from app.services.ollama_budget import fenetre_ollama
+from app.services.ollama_budget import estimer_jetons, fenetre_ollama
 
 from .base import (
     BaseProvider,
@@ -101,7 +101,7 @@ class OllamaProvider(BaseProvider):
         # Dernier garde sur la charge effectivement convertie, continuations incluses.
         # On ne laisse jamais Ollama tronquer le système de sa propre initiative.
         charge: dict[str, Any] = {'messages': request_body['messages'], 'tools': request_body.get('tools', [])}
-        cout = len(json.dumps(charge, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
+        cout = estimer_jetons(json.dumps(charge, ensure_ascii=False, separators=(',', ':')))
         cout += 32 * (len(charge['messages']) + len(charge['tools'])) + 512
         if cout + self.config.max_tokens > fenetre_ollama(self.config):
             yield StreamEvent(type="error", content=(
