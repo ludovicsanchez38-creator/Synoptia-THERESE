@@ -110,12 +110,13 @@ export function usePrototypeMeetingData(enabled = true) {
     setEventResource({ status: 'loading', data: null, error: null });
     const relatedContacts = contactsForEvent(event, data.contacts);
     const activityResults = await Promise.allSettled(
-      relatedContacts.map((contact) => listActivities({ contact_id: contact.id, limit: 20 })),
+      [...relatedContacts.map((contact) => listActivities({ contact_id: contact.id, limit: 20 })),
+        listActivities({ calendar_event_id: event.id, calendar_id: event.calendar_id, limit: 50 })],
     );
     if (activeRequest !== detailRequestId.current) return;
 
-    const activities = activityResults
-      .flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+    const activities = [...new Map(activityResults
+      .flatMap((result) => result.status === 'fulfilled' ? result.value : []).map(a => [a.id, a])).values()]
       .sort((left, right) => right.created_at.localeCompare(left.created_at));
     const unavailableSources = activityResults.some((result) => result.status === 'rejected')
       ? ['historique CRM']
@@ -257,11 +258,11 @@ export function usePrototypeMeetingData(enabled = true) {
       // B-1588 : une séance ouverte depuis l'Agenda (P-117) est hors de la liste.
       const event = data ? trouver(data.events, eventId) : undefined;
       const contact = data?.contacts.find((item) => item.id === contactId);
-      if (!data || !event || !contact || !contactsForEvent(event, data.contacts).some((item) => item.id === contactId)) {
+      if (!data || !event || (contactId && (!contact || !contactsForEvent(event, data.contacts).some((item) => item.id === contactId)))) {
         throw new Error('Le contact n’est pas relié à ce rendez-vous par son adresse email.');
       }
       const created = await createActivity({
-        contact_id: contactId,
+        contact_id: contactId || null,
         type: 'note',
         title: `Note rendez-vous : ${event.summary}`,
         description: cleanDescription,

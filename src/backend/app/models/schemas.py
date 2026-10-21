@@ -1411,6 +1411,7 @@ class ActivityResponse(BaseModel):
     created_at: HorodatageUTC
     statut: str = "en_vigueur"
     remplace_id: str | None = None
+    event_deleted: bool = False
 
 
 class CreateActivityRequest(BaseModel):

@@ -7,6 +7,7 @@ import { useDemoMask } from '../../hooks/useDemoMask';
 import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
+import { MemoryMeetingNotesBranch } from './MemoryMeetingNotesBranch';
 import { MemoryDraftsBranch } from './MemoryDraftsBranch';
 import { MemoryProfileBranch } from './MemoryProfileBranch';
 import { ActivityMemoryBranch } from './ActivityMemoryBranch';
@@ -97,12 +98,12 @@ export function AgentMemoryPanel() {
 
   return <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 lg:flex-row">
     <nav aria-label="Arborescence de Mémoire" className="flex shrink-0 flex-col gap-2 lg:w-56">
-      {BRANCHES.map((branche, i) => <button key={branche} type="button" className={classe} disabled={i > 3} onClick={() => setBranch(i)} aria-current={i === branch ? 'page' : undefined}>
-        {branche}{i > 3 && <span className="block text-xs text-text-muted">Non disponible</span>}
+      {BRANCHES.map((branche, i) => <button key={branche} type="button" className={classe} onClick={() => setBranch(i)} aria-current={i === branch ? 'page' : undefined}>
+        {branche}
       </button>)}
     </nav>
     <div className="min-w-0 flex-1 space-y-4">
-      {branch === 0 ? <MemoryProfileBranch /> : branch === 2 ? <ActivityMemoryBranch /> : branch === 3 ? <MemoryDraftsBranch /> : <>
+      {branch === 0 ? <MemoryProfileBranch /> : branch === 2 ? <ActivityMemoryBranch /> : branch === 3 ? <MemoryDraftsBranch /> : branch === 4 ? <MemoryMeetingNotesBranch /> : <>
       <p className="text-sm text-text-muted">Thérèse écrit tes fiches ; tu peux les corriger ou les effacer. Elles restent dans ta base chiffrée. Dans le chat, tes fiches mémoire utiles sont envoyées avec chaque échange où la mémoire est activée, avec ton accord pour un service en ligne.</p>
       <div className="flex flex-wrap gap-2">
         <label>Rechercher<input className={classe} value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>

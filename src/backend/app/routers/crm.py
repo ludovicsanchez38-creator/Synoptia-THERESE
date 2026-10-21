@@ -11,7 +11,15 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.models.database import get_session
-from app.models.entities import Activity, Contact, Deliverable, EmailAccount, Preference, Project
+from app.models.entities import (
+    Activity,
+    CalendarEvent,
+    Contact,
+    Deliverable,
+    EmailAccount,
+    Preference,
+    Project,
+)
 from app.models.schemas import (
     ActivityResponse,
     ContactResponse,
@@ -55,8 +63,9 @@ from app.services.scoring import calculate_base_score, update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
+from sqlalchemy import case
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import func, select
+from sqlmodel import col, func, select
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +110,9 @@ def _activity_to_response(activity: Activity) -> ActivityResponse:
 async def list_activities(
     contact_id: str | None = Query(None, description="Filtrer par contact"),
     type: str | None = Query(None, description="Filtrer par type"),
+    meeting_notes: bool = Query(False),
+    calendar_event_id: str | None = Query(None),
+    calendar_id: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -116,6 +128,16 @@ async def list_activities(
     if type:
         statement = statement.where(Activity.type == type)
 
+    extra_json = case((func.json_valid(col(Activity.extra_data)), col(Activity.extra_data)), else_='{}')
+    if meeting_notes or calendar_event_id:
+        statement = statement.where(col(Activity.type) == 'note', func.json_valid(col(Activity.extra_data)),
+            func.json_extract(extra_json, '$.calendar_event_id').is_not(None),
+            func.json_extract(extra_json, '$.calendar_id').is_not(None))
+    if calendar_event_id:
+        if not calendar_id:
+            raise HTTPException(422, 'Le calendrier du rendez-vous est obligatoire.')
+        statement = statement.where(func.json_extract(extra_json, '$.calendar_event_id') == calendar_event_id,
+            func.json_extract(extra_json, '$.calendar_id') == calendar_id)
     # Ordre anti-chronologique
     statement = statement.order_by(Activity.created_at.desc())
 
@@ -125,7 +147,16 @@ async def list_activities(
     result = await session.execute(statement)
     activities = result.scalars().all()
 
-    return [_activity_to_response(activity) for activity in activities]
+    from app.services.meeting_notes import liens
+    resultat = []
+    for activity in activities:
+        reponse = _activity_to_response(activity)
+        extra = liens(activity.extra_data)
+        if activity.type == 'note' and extra.get('calendar_event_id') and extra.get('calendar_id'):
+            event = await session.get(CalendarEvent, extra['calendar_event_id'])
+            reponse.event_deleted = event is None or event.calendar_id != extra['calendar_id']
+        resultat.append(reponse)
+    return resultat
 
 
 @router.post("/activities", response_model=ActivityResponse)
@@ -157,7 +188,21 @@ async def _creer_activite(request: CreateActivityRequest, session: AsyncSession)
 
     if request.type == 'agent_action':
         raise HTTPException(422, 'Le reçu d’une action est produit uniquement par son exécution.')
-    verifier_texte(request.title, request.description, request.extra_data)
+    from app.services.meeting_notes import liens, verifier_evenement
+    extra = liens(request.extra_data)
+    projet_id = request.project_id
+    if request.type == 'note' and ('calendar_event_id' in extra or 'calendar_id' in extra):
+        event = await verifier_evenement(session, extra)
+        if projet_id and projet_id != event.project_id:
+            raise HTTPException(422, 'La note hérite du dossier du rendez-vous.')
+        projet_id = event.project_id
+        # Les deux références sont vérifiées, pas traitées comme de la prose.
+        texte_extra = {k: v for k, v in extra.items() if k not in ('calendar_event_id', 'calendar_id')}
+        verifier_texte(request.title, request.description, json.dumps(texte_extra))
+        extra['meeting_note_v'] = 1
+        request.extra_data = json.dumps(extra)
+    else:
+        verifier_texte(request.title, request.description, request.extra_data)
     contact = await session.get(Contact, request.contact_id) if request.contact_id else None
     if request.contact_id and not contact:
         raise HTTPException(404, 'Contact not found')
@@ -165,7 +210,7 @@ async def _creer_activite(request: CreateActivityRequest, session: AsyncSession)
         raise HTTPException(404, 'Projet introuvable')
     if request.conversation_id:
         raise HTTPException(422, 'La provenance est réservée aux actions exécutées.')
-    activity = Activity(contact_id=request.contact_id, project_id=request.project_id,
+    activity = Activity(contact_id=request.contact_id, project_id=projet_id,
         type=request.type, title=request.title, description=request.description, extra_data=request.extra_data)
     session.add(activity)
     if contact:
@@ -182,12 +227,46 @@ async def _creer_activite(request: CreateActivityRequest, session: AsyncSession)
     return _activity_to_response(activity)
 
 
+def _liens_de_note(extra_data: str | None) -> str | None:
+    from app.services.meeting_notes import liens
+    extra = liens(extra_data)
+    return json.dumps({k: extra[k] for k in ('calendar_event_id', 'calendar_id', 'meeting_note_v') if k in extra}) if extra.get('calendar_event_id') and extra.get('calendar_id') else None
+
+
+class NouvelleNoteDeRendezVous(BaseModel):
+    calendar_event_id: str
+    calendar_id: str
+    contact_id: str | None = None
+    description: str
+
+
+@router.post('/meeting-notes', response_model=ActivityResponse)
+async def creer_note_de_rendez_vous(request: NouvelleNoteDeRendezVous, session: AsyncSession = Depends(get_session)) -> ActivityResponse:
+    if not request.description.strip() or len(request.description) > 1200:
+        raise HTTPException(422, 'Écris une note de 1 à 1 200 caractères.')
+    return await create_activity(CreateActivityRequest(type='note', title='Note de rendez-vous',
+        contact_id=request.contact_id, description=request.description,
+        extra_data=json.dumps({'calendar_event_id': request.calendar_event_id, 'calendar_id': request.calendar_id})), session)
+
+
+@router.get('/meeting-events')
+async def rendez_vous_locaux(query: str = '', skip: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100),
+                            session: AsyncSession = Depends(get_session)) -> list[dict[str, Any]]:
+    requete = select(CalendarEvent)
+    if query:
+        requete = requete.where(col(CalendarEvent.summary).contains(query, autoescape=True))
+    events = (await session.execute(requete.order_by(col(CalendarEvent.start_datetime).desc(), col(CalendarEvent.id))
+        .offset(skip).limit(limit))).scalars().all()
+    return [{'id': e.id, 'calendar_id': e.calendar_id, 'summary': e.summary,
+             'date': (e.start_datetime.isoformat() if e.start_datetime else e.start_date)} for e in events]
+
+
 class CorrectionDeTrace(BaseModel):
     description: str
 
 
 @router.post('/activities/{activity_id}/correction', response_model=ActivityResponse)
-async def corriger_trace(activity_id: str, request: CorrectionDeTrace):
+async def corriger_trace(activity_id: str, request: CorrectionDeTrace) -> ActivityResponse:
     from app.models.database import get_session_context
     from app.services.action_journal import verifier_texte
     from app.services.memory_tools import _proteger_le_geste, generation_des_donnees
@@ -209,7 +288,7 @@ async def corriger_trace(activity_id: str, request: CorrectionDeTrace):
                 raise HTTPException(409, 'Cette trace a déjà été remplacée.')
             nouvelle = Activity(type=originale.type if originale.type == 'agent_action' else 'note',
                 title='Correction de trace', description=request.description,
-                extra_data=json.dumps({'outcome': 'annotation'}) if originale.type == 'agent_action' else None,
+                extra_data=json.dumps({'outcome': 'annotation'}) if originale.type == 'agent_action' else _liens_de_note(originale.extra_data),
                 contact_id=originale.contact_id, project_id=originale.project_id,
                 conversation_id=originale.conversation_id)
             session.add(nouvelle)

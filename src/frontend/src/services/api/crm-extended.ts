@@ -16,6 +16,7 @@ export interface ActivityResponse {
   project_id?: string | null;
   conversation_id?: string | null;
   execution_id?: string | null;
+  event_deleted?: boolean;
   type: string;
   title: string;
   description: string | null;
@@ -91,12 +92,18 @@ export async function saveCRMGoogleCredentials(
 export async function listActivities(params: {
   contact_id?: string;
   type?: string;
+  meeting_notes?: boolean;
+  calendar_event_id?: string;
+  calendar_id?: string;
   skip?: number;
   limit?: number;
 }): Promise<ActivityResponse[]> {
   const query = new URLSearchParams();
   if (params.contact_id) query.append('contact_id', params.contact_id);
   if (params.type) query.append('type', params.type);
+  if (params.meeting_notes) query.append('meeting_notes', 'true');
+  if (params.calendar_event_id) query.append('calendar_event_id', params.calendar_event_id);
+  if (params.calendar_id) query.append('calendar_id', params.calendar_id);
   if (params.skip) query.append('skip', params.skip.toString());
   if (params.limit) query.append('limit', params.limit.toString());
 

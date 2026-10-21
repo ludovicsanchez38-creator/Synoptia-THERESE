@@ -40,7 +40,7 @@ export function ActivityMemoryBranch({ notes = false }: { notes?: boolean }) {
   const afficher = (value: string) => demo.enabled ? 'Contenu masqué en démonstration' : demo.maskText(value);
   useEffect(() => {
     let actif = true; setLoading(true); setError('');
-    listActivities({ type: notes ? 'note' : 'agent_action', skip: offset, limit: 50 })
+    listActivities({ type: notes ? 'note' : 'agent_action', ...(notes ? { meeting_notes: true } : {}), skip: offset, limit: 50 })
       .then(data => { if (actif) setItems(data); })
       .catch(() => { if (actif) { setItems([]); setError('Impossible de lire tes traces. Réessaie.'); } })
       .finally(() => { if (actif) setLoading(false); });
@@ -69,6 +69,7 @@ export function ActivityMemoryBranch({ notes = false }: { notes?: boolean }) {
         {t.project_id && <button className={classe} disabled={demo.enabled} onClick={() => {
           void getProject(t.project_id!).then(p => usePanelStore.getState().openEditProject(p)).catch(() => setError('Dossier supprimé ou indisponible.'));
         }}>Voir le dossier lié</button>}
+        {notes && t.event_deleted && <p>Rendez-vous supprimé</p>}
         {t.description && <p className="whitespace-pre-wrap">{afficher(t.description)}</p>}
         {t.statut === 'annulee' && <p>Trace annulée{t.remplace_id ? ' et remplacée par une correction ci-dessus.' : '.'}</p>}
         {t.statut !== 'annulee' && <button className={classe} disabled={demo.enabled || busy} onClick={() => { if (!gesteBloqueEnDemo()) { setEdit(t.id); setText(''); } }}>Corriger cette trace</button>}{' '}

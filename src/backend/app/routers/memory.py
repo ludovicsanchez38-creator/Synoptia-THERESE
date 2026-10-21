@@ -470,7 +470,7 @@ async def _nettoyer_et_supprimer_projet(
 
     from app.models.entities import Activity
     from app.services.action_journal import effacer_activites
-    nombre_activites = await effacer_activites(session, Activity.project_id == project_id)
+    nombre_activites = await effacer_activites(session, col(Activity.project_id) == project_id)
     from app.services.memory_cards import effacer_liees
     fiches_effacees = await effacer_liees(session, project_id=project_id)
     await session.delete(project)
