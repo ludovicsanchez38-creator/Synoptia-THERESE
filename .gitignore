@@ -133,3 +133,6 @@ docs/campagnes/*/captures/
 
 # Données fictives et preuves locales du lot R3
 .recette-r3/
+
+# Preuves et profils locaux de la recette R4
+.recette-r4/
