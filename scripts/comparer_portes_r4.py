@@ -16,6 +16,8 @@ def junit(phase, suite):
         for s in ('skipped', 'failure', 'error'):
             if t.find(s) is not None:
                 statut = 'xfail' if t.find(s).get('type') == 'pytest.xfail' else s
+        if nom in tests:
+            raise ValueError(f'JUnit {phase} : nom dupliqué {nom}')
         tests[nom] = statut
     return tests
 
@@ -26,7 +28,15 @@ def vitest(phase):
     for fichier in donnees['testResults']:
         nom_fichier = fichier['name'].split('/src/frontend/')[-1]
         for t in fichier['assertionResults']:
-            tests[nom_fichier + '::' + t['fullName']] = t['status']
+            nom = nom_fichier + '::' + t['fullName']
+            if nom in tests:
+                raise ValueError(f'Vitest {phase} : nom dupliqué {nom}')
+            tests[nom] = t['status']
+    if len(tests) != donnees['numTotalTests']:
+        raise ValueError(f"Vitest {phase} : suite incomplète, {len(tests)} noms pour {donnees['numTotalTests']} tests déclarés")
+    if any(f['status'] == 'failed' and not any(t['status'] == 'failed' for t in f['assertionResults'])
+           for f in donnees['testResults']):
+        raise ValueError(f'Vitest {phase} : échec de fichier sans résultat de test')
     return tests
 
 
