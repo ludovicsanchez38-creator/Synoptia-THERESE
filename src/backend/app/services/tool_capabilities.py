@@ -29,7 +29,7 @@ def capacites_outils(tool_names: list[str]) -> str:
     if "search_emails" in tool_names:
         capabilities += "- **search_emails** : Chercher dans les emails de l'utilisateur.\n"
     if "list_calendar_events" in tool_names:
-        capabilities += "- **list_calendar_events** : Consulter les evenements du calendrier.\n"
+        capabilities += "- **list_calendar_events** : Consulter les événements du calendrier. Appelle cet outil avant toute réponse sur les rendez-vous réels. Sans résultat vérifié, dis que tu ne peux pas confirmer l'agenda ; n'invente aucun événement.\n"
     if "create_calendar_event" in tool_names:
         capabilities += "- **create_calendar_event** : Creer un evenement dans le calendrier.\n"
     if "list_tasks" in tool_names:

@@ -1566,6 +1566,22 @@ async def _list_calendar_events(
     """
     from datetime import datetime, timedelta, timezone
 
+    from app.models.entities import Calendar
+    calendrier, _ = await _resoudre_calendrier(session, calendar_id=_id_agenda_demande(args=args))
+    if isinstance(calendrier, Calendar) and calendrier.provider != "local":
+        if calendrier.sync_status == "error":
+            return (
+                "La dernière synchronisation a échoué. Je ne peux pas confirmer ton agenda. "
+                "N'invente AUCUN événement, date ni rendez-vous. "
+                "Dis-le et propose d'ouvrir Agenda pour relancer la synchronisation."
+            )
+        if calendrier.synced_at is None:
+            return (
+                "Aucun calendrier synchronisé : ce calendrier est configuré, mais ses événements n'ont pas encore été importés. "
+                "N'invente AUCUN événement, date ni rendez-vous. "
+                "Propose d'ouvrir Agenda et de lancer la synchronisation."
+            )
+
     provider, cal_id, error = await _get_calendar_provider(
         session, calendar_id=_id_agenda_demande(args=args)
     )
@@ -1581,7 +1597,7 @@ async def _list_calendar_events(
         # QW2 : sans calendrier connecté, l'IA inventait des RDV. On renvoie une
         # consigne directive pour qu'elle relaie l'absence au lieu de broder.
         return (
-            f"AUCUN CALENDRIER CONNECTE ({error}). "
+            f"Aucun calendrier synchronisé. AUCUN CALENDRIER CONNECTE ({error}). "
             "N'invente AUCUN evenement, date ni rendez-vous. Indique a l'utilisateur "
             "qu'aucun calendrier n'est connecte et propose d'en configurer un."
         )
@@ -1607,7 +1623,13 @@ async def _list_calendar_events(
         )
 
         if not events:
-            return f"Aucun evenement dans les {days} prochains jours."
+            if isinstance(calendrier, Calendar) and calendrier.provider == "local" and calendrier.synced_at is None:
+                return (
+                    f"Aucun evenement dans les {days} prochains jours. Aucun calendrier synchronisé à une source externe. "
+                    "N'invente AUCUN événement, date ni rendez-vous. "
+                    "Dis que cette période est vide ; si tu attends des rendez-vous externes, configure leur calendrier dans Agenda."
+                )
+            return f"Aucun evenement dans les {days} prochains jours. N'invente AUCUN autre événement."
 
         lines = [f"**{len(events)} evenement(s) dans les {days} prochains jours :**\n"]
         for event in events:
@@ -1644,7 +1666,14 @@ async def _list_calendar_events(
             return "Erreur lors de la lecture du calendrier."
     except Exception:
         logger.exception("Erreur lecture calendrier")
-        return "Erreur lors de la lecture du calendrier. Le détail est au journal."
+        if isinstance(calendrier, Calendar) and calendrier.provider != "local":
+            calendrier.sync_status = "error"
+            calendrier.last_sync_error = "La dernière synchronisation a échoué. Ouvre Agenda et relance la synchronisation."
+            session.add(calendrier)
+            await session.commit()
+        return ("La dernière synchronisation a échoué : la lecture du calendrier est impossible. "
+                "N'invente AUCUN événement, date ni rendez-vous. "
+                "Dis que tu ne peux pas confirmer l'agenda et propose d'ouvrir Agenda pour relancer la synchronisation.")
 
 
 async def _create_calendar_event(

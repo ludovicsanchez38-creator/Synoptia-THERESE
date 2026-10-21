@@ -860,26 +860,35 @@ async def _list_events_provider(
     dt_min = _parse_borne_instant(time_min) if time_min else None
     dt_max = _parse_borne_instant(time_max) if time_max else None
 
-    if dt_min is not None and dt_max is not None:
-        # Fenêtre bornée (mois de l'agenda) : tout ramener ou avouer.
-        async def _page(token: str | None) -> tuple[list[Any], str | None]:
-            evenements, jeton = await provider.list_events(
+    try:
+        if dt_min is not None and dt_max is not None:
+            # Fenêtre bornée (mois de l'agenda) : tout ramener ou avouer.
+            async def _page(token: str | None) -> tuple[list[Any], str | None]:
+                evenements, jeton = await provider.list_events(
+                    calendar_id=provider_calendar_id,
+                    time_min=dt_min,
+                    time_max=dt_max,
+                    max_results=250,
+                    page_token=token,
+                )
+                return list(evenements), jeton
+    
+            events_dto = await _collecter_pages_evenements(_page)
+        else:
+            events_dto, _ = await provider.list_events(
                 calendar_id=provider_calendar_id,
                 time_min=dt_min,
                 time_max=dt_max,
-                max_results=250,
-                page_token=token,
+                max_results=max_results,
             )
-            return list(evenements), jeton
-
-        events_dto = await _collecter_pages_evenements(_page)
-    else:
-        events_dto, _ = await provider.list_events(
-            calendar_id=provider_calendar_id,
-            time_min=dt_min,
-            time_max=dt_max,
-            max_results=max_results,
-        )
+    
+    except Exception:
+        if calendar.provider == "caldav":
+            calendar.sync_status = "error"
+            calendar.last_sync_error = "La dernière synchronisation a échoué. Ouvre Agenda et relance la synchronisation."
+            session.add(calendar)
+            await session.commit()
+        raise
 
     if calendar.provider == "caldav":
         # Cache local cloisonné par calendrier, sans collision entre UID DAV.
