@@ -1,3 +1,4 @@
+import { notifyMemoryChange } from './memoryCards';
 /**
  * THÉRÈSE v2 - RGPD API Module
  *
@@ -67,7 +68,9 @@ export async function anonymizeContact(contactId: string, reason: string): Promi
     const error = await response.json();
     throw new Error(error.detail || `RGPD anonymize failed: ${response.statusText}`);
   }
-  return response.json();
+  const resultat = await response.json();
+  notifyMemoryChange();
+  return resultat;
 }
 
 export async function renewContactConsent(contactId: string): Promise<RGPDRenewConsentResponse> {

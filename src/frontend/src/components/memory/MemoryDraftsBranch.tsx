@@ -4,6 +4,7 @@ import { getInvoice, type Invoice } from '../../services/api/invoices';
 import { InvoiceForm } from '../invoices/InvoiceForm';
 import { DocumentWorkspace } from '../documents/DocumentWorkspace';
 import { EmailCompose } from '../email/EmailCompose';
+import { listenMemoryChanges } from '../../services/api/memoryCards';
 import { useEmailStore } from '../../stores/emailStore';
 import { useDemoMask } from '../../hooks/useDemoMask';
 import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
@@ -23,6 +24,9 @@ export function MemoryDraftsBranch() {
   const composing = useEmailStore(s => s.isComposing);
   const temporary = useEmailStore(s => Boolean(s.draftBody || s.draftSubject || s.draftRecipients.length || s.isComposing));
   const demo = useDemoMask();
+  useEffect(() => listenMemoryChanges(() => {
+    setItems([]); setInvoice(null); setDocumentId(null); setMail(null); setLoading(true); setRevision(r => r + 1);
+  }), []);
   useEffect(() => {
     let actif = true; setLoading(true); setError('');
     listMemoryDrafts(offset).then(page => { if (actif) { setItems(page.items); setTotal(page.total); } })
@@ -66,6 +70,6 @@ export function MemoryDraftsBranch() {
     </li>)}</ul>}
     {total > 50 && <div><button className={classe} disabled={!offset} onClick={() => setOffset(o => Math.max(0, o - 50))}>Précédents</button>{' '}<button className={classe} disabled={offset + 50 >= total} onClick={() => setOffset(o => o + 50)}>Suivants</button></div>}
     {invoice && !demo.enabled && <InvoiceForm invoice={invoice} onClose={() => setInvoice(null)} onSave={() => { setInvoice(null); setRevision(r => r + 1); }} />}
-    {mail && composing && !demo.enabled && <EmailCompose draftId={useEmailStore.getState().editingDraftId || undefined} />}
+    {mail && composing && !demo.enabled && <EmailCompose sourceMessageId={useEmailStore.getState().editingDraftId || undefined} />}
   </section>;
 }

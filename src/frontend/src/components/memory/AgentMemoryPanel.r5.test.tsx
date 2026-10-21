@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { AgentMemoryPanel } from './AgentMemoryPanel';
 import * as api from '../../services/api/crm-extended';
@@ -40,4 +40,14 @@ it('confirme l’effacement, reprend le focus après Échap et masque les traces
   useDemoStore.setState({ enabled: true });
   await waitFor(() => expect(screen.getByRole('button', { name: 'Effacer cette trace' })).toBeDisabled());
   expect(screen.queryByText('Action confirmée')).not.toBeInTheDocument();
+});
+
+it('masque aussi une recherche déjà saisie quand la démonstration est activée', async () => {
+  render(<AgentMemoryPanel />);
+  const recherche = screen.getByLabelText('Rechercher');
+  fireEvent.change(recherche, { target: { value: 'SENTINELLE_DEMO_RECHERCHE' } });
+  expect(recherche).toHaveValue('SENTINELLE_DEMO_RECHERCHE');
+  act(() => { useDemoStore.setState({ enabled: true }); });
+  expect(recherche).toHaveValue('');
+  expect(recherche).toBeDisabled();
 });

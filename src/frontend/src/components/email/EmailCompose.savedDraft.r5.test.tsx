@@ -12,5 +12,5 @@ it('remplace le brouillon sauvegardé seulement au geste de sauvegarde et ne per
   expect(api.createDraft).not.toHaveBeenCalled();
   expect(localStorage.getItem('therese-email-store') || '').not.toContain('SENTINELLE_R5_COMPOSEUR');
   fireEvent.click(screen.getByRole('button', { name: 'Sauvegarder brouillon' }));
-  await waitFor(() => expect(api.createDraft).toHaveBeenCalledWith('compte', expect.objectContaining({ body: 'SENTINELLE_R5_COMPOSEUR' }), 'brouillon-source'));
+  await waitFor(() => expect(api.createDraft).toHaveBeenCalledWith('compte', expect.objectContaining({ body: 'SENTINELLE_R5_COMPOSEUR' }), undefined, 'brouillon-source'));
 });

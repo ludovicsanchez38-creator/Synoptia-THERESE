@@ -13,6 +13,7 @@ export function MemoryMeetingNotesBranch() {
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState('');
   const [contact, setContact] = useState('');
+  const [contactOffset, setContactOffset] = useState(0);
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -21,13 +22,14 @@ export function MemoryMeetingNotesBranch() {
   const demo = useDemoMask();
   useEffect(() => {
     if (!open || demo.enabled) return;
-    let actif = true; setLoading(true); setError(''); setSelected('');
-    Promise.all([listMeetingEvents(query, offset), listContacts(0, 200)])
+    let actif = true; setLoading(true); setError('');
+    Promise.all([listMeetingEvents(query, offset), listContacts(contactOffset, 200)])
       .then(([e, c]) => { if (actif) { setEvents(e); setContacts(c); } })
       .catch(() => { if (actif) { setEvents([]); setError('Impossible de lire les rendez-vous et contacts locaux. Réessaie.'); } })
       .finally(() => { if (actif) setLoading(false); });
     return () => { actif = false; };
-  }, [open, demo.enabled, query, offset, revision]);
+  }, [open, demo.enabled, query, offset, contactOffset, revision]);
+  useEffect(() => { setSelected(''); }, [query, offset]);
   async function enregistrer() {
     if (gesteBloqueEnDemo() || busy) return;
     const event = events.find(e => e.id === selected);
@@ -49,7 +51,10 @@ export function MemoryMeetingNotesBranch() {
       {loading && <p role="status">Lecture des rendez-vous locaux…</p>}
       <div><button className={classe} type="button" disabled={!offset} onClick={() => setOffset(o => Math.max(0, o - 50))}>Rendez-vous précédents</button>{' '}<button className={classe} type="button" disabled={events.length < 50} onClick={() => setOffset(o => o + 50)}>Autres rendez-vous</button></div>
       <label className="block">Contact facultatif<select className={classe} value={contact} onChange={e => setContact(e.target.value)}><option value="">Sans contact</option>{contacts.map(c => <option key={c.id} value={c.id}>{demo.maskText([c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || 'Contact')}</option>)}</select></label>
-      {contacts.length === 200 && <p>Les 200 premiers contacts sont proposés. Tu peux aussi noter la séance sans contact.</p>}
+      {(contacts.length === 200 || contactOffset > 0) && <div>
+        <button className={classe} type="button" disabled={!contactOffset} onClick={() => { setContact(''); setContactOffset(o => Math.max(0, o - 200)); }}>Contacts précédents</button>{' '}
+        <button className={classe} type="button" disabled={contacts.length < 200} onClick={() => { setContact(''); setContactOffset(o => o + 200); }}>Contacts suivants</button>
+      </div>}
       <label className="block">Ta note<textarea className={classe} required maxLength={1200} value={description} onChange={e => setDescription(e.target.value)} /></label>
       <p>Le dossier du rendez-vous est repris automatiquement. La note reste dans ta base chiffrée.</p>
       <button className={classe} disabled={busy || loading || !selected || !description.trim()}>Enregistrer la note</button>{' '}<button className={classe} type="button" disabled={busy} onClick={() => setOpen(false)}>Annuler</button>

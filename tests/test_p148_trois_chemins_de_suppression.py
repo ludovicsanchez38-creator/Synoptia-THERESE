@@ -23,6 +23,7 @@ from tests.peuplement_projet import (
 )
 
 RAPPORT_D_UN_PROJET_GARNI = {
+    "activities": 0,
     "memory_cards": 0,
     "files": 1,
     "conversations_detachees": 1,
@@ -95,6 +96,7 @@ async def test_la_suppression_d_un_contact_en_cascade(client):
     assert reponse.status_code == 200, reponse.text
     assert reponse.json()["cascade_deleted"] == {
         "activities": 0,
+        "email_drafts": 0,
         **RAPPORT_D_UN_PROJET_GARNI,
         "projects": 1,
     }

@@ -252,3 +252,22 @@ async def test_confirmation_avant_inscription_ne_survit_pas_a_la_purge(client, d
     reprendre.set()
     assert (await tache)['status'] == 'cancelled'
     assert not (await client.get('/api/crm/activities?type=agent_action')).json()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('recu,corps,issue', [('recu-factice', 'Corps professionnel', 'envoyee'),
+    (None, 'Corps professionnel', 'indeterminee'), ('non-sollicite', '', 'echouee')])
+async def test_issue_native_de_l_envoi_sans_classer_la_prose(client, db_session, monkeypatch, recu, corps, issue):
+    from app.services import workspace_tools
+    from unittest.mock import AsyncMock
+    provider = AsyncMock()
+    provider.send_message.return_value = recu
+    fournir = AsyncMock(return_value=(provider, None))
+    monkeypatch.setattr(workspace_tools, '_get_email_provider', fournir)
+    cid = register_pending('send_email', {'to': 'fictif@example.test', 'subject': 'Objet fictif', 'body': corps})
+    rep = await client.post('/api/chat/confirm-tool', json={'confirmation_id': cid, 'approved': True})
+    assert rep.status_code == 200
+    trace = (await client.get('/api/crm/activities?type=agent_action')).json()[0]
+    assert json.loads(trace['extra_data'])['outcome'] == issue
+    if not corps: fournir.assert_not_called()
+    if recu is None: assert 'envoye' not in rep.json()['result'].lower()

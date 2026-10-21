@@ -23,17 +23,19 @@ function enumerer(parties: string[]): string {
 export function consequencesDeLaSuppression(ensemble: EnsembleDuProjet): string[] | null {
   const {
     taches, livrables, fichiers, dossier_synchronise, planning, conversations, documents, rendez_vous, contacts,
-    sous_dossiers,
+    sous_dossiers, memory_cards, activities,
   } = ensemble;
   if (
     !taches || !livrables || !fichiers || !dossier_synchronise || !planning || !conversations || !documents
-    || !rendez_vous || !contacts || !sous_dossiers
+    || !rendez_vous || !contacts || !sous_dossiers || memory_cards === null || activities === null
   ) {
     return null;
   }
   const phrases: string[] = [];
 
   const emportes = [
+    memory_cards && memory_cards.total > 0 ? compte(memory_cards.total, "fiche mémoire", "fiches mémoire") : '',
+    activities && activities.total > 0 ? compte(activities.total, "trace du journal ou note de rendez-vous", "traces du journal ou notes de rendez-vous") : '',
     taches.total > 0 ? compte(taches.total, 'tâche', 'tâches') : '',
     livrables.total > 0 ? compte(livrables.total, 'livrable', 'livrables') : '',
     // Revue P-148, constat 3 : seul le dépôt de THÉRÈSE part du disque.

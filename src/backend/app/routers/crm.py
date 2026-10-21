@@ -163,7 +163,7 @@ async def list_activities(
 async def create_activity(
     request: CreateActivityRequest,
     session: AsyncSession = Depends(get_session),
-):
+) -> ActivityResponse:
     """
     Crée une nouvelle activité dans la timeline.
     """
@@ -175,6 +175,8 @@ async def create_activity(
         if generation != generation_des_donnees():
             raise HTTPException(409, 'Les données ont changé. Recharge Mémoire.')
         async with get_session_context() as courte:
+            from sqlalchemy import text
+            await courte.execute(text('BEGIN IMMEDIATE'))
             resultat = await _creer_activite(request, courte)
             return resultat.model_dump_json()
     resultat = json.loads(await _proteger_le_geste(geste()))
@@ -362,7 +364,7 @@ async def delete_activity(
         raise HTTPException(status_code=404, detail="Activity not found")
 
     from sqlalchemy import update
-    await session.execute(update(Activity).where(Activity.remplace_id == activity_id).values(remplace_id=None))
+    await session.execute(update(Activity).where(col(Activity.remplace_id) == activity_id).values(remplace_id=None))
     await session.delete(activity)
     await session.commit()
 

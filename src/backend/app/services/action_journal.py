@@ -19,10 +19,14 @@ def verifier_texte(title: str, description: str | None, extra_data: str | None) 
 
 
 def issue_structuree(tool_name: str, resultat: str) -> dict[str, Any]:
-    try:
-        data = json.loads(resultat)
-    except (ValueError, TypeError):
-        data = {}
+    from app.services.tool_result import ResultatOutil
+    if isinstance(resultat, ResultatOutil):
+        data = resultat.issue
+    else:
+        try:
+            data = json.loads(resultat)
+        except (ValueError, TypeError):
+            data = {}
     if not isinstance(data, dict):
         data = {}
     if data.get('success') is False or data.get('error'):
@@ -38,7 +42,9 @@ def issue_structuree(tool_name: str, resultat: str) -> dict[str, Any]:
 async def commencer(execution_id: str, arguments: dict[str, Any], conversation_id: str | None,
                    approved: bool, tool_name: str = "") -> str:
     async with get_session_context() as session:
-        precedente = (await session.execute(select(Activity).where(col(Activity.execution_id) == execution_id))).scalar_one_or_none()
+        from sqlalchemy import text
+        await session.execute(text('BEGIN IMMEDIATE'))
+        precedente: Activity | None = (await session.execute(select(Activity).where(col(Activity.execution_id) == execution_id))).scalar_one_or_none()
         if precedente:
             return precedente.id
         conv = await session.get(Conversation, conversation_id) if conversation_id else None
@@ -82,8 +88,9 @@ def clause_du_contact(contact_id: str) -> Any:
 
 async def effacer_activites(session: Any, clause: Any) -> int:
     from sqlalchemy import delete, update
-    ids = list((await session.execute(select(col(Activity.id)).where(clause))).scalars())
-    if ids:
-        await session.execute(update(Activity).where(col(Activity.remplace_id).in_(ids)).values(remplace_id=None))
-        await session.execute(delete(Activity).where(col(Activity.id).in_(ids)))
-    return len(ids)
+    # Le premier write prend le verrou même si le périmètre était vide.
+    # Relire le prédicat dans le DELETE évite un instantané d'ids périmé.
+    ids = select(col(Activity.id)).where(clause)
+    await session.execute(update(Activity).where(col(Activity.remplace_id).in_(ids)).values(remplace_id=None))
+    retires = (await session.execute(delete(Activity).where(clause).returning(col(Activity.id)))).scalars().all()
+    return len(retires)

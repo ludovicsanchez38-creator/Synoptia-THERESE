@@ -8,7 +8,7 @@ vi.mock('../../services/api/memoryDrafts', () => ({ listMemoryDrafts: vi.fn(), g
 vi.mock('../../services/api/invoices', () => ({ getInvoice: vi.fn().mockResolvedValue({ id: 'facture', status: 'draft' }) }));
 vi.mock('../invoices/InvoiceForm', () => ({ InvoiceForm: ({ invoice }: { invoice: { id: string } }) => <p>Éditeur facture {invoice.id}</p> }));
 vi.mock('../documents/DocumentWorkspace', () => ({ DocumentWorkspace: ({ documentId }: { documentId: string }) => <p>Éditeur document {documentId}</p> }));
-vi.mock('../email/EmailCompose', () => ({ EmailCompose: ({ draftId }: { draftId?: string }) => <p>Éditeur mail {draftId || 'temporaire'}</p> }));
+vi.mock('../email/EmailCompose', () => ({ EmailCompose: ({ sourceMessageId }: { sourceMessageId?: string }) => <p>Éditeur mail {sourceMessageId || 'temporaire'}</p> }));
 beforeEach(() => {
   vi.clearAllMocks(); useDemoStore.setState({ enabled: false });
   useEmailStore.getState().clearDraft(); useEmailStore.setState({ isComposing: false });

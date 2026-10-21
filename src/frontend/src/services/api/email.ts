@@ -320,8 +320,9 @@ export async function createDraft(
   accountId: string,
   req: SendEmailRequest,
   draftId?: string | null,
+  sourceMessageId?: string | null,
 ): Promise<{ id: string; labelIds?: string[] }> {
-  const remplace = draftId ? `&draft_id=${encodeURIComponent(draftId)}` : '';
+  const remplace = sourceMessageId ? `&source_message_id=${encodeURIComponent(sourceMessageId)}` : draftId ? `&draft_id=${encodeURIComponent(draftId)}` : '';
   const response = await apiFetch(
     `${API_BASE}/api/email/messages/draft?account_id=${accountId}${remplace}`,
     {

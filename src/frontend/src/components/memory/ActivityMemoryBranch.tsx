@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { listActivities, correctActivity, deleteActivity, type ActivityResponse } from '../../services/api/crm-extended';
 import { useDemoMask } from '../../hooks/useDemoMask';
 import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
+import { listenMemoryChanges, notifyMemoryChange } from '../../services/api/memoryCards';
 import { useChatStore } from '../../stores/chatStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
@@ -38,6 +39,9 @@ export function ActivityMemoryBranch({ notes = false }: { notes?: boolean }) {
   const retour = useRef<HTMLButtonElement | null>(null);
   const demo = useDemoMask();
   const afficher = (value: string) => demo.enabled ? 'Contenu masqué en démonstration' : demo.maskText(value);
+  useEffect(() => listenMemoryChanges(() => {
+    setItems([]); setEdit(null); setConfirmation(null); setLoading(true); setRevision(r => r + 1);
+  }), []);
   useEffect(() => {
     let actif = true; setLoading(true); setError('');
     listActivities({ type: notes ? 'note' : 'agent_action', ...(notes ? { meeting_notes: true } : {}), skip: offset, limit: 50 })
@@ -49,7 +53,7 @@ export function ActivityMemoryBranch({ notes = false }: { notes?: boolean }) {
   async function muter(action: () => Promise<unknown>) {
     if (gesteBloqueEnDemo()) return;
     setBusy(true); setError('');
-    try { await action(); setEdit(null); setConfirmation(null); setRevision(r => r + 1); }
+    try { await action(); notifyMemoryChange(); setEdit(null); setConfirmation(null); setRevision(r => r + 1); }
     catch { setError('La modification a échoué. Réessaie.'); }
     finally { setBusy(false); }
   }

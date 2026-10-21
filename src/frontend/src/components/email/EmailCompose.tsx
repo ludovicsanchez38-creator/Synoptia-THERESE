@@ -17,7 +17,7 @@ import { useExternalActionConfirmation } from '../app/useExternalActionConfirmat
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
 
-export function EmailCompose({ draftId }: { draftId?: string } = {}) {
+export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; sourceMessageId?: string } = {}) {
   const requestExternalAction = useExternalActionConfirmation();
   const {
     accounts,
@@ -160,8 +160,9 @@ export function EmailCompose({ draftId }: { draftId?: string } = {}) {
         body: draftBody,
         html: draftIsHtml,
       };
-      const identifiant = draftId || editingDraftId;
-      if (identifiant) await api.createDraft(currentAccountId, demande, identifiant);
+      const source = sourceMessageId || editingDraftId;
+      if (source) await api.createDraft(currentAccountId, demande, undefined, source);
+      else if (draftId) await api.createDraft(currentAccountId, demande, draftId);
       else await api.createDraft(currentAccountId, demande);
 
       clearDraft();

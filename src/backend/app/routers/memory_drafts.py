@@ -6,21 +6,21 @@ from app.models.database import get_session_context
 from app.models.entities import Document, EmailMessage, Invoice
 from app.services.memory_cards import date_utc
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import func, literal, union_all
-from sqlmodel import col, select
+from sqlalchemy import Select, func, literal, select, union_all
+from sqlmodel import col
 
 router = APIRouter(prefix='/drafts', tags=['mémoire'])
 
 
 @router.get('')
 async def brouillons(offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
-    factures = select(col(Invoice.id).label('id'), col(Invoice.document_type).label('kind'),
+    factures: Select[Any] = select(col(Invoice.id).label('id'), col(Invoice.document_type).label('kind'),
         col(Invoice.invoice_number).label('title'), col(Invoice.status).label('status'),
         col(Invoice.updated_at).label('updated_at'), literal(None).label('account_id')).where(col(Invoice.status) == 'draft')
-    documents = select(col(Document.id).label('id'), literal('document').label('kind'),
+    documents: Select[Any] = select(col(Document.id).label('id'), literal('document').label('kind'),
         col(Document.title).label('title'), col(Document.status).label('status'),
         col(Document.updated_at).label('updated_at'), literal(None).label('account_id')).where(col(Document.status) == 'en_cours')
-    mails = select(col(EmailMessage.id).label('id'), literal('email').label('kind'),
+    mails: Select[Any] = select(col(EmailMessage.id).label('id'), literal('email').label('kind'),
         func.coalesce(col(EmailMessage.subject), 'Mail sans objet').label('title'), literal('draft').label('status'),
         col(EmailMessage.date).label('updated_at'), col(EmailMessage.account_id).label('account_id')).where(col(EmailMessage.is_draft).is_(True))
     vue = union_all(factures, documents, mails).subquery()

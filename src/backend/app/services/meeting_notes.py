@@ -4,6 +4,7 @@ from typing import Any
 
 from app.models.entities import CalendarEvent
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def liens(extra_data: str | None) -> dict[str, Any]:
@@ -14,7 +15,7 @@ def liens(extra_data: str | None) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-async def verifier_evenement(session: Any, extra: dict[str, Any]) -> CalendarEvent:
+async def verifier_evenement(session: AsyncSession, extra: dict[str, Any]) -> CalendarEvent:
     identifiant, calendrier = extra.get('calendar_event_id'), extra.get('calendar_id')
     if not isinstance(identifiant, str) or not isinstance(calendrier, str) or not identifiant or not calendrier:
         raise HTTPException(422, 'Choisis le rendez-vous auquel cette note appartient.')

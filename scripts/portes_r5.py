@@ -13,7 +13,7 @@ frontend = code / 'src/frontend'
 commands = {
  'pytest': [python, '-m', 'pytest', 'tests/', '--ignore=tests/e2e', '-q', f'--junitxml={logs}/{phase}-pytest.xml'],
  'autonome': [python, '-m', 'pytest', 'src/backend/tests/', '-q', f'--junitxml={logs}/{phase}-autonome.xml'],
- 'vitest': ['node', str(frontend / 'node_modules/vitest/vitest.mjs'), 'run', '--no-cache', '--root', str(frontend), '--reporter=default', '--reporter=json', f'--outputFile={logs}/{phase}-vitest.json'],
+ 'vitest': ['node', str(frontend / 'node_modules/vitest/vitest.mjs'), 'run', '--no-cache', '--configLoader', 'runner', '--root', str(frontend), '--reporter=default', '--reporter=json', f'--outputFile={logs}/{phase}-vitest.json'],
  'mypy': [python, '-m', 'mypy', '-p', 'app', '--cache-dir=/dev/null'],
  'tsc': ['node', str(frontend / 'node_modules/typescript/bin/tsc'), '--noEmit', '--project', str(frontend)],
  'ruff': [python, '-m', 'ruff', 'check', '--no-fix', 'src/backend'],

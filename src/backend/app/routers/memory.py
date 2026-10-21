@@ -1192,6 +1192,14 @@ async def delete_contact(
             await session.delete(file)
         cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
 
+    # Les copies locales des brouillons suivent la fiche, sans envoi distant.
+    from app.models.entities import EmailMessage
+    from sqlalchemy import delete
+    retires = (await session.execute(delete(EmailMessage).where(
+        col(EmailMessage.contact_id) == contact_id, col(EmailMessage.is_draft).is_(True)
+    ).returning(col(EmailMessage.id)))).scalars().all()
+    cascade_deleted['email_drafts'] = len(retires)
+
     contact_name = contact.display_name
     await session.delete(contact)
     await session.commit()

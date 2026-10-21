@@ -358,6 +358,7 @@ class TestUneSeuleDefinition:
 
         annonce = {
             "memory_cards": ensemble["memory_cards"]["total"],
+            "activities": ensemble["activities"]["total"],
             "files": ensemble["fichiers"]["total"],
             "conversations_detachees": ensemble["conversations"]["total"],
             "documents_detaches": ensemble["documents"]["total"],

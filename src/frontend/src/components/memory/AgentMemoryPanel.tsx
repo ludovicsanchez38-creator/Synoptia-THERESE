@@ -52,7 +52,7 @@ export function AgentMemoryPanel() {
   const retourFocus = useRef<HTMLButtonElement>(null);
   const demo = useDemoMask();
   const afficher = (texte: string) => demo.enabled ? 'Contenu masqué en démonstration' : demo.maskText(texte);
-  useEffect(() => listenMemoryChanges(() => { setCard(null); setRevision(r => r + 1); }), []);
+  useEffect(() => listenMemoryChanges(() => { setItems([]); setLoading(true); setCard(null); setRevision(r => r + 1); }), []);
   useEffect(() => { getMemoryScopes().then(setScopes).catch(() => {}); }, []);
   useEffect(() => {
     let actif = true;
@@ -106,7 +106,7 @@ export function AgentMemoryPanel() {
       {branch === 0 ? <MemoryProfileBranch /> : branch === 2 ? <ActivityMemoryBranch /> : branch === 3 ? <MemoryDraftsBranch /> : branch === 4 ? <MemoryMeetingNotesBranch /> : <>
       <p className="text-sm text-text-muted">Thérèse écrit tes fiches ; tu peux les corriger ou les effacer. Elles restent dans ta base chiffrée. Dans le chat, tes fiches mémoire utiles sont envoyées avec chaque échange où la mémoire est activée, avec ton accord pour un service en ligne.</p>
       <div className="flex flex-wrap gap-2">
-        <label>Rechercher<input className={classe} value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>
+        <label>Rechercher<input className={classe} value={demo.enabled ? '' : query} disabled={demo.enabled} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>
         <label>Type<select className={classe} value={kind} onChange={e => { setKind(e.target.value); setOffset(0); }}><option value="">Tous les types</option>{Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
         <label>État<select className={classe} value={state} onChange={e => { setState(e.target.value); setOffset(0); }}><option value="active">Actives</option><option value="archivee">Archivées</option></select></label>
         <label>Portée<select className={classe} value={scope} onChange={e => { setScope(e.target.value); setOffset(0); }}><option value="">Toutes les portées</option><option value="global">Général</option>{scopes.map(p => <option key={p.id} value={p.id}>{afficher(p.name)}</option>)}</select></label>

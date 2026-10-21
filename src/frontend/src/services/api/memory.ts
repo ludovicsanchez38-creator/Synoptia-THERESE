@@ -1,3 +1,4 @@
+import { notifyMemoryChange } from './memoryCards';
 /**
  * THÉRÈSE v2 - Memory API Module
  *
@@ -112,6 +113,7 @@ export async function deleteContact(id: string): Promise<void> {
   await request<{ ok: boolean }>(`/api/memory/contacts/${id}`, {
     method: 'DELETE',
   });
+  notifyMemoryChange();
 }
 
 // E3-05: List contacts with scope filter
@@ -143,10 +145,12 @@ export async function deleteContactWithCascade(
   id: string,
   cascade = false
 ): Promise<DeleteResponse> {
-  return request<DeleteResponse>(
+  const resultat = await request<DeleteResponse>(
     `/api/memory/contacts/${id}?cascade=${cascade}`,
     { method: 'DELETE' }
   );
+  notifyMemoryChange();
+  return resultat;
 }
 
 // Projects
@@ -205,6 +209,8 @@ export interface ContactDuProjet {
 }
 
 export interface EnsembleDuProjet {
+  memory_cards?: { total: number } | null;
+  activities?: { total: number } | null;
   conversations: FamilleListee<ConversationDuProjet> | null;
   documents: FamilleListee<DocumentDuProjet> | null;
   taches: (FamilleListee<TacheDuProjet> & { ouvertes: number; en_retard: number }) | null;
@@ -253,6 +259,7 @@ export async function deleteProject(id: string): Promise<void> {
   await request<{ ok: boolean }>(`/api/memory/projects/${id}?cascade=true`, {
     method: 'DELETE',
   });
+  notifyMemoryChange();
 }
 
 // E3-05: List projects with scope filter
@@ -284,10 +291,12 @@ export async function deleteProjectWithCascade(
   id: string,
   cascade = false
 ): Promise<DeleteResponse> {
-  return request<DeleteResponse>(
+  const resultat = await request<DeleteResponse>(
     `/api/memory/projects/${id}?cascade=${cascade}`,
     { method: 'DELETE' }
   );
+  notifyMemoryChange();
+  return resultat;
 }
 
 // Memory Search

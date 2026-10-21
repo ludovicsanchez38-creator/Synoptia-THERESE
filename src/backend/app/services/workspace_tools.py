@@ -1453,11 +1453,12 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
     de tenter l'envoi, pour eviter un spinner long suivi d'une erreur.
     """
     import asyncio
-    import json
     import re
 
+    from app.services.tool_result import ResultatOutil
+
     def echec(message: str, indetermine: bool = False) -> str:
-        return json.dumps({'success': None if indetermine else False, 'message': message}, ensure_ascii=False)
+        return ResultatOutil(message, {'success': None if indetermine else False})
 
     from app.services.email.base_provider import SendEmailRequest
 
@@ -1499,8 +1500,10 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
         )
         # BUG-085 : timeout de 30s pour l'envoi (evite les spinners infinis)
         recu = await asyncio.wait_for(provider.send_message(request), timeout=30.0)
-        return json.dumps({"success": True, "message_id": recu,
-                           "message": f"Email envoye avec succes a {to_addr} (sujet: {subject})"}, ensure_ascii=False)
+        if not recu:
+            return echec("Envoi demandé ; accusé non reçu. Vérifie avant de réessayer.", indetermine=True)
+        return ResultatOutil(f"Email envoye avec succes a {to_addr} (sujet: {subject})",
+                             {"success": True, "message_id": recu})
     except asyncio.TimeoutError:
         logger.error("Timeout envoi email a %s", to_addr)
         return echec(

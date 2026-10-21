@@ -1,3 +1,4 @@
+import { notifyMemoryChange } from './memoryCards';
 /**
  * THÉRÈSE v2 - CRM Extended API Module
  *
@@ -134,6 +135,7 @@ export async function deleteActivity(activityId: string): Promise<void> {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+  notifyMemoryChange();
 }
 
 export async function correctActivity(id: string, description: string): Promise<ActivityResponse> {
@@ -141,7 +143,9 @@ export async function correctActivity(id: string, description: string): Promise<
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description }),
   });
   if (!response.ok) throw new Error('La correction a échoué.');
-  return response.json();
+  const resultat = await response.json();
+  notifyMemoryChange();
+  return resultat;
 }
 
 // Deliverables API

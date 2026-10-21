@@ -10,8 +10,9 @@ async def test_liste_seulement_les_vrais_brouillons_locaux(client, db_session):
     compte = EmailAccount(email='fictif@example.test', provider='gmail')
     db_session.add_all([contact, compte])
     await db_session.commit()
-    for statut in ('draft', 'sent', 'paid', 'overdue', 'cancelled'):
-        db_session.add(Invoice(invoice_number='FACT-'+statut, contact_id=contact.id, due_date=datetime.now(UTC), status=statut))
+    for statut in ('draft', 'sent', 'paid', 'overdue', 'cancelled', 'accepted', 'refused', 'expired', 'converted'):
+        db_session.add(Invoice(invoice_number='FACT-'+statut, contact_id=contact.id, due_date=datetime.now(UTC), status=statut,
+            document_type='devis' if statut in ('accepted', 'refused', 'expired', 'converted') else 'facture'))
     db_session.add(Invoice(invoice_number='DEV-draft', contact_id=contact.id, due_date=datetime.now(UTC), status='draft', document_type='devis'))
     for statut in ('en_cours', 'termine'):
         db_session.add(Document(title='Document '+statut, status=statut, brief='CORPS_NON_RECOPIE'))
