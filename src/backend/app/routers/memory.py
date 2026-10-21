@@ -47,7 +47,7 @@ from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -515,7 +515,7 @@ async def search_memory(
             memory_types=memory_types,
             limit=request.limit * 2,  # Get more to merge with keyword results
             score_threshold=0.5,  # Lower threshold for semantic
-        )
+        ) if request.include_semantic else []
 
         # Lot F : un SELECT par hit. On groupe par type, une requête chacun.
         ids_contact = [
@@ -541,11 +541,22 @@ async def search_memory(
             )
             projets_par_id = {p.id: p for p in charge.scalars().all()}
 
+        ids_fichiers = [hit.get("entity_id") for hit in semantic_results
+                        if hit.get("type") == "file" and hit.get("entity_id")]
+        fichiers_par_id: dict[str, FileMetadata] = {}
+        if ids_fichiers:
+            charge = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(ids_fichiers)))
+            fichiers_par_id = {f.id: f for f in charge.scalars().all()}
+
         for hit in semantic_results:
             entity_id = hit.get("entity_id")
             if not entity_id:
                 continue
             entity_type = hit.get("type", "")
+            if request.entity_types and entity_type not in request.entity_types:
+                continue
+            if entity_id in results_map and results_map[entity_id].score >= hit.get("score", 0.0):
+                continue
             title = ""
             content = ""
             metadata: dict[str, Any] = {}
@@ -563,6 +574,13 @@ async def search_memory(
                     title = project.name
                     content = project.description or ""
                     metadata = {"status": project.status, "budget": project.budget}
+
+            elif entity_type == "file":
+                fichier = fichiers_par_id.get(entity_id)
+                if fichier:
+                    title = fichier.name
+                    content = hit.get("text") or ""
+                    metadata = {"path": fichier.path, "extension": fichier.extension}
 
             if title:
                 results_map[entity_id] = MemorySearchResult(
@@ -641,6 +659,19 @@ async def search_memory(
                     score=min(score * 0.8, 0.8),  # Cap keyword results below semantic
                     metadata={"status": project.status, "budget": project.budget},
                 )
+
+    # Sans embeddings, le nom reste consultable ; le contenu nécessite l'index.
+    if not request.entity_types or "file" in request.entity_types:
+        charge = await session.execute(select(FileMetadata).where(
+            col(FileMetadata.name).ilike(f"%{request.query}%")
+        ).limit(PLAFOND_ILIKE_MEMOIRE))
+        fichiers = list(charge.scalars().all())
+        ilike_tronque |= len(fichiers) >= PLAFOND_ILIKE_MEMOIRE
+        for fichier in fichiers:
+            if fichier.id not in results_map:
+                results_map[fichier.id] = MemorySearchResult(id=fichier.id, entity_type="file",
+                    title=fichier.name, content="", score=0.4,
+                    metadata={"path": fichier.path, "extension": fichier.extension})
 
     # Sort by score and limit
     results = sorted(results_map.values(), key=lambda x: x.score, reverse=True)
