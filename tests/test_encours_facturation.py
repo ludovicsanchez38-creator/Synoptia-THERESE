@@ -1181,9 +1181,9 @@ class TestLeContratDitExactementCeQueLeCodeFait:
         """La description et le prompt dynamique doivent s'accorder."""
         import inspect
 
-        from app.routers import chat
+        from app.services import tool_capabilities
 
-        source = inspect.getsource(chat)
+        source = inspect.getsource(tool_capabilities)
         i = source.find("invoice_totals** :")
         assert i != -1
         bloc = source[i : i + 1200]
