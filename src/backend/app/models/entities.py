@@ -203,6 +203,8 @@ class Conversation(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
 
     # Relationships
+    memory_cards: list["MemoryCard"] = Relationship(sa_relationship_kwargs={"foreign_keys": "MemoryCard.conversation_id"})
+
     messages: list["Message"] = Relationship(
         back_populates="conversation",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
@@ -230,6 +232,8 @@ class Message(SQLModel, table=True):
 
     # Relationships
     conversation: Conversation | None = Relationship(back_populates="messages")
+    memory_cards: list["MemoryCard"] = Relationship(sa_relationship_kwargs={"foreign_keys": "MemoryCard.message_id"})
+    memory_card_uses: list["MemoryCardUse"] = Relationship()
 
 
 class FileMetadata(SQLModel, table=True):
@@ -1011,3 +1015,52 @@ class DocumentPiste(SQLModel, table=True):
     texte: str
     status: str = Field(default="nouvelle")  # nouvelle | exploree | ignoree
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class MemoryCard(SQLModel, table=True):
+    """Fiche de l'agent ; texte et index restent dans SQLCipher."""
+
+    __tablename__ = 'memory_cards'
+    __table_args__ = (
+        CheckConstraint("kind IN ('preference','fait','decision','correction')"),
+        CheckConstraint("state IN ('active','archivee')"),
+        CheckConstraint("scope IN ('global','project')"),
+        CheckConstraint("(scope = 'global' AND scope_id IS NULL) OR (scope = 'project' AND scope_id IS NOT NULL)"),
+        CheckConstraint("length(title) BETWEEN 1 AND 120 AND length(content) BETWEEN 1 AND 1200"),
+        CheckConstraint("length(reason) <= 600 AND (kind != 'decision' OR length(reason) > 0)"),
+        CheckConstraint('version >= 1'),
+        UniqueConstraint('dedup_key'),
+    )
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    kind: str = Field(index=True)
+    subject: str
+    dedup_key: str
+    title: str
+    content: str
+    reason: str = ''
+    search_text: str = ''
+    scope: str = Field(default='global', index=True)
+    scope_id: str | None = Field(default=None, foreign_key='projects.id', index=True)
+    contact_id: str | None = Field(default=None, foreign_key='contacts.id', index=True)
+    project_id: str | None = Field(default=None, foreign_key='projects.id', index=True)
+    conversation_id: str | None = Field(default=None, foreign_key='conversations.id', ondelete='SET NULL')
+    message_id: str | None = Field(default=None, foreign_key='messages.id', ondelete='SET NULL')
+    author: str = 'therese'
+    last_author: str = 'therese'
+    protected: bool = False
+    state: str = Field(default='active', index=True)
+    version: int = 1
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class MemoryCardUse(SQLModel, table=True):
+    """Rejeu consommé, sans texte ; survit à l'effacement de la fiche."""
+
+    __tablename__ = 'memory_card_uses'
+    id: str = Field(primary_key=True)
+    message_id: str | None = Field(default=None, foreign_key='messages.id', ondelete='SET NULL', index=True)
+    card_id: str = Field(index=True)
+    version: int
+    operation: str
+    blocked: bool = False

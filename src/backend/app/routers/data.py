@@ -35,6 +35,8 @@ from app.models.entities import (
     FileMetadata,
     Invoice,
     InvoiceLine,
+    MemoryCard,
+    MemoryCardUse,
     Message,
     Notification,
     PlanningResource,
@@ -258,7 +260,8 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             # B-212 : la section profil suit la même règle, d'où 1.4.
             # P-132 : les prestations parlent le pipeline (`phase` vaut
             # discovery, signature… au lieu de piste, gagne…), d'où 1.5.
-            "data_format_version": "1.5",
+            "data_format_version": "1.6",
+            "memory_cards": [_export_row(f) for f in session.execute(select(MemoryCard)).scalars().all()],
             "profil": _profil_pour_export(),
             "variables": [
                 {
@@ -688,6 +691,8 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     from sqlalchemy import delete
 
     # Supprimer dans l'ordre (FK en premier)
+    await session.execute(delete(MemoryCardUse))
+    await session.execute(delete(MemoryCard))
     # -- Tables agents
     await session.execute(delete(CodeChange))
     await session.execute(delete(AgentMessage))

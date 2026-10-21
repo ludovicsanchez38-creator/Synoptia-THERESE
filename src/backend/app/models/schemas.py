@@ -492,6 +492,7 @@ class RGPDExportResponse(BaseModel):
     # B-590 : ce que l'anonymisation efface doit d'abord pouvoir être emporté.
     prestations: list[dict] = []
     email_messages: list[dict] = []
+    memory_cards: list[dict] = []
 
 
 class RGPDAnonymizeRequest(BaseModel):

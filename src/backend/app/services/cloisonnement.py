@@ -25,6 +25,12 @@ démarrage et à chaque changement de réglage, pour rester utilisable sans
 session.
 """
 
+from typing import Any
+
+from app.models.entities import Contact
+from sqlalchemy import false, or_
+from sqlalchemy.sql.elements import ColumnElement
+
 _mode_cabinet_cache: bool | None = None
 
 
@@ -80,3 +86,62 @@ def souvenirs_globaux_visibles(scope: str | None = "project") -> bool:
     if not mode_cabinet_actif():
         return True
     return scope != "project"
+
+
+
+
+def cloison_contacts(
+    requete: Any,
+    scope: str | None,
+    scope_id: str | None,
+    conversation_id: str | None = None,
+) -> Any:
+    """Restreint une requête contacts au périmètre de la conversation.
+
+    Les contacts GÉNÉRAUX restent visibles partout, comme les documents
+    globaux. `scope` NULL en base (contacts d'avant E3-05) est traité comme
+    général : ne pas le faire masquerait des contacts existants.
+    """
+    # C3 : en mode cabinet, une conversation rattachée à un dossier ne voit
+    # plus le carnet général. Sans cette branche, le modèle contournerait la
+    # fermeture du RAG en demandant simplement la fiche par son nom.
+    # Le type est annoté : sans lui, mypy infère `False_` du premier
+    # assignement et refuse le `or_(...)` qui suit.
+    generaux: ColumnElement[bool]
+    if not souvenirs_globaux_visibles(scope):
+        generaux = false()
+    else:
+        generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
+    # RÉGRESSION ÉVITÉE (revue de clôture) : l'interface crée les contacts
+    # suggérés avec `scope="conversation"` (`EntitySuggestion.tsx`). Sans cette
+    # branche, un contact tout juste enregistré depuis la conversation en cours
+    # devenait introuvable dans cette même conversation — la fonction cassait
+    # sous prétexte de la protéger.
+    if conversation_id:
+        generaux = or_(
+            generaux,
+            (Contact.scope == "conversation") & (Contact.scope_id == conversation_id),
+        )
+    if scope == "project" and scope_id:
+        return requete.where(
+            or_(
+                generaux,
+                (Contact.scope == "project") & (Contact.scope_id == scope_id),
+            )
+        )
+    if scope == "global":
+        # Le mode global est le DÉFAUT : le laisser sans filtre revenait à
+        # n'avoir cloisonné personne. Une conversation libre ne voit que les
+        # contacts généraux et ceux de sa propre conversation.
+        return requete.where(generaux)
+    if scope == "all":
+        # « Tous les projets » : le libellé engage. Il donne accès aux
+        # dossiers, PAS aux souvenirs privés des autres conversations — un
+        # contact enregistré dans une conversation y reste (revue de clôture :
+        # ce mode rendait coordonnées et notes de n'importe quelle
+        # conversation).
+        return requete.where(or_(generaux, Contact.scope == "project"))
+    # `scope is None` : appel hors conversation (scripts, tests, chemins
+    # historiques). Pas de cloison, comportement d'avant la 0.43.
+    return requete
+

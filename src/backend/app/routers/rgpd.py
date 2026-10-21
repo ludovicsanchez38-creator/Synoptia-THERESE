@@ -16,6 +16,7 @@ from app.models.entities import (
     Activity,
     Contact,
     EmailMessage,
+    MemoryCard,
     Prestation,
     Project,
     Task,
@@ -165,6 +166,8 @@ async def export_contact_data(
 
     logger.info(f"RGPD export for contact {contact_id}")
     return RGPDExportResponse(
+        memory_cards=[f.model_dump(mode="json", exclude={"search_text", "dedup_key"}) for f in
+            (await session.execute(select(MemoryCard).where(MemoryCard.contact_id == contact_id))).scalars().all()],
         contact=contact_data,
         activities=activities_data,
         projects=projects_data,

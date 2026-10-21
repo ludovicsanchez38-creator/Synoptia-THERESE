@@ -463,8 +463,11 @@ async def _nettoyer_et_supprimer_projet(
         await session.execute(select(Deliverable).where(clause_livrables(project_id)))
     ).scalars().all()
 
+    from app.services.memory_cards import effacer_liees
+    fiches_effacees = await effacer_liees(session, project_id=project_id)
     await session.delete(project)
     return {
+        "memory_cards": fiches_effacees,
         "files": len(files),
         "conversations_detachees": len(conversations),
         "documents_detaches": len(documents),
@@ -1095,6 +1098,8 @@ async def delete_contact(
         raise HTTPException(status_code=404, detail="Contact not found")
 
     cascade_deleted: dict[str, int] = {}
+    from app.services.memory_cards import effacer_liees
+    cascade_deleted["memory_cards"] = await effacer_liees(session, contact_id=contact_id)
 
     # Une tâche est du TRAVAIL, pas une dépendance de la fiche : le lien se
     # dénoue, la tâche reste. La supprimer ferait perdre du travail en silence,

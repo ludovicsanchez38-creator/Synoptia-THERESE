@@ -107,6 +107,8 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
     # B-1685 : avant la première écriture de la session.
     await detacher_les_dossiers_synchronises(session, contact_id)
     # B-1438 : l'identité, l'adresse et la relance datée.
+    from app.services.memory_cards import effacer_liees
+    await effacer_liees(session, contact_id=contact_id)
     effacer_l_identite(contact, maintenant)
 
     # Incident du 30/08 : une prestation sans personne n'a pas de sens.

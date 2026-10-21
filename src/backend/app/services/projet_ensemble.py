@@ -28,6 +28,7 @@ from app.models.entities import (
     Deliverable,
     Document,
     FileMetadata,
+    MemoryCard,
     PlanningResource,
     PlanningSnapshot,
     Project,
@@ -36,7 +37,7 @@ from app.models.entities import (
 from app.models.entities_sync import ProjectSyncRoot
 from app.models.schemas import _iso_utc
 from app.services.civil_time import date_civile_paris
-from sqlalchemy import and_, case, func
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 from sqlmodel import col, select
@@ -53,6 +54,11 @@ STATUTS_OUVERTS = ("todo", "in_progress")
 # ============================================================
 # Les clauses : ce qu'« appartenir à ce projet » veut dire
 # ============================================================
+
+
+def clause_memory_cards(projet_id: str) -> ColumnElement[bool]:
+    return or_(col(MemoryCard.project_id) == projet_id,
+               and_(col(MemoryCard.scope) == "project", col(MemoryCard.scope_id) == projet_id))
 
 
 def clause_fichiers(projet_id: str) -> ColumnElement[bool]:
@@ -316,6 +322,7 @@ async def lire_l_ensemble(
     projet_id, contact_id = projet.id, projet.contact_id
     jour = date_civile_paris(maintenant or datetime.now(UTC))
     familles: tuple[tuple[str, Callable[..., Awaitable[dict[str, Any]]]], ...] = (
+        ("memory_cards", _total(MemoryCard, clause_memory_cards)),
         ("conversations", _lire_conversations),
         ("documents", _lire_documents),
         ("taches", _lire_taches),
