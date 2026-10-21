@@ -130,13 +130,9 @@ class UserProfile:
                 f"{', '.join(legal)}."
             )
 
-        # Extended context (truncated if too long)
+        # Le bornage du payload décide si le contexte entier tient.
         if self.context:
-            # Limit context to ~2000 chars to not overwhelm the prompt
-            context_text = self.context[:2000]
-            if len(self.context) > 2000:
-                context_text += "..."
-            parts.append(f"\n\n### Contexte utilisateur:\n{context_text}")
+            parts.append(f"\n\n### Contexte utilisateur:\n{self.context}")
 
         return "".join(parts) if parts else ""
 
