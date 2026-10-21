@@ -143,6 +143,21 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
 
 async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, scope: str,
                   scope_id: str | None, conversation_id: str | None, message_id: str | None) -> dict[str, Any]:
+    from app.services.memory_card_security import MESSAGE_REFUS, contient_sensible
+    if contient_sensible([donnees.get(champ, '') for champ in ('title', 'content', 'reason', 'subject')]):
+        raise RefusMemoire(MESSAGE_REFUS)
+    cle_usage = None
+    if automatique and message_id:
+        cle_usage = hashlib.sha256((message_id + json.dumps(donnees, sort_keys=True, ensure_ascii=False)).encode()).hexdigest()
+        usages_source = (await session.execute(select(MemoryCardUse).where(MemoryCardUse.message_id == message_id))).scalars().all()
+        if any(u.blocked for u in usages_source):
+            raise RefusMemoire('Ce tour a déjà été traité puis effacé. Une nouvelle demande est nécessaire.', 409)
+        usage = await session.get(MemoryCardUse, cle_usage)
+        if usage:
+            actuelle = await session.get(MemoryCard, usage.card_id)
+            if actuelle:
+                return presenter(actuelle) | {'receipt': {'id': usage.card_id, 'version': usage.version, 'operation': usage.operation}}
+            raise RefusMemoire('Cette fiche a été effacée.', 409)
     existante = await session.get(MemoryCard, donnees['id']) if donnees.get('id') else None
     if donnees.get('id') and not existante:
         raise RefusMemoire('Cette fiche est introuvable.', 404)
@@ -155,6 +170,12 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         source = await session.get(Message, message_id) if message_id else None
         if not source or source.role != 'user' or source.conversation_id != conversation_id:
             raise RefusMemoire('Une source utilisateur vérifiable est nécessaire.')
+        if contient_sensible(source.content):
+            raise RefusMemoire(MESSAGE_REFUS)
+        # Le modèle ne peut ajouter un fait absent de la source utilisateur.
+        # Un titre résume, le contenu et la raison doivent rester dans la source.
+        if not mots(' '.join(str(donnees.get(k, '')) for k in ('content', 'reason'))) <= mots(source.content):
+            raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
     f = existante or MemoryCard(kind=donnees.get('kind', ''), subject='', title='', content='',
@@ -179,20 +200,43 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
     if len(f.title) > 120 or len(f.content) > 1200 or len(f.reason) > 600 or (f.kind == 'decision' and not f.reason.strip()):
         raise RefusMemoire('Cette fiche dépasse les limites ou la décision manque de raison.')
     await _liens(session, f, automatique, scope, scope_id, conversation_id)
+    if contient_sensible([f.title, f.content, f.reason, f.subject]):
+        raise RefusMemoire(MESSAGE_REFUS)
+    if automatique:
+        protegees = (await session.execute(select(MemoryCard).where(MemoryCard.protected == True))).scalars().all()  # noqa: E712
+        for protegee in protegees:
+            if _recouvre(f, protegee):
+                raise RefusMemoire('Cette fiche est protégée par ta correction. Tu peux la modifier dans Mémoire.',
+                                   409, protegee.id)
     cle = _cle(f)
     doublon = (await session.execute(select(MemoryCard).where(MemoryCard.dedup_key == cle))).scalars().first()
     if doublon and doublon.id != f.id:
         raise RefusMemoire('Une fiche correspond déjà à ce sujet. Ouvre-la pour la modifier.', 409, doublon.id)
     f.dedup_key = cle
     f.last_author = 'therese' if automatique else 'utilisateur'
-    f.protected = bool(f.protected or existante or f.kind == 'correction')
+    f.protected = bool(f.protected or not automatique or existante or f.kind == 'correction'
+        or (automatique and re.search(r'corrig|remplac|en fait|ne refais|plutot|rectifi', normaliser(source.content))))
     f.search_text = normaliser(f'{f.title} {f.content}')
     f.updated_at = datetime.now(UTC)
     if existante:
         f.version += 1
     session.add(f)
     await session.flush()
-    return presenter(f)
+    resultat = presenter(f)
+    if automatique and cle_usage:
+        operation = 'modification' if existante else 'creation'
+        usage = MemoryCardUse(id=cle_usage, message_id=message_id, card_id=f.id,
+                              version=f.version, operation=operation)
+        session.add(usage)
+        receipt = {'id': f.id, 'version': f.version, 'operation': operation}
+        extra = json.loads(source.extra_data or '{}')
+        recus = extra.setdefault('memory_receipts', [])
+        if receipt not in recus:
+            recus.append(receipt)
+        source.extra_data = json.dumps(extra)
+        session.add(source)
+        resultat['receipt'] = receipt
+    return resultat
 
 
 async def effacer_liees(session: Any, *, contact_id: str | None = None, project_id: str | None = None) -> int:
@@ -229,3 +273,36 @@ async def effacer(card_id: str, version: int) -> None:
     resultat = json.loads(await _proteger_le_geste(geste()))
     if not resultat.get('success'):
         raise RefusMemoire(resultat['error'], 409)
+
+
+def _recouvre(a: MemoryCard, b: MemoryCard) -> bool:
+    """Absence de lien = recouvrement possible ; deux projets distincts = fermés."""
+    pa = a.scope_id if a.scope == 'project' else a.project_id
+    pb = b.scope_id if b.scope == 'project' else b.project_id
+    if pa and pb and pa != pb:
+        return False
+    return not (a.contact_id and b.contact_id and a.contact_id != b.contact_id)
+
+
+async def rendre_la_main(card_id: str, version: int) -> dict[str, Any]:
+    from app.services.memory_tools import _proteger_le_geste
+
+    async def geste() -> str:
+        async with get_session_context() as session:
+            await session.execute(text('BEGIN IMMEDIATE'))
+            f = await session.get(MemoryCard, card_id)
+            if not f:
+                raise RefusMemoire('Cette fiche est introuvable.', 404)
+            if f.version != version:
+                raise RefusMemoire('Cette fiche a changé. Recharge-la.', 409)
+            f.protected = False
+            f.version += 1
+            f.last_author = 'utilisateur'
+            f.updated_at = datetime.now(UTC)
+            session.add(f)
+            await session.commit()
+            return json.dumps({'card': presenter(f)})
+    resultat = json.loads(await _proteger_le_geste(geste()))
+    if 'card' not in resultat:
+        raise RefusMemoire(resultat['error'], 409)
+    return resultat['card']
