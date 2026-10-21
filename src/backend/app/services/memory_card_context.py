@@ -176,11 +176,29 @@ def alleger_outils_locaux(context: ContextWindow, config: Any,
             or not isinstance(config.max_tokens, int)):
         return tools
     from app.services.ollama_budget import fenetre_ollama
+    from app.services.tool_capabilities import capacites_outils
+    from app.services.tool_selection import domaines_demandes, groupe_outil
     limite = fenetre_ollama(config) - config.max_tokens
-    # Marge pour les descriptions de capacités ajoutées par le routeur.
-    if compter_payload(context, config, tools) + 6000 <= limite:
-        return tools
-    essentiels = [t for t in tools if t.get('function', {}).get('name') == 'upsert_memory_card']
-    if compter_payload(context, config, essentiels) + 2000 <= limite:
-        return essentiels
-    return []
+    # Les 6000 étaient une marge en OCTETS, sans rapport avec les capacités
+    # ajoutées. On compte maintenant leur texte réel ; 512 jetons restent
+    # pour la langue/les directives du routeur et 512 pour un résultat court.
+    def tient(selection: list[dict[str, Any]]) -> bool:
+        noms = [t.get('function', {}).get('name', '') for t in selection]
+        essai = dataclasses.replace(context, system_prompt=(context.system_prompt or '') + capacites_outils(noms))
+        return compter_payload(essai, config, selection) + 1024 <= limite
+
+    selection = list(tools)
+    if tient(selection):
+        return selection
+    demandes = domaines_demandes(context.memory_original_messages or context.messages)
+    groupes = list(dict.fromkeys(groupe_outil(t) for t in tools))
+    # Retirer des groupes entiers, sans rapport d'abord. Un domaine demandé
+    # ou utilisé dans la conversation reste indivisible ; le garde final
+    # explique une fenêtre insuffisante plutôt que d'en promettre les outils.
+    facultatifs = [g for g in groupes if g not in demandes and g != 'memoire']
+    facultatifs.sort(key=lambda g: -sum(len(_json(t)) for t in tools if groupe_outil(t) == g))
+    for groupe in [*facultatifs, *(['memoire'] if 'memoire' not in demandes else [])]:
+        selection = [t for t in selection if groupe_outil(t) != groupe]
+        if tient(selection):
+            return selection
+    return selection

@@ -683,6 +683,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url=settings.ollama_base_url, context_window=32000)
 
+    async def actualiser_fenetre_locale(self) -> None:
+        if self.config.provider != LLMProvider.OLLAMA:
+            return
+        await self._ensure_provider()
+        if isinstance(self._provider, OllamaProvider):
+            from app.services.ollama_budget import actualiser_fenetre
+            await actualiser_fenetre(self.config, self._provider.client)
+
     async def _get_client(self):
         """Get shared HTTP client from global pool."""
         from app.services.http_client import get_http_client

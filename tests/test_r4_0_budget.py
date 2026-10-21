@@ -20,6 +20,8 @@ async def test_petit_poste_accepte_une_charge_francaise_de_douze_ko(monkeypatch)
     assert context.system_prompt == systeme
     appels = []
     def transport(request):
+        if request.url.path == '/api/show':
+            return httpx.Response(404)
         appels.append(json.loads(request.content))
         return httpx.Response(200, content=json.dumps({'message': {'content': 'Fictif'}, 'done': True}))
     async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:

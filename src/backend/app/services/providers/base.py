@@ -109,6 +109,7 @@ class LLMConfig:
     # sans qu'aucun site ne puisse l'oublier). Les providers emettent ce
     # champ dans leur syntaxe, sans table locale.
     effort_resolu: str | None = None
+    ollama_show_lu: bool = False
 
     def __post_init__(self) -> None:
         # Import local : modeles_catalogue importe LLMProvider d'ici -
