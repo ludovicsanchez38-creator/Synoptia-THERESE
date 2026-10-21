@@ -29,8 +29,8 @@ for name, command in commands.items():
  if len(sys.argv) > 2 and name not in sys.argv[2:]:
   continue
  print(f'{phase} {name} : début', flush=True)
- # ESLint doit retrouver sa configuration depuis le frontend.
- if name == 'eslint':
+ # Vitest et ESLint doivent partir du frontend, y compris process.cwd().
+ if name in ('eslint', 'vitest'):
   command = [python, '-c', 'import os,subprocess,sys; os.chdir(sys.argv[1]); raise SystemExit(subprocess.call(sys.argv[2:]))', str(frontend), *command]
  harness = [sys.executable, str(ROOT / 'scripts/recette_r4_hors_reseau.py')]
  if phase == 'avant':

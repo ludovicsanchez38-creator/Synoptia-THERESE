@@ -19,7 +19,8 @@ code_root = root
 if sys.argv[1:2] == ['--baseline']:
     code_root = root / '.recette-r4/base'
     sys.argv.pop(1)
-if (code_root / '.env').exists():
+if any((dossier / nom).exists() for dossier in (code_root, code_root / 'src/frontend')
+       for nom in ('.env', '.env.local', '.env.test', '.env.test.local')):
     raise SystemExit('Recette isolée : fichier .env présent, lancement refusé sans lecture.')
 # Pas d'héritage de clés, de proxy ni du profil personnel.
 clean = {

@@ -9,9 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOGS = ROOT / '.recette-r4/logs'
 SOURCES = {
- 'avant-portes.log': ('avant', ['autonome', 'vitest', 'mypy', 'tsc', 'ruff', 'eslint']),
+ 'avant-portes.log': ('avant', ['autonome', 'mypy', 'tsc', 'ruff', 'eslint']),
  'avant-rejeu-portes.log': ('avant', ['pytest']),
- 'apres-front-portes.log': ('apres', ['autonome', 'vitest']),
+ 'apres-front-portes.log': ('apres', ['autonome']),
  'apres-statique.log': ('apres', ['tsc', 'ruff', 'eslint']),
  'apres-portes.log': ('apres', ['pytest']),
 }
@@ -33,6 +33,18 @@ print('Toutes les portes complètes sont terminées.', flush=True)
 if any(valeur != 0 for portes in codes.values() for nom, valeur in portes.items() if nom != 'mypy'):
  print(json.dumps(codes, indent=2), flush=True)
  raise SystemExit('Une porte nécessite une correction ; aucun nouveau banc lancé.')
+# Reprises Vitest complètes depuis le bon dossier, sans autre porte lourde.
+for phase in ('avant', 'apres'):
+ for suffixe in ('log', 'json'):
+  chemin = LOGS / f'{phase}-vitest.{suffixe}'
+  if chemin.exists():
+   chemin.rename(LOGS / f'diagnostic-cwd-{phase}-vitest.{suffixe}')
+ with (LOGS / f'{phase}-vitest-rejeu-portes.log').open('w') as journal:
+  codes[phase]['vitest'] = subprocess.call([sys.executable, str(ROOT / 'scripts/portes_r4.py'),
+      phase, 'vitest'], stdout=journal, stderr=subprocess.STDOUT)
+ print(phase, 'Vitest complet :', codes[phase]['vitest'], flush=True)
+if any(portes['vitest'] != 0 for portes in codes.values()):
+ raise SystemExit('Vitest nécessite une correction ; aucun nouveau banc lancé.')
 harnais = [sys.executable, str(ROOT / 'scripts/recette_r4_hors_reseau.py')]
 with (LOGS / 'apres-mypy.log').open('w') as journal:
  codes['apres']['mypy'] = subprocess.call([*harnais, str(ROOT / '.venv/bin/python'),
