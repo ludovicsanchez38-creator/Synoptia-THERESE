@@ -1,10 +1,11 @@
 """Banc R4 réel, séquentiel, données fictives et seul réseau 127.0.0.1:11435.
 
-Usage : python3 scripts/banc_ollama_r3.py avant|apres [--code CHEMIN]
+Usage : python3 scripts/banc_ollama_r4.py avant|apres [--code CHEMIN]
 Le backend tourne dans un processus isolé ; HTTP ASGI sans port supplémentaire.
 Les compteurs proviennent des réponses NDJSON réelles, pas d'une estimation.
 """
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -52,6 +53,9 @@ def lancer(args):
 
 
 def mesurer(args):
+    code = Path(args.code).resolve() if args.code else ROOT
+    if not code.is_relative_to(ROOT):
+        raise ValueError('Le code doit rester dans le worktree.')
     from contextlib import asynccontextmanager
 
     # Interdit toute autre destination Python avant d'importer le backend.
@@ -75,7 +79,17 @@ def mesurer(args):
 
     dossier = ROOT / '.recette-r4' / f'banc-{args.phase}'
     modele = (BANC / 'MODELE.txt').read_text().strip()
-    resultat = {'phase': args.phase, 'modele': modele, 'context_caracteres': len(CONTEXTE),
+    empreinte = hashlib.sha256()
+    for fichier in sorted((code / 'src/backend/app').rglob('*.py')):
+        if not fichier.resolve().is_relative_to(code):
+            raise ValueError('Source hors du worktree.')
+        empreinte.update(str(fichier.relative_to(code)).encode())
+        empreinte.update(b'\0' + fichier.read_bytes())
+    revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=code,
+        capture_output=True, text=True, check=False)
+    resultat = {'empreinte_app': empreinte.hexdigest(),
+        'revision_git': revision.stdout.strip() if revision.returncode == 0 else 'archive locale',
+        'phase': args.phase, 'modele': modele, 'context_caracteres': len(CONTEXTE),
         'regle3_position': CONTEXTE.index('Règle 3 :'), 'appels': [], 'tours': []}
 
     @asynccontextmanager
@@ -89,6 +103,14 @@ def mesurer(args):
         await close_db()
     app.router.lifespan_context = vie
     app.state.auth_disabled = True
+    # Les outils externes restent décrits pour mesurer la vraie sélection,
+    # mais leur exécution est doublée : même une bibliothèque HTTP native
+    # utilisée par un outil ne doit pas sortir du poste pendant le banc.
+    from app.routers import chat as chat_router
+    async def outil_reseau_interdit(*_args, **_kwargs):
+        raise PermissionError('Banc local : seul le moteur Ollama fourni est autorisé.')
+    chat_router.execute_web_search = outil_reseau_interdit
+    chat_router.execute_browser_action = outil_reseau_interdit
 
     # Instrumentation du vrai transport : requête et réponse restent inchangées,
     # sauf think=false et température=0 communs aux deux passes pour le banc.
