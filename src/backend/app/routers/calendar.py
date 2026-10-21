@@ -872,7 +872,7 @@ async def _list_events_provider(
                     page_token=token,
                 )
                 return list(evenements), jeton
-    
+
             events_dto = await _collecter_pages_evenements(_page)
         else:
             events_dto, _ = await provider.list_events(
@@ -881,7 +881,7 @@ async def _list_events_provider(
                 time_max=dt_max,
                 max_results=max_results,
             )
-    
+
     except Exception:
         if calendar.provider == "caldav":
             calendar.sync_status = "error"
@@ -1820,12 +1820,23 @@ async def sync_calendar(
 
         total_events = 0
         for calendar in calendars_result:
-            events_result = await list_events(
-                calendar_id=calendar.id,
-                account_id=account_id,
-                max_results=250,
-                session=session,
-            )
+            try:
+                events_result = await list_events(
+                    calendar_id=calendar.id,
+                    account_id=account_id,
+                    max_results=250,
+                    session=session,
+                )
+            except Exception as exc:
+                if calendar.provider != "caldav":
+                    raise
+                logger.error("Synchronisation CalDAV échouée pour %s : %s", calendar.id, exc)
+                raise HTTPException(status_code=502, detail=(
+                    "Synchronisation CalDAV impossible. Ouvre Agenda > Calendriers, "
+                    "vérifie ta connexion, l'adresse du serveur et ton mot de passe d'application, "
+                    "puis relance la synchronisation. Si le calendrier a changé sur le serveur, "
+                    "ajoute-le à nouveau dans Calendriers."
+                )) from exc
             total_events += len(events_result)
 
         return CalendarSyncResponse(

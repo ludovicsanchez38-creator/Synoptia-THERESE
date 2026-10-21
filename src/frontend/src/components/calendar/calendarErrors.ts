@@ -57,6 +57,13 @@ export function classifyCalendarError(
   opts: { fallback: string; hasCache?: boolean },
 ): CalendarErrorAction {
   const msg = message || '';
+  // R4-5 : conseil rédigé par le backend pour CalDAV (aucun OAuth requis).
+  // Le garde explicite évite de recopier une exception technique quelconque.
+  if (msg.startsWith('Synchronisation CalDAV impossible.')) {
+    return opts.hasCache
+      ? { error: null, staleWarning: msg, needsReauth: false }
+      : { error: msg, needsReauth: false };
+  }
   if (isGoogleAuthError(msg)) {
     return { error: 'Connexion Google expirée.', needsReauth: true };
   }

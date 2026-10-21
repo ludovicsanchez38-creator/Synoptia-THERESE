@@ -72,3 +72,14 @@ describe('classifyCalendarError', () => {
     expect(action.staleWarning).toBeUndefined();
   });
 });
+
+
+describe('R4-5 : erreur CalDAV actionnable sans compte OAuth', () => {
+  const message = "Synchronisation CalDAV impossible. Ouvre Agenda > Calendriers, vérifie l'adresse du serveur et ton mot de passe d'application, puis relance la synchronisation.";
+  it('garde le message français et désarme une ancienne erreur Google', () => {
+    expect(classifyCalendarError(message, { fallback: 'Échec de la synchronisation' })).toEqual({ error: message, needsReauth: false });
+  });
+  it('garde aussi le conseil quand des événements sont en cache', () => {
+    expect(classifyCalendarError(message, { fallback: 'Échec', hasCache: true })).toEqual({ error: null, staleWarning: message, needsReauth: false });
+  });
+});

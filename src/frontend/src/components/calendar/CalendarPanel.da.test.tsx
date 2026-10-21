@@ -400,3 +400,19 @@ describe('lot 8 (11) : le châssis de la branche « grille »', () => {
     expect(container.textContent).not.toContain('Agenda local « Agenda Atelier »');
   });
 });
+
+
+describe('R4-5 : synchronisation CalDAV sans compte Google', () => {
+  it('affiche le conseil du serveur dans le bandeau après un échec', async () => {
+    const conseil = "Synchronisation CalDAV impossible. Ouvre Agenda > Calendriers, vérifie ton mot de passe d'application, puis relance la synchronisation.";
+    api.listCalendars.mockResolvedValue([AGENDA_CALDAV]);
+    semer({ calendars: [AGENDA_CALDAV], currentCalendarId: 'cal-2', events: [] });
+    api.listEvents.mockResolvedValue([]);
+    api.syncCalendar.mockRejectedValue(new Error(conseil));
+    await monter();
+    fireEvent.click(screen.getByRole('button', { name: /Synchroniser/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(conseil));
+    expect(screen.queryByText('Connexion Google expirée.')).not.toBeInTheDocument();
+    expect(api.syncCalendar).toHaveBeenCalledWith(undefined);
+  });
+});
