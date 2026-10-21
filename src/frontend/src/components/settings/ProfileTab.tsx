@@ -317,7 +317,7 @@ export function ProfileTab({
               id="settings-profile-context"
               value={profileForm.context}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
-              placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
+              placeholder="Ex : Je dirige une entreprise de plomberie de 4 personnes. Je veux préparer mes devis et organiser les interventions de la semaine."
               rows={3}
               className="resize-none"
             />

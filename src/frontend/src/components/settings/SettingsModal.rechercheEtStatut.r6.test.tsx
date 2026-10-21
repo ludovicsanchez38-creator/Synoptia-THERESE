@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsModal } from './SettingsModal';
+import './ProfileTab';
 import { ConversationCanvasPrototype } from '../prototype/ConversationCanvasPrototype';
 import { useChatStore } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
@@ -83,4 +84,11 @@ describe('R6 : recherche et retours des réglages', () => {
     expect(champ).toHaveValue('Camille, brouillon conservé');
     expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
   });
+});
+
+it('R6 : garde un exemple neutre dans le contexte des réglages', async () => {
+  render(<SettingsModal isOpen onClose={vi.fn()} requestedTab="profile" />);
+  const champ = await screen.findByLabelText('Ce que Thérèse doit savoir');
+  expect(champ.getAttribute('placeholder')).toContain('entreprise de plomberie');
+  expect(champ.getAttribute('placeholder')).not.toMatch(/FORGER|Synopt|490/);
 });
