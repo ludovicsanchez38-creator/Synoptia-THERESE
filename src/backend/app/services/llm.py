@@ -702,7 +702,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             pass
         return self._provider
 
-    async def _ensure_provider(self):
+    async def _ensure_provider(self) -> None:
         """Ensure provider is initialized."""
         if self._provider is None:
             client = await self._get_client()
