@@ -1212,6 +1212,9 @@ async def save_therese_md(request: ThereseMdRequest) -> dict[str, str | bool]:
     md_path = Path(settings.data_dir) / "THERESE.md"
     md_path.parent.mkdir(parents=True, exist_ok=True)
     md_path.write_text(request.content, encoding="utf-8")
+    from app.services.llm import reload_therese_md
+
+    reload_therese_md()
     return {"success": True, "path": str(md_path)}
 
 
