@@ -1397,7 +1397,10 @@ class ActivityResponse(BaseModel):
     """Response schema pour une activité."""
 
     id: str
-    contact_id: str
+    contact_id: str | None = None
+    project_id: str | None = None
+    conversation_id: str | None = None
+    execution_id: str | None = None
     type: str  # email, call, meeting, note, stage_change, score_change
     title: str
     description: str | None
@@ -1413,7 +1416,9 @@ class ActivityResponse(BaseModel):
 class CreateActivityRequest(BaseModel):
     """Request pour créer une activité."""
 
-    contact_id: str
+    contact_id: str | None = None
+    project_id: str | None = None
+    conversation_id: str | None = None
     type: str
     title: str
     description: str | None = None

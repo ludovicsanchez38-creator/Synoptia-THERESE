@@ -29,6 +29,7 @@ from app.models.schemas import (
     RGPDStatsResponse,
     RGPDUpdateRequest,
 )
+from app.services.action_journal import clause_du_contact as clause_activites_du_contact
 from app.services.memory_cards import clause_du_contact, presenter
 from app.services.rgpd_identite import anonymiser_la_personne, exporter_la_fiche
 from fastapi import APIRouter, Depends, HTTPException
@@ -70,7 +71,7 @@ async def export_contact_data(
 
     # Get activities
     result = await session.execute(
-        select(Activity).where(Activity.contact_id == contact_id)
+        select(Activity).where(clause_activites_du_contact(contact_id))
     )
     activities = result.scalars().all()
 
@@ -97,16 +98,7 @@ async def export_contact_data(
     # B-1438 : toutes les colonnes de la fiche, adresse comprise.
     contact_data = exporter_la_fiche(contact)
 
-    activities_data = [
-        {
-            "id": a.id,
-            "type": a.type,
-            "title": a.title,
-            "description": a.description,
-            "created_at": a.created_at.isoformat() if a.created_at else None,
-        }
-        for a in activities
-    ]
+    activities_data = [a.model_dump(mode='json') for a in activities]
 
     projects_data = [
         {

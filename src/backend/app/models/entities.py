@@ -880,8 +880,11 @@ class Activity(SQLModel, table=True):
     __tablename__ = "activities"
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
-    contact_id: str = Field(foreign_key="contacts.id", index=True)
-    type: str  # email, call, meeting, note, stage_change, score_change
+    contact_id: str | None = Field(default=None, foreign_key="contacts.id", index=True)
+    project_id: str | None = Field(default=None, foreign_key="projects.id", index=True)
+    conversation_id: str | None = Field(default=None, foreign_key="conversations.id", ondelete="SET NULL", index=True)
+    execution_id: str | None = Field(default=None, unique=True, index=True)
+    type: str  # email, call, meeting, note, agent_action, stage_change, score_change
     title: str
     description: str | None = None
     # Une trace peut en annuler une autre. Ce n'est pas un moteur de versions :

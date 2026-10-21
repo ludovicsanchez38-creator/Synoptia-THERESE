@@ -26,6 +26,7 @@ from app.models.schemas import (
     fiche_identifiable,
 )
 from app.routers.memory_cards import router as memory_cards_router
+from app.services.action_journal import clause_du_contact as clause_activites_du_contact
 from app.services.audit import AuditAction, log_activity
 from app.services.civil_time import date_civile_paris
 from app.services.projet_ensemble import (
@@ -464,11 +465,15 @@ async def _nettoyer_et_supprimer_projet(
         await session.execute(select(Deliverable).where(clause_livrables(project_id)))
     ).scalars().all()
 
+    from app.models.entities import Activity
+    from app.services.action_journal import effacer_activites
+    nombre_activites = await effacer_activites(session, Activity.project_id == project_id)
     from app.services.memory_cards import effacer_liees
     fiches_effacees = await effacer_liees(session, project_id=project_id)
     await session.delete(project)
     return {
         "memory_cards": fiches_effacees,
+        "activities": nombre_activites,
         "files": len(files),
         "conversations_detachees": len(conversations),
         "documents_detaches": len(documents),
@@ -1154,14 +1159,9 @@ async def delete_contact(
     ).scalars().all():
         await session.delete(prestation)
 
-    # Toujours supprimer les activités liées (FK non-nullable sur Activity.contact_id)
-    from app.models.entities import Activity
-    activities = (await session.execute(
-        select(Activity).where(Activity.contact_id == contact_id)
-    )).scalars().all()
-    for act in activities:
-        await session.delete(act)
-    cascade_deleted["activities"] = len(activities)
+    # Les traces suivent le contact et ses dossiers, même sans cascade projet.
+    from app.services.action_journal import effacer_activites
+    cascade_deleted["activities"] = await effacer_activites(session, clause_activites_du_contact(contact_id))
 
     projets_supprimes: list[str] = []
     if cascade:

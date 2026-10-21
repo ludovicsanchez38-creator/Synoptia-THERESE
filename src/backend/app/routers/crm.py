@@ -82,6 +82,9 @@ def _activity_to_response(activity: Activity) -> ActivityResponse:
     return ActivityResponse(
         id=activity.id,
         contact_id=activity.contact_id,
+        project_id=activity.project_id,
+        conversation_id=activity.conversation_id,
+        execution_id=activity.execution_id,
         type=activity.type,
         title=activity.title,
         description=activity.description,
@@ -133,44 +136,93 @@ async def create_activity(
     """
     Crée une nouvelle activité dans la timeline.
     """
-    # Vérifier que le contact existe
-    contact = await session.get(Contact, request.contact_id)
-    if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+    from app.models.database import get_session_context
+    from app.services.memory_tools import _proteger_le_geste, generation_des_donnees
 
-    # Créer l'activité
-    activity = Activity(
-        contact_id=request.contact_id,
-        type=request.type,
-        title=request.title,
-        description=request.description,
-        extra_data=request.extra_data,
-    )
+    generation = generation_des_donnees()
+    async def geste() -> str:
+        if generation != generation_des_donnees():
+            raise HTTPException(409, 'Les données ont changé. Recharge Mémoire.')
+        async with get_session_context() as courte:
+            resultat = await _creer_activite(request, courte)
+            return resultat.model_dump_json()
+    resultat = json.loads(await _proteger_le_geste(geste()))
+    if 'id' not in resultat:
+        raise HTTPException(409, 'Une opération sur tes données est en cours. Réessaie ensuite.')
+    return ActivityResponse.model_validate(resultat)
 
+
+async def _creer_activite(request: CreateActivityRequest, session: AsyncSession) -> ActivityResponse:
+    from app.services.action_journal import verifier_texte
+
+    if request.type == 'agent_action':
+        raise HTTPException(422, 'Le reçu d’une action est produit uniquement par son exécution.')
+    verifier_texte(request.title, request.description, request.extra_data)
+    contact = await session.get(Contact, request.contact_id) if request.contact_id else None
+    if request.contact_id and not contact:
+        raise HTTPException(404, 'Contact not found')
+    if request.project_id and not await session.get(Project, request.project_id):
+        raise HTTPException(404, 'Projet introuvable')
+    if request.conversation_id:
+        raise HTTPException(422, 'La provenance est réservée aux actions exécutées.')
+    activity = Activity(contact_id=request.contact_id, project_id=request.project_id,
+        type=request.type, title=request.title, description=request.description, extra_data=request.extra_data)
     session.add(activity)
-
-    # Mettre à jour last_interaction du contact
-    contact.last_interaction = datetime.now(UTC)
-    # Un GESTE vers la personne, c'est avoir relance : le devoir s'eteint.
-    # Ecrire une note ne l'est pas (correctif du 29/08 au soir : une note de
-    # correction soldait la relance en silence).
-    from app.services.relances import GESTES_QUI_SOLDENT, solder_la_relance
-
-    if request.type in GESTES_QUI_SOLDENT:
-        solder_la_relance(contact)
-    contact.updated_at = datetime.now(UTC)
-    session.add(contact)
-
-    # Recalculer le score (interaction = points)
-    if request.type in ["email", "call", "meeting"]:
-        await update_contact_score(session, contact, reason=f"interaction_{request.type}")
-
+    if contact:
+        from app.services.relances import GESTES_QUI_SOLDENT, solder_la_relance
+        contact.last_interaction = datetime.now(UTC)
+        if request.type in GESTES_QUI_SOLDENT:
+            solder_la_relance(contact)
+        contact.updated_at = datetime.now(UTC)
+        session.add(contact)
+        if request.type in ['email', 'call', 'meeting']:
+            await update_contact_score(session, contact, reason=f'interaction_{request.type}')
     await session.commit()
     await session.refresh(activity)
-
-    logger.info(f"Activity created: {activity.id} for contact {contact.id}")
-
     return _activity_to_response(activity)
+
+
+class CorrectionDeTrace(BaseModel):
+    description: str
+
+
+@router.post('/activities/{activity_id}/correction', response_model=ActivityResponse)
+async def corriger_trace(activity_id: str, request: CorrectionDeTrace):
+    from app.models.database import get_session_context
+    from app.services.action_journal import verifier_texte
+    from app.services.memory_tools import _proteger_le_geste, generation_des_donnees
+    from sqlalchemy import text
+
+    verifier_texte('Correction', request.description, None)
+    if not request.description.strip():
+        raise HTTPException(422, 'Écris ta correction.')
+    generation = generation_des_donnees()
+    async def geste() -> str:
+        async with get_session_context() as session:
+            await session.execute(text('BEGIN IMMEDIATE'))
+            if generation != generation_des_donnees():
+                raise HTTPException(409, 'Les données ont changé. Recharge Mémoire.')
+            originale = await session.get(Activity, activity_id)
+            if originale is None:
+                raise HTTPException(404, 'Trace introuvable')
+            if originale.statut != 'en_vigueur':
+                raise HTTPException(409, 'Cette trace a déjà été remplacée.')
+            nouvelle = Activity(type=originale.type if originale.type == 'agent_action' else 'note',
+                title='Correction de trace', description=request.description,
+                extra_data=json.dumps({'outcome': 'annotation'}) if originale.type == 'agent_action' else None,
+                contact_id=originale.contact_id, project_id=originale.project_id,
+                conversation_id=originale.conversation_id)
+            session.add(nouvelle)
+            await session.flush()
+            originale.statut, originale.remplace_id = 'annulee', nouvelle.id
+            session.add(originale)
+            await session.commit()
+            await session.refresh(nouvelle)
+            return _activity_to_response(nouvelle).model_dump_json()
+    resultat = json.loads(await _proteger_le_geste(geste()))
+    if 'id' not in resultat:
+        raise HTTPException(409, 'Une opération sur tes données est en cours.')
+    return ActivityResponse.model_validate(resultat)
 
 
 class AnnulationDeTrace(BaseModel):
@@ -204,6 +256,10 @@ async def marquer_la_trace(
             status_code=400, detail="Une trace ne peut pas s'annuler elle-meme"
         )
 
+    if request.remplace_par_id:
+        remplacement = await session.get(Activity, request.remplace_par_id)
+        if not remplacement or remplacement.contact_id != trace.contact_id or remplacement.project_id != trace.project_id:
+            raise HTTPException(422, 'La trace de remplacement doit appartenir au même périmètre.')
     trace.statut = request.statut
     # Le pointeur ne vaut que pour une annulation : remettre en vigueur
     # l'efface, sinon la fiche garderait un lien vers un remplacant caduc.
@@ -226,6 +282,8 @@ async def delete_activity(
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
+    from sqlalchemy import update
+    await session.execute(update(Activity).where(Activity.remplace_id == activity_id).values(remplace_id=None))
     await session.delete(activity)
     await session.commit()
 

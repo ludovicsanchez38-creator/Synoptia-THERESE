@@ -12,7 +12,10 @@ export type ContactResponse = Contact;
 
 export interface ActivityResponse {
   id: string;
-  contact_id: string;
+  contact_id: string | null;
+  project_id?: string | null;
+  conversation_id?: string | null;
+  execution_id?: string | null;
   type: string;
   title: string;
   description: string | null;
@@ -103,7 +106,8 @@ export async function listActivities(params: {
 }
 
 export async function createActivity(data: {
-  contact_id: string;
+  contact_id?: string | null;
+  project_id?: string | null;
   type: string;
   title: string;
   description?: string;
@@ -123,6 +127,14 @@ export async function deleteActivity(activityId: string): Promise<void> {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+}
+
+export async function correctActivity(id: string, description: string): Promise<ActivityResponse> {
+  const response = await apiFetch(`${API_BASE}/api/crm/activities/${id}/correction`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description }),
+  });
+  if (!response.ok) throw new Error('La correction a échoué.');
+  return response.json();
 }
 
 // Deliverables API
