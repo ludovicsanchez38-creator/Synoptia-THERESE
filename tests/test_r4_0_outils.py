@@ -35,7 +35,7 @@ def test_conserve_le_domaine_du_tour_precedent(monkeypatch):
     from app.services import ollama_budget
     monkeypatch.setattr(ollama_budget, 'plafond_memoire', lambda: 8192)
     config = LLMConfig(LLMProvider.OLLAMA, 'qwen3:1.7b', max_tokens=3072)
-    context = _context('Et demain ?')
+    context = _context('Et ensuite ?')
     context.memory_original_messages = [Message('user', 'Quel est mon agenda ?'), Message('assistant', 'Je consulte.'), *context.messages]
     selection = alleger_outils_locaux(context, config, [*WORKSPACE_TOOLS, MEMORY_CARD_TOOL])
     assert 'list_calendar_events' in {t['function']['name'] for t in selection}
