@@ -39,6 +39,8 @@ interface EmailStore {
   // UI State
   isEmailPanelOpen: boolean;
   isComposing: boolean;
+  /** Identifiant du brouillon sauvegardé en cours de correction, en mémoire vive uniquement. */
+  editingDraftId: string | null;
   draftRecipients: string[];
   draftCc: string[];
   draftBcc: string[];
@@ -100,6 +102,7 @@ export const useEmailStore = create<EmailStore>()(
         }
         set({
           currentAccountId: accountId,
+          editingDraftId: null,
           messages: [],
           currentMessageId: null,
           labels: [],
@@ -150,6 +153,7 @@ export const useEmailStore = create<EmailStore>()(
       setCurrentLabel: (labelId) => set({ currentLabelId: labelId }),
 
       // UI State
+      editingDraftId: null,
       isEmailPanelOpen: false,
       isComposing: false,
       draftRecipients: [],
@@ -168,6 +172,7 @@ export const useEmailStore = create<EmailStore>()(
       setDraftIsHtml: (isHtml) => set({ draftIsHtml: isHtml }),
       clearDraft: () =>
         set({
+          editingDraftId: null,
           draftRecipients: [],
           draftCc: [],
           draftBcc: [],
@@ -178,6 +183,7 @@ export const useEmailStore = create<EmailStore>()(
         }),
       startComposing: (recipients, subject, body) =>
         set({
+          editingDraftId: null,
           draftRecipients: recipients,
           draftCc: [],
           draftBcc: [],

@@ -26,6 +26,7 @@ from app.models.schemas import (
     fiche_identifiable,
 )
 from app.routers.memory_cards import router as memory_cards_router
+from app.routers.memory_drafts import router as brouillons_router
 from app.services.action_journal import clause_du_contact as clause_activites_du_contact
 from app.services.audit import AuditAction, log_activity
 from app.services.civil_time import date_civile_paris
@@ -55,6 +56,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+router.include_router(brouillons_router)
+
 
 # Lot F : un ILIKE « e » chargeait l'annuaire, notait en Python, n'en gardait
 # que 10. 200 lignes, pas plus : au-delà on avoue la troncature.
