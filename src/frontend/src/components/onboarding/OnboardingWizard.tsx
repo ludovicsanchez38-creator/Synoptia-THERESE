@@ -198,13 +198,13 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             exit={{ opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             data-testid="onboarding-wizard"
-            className="relative my-6 flex max-h-[calc(100vh-3rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-md border border-border/50 bg-surface shadow-2xl"
+            className="relative my-6 flex h-[calc(100dvh-3rem)] max-h-[calc(100vh-3rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-md border border-border/50 bg-surface shadow-2xl"
           >
             <h1 id="onboarding-title" tabIndex={-1} data-dialog-autofocus className="sr-only">
               Configuration initiale de Thérèse
             </h1>
             {/* Progress Header */}
-            <div className="border-b border-border/30 px-3 py-3 sm:px-8 sm:py-4">
+            <div className="shrink-0 border-b border-border/30 px-3 py-3 sm:px-8 sm:py-4">
               {/* Step Indicators */}
               <ol className="grid grid-cols-6 items-center" aria-label="Étapes de configuration">
                 {STEPS.map((step, index) => (
@@ -270,7 +270,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             </div>
 
             {/* Step Content */}
-            <div ref={contenuRef} className="flex-1 overflow-y-auto relative">
+            <div ref={contenuRef} className="min-h-0 flex-1 overflow-y-auto relative">
               <AnimatePresence
                 mode="wait"
                 custom={direction}
