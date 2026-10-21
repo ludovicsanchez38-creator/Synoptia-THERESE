@@ -693,7 +693,8 @@ async def setup_caldav_calendar(
             existing.caldav_password = encrypt_value(request.password)
             existing.summary = cal_info["name"] or existing.summary
             existing.sync_status = "idle"
-            existing.synced_at = datetime.now(UTC)
+            existing.synced_at = None
+            existing.last_sync_error = None
             session.add(existing)
             calendars.append(existing)
         else:
@@ -706,7 +707,7 @@ async def setup_caldav_calendar(
                 caldav_username=request.username,
                 caldav_password=encrypt_value(request.password),
                 sync_status="idle",
-                synced_at=datetime.now(UTC),
+                synced_at=None,
             )
             session.add(new_cal)
             calendars.append(new_cal)
@@ -832,6 +833,8 @@ async def _list_events_provider(
 ) -> list[CalendarEventResponse]:
     """List events via abstract CalendarProvider (local or CalDAV)."""
     provider = await _get_provider_for_calendar(calendar, session)
+    # L'UUID SQL est une identité locale ; CalDAV cherche son id/URL distant.
+    provider_calendar_id = (calendar.remote_id or calendar.id) if calendar.provider == "caldav" else calendar.id
 
     def _parse_borne_instant(s: str) -> datetime:
         """Borne de fenêtre, rendue comme un INSTANT (datetime aware).
@@ -861,7 +864,7 @@ async def _list_events_provider(
         # Fenêtre bornée (mois de l'agenda) : tout ramener ou avouer.
         async def _page(token: str | None) -> tuple[list[Any], str | None]:
             evenements, jeton = await provider.list_events(
-                calendar_id=calendar.id,
+                calendar_id=provider_calendar_id,
                 time_min=dt_min,
                 time_max=dt_max,
                 max_results=250,
@@ -872,17 +875,40 @@ async def _list_events_provider(
         events_dto = await _collecter_pages_evenements(_page)
     else:
         events_dto, _ = await provider.list_events(
-            calendar_id=calendar.id,
+            calendar_id=provider_calendar_id,
             time_min=dt_min,
             time_max=dt_max,
             max_results=max_results,
         )
 
+    if calendar.provider == "caldav":
+        # Cache local cloisonné par calendrier, sans collision entre UID DAV.
+        # synced_at n'est posé qu'après une vraie lecture d'événements.
+        for evt in events_dto:
+            identifiant = _id_evenement_importe(calendar.id, evt.id)
+            copie = await session.get(CalendarEvent, identifiant)
+            if copie is None:
+                copie = CalendarEvent(id=identifiant, calendar_id=calendar.id, summary=evt.summary)
+            copie.summary, copie.description, copie.location = evt.summary, evt.description, evt.location
+            copie.all_day, copie.status = evt.all_day, evt.status
+            copie.start_date = evt.start.isoformat() if evt.all_day and evt.start else None
+            copie.end_date = evt.end.isoformat() if evt.all_day and evt.end else None
+            copie.start_datetime = _heure_murale_paris(evt.start.isoformat(), calendar.timezone) if isinstance(evt.start, datetime) and not evt.all_day else None
+            copie.end_datetime = _heure_murale_paris(evt.end.isoformat(), calendar.timezone) if isinstance(evt.end, datetime) and not evt.all_day else None
+            copie.attendees = json.dumps(evt.attendees or [])
+            copie.recurrence = json.dumps(evt.recurrence or [])
+            copie.synced_at = datetime.now(UTC)
+            session.add(copie)
+        calendar.sync_status, calendar.last_sync_error = "idle", None
+        calendar.synced_at = datetime.now(UTC)
+        session.add(calendar)
+        await session.commit()
+
     # Convert DTOs to CalendarEventResponse
     return [
         CalendarEventResponse(
             id=evt.id,
-            calendar_id=evt.calendar_id,
+            calendar_id=calendar.id,
             summary=evt.summary,
             description=evt.description,
             location=evt.location,
