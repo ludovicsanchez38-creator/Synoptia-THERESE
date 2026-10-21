@@ -53,5 +53,4 @@ def capacites_outils(tool_names: list[str]) -> str:
     mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", "upsert_memory_card", *MEMORY_TOOL_NAMES, *WORKSPACE_TOOL_NAMES)]
     if mcp_tools:
         capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
-    capabilities += bloc_outils_sous_confirmation(tool_names)
-    return capabilities
+    return capabilities + bloc_outils_sous_confirmation(tool_names)

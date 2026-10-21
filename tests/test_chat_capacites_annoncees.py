@@ -11,7 +11,7 @@ lit la capacité, invente l'appel, et redemande une action déjà en attente.
 import re
 from pathlib import Path
 
-SOURCE = Path("src/backend/app/routers/chat.py").read_text(encoding="utf-8")
+SOURCE = Path("src/backend/app/services/tool_capabilities.py").read_text(encoding="utf-8")
 
 
 def _bloc_capacites(source: str = SOURCE) -> list[tuple[str, str]]:
@@ -44,7 +44,7 @@ def _capacites_sans_garde(source: str = SOURCE) -> list[str]:
         manquants.append(
             "le balayage ne trouve plus aucune capacité : le verbe "
             "« capabilities += » ou la garde « in tool_names » a changé dans "
-            "chat.py, et ce test ne surveille plus rien"
+            "tool_capabilities.py, et ce test ne surveille plus rien"
         )
     elif len(verbes) - len(paires) > 1:
         # Une seule ligne non appariée est attendue : le bloc des outils MCP,
