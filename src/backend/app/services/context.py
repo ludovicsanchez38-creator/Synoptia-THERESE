@@ -26,6 +26,12 @@ class ContextWindow:
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0
     memory_cards_enabled: bool = True
+    memory_request: dict[str, Any] | None = None
+    memory_documents: str = ''
+    memory_base_system: str | None = None
+    memory_original_messages: list[Message] | None = None
+    memory_used: list[str] | None = None
+    memory_transmitted: list[str] | None = None
 
     def estimate_tokens(self, text: str) -> int:
         """Rough token estimation (4 chars = 1 token for most languages)."""

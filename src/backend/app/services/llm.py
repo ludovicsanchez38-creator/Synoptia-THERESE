@@ -992,6 +992,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # et son fournisseur sont LOCAUX à l'appel ; `config` permet une
         # variante (max_tokens) sans écrire dans l'état partagé.
         effective_config = config or self._resolve_with_circuit_breaker()
+        if context.memory_request:
+            from app.services.memory_card_context import actualiser_fiches
+            context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
+            await actualiser_fiches(context, effective_config, tools)
         provider_switched = effective_config is not self.config
         context.config_effective = effective_config
 
@@ -1032,6 +1036,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             else:
                 messages = context.to_openai_format()
                 system_prompt = context.system_prompt
+
+            context.memory_transmitted = context.memory_used
 
             # Pass enable_grounding to Gemini provider
             if effective_config.provider == LLMProvider.GEMINI:
@@ -1086,6 +1092,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # d'outils émis par le fournisseur de repli, dans un autre format.
         retenue = getattr(context, "config_effective", None)
         effective_config = retenue if isinstance(retenue, LLMConfig) else self.config
+        if context.memory_request:
+            from app.services.memory_card_context import actualiser_fiches
+            await actualiser_fiches(context, effective_config, tools, {
+                'assistant': assistant_content, 'calls': tool_calls, 'results': tool_results,
+                'prior_turns': prior_turns, 'assistant_content_brut': assistant_content_brut,
+            })
         if effective_config is not self.config:
             provider = await self._provider_pour(effective_config)
         else:
@@ -1112,6 +1124,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         had_error = False
         error_detail = ""
 
+        context.memory_transmitted = context.memory_used
         async for event in provider.continue_with_tool_results(
             system_prompt,
             messages,

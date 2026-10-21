@@ -109,6 +109,8 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: str | None = None
     include_memory: bool = True
+    memory_card_grants: list[str] = []
+    memory_card_purpose: Literal["llm", "documents"] = "llm"
     stream: bool = True
     skill_id: str | None = None
     file_paths: list[str] | None = None

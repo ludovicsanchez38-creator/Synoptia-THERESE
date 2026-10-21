@@ -1994,6 +1994,8 @@ async def send_message(
                 email_account_id=request.email_account_id,
                 calendar_id=request.calendar_id,
                 include_memory=request.include_memory,
+                memory_card_grants=request.memory_card_grants,
+                memory_card_purpose=request.memory_card_purpose,
             ),
             media_type="text/event-stream",
             headers={
@@ -2125,6 +2127,13 @@ async def send_message(
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
     context.memory_cards_enabled = request.include_memory
+    if request.include_memory:
+        from app.services.memory_card_context import attacher_relecture
+        attacher_relecture(context, messages, memory_context,
+            scope=_perimetre_conv or "global", scope_id=_perimetre_conv_id,
+            conversation_id=conversation.id,
+            query=" ".join([m.content for m in messages if m.role == "user"][-3:]),
+            grants=request.memory_card_grants, purpose=request.memory_card_purpose)
     context.system_prompt = (context.system_prompt or "") + (
         "\nAucun outil de messagerie n'est disponible dans ce tour sans flux. "
         "Tu peux rédiger un texte, mais ne propose ni lecture ni envoi de mail.\n"
@@ -2196,7 +2205,12 @@ async def send_message(
         tokens_in=input_tokens,
         tokens_out=output_tokens,
     )
+    bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
+    if context.memory_transmitted:
+        extra = json.loads(assistant_message.extra_data or '{}')
+        extra['memory_used'] = context.memory_transmitted
+        assistant_message.extra_data = json.dumps(extra)
     # B-1494, voie non diffusée : la suppression pendant la génération
     # l'emporte aussi ici. Construire la réponse avant un éventuel rollback
     # évite de relire une conversation dont les attributs SQL sont expirés.
@@ -2233,6 +2247,8 @@ async def _stream_response(
     email_account_id: str | None = None,
     calendar_id: str | None = None,
     include_memory: bool = True,
+    memory_card_grants: list[str] | None = None,
+    memory_card_purpose: str = "llm",
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2322,6 +2338,7 @@ async def _stream_response(
         email_account_id=email_account_id,
         calendar_id=calendar_id,
         include_memory=include_memory,
+        memory_card_grants=memory_card_grants, memory_card_purpose=memory_card_purpose,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2593,6 +2610,8 @@ async def _do_stream_response(
     email_account_id: str | None = None,
     calendar_id: str | None = None,
     include_memory: bool = True,
+    memory_card_grants: list[str] | None = None,
+    memory_card_purpose: str = "llm",
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -2816,6 +2835,13 @@ async def _do_stream_response(
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
     context.memory_cards_enabled = include_memory
+    if include_memory:
+        from app.services.memory_card_context import attacher_relecture
+        attacher_relecture(context, messages, memory_context,
+            scope=_perimetre_conv or "global", scope_id=_perimetre_conv_id,
+            conversation_id=conversation_id,
+            query=" ".join([m.content for m in messages if m.role == "user"][-3:]),
+            grants=memory_card_grants or [], purpose=memory_card_purpose)
     bilan_contexte = bilan_depuis_fenetre(
         _passes_que_le_fournisseur_garde(messages), context
     )
@@ -3312,7 +3338,12 @@ async def _do_stream_response(
         assistant_message.extra_data = json.dumps(
             {"skill_files": skill_files_payloads}
         )
+    bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
+    if context.memory_transmitted:
+        extra = json.loads(assistant_message.extra_data or '{}')
+        extra['memory_used'] = context.memory_transmitted
+        assistant_message.extra_data = json.dumps(extra)
     await session.commit()
 
     # Send done event with usage info
@@ -3333,6 +3364,7 @@ async def _do_stream_response(
     }
     done_dict["uncertainty"] = uncertainty
     done_dict["contexte"] = bilan_contexte
+    done_dict["memory_used"] = context.memory_transmitted or []
     yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)
