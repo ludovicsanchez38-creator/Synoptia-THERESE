@@ -41,6 +41,7 @@ export interface MemoryReceipt { id: string; version: number; operation: string 
 
 export interface Message {
   memoryReceipts?: MemoryReceipt[];
+  memoryUsed?: string[];
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;

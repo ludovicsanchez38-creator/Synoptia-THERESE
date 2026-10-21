@@ -25,6 +25,7 @@ from app.models.schemas import (
     ProjectUpdate,
     fiche_identifiable,
 )
+from app.routers.memory_cards import router as memory_cards_router
 from app.services.audit import AuditAction, log_activity
 from app.services.civil_time import date_civile_paris
 from app.services.projet_ensemble import (
@@ -1480,3 +1481,8 @@ async def delete_project(
         logger.warning("Audit log failed after project delete: %s", e)
 
     return {"deleted": True, "id": project_id, "cascade_deleted": cascade_deleted}
+
+
+# R2 : activation du noyau avec sa garde et son écran.
+
+router.include_router(memory_cards_router)

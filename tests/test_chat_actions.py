@@ -34,7 +34,7 @@ class TestParseActionMessage:
         parsed = self._parse("  {Action:  Ouvrir  Mémoire }  ")
         assert parsed is not None
         assert parsed.kind == "navigate"
-        assert parsed.action_id == "memory.open"
+        assert parsed.action_id == "agent_memory.open"
 
     def test_texte_mixte_pas_un_message_action(self):
         # L'action au milieu d'un texte = flux LLM normal (tranche 1 :
@@ -519,7 +519,7 @@ class TestLeLexiqueDansLesCommandes:
             ("devis", "invoices.open"),
             # Compat : les anciennes cibles restent parsées
             ("crm", "crm.open"),
-            ("memoire", "memory.open"),
+            ("memoire", "agent_memory.open"),
             ("calendrier", "calendar.open"),
             ("facturation", "invoices.open"),
         ],
@@ -543,5 +543,5 @@ class TestLeLexiqueDansLesCommandes:
         assert "{action: ouvrir contacts}" in aide
         assert "{action: ouvrir agenda}" in aide
         assert "{action: ouvrir crm}" not in aide
-        assert "{action: ouvrir memoire}" not in aide
+        assert "{action: ouvrir memoire}" in aide
         assert "{action: ouvrir calendrier}" not in aide

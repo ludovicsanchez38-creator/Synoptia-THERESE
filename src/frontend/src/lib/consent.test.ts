@@ -120,4 +120,15 @@ describe('consentement cloud v2 - par finalité et fournisseur (US-003 RGPD-4)',
     grantCloudConsent('llm', 'openai');
     expect(hasCloudConsent('llm', 'openai')).toBe(true);
   });
+
+it('R2 : un ancien accord suffit sans fiche ; la catégorie est exigée seulement à la demande', () => {
+  grantCloudConsent('llm', 'openai', ['message saisi']);
+  expect(hasCloudConsent('llm', 'openai')).toBe(true);
+  expect(hasCloudConsent('llm', 'openai', ['memory_cards_r2_v1'])).toBe(false);
+  grantCloudConsent('llm', 'openai', ['message saisi', 'memory_cards_r2_v1']);
+  expect(hasCloudConsent('llm', 'openai', ['memory_cards_r2_v1'])).toBe(true);
+  expect(hasCloudConsent('documents', 'openai', ['memory_cards_r2_v1'])).toBe(false);
+});
+
+
 });

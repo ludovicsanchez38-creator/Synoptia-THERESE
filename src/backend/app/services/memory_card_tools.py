@@ -42,6 +42,8 @@ async def executer_outil(arguments: dict[str, Any], *, scope: str, scope_id: str
                          contexte: Any = None) -> dict[str, Any]:
     if not include_memory:
         return {'success': False, 'message': 'La mémoire est désactivée pour cet échange. Aucune fiche écrite.'}
+    from app.services.memory_tools import generation_des_donnees
+    generation = generation_des_donnees()
     try:
         autorises = set(MEMORY_CARD_TOOL['function']['parameters']['properties'])
         if set(arguments) - autorises:
@@ -52,7 +54,7 @@ async def executer_outil(arguments: dict[str, Any], *, scope: str, scope_id: str
             ).order_by(col(Message.created_at).desc(), col(Message.id).desc()).limit(1))).scalars().first()
             message_id = source.id if source else None
         fiche = await ecrire(arguments, automatique=True, scope=scope, scope_id=scope_id,
-                              conversation_id=conversation_id, message_id=message_id, contexte=contexte)
+                              conversation_id=conversation_id, message_id=message_id, contexte=contexte, generation_attendue=generation)
         return {'success': True, 'receipt': fiche['receipt']}
     except RefusMemoire as refus:
         return {'success': False, 'message': str(refus), 'card_id': refus.card_id}

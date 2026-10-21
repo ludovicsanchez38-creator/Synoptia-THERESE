@@ -9,6 +9,7 @@ const EmailPanel = lazy(() => import('../email').then((module) => ({ default: mo
 const CalendarPanel = lazy(() => import('../calendar').then((module) => ({ default: module.CalendarPanel })));
 const TasksPanel = lazy(() => import('../tasks').then((module) => ({ default: module.TasksPanel })));
 const InvoicesPanel = lazy(() => import('../invoices').then((module) => ({ default: module.InvoicesPanel })));
+const AgentMemoryPanel = lazy(() => import('../memory/AgentMemoryPanel').then(module => ({ default: module.AgentMemoryPanel })));
 const MemoryPanel = lazy(() => import('../memory/MemoryPanel').then((module) => ({ default: module.MemoryPanel })));
 const FileBrowser = lazy(() => import('../files/FileBrowser').then((module) => ({ default: module.FileBrowser })));
 const ProjectsPanel = lazy(() => import('../memory/ProjectsPanel').then((module) => ({ default: module.ProjectsPanel })));
@@ -16,6 +17,7 @@ const DocumentsList = lazy(() => import('../documents/DocumentsList').then((modu
 
 export const viewLabels: Record<Exclude<AppView, 'chat'>, string> = {
   memory: 'Contacts',
+  agent_memory: 'Mémoire',
   crm: 'Pipeline',
   email: 'Email',
   calendar: 'Agenda',
@@ -87,6 +89,7 @@ export function PrototypeUnifiedViewCanvas({
           scroller dans le mail », revue harmonisation 17/07) */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Suspense fallback={<div className="grid h-full place-items-center text-sm text-text-muted">Chargement…</div>}>
+          {view === 'agent_memory' && <AgentMemoryPanel />}
           {view === 'crm' && <CRMPanel standalone />}
           {view === 'email' && <EmailPanel standalone />}
           {view === 'calendar' && <CalendarPanel standalone />}

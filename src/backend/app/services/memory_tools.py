@@ -29,6 +29,7 @@ from app.models.schemas import adresse_unique_valide
 from app.services.cloisonnement import cloison_contacts as _cloison_contacts
 from app.services.contexte_execution import ContexteExecution
 from app.services.crm_utils import DEFINITIONS_ETAPES, libelle_d_etape
+from app.services.memory_card_tools import MEMORY_CARD_TOOL
 from app.services.qdrant import get_qdrant_service
 from sqlalchemy import case, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -226,6 +227,7 @@ READ_FILE_TOOL = {
 
 
 MEMORY_TOOLS = [
+    MEMORY_CARD_TOOL,
     CREATE_CONTACT_TOOL,
     CREATE_PROJECT_TOOL,
     READ_CONTACT_TOOL,
@@ -1218,6 +1220,10 @@ def _consommer_issue_geste(geste: "asyncio.Task[str]") -> None:
 
 # B-1276 : nombre de purges en cours ; tant qu'il est positif, le chat ne crée rien.
 _CREATIONS_SUSPENDUES = 0
+_GENERATION_DONNEES = 0
+
+def generation_des_donnees() -> int:
+    return _GENERATION_DONNEES
 
 
 @contextlib.asynccontextmanager
@@ -1237,8 +1243,9 @@ async def creations_du_chat_suspendues() -> AsyncIterator[None]:
 def suspendre_les_creations_du_chat() -> None:
     """B-1284 : forme sans bloc, pour la restauration, dont le try/finally
     enjambe déjà begin() et la fin du mode maintenance."""
-    global _CREATIONS_SUSPENDUES
+    global _CREATIONS_SUSPENDUES, _GENERATION_DONNEES
     _CREATIONS_SUSPENDUES += 1
+    _GENERATION_DONNEES += 1
 
 
 def reprendre_les_creations_du_chat() -> None:

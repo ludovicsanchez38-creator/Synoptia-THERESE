@@ -15,9 +15,15 @@ CATEGORIE = 'memory_cards_r2_v1'
 ENVELOPPE = 32
 
 
+class AccordFichesRequis(ErreurPourEcran):
+    def __init__(self, provider: str, purpose: str):
+        super().__init__('Tes fiches mémoire utiles vont être envoyées avec cet échange. Donne ton accord actualisé pour ce fournisseur avant de réessayer, ou désactive explicitement la mémoire.')
+        self.provider, self.purpose = provider, purpose
+
+
 def _json(valeur: Any) -> str:
     return json.dumps(valeur, ensure_ascii=False, separators=(',', ':'),
-                      default=lambda x: dataclasses.asdict(x) if dataclasses.is_dataclass(x) else str(x))
+                      default=lambda x: dataclasses.asdict(x) if dataclasses.is_dataclass(x) and not isinstance(x, type) else str(x))
 
 
 def destination_cloud(config: Any) -> str | None:
@@ -25,7 +31,7 @@ def destination_cloud(config: Any) -> str | None:
         return str(config.provider.value)
     from app.services.ollama_capabilites import est_modele_ollama_cloud
     host = urlsplit(config.base_url or 'http://127.0.0.1:11434').hostname
-    return 'ollama' if est_modele_ollama_cloud(config.model) or host not in ('localhost', '127.0.0.1', '::1') else None
+    return 'ollama-cloud' if est_modele_ollama_cloud(config.model) or host not in ('localhost', '127.0.0.1', '::1') else None
 
 
 def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, Any]] | None,
@@ -37,7 +43,7 @@ def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, A
         system, messages = context.to_gemini_format()
     else:
         system, messages = None, context.to_openai_format()
-    charge = {'messages': messages, 'tools': tools or []}
+    charge: dict[str, Any] = {'messages': messages, 'tools': tools or []}
     if system:
         charge['system'] = system
     if suite:
@@ -45,7 +51,7 @@ def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, A
     # Un octet UTF-8 = au plus un jeton, plus enveloppes et schémas sérialisés.
     # La suite entière est comptée (résultats et tours précédents), jamais len/4.
     def enveloppes_de(valeur: Any) -> int:
-        if dataclasses.is_dataclass(valeur):
+        if dataclasses.is_dataclass(valeur) and not isinstance(valeur, type):
             valeur = dataclasses.asdict(valeur)
         if isinstance(valeur, dict):
             return 1 + sum(enveloppes_de(v) for v in valeur.values())
@@ -121,6 +127,7 @@ def borner_payload(context: ContextWindow, fiches: list[dict[str, Any]], config:
         gardes.insert(0, ancien)
     context.system_prompt = base + bloc_fiches(retenues) + documents
     context.messages = gardes
+    context.caracteres_retires = 0  # demande entière restaurée avant la réserve R2
     context.max_tokens = limite
     context.memory_used = [f['id'] for f in retenues]
     if compter_payload(context, config, tools, suite) > limite:
@@ -148,4 +155,4 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
     borner_payload(context, fiches, config, tools, suite)
     destination = destination_cloud(config)
     if context.memory_used and destination and f"{demande['purpose']}:{destination}" not in demande['grants']:
-        raise ErreurPourEcran('Tes fiches mémoire utiles vont être envoyées avec cet échange. Donne ton accord actualisé pour ce fournisseur avant de réessayer, ou désactive explicitement la mémoire.')
+        raise AccordFichesRequis(destination, demande['purpose'])

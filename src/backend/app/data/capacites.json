@@ -357,6 +357,30 @@
       "cycle": {
         "introduite": "0.48"
       }
+    },
+    {
+      "id": "agent_memory",
+      "famille": "quotidien",
+      "textes": {
+        "fr-FR": {
+          "nom": "Mémoire",
+          "quoi": "Relire les fiches écrites par Thérèse, voir leur source, les corriger ou les effacer."
+        }
+      },
+      "maturite": "partielle",
+      "audience": "tous",
+      "entrees": [
+        "agent_memory.vue",
+        "agent_memory.action",
+        "agent_memory.tiroir"
+      ],
+      "exigences": [],
+      "limites": [
+        "Journal, profil, brouillons et notes de rendez-vous : branches non disponibles dans ce lot."
+      ],
+      "cycle": {
+        "introduite": "R2"
+      }
     }
   ],
   "points_entree": [
@@ -768,6 +792,40 @@
         "carte": "prompts-variables"
       },
       "principal": true
+    },
+    {
+      "id": "agent_memory.vue",
+      "capacites": [
+        "agent_memory"
+      ],
+      "type": "vue",
+      "binding": {
+        "registre": "vue",
+        "view": "agent_memory"
+      }
+    },
+    {
+      "id": "agent_memory.action",
+      "capacites": [
+        "agent_memory"
+      ],
+      "type": "action",
+      "binding": {
+        "registre": "action",
+        "actionId": "agent_memory.open"
+      },
+      "principal": true
+    },
+    {
+      "id": "agent_memory.tiroir",
+      "capacites": [
+        "agent_memory"
+      ],
+      "type": "tiroir",
+      "binding": {
+        "registre": "tiroir",
+        "carte": "agent-memory"
+      }
     }
   ],
   "identifiants_reserves": []

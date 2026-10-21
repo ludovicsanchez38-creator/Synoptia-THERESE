@@ -127,3 +127,6 @@ docs/campagnes/*/captures/
 # Preuves locales de la recette R1, conservées dans le worktree
 /.recette-r1/
 /recette-r1-base/
+
+# Preuves et données fictives de la recette R2, conservées localement.
+/.recette-r2/

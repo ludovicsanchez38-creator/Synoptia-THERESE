@@ -29,6 +29,7 @@ from app.models.schemas import (
     RGPDStatsResponse,
     RGPDUpdateRequest,
 )
+from app.services.memory_cards import clause_du_contact, presenter
 from app.services.rgpd_identite import anonymiser_la_personne, exporter_la_fiche
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -166,8 +167,8 @@ async def export_contact_data(
 
     logger.info(f"RGPD export for contact {contact_id}")
     return RGPDExportResponse(
-        memory_cards=[f.model_dump(mode="json", exclude={"search_text", "dedup_key"}) for f in
-            (await session.execute(select(MemoryCard).where(MemoryCard.contact_id == contact_id))).scalars().all()],
+        memory_cards=[presenter(f) for f in
+            (await session.execute(select(MemoryCard).where(clause_du_contact(contact_id)))).scalars().all()],
         contact=contact_data,
         activities=activities_data,
         projects=projects_data,

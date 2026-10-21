@@ -1,7 +1,7 @@
-"""Portes R1 hors réseau sous Linux, dans un profil privé du worktree.
+"""Portes R2 hors réseau sous Linux, dans un profil privé du worktree.
 
-Usage : python3 scripts/recette_r1_hors_reseau.py .venv/bin/python -m pytest tests/ --ignore=tests/e2e
---baseline utilise la copie locale f61f28a3 dans recette-r1-base.
+Usage : python3 scripts/recette_r2_hors_reseau.py .venv/bin/python -m pytest tests/ --ignore=tests/e2e
+--baseline utilise l'archive locale R2-0c dans .recette-r2/base.
 Aucune clé ni variable personnelle n'est héritée par la commande.
 """
 import ctypes
@@ -30,6 +30,7 @@ clean = {
     'OLLAMA_BASE_URL': 'http://127.0.0.1:1',
     'HF_HUB_OFFLINE': '1', 'TRANSFORMERS_OFFLINE': '1',
     'PYTHONPATH': str(code_root / 'src/backend'),
+    'MYPYPATH': str(code_root / 'src/backend'),
     'GIT_CEILING_DIRECTORIES': str(box / 'tmp'),
     'LANG': 'C.UTF-8', 'TZ': 'Europe/Paris',
 }

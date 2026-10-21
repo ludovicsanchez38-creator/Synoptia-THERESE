@@ -1,3 +1,4 @@
+import { notifyMemoryChange } from '../../services/api/memoryCards';
 import {
   useState,
   useRef,
@@ -32,7 +33,7 @@ import { FormulaireVariables } from './FormulaireVariables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
 import { messageDErreurDuFlux } from '../../lib/messageDErreurDuFlux';
-import { inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
+import { arreterLaReponse, inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
 import { decorer, DECORATIONS } from '../../lib/catalogueModeles';
 import { estUneImage } from '../../lib/pieceJointeImage';
@@ -52,6 +53,8 @@ import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables'
 import {
   CLOUD_CONSENT_REVOKED_EVENT,
   grantCloudConsent,
+  MEMORY_CARDS_CATEGORY,
+  memoryCardGrantsForRequest,
   hasCloudConsent,
   type CloudPurpose,
 } from '../../lib/consent';
@@ -73,6 +76,7 @@ interface ChatInputProps {
 }
 
 interface PendingCloudConsent {
+  memoryOrigin?: string;
   action: 'message' | 'deep-research';
   // Revue Soso : la finalité fait partie de la demande. Un accord donné pour
   // les messages ne vaut pas pour l'envoi de documents.
@@ -153,6 +157,7 @@ function titreEffortPuce(texte: string): string {
 
 export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands, demandeDeFocus = 0 }: ChatInputProps) {
   const [input, setInput] = useState('');
+  const [includeMemory, setIncludeMemory] = useState(true);
   // P-061 : calculé une fois par saisie (audit 0.74 : trois parcours par rendu).
   const jetonsRates = useMemo(() => jetonsMalFormes(input), [input]);
   const [pendingSkillId, setPendingSkillId] = useState<string | undefined>(undefined);
@@ -233,6 +238,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // Mémorise le FOURNISSEUR accordé dans la session : changer de fournisseur
   // redemande un accord (consentement par fournisseur, revue 0.40).
   const cloudConsentGrantedRef = useRef<string | null>(null);
+  const repriseMemoireRef = useRef<{ message: string; id: string; conversationId: string } | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   // P-156 : l'effort choisi dans Paramètres se lit dans la puce du modèle.
   const [currentEffort, setCurrentEffort] = useState<string | null>(null);
@@ -276,7 +282,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // être indisponible), mais il doit céder devant une révocation faite dans les
   // réglages pendant que le chat reste ouvert.
   useEffect(() => {
-    const oublier = () => { cloudConsentGrantedRef.current = null; };
+    const oublier = (event: Event) => {
+      cloudConsentGrantedRef.current = null;
+      const purpose = (event as CustomEvent<{ purpose?: string }>).detail?.purpose;
+      if (!purpose || purpose === 'llm' || purpose === 'documents') arreterLaReponse();
+    };
     window.addEventListener(CLOUD_CONSENT_REVOKED_EVENT, oublier);
     return () => window.removeEventListener(CLOUD_CONSENT_REVOKED_EVENT, oublier);
   }, []);
@@ -670,6 +680,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
+          'tes fiches mémoire utiles, renvoyées avec chaque échange où la mémoire est activée',
+          MEMORY_CARDS_CATEGORY,
           // B-1515 : ils partent avec chaque message, dans le prompt système.
           'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
           ...(attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
@@ -683,6 +695,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       return;
     }
 
+    const repriseMemoire = repriseMemoireRef.current?.message === trimmed
+      && repriseMemoireRef.current.conversationId === useChatStore.getState().currentConversationId
+      ? repriseMemoireRef.current : null;
     // Close slash menu if open
     setShowSlashMenu(false);
 
@@ -713,7 +728,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // Le drapeau n'était posé qu'au rechargement depuis le backend, or la
     // synchronisation préserve les messages locaux et ne recharge pas une
     // conversation déjà remplie.
-    addMessage({
+    if (!repriseMemoire) addMessage({
       role: 'user',
       content: messageContent,
       ...(sentFiles.length > 0 ? { hasAttachments: true } : {}),
@@ -775,6 +790,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // y compris quand le flux se termine en erreur - la navigation reçue
     // reste valide).
     let pendingClientAction: StreamChunk | null = null;
+    let accordMemoireEnAttente = false;
     try {
       // Un rattachement de projet peut être en train de persister CETTE
       // conversation : partir sans attendre enverrait le message sans
@@ -803,7 +819,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       const stream = streamMessage({
         message: trimmed,
         conversation_id: syncedConversationId || undefined,
-        include_memory: true,
+        include_memory: includeMemory,
+        memory_card_grants: memoryCardGrantsForRequest(),
+        memory_card_purpose: finaliteCloud,
+        ...(repriseMemoire ? { resume_message_id: repriseMemoire.id } : {}),
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
         ...(filePaths && { file_paths: filePaths }),
@@ -861,7 +880,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         } else if (chunk.type === 'tool_result') {
           // Tool execution result - show in activity indicator
           setActivity('thinking', `🔧 ${chunk.content || 'Outil exécuté'}`);
+        } else if (chunk.type === 'memory_consent_required' && chunk.provider && chunk.message_id && chunk.conversation_id) {
+          accordMemoireEnAttente = true;
+          repriseMemoireRef.current = { message: trimmed, id: chunk.message_id, conversationId: chunk.conversation_id };
+          setInput(trimmed);
+          setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
+            provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
+            memoryOrigin: `${currentProvider}:${currentModel}`,
+            dataCategories: ['message saisi', 'contexte de conversation',
+              'tes fiches mémoire utiles avec chaque échange où la mémoire est activée',
+              'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
+              ...(chunk.purpose === 'documents' ? ['contenu intégral des documents joints ou relus à chaque message'] : []),
+              MEMORY_CARDS_CATEGORY] });
+          useChatStore.setState(s => ({ conversations: s.conversations.map(c => ({ ...c,
+            messages: c.messages.filter(m => m.id !== assistantMessageId) })) }));
         } else if (chunk.type === 'memory_receipt' && chunk.receipt) {
+          notifyMemoryChange();
           const message = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
           updateMessage(assistantMessageId, accumulatedContent, {
             isStreaming: true, memoryReceipts: [...(message?.memoryReceipts ?? []), chunk.receipt],
@@ -913,6 +947,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           // On affiche une carte de confirmation ; rien n'est exécuté sans clic.
           useToolConfirmationStore.getState().add(chunk.confirmation);
         } else if (chunk.type === 'done') {
+          if (chunk.memory_used?.length) {
+            const courant = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
+            updateMessage(assistantMessageId, courant?.content ?? accumulatedContent, { memoryUsed: chunk.memory_used, isStreaming: true });
+          }
           // Store usage and uncertainty metadata (US-ESC-02, US-ESC-01)
           if (chunk.usage || chunk.uncertainty || chunk.contexte) {
             setMessageMetadata(
@@ -938,6 +976,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       stopBatching();
       // Finalize the message (remove streaming flag)
       updateMessage(assistantMessageId, accumulatedContent);
+      if (!accordMemoireEnAttente) repriseMemoireRef.current = null;
     } catch (error) {
       // Stop batching on error
       stopBatching();
@@ -1008,7 +1047,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } finally {
       envoiEnPreparationRef.current = false;
     }
-  }, [input, isOffline, modelAvailable, isStreaming, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
+  }, [input, isOffline, modelAvailable, isStreaming, includeMemory, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {
@@ -1131,7 +1170,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   deepResearchRef.current = handleDeepResearch;
 
   const confirmCloudConsent = useCallback(() => {
-    if (!pendingCloudConsent || fournisseurDAccord(currentProvider, currentModel) !== pendingCloudConsent.provider) {
+    if (!pendingCloudConsent || (pendingCloudConsent.memoryOrigin
+      ? pendingCloudConsent.memoryOrigin !== `${currentProvider}:${currentModel}`
+      : fournisseurDAccord(currentProvider, currentModel) !== pendingCloudConsent.provider)) {
       setPendingCloudConsent(null);
       return;
     }
@@ -1613,10 +1654,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         </div>
       )}
 
+      <label className="mb-2 flex items-center gap-2 text-sm text-text-muted">
+        <input type="checkbox" checked={includeMemory} disabled={isStreaming} onChange={event => {
+          setIncludeMemory(event.target.checked);
+          if (!event.target.checked && pendingCloudConsent?.memoryOrigin) setPendingCloudConsent(null);
+        }} />
+        Utiliser les fiches mémoire
+      </label>
+
       {pendingCloudConsent && (
         <div role="alertdialog" aria-labelledby="cloud-consent-title" className="mb-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="chat-cloud-consent">
-          <p id="cloud-consent-title" className="font-semibold">{pendingCloudConsent.purpose === 'documents' ? 'Autoriser le premier envoi de documents' : pendingCloudConsent.action === 'deep-research' ? 'Autoriser cette recherche approfondie' : 'Autoriser ce premier envoi'} à {pendingCloudConsent.providerLabel} ?</p>
-          <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.join(', ')}.</p>
+          <p id="cloud-consent-title" className="font-semibold">{pendingCloudConsent.memoryOrigin ? 'Autoriser l’envoi de tes fiches mémoire' : pendingCloudConsent.purpose === 'documents' ? 'Autoriser le premier envoi de documents' : pendingCloudConsent.action === 'deep-research' ? 'Autoriser cette recherche approfondie' : 'Autoriser ce premier envoi'} à {pendingCloudConsent.providerLabel} ?</p>
+          <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.filter(c => c !== MEMORY_CARDS_CATEGORY).join(', ')}.</p>
           <div className="mt-3 flex justify-end gap-2">
             <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
             <button type="button" onClick={confirmCloudConsent} className="rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Autoriser et envoyer</button>

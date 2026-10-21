@@ -109,7 +109,7 @@ vi.mock('./usePrototypeAtelierData', () => ({
  * ajoutée hors convention sera signalée par le test de complétude.
  */
 const VUES_CONNUES = [
-  'memory', 'crm', 'email', 'calendar', 'tasks', 'invoices', 'files', 'projects', 'documents',
+  'memory', 'agent_memory', 'crm', 'email', 'calendar', 'tasks', 'invoices', 'files', 'projects', 'documents',
 ] as const;
 
 const ACTIONS_DE_VUE = APP_ACTIONS

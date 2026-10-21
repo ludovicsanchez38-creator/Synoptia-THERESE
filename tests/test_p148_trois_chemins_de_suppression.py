@@ -23,6 +23,7 @@ from tests.peuplement_projet import (
 )
 
 RAPPORT_D_UN_PROJET_GARNI = {
+    "memory_cards": 0,
     "files": 1,
     "conversations_detachees": 1,
     "documents_detaches": 1,

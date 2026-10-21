@@ -150,7 +150,7 @@ class TestDataExport:
             }
         ]
         # P-132 : les prestations parlent le pipeline, le contrat change.
-        assert exported["data_format_version"] == "1.5"
+        assert exported["data_format_version"] == "1.6"
 
     @pytest.mark.asyncio
     async def test_export_all_data_contains_documents_sections_pistes(self, client: AsyncClient):

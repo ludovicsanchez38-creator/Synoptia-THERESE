@@ -24,6 +24,7 @@ import { usePersonalisationStore } from './personalisationStore';
 export const APP_VIEWS = [
   'chat',
   'memory',
+  'agent_memory',
   'crm',
   'email',
   'calendar',

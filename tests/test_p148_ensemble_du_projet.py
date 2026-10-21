@@ -357,6 +357,7 @@ class TestUneSeuleDefinition:
         rapport = (await client.delete("/api/memory/projects/projet-cible")).json()["cascade_deleted"]
 
         annonce = {
+            "memory_cards": ensemble["memory_cards"]["total"],
             "files": ensemble["fichiers"]["total"],
             "conversations_detachees": ensemble["conversations"]["total"],
             "documents_detaches": ensemble["documents"]["total"],

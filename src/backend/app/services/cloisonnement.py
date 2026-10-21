@@ -30,6 +30,7 @@ from typing import Any
 from app.models.entities import Contact
 from sqlalchemy import false, or_
 from sqlalchemy.sql.elements import ColumnElement
+from sqlmodel import col
 
 _mode_cabinet_cache: bool | None = None
 
@@ -111,7 +112,7 @@ def cloison_contacts(
     if not souvenirs_globaux_visibles(scope):
         generaux = false()
     else:
-        generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
+        generaux = or_(col(Contact.scope) == "global", col(Contact.scope).is_(None))
     # RÉGRESSION ÉVITÉE (revue de clôture) : l'interface crée les contacts
     # suggérés avec `scope="conversation"` (`EntitySuggestion.tsx`). Sans cette
     # branche, un contact tout juste enregistré depuis la conversation en cours
@@ -120,13 +121,13 @@ def cloison_contacts(
     if conversation_id:
         generaux = or_(
             generaux,
-            (Contact.scope == "conversation") & (Contact.scope_id == conversation_id),
+            (col(Contact.scope) == "conversation") & (col(Contact.scope_id) == conversation_id),
         )
     if scope == "project" and scope_id:
         return requete.where(
             or_(
                 generaux,
-                (Contact.scope == "project") & (Contact.scope_id == scope_id),
+                (col(Contact.scope) == "project") & (col(Contact.scope_id) == scope_id),
             )
         )
     if scope == "global":
@@ -140,7 +141,7 @@ def cloison_contacts(
         # contact enregistré dans une conversation y reste (revue de clôture :
         # ce mode rendait coordonnées et notes de n'importe quelle
         # conversation).
-        return requete.where(or_(generaux, Contact.scope == "project"))
+        return requete.where(or_(generaux, col(Contact.scope) == "project"))
     # `scope is None` : appel hors conversation (scripts, tests, chemins
     # historiques). Pas de cloison, comportement d'avant la 0.43.
     return requete

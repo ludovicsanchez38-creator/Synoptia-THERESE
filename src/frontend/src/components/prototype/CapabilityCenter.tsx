@@ -122,6 +122,11 @@ export const capabilityGroups: CapabilityGroup[] = [
 ];
 
 export const capabilities: CapabilityItem[] = [
+  { id: 'agent-memory', group: 'organize', title: 'Mémoire',
+    description: 'Les préférences, faits, décisions et corrections que Thérèse retient pour toi.',
+    features: ['Relire les fiches', 'Corriger ou effacer', 'Voir la source et la portée'],
+    keywords: ['mémoire', 'fiches', 'préférences', 'corrections'], prompt: '', icon: Database,
+    destination: { kind: 'view', view: 'agent_memory' } },
   {
     id: 'daily-brief', group: 'organize', title: 'Brief du jour', icon: Sparkles, scenario: 'today',
     description: 'Regrouper rendez-vous, urgences, relances et notifications dans une seule vue.',

@@ -236,7 +236,7 @@ def _creer_tables_sync_depuis_modeles(db_path):
             "project_sync_roots", "project_sync_entries",
             "sync_plans", "sync_operations",
             "task_schedules", "task_dependencies",
-            "planning_resources", "task_allocations", "planning_snapshots",
+            "planning_resources", "task_allocations", "planning_snapshots", "memory_cards", "memory_card_uses",
         )
     ])
     engine.dispose()

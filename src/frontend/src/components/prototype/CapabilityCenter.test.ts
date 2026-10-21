@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { capabilities, capabilityGroups } from './CapabilityCenter';
 
-describe('catalogue des capacités 0.40', () => {
-  it('conserve les 30 capacités validées dans le prototype', () => {
-    expect(capabilities).toHaveLength(30);
+describe('catalogue des capacités après R2', () => {
+  it('conserve les 30 capacités du prototype et ajoute la Mémoire', () => {
+    expect(capabilities).toHaveLength(31);
   });
 
   it('utilise un identifiant unique pour chaque capacité', () => {
@@ -14,6 +14,7 @@ describe('catalogue des capacités 0.40', () => {
   it('préserve explicitement chaque capacité du périmètre 0.40', () => {
     expect(capabilities.map((capability) => capability.id).sort()).toEqual([
       'actions',
+      'agent-memory',
       'agents',
       'attention',
       'billing',
@@ -74,6 +75,7 @@ describe('catalogue des capacités 0.40', () => {
       .map((capability) => capability.id)
       .sort();
 
+    expect(capabilities.find(c => c.id === 'agent-memory')?.destination).toEqual({ kind: 'view', view: 'agent_memory' });
     expect(pending).toEqual([]);
     expect(chatHandoffs).toEqual(['legal', 'skills-commands', 'web-research']);
     expect(capabilities.find((capability) => capability.id === 'voice')?.destination?.kind).toBe('voice');
@@ -92,7 +94,7 @@ describe('catalogue des capacités 0.40', () => {
     );
 
     expect(counts).toEqual({
-      organize: 5,
+      organize: 6,
       business: 5,
       create: 5,
       decide: 5,

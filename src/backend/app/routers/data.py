@@ -93,6 +93,10 @@ def _export_row(
     permettant d'accéder à un service tiers.
     """
     payload: dict[str, Any] = row.model_dump(mode="json", exclude=exclude or set())
+    if isinstance(row, MemoryCard):
+        from app.services.memory_cards import date_utc
+        for champ in ('created_at', 'updated_at'):
+            payload[champ] = date_utc(getattr(row, champ)).isoformat()
     for field in json_fields:
         value = payload.get(field)
         if not isinstance(value, str):

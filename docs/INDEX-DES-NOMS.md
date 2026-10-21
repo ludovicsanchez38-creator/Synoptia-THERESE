@@ -28,6 +28,7 @@ L'identifiant d'un contrôle, c'est **le texte visible à l'écran**.
 | Nom affiché | Identifiant interne |
 |---|---|
 | **Contacts** | `memory` |
+| **Mémoire** | `agent_memory` |
 | **Pipeline** | `crm` |
 | **Email** | `email` |
 | **Agenda** | `calendar` |
@@ -48,6 +49,7 @@ ouvre les surfaces ci-dessus, il ne les documente pas.
 
 | Capacité | Identifiant |
 |---|---|
+| Mémoire | `agent-memory` |
 | Brief du jour | `daily-brief` |
 | Écrire un e-mail | `email` |
 | Préparer un rendez-vous | `calendar` |

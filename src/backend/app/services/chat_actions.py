@@ -54,7 +54,7 @@ NAVIGATION_TARGETS: dict[str, tuple[str, str]] = {
     "agenda": ("calendar.open", "l'Agenda"),
     "devis et factures": ("invoices.open", "les Devis et factures"),
     "crm": ("crm.open", "le Pipeline"),
-    "memoire": ("memory.open", "les Contacts"),
+    "memoire": ("agent_memory.open", "la Mémoire"),
     "documents": ("documents.open", "les Documents"),
     "taches": ("tasks.open", "les Tâches"),
     "calendrier": ("calendar.open", "l'Agenda"),

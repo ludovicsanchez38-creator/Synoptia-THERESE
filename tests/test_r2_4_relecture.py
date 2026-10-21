@@ -73,7 +73,7 @@ async def test_aucun_rappel_sensible_dans_un_autre_chat(client, db_session, four
     ('openai', 'factice', 'documents', ['llm:openai'], False),
     ('openai', 'factice', 'documents', ['documents:openai'], True),
     ('ollama', 'factice:cloud', 'llm', [], False),
-    ('ollama', 'factice:cloud', 'llm', ['llm:ollama'], True),
+    ('ollama', 'factice:cloud', 'llm', ['llm:ollama-cloud'], True),
     ('ollama', 'factice', 'llm', [], True),
 ])
 async def test_accord_destination_reelle_et_finalite(client, db_session, fournisseur, provider, model, purpose, grants, autorise):
@@ -116,3 +116,29 @@ async def test_repli_plus_petit_refuse_avant_fournisseur(client, db_session, fou
     assert rep.status_code == 200
     assert not fournisseur[2]
     obtenir.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('stream', [True, False])
+@pytest.mark.parametrize('taille', [4000, 30000])
+async def test_document_long_ne_rabote_pas_la_demande_avant_la_reserve(client, db_session, fournisseur, monkeypatch, stream, taille):
+    from unittest.mock import AsyncMock
+    from app.routers import chat
+    await memory_cards.ecrire(action())
+    document = 'D' * 100000
+    service = fournisseur[0]
+    # Ancien prepare_context laisse environ 500 jetons à la demande, donc la coupe.
+    # La réserve R2 doit repartir de la demande entière, avant cette coupe.
+    fenetre_entree = len(service._get_system_prompt_with_identity() + '\n\n## Contexte mémoire:\n' + document) // 4 + 500
+    service.config = llm.LLMConfig(LLMProvider.OLLAMA, 'factice', context_window=fenetre_entree + 4096)
+    monkeypatch.setattr(chat, '_get_file_context', AsyncMock(return_value=(document, None)))
+    demande = 'Q' * taille
+    rep = await client.post('/api/chat/send', json={'message': demande, 'stream': stream,
+        'disable_tools': True, 'file_paths': ['document-factice.txt']})
+    assert rep.status_code == 200
+    if taille == 30000:
+        assert not fournisseur[2], 'La demande entière ne tient pas : aucun envoi partiel ne doit partir.'
+    else:
+        assert len(fournisseur[2]) == 1, rep.text
+        user = [m for m in fournisseur[2][0]['messages'] if m.get('role') == 'user'][-1]
+        assert user['content'] == demande

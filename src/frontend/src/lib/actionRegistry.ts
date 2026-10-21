@@ -18,7 +18,7 @@ import { useActionsStore } from '../stores/actionsStore';
 import { useDocumentStore } from '../stores/documentStore';
 import { sortieRetenueParUneSaisie } from './saisieEnCours';
 
-export type ActionGroup = 'Chat' | 'Mémoire' | 'Navigation' | 'Réglages' | 'Actions';
+export type ActionGroup = 'Chat' | 'Mémoire' | 'Contacts' | 'Navigation' | 'Réglages' | 'Actions';
 
 export interface AppAction {
   id: string;
@@ -53,10 +53,10 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'prompt-library.open', label: 'Bibliothèque de prompts', description: 'Modèles de prompts prêts à l\'emploi', group: 'Chat', keywords: ['modèles', 'templates'], run: () => panel().openPromptLibrary() },
 
   // -- Mémoire --
-  { id: 'memory.open', label: 'Ouvrir les Contacts', description: 'Fiches contacts et contexte', group: 'Mémoire', shortcut: 'M', keywords: ['contacts'], run: () => nav().setView('memory') },
-  { id: 'memory.search', label: 'Rechercher dans les Contacts', description: 'Chercher dans les contacts', group: 'Mémoire', shortcut: '⇧F', keywords: ['recherche', 'find'], run: () => { nav().setView('memory'); nav().requestMemorySearchFocus(); } },
-  { id: 'contact.new', label: 'Ajouter un contact', description: 'Créer un nouveau contact', group: 'Mémoire', keywords: ['nouveau contact'], run: () => panel().openNewContact() },
-  { id: 'project.new', label: 'Ajouter un projet', description: 'Créer un nouveau projet', group: 'Mémoire', keywords: ['nouveau projet'], run: () => panel().openNewProject() },
+  { id: 'memory.open', label: 'Ouvrir les Contacts', description: 'Fiches contacts et contexte', group: 'Contacts', shortcut: 'M', keywords: ['contacts'], run: () => nav().setView('memory') },
+  { id: 'memory.search', label: 'Rechercher dans les Contacts', description: 'Chercher dans les contacts', group: 'Contacts', shortcut: '⇧F', keywords: ['recherche', 'find'], run: () => { nav().setView('memory'); nav().requestMemorySearchFocus(); } },
+  { id: 'contact.new', label: 'Ajouter un contact', description: 'Créer un nouveau contact', group: 'Contacts', keywords: ['nouveau contact'], run: () => panel().openNewContact() },
+  { id: 'project.new', label: 'Ajouter un projet', description: 'Créer un nouveau projet', group: 'Contacts', keywords: ['nouveau projet'], run: () => panel().openNewProject() },
 
   // -- Navigation (vues content-swap) --
   // 28/08 : cette action, son raccourci H et ses mots-clés « accueil » menaient
@@ -76,6 +76,8 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'documents.new', label: 'Nouveau document', description: 'Créer une proposition, un dossier ou un rapport structuré', group: 'Navigation', keywords: ['document', 'rédiger', 'dossier', 'atelier'], run: () => { nav().setView('documents'); documents().requestCreateModal(); } },
   { id: 'board.open', label: 'Décision', description: 'Convoquer le board de conseillers IA', group: 'Navigation', shortcut: 'D', run: () => panel().toggleBoardPanel() },
   { id: 'actions.open', label: 'Actions', description: 'Lancer un agent actionnable (rapport, relance, audit...)', group: 'Actions', run: () => useActionsStore.getState().openPanel() },
+
+  { id: 'agent_memory.open', label: 'Ouvrir la Mémoire', description: 'Relire, corriger et effacer les fiches de Thérèse', group: 'Mémoire', keywords: ['fiches', 'préférences', 'corrections'], run: () => nav().setView('agent_memory') },
 
   // -- Réglages --
   { id: 'data.export', label: 'Exporter les données', description: 'Sauvegarder ta mémoire (via Réglages)', group: 'Réglages', keywords: ['backup', 'sauvegarde'], run: () => panel().openSettings() },
@@ -98,6 +100,7 @@ export function getActions(): AppAction[] {
 const VUE_DES_ACTIONS: Record<string, AppView | null> = {
   'home.open': null,
   'memory.open': 'memory',
+  'agent_memory.open': 'agent_memory',
   'memory.search': 'memory',
   'crm.open': 'crm',
   'email.open': 'email',

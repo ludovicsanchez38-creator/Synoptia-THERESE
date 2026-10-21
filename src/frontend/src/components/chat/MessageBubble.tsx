@@ -1,5 +1,7 @@
+import { MemoryReceipt } from '../memory/MemoryReceipt';
+import { useAgentMemoryStore } from '../../stores/agentMemoryStore';
 import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
-import { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { texteContexteTransmis } from '../../lib/contexteTransmis';
 import { formaterCout } from '../../lib/coutAffiche';
 import { motion } from 'framer-motion';
@@ -335,8 +337,19 @@ export const MessageBubble = memo(function MessageBubble({
   );
 
 
+  const sourceId = useAgentMemoryStore(s => s.sourceMessageId);
+  const sourceRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (sourceId === message.id) {
+      sourceRef.current?.scrollIntoView?.({ block: 'center' });
+      sourceRef.current?.focus();
+      useAgentMemoryStore.setState({ sourceMessageId: null, sourceConversationId: null });
+    }
+  }, [sourceId, message.id]);
+
   return (
     <motion.div
+      ref={sourceRef} tabIndex={-1} data-message-id={message.id}
       variants={messageVariants}
       initial="initial"
       animate="animate"
@@ -608,6 +621,8 @@ export const MessageBubble = memo(function MessageBubble({
           )}
         </div>
 
+        {message.memoryReceipts?.map(r => <div key={`${r.id}:${r.version}`} className="mt-2"><MemoryReceipt id={r.id} /></div>)}
+        {message.memoryUsed?.filter(id => !message.memoryReceipts?.some(r => r.id === id)).map(id => <div key={id} className="mt-2"><MemoryReceipt id={id} used /></div>)}
         {message.webSources && message.webSources.length > 0 && !message.isStreaming && (
           <div className="mt-3 rounded-md w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
             <p className="px-3 pt-2.5 text-xs font-semibold uppercase tracking-wide text-accent-cyan-ink">

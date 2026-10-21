@@ -1920,6 +1920,7 @@ export function ConversationCanvasPrototype() {
   function runUnifiedAction(actionId: string) {
     const viewByAction: Partial<Record<string, Exclude<AppView, 'chat'>>> = {
       'memory.open': 'memory',
+      'agent_memory.open': 'agent_memory',
       'memory.search': 'memory',
       'crm.open': 'crm',
       'email.open': 'email',

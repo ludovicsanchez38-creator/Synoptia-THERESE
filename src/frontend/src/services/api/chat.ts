@@ -17,6 +17,9 @@ export interface ChatRequest {
   message: string;
   conversation_id?: string;
   include_memory?: boolean;
+  resume_message_id?: string;
+  memory_card_grants?: string[];
+  memory_card_purpose?: "llm" | "documents";
   stream?: boolean;
   skill_id?: string;
   file_paths?: string[];
@@ -64,7 +67,7 @@ export interface DetectedEntities {
 }
 
 export interface StreamChunk {
-  type: 'memory_receipt' | 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'skill_file_error' | 'confirmation_required' | 'client_action' | 'generation' | 'cancelled' | 'warning';
+  type: 'memory_consent_required' | 'memory_receipt' | 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'skill_file_error' | 'confirmation_required' | 'client_action' | 'generation' | 'cancelled' | 'warning';
   content: string;
   conversation_id?: string;
   message_id?: string;
@@ -72,6 +75,8 @@ export interface StreamChunk {
   generation_id?: string;
   entities?: DetectedEntities;
   receipt?: { id: string; version: number; operation: string };
+  purpose?: "llm" | "documents";
+  memory_used?: string[];
   tool_name?: string;
   skill_file?: {
     skill_id: string;
@@ -315,10 +320,11 @@ export async function setConversationProject(
 
 export async function getConversationMessages(
   conversationId: string,
-  limit = 100
+  limit = 100,
+  aroundMessageId?: string,
 ): Promise<MessageResponse[]> {
   return request<MessageResponse[]>(
-    `/api/chat/conversations/${conversationId}/messages?limit=${limit}`
+    `/api/chat/conversations/${conversationId}/messages?limit=${limit}${aroundMessageId ? `&around_message_id=${encodeURIComponent(aroundMessageId)}` : ''}`
   );
 }
 

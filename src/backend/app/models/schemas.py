@@ -108,6 +108,7 @@ class ChatRequest(BaseModel):
 
     message: str
     conversation_id: str | None = None
+    resume_message_id: str | None = None
     include_memory: bool = True
     memory_card_grants: list[str] = []
     memory_card_purpose: Literal["llm", "documents"] = "llm"
@@ -494,7 +495,7 @@ class RGPDExportResponse(BaseModel):
     # B-590 : ce que l'anonymisation efface doit d'abord pouvoir être emporté.
     prestations: list[dict] = []
     email_messages: list[dict] = []
-    memory_cards: list[dict] = []
+    memory_cards: list[dict[str, Any]] = []
 
 
 class RGPDAnonymizeRequest(BaseModel):

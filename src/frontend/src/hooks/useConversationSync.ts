@@ -10,8 +10,9 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { activerSauvegardeChat, migrerCacheChat } from '../lib/chatPersistence';
+import { useAgentMemoryStore } from '../stores/agentMemoryStore';
 import { useStatusStore } from '../stores/statusStore';
-import { useChatStore, type Message } from '../stores/chatStore';
+import { useChatStore, type Message, type Conversation } from '../stores/chatStore';
 import {
   listConversations,
   getConversationMessages,
@@ -33,6 +34,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
   let skillFiles: NonNullable<Message['skillFiles']> = [];
   let contexte: Message['contexte'];
   let memoryReceipts: Message['memoryReceipts'];
+  let memoryUsed: string[] | undefined;
   let imageId: string | undefined;
   // Revue Soso : le frontend doit savoir qu'un message portait des pièces
   // jointes. Sans cela, une conversation rechargée ignore que le backend va
@@ -48,6 +50,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
         } else if (parsed.skill_file) {
           skillFiles = [parsed.skill_file as NonNullable<Message['skillFile']>];
         }
+        if (Array.isArray(parsed.memory_used)) memoryUsed = parsed.memory_used.filter((id: unknown) => typeof id === "string");
         if (Array.isArray(parsed.memory_receipts)) memoryReceipts = parsed.memory_receipts;
         if (typeof parsed.image_id === 'string') imageId = parsed.image_id;
         hasAttachments = Array.isArray(parsed.attachments) && parsed.attachments.length > 0;
@@ -80,6 +83,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
     content: msg.content,
     hasAttachments,
     ...(memoryReceipts ? { memoryReceipts } : {}),
+    ...(memoryUsed ? { memoryUsed } : {}),
     ...(imageId ? { imageId } : {}),
     timestamp: new Date(msg.created_at),
     ...(msg.provider ? { provider: msg.provider } : {}),
@@ -147,7 +151,7 @@ export function useConversationSync() {
   const lastLoadedConversationId = useRef<string | null>(null);
 
   // Load conversations from backend and merge with local
-  const syncConversations = useCallback(async () => {
+  const syncConversations = useCallback(async (): Promise<Conversation[]> => {
     try {
       await migrerCacheChat();
       activerSauvegardeChat();
@@ -183,8 +187,9 @@ export function useConversationSync() {
       useChatStore.getState().setConversationsTruncated(truncated);
 
       return syncedConversations;
-    } catch (error) {
-      useStatusStore.getState().addNotification({ type: 'error', title: 'Reprise des échanges interrompue', message: 'Le cache reste conservé. Réessaie la synchronisation quand la base sera disponible.', duration: 0 });
+    } catch {
+      useStatusStore.getState().addNotification({ type: 'error', title: 'Reprise des échanges interrompue', message: 'Le cache reste conservé. Réessaie la synchronisation quand la base sera disponible.', duration: 0,
+        action: { label: 'Réessayer', onClick: () => { void syncConversations(); } } });
       return [];
     }
   }, [setConversations]);
@@ -192,7 +197,9 @@ export function useConversationSync() {
   // Load messages for a specific conversation
   const loadConversationMessages = useCallback(async (conversationId: string) => {
     try {
-      const messages = await getConversationMessages(conversationId);
+      const source = useAgentMemoryStore.getState();
+      const cible = source.sourceConversationId === conversationId ? source.sourceMessageId : null;
+      const messages = cible ? await getConversationMessages(conversationId, 100, cible) : await getConversationMessages(conversationId);
 
       // Convert backend format to local format (restaure fichier de skill + provider)
       const formattedMessages = messages.map(formatMessageFromResponse);
@@ -210,10 +217,17 @@ export function useConversationSync() {
   useEffect(() => {
     const erreur = () => useStatusStore.getState().addNotification({ type: 'error',
       title: 'Échange en attente de sauvegarde',
-      message: 'Garde cette fenêtre ouverte et réessaie la synchronisation.', duration: 0 });
+      message: 'Garde cette fenêtre ouverte et réessaie la synchronisation.', duration: 0,
+      action: { label: 'Réessayer', onClick: () => { void syncConversations(); } } });
     window.addEventListener('therese:chat-save-error', erreur);
     return () => window.removeEventListener('therese:chat-save-error', erreur);
-  }, []);
+  }, [syncConversations]);
+
+  const sourceMessageId = useAgentMemoryStore(s => s.sourceMessageId);
+  const sourceConversationId = useAgentMemoryStore(s => s.sourceConversationId);
+  useEffect(() => {
+    if (sourceMessageId && sourceConversationId) void loadConversationMessages(sourceConversationId);
+  }, [sourceMessageId, sourceConversationId, loadConversationMessages]);
 
   // Initial sync on mount
   useEffect(() => {

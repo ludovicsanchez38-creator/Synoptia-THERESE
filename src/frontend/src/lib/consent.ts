@@ -79,12 +79,13 @@ export function grantCloudConsent(
   return grant;
 }
 
-export function hasCloudConsent(purpose: CloudPurpose, provider?: string): boolean {
+export function hasCloudConsent(purpose: CloudPurpose, provider?: string, requiredCategories: string[] = []): boolean {
   const store = loadStore();
   if (provider !== undefined) {
-    return grantKey(purpose, provider) in store.grants;
+    const grant = store.grants[grantKey(purpose, provider)];
+    return Boolean(grant && requiredCategories.every(c => grant.dataCategories?.includes(c)));
   }
-  return Object.values(store.grants).some((g) => g.purpose === purpose);
+  return Object.values(store.grants).some((g) => g.purpose === purpose && requiredCategories.every(c => g.dataCategories?.includes(c)));
 }
 
 /** Événement émis à chaque révocation, pour que les écrans ouverts en tiennent
@@ -105,4 +106,13 @@ export function revokeCloudConsent(purpose: CloudPurpose, provider: string): voi
 
 export function listCloudConsents(): CloudGrant[] {
   return Object.values(loadStore().grants);
+}
+
+export const MEMORY_CARDS_CATEGORY = 'memory_cards_r2_v1';
+
+/** Revalidation à chaque envoi, révocations comprises. Aucune donnée de fiche. */
+export function memoryCardGrantsForRequest(): string[] {
+  return listCloudConsents().filter(g => (g.purpose === 'llm' || g.purpose === 'documents')
+    && g.dataCategories?.includes(MEMORY_CARDS_CATEGORY))
+    .map(g => `${g.purpose}:${g.provider.trim().toLowerCase()}`);
 }

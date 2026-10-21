@@ -126,3 +126,12 @@ async def test_suspension_et_concurrence_versions(db_session):
         for contenu in ('Version A', 'Version B')], return_exceptions=True)
     assert sum(isinstance(r, service.RefusMemoire) for r in resultats) == 1
     assert sum(isinstance(r, dict) for r in resultats) == 1
+
+
+def test_noms_communs_de_secrets_et_valeurs_isolees_du_corpus():
+    from app.services.memory_card_security import contient_sensible
+    for valeur in ['crm_access_token', 'smtp_passwd', 'AKIAABCDEFGHIJKLMNOP',
+                    'AIzaFauxJetonSansValeurDeVingtCaracteres',
+                    'eyJfauxheader.abcdefghijklmno.abcdefghijklmnop']:
+        assert contient_sensible(valeur)
+    assert not contient_sensible('SIRET fictif 12345678901237')

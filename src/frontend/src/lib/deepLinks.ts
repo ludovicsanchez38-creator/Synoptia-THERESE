@@ -16,6 +16,7 @@ import type { AppView } from '../stores/navigationStore';
 const VUES = new Set<AppView>([
   'chat',
   'memory',
+  'agent_memory',
   'crm',
   'email',
   'calendar',
