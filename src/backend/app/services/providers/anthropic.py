@@ -59,13 +59,21 @@ class AnthropicProvider(BaseProvider):
         """Payload /v1/messages - `temperature` seulement sur les modèles qui
         l'acceptent (les récents la refusent avec un 400, cf. _NO_SAMPLING)."""
         plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
+        system_blocks: str | list[dict[str, Any]] | None = system_prompt
+        if system_prompt:
+            # Le profil et les consignes de langue précèdent l'heure variable.
+            # Ce point de cache reste stable d'une minute à l'autre, même si
+            # le contexte qui suit change. Aucun texte n'est retiré ni déplacé.
+            debut, separateur, suite = system_prompt.partition("\n\n## Date et heure actuelles\n")
+            textes = [debut, separateur + suite] if separateur else [system_prompt]
+            system_blocks = [{
+                "type": "text", "text": texte,
+                "cache_control": {"type": "ephemeral"},
+            } for texte in textes if texte]
         request_body: dict[str, Any] = {
             "model": self.config.model,
             "max_tokens": self.config.max_tokens if plafond is None else plafond,
-            "system": ([{
-                "type": "text", "text": system_prompt,
-                "cache_control": {"type": "ephemeral"},
-            }] if system_prompt else system_prompt),
+            "system": system_blocks,
             "messages": messages,
             "stream": True,
         }

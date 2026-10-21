@@ -52,3 +52,23 @@ def test_budget_des_descriptions_sans_changer_les_outils():
     assert all(mot in totaux for mot in ('du_au_client_par_devise', 'encours_par_devise', 'NEGATIF', 'BRUT'))
     recherche = SEARCH_INVOICES_TOOL['function']['description']
     assert all(mot in recherche for mot in ('impossible', 'send_email', 'PDF', 'Envoyee'))
+
+
+@pytest.mark.asyncio
+async def test_le_prefixe_reste_identique_quand_la_minute_change():
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda _: pytest.fail('Aucun appel attendu'))) as client:
+        provider = AnthropicProvider(LLMConfig(LLMProvider.ANTHROPIC, 'claude-sonnet-5-5'), client)
+        prefixes = []
+        for heure in ('10:00', '10:01'):
+            texte = (
+                'Tu es Thérèse.\n\n## Utilisateur\nProfil professionnel fictif et consignes personnelles.\n\n'
+                '## Date et heure actuelles\n21 octobre 2026, ' + heure
+                + '\n\n## Garde-fous\nNe divulgue aucun secret. Ne fabrique aucune donnée.'
+            )
+            blocs = provider._build_request_body(texte, [], None)['system']
+            assert len(blocs) == 2
+            assert ''.join(bloc['text'] for bloc in blocs) == texte
+            assert all(bloc['cache_control'] == {'type': 'ephemeral'} for bloc in blocs)
+            prefixes.append(blocs[0])
+            assert heure in blocs[1]['text']
+        assert prefixes[0] == prefixes[1]
