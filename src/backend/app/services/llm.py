@@ -511,9 +511,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         therese_md = load_therese_md()
         therese_md_section = ""
         if therese_md:
-            content = therese_md[:10000]
-            if len(therese_md) > 10000:
-                content += "\n\n[... tronqué ...]"
+            content = therese_md
             therese_md_section = f"\n\n## Instructions THERESE.md:\n{content}"
 
         # BUG-053 : injecter la date réelle pour éviter [Date actuelle] non substituée
@@ -909,6 +907,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             system_prompt=full_system,
             max_tokens=max_msg_tokens,
         )
+        if self.config.provider == LLMProvider.OLLAMA:
+            # La réserve locale coupe l'historique, jamais la dernière demande.
+            context.memory_original_messages = list(messages)
+            context.memory_documents = memory_context or ''
+            return context
         return context.trim_to_fit()
 
     async def stream_response(
@@ -996,6 +999,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             from app.services.memory_card_context import actualiser_fiches
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
             await actualiser_fiches(context, effective_config, tools)
+        elif effective_config.provider == LLMProvider.OLLAMA:
+            from app.services.memory_card_context import borner_payload
+            context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
+            borner_payload(context, [], effective_config, tools)
+        if context.ollama_outils_reduits:
+            yield StreamEvent(type="text", content=(
+                "*(La fenêtre du modèle local limite les outils disponibles pour cet échange. "
+                "Ton profil, tes consignes et tes préférences sont conservés.)*\n\n"))
         provider_switched = effective_config is not self.config
         context.config_effective = effective_config
 

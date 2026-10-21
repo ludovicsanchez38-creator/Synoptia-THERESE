@@ -130,11 +130,11 @@ async def test_document_long_ne_rabote_pas_la_demande_avant_la_reserve(client, d
     # Ancien prepare_context laisse environ 500 jetons à la demande, donc la coupe.
     # La réserve R2 doit repartir de la demande entière, avant cette coupe.
     fenetre_entree = len(service._get_system_prompt_with_identity() + '\n\n## Contexte mémoire:\n' + document) // 4 + 500
-    service.config = llm.LLMConfig(LLMProvider.OLLAMA, 'factice', context_window=fenetre_entree + 4096)
+    service.config = llm.LLMConfig(LLMProvider.OPENAI, 'factice', context_window=fenetre_entree + 4096)
     monkeypatch.setattr(chat, '_get_file_context', AsyncMock(return_value=(document, None)))
     demande = 'Q' * taille
     rep = await client.post('/api/chat/send', json={'message': demande, 'stream': stream,
-        'disable_tools': True, 'file_paths': ['document-factice.txt']})
+        'disable_tools': True, 'file_paths': ['document-factice.txt'], 'memory_card_grants': ['llm:openai']})
     assert rep.status_code == 200
     if taille == 30000:
         assert not fournisseur[2], 'La demande entière ne tient pas : aucun envoi partiel ne doit partir.'

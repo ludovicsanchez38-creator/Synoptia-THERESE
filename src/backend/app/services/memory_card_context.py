@@ -59,7 +59,9 @@ def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, A
             return sum(enveloppes_de(v) for v in valeur)
         return 0
     enveloppes = len(messages) + len(tools or []) + enveloppes_de(suite)
-    return len(_json(charge).encode('utf-8')) + ENVELOPPE * enveloppes
+    # Réserve pour le gabarit de chat local (rôles, séparateurs, outils).
+    gabarit = 512 if nom == 'ollama' else 0
+    return len(_json(charge).encode('utf-8')) + ENVELOPPE * enveloppes + gabarit
 
 
 def bloc_fiches(fiches: list[dict[str, Any]]) -> str:
@@ -76,9 +78,11 @@ def _prefixe_octets(texte: str, limite: int) -> str:
 
 def borner_payload(context: ContextWindow, fiches: list[dict[str, Any]], config: Any,
                    tools: list[dict[str, Any]] | None, suite: Any = None) -> None:
-    if not isinstance(config.context_window, int) or config.context_window <= config.max_tokens:
+    from app.services.ollama_budget import fenetre_ollama
+    fenetre = fenetre_ollama(config) if config.provider.value == 'ollama' else config.context_window
+    if not isinstance(fenetre, int) or fenetre <= config.max_tokens:
         raise ErreurPourEcran('La fenêtre de ce modèle est inconnue ou insuffisante. Ouvre Mémoire ou choisis un modèle adapté.')
-    limite = config.context_window - config.max_tokens
+    limite = fenetre - config.max_tokens
     base = context.memory_base_system
     if base is None:
         base = context.system_prompt or ''
@@ -149,10 +153,26 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
     if not demande:
         return  # Board, atelier, agents : aucun chemin de relecture R2.
     fiches = await lire_pour_chat(demande['requete'], demande['scope'], demande['scope_id'], demande['conversation_id'])
-    if not fiches and context.memory_base_system is None:
+    if not fiches and context.memory_base_system is None and config.provider.value != 'ollama':
         context.memory_used = []
         return
     borner_payload(context, fiches, config, tools, suite)
     destination = destination_cloud(config)
     if context.memory_used and destination and f"{demande['purpose']}:{destination}" not in demande['grants']:
         raise AccordFichesRequis(destination, demande['purpose'])
+
+
+def alleger_outils_locaux(context: ContextWindow, config: Any,
+                          tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Garder l'identité avant les capacités facultatives, annoncées ensuite."""
+    if config.provider.value != 'ollama':
+        return tools
+    from app.services.ollama_budget import fenetre_ollama
+    limite = fenetre_ollama(config) - config.max_tokens
+    # Marge pour les descriptions de capacités ajoutées par le routeur.
+    if compter_payload(context, config, tools) + 6000 <= limite:
+        return tools
+    essentiels = [t for t in tools if t.get('function', {}).get('name') == 'upsert_memory_card']
+    if compter_payload(context, config, essentiels) + 2000 <= limite:
+        return essentiels
+    return []

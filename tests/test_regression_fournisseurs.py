@@ -108,13 +108,15 @@ class TestOllamaCorpsDeRequete:
 
     @pytest.mark.parametrize(
         ("max_tokens", "context_window", "num_predict", "num_ctx"),
-        [(6000, 200_000, 6000, 8192), (256, 512, 256, 2048), (4096, 4096, 4096, 4096)],
+        [(6000, 200_000, 6000, 8192), (256, 512, 256, 512), (4096, 4096, 4096, 4096)],
     )
-    def test_les_options_suivent_la_configuration_bornee(self, max_tokens, context_window, num_predict, num_ctx):
+    def test_les_options_suivent_la_configuration_bornee(self, max_tokens, context_window, num_predict, num_ctx, monkeypatch):
+        from app.services import ollama_budget
+        monkeypatch.setattr(ollama_budget, "plafond_memoire", lambda: 8192)
         provider = _ollama(FauxClient(), max_tokens=max_tokens, context_window=context_window)
         options = provider._build_request_body(None, [{"role": "user", "content": "x"}])["options"]
         assert options["num_predict"] == num_predict
-        assert options["num_ctx"] == num_ctx, "num_ctx est borné entre 2048 et 8192 (BUG-052)"
+        assert options["num_ctx"] == num_ctx, "num_ctx respecte le modèle et le plafond petite machine (BUG-052)"
 
     @pytest.mark.asyncio
     async def test_l_url_de_base_perd_sa_barre_finale_et_la_connexion_est_bornee(self):

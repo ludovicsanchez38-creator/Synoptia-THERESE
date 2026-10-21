@@ -25,6 +25,7 @@ class ContextWindow:
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0
+    ollama_outils_reduits: bool = False
     memory_cards_enabled: bool = True
     memory_request: dict[str, Any] | None = None
     memory_documents: str = ''

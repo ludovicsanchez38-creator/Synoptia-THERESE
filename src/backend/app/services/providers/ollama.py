@@ -11,6 +11,7 @@ import logging
 from typing import Any, AsyncGenerator
 
 import httpx
+from app.services.ollama_budget import fenetre_ollama
 
 from .base import (
     BaseProvider,
@@ -60,9 +61,8 @@ class OllamaProvider(BaseProvider):
         # (certains modèles Ollama ont des défauts trop petits : 128 tokens)
         ollama_options: dict = {
             "num_predict": self.config.max_tokens,
-            # BUG-052 : cap à 8192 pour éviter l'OOM sur les machines <8 Go RAM
-            # Ollama respecte le context_window réel du modèle si inférieur
-            "num_ctx": min(max(self.config.context_window, 2048), 8192),
+            # Même garde mémoire que le bornage R2, y compris sans fiche.
+            "num_ctx": fenetre_ollama(self.config),
         }
 
         request_body: dict = {
@@ -98,6 +98,16 @@ class OllamaProvider(BaseProvider):
         base_url = (self.config.base_url or "http://localhost:11434").rstrip("/")
         model = self.config.model
         request_body = self._build_request_body(system_prompt, messages, tools)
+        # Dernier garde sur la charge effectivement convertie, continuations incluses.
+        # On ne laisse jamais Ollama tronquer le système de sa propre initiative.
+        charge: dict[str, Any] = {'messages': request_body['messages'], 'tools': request_body.get('tools', [])}
+        cout = len(json.dumps(charge, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
+        cout += 32 * (len(charge['messages']) + len(charge['tools'])) + 512
+        if cout + self.config.max_tokens > fenetre_ollama(self.config):
+            yield StreamEvent(type="error", content=(
+                "La fenêtre du modèle local ne suffit pas pour tes consignes et cet échange. "
+                "Aucun envoi tronqué n'a été fait. Réduis les pièces jointes ou choisis un modèle adapté."))
+            return
 
         tools_rejected = False
         think_rejected = False

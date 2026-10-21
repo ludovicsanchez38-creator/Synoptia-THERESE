@@ -2921,6 +2921,11 @@ async def _do_stream_response(
         # même action (cf. tests/test_chat_outils_deja_en_attente.py).
         tools = retirer_outils_deja_en_attente(tools, pending_confirmations)
 
+    from app.services.memory_card_context import alleger_outils_locaux
+    outils_avant_borne = len(tools)
+    tools = alleger_outils_locaux(context, llm_service.config, tools)
+    context.ollama_outils_reduits = len(tools) < outils_avant_borne
+
     if tools:
         logger.info(f"Providing {len(tools)} tools to LLM")
 
