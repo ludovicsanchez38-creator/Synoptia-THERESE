@@ -560,6 +560,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         prompt = prompt.replace("{current_date}", current_date)
         prompt = prompt.replace("{current_date_example}", current_date_example)
         prompt = prompt.replace("{therese_md}", therese_md_section)
+        # Le petit modèle local confondait « qui suis-je ? » avec son identité,
+        # même lorsque le profil complet était présent dans sa charge.
+        prompt += (
+            f"\n\nL'utilisateur est {profile.name}. Si l'utilisateur demande « qui suis-je ? », "
+            f"réponds « Tu es {profile.name} », puis rappelle uniquement les faits de son profil. "
+            "THÉRÈSE est le nom de l'assistante. Pour les règles numérotées de son profil, "
+            "cite son contexte utilisateur ou THERESE.md ; ne leur substitue pas une règle interne."
+        )
         return prompt
 
     def _default_config(self) -> LLMConfig:
