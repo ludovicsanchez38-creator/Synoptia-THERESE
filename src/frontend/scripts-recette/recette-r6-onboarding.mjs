@@ -24,7 +24,7 @@ await writeFile(resolve(box, 'entry.tsx'), `
 import React from '${root}/src/frontend/node_modules/react';
 import { createRoot } from '${root}/src/frontend/node_modules/react-dom/client';
 import { OnboardingWizard } from '${source}/src/frontend/src/components/onboarding/OnboardingWizard';
-import { SettingsModal } from '${source}/src/frontend/src/components/settings/SettingsModal';
+import { usePanelStore } from '${source}/src/frontend/src/stores/panelStore';
 import { ConversationCanvasPrototype } from '${source}/src/frontend/src/components/prototype/ConversationCanvasPrototype';
 window.catalogueTermine = false;
 window.fetch = async (url) => {
@@ -44,7 +44,8 @@ window.fetch = async (url) => {
   else return new Response(JSON.stringify({ detail: 'Indisponible dans cette doublure' }), { status: 503 });
   return new Response(JSON.stringify(data), { status: 200 });
 };
-createRoot(document.getElementById('root')).render(${reglages ? '<><ConversationCanvasPrototype /><SettingsModal isOpen onClose={() => {}} /></>' : '<OnboardingWizard isOpen onComplete={() => {}} />'});
+${reglages ? "usePanelStore.getState().openSettings('profile');" : ''}
+createRoot(document.getElementById('root')).render(${reglages ? '<ConversationCanvasPrototype />' : '<OnboardingWizard isOpen onComplete={() => {}} />'});
 `);
 await build({ entryPoints: [resolve(box, 'entry.tsx')], outfile: resolve(box, 'bundle.js'), bundle: true,
   format: 'iife', platform: 'browser', jsx: 'automatic', nodePaths: [resolve(root, 'src/frontend/node_modules')],
@@ -121,7 +122,18 @@ try {
         const c = document.getElementById('settings-profile-name');
         return Boolean(c && document.activeElement === c && !c.closest('[inert]') && c.value === 'Camille brouillon');
       })()`);
-      results.push({ width, height, paletteActive, retour });
+      await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'k', code: 'KeyK', modifiers: 2 }, sessionId);
+      await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'k', code: 'KeyK', modifiers: 2 }, sessionId);
+      await pause(400);
+      await cdp('Input.insertText', { text: 'devis et factures' }, sessionId);
+      await pause(200);
+      await evaluate(`[...document.querySelectorAll('[role=option]')].find(e => e.textContent.includes('Ouvrir les Devis et factures')).click()`);
+      await pause(600);
+      const destinationVisible = await evaluate(`(() => {
+        const c = document.querySelector('[data-testid=conversation-canvas-prototype]');
+        return c?.dataset.embeddedView === 'invoices' && !c.closest('[inert]') && !document.querySelector('[data-testid=settings-modal]');
+      })()`);
+      results.push({ width, height, paletteActive, retour, destinationVisible });
       continue;
     }
     for (let i = 0; i < 50; i++) {
@@ -162,7 +174,7 @@ try {
   await writeFile(resolve(box, 'resultats.json'), JSON.stringify(results, null, 2));
   console.log(JSON.stringify(results, null, 2));
   if (reglages) {
-    assert(results.every(r => r.paletteActive && r.retour), 'Ctrl+K puis Échap doit conserver le brouillon et rendre le focus');
+    assert(results.every(r => r.paletteActive && r.retour && r.destinationVisible), 'Ctrl+K doit conserver le brouillon à Échap et montrer la destination choisie');
   } else {
   const mode = process.argv[4] || 'tout';
   if (mode !== 'catalogue') assert(results.every(r => r.footer.visible), 'Les trois boutons doivent rester visibles sans défilement');

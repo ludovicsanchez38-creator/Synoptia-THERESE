@@ -9,6 +9,8 @@ import { useNavigationStore } from '../../stores/navigationStore';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
 
+vi.mock('../chat/PanelContainer', () => ({ PanelContainer: () => null }));
+
 // Mock PARTIEL (leçon 22/07) : seuls les appels réseau sont neutralisés.
 vi.mock('../../services/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../services/api')>()),
@@ -91,4 +93,20 @@ it('R6 : garde un exemple neutre dans le contexte des réglages', async () => {
   const champ = await screen.findByLabelText('Ce que Thérèse doit savoir');
   expect(champ.getAttribute('placeholder')).toContain('entreprise de plomberie');
   expect(champ.getAttribute('placeholder')).not.toMatch(/FORGER|Synopt|490/);
+});
+
+it('R6 : un résultat choisi dans la palette devient visible en quittant les réglages', async () => {
+  function ReglagesBranches() {
+    const ouverts = usePanelStore((state) => state.showSettings);
+    return <SettingsModal isOpen={ouverts} onClose={usePanelStore.getState().closeSettings} />;
+  }
+  usePanelStore.getState().openSettings('profile');
+  render(<><ConversationCanvasPrototype /><ReglagesBranches /></>);
+  const champ = await screen.findByLabelText(/Nom complet/);
+  champ.focus();
+  fireEvent.keyDown(champ, { key: 'k', ctrlKey: true, metaKey: true });
+  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'devis et factures' } });
+  fireEvent.click(screen.getByRole('option', { name: /Ouvrir les Devis et factures/ }));
+  expect(usePanelStore.getState().showSettings).toBe(false);
+  expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'invoices');
 });
