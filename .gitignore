@@ -130,3 +130,6 @@ docs/campagnes/*/captures/
 
 # Preuves et données fictives de la recette R2, conservées localement.
 /.recette-r2/
+
+# Données fictives et preuves locales du lot R3
+.recette-r3/
