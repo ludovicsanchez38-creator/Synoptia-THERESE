@@ -10,6 +10,7 @@ from app.services.context import ContextWindow
 from app.services.error_handler import ErreurPourEcran
 from app.services.memory_cards import lire_pour_chat
 from app.services.prompt_security import get_prompt_security
+from app.services.providers.base import LLMConfig
 
 CATEGORIE = 'memory_cards_r2_v1'
 ENVELOPPE = 32
@@ -165,7 +166,12 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
 def alleger_outils_locaux(context: ContextWindow, config: Any,
                           tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Garder l'identité avant les capacités facultatives, annoncées ensuite."""
-    if config.provider.value != 'ollama':
+    # Les adaptateurs sans fenêtre publiée conservent leur jeu d'outils.
+    # Le vrai fournisseur conserve sa garde finale sur le payload converti.
+    if (config.provider.value != 'ollama' or not isinstance(config, LLMConfig)
+            or not isinstance(context, ContextWindow)
+            or not isinstance(config.context_window, int)
+            or not isinstance(config.max_tokens, int)):
         return tools
     from app.services.ollama_budget import fenetre_ollama
     limite = fenetre_ollama(config) - config.max_tokens

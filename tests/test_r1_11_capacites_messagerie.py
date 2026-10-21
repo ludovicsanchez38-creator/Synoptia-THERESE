@@ -20,7 +20,9 @@ async def test_outils_et_prompt_suivent_la_messagerie(client, db_session, monkey
             captures.append((system_prompt, tools))
             yield StreamEvent(type='text', content='Je peux rédiger ton texte.')
             yield StreamEvent(type='done', stop_reason='end_turn')
-    llm = LLMService(LLMConfig(LLMProvider.OLLAMA, 'factice'), bascule_circuit=False)
+    # Ce test isole la disponibilité des comptes de la réduction des outils
+    # dans les petites fenêtres Ollama, couverte par R3-4.
+    llm = LLMService(LLMConfig(LLMProvider.OPENAI, 'factice', context_window=128000), bascule_circuit=False)
     llm._provider = Fournisseur()
     mcp = MagicMock()
     mcp.get_tools_for_llm.return_value = []

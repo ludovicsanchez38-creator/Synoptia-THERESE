@@ -1007,11 +1007,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             from app.services.memory_card_context import actualiser_fiches
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
             await actualiser_fiches(context, effective_config, tools)
-        elif effective_config.provider == LLMProvider.OLLAMA:
+        elif effective_config.provider == LLMProvider.OLLAMA and isinstance(context, ContextWindow):
             from app.services.memory_card_context import borner_payload
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
             borner_payload(context, [], effective_config, tools)
-        if context.ollama_outils_reduits:
+        if getattr(context, 'ollama_outils_reduits', False) is True:
             yield StreamEvent(type="text", content=(
                 "*(La fenêtre du modèle local limite les outils disponibles pour cet échange. "
                 "Ton profil, tes consignes et tes préférences sont conservés.)*\n\n"))
