@@ -3,7 +3,7 @@ import type { ContexteTransmis } from '../lib/contexteTransmis';
 import { texteDuContenu } from '../lib/texteDuContenu';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
-import { createDebouncedStorage } from '../lib/debouncedStorage';
+import { createChatStorage } from '../lib/chatPersistence';
 import { useNavigationStore } from './navigationStore';
 
 import type { DetectedEntities } from '../services/api';
@@ -37,7 +37,10 @@ export interface MessageSkillFile {
   local_dir?: string;
 }
 
+export interface MemoryReceipt { id: string; version: number; operation: string }
+
 export interface Message {
+  memoryReceipts?: MemoryReceipt[];
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -465,8 +468,9 @@ export const useChatStore = create<ChatStore>()(
       // US-010 : écritures localStorage coalescées (au plus 1 par 400ms).
       // Sans ça, chaque flush de phrase pendant le streaming sérialisait
       // toutes les conversations vers localStorage.
-      storage: createJSONStorage(() => createDebouncedStorage(400)),
+      storage: createJSONStorage(() => createChatStorage()),
       partialize: (state) => ({
+        isStreaming: state.isStreaming,
         // Exclure les conversations éphémères de la persistance, et assainir
         // isStreaming (revue adversariale US-010 : un crash/fermeture pendant
         // le streaming persistait un curseur fantôme éternel)

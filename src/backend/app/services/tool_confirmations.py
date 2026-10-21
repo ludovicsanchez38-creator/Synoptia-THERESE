@@ -47,7 +47,7 @@ def requires_confirmation(tool_name: str) -> bool:
     PAS le préfixe MCP avant de classer : `filesystem__read_file` n'est
     pas l'outil local `read_file`.
     """
-    return bool(classe_de(tool_name) != LECTURE_SEULE)
+    return tool_name != "upsert_memory_card" and bool(classe_de(tool_name) != LECTURE_SEULE)
 
 
 def bloc_outils_sous_confirmation(tool_names: list[str]) -> str:

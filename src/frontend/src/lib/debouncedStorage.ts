@@ -14,6 +14,13 @@
 // désarme toutes les instances et coupe toute écriture jusqu'au reload.
 let persistenceDisabled = false;
 const instances: Array<() => void> = [];
+const disabledKeys = new Set<string>();
+
+/** R2 : empêche une ancienne instance armée de réécrire le cache de chat. */
+export function disableStorageKey(key: string): void { disabledKeys.add(key); }
+
+export function registerPendingDiscard(discard: () => void): void { instances.push(discard); }
+export function persistenceIsDisabled(): boolean { return persistenceDisabled; }
 
 export function discardAllPendingWrites(): void {
   persistenceDisabled = true;
@@ -24,6 +31,7 @@ export function discardAllPendingWrites(): void {
 export function __resetPersistenceForTests(): void {
   persistenceDisabled = false;
   instances.length = 0;
+  disabledKeys.clear();
 }
 
 /**
@@ -73,7 +81,7 @@ export function createDebouncedStorage(delayMs = 400): Storage {
     const cible = stockage();
     if (cible) {
       for (const [key, value] of pending) {
-        cible.setItem(key, value);
+        if (!disabledKeys.has(key)) cible.setItem(key, value);
       }
     }
     pending.clear();
@@ -96,7 +104,7 @@ export function createDebouncedStorage(delayMs = 400): Storage {
       return stockage()?.getItem(key) ?? null;
     },
     setItem(key: string, value: string): void {
-      if (persistenceDisabled) return;
+      if (persistenceDisabled || disabledKeys.has(key)) return;
       pending.set(key, value);
       if (!timer) {
         timer = setTimeout(flush, delayMs);

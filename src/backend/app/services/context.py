@@ -25,6 +25,7 @@ class ContextWindow:
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0
+    memory_cards_enabled: bool = True
 
     def estimate_tokens(self, text: str) -> int:
         """Rough token estimation (4 chars = 1 token for most languages)."""

@@ -698,6 +698,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       messageContent = `${trimmed}\n\n[Fichiers joints: ${filesList}]`;
     }
 
+    // Un échange accepté à l'écran doit déjà être acquitté par le serveur.
+    // Avant le premier octet SSE, le texte reste dans le composeur.
+    if (!useChatStore.getState().currentConversationId) useChatStore.getState().createConversation();
+    setStreaming(true);
+    setActivity('thinking', 'Envoi en cours...');
+    let assistantMessageId = '';
+    const accepterMessage = () => {
+      if (assistantMessageId) return;
     // Add user message
     // Revue Soso, passe 3 : le message ajouté localement doit porter le drapeau,
     // sinon changer de fournisseur en cours de conversation ne redemande pas le
@@ -726,15 +734,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     }
 
     // Start streaming
-    setStreaming(true);
-    setActivity('thinking', 'Réflexion en cours...');
 
     // Create placeholder assistant message for streaming
-    const assistantMessageId = addMessage({
+    assistantMessageId = addMessage({
       role: 'assistant',
       content: '',
       isStreaming: true,
     });
+
+    };
 
     let accumulatedContent = '';
     let backendConversationId: string | null = null;
@@ -809,6 +817,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setPendingSkillId(undefined);
 
       for await (const chunk of stream) {
+        accepterMessage();
         // Capture the backend conversation ID from the first chunk
         if (chunk.conversation_id && !backendConversationId) {
           backendConversationId = chunk.conversation_id;
@@ -852,6 +861,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         } else if (chunk.type === 'tool_result') {
           // Tool execution result - show in activity indicator
           setActivity('thinking', `🔧 ${chunk.content || 'Outil exécuté'}`);
+        } else if (chunk.type === 'memory_receipt' && chunk.receipt) {
+          const message = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
+          updateMessage(assistantMessageId, accumulatedContent, {
+            isStreaming: true, memoryReceipts: [...(message?.memoryReceipts ?? []), chunk.receipt],
+          });
         } else if (chunk.type === 'entities_detected' && chunk.entities) {
           // Entities detected - attach to the assistant message
           setMessageEntities(assistantMessageId, chunk.entities);
@@ -973,7 +987,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           : messageDErreurDuFlux(error);
 
         // Update the placeholder message with error
-        updateMessage(assistantMessageId, errorMessage);
+        if (assistantMessageId) updateMessage(assistantMessageId, errorMessage);
+        else useStatusStore.getState().addNotification({ type: 'error', title: 'Message non envoyé', message: errorMessage });
       }
     } finally {
       abortRef.current = null;

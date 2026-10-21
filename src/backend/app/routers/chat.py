@@ -2124,6 +2124,7 @@ async def send_message(
         )
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.memory_cards_enabled = request.include_memory
     context.system_prompt = (context.system_prompt or "") + (
         "\nAucun outil de messagerie n'est disponible dans ce tour sans flux. "
         "Tu peux rédiger un texte, mais ne propose ni lecture ni envoi de mail.\n"
@@ -2814,6 +2815,7 @@ async def _do_stream_response(
         )
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.memory_cards_enabled = include_memory
     bilan_contexte = bilan_depuis_fenetre(
         _passes_que_le_fournisseur_garde(messages), context
     )
@@ -3648,6 +3650,30 @@ async def _execute_tools_and_continue(
                         self.execution_time_ms = exec_time
 
                 result = BrowserError(str(e), execution_time)
+        elif tc.name == "upsert_memory_card":
+            from types import SimpleNamespace
+
+            from app.services.memory_card_tools import executer_outil, texte_resultat
+            perimetre, perimetre_id = await _perimetre_de_conversation(conversation_id, session)
+            resultat_fiche = await executer_outil(
+                tc.arguments, scope=perimetre or "global", scope_id=perimetre_id,
+                conversation_id=conversation_id,
+                include_memory=context.memory_cards_enabled, contexte=contexte,
+            )
+            result = SimpleNamespace(
+                success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
+                error=resultat_fiche.get('message'), execution_time_ms=0,
+            )
+            if not resultat_fiche['success']:
+                yield 'data: ' + json.dumps({
+                    'type': 'text', 'conversation_id': conversation_id,
+                    'content': '\n\n' + resultat_fiche['message'] + '\n\n',
+                }, ensure_ascii=False) + '\n\n'
+            if resultat_fiche.get('receipt'):
+                yield "data: " + json.dumps({
+                    "type": "memory_receipt", "conversation_id": conversation_id,
+                    "receipt": resultat_fiche['receipt'],
+                }, ensure_ascii=False) + "\n\n"
         elif tc.name in MEMORY_TOOL_NAMES:
             # Built-in memory tools (create_contact, create_project)
             import time
@@ -4052,6 +4078,86 @@ async def confirm_tool(
 # ============================================================
 # Conversation Endpoints
 # ============================================================
+
+
+class CacheChatMigration(BaseModel):
+    conversations: list[dict[str, Any]]
+
+
+@router.post('/cache-migration')
+async def migrer_cache_chat(request: CacheChatMigration) -> dict[str, bool]:
+    """Reprise idempotente des seuls échanges locaux, sans fournisseur ni extraction."""
+    from datetime import UTC, datetime
+
+    from app.models.database import get_session_context
+    from app.services.memory_tools import _proteger_le_geste
+    from sqlalchemy import text
+
+    async def geste() -> str:
+        async with get_session_context() as session:
+            await session.execute(text('BEGIN IMMEDIATE'))
+            if len(request.conversations) > 500:
+                raise HTTPException(422, 'Trop de conversations à reprendre en une fois.')
+            for locale in request.conversations:
+                identifiant = locale.get('id')
+                if not isinstance(identifiant, str) or not identifiant or len(identifiant) > 100:
+                    raise HTTPException(422, 'Identifiant de conversation invalide ; cache conservé.')
+                conv = await session.get(Conversation, identifiant)
+                if not conv:
+                    conv = Conversation(id=identifiant, title=str(locale.get('title') or 'Conversation reprise')[:500])
+                    projet_id = locale.get('projectId')
+                    if projet_id and await session.get(Project, projet_id):
+                        conv.project_id, conv.memory_scope = projet_id, 'project'
+                    session.add(conv)
+                    await session.flush()
+                messages = locale.get('messages', [])
+                if not isinstance(messages, list) or len(messages) > 10000:
+                    raise HTTPException(422, 'Messages de reprise invalides ; cache conservé.')
+                existants = list((await session.execute(select(Message).where(Message.conversation_id == conv.id))).scalars().all())
+                utilises: set[str] = set()
+                for local in messages:
+                    role, contenu = local.get('role'), local.get('content')
+                    if role not in ('user', 'assistant', 'system') or not isinstance(contenu, str):
+                        raise HTTPException(422, 'Un message est illisible ; cache conservé.')
+                    if not contenu:
+                        continue  # curseur vide, aucun texte accepté à perdre
+                    local_id = local.get('id')
+                    correspondance = next((m for m in existants if m.id not in utilises and
+                        (m.id == local_id or (m.role == role and m.content == contenu))), None)
+                    if correspondance:
+                        utilises.add(correspondance.id)
+                        continue
+                    deja = await session.get(Message, local_id) if isinstance(local_id, str) else None
+                    if deja:
+                        # Jamais déplacer ni écraser un message serveur depuis un cache périmé.
+                        if deja.conversation_id != conv.id:
+                            raise HTTPException(409, 'Un identifiant de reprise appartient à un autre échange ; cache conservé.')
+                        continue
+                    date = datetime.now(UTC)
+                    try:
+                        date = datetime.fromisoformat(str(local.get('timestamp', '')).replace('Z', '+00:00'))
+                    except ValueError:
+                        pass
+                    extra = {cle: local[champ] for cle, champ in (
+                        ('skill_files', 'skillFiles'), ('sources', 'webSources'), ('contexte', 'contexte'),
+                        ('memory_receipts', 'memoryReceipts'), ('image_id', 'imageId')) if local.get(champ)}
+                    if local.get('skillFile') and not extra.get('skill_files'):
+                        extra['skill_files'] = [local['skillFile']]
+                    # Un reçu n'est jamais importé depuis le navigateur : il est émis par le geste SQL.
+                    extra.pop('memory_receipts', None)
+                    msg = Message(conversation_id=conv.id, role=role, content=contenu,
+                                  created_at=date, extra_data=json.dumps(extra) if extra else None)
+                    if isinstance(local_id, str) and local_id:
+                        msg.id = local_id
+                    session.add(msg)
+                    existants.append(msg)
+                    utilises.add(msg.id)
+            await session.commit()
+            return json.dumps({'success': True})
+    resultat = json.loads(await _proteger_le_geste(geste()))
+    if not resultat.get('success'):
+        raise HTTPException(409, 'Reprise suspendue pendant une opération sur tes données. Cache conservé.')
+    return {'success': True}
 
 
 class ConversationRename(BaseModel):

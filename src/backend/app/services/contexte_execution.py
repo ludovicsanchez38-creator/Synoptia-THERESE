@@ -29,6 +29,7 @@ MUTATION_EXTERNE = "external_mutation"
 
 CLASSIFICATION_DES_OUTILS: dict[str, str] = {
     # Outils mémoire
+    "upsert_memory_card": MUTATION_LOCALE,
     "create_contact": MUTATION_LOCALE,
     "create_project": MUTATION_LOCALE,
     "read_contact": LECTURE_SEULE,

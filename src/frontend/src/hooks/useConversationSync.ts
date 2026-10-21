@@ -9,6 +9,8 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
+import { activerSauvegardeChat, migrerCacheChat } from '../lib/chatPersistence';
+import { useStatusStore } from '../stores/statusStore';
 import { useChatStore, type Message } from '../stores/chatStore';
 import {
   listConversations,
@@ -30,6 +32,8 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
   // {skill_file: {...}} conservée pour les messages persistés avant le fix.
   let skillFiles: NonNullable<Message['skillFiles']> = [];
   let contexte: Message['contexte'];
+  let memoryReceipts: Message['memoryReceipts'];
+  let imageId: string | undefined;
   // Revue Soso : le frontend doit savoir qu'un message portait des pièces
   // jointes. Sans cela, une conversation rechargée ignore que le backend va
   // rejouer ces documents, et le consentement demandé ne mentionne rien.
@@ -44,6 +48,8 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
         } else if (parsed.skill_file) {
           skillFiles = [parsed.skill_file as NonNullable<Message['skillFile']>];
         }
+        if (Array.isArray(parsed.memory_receipts)) memoryReceipts = parsed.memory_receipts;
+        if (typeof parsed.image_id === 'string') imageId = parsed.image_id;
         hasAttachments = Array.isArray(parsed.attachments) && parsed.attachments.length > 0;
         if (Array.isArray(parsed.sources)) {
           webSources = parsed.sources as NonNullable<Message['webSources']>;
@@ -73,6 +79,8 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
     role: msg.role as 'user' | 'assistant' | 'system',
     content: msg.content,
     hasAttachments,
+    ...(memoryReceipts ? { memoryReceipts } : {}),
+    ...(imageId ? { imageId } : {}),
     timestamp: new Date(msg.created_at),
     ...(msg.provider ? { provider: msg.provider } : {}),
     ...(skillFiles.length > 0
@@ -141,6 +149,8 @@ export function useConversationSync() {
   // Load conversations from backend and merge with local
   const syncConversations = useCallback(async () => {
     try {
+      await migrerCacheChat();
+      activerSauvegardeChat();
       const { conversations: backendConversations, truncated } =
         await chargerConversationsPaginees(listConversations);
 
@@ -174,7 +184,7 @@ export function useConversationSync() {
 
       return syncedConversations;
     } catch (error) {
-      console.error('Failed to sync conversations:', error);
+      useStatusStore.getState().addNotification({ type: 'error', title: 'Reprise des échanges interrompue', message: 'Le cache reste conservé. Réessaie la synchronisation quand la base sera disponible.', duration: 0 });
       return [];
     }
   }, [setConversations]);
@@ -196,6 +206,14 @@ export function useConversationSync() {
       return [];
     }
   }, [setConversationMessages]);
+
+  useEffect(() => {
+    const erreur = () => useStatusStore.getState().addNotification({ type: 'error',
+      title: 'Échange en attente de sauvegarde',
+      message: 'Garde cette fenêtre ouverte et réessaie la synchronisation.', duration: 0 });
+    window.addEventListener('therese:chat-save-error', erreur);
+    return () => window.removeEventListener('therese:chat-save-error', erreur);
+  }, []);
 
   // Initial sync on mount
   useEffect(() => {

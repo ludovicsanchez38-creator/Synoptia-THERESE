@@ -12,6 +12,7 @@ from app.models.database import get_session_context
 from app.models.entities import Contact, MemoryCard, MemoryCardUse, Message, Project
 from app.services.cloisonnement import cloison_contacts, souvenirs_globaux_visibles
 from sqlalchemy import or_, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import col, select
 
 KINDS = ('preference', 'fait', 'decision', 'correction')
@@ -132,6 +133,8 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
                     scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
                 await session.commit()
                 return json.dumps({'card': resultat})
+        except SQLAlchemyError:
+            return json.dumps({'refus': 'La fiche n’a pas pu être enregistrée. Réessaie.', 'status': 409})
         except RefusMemoire as erreur:
             return json.dumps({'refus': str(erreur), 'status': erreur.status, 'card_id': erreur.card_id})
     resultat = json.loads(await _proteger_le_geste(geste()))
