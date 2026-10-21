@@ -11,7 +11,6 @@ LOGS = ROOT / '.recette-r4/logs'
 SOURCES = {
  'avant-portes.log': ('avant', ['autonome', 'mypy', 'tsc', 'ruff', 'eslint']),
  'avant-rejeu-portes.log': ('avant', ['pytest']),
- 'avant-vitest-rejeu-portes.log': ('avant', ['vitest']),
  'apres-front-portes.log': ('apres', ['autonome']),
  'apres-statique.log': ('apres', ['tsc', 'ruff', 'eslint']),
  'apres-portes.log': ('apres', ['pytest']),
@@ -30,16 +29,19 @@ while True:
  if not manque:
   break
  time.sleep(10)
-print('Python, contrôles statiques et référence Vitest terminés.', flush=True)
+print('Python et contrôles statiques terminés ; deux Vitest complets sans concurrence.', flush=True)
 if any(valeur != 0 for portes in codes.values() for nom, valeur in portes.items() if nom != 'mypy'):
  print(json.dumps(codes, indent=2), flush=True)
  raise SystemExit('Une porte nécessite une correction ; aucun nouveau banc lancé.')
 # Reprises Vitest complètes depuis le bon dossier, sans autre porte lourde.
-for phase in ('apres',):
+for phase in ('avant', 'apres'):
+ numero = 1
+ while any((LOGS / f'diagnostic-vitest-{numero}-{phase}.{extension}').exists() for extension in ('log', 'json')):
+  numero += 1
  for suffixe in ('log', 'json'):
   chemin = LOGS / f'{phase}-vitest.{suffixe}'
   if chemin.exists():
-   chemin.rename(LOGS / f'diagnostic-cwd-{phase}-vitest.{suffixe}')
+   chemin.rename(LOGS / f'diagnostic-vitest-{numero}-{phase}.{suffixe}')
  with (LOGS / f'{phase}-vitest-rejeu-portes.log').open('w') as journal:
   codes[phase]['vitest'] = subprocess.call([sys.executable, str(ROOT / 'scripts/portes_r4.py'),
       phase, 'vitest'], stdout=journal, stderr=subprocess.STDOUT)
