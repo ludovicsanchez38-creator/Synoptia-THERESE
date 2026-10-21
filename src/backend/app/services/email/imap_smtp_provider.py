@@ -516,7 +516,7 @@ class ImapSmtpProvider(EmailProvider):
                 def _sync_append() -> Any:
                     with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                         return mailbox.append(
-                            msg.as_bytes(), dossier, dt=datetime.now(), flag_set=[MailMessageFlags.SEEN]
+                            msg.as_bytes(), dossier, dt=datetime.now(UTC), flag_set=[MailMessageFlags.SEEN]
                         )
 
                 resultat = await self._run_imap_operation(
@@ -608,7 +608,7 @@ class ImapSmtpProvider(EmailProvider):
         def _sync_create():
             with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                 resultat = mailbox.append(
-                    msg.as_bytes(), self._dossier_brouillons(mailbox), dt=datetime.now()
+                    msg.as_bytes(), self._dossier_brouillons(mailbox), dt=datetime.now(UTC)
                 )
 
             # L'UID du serveur quand il le donne : c'est lui qui permettra de
@@ -650,7 +650,7 @@ class ImapSmtpProvider(EmailProvider):
         def _sync_update() -> str:
             with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                 dossier = self._dossier_brouillons(mailbox)
-                resultat = mailbox.append(msg.as_bytes(), dossier, dt=datetime.now())
+                resultat = mailbox.append(msg.as_bytes(), dossier, dt=datetime.now(UTC))
                 mailbox.folder.set(dossier)
                 mailbox.delete([draft_id])
 
