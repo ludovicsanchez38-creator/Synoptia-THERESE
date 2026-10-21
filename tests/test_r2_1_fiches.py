@@ -63,6 +63,13 @@ async def test_cloisons_et_liens_de_client(db_session, cabinet):
     fa = await ajouter(service, scope='project', scope_id=a.id, project_id=a.id)
     fb = await ajouter(service, scope='project', scope_id=b.id, project_id=b.id)
     liee = await ajouter(service, subject='façon client', contact_id=client.id)
+    fait = await ajouter(service, kind='fait', subject='preuve cabinet', title='Orchidée', content='Orchidée globale.')
+    conv = Conversation(title='Source dossier B', project_id=b.id)
+    db_session.add(conv)
+    await db_session.commit()
+    source = Message(conversation_id=conv.id, role='user', content='autre')
+    db_session.add(source)
+    await db_session.commit()
     poser_mode_cabinet(cabinet)
     try:
         ids = lambda fiches: {f['id'] for f in fiches}
@@ -71,9 +78,14 @@ async def test_cloisons_et_liens_de_client(db_session, cabinet):
         assert ids(await service.lire_pour_chat('', 'project', a.id)) == {globale['id'], fa['id'], liee['id']}
         assert ids(await service.lire_pour_chat('', 'all', None)) == {globale['id'], fa['id'], fb['id'], liee['id']}
         assert await service.lire_pour_chat('', 'inconnu', None) == []
-        with pytest.raises(service.RefusMemoire):
+        rappel = ids(await service.lire_pour_chat('orchidée', 'project', a.id))
+        assert (fait['id'] in rappel) is (not cabinet)
+        assert fait['id'] in ids(await service.lire_pour_chat('orchidée', 'global', None))
+        with pytest.raises(service.RefusMemoire, match='hors du périmètre') as refus:
             await service.ecrire({'id': fa['id'], 'version': 1, 'content': 'autre'},
-                                  automatique=True, scope='project', scope_id=b.id)
+                automatique=True, scope='project', scope_id=b.id,
+                conversation_id=conv.id, message_id=source.id)
+        assert refus.value.status == 403
     finally:
         poser_mode_cabinet(None)
 

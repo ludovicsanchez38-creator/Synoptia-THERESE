@@ -83,13 +83,18 @@ async def lire_pour_chat(requete: str, scope: str, scope_id: str | None,
     async with get_session_context() as session:
         fiches = [f for f in await autorisees(session, scope, scope_id, conversation_id) if f.state == 'active']
         termes = mots(requete)
+        def liee(f: MemoryCard) -> bool:
+            # Les contacts ont déjà passé la cloison dans autorisees.
+            return bool(f.contact_id or (scope == 'project' and scope_id and (
+                f.project_id == scope_id or (f.scope == 'project' and f.scope_id == scope_id))))
+
         def rang(f: MemoryCard) -> tuple[Any, ...]:
             return (f.kind not in ('preference', 'correction'),
-                    not bool(f.project_id and f.project_id == scope_id),
+                    not liee(f),
                     -len(termes & mots(f.search_text)), -date_utc(f.updated_at).timestamp(), f.id)
         return [presenter(f) for f in sorted(fiches, key=rang)
                 if f.kind in ('preference', 'correction') or termes & mots(f.search_text)
-                or (f.project_id and f.project_id == scope_id)]
+                or liee(f)]
 
 
 async def lister(*, query: str = '', kind: str | None = None, state: str = 'active',
