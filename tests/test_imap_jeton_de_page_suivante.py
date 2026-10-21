@@ -25,8 +25,9 @@ class _BoiteFactice:
 
     def fetch(self, criteria, reverse=False, limit=None, **kwargs):
         self.limites.append(limit)
-        n = self.total if limit is None else min(limit, self.total)
-        return [SimpleNamespace(uid=str(i)) for i in range(n)]
+        indices = range(self.total)
+        indices = indices[limit] if isinstance(limit, slice) else indices[:limit]
+        return [SimpleNamespace(uid=str(i)) for i in indices]
 
 
 def _provider(monkeypatch, boite: _BoiteFactice):

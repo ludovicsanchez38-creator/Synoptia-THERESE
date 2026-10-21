@@ -338,6 +338,9 @@ class ImapSmtpProvider(EmailProvider):
 
         # Calculate offset from page token
         offset = int(page_token) if page_token else 0
+        if offset < 0 or max_results < 1:
+            raise ValueError("Page IMAP invalide : utilise une taille positive et un décalage positif.")
+        max_results = min(max_results, 250)
 
         def _sync_fetch():
             with self._connect_mailbox(
@@ -347,19 +350,16 @@ class ImapSmtpProvider(EmailProvider):
                 # Build search criteria (cycle 6 : filtres combinés)
                 criteria = self._criteres(unread_only, query, flagged_only)
 
-                # Fetch messages (reversed for newest first).
-                # B-351 (05/09/2026) : on demande UN message de plus que la page
-                # pour savoir s'il en reste ; avec `limit=offset + max_results`,
-                # le seuil `len(all_msgs) > offset + max_results` ne pouvait
-                # jamais être vrai et aucune page suivante n'était annoncée.
-                # B-1409 : `mark_seen` vaut True par défaut dans imap_tools
-                # (BODY[] au lieu de BODY.PEEK[]) : lister marquait lus chez
-                # le fournisseur des messages jamais ouverts. Le « lu » est
-                # posé explicitement à l'ouverture (EmailDetail, markAsRead).
-                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results + 1, mark_seen=False))
-
-                # Apply pagination
-                paginated = all_msgs[offset : offset + max_results]
+                # imap_tools fait UID SEARCH puis inverse les UID côté client.
+                # La tranche est appliquée AVANT FETCH : aucune relecture des
+                # pages précédentes. Un seul FETCH groupé, uniquement les
+                # en-têtes, UID, FLAGS et RFC822.SIZE (jamais corps/pièces).
+                all_msgs = list(mailbox.fetch(
+                    criteria, reverse=True,
+                    limit=slice(offset, offset + max_results + 1),
+                    mark_seen=False, headers_only=True, bulk=True,
+                ))
+                paginated = all_msgs[:max_results]
 
                 result = []
                 for msg in paginated:
@@ -367,7 +367,7 @@ class ImapSmtpProvider(EmailProvider):
 
                 # Calculate next page token
                 next_token = None
-                if len(all_msgs) > offset + max_results:
+                if len(all_msgs) > max_results:
                     next_token = str(offset + max_results)
 
                 return result, next_token

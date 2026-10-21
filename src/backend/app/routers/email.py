@@ -1091,7 +1091,9 @@ async def _list_messages_imap(
         logger.error(f"IMAP timeout for account {account.email}: {e}")
         raise HTTPException(
             status_code=504,
-            detail=f"Délai de connexion IMAP dépassé pour {account.imap_host}",
+            detail=("La lecture des derniers mails a dépassé le délai autorisé. "
+                    "Réessaie avec moins de messages ou dans un dossier plus précis. "
+                    "Si le problème persiste, teste la connexion dans les paramètres de messagerie."),
         )
     except Exception as e:
         logger.error(f"IMAP list_messages failed for {account.email}: {e}")
