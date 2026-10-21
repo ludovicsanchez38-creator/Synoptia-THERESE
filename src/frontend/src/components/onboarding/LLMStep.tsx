@@ -77,6 +77,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   // La LISTE des modèles cloud vient du backend ; le repli statique ne sert
   // que si la route échoue. En onboarding rien n'est encore enregistré : si le
   // modèle sélectionné n'existe pas dans la liste fraîche, on prend le premier.
+  const [catalogueEnChargement, setCatalogueEnChargement] = useState(choixPrecedent !== 'ollama');
   const [catalogueDynamique, setCatalogueDynamique] = useState<ModeleDecore[] | null>(null);
   // Adresse d'espace de travail Qwen : sans elle, le fournisseur ne peut pas
   // fonctionner - elle fait donc partie du parcours, pas d'un réglage caché.
@@ -233,6 +234,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
 
   useEffect(() => {
     setCatalogueDynamique(null);
+    setCatalogueEnChargement(selectedProvider !== 'ollama');
     if (selectedProvider === 'ollama') return;
     let annule = false;
     void chargerCatalogue(selectedProvider).then((modeles) => {
@@ -241,6 +243,8 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
       setSelectedModel((actuel) =>
         selectionApresCatalogue(actuel, modeles, modeleChoisiParLUtilisateur.current),
       );
+    }).finally(() => {
+      if (!annule) setCatalogueEnChargement(false);
     });
     return () => { annule = true; };
   }, [selectedProvider]);
@@ -384,6 +388,13 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
       transition={{ duration: 0.3 }}
       className="flex flex-col px-8 py-6 h-full overflow-y-auto"
     >
+      {catalogueEnChargement && (
+        <p role="status" className="mb-3 flex items-center gap-2 text-sm text-text-muted">
+          <Spinner taille="ligne" />
+          Actualisation de la liste des modèles…
+        </p>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint">

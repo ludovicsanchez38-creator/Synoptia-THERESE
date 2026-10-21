@@ -16,6 +16,9 @@ box = root / '.recette-r6'
 for dossier in (box, box / 'home', box / 'tmp', box / 'logs'):
     dossier.mkdir(parents=True, exist_ok=True)
 code_root = root
+browser = sys.argv[1:2] == ['--browser']
+if browser:
+    sys.argv.pop(1)
 if sys.argv[1:2] == ['--baseline']:
     code_root = root / '.recette-r6/base'
     sys.argv.pop(1)
@@ -44,15 +47,22 @@ def offline():
     lib.seccomp_rule_add.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_uint]
     lib.seccomp_load.argtypes = [ctypes.c_void_p]
     ctx = lib.seccomp_init(0x7fff0000)
-    for name in (b'connect', b'sendmsg', b'sendmmsg'):
+    for name in (() if browser else (b'connect', b'sendmsg', b'sendmmsg')):
         nr = lib.seccomp_syscall_resolve_name(name)
         assert lib.seccomp_rule_add(ctx, 0x50000 | errno.EPERM, nr, 0) == 0
     class Comparaison(ctypes.Structure):
         _fields_ = [('arg', ctypes.c_uint), ('op', ctypes.c_int), ('a', ctypes.c_uint64), ('b', ctypes.c_uint64)]
+    if browser:
+        # Chrome communique entre processus par sockets Unix. Aucun socket
+        # d'une autre famille ne peut être créé ; le CDP passe par des pipes.
+        for famille in (2, 10):
+            assert lib.seccomp_rule_add(ctx, 0x50000 | errno.EPERM,
+                lib.seccomp_syscall_resolve_name(b'socket'), 1, Comparaison(0, 4, famille, 0)) == 0
     # send()/socketpair() passe par sendto(..., NULL, 0) sous Linux.
     # Les datagrammes adressés restent interdits.
-    assert lib.seccomp_rule_add(ctx, 0x50000 | errno.EPERM,
-        lib.seccomp_syscall_resolve_name(b'sendto'), 1, Comparaison(4, 1, 0, 0)) == 0
+    if not browser:
+        assert lib.seccomp_rule_add(ctx, 0x50000 | errno.EPERM,
+            lib.seccomp_syscall_resolve_name(b'sendto'), 1, Comparaison(4, 1, 0, 0)) == 0
     assert lib.seccomp_load(ctx) == 0
 
 clean['PATH'] = f'{code_root}/.venv/bin:/usr/bin:/bin'
