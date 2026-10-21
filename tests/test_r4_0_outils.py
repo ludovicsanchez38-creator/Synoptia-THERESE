@@ -55,6 +55,7 @@ async def test_grand_poste_envoie_la_fenetre_api_show(monkeypatch):
         return httpx.Response(200, content=json.dumps({'message': {'content': 'Fictif'}, 'done': True}))
     async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
         provider = OllamaProvider(LLMConfig(LLMProvider.OLLAMA, 'qwen3:1.7b', context_window=32000), client)
+        await provider.actualiser_fenetre()
         events = [e async for e in provider.stream('Consignes', [{'role': 'user', 'content': 'Qui suis-je ?'}])]
     assert [r.url.path for r in appels] == ['/api/show', '/api/chat']
     assert not any(e.type == 'error' for e in events)

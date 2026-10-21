@@ -42,6 +42,10 @@ _THINK_UNSUPPORTED = StreamEvent(type="error", content="__ollama_think_unsupport
 class OllamaProvider(BaseProvider):
     """Local Ollama API provider."""
 
+    async def actualiser_fenetre(self) -> None:
+        from app.services.ollama_budget import actualiser_fenetre
+        await actualiser_fenetre(self.config, self.client)
+
     def _build_request_body(
         self,
         system_prompt: str | None,
@@ -97,8 +101,6 @@ class OllamaProvider(BaseProvider):
         """
         base_url = (self.config.base_url or "http://localhost:11434").rstrip("/")
         model = self.config.model
-        from app.services.ollama_budget import actualiser_fenetre
-        await actualiser_fenetre(self.config, self.client)
         request_body = self._build_request_body(system_prompt, messages, tools)
         # Dernier garde sur la charge effectivement convertie, continuations incluses.
         # On ne laisse jamais Ollama tronquer le système de sa propre initiative.

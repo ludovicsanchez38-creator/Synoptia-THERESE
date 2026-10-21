@@ -16,7 +16,7 @@ def test_r2_utilise_la_fenetre_reellement_envoyee():
     config = LLMConfig(LLMProvider.OLLAMA, 'qwen3:8b', context_window=128000)
     provider = OllamaProvider(config, None)
     fenetre = provider._build_request_body('Système', [])['options']['num_ctx']
-    contexte = ContextWindow([Message('user', 'Question')], system_prompt='S' * fenetre)
+    contexte = ContextWindow([Message('user', 'Question')], system_prompt='S' * (4 * fenetre))
     with pytest.raises(ErreurPourEcran):
         borner_payload(contexte, [], config, [])
 
@@ -71,7 +71,9 @@ async def test_faux_transport_verifie_systeme_integral_et_num_ctx_coherent():
         assert body['messages'][0]['content'] == systeme
         charge = {k: body[k] for k in ('messages', 'tools') if k in body}
         cout = len(json.dumps(charge, ensure_ascii=False).encode()) + 1024
-        assert cout + body['options']['num_predict'] <= body['options']['num_ctx'] <= 16384
+        from app.services.ollama_budget import estimer_jetons, fenetre_ollama
+        cout = estimer_jetons(json.dumps(charge, ensure_ascii=False)) + 1024
+        assert cout + body['options']['num_predict'] <= body['options']['num_ctx'] == fenetre_ollama(provider.config)
         return httpx.Response(200, content=json.dumps({'message': {'content': 'Réponse fictive.'},
             'done': True, 'prompt_eval_count': 123, 'eval_count': 4}))
     async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
@@ -88,25 +90,26 @@ def test_petites_machines_et_petite_fenetre_modele(monkeypatch):
     config = LLMConfig(LLMProvider.OLLAMA, 'factice', context_window=2048, max_tokens=256)
     assert ollama_budget.fenetre_ollama(config) == 2048
     monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 4 * 1024 * 1024)
-    assert ollama_budget.plafond_memoire() == 16384
+    assert ollama_budget.plafond_memoire() == 131072
 
 
 @pytest.mark.asyncio
 async def test_routeur_allege_outils_et_garde_identite_consignes(client, db_session, fournisseur, monkeypatch):
     from app.services import ollama_budget
     from app.services.memory_card_context import compter_payload
-    monkeypatch.setattr(ollama_budget, 'plafond_memoire', lambda: 16384)
+    monkeypatch.setattr(ollama_budget, 'plafond_memoire', lambda: 8192)
     contexte = 'Règle 1 : tutoyer.\n' + 'Projet fictif. ' * 155 + '\nRègle 3 : LOUTRE-VIOLETTE.'
     await client.post('/api/config/profile', json={'name': 'Camille Fictive', 'context': contexte})
     await client.post('/api/config/therese-md', json={'content': 'Témoin : PAPILLON-CUIVRE.'})
-    fournisseur[0].config = LLMConfig(LLMProvider.OLLAMA, 'qwen3:8b', context_window=32768)
-    rep = await client.post('/api/chat/send', json={'message': 'Qui suis-je ?', 'stream': True})
+    fournisseur[0].config = LLMConfig(LLMProvider.OLLAMA, 'qwen3:8b', context_window=32768, max_tokens=2048)
+    rep = await client.post('/api/chat/send', json={'message': 'Quel est mon agenda ?', 'stream': True})
     assert 'outils disponibles' in rep.text
     payload = fournisseur[2][-1]
     assert contexte in payload['system'] and 'PAPILLON-CUIVRE' in payload['system']
-    assert len(payload['tools'] or []) <= 1
+    assert 'list_calendar_events' in {t['function']['name'] for t in payload['tools']}
+    assert len(payload['tools']) < len(__import__('app.services.workspace_tools', fromlist=['WORKSPACE_TOOLS']).WORKSPACE_TOOLS)
     assert 'web_search**' not in payload['system']
     wire = OllamaProvider(fournisseur[0].config, None)._build_request_body(payload['system'], payload['messages'], payload['tools'])
-    assert wire['options']['num_ctx'] == 16384
+    assert wire['options']['num_ctx'] == 8192
     contexte_final = ContextWindow([Message('user', 'Qui suis-je ?')], system_prompt=payload['system'])
-    assert compter_payload(contexte_final, fournisseur[0].config, payload['tools']) + 4096 <= 16384
+    assert compter_payload(contexte_final, fournisseur[0].config, payload['tools']) + 2048 <= 8192

@@ -688,8 +688,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             return
         await self._ensure_provider()
         if isinstance(self._provider, OllamaProvider):
-            from app.services.ollama_budget import actualiser_fenetre
-            await actualiser_fenetre(self.config, self._provider.client)
+            await self._provider.actualiser_fenetre()
 
     async def _get_client(self):
         """Get shared HTTP client from global pool."""
