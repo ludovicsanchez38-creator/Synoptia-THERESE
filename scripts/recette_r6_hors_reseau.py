@@ -15,6 +15,7 @@ root = Path(__file__).resolve().parents[1]
 box = root / '.recette-r6'
 for dossier in (box, box / 'home', box / 'tmp', box / 'logs'):
     dossier.mkdir(parents=True, exist_ok=True)
+(box / '.gitignore').write_text('*\n')
 code_root = root
 browser = sys.argv[1:2] == ['--browser']
 if browser:
@@ -55,9 +56,8 @@ def offline():
     if browser:
         # Chrome communique entre processus par sockets Unix. Aucun socket
         # d'une autre famille ne peut être créé ; le CDP passe par des pipes.
-        for famille in (2, 10):
-            assert lib.seccomp_rule_add(ctx, 0x50000 | errno.EPERM,
-                lib.seccomp_syscall_resolve_name(b'socket'), 1, Comparaison(0, 4, famille, 0)) == 0
+        assert lib.seccomp_rule_add(ctx, 0x50000 | errno.EPERM,
+            lib.seccomp_syscall_resolve_name(b'socket'), 1, Comparaison(0, 1, 1, 0)) == 0
     # send()/socketpair() passe par sendto(..., NULL, 0) sous Linux.
     # Les datagrammes adressés restent interdits.
     if not browser:

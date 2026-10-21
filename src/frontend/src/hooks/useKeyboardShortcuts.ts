@@ -58,9 +58,13 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
 
       // B-638 (Nadia, c4) : la Décision ouverte, ⌘E ⌘T ⌘I ⌘P ⌘O changeaient
       // la vue DERRIÈRE la fenêtre modale, et ⌘E empilait deux dialogues. Un
-      // dialogue modal absorbe les raccourcis de navigation ; Échap (traité
-      // plus haut) reste le seul geste clavier global tant qu'il est ouvert.
-      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      // dialogue modal absorbe les raccourcis de navigation. Seuls les
+      // réglages autorisent la palette au-dessus, pour conserver la saisie.
+      // Une confirmation ou une autre modale garde la priorité.
+      const dialogues = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"]'));
+      const rechercheDepuisReglages = key === 'k' && !event.shiftKey
+        && dialogues.every((dialogue) => dialogue.hasAttribute('data-allow-command-palette'));
+      if (dialogues.length > 0 && !rechercheDepuisReglages) return;
 
       // Cmd+Shift+K - Ouvrir Atelier en mode Katia + focus nouvelle tache
       if (key === 'k' && event.shiftKey) {

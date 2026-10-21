@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 const root = resolve(import.meta.dirname, '../../..');
 const source = resolve(process.argv[2] || root);
 const phase = process.argv[3] || 'apres';
+const reglages = process.argv[4] === 'reglages';
 const box = resolve(root, '.recette-r6/browser', phase);
 await mkdir(box, { recursive: true });
 const require = createRequire(resolve(root, 'src/frontend/package.json'));
@@ -23,6 +24,8 @@ await writeFile(resolve(box, 'entry.tsx'), `
 import React from '${root}/src/frontend/node_modules/react';
 import { createRoot } from '${root}/src/frontend/node_modules/react-dom/client';
 import { OnboardingWizard } from '${source}/src/frontend/src/components/onboarding/OnboardingWizard';
+import { SettingsModal } from '${source}/src/frontend/src/components/settings/SettingsModal';
+import { ConversationCanvasPrototype } from '${source}/src/frontend/src/components/prototype/ConversationCanvasPrototype';
 window.catalogueTermine = false;
 window.fetch = async (url) => {
   const path = new URL(url).pathname;
@@ -31,12 +34,17 @@ window.fetch = async (url) => {
     await new Promise(resolve => { window.livrerCatalogue = resolve; });
     window.catalogueTermine = true;
     data = { models: ['claude-opus-5-5'] };
-  } else if (path.endsWith('/ollama/status')) data = { available: false, models: [] };
+  } else if (path.endsWith('/config/llm')) data = { provider: 'mistral', model: 'mistral-medium-latest', available_models: [], available: true };
+  else if (path.endsWith('/processing-tasks')) data = { traitements: [] };
+  else if (path.endsWith('/profile')) data = null;
+  else if (path.endsWith('/projects') || path.endsWith('/contacts') || path.endsWith('/conversations')) data = [];
+  else if (path.endsWith('/ollama/status')) data = { available: false, models: [] };
   else if (path.endsWith('/system-resources')) data = null;
   else if (path.endsWith('/config/')) data = { api_keys: {}, corrupted_keys: [] };
+  else return new Response(JSON.stringify({ detail: 'Indisponible dans cette doublure' }), { status: 503 });
   return new Response(JSON.stringify(data), { status: 200 });
 };
-createRoot(document.getElementById('root')).render(<OnboardingWizard isOpen onComplete={() => {}} />);
+createRoot(document.getElementById('root')).render(${reglages ? '<><ConversationCanvasPrototype /><SettingsModal isOpen onClose={() => {}} /></>' : '<OnboardingWizard isOpen onComplete={() => {}} />'});
 `);
 await build({ entryPoints: [resolve(box, 'entry.tsx')], outfile: resolve(box, 'bundle.js'), bundle: true,
   format: 'iife', platform: 'browser', jsx: 'automatic', nodePaths: [resolve(root, 'src/frontend/node_modules')],
@@ -53,6 +61,7 @@ chrome.on('exit', (code, signal) => console.log('Chrome terminé', code, signal)
 chrome.stderr.pipe(createWriteStream(resolve(box, 'chrome.log')));
 chrome.stdio[3].on('error', () => {});
 let seq = 0, buffer = '';
+const erreurs = [];
 const pending = new Map();
 chrome.stdio[4].on('error', () => {});
 chrome.stdio[4].on('data', (chunk) => {
@@ -60,6 +69,8 @@ chrome.stdio[4].on('data', (chunk) => {
   while (buffer.includes('\0')) {
     const index = buffer.indexOf('\0');
     const event = JSON.parse(buffer.slice(0, index)); buffer = buffer.slice(index + 1);
+    if (event.method === 'Runtime.exceptionThrown') erreurs.push({ erreur: event.params.exceptionDetails.exception?.description || event.params.exceptionDetails.text, trace: event.params.exceptionDetails.stackTrace });
+    if (event.method === 'Runtime.consoleAPICalled' && event.params.type === 'error') erreurs.push(event.params.args.map(a => a.description || a.value).join(' '));
     if (event.id && pending.has(event.id)) {
       const { resolve, reject, timer } = pending.get(event.id); pending.delete(event.id); clearTimeout(timer);
       if (event.error) reject(new Error(JSON.stringify(event.error))); else resolve(event.result);
@@ -78,6 +89,7 @@ const results = [];
 try {
   const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp('Target.attachToTarget', { targetId, flatten: true });
+  await cdp('Runtime.enable', {}, sessionId);
   const evaluate = async (expression) => {
     const result = await cdp('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId);
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
@@ -88,6 +100,30 @@ try {
   for (const [width, height] of [[1238, 792], [800, 600], [480, 520]]) {
     await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, sessionId);
     await cdp('Page.navigate', { url: `file://${box}/index.html` }, sessionId);
+    if (reglages) {
+      for (let i = 0; i < 80; i++) {
+        if (await evaluate('Boolean(document.getElementById("settings-profile-name"))')) break;
+        await pause(100);
+      }
+      await evaluate('document.getElementById("settings-profile-name").focus()');
+      await cdp('Input.insertText', { text: 'Camille brouillon' }, sessionId);
+      await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'k', code: 'KeyK', modifiers: 2 }, sessionId);
+      await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'k', code: 'KeyK', modifiers: 2 }, sessionId);
+      await pause(600);
+      const paletteActive = await evaluate(`(() => {
+        const c = document.querySelector('[role=combobox]');
+        return Boolean(c && document.activeElement === c && !c.closest('[inert]'));
+      })()`);
+      await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }, sessionId);
+      await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }, sessionId);
+      await pause(600);
+      const retour = await evaluate(`(() => {
+        const c = document.getElementById('settings-profile-name');
+        return Boolean(c && document.activeElement === c && !c.closest('[inert]') && c.value === 'Camille brouillon');
+      })()`);
+      results.push({ width, height, paletteActive, retour });
+      continue;
+    }
     for (let i = 0; i < 50; i++) {
       if (await evaluate('Boolean(document.querySelector("[data-testid=onboarding-next-btn]"))')) break;
       await pause(100);
@@ -125,9 +161,14 @@ try {
   }
   await writeFile(resolve(box, 'resultats.json'), JSON.stringify(results, null, 2));
   console.log(JSON.stringify(results, null, 2));
+  if (reglages) {
+    assert(results.every(r => r.paletteActive && r.retour), 'Ctrl+K puis Échap doit conserver le brouillon et rendre le focus');
+  } else {
   const mode = process.argv[4] || 'tout';
   if (mode !== 'catalogue') assert(results.every(r => r.footer.visible), 'Les trois boutons doivent rester visibles sans défilement');
   assert(results.every(r => r.attente && r.attentePersistante && r.termine), 'Le catalogue lent doit afficher un indicateur jusqu’à sa réponse');
+  }
 } finally {
+  await writeFile(resolve(box, 'erreurs-rendu.json'), JSON.stringify(erreurs, null, 2));
   chrome.kill('SIGTERM');
 }

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Z_LAYER } from '../../styles/z-layers';
 import { demanderLaConnexionEmail } from '../../lib/demandeDeConnexionEmail';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
@@ -575,12 +577,14 @@ function CommandPalette({
     }
   };
 
-  return (
+  // Hors de l'ancêtre rendu inert par les réglages. Le portail garde le
+  // contexte AnimatePresence et le piège restitue le focus au champ initial.
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-start justify-center bg-text/35 px-4 pt-[13vh] backdrop-blur-[3px]"
+      className={`fixed inset-0 ${Z_LAYER.COMMAND_PALETTE} flex items-start justify-center bg-text/35 px-4 pt-[13vh] backdrop-blur-[3px]`}
       onClick={onClose}
     >
       <motion.div
@@ -780,7 +784,8 @@ function CommandPalette({
           <span>Recherche par résultat, fonction ou outil · {isMac ? '⌘K' : 'Ctrl+K'}</span>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
 

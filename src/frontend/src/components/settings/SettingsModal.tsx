@@ -93,6 +93,13 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
   const [loading, setLoading] = useState(true);
   const [loadWarnings, setLoadWarnings] = useState<string[]>([]);
   const [operationStatus, setOperationStatus] = useState<string | null>(null);
+  // Les reçus disparaissent ; une opération encore en cours reste annoncée.
+  useEffect(() => {
+    if (!operationStatus || operationStatus.endsWith('…')) return;
+    const timer = setTimeout(() => setOperationStatus(null), 4000);
+    return () => clearTimeout(timer);
+  }, [operationStatus]);
+  useEffect(() => { setOperationStatus(null); }, [activeTab, isOpen]);
   const [retryOperation, setRetryOperation] = useState<(() => void) | null>(null);
   const { isContributeur, setUXMode } = useUXMode();
   const visibleTabs = ALL_TABS.filter(
@@ -862,6 +869,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
             aria-labelledby="settings-title"
             aria-label="Paramètres"
             data-testid="settings-modal"
+            data-allow-command-palette
+            onChangeCapture={() => setOperationStatus(null)}
             data-active-tab={activeTab}
             data-requested-tab={requestedTab ?? ''}
             variants={modalVariants}
