@@ -89,7 +89,8 @@ describe('B-1671 : Annulée sort du sélecteur d’une facture émise', () => {
     await screen.findByLabelText('Statut');
     expect(valeursStatut()).not.toContain('cancelled');
     expect(valeursStatut()).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue']));
-    expect(screen.getByText(/expert-comptable/)).toBeVisible();
+    // Le texte existe avant que le dialogue animé soit visible.
+    await waitFor(() => expect(screen.getByText(/expert-comptable/)).toBeVisible());
     expect(screen.queryByText(/émets un avoir/)).toBeNull();
   });
 

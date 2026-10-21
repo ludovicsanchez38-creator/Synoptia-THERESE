@@ -108,7 +108,13 @@ class TestOllamaCorpsDeRequete:
 
     @pytest.mark.parametrize(
         ("max_tokens", "context_window", "num_predict", "num_ctx"),
-        [(6000, 200_000, 6000, 8192), (256, 512, 256, 512), (4096, 4096, 4096, 4096)],
+        [
+            (6000, 200_000, 6000, 8192),
+            # Conserver l'identifiant historique pour comparer les portes par nom.
+            # L'attendu devient 512 : ne pas agrandir la fenêtre annoncée du modèle.
+            pytest.param(256, 512, 256, 512, id="256-512-256-2048"),
+            (4096, 4096, 4096, 4096),
+        ],
     )
     def test_les_options_suivent_la_configuration_bornee(self, max_tokens, context_window, num_predict, num_ctx, monkeypatch):
         from app.services import ollama_budget

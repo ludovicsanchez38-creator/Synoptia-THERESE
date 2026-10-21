@@ -32,25 +32,33 @@ async def test_liens_mots_avant_dernier_message_date_et_uuid(client, db_session,
     contact = await fiche('contact', contact_id=personne.id)
     portee = await fiche('portée', scope='project', scope_id=a.id)  # écriture sans project_id
     projet = await fiche('projet', project_id=a.id)
+    correspondante = await fiche('zéphyr lié', scope='project', scope_id=a.id)
     mots = await fiche('zéphyr')
     interdit = await fiche('zéphyr interdit', contact_id=autre.id)
     sans_lien = await fiche('invisible')
     date = datetime(2026, 10, 21, tzinfo=UTC)
-    for f in (contact, portee, projet, mots):
+    for f in (contact, portee, projet, correspondante, mots):
         ligne = await db_session.get(MemoryCard, f['id'])
-        ligne.updated_at = date + (timedelta(seconds=1) if f == contact else timedelta())
+        # Création portée puis projet, UUID inversés : enlever le dernier
+        # critère du tri doit échouer systématiquement, pas une fois sur deux.
+        if f is portee or f is projet:
+            ligne.id = '00000000-0000-4000-8000-00000000000' + ('2' if f is portee else '1')
+            f['id'] = ligne.id
+        decalage = 1 if f is contact else -1 if f is correspondante else 0
+        ligne.updated_at = date + timedelta(seconds=decalage)
         db_session.add(ligne)
     await db_session.commit()
     reponse = await client.post('/api/chat/send', json={'conversation_id': conv.id,
         'message': 'Bonjour', 'stream': True, 'memory_card_grants': ['llm:openai']})
     assert reponse.status_code == 200
     systeme = fournisseur[2][-1]['system']
-    for f in (contact, portee, projet, mots):
+    for f in (contact, portee, projet, correspondante, mots):
         assert f['id'] in systeme, (f['title'], reponse.text)
     for f in (interdit, sans_lien):
         assert f['id'] not in systeme
-    # Liens avant mots seuls ; date décroissante, puis UUID croissant à égalité.
-    ordre = [contact['id'], *sorted([portee['id'], projet['id']]), mots['id']]
+    # Le lien qui partage le mot du précédent tour prime malgré sa date
+    # plus ancienne ; puis date décroissante, UUID croissant à date égale.
+    ordre = [correspondante['id'], contact['id'], projet['id'], portee['id'], mots['id']]
     assert sorted(ordre, key=systeme.index) == ordre
     # Le mot n'est pas dans la dernière demande utilisateur du payload.
     derniers = [m for m in fournisseur[2][-1]['messages'] if m['role'] == 'user']

@@ -545,8 +545,8 @@ async def search_memory(
                         if hit.get("type") == "file" and hit.get("entity_id")]
         fichiers_par_id: dict[str, FileMetadata] = {}
         if ids_fichiers:
-            charge = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(ids_fichiers)))
-            fichiers_par_id = {f.id: f for f in charge.scalars().all()}
+            fichiers_semantiques = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(ids_fichiers)))
+            fichiers_par_id = {f.id: f for f in fichiers_semantiques.scalars().all()}
 
         for hit in semantic_results:
             entity_id = hit.get("entity_id")
@@ -662,16 +662,16 @@ async def search_memory(
 
     # Sans embeddings, le nom reste consultable ; le contenu nécessite l'index.
     if not request.entity_types or "file" in request.entity_types:
-        charge = await session.execute(select(FileMetadata).where(
+        fichiers_mot_cle = await session.execute(select(FileMetadata).where(
             col(FileMetadata.name).ilike(f"%{request.query}%")
         ).limit(PLAFOND_ILIKE_MEMOIRE))
-        fichiers = list(charge.scalars().all())
+        fichiers = list(fichiers_mot_cle.scalars().all())
         ilike_tronque |= len(fichiers) >= PLAFOND_ILIKE_MEMOIRE
-        for fichier in fichiers:
-            if fichier.id not in results_map:
-                results_map[fichier.id] = MemorySearchResult(id=fichier.id, entity_type="file",
-                    title=fichier.name, content="", score=0.4,
-                    metadata={"path": fichier.path, "extension": fichier.extension})
+        for fichier_nom in fichiers:
+            if fichier_nom.id not in results_map:
+                results_map[fichier_nom.id] = MemorySearchResult(id=fichier_nom.id, entity_type="file",
+                    title=fichier_nom.name, content="", score=0.4,
+                    metadata={"path": fichier_nom.path, "extension": fichier_nom.extension})
 
     # Sort by score and limit
     results = sorted(results_map.values(), key=lambda x: x.score, reverse=True)
