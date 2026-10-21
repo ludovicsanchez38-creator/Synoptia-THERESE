@@ -1380,6 +1380,24 @@ async def _summarize_emails(args: dict, session: AsyncSession) -> str:
         if not messages:
             return "Aucun email a resumer."
 
+        from app.services.email.imap_smtp_provider import ImapSmtpProvider
+        if isinstance(provider, ImapSmtpProvider):
+            # Le listage ne télécharge que les en-têtes. Charger les corps
+            # uniquement pour ce résumé explicite et pour les UID sélectionnés,
+            # dans une enveloppe totale de 30 s (pas 30 s par message).
+            try:
+                async with asyncio.timeout(30):
+                    messages = [
+                        await provider.get_message(msg.id)
+                        if not (msg.body_plain or msg.snippet) else msg
+                        for msg in messages
+                    ]
+            except TimeoutError:
+                return (
+                    "La lecture des mails à résumer a dépassé le délai. "
+                    "Réessaie avec moins de messages ; je ne peux pas encore résumer leur contenu."
+                )
+
         from app.services.prompt_security import get_prompt_security
 
         security = get_prompt_security()
