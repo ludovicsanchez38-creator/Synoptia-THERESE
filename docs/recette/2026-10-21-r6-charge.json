@@ -1,0 +1,575 @@
+{
+  "methode": "HTTP MockTransport, vrais routeur/service/adaptateurs, Bonjour sans profil ni historique ; JSON compact ; estimation ceil(caractères/4), pas une mesure du tokenizer fournisseur",
+  "contrats_identiques": {
+    "web_search.py": [
+      "WEB_SEARCH_TOOL"
+    ],
+    "workspace_tools.py": [
+      "GENERATE_DOCUMENT_TOOL",
+      "SEARCH_INVOICES_TOOL",
+      "INVOICE_TOTALS_TOOL"
+    ]
+  },
+  "fournisseurs": {
+    "anthropic": {
+      "avant": {
+        "fournisseur": "anthropic",
+        "modele": "claude-opus-5-5",
+        "systeme": {
+          "octets": 12325,
+          "caracteres": 12059,
+          "jetons_estimes": 3015
+        },
+        "outils": {
+          "octets": 11921,
+          "caracteres": 11875,
+          "jetons_estimes": 2969
+        },
+        "requete": {
+          "octets": 24374,
+          "caracteres": 24062,
+          "jetons_estimes": 6016
+        }
+      },
+      "apres": {
+        "fournisseur": "anthropic",
+        "modele": "claude-opus-5-5",
+        "systeme": {
+          "octets": 12413,
+          "caracteres": 12147,
+          "jetons_estimes": 3037
+        },
+        "outils": {
+          "octets": 11013,
+          "caracteres": 10976,
+          "jetons_estimes": 2744
+        },
+        "requete": {
+          "octets": 23554,
+          "caracteres": 23251,
+          "jetons_estimes": 5813
+        }
+      }
+    },
+    "deepseek": {
+      "avant": {
+        "fournisseur": "deepseek",
+        "modele": "deepseek-v4-pro",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24906,
+          "caracteres": 24594,
+          "jetons_estimes": 6149
+        }
+      },
+      "apres": {
+        "fournisseur": "deepseek",
+        "modele": "deepseek-v4-pro",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23961,
+          "caracteres": 23658,
+          "jetons_estimes": 5915
+        }
+      }
+    },
+    "gemini": {
+      "avant": {
+        "fournisseur": "gemini",
+        "modele": "gemini-3.8-flash",
+        "systeme": {
+          "octets": 12180,
+          "caracteres": 11916,
+          "jetons_estimes": 2979
+        },
+        "outils": {
+          "octets": 11206,
+          "caracteres": 11167,
+          "jetons_estimes": 2792
+        },
+        "requete": {
+          "octets": 23624,
+          "caracteres": 23321,
+          "jetons_estimes": 5831
+        }
+      },
+      "apres": {
+        "fournisseur": "gemini",
+        "modele": "gemini-3.8-flash",
+        "systeme": {
+          "octets": 12180,
+          "caracteres": 11916,
+          "jetons_estimes": 2979
+        },
+        "outils": {
+          "octets": 10439,
+          "caracteres": 10408,
+          "jetons_estimes": 2602
+        },
+        "requete": {
+          "octets": 22857,
+          "caracteres": 22562,
+          "jetons_estimes": 5641
+        }
+      }
+    },
+    "glm": {
+      "avant": {
+        "fournisseur": "glm",
+        "modele": "glm-5.3",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24898,
+          "caracteres": 24586,
+          "jetons_estimes": 6147
+        }
+      },
+      "apres": {
+        "fournisseur": "glm",
+        "modele": "glm-5.3",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23953,
+          "caracteres": 23650,
+          "jetons_estimes": 5913
+        }
+      }
+    },
+    "grok": {
+      "avant": {
+        "fournisseur": "grok",
+        "modele": "grok-4.7",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24881,
+          "caracteres": 24569,
+          "jetons_estimes": 6143
+        }
+      },
+      "apres": {
+        "fournisseur": "grok",
+        "modele": "grok-4.7",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23936,
+          "caracteres": 23633,
+          "jetons_estimes": 5909
+        }
+      }
+    },
+    "infomaniak": {
+      "avant": {
+        "fournisseur": "infomaniak",
+        "modele": "mix",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24894,
+          "caracteres": 24582,
+          "jetons_estimes": 6146
+        }
+      },
+      "apres": {
+        "fournisseur": "infomaniak",
+        "modele": "mix",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23949,
+          "caracteres": 23646,
+          "jetons_estimes": 5912
+        }
+      }
+    },
+    "kimi": {
+      "avant": {
+        "fournisseur": "kimi",
+        "modele": "kimi-k3",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24898,
+          "caracteres": 24586,
+          "jetons_estimes": 6147
+        }
+      },
+      "apres": {
+        "fournisseur": "kimi",
+        "modele": "kimi-k3",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23953,
+          "caracteres": 23650,
+          "jetons_estimes": 5913
+        }
+      }
+    },
+    "minimax": {
+      "avant": {
+        "fournisseur": "minimax",
+        "modele": "MiniMax-M3",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24901,
+          "caracteres": 24589,
+          "jetons_estimes": 6148
+        }
+      },
+      "apres": {
+        "fournisseur": "minimax",
+        "modele": "MiniMax-M3",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23956,
+          "caracteres": 23653,
+          "jetons_estimes": 5914
+        }
+      }
+    },
+    "mistral": {
+      "avant": {
+        "fournisseur": "mistral",
+        "modele": "mistral-medium-3-5",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24909,
+          "caracteres": 24597,
+          "jetons_estimes": 6150
+        }
+      },
+      "apres": {
+        "fournisseur": "mistral",
+        "modele": "mistral-medium-3-5",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23964,
+          "caracteres": 23661,
+          "jetons_estimes": 5916
+        }
+      }
+    },
+    "ollama": {
+      "avant": {
+        "fournisseur": "ollama",
+        "modele": "mistral-nemo",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24853,
+          "caracteres": 24541,
+          "jetons_estimes": 6136
+        }
+      },
+      "apres": {
+        "fournisseur": "ollama",
+        "modele": "mistral-nemo",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23908,
+          "caracteres": 23605,
+          "jetons_estimes": 5902
+        }
+      }
+    },
+    "openai": {
+      "avant": {
+        "fournisseur": "openai",
+        "modele": "gpt-6-sol",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24919,
+          "caracteres": 24607,
+          "jetons_estimes": 6152
+        }
+      },
+      "apres": {
+        "fournisseur": "openai",
+        "modele": "gpt-6-sol",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23974,
+          "caracteres": 23671,
+          "jetons_estimes": 5918
+        }
+      }
+    },
+    "openrouter": {
+      "avant": {
+        "fournisseur": "openrouter",
+        "modele": "anthropic/claude-sonnet-4-6",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24918,
+          "caracteres": 24606,
+          "jetons_estimes": 6152
+        }
+      },
+      "apres": {
+        "fournisseur": "openrouter",
+        "modele": "anthropic/claude-sonnet-4-6",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23973,
+          "caracteres": 23670,
+          "jetons_estimes": 5918
+        }
+      }
+    },
+    "perplexity": {
+      "avant": {
+        "fournisseur": "perplexity",
+        "modele": "sonar-pro",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24900,
+          "caracteres": 24588,
+          "jetons_estimes": 6147
+        }
+      },
+      "apres": {
+        "fournisseur": "perplexity",
+        "modele": "sonar-pro",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23955,
+          "caracteres": 23652,
+          "jetons_estimes": 5913
+        }
+      }
+    },
+    "qwen": {
+      "avant": {
+        "fournisseur": "qwen",
+        "modele": "qwen3.8-max",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 12356,
+          "caracteres": 12310,
+          "jetons_estimes": 3078
+        },
+        "requete": {
+          "octets": 24902,
+          "caracteres": 24590,
+          "jetons_estimes": 6148
+        }
+      },
+      "apres": {
+        "fournisseur": "qwen",
+        "modele": "qwen3.8-max",
+        "systeme": {
+          "octets": 12355,
+          "caracteres": 12089,
+          "jetons_estimes": 3023
+        },
+        "outils": {
+          "octets": 11411,
+          "caracteres": 11374,
+          "jetons_estimes": 2844
+        },
+        "requete": {
+          "octets": 23957,
+          "caracteres": 23654,
+          "jetons_estimes": 5914
+        }
+      }
+    }
+  }
+}
