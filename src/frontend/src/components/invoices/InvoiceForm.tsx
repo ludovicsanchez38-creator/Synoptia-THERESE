@@ -1028,11 +1028,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             {erreurValidation}
           </p>
         )}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-border flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted">Payée le</label>
+              <div className="flex flex-wrap items-center gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+                <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted whitespace-nowrap">Payée le</label>
                 <input
                   id="invoiceform-date-paiement"
                   type="date"
@@ -1073,13 +1073,13 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           </div>
 
           {abandonDemande && (
-            <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+            <div className="flex w-full basis-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
               <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
               <Button variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
               <Button variant="danger" size="md" type="button" onClick={abandonner}>Abandonner</Button>
             </div>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 ml-auto whitespace-nowrap">
             <Button variant="secondary" size="md" type="button" onClick={demanderFermeture}>
               Annuler
             </Button>
