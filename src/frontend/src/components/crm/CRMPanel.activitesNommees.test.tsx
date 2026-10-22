@@ -93,6 +93,20 @@ describe('B-205 : une activité affichée nomme toujours son contact', () => {
     expect(screen.queryByText('Contact inconnu')).toBeNull();
   });
 
+  it('distingue une activité sans contact d’une référence à un contact inconnu', async () => {
+    const api = await import('../../services/api');
+    vi.mocked(api.listActivities).mockResolvedValueOnce([
+      { ...ACTIVITES[0], id: 'sans-contact', contact_id: null, title: 'Note sans contact' },
+      { ...ACTIVITES[1], id: 'contact-absent', contact_id: 'absent', title: 'Note liée' },
+    ] as never);
+    render(<CRMPanel standalone />);
+
+    await waitFor(() => expect(screen.getByText('Note sans contact')).toBeInTheDocument());
+    expect(screen.getByText('Note liée')).toBeInTheDocument();
+    expect(screen.getByText('Sans contact')).toBeInTheDocument();
+    expect(screen.getAllByText('Contact inconnu')).toHaveLength(1);
+  });
+
   it('le pipeline utilise le même magasin complet', async () => {
     useCRMStore.setState({ activeTab: 'pipeline' });
     render(<CRMPanel standalone />);
