@@ -9,6 +9,17 @@ import { request } from '../services/api/core';
 const CLE = 'therese-chat';
 let sauvegardeActive = false;
 let migration: Promise<void> | null = null;
+let lecturesEnCours = 0;
+
+/** Une réponse du serveur actualise le store sans redevenir une écriture. */
+export function appliquerLectureChat<T>(lecture: () => T): T {
+  lecturesEnCours += 1;
+  try {
+    return lecture();
+  } finally {
+    lecturesEnCours -= 1;
+  }
+}
 
 export function activerSauvegardeChat(): void { sauvegardeActive = true; }
 
@@ -32,6 +43,7 @@ export function createChatStorage(): Storage {
   disableStorageKey(CLE);
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending: string | null = null;
+  let dernierEtat = JSON.stringify({ conversations: [], isStreaming: false });
   let controller: AbortController | null = null;
   registerPendingDiscard(() => {
     pending = null; if (timer) clearTimeout(timer); timer = null;
@@ -59,8 +71,17 @@ export function createChatStorage(): Storage {
     getItem: key => localStorage.getItem(key), // copie héritée conservée jusqu'à son acquittement
     setItem: (_key, value) => {
       if (persistenceIsDisabled()) return;
-      pending = value;
-      if (!timer) timer = setTimeout(() => { void flush(); }, 400);
+      const { conversations, isStreaming = false } = JSON.parse(value).state;
+      const etat = JSON.stringify({ conversations, isStreaming });
+      const modifie = etat !== dernierEtat;
+      dernierEtat = etat;
+      // Zustand appelle aussi ce stockage après une lecture, une navigation
+      // ou un changement de métadonnée non persistée. Seule une modification
+      // locale doit armer une écriture. Une lecture laisse intacte une vraie
+      // sauvegarde déjà en attente (y compris après un refus du serveur).
+      if (lecturesEnCours > 0) return;
+      if (modifie) pending = value;
+      if (pending && !timer) timer = setTimeout(() => { void flush(); }, 400);
     },
     removeItem: key => { pending = null; if (timer) clearTimeout(timer); timer = null; localStorage.removeItem(key); },
     clear: () => { pending = null; if (timer) clearTimeout(timer); timer = null; },

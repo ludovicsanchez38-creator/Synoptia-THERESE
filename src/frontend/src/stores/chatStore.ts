@@ -3,7 +3,7 @@ import type { ContexteTransmis } from '../lib/contexteTransmis';
 import { texteDuContenu } from '../lib/texteDuContenu';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
-import { createChatStorage } from '../lib/chatPersistence';
+import { appliquerLectureChat, createChatStorage } from '../lib/chatPersistence';
 import { useNavigationStore } from './navigationStore';
 
 import type { DetectedEntities } from '../services/api';
@@ -397,13 +397,13 @@ export const useChatStore = create<ChatStore>()(
         const sorted = [...conversations].sort(
           (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
-        set({ conversations: sorted });
+        appliquerLectureChat(() => set({ conversations: sorted }));
       },
 
       setConversationsTruncated: (truncated) => set({ conversationsTruncated: truncated }),
 
       setConversationMessages: (conversationId, messages) => {
-        set((state) => {
+        appliquerLectureChat(() => set((state) => {
           const existingConv = state.conversations.find((c) => c.id === conversationId);
 
           if (existingConv) {
@@ -451,7 +451,7 @@ export const useChatStore = create<ChatStore>()(
               conversations: [newConversation, ...state.conversations],
             };
           }
-        });
+        }));
       },
 
       updateConversationId: (oldId, newId) => {
