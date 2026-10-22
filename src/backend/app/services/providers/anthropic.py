@@ -59,10 +59,23 @@ class AnthropicProvider(BaseProvider):
         """Payload /v1/messages - `temperature` seulement sur les modèles qui
         l'acceptent (les récents la refusent avec un 400, cf. _NO_SAMPLING)."""
         plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
+        system_blocks: str | list[dict[str, Any]] | None = system_prompt
+        if system_prompt:
+            # Le constructeur place toutes les consignes stables avant la
+            # date ; mémoire et fiches suivent. Seul ce préfixe est marqué.
+            debut, separateur, suite = system_prompt.partition("\n\n## Date et heure actuelles\n")
+            system_blocks = []
+            if debut:
+                system_blocks.append({
+                    "type": "text", "text": debut,
+                    "cache_control": {"type": "ephemeral"},
+                })
+            if separateur:
+                system_blocks.append({"type": "text", "text": separateur + suite})
         request_body: dict[str, Any] = {
             "model": self.config.model,
             "max_tokens": self.config.max_tokens if plafond is None else plafond,
-            "system": system_prompt,
+            "system": system_blocks,
             "messages": messages,
             "stream": True,
         }
@@ -71,7 +84,11 @@ class AnthropicProvider(BaseProvider):
         if self.config.effort_resolu:
             request_body["output_config"] = {"effort": self.config.effort_resolu}
         if anthropic_tools:
-            request_body["tools"] = anthropic_tools
+            # Un point de cache après les outils protège ce préfixe même
+            # quand le contexte système (date, mémoire) change. Le catalogue
+            # partagé reste intact et la reprise emprunte la même méthode.
+            request_body["tools"] = [dict(tool) for tool in anthropic_tools]
+            request_body["tools"][-1]["cache_control"] = {"type": "ephemeral"}
         return request_body
 
     def _convert_tools(self, tools: list[dict] | None) -> list[dict] | None:
@@ -142,9 +159,16 @@ class AnthropicProvider(BaseProvider):
                             event_type = event.get("type")
 
                             if event_type == "message_start":
-                                input_tokens = (
-                                    event.get("message", {}).get("usage", {}).get("input_tokens")
-                                )
+                                usage = event.get("message", {}).get("usage", {})
+                                input_tokens = usage.get("input_tokens")
+                                if input_tokens is not None:
+                                    # Les jetons en cache restent du contexte
+                                    # transmis : ne pas annoncer une fausse
+                                    # baisse du nombre de jetons à l'écran.
+                                    input_tokens += (
+                                        usage.get("cache_creation_input_tokens", 0)
+                                        + usage.get("cache_read_input_tokens", 0)
+                                    )
 
                             elif event_type == "content_block_start":
                                 content_block = event.get("content_block", {})

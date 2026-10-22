@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Z_LAYER } from '../../styles/z-layers';
 import { demanderLaConnexionEmail } from '../../lib/demandeDeConnexionEmail';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
@@ -575,12 +577,22 @@ function CommandPalette({
     }
   };
 
-  return (
+  function choisir(action: () => void) {
+    // Une destination choisie doit apparaître ; Échap conserve les réglages.
+    const panneaux = usePanelStore.getState();
+    if (panneaux.showSettings) panneaux.closeSettings();
+    action();
+    onClose();
+  }
+
+  // Hors de l'ancêtre rendu inert par les réglages. Le portail garde le
+  // contexte AnimatePresence et le piège restitue le focus au champ initial.
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-start justify-center bg-text/35 px-4 pt-[13vh] backdrop-blur-[3px]"
+      className={`fixed inset-0 ${Z_LAYER.COMMAND_PALETTE} flex items-start justify-center bg-text/35 px-4 pt-[13vh] backdrop-blur-[3px]`}
       onClick={onClose}
     >
       <motion.div
@@ -638,8 +650,7 @@ function CommandPalette({
                   type="button"
                   onMouseEnter={() => setActiveOption(optionIndex)}
                   onClick={() => {
-                    onSelect(action.id);
-                    onClose();
+                    choisir(() => onSelect(action.id));
                   }}
                   className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg"
                 >
@@ -690,8 +701,7 @@ function CommandPalette({
                       type="button"
                       onMouseEnter={() => setActiveOption(optionIndex)}
                       onClick={() => {
-                        onDonnee(resultat);
-                        onClose();
+                        choisir(() => onDonnee(resultat));
                       }}
                       className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg"
                     >
@@ -727,8 +737,7 @@ function CommandPalette({
                 type="button"
                 onMouseEnter={() => setActiveOption(optionIndex)}
                 onClick={() => {
-                  onCapability(capability);
-                  onClose();
+                  choisir(() => onCapability(capability));
                 }}
                 className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg"
               >
@@ -762,7 +771,7 @@ function CommandPalette({
               <SectionLabel>Commandes de l’application</SectionLabel>
               {visibleActions.map((action, actionIndex) => {
                 const optionIndex = scenarioCount + nbDonnees + visibleCapabilities.length + actionIndex;
-                return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg">
+                return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => choisir(() => onAction(action.id))} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg">
                   <span className="grid h-8 w-8 place-items-center rounded-sm bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
                   {/* B-229 : le registre stocke la lettre SEULE ('I', '⇧C', ','),
@@ -780,7 +789,8 @@ function CommandPalette({
           <span>Recherche par résultat, fonction ou outil · {isMac ? '⌘K' : 'Ctrl+K'}</span>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
 

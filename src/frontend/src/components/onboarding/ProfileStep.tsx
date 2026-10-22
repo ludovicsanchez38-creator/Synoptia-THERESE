@@ -161,8 +161,9 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col px-8 py-6"
+      className="flex h-full min-h-0 flex-col overflow-hidden px-8 py-6"
     >
+      <div className="min-h-0 flex-1 overflow-y-auto">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -188,7 +189,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       </p>
 
       {/* Form */}
-      <div className="space-y-4 flex-1 overflow-y-auto">
+      <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Nom complet" htmlFor="profile-name" required error={nomEnFaute && error ? error : undefined}>
             <Input
@@ -268,7 +269,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             id="profile-context"
             value={profileForm.context}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
-            placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
+            placeholder="Ex : Je dirige une entreprise de plomberie de 4 personnes. Je veux préparer mes devis et organiser les interventions de la semaine."
             rows={3}
             className="resize-none"
           />
@@ -334,8 +335,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         )}
       </div>
 
+      </div>
+
       {/* Footer */}
-      <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-border pt-4">
+      <div className="mt-6 flex shrink-0 flex-wrap justify-between gap-3 border-t border-border pt-4">
         <Button variant="ghost" onClick={onBack} disabled={loading || saveState === 'success'} data-testid="onboarding-prev-btn">
           Retour
         </Button>

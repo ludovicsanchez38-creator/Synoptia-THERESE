@@ -236,14 +236,11 @@ GENERATE_DOCUMENT_TOOL = {
     "function": {
         "name": "generate_document",
         "description": (
-            "Genere un VRAI fichier bureautique telechargeable (Word, PowerPoint ou Excel) "
-            "a partir du contenu que tu fournis. UNIQUEMENT si l'utilisateur demande "
-            "EXPLICITEMENT un fichier DANS CE MESSAGE (creer/generer un DOCX/Word, "
-            "PPTX/presentation, XLSX/tableur). Nommer, preparer, planifier ou discuter d'un "
-            "document n'est PAS une demande de fichier (BUG-137) : en cas de doute, demande "
-            "confirmation au lieu de generer. Ne fabrique JAMAIS de faux lien : c'est cet outil "
-            "qui produit le fichier et renvoie l'URL de telechargement reelle. Mets tout le "
-            "contenu voulu dans le parametre content."
+            "Genere un fichier Word/DOCX, PowerPoint/PPTX ou Excel/XLSX telechargeable, "
+            "UNIQUEMENT si demande EXPLICITEMENT DANS CE MESSAGE. Nommer, preparer, planifier "
+            "ou discuter d'un document ne suffit pas : en cas de doute, demande confirmation. "
+            "Ne fabrique JAMAIS de lien : l'outil renvoie l'URL reelle. Fournis tout le "
+            "contenu dans content."
         ),
         "parameters": {
             "type": "object",
@@ -274,10 +271,11 @@ SEARCH_INVOICES_TOOL = {
     "function": {
         "name": "search_invoices",
         "description": (
-            "Recherche les factures, devis et avoirs LOCAUX de l'utilisateur "
-            "par reference (ex: FACT-2026-001, DEV-2026-007) ou par nom de "
-            "client. Utilise cet outil des qu'une facture ou un devis est "
-            "mentionne par sa reference ou son client. L'envoi par email est impossible dans l'application, y compris depuis la vue Facturation : n'utilise pas send_email pour ca et n'affirme jamais un envoi. Le parcours reel : telecharger le PDF, l'envoyer soi-meme, puis marquer le document « Envoyee » a la main."
+            "Recherche les factures, devis et avoirs LOCAUX par reference (meme partielle) "
+            "ou client ; utilise-le des qu'un document est mentionne ainsi. L'envoi par "
+            "email est impossible, meme dans Facturation : n'utilise pas send_email et "
+            "n'affirme jamais un envoi. Telecharger le PDF, l'envoyer soi-meme, puis "
+            "marquer le document « Envoyee » a la main."
         ),
         "parameters": {
             "type": "object",
@@ -319,25 +317,17 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
     "function": {
         "name": "invoice_totals",
         "description": (
-            "Calcule ce qu'il RESTE A ENCAISSER : total des factures emises et "
-            "non encore payees, et part deja en retard. Utilise-le pour toute "
-            "question de tresorerie sans nom ni reference : « combien il me "
-            "reste a encaisser », « quelles factures ne sont pas payees », "
-            "« combien on me doit ». N'utilise PAS search_invoices pour ca : "
-            "il cherche UNE facture par son numero ou son client, il ne "
-            "totalise rien. "
-            "AUCUN champ nomme encours ou retard ne porte de montant negatif : "
-            "ce qui est du AU client est dans `du_au_client_par_devise`, ne le "
-            "presente jamais comme une somme a encaisser. `encours_ttc` et "
-            "`retard_ttc` ne valent un nombre que s'il y a une seule devise ET "
-            "un montant positif ou nul ; sinon null, et il n'existe AUCUN total global "
-            "- n'en fabrique pas, donne `encours_par_devise` montant par "
-            "montant. Chaque ligne de `documents` porte son `type` et sa `devise`, "
-            "un avoir y est NEGATIF, et la somme du detail vaut exactement "
-            "l'encours : ne la recalcule pas autrement. "
-            "`retard_ttc` est BRUT, avant avoirs : il peut donc depasser "
-            "l'encours, et ce n'est pas une contradiction - ne le presente "
-            "jamais comme « la part en retard » de l'encours."
+            "Totalise les factures emises non payees pour toute question de tresorerie "
+            "sans nom ni reference (reste a encaisser, factures impayees, combien on me doit). "
+            "search_invoices recherche par numero/client et ne totalise rien. "
+            "Encours et retard ne sont jamais negatifs : du_au_client_par_devise est du "
+            "AU client, jamais a encaisser. encours_ttc et retard_ttc sont numeriques "
+            "seulement pour une devise unique et un montant positif ou nul ; sinon null. "
+            "AUCUN total global multidevise : donne encours_par_devise montant par montant. "
+            "Chaque document porte type et devise ; un avoir est NEGATIF. La somme du "
+            "detail vaut exactement l'encours : ne la recalcule pas autrement. "
+            "retard_ttc est BRUT avant avoirs, peut depasser l'encours : ne le presente "
+            "jamais comme sa part en retard."
         ),
         "parameters": {
             "type": "object",
