@@ -96,8 +96,8 @@ describe('B-205 : une activité affichée nomme toujours son contact', () => {
   it('distingue une activité sans contact d’une référence à un contact inconnu', async () => {
     const api = await import('../../services/api');
     vi.mocked(api.listActivities).mockResolvedValueOnce([
-      { ...ACTIVITES[0], id: 'sans-contact', contact_id: null, title: 'Note sans contact' },
-      { ...ACTIVITES[1], id: 'contact-absent', contact_id: 'absent', title: 'Note liée' },
+      { ...(ACTIVITES[0] as Record<string, unknown>), id: 'sans-contact', contact_id: null, title: 'Note sans contact' },
+      { ...(ACTIVITES[1] as Record<string, unknown>), id: 'contact-absent', contact_id: 'absent', title: 'Note liée' },
     ] as never);
     render(<CRMPanel standalone />);
 
