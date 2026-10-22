@@ -25,9 +25,9 @@ describe('B-1407 : la carte de tâche a un nom', () => {
     useTaskStore.setState({ tasks: [TACHE], searchQuery: '', currentTaskId: null, isTaskFormOpen: false });
   });
 
-  it('le conteneur déplaçable porte le titre de la tâche', () => {
+  it('la poignée déplaçable porte le titre de la tâche', () => {
     render(<TaskKanban />);
     const carte = document.querySelector('[aria-roledescription]') as HTMLElement;
-    expect(carte.getAttribute('aria-label')).toBe('Relancer Sophie Moreau');
+    expect(carte.getAttribute('aria-label')).toBe('Déplacer Relancer Sophie Moreau');
   });
 });

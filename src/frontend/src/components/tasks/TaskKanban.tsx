@@ -263,10 +263,8 @@ interface SortableTaskCardProps {
 }
 
 function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: SortableTaskCardProps) {
-  // B-209 : les commandes de la carte n'existaient que pour la souris
-  // (`onMouseEnter` seul). Le focus clavier atterrit ICI - c'est ce conteneur
-  // que `useSortable` rend focalisable - et pas sur la carte : brancher la
-  // révélation plus bas ne déclencherait jamais rien.
+  // Le focus de la poignée, du titre ou des commandes remonte vers cette
+  // enveloppe et révèle les commandes rapides sans changer la hauteur.
   const [focusDansLaCarte, setFocusDansLaCarte] = useState(false);
   const {
     attributes,
@@ -284,30 +282,16 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
     opacity: isDragging ? 0.4 : 1,
   };
 
-  // Même fix que le BUG-041 (ProjectsKanban) : les listeners couvrent toute
-  // la carte, pas seulement la poignée - sinon attraper la carte par son
-  // corps ne démarre aucun drag. Les clics simples (ouvrir, quick actions)
-  // restent distingués du drag par l'activationConstraint (distance 8px).
-  // B-750 : sans `setActivatorNodeRef`, `activatorNode.current` reste `null`
-  // et la garde du KeyboardSensor (`event.target !== activator`, cf
-  // `@dnd-kit/core/dist/core.esm.js`) ne s'applique JAMAIS : le capteur
-  // écoutait tout le sous-arbre, si bien qu'Entrée ou Espace sur « Marquer
-  // terminé » saisissait la carte et confisquait l'activation du bouton. Le
-  // nœud activateur est l'enveloppe elle-même, celle qui porte les écouteurs
-  // et le focus : la frappe partie d'elle ouvre bien un glisser, celle partie
-  // d'une commande revient au bouton. Le PointerSensor, lui, n'a pas de
-  // garde d'activateur : le glisser à la souris depuis le corps de la carte
-  // (BUG-041, seuil de 8 px) reste intact.
+  // Le pointeur peut saisir toute la carte ; le clavier a une poignée
+  // distincte du bouton qui ouvre la tâche.
   return (
     <div
-      ref={(noeud) => { setNodeRef(noeud); setActivatorNodeRef(noeud); }}
+      ref={setNodeRef}
       style={style}
       className="cursor-grab active:cursor-grabbing"
-      {...attributes}
-      {...listeners}
+      onPointerDown={(event) => listeners?.onPointerDown?.(event)}
       // B-1407 : le conteneur déplaçable porte le titre de la tâche (comme les
       // cartes du Pipeline, B-877) ; il était un bouton sans nom.
-      aria-label={(maskTextFn ?? ((t: string) => t))(task.title) || 'Tâche'}
       onFocus={() => setFocusDansLaCarte(true)}
       onBlur={(event) => {
         // Passer d'une commande de la carte à l'autre ne referme rien :
@@ -322,6 +306,10 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
         onClick={onClick}
         onStatusChange={onStatusChange}
         showDragHandle
+        poignee={<button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners}
+          aria-label={`Déplacer ${(maskTextFn ?? ((t: string) => t))(task.title) || 'la tâche'}`}
+          className="absolute top-3 left-1 text-text-muted cursor-grab active:cursor-grabbing"
+          onClick={(event) => event.stopPropagation()}><GripVertical className="w-4 h-4" aria-hidden /></button>}
         commandesRevelees={focusDansLaCarte}
         maskTextFn={maskTextFn}
       />
@@ -341,10 +329,11 @@ interface TaskCardProps {
   showDragHandle?: boolean;
   /** B-209 : révélation venue du clavier, en plus du survol souris. */
   commandesRevelees?: boolean;
+  poignee?: React.ReactNode;
   maskTextFn?: (text: string) => string;
 }
 
-function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, commandesRevelees = false, maskTextFn }: TaskCardProps) {
+function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, commandesRevelees = false, maskTextFn, poignee }: TaskCardProps) {
   const [survol, setSurvol] = useState(false);
   const showActions = survol || commandesRevelees;
   // P-151 : la personne liée se lit sur la carte.
@@ -378,11 +367,11 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
       onClick={onClick}
     >
       {/* Poignée (repère visuel : toute la carte est draggable) */}
-      {showDragHandle && (
+      {poignee ?? (showDragHandle && (
         <div className="absolute top-3 left-1 text-text-muted">
           <GripVertical className="w-4 h-4" />
         </div>
-      )}
+      ))}
 
       <div className={showDragHandle ? 'pl-5' : ''}>
         <div className="flex items-start gap-2">
@@ -394,7 +383,11 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
 
           <div className="min-w-0 flex-1">
             <h4 className={cn('font-semibold text-sm', isDone ? 'line-through text-text-muted' : 'text-text')}>
-              {maskTextFn ? maskTextFn(task.title) : task.title}
+              {isOverlay ? (maskTextFn ? maskTextFn(task.title) : task.title) : (
+                <button type="button" className="text-left w-full" onClick={(event) => { event.stopPropagation(); onClick(); }}>
+                  {maskTextFn ? maskTextFn(task.title) : task.title}
+                </button>
+              )}
             </h4>
 
             {/* Description. B-134 : corps de la carte, pas une métadonnée - cf TaskList. */}

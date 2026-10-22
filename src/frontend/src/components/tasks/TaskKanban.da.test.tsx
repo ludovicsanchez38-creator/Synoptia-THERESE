@@ -112,7 +112,7 @@ describe('Lot 6 DA : têtes de colonnes', () => {
   it('la liste défilante réserve les 5 px de l’anneau de focus des cartes', () => {
     render(<TaskKanban />);
 
-    expect(conteneurSortable()).toHaveAttribute('tabindex', '0');
+    expect(conteneurSortable().querySelector('[aria-roledescription]')).toHaveAttribute('tabindex', '0');
 
     const liste = screen.getByTestId('task-item').closest('[class*="overflow-y-auto"]') as HTMLElement;
     expect(liste).not.toBeNull();

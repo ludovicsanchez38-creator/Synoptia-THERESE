@@ -46,7 +46,7 @@ function renderKanban() {
 /** Le wrapper sortable de la carte (élément portant role + tabIndex posés par useSortable). */
 function getSortableWrapper(taskTitle: string): HTMLElement {
   const title = screen.getByText(taskTitle);
-  const wrapper = title.closest('[aria-roledescription="sortable"]');
+  const wrapper = title.closest('.cursor-grab')?.querySelector('[aria-roledescription="sortable"]');
   if (!(wrapper instanceof HTMLElement)) {
     throw new Error(`Wrapper sortable introuvable pour ${taskTitle}`);
   }
