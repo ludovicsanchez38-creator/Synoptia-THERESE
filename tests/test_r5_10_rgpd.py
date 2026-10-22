@@ -13,6 +13,38 @@ from tests.test_r2_3_outil import fournisseur  # noqa: F401
 
 
 @pytest.mark.asyncio
+async def test_cascade_deux_dossiers_synchronises_avec_fiches_et_notes(client, db_session, monkeypatch):
+    from unittest.mock import AsyncMock
+    from app.models.entities import Contact, Project
+    from app.models.entities_sync import ProjectSyncRoot
+    from tests.test_routers_memory import _seed_project_references
+    contact = Contact(first_name='Personne fictive')
+    db_session.add(contact)
+    await db_session.commit()
+    racines = []
+    for projet_id in ('cascade-r5-premier', 'cascade-r5-second'):
+        _, _, _, event, root = await _seed_project_references(db_session, projet_id, contact.id)
+        racines.append(root.id)
+        await memory_cards.ecrire({'kind': 'fait', 'subject': 'Professionnel', 'title': 'Fiche fictive',
+            'content': 'Fait professionnel', 'contact_id': contact.id, 'project_id': projet_id,
+            'scope': 'project', 'scope_id': projet_id})
+        rep = await client.post('/api/crm/meeting-notes', json={'calendar_event_id': event.id,
+            'calendar_id': event.calendar_id, 'description': 'Note professionnelle'})
+        assert rep.status_code == 200
+    qdrant = type('Qdrant', (), {'async_delete_by_entity': AsyncMock(), 'async_delete_by_scope': AsyncMock()})()
+    monkeypatch.setattr('app.routers.memory.get_qdrant_service', lambda: qdrant)
+    rep = await client.delete(f'/api/memory/contacts/{contact.id}?cascade=true')
+    assert rep.status_code == 200, rep.text
+    assert rep.json()['cascade_deleted']['activities'] == 2
+    async with get_session_context() as session:
+        assert not (await session.execute(select(Project))).scalars().all()
+        assert not (await session.execute(select(Activity))).scalars().all()
+        assert not (await session.execute(select(MemoryCard))).scalars().all()
+        for root_id in racines:
+            assert (await session.get(ProjectSyncRoot, root_id)).detachee
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('action', ['contact', 'contact_cascade', 'projet', 'anonymisation', 'auto', 'purge'])
 async def test_effacement_croise_sans_rappel_derive(client, db_session, monkeypatch, fournisseur, action):
     import app.routers.chat as chat

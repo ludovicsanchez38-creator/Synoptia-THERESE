@@ -1137,6 +1137,16 @@ async def delete_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
+    if cascade:
+        # Ces transactions dédiées doivent précéder toute mutation métier,
+        # même avec plusieurs dossiers, fiches ou tâches à effacer/détacher.
+        from app.services.project_sync_service import retirer_racine
+        projets_a_detacher = (await session.execute(
+            select(Project).where(Project.contact_id == contact_id)
+        )).scalars().all()
+        for projet in projets_a_detacher:
+            await retirer_racine(projet.id)
+
     cascade_deleted: dict[str, int] = {}
     from app.services.memory_cards import effacer_liees
     cascade_deleted["memory_cards"] = await effacer_liees(session, contact_id=contact_id)
@@ -1161,10 +1171,6 @@ async def delete_contact(
         await session.execute(select(Prestation).where(Prestation.contact_id == contact_id))
     ).scalars().all():
         await session.delete(prestation)
-
-    # Les traces suivent le contact et ses dossiers, même sans cascade projet.
-    from app.services.action_journal import effacer_activites
-    cascade_deleted["activities"] = await effacer_activites(session, clause_activites_du_contact(contact_id))
 
     projets_supprimes: list[str] = []
     if cascade:
@@ -1191,6 +1197,14 @@ async def delete_contact(
             await _delete_embedding(file.id)
             await session.delete(file)
         cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
+
+    # Après le détachement des racines (transaction dédiée), prendre le verrou
+    # d'écriture des traces. Le prendre avant bloquait cette transaction annexe.
+    # Les traces des dossiers supprimés sont déjà comptées par leur nettoyage.
+    from app.services.action_journal import effacer_activites
+    cascade_deleted['activities'] = cascade_deleted.get('activities', 0) + await effacer_activites(
+        session, clause_activites_du_contact(contact_id)
+    )
 
     # Les copies locales des brouillons suivent la fiche, sans envoi distant.
     from app.models.entities import EmailMessage
