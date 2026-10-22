@@ -2534,7 +2534,7 @@ export function ConversationCanvasPrototype() {
                           rail (« Plus d'outils »). */}
                       <div className="flex items-center gap-1" />
                       <div className="flex items-center gap-2">
-                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Thérèse te demande confirmation avant tout envoi ou modification externe.</span>
+                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Dans la conversation, les cartes de confirmation précisent les actions à autoriser.</span>
                         {destinationUsesChat && (
                           <VoiceDictationButton
                             onTranscript={handleComposerTranscript}
