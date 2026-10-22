@@ -212,13 +212,33 @@ def _extract_docx(file_path: Path) -> str:
         return "[DOCX extraction unavailable - install python-docx]"
 
     doc = Document(file_path)
-    text_parts = []
+    from docx.oxml.ns import qn
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
 
-    for para in doc.paragraphs:
-        if para.text.strip():
-            text_parts.append(para.text)
+    def extraire_blocs(element, parent):
+        morceaux = []
+        for enfant in element.iterchildren():
+            if enfant.tag == qn("w:p"):
+                texte = Paragraph(enfant, parent).text
+                if texte.strip():
+                    morceaux.append(texte)
+            elif enfant.tag == qn("w:tbl"):
+                tableau = Table(enfant, parent)
+                vues = set()
+                for ligne in tableau.rows:
+                    cellules = []
+                    for cellule in ligne.cells:
+                        # Les fusions réutilisent le même élément XML.
+                        if cellule._tc in vues:
+                            continue
+                        vues.add(cellule._tc)
+                        cellules.append(extraire_blocs(cellule._tc, cellule))
+                    if cellules:
+                        morceaux.append("\t".join(cellules))
+        return "\n\n".join(morceaux)
 
-    return "\n\n".join(text_parts)
+    return extraire_blocs(doc.element.body, doc)
 
 
 def _extract_pptx(file_path: Path) -> str:
