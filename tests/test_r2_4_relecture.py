@@ -12,7 +12,7 @@ from tests.test_r2_3_outil import action, fournisseur  # noqa: F401
 @pytest.mark.asyncio
 @pytest.mark.parametrize('provider', ['ollama', 'openai', 'anthropic'])
 @pytest.mark.parametrize('stream', [True, False])
-async def test_ecriture_a_puis_charge_reelle_b_et_effacement(client, db_session, fournisseur, provider, stream):
+async def test_ecriture_a_puis_charge_reelle_b_et_effacement(client, db_session, fournisseur, provider, stream):  # noqa: F811
     fournisseur[1].append(action())
     tour1 = await client.post('/api/chat/send', json={'message': 'Préfère des phrases courtes.', 'stream': True})
     assert tour1.status_code == 200
@@ -40,7 +40,7 @@ async def test_ecriture_a_puis_charge_reelle_b_et_effacement(client, db_session,
 
 
 @pytest.mark.asyncio
-async def test_correction_utilisateur_resiste_au_chat_et_seule_valeur_corrigee_relue(client, db_session, fournisseur):
+async def test_correction_utilisateur_resiste_au_chat_et_seule_valeur_corrigee_relue(client, db_session, fournisseur):  # noqa: F811
     fournisseur[1].append(action())
     await client.post('/api/chat/send', json={'message': 'Préfère des phrases courtes.', 'stream': True})
     fiche = (await memory_cards.lister())['items'][0]
@@ -58,7 +58,7 @@ async def test_correction_utilisateur_resiste_au_chat_et_seule_valeur_corrigee_r
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('message', ['Mon mot de passe est Factice!2026', 'Ma clé API est sk-test-factice123456', 'Il souffre de diabète'])
-async def test_aucun_rappel_sensible_dans_un_autre_chat(client, db_session, fournisseur, message):
+async def test_aucun_rappel_sensible_dans_un_autre_chat(client, db_session, fournisseur, message):  # noqa: F811
     fournisseur[1].append(action(content=message))
     await client.post('/api/chat/send', json={'message': message, 'stream': True})
     assert not (await memory_cards.lister())['items']
@@ -76,7 +76,7 @@ async def test_aucun_rappel_sensible_dans_un_autre_chat(client, db_session, four
     ('ollama', 'factice:cloud', 'llm', ['llm:ollama-cloud'], True),
     ('ollama', 'factice', 'llm', [], True),
 ])
-async def test_accord_destination_reelle_et_finalite(client, db_session, fournisseur, provider, model, purpose, grants, autorise):
+async def test_accord_destination_reelle_et_finalite(client, db_session, fournisseur, provider, model, purpose, grants, autorise):  # noqa: F811
     await memory_cards.ecrire(action())
     fournisseur[0].config = llm.LLMConfig(LLMProvider(provider), model, context_window=128000)
     avant = len(fournisseur[2])
@@ -92,7 +92,7 @@ async def test_accord_destination_reelle_et_finalite(client, db_session, fournis
 
 
 @pytest.mark.asyncio
-async def test_sans_fiche_ancien_accord_suffit_et_autres_consommateurs_restent_vides(client, db_session, fournisseur):
+async def test_sans_fiche_ancien_accord_suffit_et_autres_consommateurs_restent_vides(client, db_session, fournisseur):  # noqa: F811
     fournisseur[0].config = llm.LLMConfig(LLMProvider.OPENAI, 'factice', context_window=128000)
     rep = await client.post('/api/chat/send', json={'message': 'Bonjour', 'stream': True})
     assert rep.status_code == 200 and len(fournisseur[2]) == 1
@@ -105,7 +105,7 @@ async def test_sans_fiche_ancien_accord_suffit_et_autres_consommateurs_restent_v
 
 
 @pytest.mark.asyncio
-async def test_repli_plus_petit_refuse_avant_fournisseur(client, db_session, fournisseur, monkeypatch):
+async def test_repli_plus_petit_refuse_avant_fournisseur(client, db_session, fournisseur, monkeypatch):  # noqa: F811
     from unittest.mock import AsyncMock
     await memory_cards.ecrire(action(content='Préférence longue ' * 50))
     repli = llm.LLMConfig(LLMProvider.OPENAI, 'petit-factice', context_window=500)
@@ -121,8 +121,9 @@ async def test_repli_plus_petit_refuse_avant_fournisseur(client, db_session, fou
 @pytest.mark.asyncio
 @pytest.mark.parametrize('stream', [True, False])
 @pytest.mark.parametrize('taille', [4000, 30000])
-async def test_document_long_ne_rabote_pas_la_demande_avant_la_reserve(client, db_session, fournisseur, monkeypatch, stream, taille):
+async def test_document_long_ne_rabote_pas_la_demande_avant_la_reserve(client, db_session, fournisseur, monkeypatch, stream, taille):  # noqa: F811
     from unittest.mock import AsyncMock
+
     from app.routers import chat
     await memory_cards.ecrire(action())
     document = 'D' * 100000

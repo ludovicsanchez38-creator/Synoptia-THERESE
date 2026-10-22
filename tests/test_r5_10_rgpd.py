@@ -2,21 +2,25 @@
 import asyncio
 import json
 from pathlib import Path
+
 import pytest
-from app.models.entities import Activity, Conversation, MemoryCard, Message
 from app.models.database import get_session_context
+from app.models.entities import Activity, Conversation, MemoryCard, Message
 from app.services import memory_cards, memory_tools
 from app.services.tool_confirmations import register_pending
 from sqlmodel import select
-from tests.test_r5_9_notes import rendez_vous
+
 from tests.test_r2_3_outil import fournisseur  # noqa: F401
+from tests.test_r5_9_notes import rendez_vous
 
 
 @pytest.mark.asyncio
 async def test_cascade_deux_dossiers_synchronises_avec_fiches_et_notes(client, db_session, monkeypatch):
     from unittest.mock import AsyncMock
+
     from app.models.entities import Contact, Project
     from app.models.entities_sync import ProjectSyncRoot
+
     from tests.test_routers_memory import _seed_project_references
     contact = Contact(first_name='Personne fictive')
     db_session.add(contact)
@@ -46,7 +50,7 @@ async def test_cascade_deux_dossiers_synchronises_avec_fiches_et_notes(client, d
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('action', ['contact', 'contact_cascade', 'projet', 'anonymisation', 'auto', 'purge'])
-async def test_effacement_croise_sans_rappel_derive(client, db_session, monkeypatch, fournisseur, action):
+async def test_effacement_croise_sans_rappel_derive(client, db_session, monkeypatch, fournisseur, action):  # noqa: F811
     import app.routers.chat as chat
     contact, projet, event = await rendez_vous(db_session)
     fiche = await memory_cards.ecrire({'kind': 'fait', 'subject': 'sentinelle croisée', 'title': 'Fiche croisée',
@@ -73,15 +77,19 @@ async def test_effacement_croise_sans_rappel_derive(client, db_session, monkeypa
     assert len(export['activities']) == 3
     if action.startswith('contact'):
         rep = await client.delete(f'/api/memory/contacts/{contact.id}', params={'cascade': action == 'contact_cascade'})
-    elif action == 'projet': rep = await client.delete(f'/api/memory/projects/{projet.id}')
-    elif action == 'anonymisation': rep = await client.post(f'/api/rgpd/anonymize/{contact.id}', json={})
+    elif action == 'projet':
+        rep = await client.delete(f'/api/memory/projects/{projet.id}')
+    elif action == 'anonymisation':
+        rep = await client.post(f'/api/rgpd/anonymize/{contact.id}', json={})
     elif action == 'auto':
-        from app.services.rgpd_identite import anonymiser_la_personne
         from datetime import UTC, datetime
+
+        from app.services.rgpd_identite import anonymiser_la_personne
         await anonymiser_la_personne(db_session, contact, datetime.now(UTC))
         await db_session.commit()
         rep = None
-    else: rep = await client.delete('/api/data/all', params={'confirm': True})
+    else:
+        rep = await client.delete('/api/data/all', params={'confirm': True})
     assert rep is None or rep.status_code == 200
     async with get_session_context() as session:
         assert not (await session.execute(select(MemoryCard))).scalars().all()
@@ -99,14 +107,15 @@ async def test_effacement_croise_sans_rappel_derive(client, db_session, monkeypa
     assert 'SENTINELLE_R5' not in json.dumps(fournisseur[2][-1])
     from app.config import settings
     for fichier in Path(settings.data_dir).rglob('*'):
-        if fichier.is_file(): assert b'SENTINELLE_R5' not in fichier.read_bytes(), fichier.name
+        if fichier.is_file():
+            assert b'SENTINELLE_R5' not in fichier.read_bytes(), fichier.name
 
 
 @pytest.mark.asyncio
 async def test_purge_attend_issue_du_journal_puis_efface_sans_trace_tardive(db_session, monkeypatch):
-    from app.routers.chat import confirm_tool, ConfirmToolRequest
-    from app.routers.data import delete_all_data
     import app.routers.chat as chat
+    from app.routers.chat import ConfirmToolRequest, confirm_tool
+    from app.routers.data import delete_all_data
     entree, reprendre = asyncio.Event(), asyncio.Event()
     async def executer(*args, **kwargs):
         entree.set()
@@ -133,11 +142,12 @@ async def test_purge_attend_issue_du_journal_puis_efface_sans_trace_tardive(db_s
 @pytest.mark.asyncio
 async def test_verification_du_rendez_vous_et_ecriture_serialisees_avec_effacement_projet(db_session, monkeypatch):
     from unittest.mock import AsyncMock
+
+    from app.models.schemas import CreateActivityRequest
+    from app.routers import crm, memory
+    from app.services import meeting_notes, project_sync_service
     from sqlalchemy import text
     from sqlalchemy.exc import OperationalError
-    from app.routers import crm, memory
-    from app.models.schemas import CreateActivityRequest
-    from app.services import meeting_notes, project_sync_service
     _, projet, event = await rendez_vous(db_session)
     entree, reprendre = asyncio.Event(), asyncio.Event()
     verifier = meeting_notes.verifier_evenement

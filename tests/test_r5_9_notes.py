@@ -1,6 +1,7 @@
 """Notes de rendez-vous : événement vérifié, contact facultatif, RGPD immédiat."""
 import json
 from pathlib import Path
+
 import pytest
 from app.models.entities import Activity, Calendar, CalendarEvent, Contact, Project
 from sqlmodel import select
@@ -70,8 +71,9 @@ async def test_notes_export_effacement_anonymisation_et_purge(client, db_session
     elif action == 'anonymisation':
         rep = await client.post(f'/api/rgpd/anonymize/{contact.id}', json={})
     elif action == 'auto':
-        from app.services.rgpd_identite import anonymiser_la_personne
         from datetime import UTC, datetime
+
+        from app.services.rgpd_identite import anonymiser_la_personne
         await anonymiser_la_personne(db_session, contact, datetime.now(UTC))
         await db_session.commit()
         rep = None
@@ -94,8 +96,8 @@ async def test_note_sensible_refusee_sans_trace(client, db_session):
 
 @pytest.mark.asyncio
 async def test_anciennes_notes_reliees_une_seule_fois_sans_copie(client, db_session):
-    from app.models.database import apply_adhoc_migrations
     from app.config import settings
+    from app.models.database import apply_adhoc_migrations
     contact, projet, event = await rendez_vous(db_session)
     ancienne = Activity(type='note', title='Note ancienne', contact_id=contact.id,
         extra_data=json.dumps({'calendar_event_id': event.id, 'calendar_id': event.calendar_id}))

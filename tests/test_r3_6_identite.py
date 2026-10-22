@@ -6,7 +6,7 @@ from tests.test_r2_3_outil import fournisseur  # noqa: F401
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('nom', ['Élise Maquette', 'Noé Atelier'])
-async def test_identite_et_regles_du_profil_desambiguees_dans_le_payload(client, db_session, fournisseur, nom):
+async def test_identite_et_regles_du_profil_desambiguees_dans_le_payload(client, db_session, fournisseur, nom):  # noqa: F811
     rep = await client.post('/api/config/profile', json={'name': nom,
         'context': 'Règle 3 : préfixe LOUTRE-VIOLETTE.'})
     assert rep.status_code == 200

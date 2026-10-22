@@ -1,5 +1,6 @@
 """La branche lit les objets sauvegardés localement, sans synchronisation."""
 from datetime import UTC, datetime
+
 import pytest
 from app.models.entities import Contact, Document, EmailAccount, EmailMessage, Invoice
 

@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 from app.models.entities import MemoryCard, Message
-from app.services import memory_cards as service, memory_tools
+from app.services import memory_cards as service
+from app.services import memory_tools
 from sqlalchemy import delete
 from sqlmodel import select
 
@@ -54,7 +55,7 @@ async def test_purge_attend_le_commit_du_geste_puis_efface(db_session, monkeypat
 
 
 @pytest.mark.asyncio
-async def test_rollback_ne_laisse_ni_fiche_ni_recu(client, db_session, fournisseur, monkeypatch):
+async def test_rollback_ne_laisse_ni_fiche_ni_recu(client, db_session, fournisseur, monkeypatch):  # noqa: F811
     original = service._ecrire
     async def echouer(*args, **kwargs):
         await original(*args, **kwargs)
@@ -69,7 +70,7 @@ async def test_rollback_ne_laisse_ni_fiche_ni_recu(client, db_session, fournisse
 
 
 @pytest.mark.asyncio
-async def test_aucun_clair_dans_le_dossier_de_donnees_apres_ecriture_chat(client, db_session, fournisseur):
+async def test_aucun_clair_dans_le_dossier_de_donnees_apres_ecriture_chat(client, db_session, fournisseur):  # noqa: F811
     from app.config import settings
     sentinelle = 'SENTINELLE_MEMOIRE_CHIFFREE préfère les listes.'
     fournisseur[1].append(action(content=sentinelle))
@@ -84,6 +85,7 @@ async def test_aucun_clair_dans_le_dossier_de_donnees_apres_ecriture_chat(client
 @pytest.mark.asyncio
 async def test_un_rejeu_ne_contourne_pas_un_changement_de_dossier(db_session):
     from app.models.entities import Project
+
     from tests.test_r2_2_protection import source
     a, b = Project(name='A'), Project(name='B')
     db_session.add_all([a, b])
@@ -128,6 +130,7 @@ async def test_contact_exporte_et_efface_aussi_les_fiches_de_son_dossier(client,
 @pytest.mark.asyncio
 async def test_source_ancienne_accessible_depuis_la_fiche(client, db_session):
     from datetime import UTC, datetime, timedelta
+
     from app.models.entities import Conversation
     conv = Conversation(title='Ancien échange')
     db_session.add(conv)

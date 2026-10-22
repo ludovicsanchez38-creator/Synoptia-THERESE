@@ -1,5 +1,4 @@
 """Noyau exposé ensemble : lecture locale, correction, effacement et accord tardif."""
-import json
 
 import pytest
 from app.models.entities import Message
@@ -33,7 +32,7 @@ async def test_lecture_correction_archive_effacement(client, db_session):
 
 
 @pytest.mark.asyncio
-async def test_accord_apres_payload_et_reprise_sans_dupliquer_la_source(client, db_session, fournisseur):
+async def test_accord_apres_payload_et_reprise_sans_dupliquer_la_source(client, db_session, fournisseur):  # noqa: F811
     await memory_cards.ecrire(action())
     fournisseur[0].config = llm.LLMConfig(LLMProvider.OPENAI, 'factice', context_window=128000)
     rep = await client.post('/api/chat/send', json={'message': 'Aide-moi à rédiger.', 'stream': True})

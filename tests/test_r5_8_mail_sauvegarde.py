@@ -1,6 +1,7 @@
 """Un message Gmail synchronisé n'est pas un identifiant de brouillon."""
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock
+
 import pytest
 from app.models.entities import Contact, EmailAccount, EmailMessage
 
@@ -32,15 +33,20 @@ async def test_correction_mail_resout_le_brouillon_et_actualise_la_seule_copie_l
     assert (await client.get('/api/memory/drafts/email/message-ancien')).status_code == 404
     export = (await client.get(f'/api/rgpd/export/{contact.id}')).json()
     assert [m['id'] for m in export['email_messages']] == ['message-nouveau']
-    if effacement == 'contact': rep = await client.delete(f'/api/memory/contacts/{contact.id}')
-    elif effacement == 'anonymisation': rep = await client.post(f'/api/rgpd/anonymize/{contact.id}', json={})
-    else: rep = await client.delete('/api/data/all', params={'confirm': True})
+    if effacement == 'contact':
+        rep = await client.delete(f'/api/memory/contacts/{contact.id}')
+    elif effacement == 'anonymisation':
+        rep = await client.post(f'/api/rgpd/anonymize/{contact.id}', json={})
+    else:
+        rep = await client.delete('/api/data/all', params={'confirm': True})
     assert rep.status_code == 200
     assert not (await client.get('/api/memory/drafts')).json()['items']
-    from app.config import settings
     from pathlib import Path
+
+    from app.config import settings
     for fichier in Path(settings.data_dir).rglob('*'):
-        if fichier.is_file(): assert b'Texte corrig' not in fichier.read_bytes(), fichier.name
+        if fichier.is_file():
+            assert b'Texte corrig' not in fichier.read_bytes(), fichier.name
 
 
 @pytest.mark.asyncio
@@ -67,7 +73,8 @@ async def test_cache_brouillon_ne_reecrit_pas_apres_purge(db_session):
     db_session.add(compte)
     await db_session.commit()
     generation = generation_des_donnees()
-    async with creations_du_chat_suspendues(): pass
+    async with creations_du_chat_suspendues():
+        pass
     await actualiser_cache(db_session, compte, SendEmailRequest(to=['fictif@example.test'], subject='Objet', body='Texte'),
         'nouveau', generation_attendue=generation)
     assert not (await db_session.execute(select(EmailMessage))).scalars().all()

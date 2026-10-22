@@ -5,8 +5,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from imap_tools import MailBox
 from app.services.email.imap_smtp_provider import ImapSmtpProvider
+from imap_tools import MailBox
 
 
 class ServeurImapMemoire:

@@ -6,7 +6,7 @@ from tests.test_r2_3_outil import fournisseur  # noqa: F401
 
 
 @pytest.mark.asyncio
-async def test_enregistrement_therese_md_recharge_le_chat(client, db_session, fournisseur, monkeypatch):
+async def test_enregistrement_therese_md_recharge_le_chat(client, db_session, fournisseur, monkeypatch):  # noqa: F811
     monkeypatch.setattr(llm, '_therese_md_content', 'Ancien témoin FICTIF-ANCIEN')
     monkeypatch.setattr(llm, '_therese_md_loaded', True)
     assert 'FICTIF-ANCIEN' in llm.load_therese_md()

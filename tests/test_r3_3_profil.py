@@ -13,7 +13,7 @@ def test_format_profil_integral():
 
 
 @pytest.mark.asyncio
-async def test_profil_integral_dans_charge_du_routeur(client, db_session, fournisseur):
+async def test_profil_integral_dans_charge_du_routeur(client, db_session, fournisseur):  # noqa: F811
     reponse = await client.post('/api/config/profile', json={'name': 'Camille Fictive',
         'location': 'Bretagne fictive', 'context': CONTEXTE})
     assert reponse.status_code == 200

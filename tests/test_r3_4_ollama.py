@@ -37,15 +37,15 @@ async def test_aucun_transport_si_le_systeme_ne_tient_pas():
 @pytest.mark.asyncio
 @pytest.mark.parametrize('memoire', [True, False])
 @pytest.mark.parametrize('stream', [True, False])
-async def test_refus_a_lecran_meme_sans_fiches(client, db_session, fournisseur, monkeypatch, memoire, stream):
+async def test_refus_a_lecran_meme_sans_fiches(client, db_session, fournisseur, monkeypatch, memoire, stream):  # noqa: F811
     monkeypatch.setattr(fournisseur[0], '_get_system_prompt_with_identity', lambda: 'Identité ' * 30000)
     rep = await client.post('/api/chat/send', json={'message': 'Qui suis-je ?',
         'include_memory': memoire, 'stream': stream})
     assert rep.status_code == 200
     assert not fournisseur[2]
     if stream:
-        affichage = ''.join(json.loads(l[6:]).get('content', '')
-            for l in rep.text.splitlines() if l.startswith('data: '))
+        affichage = ''.join(json.loads(ligne[6:]).get('content', '')
+            for ligne in rep.text.splitlines() if ligne.startswith('data: '))
     else:
         affichage = rep.json()['content']
     assert 'fenêtre' in affichage.lower()
@@ -94,7 +94,7 @@ def test_petites_machines_et_petite_fenetre_modele(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_routeur_allege_outils_et_garde_identite_consignes(client, db_session, fournisseur, monkeypatch):
+async def test_routeur_allege_outils_et_garde_identite_consignes(client, db_session, fournisseur, monkeypatch):  # noqa: F811
     from app.services import ollama_budget
     from app.services.memory_card_context import compter_payload
     monkeypatch.setattr(ollama_budget, 'plafond_memoire', lambda: 8192)

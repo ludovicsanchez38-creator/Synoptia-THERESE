@@ -11,7 +11,7 @@ from tests.test_r4_3_caldav import serveur_caldav, setup  # noqa: F401
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('etat', ['absent', 'jamais', 'echec', 'vide_local'])
-async def test_retour_outil_interdit_les_inventions(client, db_session, fournisseur, etat):
+async def test_retour_outil_interdit_les_inventions(client, db_session, fournisseur, etat):  # noqa: F811
     if etat != 'absent':
         cal = Calendar(id='r4-agenda', summary='Agenda fictif', provider='local' if etat == 'vide_local' else 'caldav',
             remote_id='r4-distant', sync_status='error' if etat == 'echec' else 'idle',
@@ -48,7 +48,7 @@ async def test_retour_outil_interdit_les_inventions(client, db_session, fourniss
 
 
 @pytest.mark.asyncio
-async def test_echec_sync_est_enregistre_pour_le_chat(client, db_session, serveur_caldav):
+async def test_echec_sync_est_enregistre_pour_le_chat(client, db_session, serveur_caldav):  # noqa: F811
     identifiant = await setup(client)
     serveur_caldav[1]['erreur'] = True
     reponse = await client.post('/api/calendar/sync')

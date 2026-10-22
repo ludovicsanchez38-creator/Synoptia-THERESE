@@ -1,5 +1,4 @@
 """R2-1 : fiches SQL chiffrées et effacement dès leur introduction."""
-import json
 from pathlib import Path
 
 import pytest
@@ -72,8 +71,9 @@ async def test_cloisons_et_liens_de_client(db_session, cabinet):
     await db_session.commit()
     poser_mode_cabinet(cabinet)
     try:
-        ids = lambda fiches: {f['id'] for f in fiches}
-        assert ids(await service.lire_pour_chat('', 'global', None)) == {globale['id']} 
+        def ids(fiches):
+            return {f['id'] for f in fiches}
+        assert ids(await service.lire_pour_chat('', 'global', None)) == {globale['id']}
         assert ids(await service.lire_pour_chat('', 'project', b.id)) == {globale['id'], fb['id']}
         assert ids(await service.lire_pour_chat('', 'project', a.id)) == {globale['id'], fa['id'], liee['id']}
         assert ids(await service.lire_pour_chat('', 'all', None)) == {globale['id'], fa['id'], fb['id'], liee['id']}
@@ -126,6 +126,7 @@ async def test_portabilite_et_effacement(client, db_session, action):
 
 def test_revision_chiffree_idempotente_et_contraintes(tmp_path):
     import importlib.util
+
     from alembic.migration import MigrationContext
     from alembic.operations import Operations
     from app.models.database import db_connect

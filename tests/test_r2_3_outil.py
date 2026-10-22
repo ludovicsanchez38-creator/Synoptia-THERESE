@@ -4,7 +4,7 @@ from copy import deepcopy
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from app.models.entities import Conversation, Message
+from app.models.entities import Message
 from app.services import llm
 from app.services.providers.base import LLMProvider, StreamEvent, ToolCall
 from sqlmodel import select

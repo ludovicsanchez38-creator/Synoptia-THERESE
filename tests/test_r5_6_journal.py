@@ -1,7 +1,7 @@
 """R5-6 : issue structurée, journal minimal et confidentialité immédiate."""
 import json
-from pathlib import Path
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from app.models.entities import Activity, Contact, Conversation, Project
@@ -149,9 +149,10 @@ async def test_correction_visible_sans_modifier_recu(client, db_session, monkeyp
 
 
 def test_garde_journal_corpus_v1_sur_tous_champs():
-    from fastapi import HTTPException
     from app.services.action_journal import verifier_texte
-    from tests.test_r2_2_protection import SENSIBLES, ADMISSIBLES
+    from fastapi import HTTPException
+
+    from tests.test_r2_2_protection import ADMISSIBLES, SENSIBLES
     for valeur in SENSIBLES:
         for champ in range(3):
             args = ['Note professionnelle', None, None]
@@ -166,10 +167,11 @@ def test_garde_journal_corpus_v1_sur_tous_champs():
 @pytest.mark.parametrize('voie', ['desktop', 'alembic'])
 def test_migration_ancienne_base_chiffree_sans_perdre_crm(tmp_path, voie):
     import importlib.util
+
     from alembic.migration import MigrationContext
     from alembic.operations import Operations
-    from app.models.database import db_connect
     from app.models.activity_migration import migrer_activites
+    from app.models.database import db_connect
     from sqlalchemy import create_engine, inspect
     from sqlmodel import SQLModel
     chemin = tmp_path / 'activites.db'
@@ -199,10 +201,9 @@ def test_migration_ancienne_base_chiffree_sans_perdre_crm(tmp_path, voie):
         spec = importlib.util.spec_from_file_location('revision_r5', path)
         revision = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(revision)
-        with moteur.begin() as conn:
-            with Operations.context(MigrationContext.configure(conn)):
-                revision.upgrade()
-                revision.upgrade()
+        with moteur.begin() as conn, Operations.context(MigrationContext.configure(conn)):
+            revision.upgrade()
+            revision.upgrade()
     with moteur.begin() as conn:
         colonnes = {c['name']: c for c in inspect(conn).get_columns('activities')}
         assert colonnes['contact_id']['nullable']
@@ -235,6 +236,7 @@ async def test_journal_sauvegarde_et_restauration_chiffrees(client, db_session, 
 @pytest.mark.asyncio
 async def test_confirmation_avant_inscription_ne_survit_pas_a_la_purge(client, db_session, monkeypatch):
     import asyncio
+
     from app.services import memory_tools
     entree, reprendre = asyncio.Event(), asyncio.Event()
     original = memory_tools._proteger_le_geste
@@ -244,7 +246,7 @@ async def test_confirmation_avant_inscription_ne_survit_pas_a_la_purge(client, d
         return await original(coro)
     monkeypatch.setattr(memory_tools, '_proteger_le_geste', retarder)
     cid = register_pending('send_email', {})
-    from app.routers.chat import confirm_tool, ConfirmToolRequest
+    from app.routers.chat import ConfirmToolRequest, confirm_tool
     tache = asyncio.create_task(confirm_tool(ConfirmToolRequest(confirmation_id=cid, approved=True), db_session))
     await entree.wait()
     async with memory_tools.creations_du_chat_suspendues():
@@ -258,8 +260,9 @@ async def test_confirmation_avant_inscription_ne_survit_pas_a_la_purge(client, d
 @pytest.mark.parametrize('recu,corps,issue', [('recu-factice', 'Corps professionnel', 'envoyee'),
     (None, 'Corps professionnel', 'indeterminee'), ('non-sollicite', '', 'echouee')])
 async def test_issue_native_de_l_envoi_sans_classer_la_prose(client, db_session, monkeypatch, recu, corps, issue):
-    from app.services import workspace_tools
     from unittest.mock import AsyncMock
+
+    from app.services import workspace_tools
     provider = AsyncMock()
     provider.send_message.return_value = recu
     fournir = AsyncMock(return_value=(provider, None))
@@ -269,5 +272,7 @@ async def test_issue_native_de_l_envoi_sans_classer_la_prose(client, db_session,
     assert rep.status_code == 200
     trace = (await client.get('/api/crm/activities?type=agent_action')).json()[0]
     assert json.loads(trace['extra_data'])['outcome'] == issue
-    if not corps: fournir.assert_not_called()
-    if recu is None: assert 'envoye' not in rep.json()['result'].lower()
+    if not corps:
+        fournir.assert_not_called()
+    if recu is None:
+        assert 'envoye' not in rep.json()['result'].lower()

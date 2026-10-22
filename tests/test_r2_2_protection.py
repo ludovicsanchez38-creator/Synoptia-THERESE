@@ -1,6 +1,5 @@
 """R2-2 : corpus fictif et refus déterministes, sans fournisseur."""
 import asyncio
-import json
 
 import pytest
 from app.models.entities import Conversation, Message, Project
