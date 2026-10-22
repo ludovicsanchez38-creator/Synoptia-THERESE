@@ -44,7 +44,7 @@ def test_conserve_le_domaine_du_tour_precedent(monkeypatch):
 @pytest.mark.asyncio
 async def test_grand_poste_envoie_la_fenetre_api_show(monkeypatch):
     from app.services import ollama_budget
-    monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 4 * 1024 * 1024)
+    monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 4 * 1024 * 1024, raising=False)
     appels = []
     def transport(request):
         appels.append(request)

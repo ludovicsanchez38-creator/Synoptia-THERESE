@@ -85,11 +85,11 @@ async def test_faux_transport_verifie_systeme_integral_et_num_ctx_coherent():
 
 def test_petites_machines_et_petite_fenetre_modele(monkeypatch):
     from app.services import ollama_budget
-    monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 1024 * 1024)
+    monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 1024 * 1024, raising=False)
     assert ollama_budget.plafond_memoire() == 8192
     config = LLMConfig(LLMProvider.OLLAMA, 'factice', context_window=2048, max_tokens=256)
     assert ollama_budget.fenetre_ollama(config) == 2048
-    monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 4 * 1024 * 1024)
+    monkeypatch.setattr(ollama_budget.os, 'sysconf', lambda cle: 4096 if cle == 'SC_PAGE_SIZE' else 4 * 1024 * 1024, raising=False)
     assert ollama_budget.plafond_memoire() == 131072
 
 
