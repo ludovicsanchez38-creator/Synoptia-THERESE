@@ -1552,6 +1552,9 @@ async def send_message(
     Supports both streaming (SSE) and non-streaming responses.
     Also handles /fichier and /analyse slash commands.
     """
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="Écris un message avant de l'envoyer.")
+
     # Get or create conversation
     if request.conversation_id:
         result = await session.execute(
