@@ -3490,6 +3490,7 @@ async def _execute_tools_and_continue(
     from app.services.execution_truth import enforce_create_cap, summarize_executions
     allowed_calls, blocked_calls = enforce_create_cap(tool_calls)
     exec_records: list[tuple[str, str, bool]] = []
+    refus_fiches_affiches: set[str] = set()
     # BUG-121 : une fois une action sensible mise en attente de confirmation, on
     # ne relance pas la chaîne d'outils (voir plus bas). Sinon le modèle - surtout
     # les modèles faibles - re-émet send_email en boucle et empile plusieurs
@@ -3699,7 +3700,8 @@ async def _execute_tools_and_continue(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
                 error=resultat_fiche.get('message'), execution_time_ms=0,
             )
-            if not resultat_fiche['success']:
+            if not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
+                refus_fiches_affiches.add(resultat_fiche['message'])
                 yield 'data: ' + json.dumps({
                     'type': 'text', 'conversation_id': conversation_id,
                     'content': '\n\n' + resultat_fiche['message'] + '\n\n',
@@ -3838,6 +3840,11 @@ async def _execute_tools_and_continue(
     # le modèle enchaîne des outils sans jamais produire de texte final.
     if tool_outcomes is not None:
         tool_outcomes.extend(exec_records)
+
+    # Le refus d'une écriture mémoire seule est déjà rendu à l'écran.
+    # Une continuation le répétait, et pouvait redemander la même écriture.
+    if refus_fiches_affiches and all(nom == "upsert_memory_card" and erreur for nom, _, erreur in exec_records):
+        return
 
     # Résumé DÉTERMINISTE de ce qui a réellement été créé (indépendant de la prose du LLM)
     recap = summarize_executions(exec_records)

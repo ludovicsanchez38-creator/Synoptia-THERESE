@@ -212,9 +212,12 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         source_content = source.content
         if contient_sensible(source_content):
             raise RefusMemoire(MESSAGE_REFUS)
-        # Le modèle ne peut ajouter un fait absent de la source utilisateur.
-        # Un titre résume, le contenu et la raison doivent rester dans la source.
-        if not mots(' '.join(str(donnees.get(k, '')) for k in ('content', 'reason'))) <= mots(source.content):
+        # Une correction peut conserver les faits de la fiche autorisée.
+        # Aucun mot nouveau hors de ces deux sources n'est accepté.
+        provenance = source.content
+        if existante:
+            provenance += f' {existante.title} {existante.content} {existante.reason}'
+        if not mots(' '.join(str(donnees.get(k, '')) for k in ('content', 'reason'))) <= mots(provenance):
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
