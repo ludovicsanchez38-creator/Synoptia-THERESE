@@ -301,6 +301,8 @@ jobs:
             - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l'app.
             - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
             - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
+          # B-1111 : seul le job final publie un manifeste validé.
+          includeUpdaterJson: false
           releaseDraft: true
           prerelease: true
           # US-007 : --config updater-ci.conf.json active createUpdaterArtifacts
@@ -351,3 +353,26 @@ jobs:
           VERSION="$(python3 -c "import json; print(json.load(open('src/frontend/src-tauri/tauri.conf.json'))['version'])")"
           echo "Paquet : $DEB ; version attendue : $VERSION"
           bash scripts/recette-deb.sh "$DEB" "$VERSION"
+
+
+  manifeste-updater:
+    name: Assembler le manifeste updater sans alias Linux dangereux
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Préparer puis publier le manifeste validé
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --json tagName,body,publishedAt,assets > release-assets.json
+          gh release download "$RELEASE_TAG" --pattern '*.sig' --dir signatures
+          VERSION=$(python3 -c 'import json; print(json.load(open("src/frontend/package.json"))["version"])')
+          python3 scripts/nettoyer_latest_json.py latest.json --release-assets release-assets.json --signatures signatures --version "$VERSION"
+          gh release upload "$RELEASE_TAG" latest.json --clobber
