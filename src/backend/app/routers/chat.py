@@ -40,7 +40,7 @@ from app.services.entity_extractor import (
     get_entity_extractor,
 )
 from app.services.error_handler import message_pour_ecran
-from app.services.file_parser import extract_text
+from app.services.file_parser import ERREUR_TAILLE_FICHIER, extract_text
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,
@@ -2078,6 +2078,7 @@ async def send_message(
         [] if produce_prompt is not None else _parse_file_commands(llm_user_message)
     )
     file_contexts = []
+    file_errors = []
     for cmd, path in file_commands:
         file_ctx, error = await _get_file_context(
             path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
@@ -2085,6 +2086,7 @@ async def send_message(
         if file_ctx:
             file_contexts.append(file_ctx)
         elif error:
+            file_errors.append(error)
             logger.warning(f"File command error: {error}")
 
     # BUG-044 : Traiter les fichiers joints (drag & drop)
@@ -2104,6 +2106,7 @@ async def send_message(
             if file_ctx:
                 file_contexts.append(file_ctx)
             elif error:
+                file_errors.append(error)
                 logger.warning(f"Attached file error: {error}")
 
     # BUG-160 : même rappel que sur le chemin streaming. Pas de contexte
@@ -2138,6 +2141,16 @@ async def send_message(
             memory_context = f"{memory_context}\n\n{file_context_str}"
         else:
             memory_context = file_context_str
+
+    # Le rejet de taille est annoncé ; les autres erreurs gardent leur traitement.
+    file_errors = [erreur for erreur in file_errors if erreur.endswith(ERREUR_TAILLE_FICHIER)]
+    if file_errors:
+        from app.services.prompt_security import get_prompt_security
+
+        avis_fichiers = get_prompt_security().sanitize_for_context(
+            "Pièces jointes non transmises :\n" + "\n".join(file_errors), source="fichier",
+        )
+        memory_context = f"{memory_context or ''}\n\n{avis_fichiers}"
 
     # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
     if actions_context:
@@ -2197,6 +2210,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
+    if file_errors:
+        assistant_content = "\n\n".join(file_errors) + "\n\n" + assistant_content
     # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
     assistant_content += _suffixe_arret(assistant_content, motif_sink.get("stop_reason"))
 
@@ -2852,6 +2867,17 @@ async def _do_stream_response(
             memory_context = f"{memory_context}\n\n{file_context_str}"
         else:
             memory_context = file_context_str
+
+    # Le statut ci-dessus compte toutes les erreurs, l'avis vise la taille.
+    file_errors = [erreur for erreur in file_errors if erreur.endswith(ERREUR_TAILLE_FICHIER)]
+    if file_errors:
+        from app.services.prompt_security import get_prompt_security
+
+        avis_fichiers = get_prompt_security().sanitize_for_context(
+            "Pièces jointes non transmises :\n" + "\n".join(file_errors), source="fichier",
+        )
+        memory_context = f"{memory_context or ''}\n\n{avis_fichiers}"
+        preamble = "\n\n".join(file_errors) + "\n\n" + preamble
 
     # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
     if actions_context:
