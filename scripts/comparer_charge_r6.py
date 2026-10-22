@@ -27,7 +27,7 @@ for fichier, noms in {
     assert lire(avant) == lire(apres), f'Contrat changé : {fichier}'
     contrats[fichier] = noms
 bilan = {}
-for fichier in sorted((logs / 'charge-avant-premiere').glob('*.json')):
+for fichier in sorted((logs / 'charge-reference-fiable').glob('*.json')):
     avant = json.loads(fichier.read_text())
     apres = json.loads((logs / 'charge' / fichier.name).read_text())
     bilan[avant['fournisseur']] = {'avant': avant, 'apres': apres}

@@ -39,6 +39,7 @@ clean = {
     'PYTHONPATH': str(code_root / 'src/backend') + ':' + str(root),
     'MYPYPATH': str(code_root / 'src/backend'),
     'GIT_CEILING_DIRECTORIES': str(box / 'tmp'),
+    'PYTHONDONTWRITEBYTECODE': '1',
     'LANG': 'C.UTF-8', 'TZ': 'Europe/Paris',
 }
 
@@ -67,6 +68,10 @@ def offline():
 
 clean['PATH'] = f'{code_root}/.venv/bin:/usr/bin:/bin'
 commande = sys.argv[1:]
+# La porte canonique reste Vitest, avec les options/reporter demandés.
+# Aucun cache ni bundle de configuration ne doit suivre node_modules lié.
+if len(commande) > 5 and commande[4] == 'node' and commande[5].endswith('vitest.mjs'):
+    commande = ['node', str(root / 'scripts/vitest_r6.mjs'), commande[3], *commande[6:]]
 # L'observateur ne doit pas être hérité par les pytest enfants qui retirent
 # volontairement PYTHONPATH pour prouver leur autonomie.
 if commande[1:3] == ['-m', 'pytest']:
