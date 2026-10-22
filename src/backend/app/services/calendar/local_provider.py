@@ -7,7 +7,9 @@ Part of the "Local First" architecture.
 """
 
 import logging
+from dataclasses import replace
 from datetime import UTC, date, datetime
+from itertools import islice
 
 import pytz
 from app.models.entities import Calendar, CalendarEvent, generate_uuid
@@ -19,6 +21,7 @@ from app.services.calendar.base_provider import (
     UpdateEventRequest,
 )
 from app.services.civil_time import PARIS
+from dateutil.rrule import rrulestr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -39,6 +42,56 @@ def _borne_murale_paris(borne: datetime) -> datetime:
     if borne.tzinfo is None:
         return borne
     return borne.astimezone(PARIS).replace(tzinfo=None)
+
+
+def _occurrences_locales(
+    event: CalendarEventDTO, debut: datetime, fin: datetime, limite: int,
+) -> list[CalendarEventDTO]:
+    """B-1110 : développe une série dans une fenêtre, sans modifier sa souche.
+
+    Les heures stockées sont murales à Paris : garder ce fuseau pendant le
+    calcul préserve 10 h après un changement d'heure. dateutil est déjà fourni
+    par CalDAV. Une règle illisible remonte comme erreur de lecture locale.
+    """
+    if event.start is None:
+        return []
+    if event.all_day:
+        # Comme le filtre SQL historique, une journée reste visible à 14 h.
+        debut = datetime.combine(debut.date(), datetime.min.time())
+    start = event.start if isinstance(event.start, datetime) else datetime.combine(event.start, datetime.min.time())
+    if not event.recurrence:
+        return [event] if debut <= start < fin else []
+    regles = []
+    for regle in event.recurrence:
+        if regle.startswith("RDATE"):
+            # dateutil ne lit pas TZID sur RDATE ; icalendar connaît ce format.
+            from icalendar import Event
+
+            dates = Event.from_ical(f"BEGIN:VEVENT\n{regle}\nEND:VEVENT")["RDATE"].dts
+            instants = []
+            for valeur in dates:
+                instant = valeur.dt
+                if not isinstance(instant, datetime):
+                    instant = datetime.combine(instant, datetime.min.time())
+                if instant.tzinfo is None:
+                    instant = instant.replace(tzinfo=PARIS)
+                instants.append(instant.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ"))
+            regle = "RDATE:" + ",".join(instants)
+        regles.append(regle if ":" in regle else f"RRULE:{regle}")
+    serie = rrulestr("\n".join(regles), dtstart=start.replace(tzinfo=PARIS), forceset=True)
+    duree = event.end - event.start if event.end else None
+    occurrences = []
+    for instant in islice(serie.xafter(debut.replace(tzinfo=PARIS), inc=True), limite):
+        mural = instant.astimezone(PARIS).replace(tzinfo=None)
+        if mural >= fin:
+            break
+        nouveau_debut = mural.date() if event.all_day else mural
+        occurrences.append(replace(
+            event, start=nouveau_debut,
+            end=nouveau_debut + duree if duree is not None else None,
+            recurring_event_id=event.id,
+        ))
+    return occurrences
 
 
 class LocalCalendarProvider(CalendarProvider):
@@ -190,6 +243,7 @@ class LocalCalendarProvider(CalendarProvider):
         max_results: int = 100,
         page_token: str | None = None,
         project_id: str | None = None,
+        expand_recurring: bool = False,
     ) -> tuple[list[CalendarEventDTO], str | None]:
         """List events from a local calendar.
 
@@ -214,10 +268,14 @@ class LocalCalendarProvider(CalendarProvider):
         # connaître la convention de SA table.
         if time_min:
             borne_min = _borne_murale_paris(time_min)
-            statement = statement.where(
+            filtre = (
                 (CalendarEvent.start_datetime >= borne_min) |
                 (CalendarEvent.start_date >= borne_min.strftime("%Y-%m-%d"))
             )
+            # Une souche ancienne peut encore produire des occurrences futures.
+            if expand_recurring:
+                filtre = filtre | CalendarEvent.recurrence.is_not(None)
+            statement = statement.where(filtre)
         if time_max:
             borne_max = _borne_murale_paris(time_max)
             statement = statement.where(
@@ -233,10 +291,27 @@ class LocalCalendarProvider(CalendarProvider):
 
         # Pagination
         offset = int(page_token) if page_token else 0
-        statement = statement.offset(offset).limit(max_results)
+        if not expand_recurring:
+            statement = statement.offset(offset).limit(max_results)
 
         result = await self._session.execute(statement)
         events = result.scalars().all()
+
+        if expand_recurring:
+            if time_min is None or time_max is None:
+                raise ValueError("Le développement des récurrences exige une période bornée")
+            dtos = [
+                occurrence for event in events
+                for occurrence in _occurrences_locales(
+                    self._event_to_dto(event), _borne_murale_paris(time_min),
+                    _borne_murale_paris(time_max), offset + max_results + 1,
+                )
+            ]
+            dtos.sort(key=lambda evt: (
+                evt.start if isinstance(evt.start, datetime) else datetime.combine(evt.start, datetime.min.time()), evt.id,
+            ))
+            suivant = str(offset + max_results) if len(dtos) > offset + max_results else None
+            return dtos[offset:offset + max_results], suivant
 
         # Calculate next page token
         next_token = None

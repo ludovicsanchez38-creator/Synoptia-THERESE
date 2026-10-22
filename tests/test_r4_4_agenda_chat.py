@@ -40,6 +40,10 @@ async def test_retour_outil_interdit_les_inventions(client, db_session, fourniss
     assert "n'invente aucun" in resultat
     if etat == 'echec':
         assert 'dernière synchronisation a échoué' in resultat
+    elif etat == 'vide_local':
+        # B-1110 : un calendrier local vide n'est pas une panne de synchro.
+        assert 'calendrier local' in resultat
+        assert 'synchro' not in resultat
     else:
         assert 'aucun calendrier synchronisé' in resultat
     if etat != 'vide_local':
