@@ -11,9 +11,13 @@
  * confirmé, aucun envoi » — elle perdrait la garantie qu'elle affiche. C'est
  * le pendant exact de `selectedInvoiceId === 'new-devis'`.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { useChatStore } from '../../stores/chatStore';
+import { useNavigationStore } from '../../stores/navigationStore';
+import { _clearEscapeHandlers } from '../../lib/escapeStack';
+import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 import { EmailMessageCanvas } from './EmailConversationCard';
 
 function rendre(nouvelleRedaction: boolean, onOpenClassic = vi.fn()) {
@@ -66,12 +70,8 @@ describe('Entrée 10 : « Écrire » mène à une rédaction', () => {
 // parcours qui compte, et le sabotage du branchement doit casser un test.
 describe('Entrée 10 : le verbe « Écrire » y conduit vraiment', () => {
   it('depuis l’établi, Écrire ouvre la rédaction', async () => {
-    const { act } = await import('@testing-library/react');
-    const { useChatStore } = await import('../../stores/chatStore');
-    const { useNavigationStore } = await import('../../stores/navigationStore');
-    const { _clearEscapeHandlers } = await import('../../lib/escapeStack');
-    const { ConversationCanvasPrototype } = await import('./ConversationCanvasPrototype');
-
+    // Le chargement du canevas appartient à la collecte : son graphe entier
+    // transformé à froid ne doit pas consommer le délai du parcours testé.
     _clearEscapeHandlers();
     useChatStore.setState({ conversations: [], currentConversationId: null, isStreaming: false });
     useNavigationStore.setState({ activeView: null, history: [] } as never);
