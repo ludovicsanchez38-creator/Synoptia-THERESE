@@ -61,15 +61,17 @@ class AnthropicProvider(BaseProvider):
         plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
         system_blocks: str | list[dict[str, Any]] | None = system_prompt
         if system_prompt:
-            # Le profil et les consignes de langue précèdent l'heure variable.
-            # Ce point de cache reste stable d'une minute à l'autre, même si
-            # le contexte qui suit change. Aucun texte n'est retiré ni déplacé.
+            # Le constructeur place toutes les consignes stables avant la
+            # date ; mémoire et fiches suivent. Seul ce préfixe est marqué.
             debut, separateur, suite = system_prompt.partition("\n\n## Date et heure actuelles\n")
-            textes = [debut, separateur + suite] if separateur else [system_prompt]
-            system_blocks = [{
-                "type": "text", "text": texte,
-                "cache_control": {"type": "ephemeral"},
-            } for texte in textes if texte]
+            system_blocks = []
+            if debut:
+                system_blocks.append({
+                    "type": "text", "text": debut,
+                    "cache_control": {"type": "ephemeral"},
+                })
+            if separateur:
+                system_blocks.append({"type": "text", "text": separateur + suite})
         request_body: dict[str, Any] = {
             "model": self.config.model,
             "max_tokens": self.config.max_tokens if plafond is None else plafond,

@@ -432,9 +432,6 @@ demande explicite de l'utilisateur peut te faire répondre dans une autre langue
 ## Utilisateur
 {user_identity}
 
-## Date et heure actuelles
-{current_date}
-
 ## Ton rôle
 Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 Tu es efficace, professionnelle et tu utilises un français naturel et fluide.
@@ -452,20 +449,20 @@ Cette règle s'applique UNIQUEMENT dans le chat conversationnel, JAMAIS pour la 
 Quand tu fais un récap ou un résumé en fin de réponse chat, tu DOIS utiliser des listes à puces simples.
 INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
 AUTORISÉ : les listes à puces (- point clé : valeur).
+
+## Mémoire persistante
+Tu as accès à une mémoire persistante contenant les contacts et projets de l'utilisateur.{therese_md}
+
+## Date et heure actuelles
+{current_date}
 Exemple de format correct pour un récap :
 - Sujet : valeur
 - Action : valeur
 - Date : {current_date_example}
-
-## Mémoire persistante
-Tu as accès à une mémoire persistante contenant les contacts et projets de l'utilisateur.
-{therese_md}"""
+"""
 
     DEFAULT_SYSTEM_PROMPT_NO_PROFILE = """Tu es THÉRÈSE, une assistante IA souveraine française.
 Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
-
-## Date et heure actuelles
-{current_date}
 
 {guardrails}
 
@@ -479,8 +476,11 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 Cette règle s'applique UNIQUEMENT dans le chat conversationnel, JAMAIS pour la génération de documents.
 Quand tu fais un récap ou un résumé en fin de réponse chat, tu DOIS utiliser des listes à puces simples.
 INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
-AUTORISÉ : les listes à puces (- point clé : valeur).
-{therese_md}"""
+AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
+
+## Date et heure actuelles
+{current_date}
+"""
 
     def __init__(
         self,
@@ -514,6 +514,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             content = therese_md
             therese_md_section = f"\n\n## Instructions THERESE.md:\n{content}"
 
+        # Le préfixe stable (profil, garde-fous, style, THERESE.md) précède
+        # la date et son exemple daté : frontière de cache Anthropic.
         # BUG-053 : injecter la date réelle pour éviter [Date actuelle] non substituée
         # str(now.day) : cross-platform, pas de zéro de tête (évite strftime POSIX-only)
         # Table de mois FR statique : évite la locale système (anglais sur Windows US)
@@ -559,16 +561,15 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         prompt = prompt.replace("{user_identity}", profile.format_for_llm())
         prompt = prompt.replace("{current_date}", current_date)
         prompt = prompt.replace("{current_date_example}", current_date_example)
-        prompt = prompt.replace("{therese_md}", therese_md_section)
         # Le petit modèle local confondait « qui suis-je ? » avec son identité,
         # même lorsque le profil complet était présent dans sa charge.
-        prompt += (
+        identity_reminder = (
             f"\n\nL'utilisateur est {profile.name}. Si l'utilisateur demande « qui suis-je ? », "
             f"réponds « Tu es {profile.name} », puis rappelle uniquement les faits de son profil. "
             "THÉRÈSE est le nom de l'assistante. Pour les règles numérotées de son profil, "
             "cite son contexte utilisateur ou THERESE.md ; ne leur substitue pas une règle interne."
         )
-        return prompt
+        return prompt.replace("{therese_md}", therese_md_section + identity_reminder)
 
     def _default_config(self) -> LLMConfig:
         """Get default configuration from user preferences."""
