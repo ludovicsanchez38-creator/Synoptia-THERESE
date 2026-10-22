@@ -22,6 +22,7 @@ from app.models.processing import EtatTache
 from app.services import task_registry
 from app.services import traitements as traitements_service
 from app.services.error_handler import message_pour_ecran
+from sqlmodel import col
 
 logger = logging.getLogger(__name__)
 
@@ -319,7 +320,7 @@ async def _gather_local_context(
                         await session.execute(
                             select(Activity)
                             .where(
-                                Activity.contact_id.in_(contact_ids),
+                                col(Activity.contact_id).in_(contact_ids),
                                 Activity.statut == "en_vigueur",
                             )
                             .order_by(Activity.created_at.desc())

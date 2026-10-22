@@ -69,6 +69,17 @@ describe('usePrototypeMeetingData', () => {
     expect(createActivity).not.toHaveBeenCalled();
   });
 
+  it('enregistre une note sans contact et relit les notes du rendez-vous', async () => {
+    vi.mocked(listContacts).mockResolvedValue([]);
+    const { result } = renderHook(() => usePrototypeMeetingData(true));
+    await waitFor(() => expect(result.current.eventResource?.status).toBe('ready'));
+    await act(async () => {
+      await result.current.createMeetingNote(meetingEventKey(event), '', 'Note sans contact');
+    });
+    expect(createActivity).toHaveBeenCalledWith(expect.objectContaining({ contact_id: null, description: 'Note sans contact' }));
+    expect(listActivities).toHaveBeenCalledWith(expect.objectContaining({ calendar_event_id: event.id, calendar_id: event.calendar_id }));
+  });
+
   it('n’écrit qu’après un appel explicite et refuse une note vide', async () => {
     const { result } = renderHook(() => usePrototypeMeetingData(true));
     await waitFor(() => expect(result.current.eventResource?.status).toBe('ready'));

@@ -1,3 +1,4 @@
+import { notifyMemoryChange } from './memoryCards';
 /**
  * THÉRÈSE v2 - CRM Extended API Module
  *
@@ -12,7 +13,11 @@ export type ContactResponse = Contact;
 
 export interface ActivityResponse {
   id: string;
-  contact_id: string;
+  contact_id: string | null;
+  project_id?: string | null;
+  conversation_id?: string | null;
+  execution_id?: string | null;
+  event_deleted?: boolean;
   type: string;
   title: string;
   description: string | null;
@@ -88,12 +93,18 @@ export async function saveCRMGoogleCredentials(
 export async function listActivities(params: {
   contact_id?: string;
   type?: string;
+  meeting_notes?: boolean;
+  calendar_event_id?: string;
+  calendar_id?: string;
   skip?: number;
   limit?: number;
 }): Promise<ActivityResponse[]> {
   const query = new URLSearchParams();
   if (params.contact_id) query.append('contact_id', params.contact_id);
   if (params.type) query.append('type', params.type);
+  if (params.meeting_notes) query.append('meeting_notes', 'true');
+  if (params.calendar_event_id) query.append('calendar_event_id', params.calendar_event_id);
+  if (params.calendar_id) query.append('calendar_id', params.calendar_id);
   if (params.skip) query.append('skip', params.skip.toString());
   if (params.limit) query.append('limit', params.limit.toString());
 
@@ -103,7 +114,8 @@ export async function listActivities(params: {
 }
 
 export async function createActivity(data: {
-  contact_id: string;
+  contact_id?: string | null;
+  project_id?: string | null;
   type: string;
   title: string;
   description?: string;
@@ -123,6 +135,17 @@ export async function deleteActivity(activityId: string): Promise<void> {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+  notifyMemoryChange();
+}
+
+export async function correctActivity(id: string, description: string): Promise<ActivityResponse> {
+  const response = await apiFetch(`${API_BASE}/api/crm/activities/${id}/correction`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description }),
+  });
+  if (!response.ok) throw new Error('La correction a échoué.');
+  const resultat = await response.json();
+  notifyMemoryChange();
+  return resultat;
 }
 
 // Deliverables API

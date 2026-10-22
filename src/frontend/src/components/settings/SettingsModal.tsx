@@ -40,6 +40,8 @@ interface SettingsModalProps {
   requestedTab?: SettingsTab | null;
   /** B-1346 : section à amener sous les yeux une fois la rubrique chargée. */
   requestedSection?: SettingsSection | null;
+  /** Depuis Mémoire : lire uniquement le profil local, sans sonder les services. */
+  profileOnly?: boolean;
 }
 
 type Tab = 'profile' | 'ai' | 'services' | 'accessibility' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
@@ -64,7 +66,7 @@ async function loadSetting<T>(label: string, request: Promise<T>, fallback: T) {
   }
 }
 
-export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection, profileOnly = false }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(
     () => requestedTab ?? resolveSettingsTab(window.location.search) ?? 'profile',
   );
@@ -96,7 +98,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
   const [retryOperation, setRetryOperation] = useState<(() => void) | null>(null);
   const { isContributeur, setUXMode } = useUXMode();
   const visibleTabs = ALL_TABS.filter(
-    (tab) => !tab.contributeurOnly || isContributeur || tab.id === activeTab,
+    (tab) => profileOnly ? tab.id === 'profile' : !tab.contributeurOnly || isContributeur || tab.id === activeTab,
   );
   // BUG-159 : nommer ce que le mode standard met de côté (le testeur cherchait
   // le chemin du dépôt des agents et croyait la rubrique supprimée).
@@ -232,8 +234,37 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
    * chargement » ne se démonte pas sous le doigt qui vient de le cliquer.
    * La liste est de toute façon remplacée à chaque retour de lecture.
    */
+  function remplirProfil(profileData: api.UserProfile) {
+    setProfileForm({
+          name: profileData.name || '',
+          nickname: profileData.nickname || '',
+          company: profileData.company || '',
+          role: profileData.role || '',
+          email: profileData.email || '',
+          location: profileData.location || '',
+          address: profileData.address || '',
+          siren: profileData.siren || '',
+          tva_intra: profileData.tva_intra || '',
+          siret: profileData.siret || '',
+          code_ape: profileData.code_ape || '',
+          nda: profileData.nda || '',
+          context: profileData.context || '',
+          regime_tva: profileData.regime_tva ?? 'normal',
+        });
+  }
+
   async function loadSettings(): Promise<string[]> {
     setLoading(true);
+    if (profileOnly) {
+      const lu = await loadSetting('profil', api.getProfile(), null);
+      setProfile(lu.value);
+      if (lu.value) remplirProfil(lu.value);
+      const erreurs = lu.unavailable ? [lu.unavailable] : [];
+      setLoadWarnings(erreurs);
+      setLoading(false);
+      return erreurs;
+    }
+
     const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
       loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [], sources: {} as Record<string, string> }),
       loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: modeleParDefaut('anthropic'), available_models: [] }),
@@ -303,22 +334,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection 
       }
 
       if (profileData) {
-        setProfileForm({
-          name: profileData.name || '',
-          nickname: profileData.nickname || '',
-          company: profileData.company || '',
-          role: profileData.role || '',
-          email: profileData.email || '',
-          location: profileData.location || '',
-          address: profileData.address || '',
-          siren: profileData.siren || '',
-          tva_intra: profileData.tva_intra || '',
-          siret: profileData.siret || '',
-          code_ape: profileData.code_ape || '',
-          nda: profileData.nda || '',
-          context: profileData.context || '',
-          regime_tva: profileData.regime_tva ?? 'normal',
-        });
+        remplirProfil(profileData);
       }
 
       if (preferences && typeof preferences === 'object') {

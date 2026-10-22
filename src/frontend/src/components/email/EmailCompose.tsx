@@ -17,7 +17,7 @@ import { useExternalActionConfirmation } from '../app/useExternalActionConfirmat
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
 
-export function EmailCompose() {
+export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; sourceMessageId?: string } = {}) {
   const requestExternalAction = useExternalActionConfirmation();
   const {
     accounts,
@@ -28,6 +28,7 @@ export function EmailCompose() {
     draftSubject,
     draftBody,
     draftIsHtml,
+    editingDraftId,
     setDraftSubject,
     setDraftBody,
     clearDraft,
@@ -151,14 +152,18 @@ export function EmailCompose() {
     setError(null);
 
     try {
-      await api.createDraft(currentAccountId, {
+      const demande = {
         to: recipients,
         cc: ccList.length > 0 ? ccList : undefined,
         bcc: bccList.length > 0 ? bccList : undefined,
         subject: draftSubject,
         body: draftBody,
         html: draftIsHtml,
-      });
+      };
+      const source = sourceMessageId || editingDraftId;
+      if (source) await api.createDraft(currentAccountId, demande, undefined, source);
+      else if (draftId) await api.createDraft(currentAccountId, demande, draftId);
+      else await api.createDraft(currentAccountId, demande);
 
       clearDraft();
       setIsComposing(false);

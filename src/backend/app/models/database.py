@@ -722,6 +722,11 @@ def apply_adhoc_migrations(db_path) -> None:
                     "Migration auto : %d fin(s) all-day Google/CalDAV converties en sémantique inclusive",
                     converted,
                 )
+        from app.models.activity_migration import migrer_activites
+        migrer_activites(conn)
+        from app.models.meeting_note_migration import lier_notes_heritees
+        lier_notes_heritees(conn)
+
 
 
 # US-015 : tête Alembic épinglée. Une DB bootstrapée par create_all + les
@@ -730,7 +735,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "d0e1f2a3b4c5"
+ALEMBIC_HEAD_REVISION = "f2a3b4c5d6e7"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:
@@ -875,8 +880,9 @@ def ensure_alembic_stamp(db_path) -> None:
                         and all(
                             name in _SQLModel.metadata.tables
                             and set(_SQLModel.metadata.tables[name].columns.keys()) <= _colonnes(name)
-                            for name in ("memory_cards", "memory_card_uses")
+                            for name in ("memory_cards", "memory_card_uses", "activities")
                         )
+                        and not any(r[1] == 'contact_id' and r[3] for r in conn.execute('PRAGMA table_info(activities)'))
                         # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa
                         # preuve est l'état des données (aucune phase de
                         # prestation héritée). Table absente = rien à migrer.

@@ -22,6 +22,7 @@ from typing import Any
 
 from app.config import settings
 from app.models.entities import (
+    Activity,
     CalendarEvent,
     Contact,
     Conversation,
@@ -323,6 +324,7 @@ async def lire_l_ensemble(
     jour = date_civile_paris(maintenant or datetime.now(UTC))
     familles: tuple[tuple[str, Callable[..., Awaitable[dict[str, Any]]]], ...] = (
         ("memory_cards", _total(MemoryCard, clause_memory_cards)),
+        ("activities", _total(Activity, lambda identifiant: col(Activity.project_id) == identifiant)),
         ("conversations", _lire_conversations),
         ("documents", _lire_documents),
         ("taches", _lire_taches),

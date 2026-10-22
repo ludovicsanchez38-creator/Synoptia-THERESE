@@ -684,7 +684,8 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
     ? activities
     : activities.filter(a => a.type === filter);
 
-  const getContactName = (contactId: string) => {
+  const getContactName = (contactId: string | null) => {
+    if (!contactId) return 'Sans contact';
     const contact = annuaire.find(c => c.id === contactId);
     if (!contact) return 'Contact inconnu';
     return `${contact.first_name} ${contact.last_name || ''}`.trim();

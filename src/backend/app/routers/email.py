@@ -1369,6 +1369,7 @@ async def create_draft(
             "créé."
         ),
     ),
+    source_message_id: str | None = Query(None, description="Message brouillon local à remplacer."),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """
@@ -1381,7 +1382,18 @@ async def create_draft(
     renvoyer : chaque correction ré-enregistrée laissait un exemplaire de plus
     chez le fournisseur, sous le même bandeau « Brouillon enregistré ».
     """
+    from app.services.memory_tools import generation_des_donnees
+    generation = generation_des_donnees()
     account = await _compte_email(account_id, session)
+    from app.services.local_drafts import actualiser_cache, identifiant_du_brouillon
+    if source_message_id:
+        source = await session.get(EmailMessage, source_message_id)
+        if source is None or source.account_id != account_id or not source.is_draft:
+            raise HTTPException(404, 'Brouillon local supprimé ou déjà envoyé.')
+        if draft_id:
+            raise HTTPException(422, 'Choisis une seule référence de brouillon.')
+        if account.provider == 'imap':
+            draft_id = source_message_id
 
     if account.provider == "imap":
         provider = _provider_imap(account)
@@ -1410,9 +1422,12 @@ async def create_draft(
                 status_code=502,
                 detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
             )
+        await actualiser_cache(session, account, request, identifiant, source_message_id, generation_attendue=generation)
         return {"id": identifiant, "labelIds": ["DRAFT"]}
 
     gmail = await get_gmail_service_for_account(account_id, session)
+    if source_message_id:
+        draft_id = await identifiant_du_brouillon(gmail, source_message_id)
     if draft_id:
         remplace: dict[str, Any] = await gmail.update_draft(
             draft_id,
@@ -1423,8 +1438,10 @@ async def create_draft(
             bcc=request.bcc,
             html=request.html,
         )
+        message = remplace.get('message') or {}
+        await actualiser_cache(session, account, request, message.get('id'), source_message_id, message.get('threadId'), generation_attendue=generation)
         return remplace
-    return await gmail.create_draft(
+    cree = await gmail.create_draft(
         to=request.to,
         subject=request.subject,
         body=request.body,
@@ -1432,6 +1449,10 @@ async def create_draft(
         bcc=request.bcc,
         html=request.html,
     )
+    message = cree.get('message') or {}
+    await actualiser_cache(session, account, request, message.get('id'), thread_id=message.get('threadId'), generation_attendue=generation)
+    return dict(cree)
+
 
 
 @router.put("/messages/{message_id}")

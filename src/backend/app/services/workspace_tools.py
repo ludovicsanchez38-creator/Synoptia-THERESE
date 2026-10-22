@@ -1455,6 +1455,11 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
     import asyncio
     import re
 
+    from app.services.tool_result import ResultatOutil
+
+    def echec(message: str, indetermine: bool = False) -> str:
+        return ResultatOutil(message, {'success': None if indetermine else False})
+
     from app.services.email.base_provider import SendEmailRequest
 
     to_addr = args.get("to", "").strip()
@@ -1465,17 +1470,17 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
 
     # Validation rapide des parametres (pas d'appel reseau)
     if not to_addr:
-        return "Erreur : le destinataire est obligatoire."
+        return echec("Erreur : le destinataire est obligatoire.")
     if not subject:
-        return "Erreur : le sujet est obligatoire."
+        return echec("Erreur : le sujet est obligatoire.")
     # Cycle 6 : un corps vide partait après confirmation (forme du défaut D1 du 27/08).
     if not str(body).strip():
-        return "Erreur : le corps du message est vide."
+        return echec("Erreur : le corps du message est vide.")
 
     # Validation basique du format email
     email_pattern = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     if not email_pattern.match(to_addr):
-        return f"Erreur : l'adresse '{to_addr}' ne semble pas etre un email valide."
+        return echec(f"Erreur : l'adresse '{to_addr}' ne semble pas etre un email valide.")
 
     # Recuperer le provider (verifie la config, le token, etc.)
     cible = _id_compte_demande(args=args)
@@ -1483,7 +1488,7 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
         _compte_ecran.set(cible)
     provider, error = await _get_email_provider(session)
     if error:
-        return error
+        return echec(error)
 
     try:
         request = SendEmailRequest(
@@ -1494,29 +1499,32 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
             is_html=is_html,
         )
         # BUG-085 : timeout de 30s pour l'envoi (evite les spinners infinis)
-        await asyncio.wait_for(provider.send_message(request), timeout=30.0)
-        return f"Email envoye avec succes a {to_addr} (sujet: {subject})"
+        recu = await asyncio.wait_for(provider.send_message(request), timeout=30.0)
+        if not recu:
+            return echec("Envoi demandé ; accusé non reçu. Vérifie avant de réessayer.", indetermine=True)
+        return ResultatOutil(f"Email envoye avec succes a {to_addr} (sujet: {subject})",
+                             {"success": True, "message_id": recu})
     except asyncio.TimeoutError:
         logger.error("Timeout envoi email a %s", to_addr)
-        return (
+        return echec(
             f"Erreur : l'envoi de l'email a {to_addr} a expiré après 30 secondes. "
-            "Vérifie la configuration de ton compte email (serveur SMTP, identifiants)."
+            "Vérifie la configuration de ton compte email (serveur SMTP, identifiants).", indetermine=True
         )
     except Exception as e:
         logger.exception("Erreur envoi email")
         error_msg = str(e)
         # Messages d'erreur plus clairs pour les cas courants
         if "authentication" in error_msg.lower() or "login" in error_msg.lower():
-            return (
+            return echec(
                 f"Erreur d'authentification lors de l'envoi a {to_addr}. "
                 "Vérifie tes identifiants email dans les parametres."
             )
         if "connection" in error_msg.lower() or "connect" in error_msg.lower():
-            return (
+            return echec(
                 f"Impossible de se connecter au serveur d'envoi pour {to_addr}. "
                 "Vérifie ta connexion internet et la configuration SMTP."
             )
-        return "Erreur lors de l'envoi de l'email. Le détail est au journal."
+        return echec("Erreur lors de l'envoi de l'email. Le détail est au journal.", indetermine=True)
 
 
 async def _search_emails(args: dict, session: AsyncSession) -> str:

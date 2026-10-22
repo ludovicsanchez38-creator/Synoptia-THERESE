@@ -1,3 +1,4 @@
+import { notifyMemoryChange } from './memoryCards';
 /**
  * THÉRÈSE v2 - Chat API Module
  *
@@ -393,13 +394,15 @@ export async function confirmTool(
   confirmationId: string,
   approved: boolean
 ): Promise<ConfirmToolResponse> {
-  return request<ConfirmToolResponse>('/api/chat/confirm-tool', {
+  const resultat = await request<ConfirmToolResponse>('/api/chat/confirm-tool', {
     method: 'POST',
     body: JSON.stringify({ confirmation_id: confirmationId, approved }),
     // B-1459 : l'action confirmée peut durer (document, indexation, envoi) ;
     // le délai de 30 s annonçait un échec pendant qu'elle aboutissait.
     timeoutMs: null,
   });
+  notifyMemoryChange();
+  return resultat;
 }
 
 /**

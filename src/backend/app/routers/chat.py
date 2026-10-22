@@ -4034,9 +4034,38 @@ async def confirm_tool(
             status_code=404, detail="Action introuvable ou déjà traitée"
         )
 
+    from app.services.action_journal import commencer, terminer
+    from app.services.memory_tools import _proteger_le_geste, generation_des_donnees
+
+    generation = generation_des_donnees()
     tool_name, arguments, conversation_id = action
-    if not request.approved:
-        return {"status": "cancelled", "tool_name": tool_name}
+
+    async def geste() -> str:
+        if generation != generation_des_donnees():
+            return json.dumps({"status": "cancelled", "tool_name": tool_name})
+        trace_id = await commencer(request.confirmation_id, arguments, conversation_id, request.approved, tool_name)
+        if not request.approved:
+            return json.dumps({"status": "cancelled", "tool_name": tool_name})
+        try:
+            payload = await _executer_action_confirmee(tool_name, arguments, conversation_id, session, trace_id)
+        except HTTPException:
+            await terminer(trace_id, tool_name, '{"success":false}')
+            raise
+        except Exception:
+            # Une perte d'accusé ne prouve pas l'échec d'un envoi distant.
+            await terminer(trace_id, tool_name, '{}')
+            payload = {"status": "executed", "tool_name": tool_name,
+                       "result": "Issue indéterminée. Vérifie avant de réessayer."}
+        return json.dumps(payload)
+
+    return dict(json.loads(await _proteger_le_geste(geste())))
+
+
+async def _executer_action_confirmee(
+    tool_name: str, arguments: dict[str, Any], conversation_id: str | None,
+    session: AsyncSession, trace_id: str,
+) -> dict[str, Any]:
+    from app.services.action_journal import terminer
 
     # Finding 1 (30/08) : la confirmation est une autre requête. Sans
     # reposer le compte collé à la carte, send_email retomberait sur
@@ -4055,6 +4084,7 @@ async def confirm_tool(
 
     start_generated_files_collection()
 
+    resultat_journal: str | None = None
     # Passe 4 : le portillon couvre désormais web_search, les outils
     # mémoire et n'importe quel MCP, plus seulement send_email / agenda.
     # Recopier le dispatch de la boucle : sans ça, l'utilisateur confirme
@@ -4064,6 +4094,8 @@ async def confirm_tool(
         # tools. L'exécution confirmée doit suivre le service MCP.
         mcp_service = get_mcp_service()
         mcp_result = await mcp_service.execute_tool_call(tool_name, arguments)
+        resultat_journal = json.dumps(mcp_result.result) if mcp_result.success else '{"success":false}'
+
         result = (
             _texte_du_resultat_mcp(mcp_result.result)
             if mcp_result.success
@@ -4093,6 +4125,7 @@ async def confirm_tool(
     # l'exécution. Sans collecteur ici, record_generated_file est un no-op
     # et l'utilisateur confirme un document qu'il ne peut pas télécharger
     # (même trou que BUG-136, déplacé après la confirmation).
+    await terminer(trace_id, tool_name, resultat_journal if resultat_journal is not None else result)
     fichiers = drain_generated_files()
     # B-1448 : ce texte s'affiche à l'utilisatrice, pas au modèle.
     if tool_name == "generate_document":

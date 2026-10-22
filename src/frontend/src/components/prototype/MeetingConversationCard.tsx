@@ -339,7 +339,7 @@ function EventPreparation({
       await onCreateNote(meetingEventKey(event), contactId, note);
       setNote('');
       setConfirming(false);
-      setFeedback('Note enregistrée dans l’historique CRM du contact.');
+      setFeedback(contactId ? 'Note enregistrée dans l’historique CRM du contact.' : 'Note enregistrée dans Mémoire, liée au rendez-vous.');
     } catch (cause) {
       setFeedback(cause instanceof Error ? cause.message : 'La note n’a pas pu être enregistrée.');
       setConfirming(false);
@@ -353,23 +353,23 @@ function EventPreparation({
   // quand la séance est passée.
   const finDeSeance = event.end_datetime ? new Date(event.end_datetime) : event.end_date ? new Date(`${event.end_date}T23:59:59`) : null;
   const seancePassee = finDeSeance !== null && finDeSeance.getTime() < Date.now();
-  const compteRendu = relatedContacts.length > 0 ? (
+  const compteRendu = (
         <section className="rounded-md border border-border bg-surface p-4">
           <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-domaine-factures" /><h3 className="text-sm font-bold text-text">Après la séance : compte rendu</h3></div>
-          <p className="mt-1 text-xs text-text-muted">La note sera ajoutée au CRM du contact choisi après confirmation.</p>
-          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
+          <p className="mt-1 text-xs text-text-muted">La note sera liée à ce rendez-vous, avec un contact si tu en choisis un.</p>
+          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"><option value="">Sans contact</option>{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
           <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-md border border-border px-3 py-2 text-sm leading-5 outline-none focus:border-accent" />
           {!confirming ? (
             <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-md bg-accent-fill px-3 py-2.5 text-sm font-semibold text-accent-ink disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
           ) : (
             <div className="mt-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
-              <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
+              <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au rendez-vous. L’événement Agenda ne sera pas modifié.</p>
               <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-sm border border-error bg-surface px-3 py-2 text-sm font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
             </div>
           )}
           {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
         </section>
-  ) : null;
+  );
 
   return (
     <div className="space-y-5" data-testid="meeting-event-preparation">

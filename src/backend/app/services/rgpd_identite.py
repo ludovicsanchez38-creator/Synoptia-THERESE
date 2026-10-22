@@ -92,7 +92,6 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
     e-mails. Rend les identifiants des dossiers supprimés, dont le dépôt
     disque se purge APRÈS le commit (B-445). Ne commite pas."""
     from app.models.entities import (
-        Activity,
         EmailMessage,
         Invoice,
         Notification,
@@ -101,6 +100,7 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
         Task,
     )
     from app.routers.memory import _nettoyer_et_supprimer_projet
+    from app.services.action_journal import clause_du_contact as clause_activites_du_contact
     from sqlmodel import select
 
     contact_id = contact.id
@@ -132,10 +132,8 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
         piece.updated_at = maintenant
         session.add(piece)
 
-    for activite in (
-        await session.execute(select(Activity).where(Activity.contact_id == contact_id))
-    ).scalars().all():
-        await session.delete(activite)
+    from app.services.action_journal import effacer_activites
+    await effacer_activites(session, clause_activites_du_contact(contact_id))
 
     # B-140 : le dossier suit le chemin de la route de suppression (fragments,
     # fichiers indexés, racine, conversations, documents, événements).

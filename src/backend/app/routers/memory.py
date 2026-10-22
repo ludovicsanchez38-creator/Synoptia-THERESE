@@ -26,6 +26,8 @@ from app.models.schemas import (
     fiche_identifiable,
 )
 from app.routers.memory_cards import router as memory_cards_router
+from app.routers.memory_drafts import router as brouillons_router
+from app.services.action_journal import clause_du_contact as clause_activites_du_contact
 from app.services.audit import AuditAction, log_activity
 from app.services.civil_time import date_civile_paris
 from app.services.projet_ensemble import (
@@ -54,6 +56,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+router.include_router(brouillons_router)
+
 
 # Lot F : un ILIKE « e » chargeait l'annuaire, notait en Python, n'en gardait
 # que 10. 200 lignes, pas plus : au-delà on avoue la troncature.
@@ -464,11 +468,15 @@ async def _nettoyer_et_supprimer_projet(
         await session.execute(select(Deliverable).where(clause_livrables(project_id)))
     ).scalars().all()
 
+    from app.models.entities import Activity
+    from app.services.action_journal import effacer_activites
+    nombre_activites = await effacer_activites(session, col(Activity.project_id) == project_id)
     from app.services.memory_cards import effacer_liees
     fiches_effacees = await effacer_liees(session, project_id=project_id)
     await session.delete(project)
     return {
         "memory_cards": fiches_effacees,
+        "activities": nombre_activites,
         "files": len(files),
         "conversations_detachees": len(conversations),
         "documents_detaches": len(documents),
@@ -1129,6 +1137,16 @@ async def delete_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
+    if cascade:
+        # Ces transactions dédiées doivent précéder toute mutation métier,
+        # même avec plusieurs dossiers, fiches ou tâches à effacer/détacher.
+        from app.services.project_sync_service import retirer_racine
+        projets_a_detacher = (await session.execute(
+            select(Project).where(Project.contact_id == contact_id)
+        )).scalars().all()
+        for projet in projets_a_detacher:
+            await retirer_racine(projet.id)
+
     cascade_deleted: dict[str, int] = {}
     from app.services.memory_cards import effacer_liees
     cascade_deleted["memory_cards"] = await effacer_liees(session, contact_id=contact_id)
@@ -1153,15 +1171,6 @@ async def delete_contact(
         await session.execute(select(Prestation).where(Prestation.contact_id == contact_id))
     ).scalars().all():
         await session.delete(prestation)
-
-    # Toujours supprimer les activités liées (FK non-nullable sur Activity.contact_id)
-    from app.models.entities import Activity
-    activities = (await session.execute(
-        select(Activity).where(Activity.contact_id == contact_id)
-    )).scalars().all()
-    for act in activities:
-        await session.delete(act)
-    cascade_deleted["activities"] = len(activities)
 
     projets_supprimes: list[str] = []
     if cascade:
@@ -1188,6 +1197,22 @@ async def delete_contact(
             await _delete_embedding(file.id)
             await session.delete(file)
         cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
+
+    # Après le détachement des racines (transaction dédiée), prendre le verrou
+    # d'écriture des traces. Le prendre avant bloquait cette transaction annexe.
+    # Les traces des dossiers supprimés sont déjà comptées par leur nettoyage.
+    from app.services.action_journal import effacer_activites
+    cascade_deleted['activities'] = cascade_deleted.get('activities', 0) + await effacer_activites(
+        session, clause_activites_du_contact(contact_id)
+    )
+
+    # Les copies locales des brouillons suivent la fiche, sans envoi distant.
+    from app.models.entities import EmailMessage
+    from sqlalchemy import delete
+    retires = (await session.execute(delete(EmailMessage).where(
+        col(EmailMessage.contact_id) == contact_id, col(EmailMessage.is_draft).is_(True)
+    ).returning(col(EmailMessage.id)))).scalars().all()
+    cascade_deleted['email_drafts'] = len(retires)
 
     contact_name = contact.display_name
     await session.delete(contact)

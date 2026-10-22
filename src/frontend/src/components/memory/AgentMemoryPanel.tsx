@@ -7,6 +7,11 @@ import { useDemoMask } from '../../hooks/useDemoMask';
 import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
+import { MemoryMeetingNotesBranch } from './MemoryMeetingNotesBranch';
+import { MemoryDraftsBranch } from './MemoryDraftsBranch';
+import { MemoryProfileBranch } from './MemoryProfileBranch';
+import { ActivityMemoryBranch } from './ActivityMemoryBranch';
+
 const TYPES = { preference: 'Préférences', fait: 'Faits clients et dossiers', decision: 'Décisions et raisons', correction: 'Corrections' };
 const BRANCHES = ['Profil et consignes', 'Fiches et index', 'Journal des actions confirmées et envois', 'Brouillons en cours', 'Notes de rendez-vous'];
 const PAGE = 25;
@@ -26,6 +31,7 @@ function Confirmation({ titre, onConfirm, onCancel, busy }: { titre: string; onC
 }
 
 export function AgentMemoryPanel() {
+  const [branch, setBranch] = useState(1);
   const selectedId = useAgentMemoryStore(s => s.selectedId);
   const [items, setItems] = useState<MemoryCard[]>([]);
   const [total, setTotal] = useState(0);
@@ -46,7 +52,7 @@ export function AgentMemoryPanel() {
   const retourFocus = useRef<HTMLButtonElement>(null);
   const demo = useDemoMask();
   const afficher = (texte: string) => demo.enabled ? 'Contenu masqué en démonstration' : demo.maskText(texte);
-  useEffect(() => listenMemoryChanges(() => { setCard(null); setRevision(r => r + 1); }), []);
+  useEffect(() => listenMemoryChanges(() => { setItems([]); setLoading(true); setCard(null); setRevision(r => r + 1); }), []);
   useEffect(() => { getMemoryScopes().then(setScopes).catch(() => {}); }, []);
   useEffect(() => {
     let actif = true;
@@ -92,14 +98,15 @@ export function AgentMemoryPanel() {
 
   return <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 lg:flex-row">
     <nav aria-label="Arborescence de Mémoire" className="flex shrink-0 flex-col gap-2 lg:w-56">
-      {BRANCHES.map((branche, i) => <button key={branche} type="button" className={classe} disabled={i !== 1} aria-current={i === 1 ? 'page' : undefined}>
-        {branche}{i !== 1 && <span className="block text-xs text-text-muted">Non disponible</span>}
+      {BRANCHES.map((branche, i) => <button key={branche} type="button" className={classe} onClick={() => setBranch(i)} aria-current={i === branch ? 'page' : undefined}>
+        {branche}
       </button>)}
     </nav>
     <div className="min-w-0 flex-1 space-y-4">
+      {branch === 0 ? <MemoryProfileBranch /> : branch === 2 ? <ActivityMemoryBranch /> : branch === 3 ? <MemoryDraftsBranch /> : branch === 4 ? <MemoryMeetingNotesBranch /> : <>
       <p className="text-sm text-text-muted">Thérèse écrit tes fiches ; tu peux les corriger ou les effacer. Elles restent dans ta base chiffrée. Dans le chat, tes fiches mémoire utiles sont envoyées avec chaque échange où la mémoire est activée, avec ton accord pour un service en ligne.</p>
       <div className="flex flex-wrap gap-2">
-        <label>Rechercher<input className={classe} value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>
+        <label>Rechercher<input className={classe} value={demo.enabled ? '' : query} disabled={demo.enabled} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>
         <label>Type<select className={classe} value={kind} onChange={e => { setKind(e.target.value); setOffset(0); }}><option value="">Tous les types</option>{Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
         <label>État<select className={classe} value={state} onChange={e => { setState(e.target.value); setOffset(0); }}><option value="active">Actives</option><option value="archivee">Archivées</option></select></label>
         <label>Portée<select className={classe} value={scope} onChange={e => { setScope(e.target.value); setOffset(0); }}><option value="">Toutes les portées</option><option value="global">Général</option>{scopes.map(p => <option key={p.id} value={p.id}>{afficher(p.name)}</option>)}</select></label>
@@ -134,6 +141,7 @@ export function AgentMemoryPanel() {
         </form>}
         {confirm && <Confirmation titre="Effacer cette fiche ?" busy={busy} onCancel={fermerConfirmation} onConfirm={() => void muter(() => deleteMemoryCard(card.id, card.version), true)} />}
       </article>}
+      </>}
     </div>
   </div>;
 }
