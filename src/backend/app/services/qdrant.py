@@ -6,6 +6,7 @@ Manages vector storage for semantic memory search.
 
 import asyncio
 import logging
+import re
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -438,6 +439,33 @@ class QdrantService:
             }
             for hit in results
         ]
+
+    def rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
+        """Retrouve un mot ou une expression littérale sans embeddings."""
+        if not query.strip():
+            return []
+        motif = re.compile(r"(?<!\w)" + re.escape(query.strip()) + r"(?!\w)", re.IGNORECASE)
+        trouves: dict[str, dict[str, Any]] = {}
+        offset = None
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=settings.qdrant_collection,
+                scroll_filter=Filter(must=[FieldCondition(key="type", match=MatchValue(value="file"))]),
+                limit=256, offset=offset, with_payload=True, with_vectors=False,
+            )
+            for point in points:
+                contenu = point.payload or {}
+                identifiant = contenu.get("entity_id")
+                texte = contenu.get("text") or ""
+                if identifiant and identifiant not in trouves and motif.search(texte):
+                    trouves[identifiant] = {"entity_id": identifiant, "text": texte}
+                    if len(trouves) >= limite:
+                        return list(trouves.values())
+            if offset is None or not points:
+                return list(trouves.values())
+
+    async def async_rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(self.rechercher_contenu_fichiers, query, limite)
 
     def points_sans_perimetre(
         self, limite: int = 10000
