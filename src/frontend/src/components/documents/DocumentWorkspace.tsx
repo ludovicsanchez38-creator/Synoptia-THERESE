@@ -74,6 +74,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
   const draftSection = useDocumentStore((s) => s.draftSection);
   const validateSection = useDocumentStore((s) => s.validateSection);
   const exportDocument = useDocumentStore((s) => s.exportDocument);
+  const openDocument = useDocumentStore((s) => s.openDocument);
   const closeDocument = useDocumentStore((s) => s.closeDocument);
   const updatePiste = useDocumentStore((s) => s.updatePiste);
 
@@ -206,10 +207,17 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
 
       {!doc ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="flex items-center gap-2 text-sm text-text-muted">
-            <Spinner taille="bouton" />
-            Chargement du document...
-          </div>
+          {error && !isLoading ? (
+            <div className="flex flex-col items-center gap-3 px-4">
+              <p role="alert" className="text-sm text-error">{error}</p>
+              <Button variant="secondary" type="button" onClick={() => void openDocument(documentId)}>Réessayer</Button>
+            </div>
+          ) : (
+            <div role="status" className="flex items-center gap-2 text-sm text-text-muted">
+              <Spinner taille="bouton" />
+              Chargement du document...
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex overflow-hidden">

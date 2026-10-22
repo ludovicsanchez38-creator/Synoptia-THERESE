@@ -1,0 +1,176 @@
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ❯ src/components/prototype/composeur.c19d.test.ts (1 test | 1 failed) 31ms
+   × B-1073 : la mention limite la promesse aux actions confirmées dans la conversation 26ms
+ ❯ src/components/documents/DocumentWorkspace.c19d.test.tsx (1 test | 1 failed) 998ms
+   × B-1064 : une erreur de lecture annonce un échec et permet de réessayer 993ms
+stderr | src/components/invoices/InvoiceForm.pied.c19d.test.tsx > B-1079 : le pied et ses groupes peuvent revenir à la ligne sans comprimer les actions
+An update to InvoiceForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to InvoiceForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to InvoiceForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ❯ src/components/invoices/InvoiceForm.pied.c19d.test.tsx (1 test | 1 failed) 1785ms
+   × B-1079 : le pied et ses groupes peuvent revenir à la ligne sans comprimer les actions 1782ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/documents/DocumentWorkspace.c19d.test.tsx > B-1064 : une erreur de lecture annonce un échec et permet de réessayer
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Retour aux documents":
+  [36m<button[39m
+    [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-8 px-3 text-sm rounded-sm"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex-1 min-h-0 flex flex-col bg-bg"[39m
+      [33mdata-testid[39m=[32m"document-workspace"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border shrink-0"[39m
+        [33mdata-testid[39m=[32m"atelier-entete"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-wrap items-center gap-3 min-w-0"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-8 px-3 text-sm rounded-sm"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33mclass[39m=[32m"lucide lucide-arrow-left w-4 h-4 mr-1.5"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m12 19-7-7 7-7"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 12H5"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRetour aux documents[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex-1 flex items-center justify-center"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-2 text-sm text-text-muted"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-loader-circle h-4 w-4 animate-spin"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 1 1-6.219-8.56"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mChargement du document...[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/documents/DocumentWorkspace.c19d.test.tsx:12:17
+     10|   render(<DocumentWorkspace documentId="document-factice" onBack={vi.f…
+     11|   await act(() => useDocumentStore.getState().openDocument('document-f…
+     12|   expect(screen.getByRole('alert')).toHaveTextContent('Lecture impossi…
+       |                 ^
+     13|   expect(screen.queryByText('Chargement du document...')).toBeNull();
+     14|   vi.mocked(api.getDocument).mockClear();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/components/invoices/InvoiceForm.pied.c19d.test.tsx > B-1079 : le pied et ses groupes peuvent revenir à la ligne sans comprimer les actions
+Error: expect(element).toHaveClass("flex-wrap gap-3")
+
+Expected the element to have class:
+  flex-wrap gap-3
+Received:
+  px-6 py-4 border-t border-border flex items-center justify-between
+ ❯ src/components/invoices/InvoiceForm.pied.c19d.test.tsx:11:16
+      9|   const question = screen.getByText('Abandonner les modifications ?');
+     10|   const pied = question.parentElement!.parentElement!;
+     11|   expect(pied).toHaveClass('flex-wrap', 'gap-3');
+       |                ^
+     12|   expect(question.parentElement).toHaveClass('basis-full');
+     13|   expect(screen.getByRole('button', { name: 'Créer' }).parentElement).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/components/prototype/composeur.c19d.test.ts > B-1073 : la mention limite la promesse aux actions confirmées dans la conversation
+TypeError: The URL must be of scheme file
+ ❯ src/components/prototype/composeur.c19d.test.ts:4:18
+      2| import { expect, it } from 'vitest';
+      3| it('B-1073 : la mention limite la promesse aux actions confirmées dans…
+      4|   const source = readFileSync(new URL('./ConversationCanvasPrototype.t…
+       |                  ^
+      5|   expect(source).not.toContain('confirmation avant tout envoi ou modif…
+      6|   expect(source).toContain('Dans la conversation, les cartes de confir…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  3 failed (3)
+   Start at  01:54:21
+   Duration  8.38s (transform 3.21s, setup 1.33s, import 7.12s, tests 2.81s, environment 7.71s)
+
