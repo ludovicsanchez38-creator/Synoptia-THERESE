@@ -154,16 +154,25 @@ async def test_verification_du_rendez_vous_et_ecriture_serialisees_avec_effaceme
     await entree.wait()
     try:
         async with get_session_context() as session:
-            await session.execute(text('PRAGMA busy_timeout=1'))
-            p = await session.get(type(projet), projet.id)
-            verrouille = False
+            # Garder la même connexion jusqu'au rétablissement du délai : un
+            # rollback la rendrait au pool avant la restauration du PRAGMA.
+            connexion = await session.connection()
+            delai = (await connexion.execute(text('PRAGMA busy_timeout'))).scalar_one()
+            assert delai != 1
+            await connexion.execute(text('PRAGMA busy_timeout=1'))
             try:
-                await memory._nettoyer_et_supprimer_projet(session, p)
-            except OperationalError as exc:
-                assert 'locked' in str(exc).lower()
-                verrouille = True
-            await session.rollback()
-            assert verrouille, 'La relation vérifiée doit rester protégée jusqu’au commit de la note.'
+                p = await session.get(type(projet), projet.id)
+                verrouille = False
+                try:
+                    await memory._nettoyer_et_supprimer_projet(session, p)
+                except OperationalError as exc:
+                    assert 'locked' in str(exc).lower()
+                    verrouille = True
+                assert verrouille, 'La relation vérifiée doit rester protégée jusqu’au commit de la note.'
+            finally:
+                await connexion.execute(text(f'PRAGMA busy_timeout={int(delai)}'))
+                assert (await connexion.execute(text('PRAGMA busy_timeout'))).scalar_one() == delai
+                await session.rollback()
     finally:
         reprendre.set()
         await creation
