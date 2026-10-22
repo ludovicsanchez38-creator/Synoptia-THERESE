@@ -42,8 +42,12 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   open: vi.fn(),
 }));
 
-// Mock fetch for API calls
-(globalThis as unknown as { fetch: typeof fetch }).fetch = vi.fn() as typeof fetch;
+// Un appel non doublé reste hors réseau et respecte le contrat Promise de
+// fetch. Un retour undefined cassait .finally() et laissait le délai API armé.
+// L'implémentation initiale survit aussi à mockReset/resetAllMocks.
+globalThis.fetch = vi.fn<typeof fetch>(async () => {
+  throw new TypeError('Réseau non doublé dans ce test');
+});
 
 // Mock localStorage
 const localStorageMock = {
