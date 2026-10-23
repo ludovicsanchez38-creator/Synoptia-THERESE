@@ -14,3 +14,14 @@ export const STATUS_CONFIG: Record<string, { label: string }> = {
   converted: { label: 'Converti' },
   cancelled: { label: 'Annulée' },
 };
+
+
+export function libelleStatutPiece(statut: string, type: string): string {
+  const feminin = type === 'facture';
+  const accords: Record<string, string> = {
+    sent: feminin ? 'Envoyée' : 'Envoyé',
+    paid: feminin ? 'Payée' : 'Payé',
+    cancelled: feminin ? 'Annulée' : 'Annulé',
+  };
+  return accords[statut] ?? STATUS_CONFIG[statut]?.label ?? statut;
+}

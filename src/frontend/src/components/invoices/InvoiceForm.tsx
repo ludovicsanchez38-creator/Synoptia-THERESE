@@ -1,3 +1,4 @@
+import { libelleStatutPiece } from './statutsFacture';
 /**
  * THERESE v2 - Invoice Form
  *
@@ -501,7 +502,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         confirmLabel: 'Confirmer le changement de statut',
         details: [
           { label: 'Document', value: numeroAffiche(invoice.invoice_number) },
-          { label: 'Statut actuel', value: invoice.status },
+          { label: 'Statut actuel', value: libelleStatutPiece(invoice.status, invoice.document_type) },
           { label: 'Nouveau statut', value: statusLabel },
           { label: 'Montant TTC', value: montantAvecDevise(totalTTC, currency) },
         ],
