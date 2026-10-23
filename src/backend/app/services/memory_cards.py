@@ -39,9 +39,21 @@ def mots(texte: str) -> set[str]:
     return {m for m in re.findall(r'[^\W_]+', normaliser(texte)) if m.isdigit() or (len(m) >= 3 and m not in MOTS_VIDES)}
 
 
+def nombres(texte: str) -> set[str]:
+    return set(re.findall(r'\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?', texte))
+
+
 def negations(texte: str) -> set[tuple[str, str]]:
-    # Une négation porte sur le mot qui la suit ; seul un message sur ce mot peut la corriger.
-    return set(re.findall(r"\b(pas|jamais|plus|aucun|aucune|sans|ni)\s+([^\W_]+)", normaliser(texte)))
+    # Nombres entiers avec décimales/séparateurs sourcés tels quels ; polarité = (marqueur, premier mot hors de/d'/du/des/la/le/les/l'/un/une/en/y), ajout ou retrait autorisé seulement si ce mot figure dans le message.
+    jetons = re.findall(r'[^\W_]+', normaliser(texte))
+    petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'en', 'y'}
+    resultat = set()
+    for index, jeton in enumerate(jetons):
+        if jeton in {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'sans', 'ni'}:
+            vise = next((mot for mot in jetons[index + 1:] if mot not in petits_mots), None)
+            if vise is not None:
+                resultat.add((jeton, vise))
+    return resultat
 
 
 def date_utc(valeur: datetime) -> datetime:
@@ -223,12 +235,13 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         if existante:
             provenance += f' {existante.title} {existante.content} {existante.reason}'
         factuel = ' '.join(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason'))
-        nombres_titre = set(re.findall(r'\d+', donnees.get('title', '')))
-        negations_perdues = (negations(f'{existante.content} {existante.reason}') - negations(factuel)) if existante else set()
+        ancien_factuel = f'{existante.content} {existante.reason}' if existante else ''
+        polarites_modifiees = negations(ancien_factuel) ^ negations(factuel)
+        mots_message = set(re.findall(r'[^\W_]+', normaliser(source.content)))
         # Un titre résume librement ; seuls ses nombres doivent avoir une source.
         if (not mots(factuel) <= mots(provenance)
-                or not nombres_titre <= set(re.findall(r'\d+', provenance))
-                or any(mot not in mots(source.content) for _, mot in negations_perdues)):
+                or not (nombres(factuel) | nombres(donnees.get('title', ''))) <= nombres(provenance)
+                or any(mot not in mots_message for _, mot in polarites_modifiees)):
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)

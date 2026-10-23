@@ -150,3 +150,27 @@ async def test_nombre_du_titre_donne_dans_le_message_accepte(db_session):
                                       "Correction : livraison sous 9 jours",
                                       title="Livraison sous 9 jours", content="Livraison sous 9 jours")
     assert fiche["title"] == "Livraison sous 9 jours"
+
+
+@pytest.mark.parametrize("contenu,changements", [
+    ("La livraison est gratuite", {"content": "La livraison n'est pas gratuite le mardi"}),
+    ("Livraison : tarif 30,50 euros", {"content": "Livraison le mardi : tarif 50,30 euros"}),
+    ("Livraison : tarif 30,50 euros", {"title": "Tarif 50,30 euros", "content": "Livraison le mardi : tarif 30,50 euros"}),
+    ("Livraison : tarif 1.5 euros", {"reason": "Tarif 5.1 euros", "content": "Livraison le mardi : tarif 1.5 euros"}),
+    ("Livraison : tarif 7 500 euros", {"content": "Livraison le mardi : tarif 500 7 euros"}),
+])
+async def test_reprise3_inventions_nombres_et_polarite_refusees(db_session, contenu, changements):
+    with pytest.raises(service.RefusMemoire, match="uniquement une information"):
+        await appliquer_correction(db_session, contenu, "Correction : livraison le mardi", **changements)
+
+
+@pytest.mark.parametrize("contenu,message,proposition", [
+    ("Il n'y a pas de livraison", "Correction : la livraison est disponible", "La livraison est disponible"),
+    ("La livraison est disponible", "Correction : il n'y a pas de livraison", "Il n'y a pas de livraison"),
+    ("Sans de l'or", "Correction : or disponible", "Or disponible"),
+    ("Livraison : tarif 30,50 euros", "Correction : tarif 50,30 euros", "Livraison : tarif 50,30 euros"),
+    ("Livraison : tarif 7 500 euros", "Correction : livraison le mardi", "Livraison le mardi : tarif 7 500 euros"),
+])
+async def test_reprise3_corrections_explicites_acceptees(db_session, contenu, message, proposition):
+    fiche = await appliquer_correction(db_session, contenu, message, content=proposition)
+    assert fiche["content"] == proposition
