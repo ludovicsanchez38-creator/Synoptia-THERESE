@@ -235,3 +235,78 @@ async def test_rdate_seul_inclut_dtstart_avant_exclusions(client, db_session, jo
     assert ("26/10" in resultat) == (not exclure_depart), resultat
     assert "27/10" in resultat, resultat
     assert resultat.count("RDATE seul") == (1 if exclure_depart else 2)
+
+
+@pytest.mark.parametrize("regles", [
+    ["RRULE:FREQ=MINUTELY"],
+    ["RRULE:FREQ=MINUTELY;BYMONTH=2;BYMONTHDAY=30"],
+    ["RRULE:FREQ=DAILY", "EXRULE:FREQ=DAILY"],
+])
+def test_ancienne_serie_dense_ou_sans_resultat_a_un_cout_borne(regles):
+    # Le sous-processus protège aussi l'exécution rouge d'un calcul qui ne
+    # rendrait jamais la main ; aucun fournisseur externe n'est appelé.
+    import subprocess
+    import sys
+    import textwrap
+
+    code = textwrap.dedent(f"""
+        import sys
+        from datetime import datetime
+        sys.path.insert(0, 'src/backend')
+        from app.services.calendar.base_provider import CalendarEventDTO
+        from app.services.calendar.local_provider import _occurrences_locales
+        evenement = CalendarEventDTO(id='dense', calendar_id='local', summary='dense',
+            start=datetime(2020, 1, 1, 9), recurrence={regles!r})
+        try:
+            _occurrences_locales(evenement, datetime(2026, 10, 26, 9), datetime(2026, 10, 26, 10), 1)
+        except ValueError as exc:
+            print(str(exc))
+    """)
+    resultat = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=15)
+    assert resultat.returncode == 0, resultat.stderr
+    assert "limite de calcul" in resultat.stdout.lower(), resultat.stdout
+
+
+@pytest.mark.asyncio
+async def test_developpement_local_hors_de_la_boucle_du_moteur(db_session, monkeypatch):
+    import threading
+
+    from app.services.calendar import local_provider
+
+    await _agenda(db_session)
+    db_session.add(CalendarEvent(
+        id="serie", calendar_id="local", summary="Série", start_datetime=datetime(2026, 10, 26, 9),
+        recurrence='["RRULE:FREQ=DAILY;COUNT=2"]',
+    ))
+    await db_session.commit()
+    fil_moteur = threading.get_ident()
+    fils_calcul = []
+    original = local_provider._occurrences_locales
+
+    def observer(*args):
+        fils_calcul.append(threading.get_ident())
+        return original(*args)
+
+    monkeypatch.setattr(local_provider, "_occurrences_locales", observer)
+    evenements, _ = await local_provider.LocalCalendarProvider(db_session).list_events(
+        "local", datetime(2026, 10, 26), datetime(2026, 10, 28), expand_recurring=True,
+    )
+    assert len(evenements) == 2
+    assert fils_calcul and all(fil != fil_moteur for fil in fils_calcul)
+
+
+@pytest.mark.asyncio
+async def test_ancienne_serie_dense_signalee_et_rendez_vous_independant_rendu(client, db_session):
+    await _agenda(db_session)
+    for evenement in [
+        {"summary": "Ancienne série dense", "start_datetime": "2020-01-01T09:00:00+01:00", "end_datetime": "2020-01-01T09:01:00+01:00", "recurrence": ["RRULE:FREQ=MINUTELY"]},
+        {"summary": "Rendez-vous indépendant", "start_datetime": "2026-10-27T15:00:00+01:00", "end_datetime": "2026-10-27T16:00:00+01:00"},
+    ]:
+        cree = await client.post("/api/calendar/events", json={"calendar_id": "local", **evenement})
+        assert cree.status_code == 200, cree.text
+    resultat = await _list_calendar_events(_periode(), db_session)
+    assert "27/10 15:00-16:00" in resultat, resultat
+    assert "Rendez-vous indépendant" in resultat
+    assert "Ancienne série dense" in resultat
+    assert "limite de calcul" in resultat.lower()
+    assert "1 evenement(s)" in resultat

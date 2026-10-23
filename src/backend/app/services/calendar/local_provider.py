@@ -6,10 +6,14 @@ No external dependencies, works completely offline.
 Part of the "Local First" architecture.
 """
 
+import asyncio
 import logging
+import sys
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, date, datetime
 from importlib import import_module
+from types import FrameType
 
 import pytz
 from app.models.entities import Calendar, CalendarEvent, generate_uuid
@@ -27,6 +31,13 @@ from sqlmodel import select
 rrulestr = import_module("dateutil.rrule").rrulestr
 
 logger = logging.getLogger(__name__)
+
+_MAX_ETAPES_RECURRENCE = 100_000
+_TraceurRecurrence = Callable[[FrameType, str, object], "_TraceurRecurrence | None"]
+
+
+class LimiteCalculRecurrence(ValueError):
+    """La série dépasse le travail autorisé pour un événement local."""
 
 
 def _borne_murale_paris(borne: datetime) -> datetime:
@@ -46,6 +57,38 @@ def _borne_murale_paris(borne: datetime) -> datetime:
 
 
 def _occurrences_locales(
+    event: CalendarEventDTO, debut: datetime, fin: datetime, limite: int,
+) -> list[CalendarEventDTO]:
+    """Borne le travail interne, même avant la première occurrence produite.
+
+    dateutil n'expose pas de budget : limiter ses seuls résultats laisse
+    sans borne les filtres impossibles ou les séries entièrement exclues.
+    Le compteur de lignes couvre aussi ces boucles internes. Le traceur est
+    propre au fil de calcul et restauré à la sortie, y compris en cas d'erreur.
+    """
+    etapes = 0
+
+    def compter(frame: FrameType, evenement: str, argument: object) -> _TraceurRecurrence | None:
+        nonlocal etapes
+        if frame.f_globals.get("__name__") != "dateutil.rrule":
+            return None
+        if evenement == "line":
+            etapes += 1
+            if etapes > _MAX_ETAPES_RECURRENCE:
+                raise LimiteCalculRecurrence(
+                    f"Limite de calcul des récurrences atteinte ({_MAX_ETAPES_RECURRENCE} étapes)"
+                )
+        return compter
+
+    precedent = sys.gettrace()
+    sys.settrace(compter)
+    try:
+        return _developper_occurrences_locales(event, debut, fin, limite)
+    finally:
+        sys.settrace(precedent)
+
+
+def _developper_occurrences_locales(
     event: CalendarEventDTO, debut: datetime, fin: datetime, limite: int,
 ) -> list[CalendarEventDTO]:
     """B-1110 : développe une série dans une fenêtre, sans modifier sa souche.
@@ -347,10 +390,16 @@ class LocalCalendarProvider(CalendarProvider):
             dtos = []
             for event in events:
                 try:
-                    dtos.extend(_occurrences_locales(
+                    dtos.extend(await asyncio.to_thread(
+                        _occurrences_locales,
                         self._event_to_dto(event), _borne_murale_paris(time_min),
                         _borne_murale_paris(time_max), offset + max_results + 1,
                     ))
+                except LimiteCalculRecurrence as exc:
+                    self.recurrence_warnings.append(
+                        f"Événement ignoré : {event.summary}. {exc}. "
+                        "Ouvre Agenda pour vérifier cette série."
+                    )
                 except Exception:
                     logger.warning("Récurrence locale illisible : événement %s", event.id)
                     self.recurrence_warnings.append(
