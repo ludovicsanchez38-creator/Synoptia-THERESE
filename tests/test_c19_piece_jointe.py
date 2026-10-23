@@ -12,7 +12,7 @@ from tests.test_p159_contexte_transmis import _FauxLLM
 @pytest.mark.parametrize("stream", [True, False])
 async def test_piece_trop_grosse_signalee(client, tmp_path, monkeypatch, stream, nom="inventaire-complet.txt"):
     fichier = tmp_path / nom
-    with fichier.open("wb") as flux:
+    with fichier.open("w", encoding="utf-8") as flux:
         flux.truncate(MAX_FILE_SIZE_BYTES + 1)
     captures = []
 
