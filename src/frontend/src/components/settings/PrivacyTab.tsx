@@ -658,10 +658,10 @@ export function PrivacyTab() {
         {/* Slider durée */}
         {purgeEnabled && (
           <div className="mb-4">
-            <label className="text-xs font-medium text-text-muted block mb-2">
+            <label htmlFor="purge-duree-retention" className="text-xs font-medium text-text-muted block mb-2">
               Durée de rétention : <span className="text-accent-cyan-ink font-semibold">{purgeMonths} mois</span>
             </label>
-            <input aria-label="Ancienneté des données à purger, en mois"
+            <input id="purge-duree-retention"
               disabled={purgeIndisponible}
               type="range"
               min={12}

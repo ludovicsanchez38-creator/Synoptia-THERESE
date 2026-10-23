@@ -150,3 +150,10 @@ describe('PrivacyTab - consentements cloud (revue 0.40)', () => {
     expect(hasCloudConsent('llm', 'openai')).toBe(true);
   });
 });
+
+it('B-1076 : le curseur est associé au libellé visible', async () => {
+  vi.mocked(listBackups).mockResolvedValue([]);
+  render(<PrivacyTab />);
+  const curseur = await screen.findByLabelText(/Durée de rétention/);
+  expect(curseur).toHaveAttribute('type', 'range');
+});
