@@ -1601,11 +1601,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
             <Cpu className="w-3.5 h-3.5 text-accent-cyan-ink" />
             {availableModels.length > 1 ? (
-              <SelecteurModele modeles={availableModels} modele={currentModel}
+              <SelecteurModele modeles={availableModels} modele={currentModel} fournisseur={currentProvider ?? undefined}
                 onChange={(modele) => void handleModelChange(modele)}
                 description={DECORATIONS[currentModel]?.badge === 'Préversion' ? 'chat-model-preview' : undefined} />
             ) : (
-              <span className="text-xs font-medium text-text">{decorer([currentModel])[0].name}</span>
+              <span className="text-xs font-medium text-text">{decorer([currentModel], currentProvider ?? undefined)[0].name}</span>
             )}
             {currentProvider && (
               <span

@@ -4,8 +4,9 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { decorer, DECORATIONS } from '../../lib/catalogueModeles';
 
 /** Liste native défilante dans la fenêtre, sans popup natif hors écran. */
-export function SelecteurModele({ modeles, modele, onChange, description }: {
+export function SelecteurModele({ modeles, modele, onChange, description, fournisseur }: {
   modeles: string[]; modele: string; onChange: (modele: string) => void; description?: string;
+  fournisseur?: string;
 }) {
   const bouton = useRef<HTMLButtonElement>(null);
   const liste = useRef<HTMLSelectElement>(null);
@@ -36,7 +37,7 @@ export function SelecteurModele({ modeles, modele, onChange, description }: {
         setChoix(modele); clavier.current = false;
         const rect = bouton.current!.getBoundingClientRect();
         setPosition({ left: Math.max(8, Math.min(rect.left, window.innerWidth - 328)), bottom: window.innerHeight - rect.top + 4, maxHeight: Math.max(60, rect.top - 16) });
-      }}>{decorer([modele])[0].name} ▾</button>
+      }}>{decorer([modele], fournisseur)[0].name} ▾</button>
     {position && createPortal(<select ref={liste} aria-label="Choisir le modèle" value={choix}
       size={Math.min(8, modeles.length)}
       className="fixed z-50 w-80 max-w-[calc(100vw-16px)] overflow-y-auto rounded-md border border-border bg-surface p-2 text-sm text-text shadow-lg"
@@ -55,7 +56,7 @@ export function SelecteurModele({ modeles, modele, onChange, description }: {
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermer(); }
         if (e.key === 'Tab') fermer();
       }}>
-      {modeles.map((m) => <option key={m} value={m} className="px-2 py-2">{decorer([m])[0].name}{DECORATIONS[m]?.badge === 'Préversion' ? ' (préversion)' : ''}</option>)}
+      {modeles.map((m) => <option key={m} value={m} className="px-2 py-2">{decorer([m], fournisseur)[0].name}{DECORATIONS[m]?.badge === 'Préversion' ? ' (préversion)' : ''}</option>)}
     </select>, document.body)}
   </>;
 }

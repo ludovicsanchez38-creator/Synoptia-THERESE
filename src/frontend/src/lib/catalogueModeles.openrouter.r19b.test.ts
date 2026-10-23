@@ -31,3 +31,10 @@ it.each([
 ])('B-1097 : decorer formate aussi le modèle absent du catalogue %s', (id, attendu) => {
   expect(decorer([id])[0].name).toBe(attendu);
 });
+
+
+it.each(['qwen3:8b', 'llama3.2:latest', 'mistral:7b-instruct-q4_K_M', 'gemma4:12b', 'deepseek-r2:14b'])(
+  'B-1097 : un modèle local à étiquette garde son nom exact (%s)', (id) => {
+    expect(decorer([id])[0].name).toBe(id);
+  },
+);
