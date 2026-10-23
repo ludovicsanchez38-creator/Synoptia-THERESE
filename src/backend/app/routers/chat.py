@@ -3481,16 +3481,6 @@ class _ResultatOutil(Protocol):
     def execution_time_ms(self) -> float: ...
 
 
-def _evenement_terminal(morceau: str) -> bool:
-    """Vrai pour un événement SSE après lequel le client cesse de lire."""
-    if not morceau.startswith("data:"):
-        return False
-    try:
-        return json.loads(morceau[5:].strip()).get("type") in ("error", "done")
-    except (json.JSONDecodeError, AttributeError):
-        return False
-
-
 async def _execute_tools_and_continue(
     llm_service: LLMService,
     mcp_service,
@@ -3508,8 +3498,6 @@ async def _execute_tools_and_continue(
     assistant_content_brut: list[Any] | None = None,
     echec_suite: dict[str, bool] | None = None,
     refus_fiches_affiches: set[str] | None = None,
-    fiches_ecrites: set[str] | None = None,
-    refus_differes: dict[str, str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -3530,48 +3518,6 @@ async def _execute_tools_and_continue(
     alors remonter le résultat réel (ex. les emails lus) plutôt qu'une réponse
     vide.
     """
-    if refus_differes is None:
-        # B-1115 : point d'entrée du tour. Le refus d'une MODIFICATION de fiche
-        # attend la fin du tour : quand le modèle reprend et que la même fiche
-        # est écrite, la bulle ne montre plus un refus au-dessus de la réussite.
-        # Revue Astra c19e v2 : les refus en attente passent AVANT tout
-        # événement terminal (le client cesse de lire à « error » ou « done »),
-        # et aussi sur une exception ou une annulation.
-        differes: dict[str, str] = {}
-        ecrites = set() if fiches_ecrites is None else fiches_ecrites
-        affiches = set() if refus_fiches_affiches is None else refus_fiches_affiches
-
-        def refus_en_attente() -> list[str]:
-            restants = []
-            for message in dict.fromkeys(m for fiche, m in differes.items() if fiche not in ecrites):
-                if message not in affiches:
-                    affiches.add(message)
-                    restants.append('data: ' + json.dumps({
-                        'type': 'text', 'conversation_id': conversation_id,
-                        'content': '\n\n' + message + '\n\n',
-                    }, ensure_ascii=False) + '\n\n')
-            return restants
-
-        try:
-            async for morceau in _execute_tools_and_continue(
-                llm_service, mcp_service, context, assistant_content, tool_calls, tools,
-                conversation_id, remaining_iterations, session=session, prior_turns=prior_turns,
-                usage_totals=usage_totals, tool_outcomes=tool_outcomes, contexte=contexte,
-                assistant_content_brut=assistant_content_brut, echec_suite=echec_suite,
-                refus_fiches_affiches=affiches, fiches_ecrites=ecrites, refus_differes=differes,
-            ):
-                if _evenement_terminal(morceau):
-                    for bulle in refus_en_attente():
-                        yield bulle
-                yield morceau
-        except Exception:
-            for bulle in refus_en_attente():
-                yield bulle
-            raise
-        for bulle in refus_en_attente():
-            yield bulle
-        return
-
     if remaining_iterations <= 0:
         logger.warning("Max tool iterations reached, stopping")
         return
@@ -3595,8 +3541,6 @@ async def _execute_tools_and_continue(
     exec_records: list[tuple[str, str, bool]] = []
     if refus_fiches_affiches is None:
         refus_fiches_affiches = set()
-    if fiches_ecrites is None:
-        fiches_ecrites = set()
     # BUG-121 : une fois une action sensible mise en attente de confirmation, on
     # ne relance pas la chaîne d'outils (voir plus bas). Sinon le modèle - surtout
     # les modèles faibles - re-émet send_email en boucle et empile plusieurs
@@ -3810,19 +3754,20 @@ async def _execute_tools_and_continue(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
                 error=resultat_fiche.get('message'), execution_time_ms=0,
             )
-            id_vise = tc.arguments.get('id')
-            if not resultat_fiche['success'] and isinstance(id_vise, str):
-                # Lu tout de suite par le modèle, affiché en fin de tour seulement
-                # si la fiche n'a pas été écrite entre-temps (B-1115).
-                refus_differes.setdefault(id_vise, resultat_fiche['message'])
-            elif not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
+            if not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
                 refus_fiches_affiches.add(resultat_fiche['message'])
+                affiche = resultat_fiche['message']
+                if isinstance(tc.arguments.get('id'), str):
+                    # B-1115 : le modèle reprend souvent la modification refusée et
+                    # réussit. Annoncé comme une tentative, le refus reste affiché
+                    # tout de suite (rien ne se perd) sans contredire la réussite
+                    # qui suit (trois essais de report, trois NO GO d'Astra).
+                    affiche = 'Tentative de modification refusée : ' + affiche[:1].lower() + affiche[1:]
                 yield 'data: ' + json.dumps({
                     'type': 'text', 'conversation_id': conversation_id,
-                    'content': '\n\n' + resultat_fiche['message'] + '\n\n',
+                    'content': '\n\n' + affiche + '\n\n',
                 }, ensure_ascii=False) + '\n\n'
             if resultat_fiche.get('receipt'):
-                fiches_ecrites.add(resultat_fiche['receipt']['id'])
                 yield "data: " + json.dumps({
                     "type": "memory_receipt", "conversation_id": conversation_id,
                     "receipt": resultat_fiche['receipt'],
@@ -4029,11 +3974,9 @@ async def _execute_tools_and_continue(
         if event.type == "text" and event.content:
             # Retirer uniquement les refus déjà rendus, même coupés entre deux chunks.
             texte_en_attente += event.content
-            # Un refus différé non plus n'est pas repris tel quel par la suite.
-            caches = refus_fiches_affiches | set(refus_differes.values())
-            for refus in caches:
+            for refus in refus_fiches_affiches:
                 texte_en_attente = texte_en_attente.replace(refus, "")
-            retenus = max((n for refus in caches
+            retenus = max((n for refus in refus_fiches_affiches
                            for n in range(1, min(len(refus), len(texte_en_attente)) + 1)
                            if texte_en_attente.endswith(refus[:n])), default=0)
             texte = texte_en_attente[:-retenus] if retenus else texte_en_attente
@@ -4083,8 +4026,6 @@ async def _execute_tools_and_continue(
                     contexte=contexte,
                     echec_suite=echec_suite,
                     refus_fiches_affiches=refus_fiches_affiches,
-                    fiches_ecrites=fiches_ecrites,
-                    refus_differes=refus_differes,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.

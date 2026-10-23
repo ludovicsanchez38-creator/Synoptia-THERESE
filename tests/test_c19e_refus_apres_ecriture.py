@@ -1,11 +1,12 @@
-"""B-1115 : une correction réussie ne s'affiche plus précédée d'un refus.
+"""B-1115 : le refus d'une modification de fiche s'annonce comme une tentative.
 
-Relance du 23/10 (Sonnet 5.5, code C19-E, journal du moteur) : Sonnet modifie la
-fiche avec une raison non sourcée (refus et détail), puis reprend sans raison
-quatre secondes plus tard (reçu, version 2). La bulle commençait par « Cette
-fiche doit reprendre uniquement une information donnée dans ton message. » au-
-dessus de « C'est mis à jour ». Le refus d'une modification est lu tout de suite
-par le modèle et n'est affiché qu'en fin de tour, si la fiche n'a pas été écrite.
+Relance du 23/10 (Sonnet 5.5, journal du moteur) : Sonnet modifie la fiche avec
+une raison non sourcée (refus et détail), puis reprend sans raison quatre
+secondes plus tard (reçu, version 2). La bulle commençait par « Cette fiche doit
+reprendre uniquement une information donnée dans ton message. » au-dessus de
+« C'est mis à jour ». Trois essais de report du refus en fin de tour ont été
+refusés par Astra (refus perdu sur une erreur, une exception, une annulation) :
+le refus reste affiché tout de suite, annoncé comme une tentative.
 """
 import json
 from types import SimpleNamespace
@@ -13,12 +14,15 @@ from unittest.mock import AsyncMock
 
 from app.routers import chat
 from app.services import memory_card_tools
-from app.services.providers.base import StreamEvent, ToolCall
+from app.services.providers.base import StreamEvent, ToolCall, ToolResult
 
 REFUS = "Cette fiche doit reprendre uniquement une information donnée dans ton message."
+TENTATIVE = "Tentative de modification refusée : cette fiche doit reprendre uniquement une information donnée dans ton message."
+MODIFICATION = {"id": "f1", "version": 1, "content": "a", "reason": "b"}
 
 
-async def _jouer(db_session, monkeypatch, resultats, appels, suite=("C'est mis à jour.",), relance=None):
+async def _flux(db_session, monkeypatch, resultats, appels, modele=None, contexte=None, suite=("C'est mis à jour.",),
+                relance=None):
     monkeypatch.setattr(memory_card_tools, "executer_outil", AsyncMock(side_effect=resultats))
     monkeypatch.setattr(chat, "_perimetre_de_conversation", AsyncMock(return_value=("global", None)))
     recus = []
@@ -36,76 +40,25 @@ async def _jouer(db_session, monkeypatch, resultats, appels, suite=("C'est mis �
                 yield StreamEvent(type="text", content=fragment)
             yield StreamEvent(type="done", stop_reason="end_turn")
 
-    chunks = [json.loads(c.removeprefix("data: ")) async for c in chat._execute_tools_and_continue(
-        Modele(), None, context=SimpleNamespace(memory_cards_enabled=True), assistant_content="",
-        tool_calls=[ToolCall(id=f"fiche-{i}", name="upsert_memory_card", arguments=a) for i, a in enumerate(appels)],
-        tools=[memory_card_tools.MEMORY_CARD_TOOL], conversation_id="conv-factice", session=db_session,
-        remaining_iterations=3,
-    )]
-    return "".join(c.get("content", "") for c in chunks if c["type"] == "text"), chunks, recus
+    morceaux = []
+    try:
+        async for c in chat._execute_tools_and_continue(
+            modele or Modele(), None, context=SimpleNamespace(memory_cards_enabled=True), assistant_content="",
+            tool_calls=[ToolCall(id=f"fiche-{i}", name="upsert_memory_card", arguments=a) for i, a in enumerate(appels)],
+            tools=[memory_card_tools.MEMORY_CARD_TOOL], conversation_id="conv-factice", session=db_session,
+            remaining_iterations=3, contexte=contexte,
+        ):
+            morceaux.append(json.loads(c.removeprefix("data: ")))
+    except RuntimeError as erreur:
+        morceaux.append({"type": "exception", "content": str(erreur)})
+    return morceaux, recus
 
 
-async def test_refus_apres_ecriture_de_la_meme_fiche_non_affiche(db_session, monkeypatch):
-    texte, chunks, recus = await _jouer(db_session, monkeypatch, [
-        {"success": True, "receipt": {"id": "f1", "version": 2, "operation": "modification"}},
-        {"success": False, "message": REFUS, "card_id": None},
-    ], [{"id": "f1", "version": 1, "content": "a"}, {"id": "f1", "version": 1, "content": "a", "reason": "b"}],
-        suite=(REFUS[:30], REFUS[30:], " C'est mis à jour."))
-    assert REFUS not in texte
-    assert texte.strip() == "C'est mis à jour."
-    assert [c["receipt"]["id"] for c in chunks if c["type"] == "memory_receipt"] == ["f1"]
-    # Le modèle a bien reçu le refus du second appel.
-    assert any(REFUS in r.result for r in _resultats_lus(recus))
+def _texte(morceaux):
+    return "".join(m.get("content", "") for m in morceaux if m["type"] == "text")
 
 
-async def test_refus_d_une_autre_fiche_reste_affiche(db_session, monkeypatch):
-    texte, _, _ = await _jouer(db_session, monkeypatch, [
-        {"success": True, "receipt": {"id": "f1", "version": 2, "operation": "modification"}},
-        {"success": False, "message": REFUS, "card_id": None},
-    ], [{"id": "f1", "version": 1, "content": "a"}, {"id": "f2", "version": 1, "content": "b"}])
-    assert texte.count(REFUS) == 1
-
-
-async def test_refus_puis_reprise_reussie_au_tour_suivant_non_affiche(db_session, monkeypatch):
-    # L'ordre observé le 23/10 : refus, le modèle relit le détail, reprend, reçu.
-    texte, chunks, recus = await _jouer(db_session, monkeypatch, [
-        {"success": False, "message": REFUS, "card_id": None, "detail": "Sans source : « utilisateur »."},
-        {"success": True, "receipt": {"id": "f1", "version": 2, "operation": "modification"}},
-    ], [{"id": "f1", "version": 1, "content": "a", "reason": "b"}], relance={"id": "f1", "version": 1, "content": "a"},
-        suite=(REFUS, " C'est mis à jour."))
-    assert REFUS not in texte
-    assert texte.strip() == "C'est mis à jour."
-    assert [c["receipt"]["id"] for c in chunks if c["type"] == "memory_receipt"] == ["f1"]
-    assert "utilisateur" in _resultats_lus(recus)[0].result
-
-
-async def test_refus_dans_le_meme_appel_puis_ecriture_non_affiche(db_session, monkeypatch):
-    texte, _, _ = await _jouer(db_session, monkeypatch, [
-        {"success": False, "message": REFUS, "card_id": None},
-        {"success": True, "receipt": {"id": "f1", "version": 2, "operation": "modification"}},
-    ], [{"id": "f1", "version": 1, "content": "a", "reason": "b"}, {"id": "f1", "version": 1, "content": "a"}])
-    assert REFUS not in texte
-
-
-async def test_refus_d_une_modification_jamais_ecrite_affiche_une_fois_en_fin(db_session, monkeypatch):
-    texte, _, _ = await _jouer(db_session, monkeypatch, [
-        {"success": False, "message": REFUS, "card_id": None},
-    ], [{"id": "f1", "version": 1, "content": "a", "reason": "b"}], suite=(REFUS, " Je n'ai pas pu la modifier."))
-    assert texte.count(REFUS) == 1
-    assert texte.index("Je n'ai pas pu") < texte.index(REFUS)
-
-
-async def test_refus_d_une_creation_reste_immediat(db_session, monkeypatch):
-    texte, _, _ = await _jouer(db_session, monkeypatch, [
-        {"success": False, "message": REFUS, "card_id": None},
-    ], [{"content": "a"}], suite=(" Je n'ai rien retenu.",))
-    assert texte.count(REFUS) == 1
-    assert texte.index(REFUS) < texte.index("Je n'ai rien retenu")
-
-
-
-def _resultats_lus(recus):
-    from app.services.providers.base import ToolResult
+def _lus(recus):
     vus = []
 
     def fouiller(objet):
@@ -121,45 +74,59 @@ def _resultats_lus(recus):
     return vus
 
 
+async def test_refus_d_une_modification_annonce_une_tentative(db_session, monkeypatch):
+    morceaux, _ = await _flux(db_session, monkeypatch, [{"success": False, "message": REFUS, "card_id": None}],
+                              [MODIFICATION], suite=(" Je n'ai pas pu la modifier.",))
+    texte = _texte(morceaux)
+    assert texte.count(TENTATIVE) == 1
+    assert texte.index(TENTATIVE) < texte.index("Je n'ai pas pu")
+
+
+async def test_tentative_refusee_puis_reprise_reussie(db_session, monkeypatch):
+    # L'ordre observé le 23/10 : refus, le modèle relit le détail, reprend, reçu.
+    morceaux, recus = await _flux(db_session, monkeypatch, [
+        {"success": False, "message": REFUS, "card_id": None, "detail": "Sans source : « utilisateur »."},
+        {"success": True, "receipt": {"id": "f1", "version": 2, "operation": "modification"}},
+    ], [MODIFICATION], relance={"id": "f1", "version": 1, "content": "a"}, suite=(REFUS, " C'est mis à jour."))
+    texte = _texte(morceaux)
+    # La tentative est annoncée une fois ; la reprise verbatim du modèle est retirée.
+    assert texte.count(TENTATIVE) == 1 and texte.count(REFUS) == 0
+    assert texte.strip().endswith("C'est mis à jour.")
+    assert [m["receipt"]["id"] for m in morceaux if m["type"] == "memory_receipt"] == ["f1"]
+    assert "utilisateur" in _lus(recus)[0].result
+
+
+async def test_refus_d_une_creation_reste_tel_quel(db_session, monkeypatch):
+    morceaux, _ = await _flux(db_session, monkeypatch, [{"success": False, "message": REFUS, "card_id": None}],
+                              [{"content": "a"}], suite=(" Je n'ai rien retenu.",))
+    texte = _texte(morceaux)
+    assert texte.count(REFUS) == 1 and "Tentative" not in texte
+
+
 async def test_le_modele_recoit_le_detail_et_la_fiche_visee(db_session, monkeypatch):
     # Astra c19e v1 : la boucle remplaçait le résultat refusé par « Error: message » ;
     # le détail (mots sans source, id et version de la fiche) n'arrivait pas au modèle.
-    _, _, recus = await _jouer(db_session, monkeypatch, [
+    _, recus = await _flux(db_session, monkeypatch, [
         {"success": False, "message": REFUS, "card_id": "f9", "detail": "Fiche « Livraison » : id f9, version 3."},
     ], [{"kind": "correction", "subject": "livraison", "title": "t", "content": "c"}])
-    (lu,) = _resultats_lus(recus)
+    (lu,) = _lus(recus)
     assert lu.is_error
     contenu = json.loads(lu.result)
     assert contenu["detail"] == "Fiche « Livraison » : id f9, version 3."
     assert contenu["card_id"] == "f9" and contenu["message"] == REFUS
 
 
-# Revue Astra c19e v2 : le refus différé se perdait quand le tour s'interrompt
-# (le client cesse de lire à « error » ou « done »). Il passe désormais avant.
+# Garde-fous de la revue Astra c19e v2 et v3 : le refus est affiché avant toute
+# interruption du tour, puisqu'il part dès que l'outil répond.
 REFUS_MODIF = [{"success": False, "message": REFUS, "card_id": None}]
-APPEL_MODIF = [{"id": "f1", "version": 1, "content": "a", "reason": "b"}]
-
-
-async def _flux(db_session, monkeypatch, modele, contexte=None, resultats=None):
-    monkeypatch.setattr(memory_card_tools, "executer_outil",
-                        AsyncMock(side_effect=resultats or list(REFUS_MODIF)))
-    monkeypatch.setattr(chat, "_perimetre_de_conversation", AsyncMock(return_value=("global", None)))
-    morceaux = []
-    try:
-        async for c in chat._execute_tools_and_continue(
-            modele, None, context=SimpleNamespace(memory_cards_enabled=True), assistant_content="",
-            tool_calls=[ToolCall(id="fiche-0", name="upsert_memory_card", arguments=APPEL_MODIF[0])],
-            tools=[memory_card_tools.MEMORY_CARD_TOOL], conversation_id="conv-factice", session=db_session,
-            remaining_iterations=3, contexte=contexte,
-        ):
-            morceaux.append(json.loads(c.removeprefix("data: ")))
-    except RuntimeError as erreur:
-        morceaux.append({"type": "exception", "content": str(erreur)})
-    return morceaux
 
 
 def _position(morceaux, predicat):
     return next(i for i, m in enumerate(morceaux) if predicat(m))
+
+
+def _est_tentative(m):
+    return m["type"] == "text" and TENTATIVE in m.get("content", "")
 
 
 async def test_refus_avant_l_erreur_du_fournisseur(db_session, monkeypatch):
@@ -168,9 +135,8 @@ async def test_refus_avant_l_erreur_du_fournisseur(db_session, monkeypatch):
             yield StreamEvent(type="text", content="Je mets ta mémoire à jour.")
             yield StreamEvent(type="error", content="Overloaded (529)")
 
-    morceaux = await _flux(db_session, monkeypatch, Modele())
-    refus = _position(morceaux, lambda m: m["type"] == "text" and REFUS in m.get("content", ""))
-    assert refus < _position(morceaux, lambda m: m["type"] == "error")
+    morceaux, _ = await _flux(db_session, monkeypatch, list(REFUS_MODIF), [MODIFICATION], modele=Modele())
+    assert _position(morceaux, _est_tentative) < _position(morceaux, lambda m: m["type"] == "error")
 
 
 async def test_refus_avant_l_exception_de_la_suite(db_session, monkeypatch):
@@ -179,9 +145,9 @@ async def test_refus_avant_l_exception_de_la_suite(db_session, monkeypatch):
             yield StreamEvent(type="text", content="Je mets ta mémoire à jour.")
             raise RuntimeError("coupure")
 
-    morceaux = await _flux(db_session, monkeypatch, Modele())
+    morceaux, _ = await _flux(db_session, monkeypatch, list(REFUS_MODIF), [MODIFICATION], modele=Modele())
     assert morceaux[-1] == {"type": "exception", "content": "coupure"}
-    assert any(m["type"] == "text" and REFUS in m.get("content", "") for m in morceaux[:-1])
+    assert any(_est_tentative(m) for m in morceaux[:-1])
 
 
 async def test_refus_avant_le_budget_refuse(db_session, monkeypatch):
@@ -192,12 +158,11 @@ async def test_refus_avant_le_budget_refuse(db_session, monkeypatch):
             raise AssertionError("aucune suite attendue")
             yield  # pragma: no cover
 
-    morceaux = await _flux(db_session, monkeypatch, Modele())
-    refus = _position(morceaux, lambda m: m["type"] == "text" and REFUS in m.get("content", ""))
-    assert refus < _position(morceaux, lambda m: m["type"] == "error")
+    morceaux, _ = await _flux(db_session, monkeypatch, list(REFUS_MODIF), [MODIFICATION], modele=Modele())
+    assert _position(morceaux, _est_tentative) < _position(morceaux, lambda m: m["type"] == "error")
 
 
-async def test_refus_conserve_apres_une_annulation(db_session, monkeypatch):
+async def test_refus_affiche_avant_une_annulation(db_session, monkeypatch):
     etat = {"annule": False}
 
     async def refuser_puis_annuler(*args, **kwargs):
@@ -210,5 +175,6 @@ async def test_refus_conserve_apres_une_annulation(db_session, monkeypatch):
             yield  # pragma: no cover
 
     contexte = SimpleNamespace(annulation_observee=lambda: etat["annule"])
-    morceaux = await _flux(db_session, monkeypatch, Modele(), contexte=contexte, resultats=refuser_puis_annuler)
-    assert sum(REFUS in m.get("content", "") for m in morceaux if m["type"] == "text") == 1
+    morceaux, _ = await _flux(db_session, monkeypatch, refuser_puis_annuler, [MODIFICATION], modele=Modele(),
+                              contexte=contexte)
+    assert sum(_est_tentative(m) for m in morceaux) == 1
