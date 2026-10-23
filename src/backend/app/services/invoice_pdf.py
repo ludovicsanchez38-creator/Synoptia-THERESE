@@ -83,6 +83,7 @@ STATUTS_PDF: dict[str, dict[str, str]] = {
         "draft": "Brouillon",
         "sent": "Émis",
         "paid": "Remboursé",
+        "overdue": "En retard",
         "cancelled": "Annulé",
     },
 }
