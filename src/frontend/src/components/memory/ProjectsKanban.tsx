@@ -278,32 +278,25 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
     opacity: isDragging ? 0.4 : 1,
   };
 
-  // BUG-041 : les listeners couvrent toute la carte (même idiome que le
-  // PipelineView CRM), pas seulement la poignée - sinon attraper la carte
-  // par son corps ne démarre aucun drag. Les clics simples (ouvrir,
-  // supprimer) restent distingués du drag par l'activationConstraint
-  // (distance 8px) du PointerSensor.
-  // B-750 : même défaut que le kanban des tâches. Tant que
-  // `setActivatorNodeRef` n'est pas appelé, la garde du KeyboardSensor
-  // (`event.target !== activator`) ne s'applique pas et le capteur saisit la
-  // carte sur un Entrée parti du bouton du nom ou de la corbeille. L'enveloppe
-  // est le nœud activateur : elle porte déjà les écouteurs et le focus.
+  // Le pointeur saisit la carte entière ; le clavier utilise une poignée
+  // distincte du nom et de la suppression, sans boutons imbriqués.
   return (
     <div
-      ref={(noeud) => { setNodeRef(noeud); setActivatorNodeRef(noeud); }}
+      ref={setNodeRef}
       style={style}
       className="cursor-grab active:cursor-grabbing"
-      {...attributes}
-      {...listeners}
-      // B-1398 : comme les cartes du Pipeline (B-877), le conteneur déplaçable
-      // porte le nom du projet ; il était un bouton sans nom.
-      aria-label={nomAccessible}
+      onPointerDown={(event) => listeners?.onPointerDown?.(event)}
     >
       <ProjectCard
         project={project}
         onSelect={onSelect}
         onDelete={onDelete}
         showDragHandle
+        poignee={<button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners}
+          aria-label={`Déplacer ${nomAccessible}`}
+          className="text-text-muted flex-shrink-0 cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-4 h-4" aria-hidden />
+        </button>}
       />
     </div>
   );
@@ -319,9 +312,10 @@ interface ProjectCardProps {
   onDelete: (project: Project) => void;
   isOverlay?: boolean;
   showDragHandle?: boolean;
+  poignee?: React.ReactNode;
 }
 
-function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }: ProjectCardProps) {
+function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle, poignee }: ProjectCardProps) {
   // B-752 : le masque du mode démo s'arrêtait aux tâches et aux contacts. Les
   // projets arrivent BRUTS du panneau, et cette carte est le seul endroit où
   // leur nom est rendu - ici pour les cartes de la liste comme pour celle du
@@ -345,11 +339,11 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
     >
       <div className="flex items-center gap-2">
         {/* Poignée (repère visuel : toute la carte est draggable) */}
-        {showDragHandle && (
+        {poignee ?? (showDragHandle && (
           <div className="text-text-muted flex-shrink-0">
             <GripVertical className="w-4 h-4" />
           </div>
-        )}
+        ))}
 
         {/* Clickable area */}
         <button
