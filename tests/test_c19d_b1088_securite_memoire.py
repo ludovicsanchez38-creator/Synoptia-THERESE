@@ -115,3 +115,69 @@ def test_coordonnees_bancaires_avec_ponctuation(separateur):
 ])
 def test_rejeu_separateurs_apres_correctif(texte, refuse):
     assert contient_sensible(texte) is refuse
+
+
+# Reprise B-1088 : le même corpus traverse les deux appelants réels.
+CORPUS_REPRISE = [
+    ('client_secretvalue2 : exemple-factice', 'secret'),
+    ('smtppasswd2 : exemple-factice', 'secret'),
+    ('Il prie chaque dimanche', 'religieuse'),
+    ('Adhérent au parti écologiste', 'politique'),
+    ('smtp_passwd2 : exemple-factice', 'secret'),
+    ('SECRETKEY : exemple-factice', 'secret'),
+    ('client_secret2 : exemple-factice', 'secret'),
+    ('smtp_token2 : exemple-factice', 'secret'),
+    ('traitements psychiatriques', 'santé'),
+    ('adhérent à FO', 'syndicale'),
+    ('membre de FO', 'syndicale'),
+    ('syndiqué à FO', 'syndicale'),
+    ('AT611904300234573201', 'IBAN'),
+    ('Rendez-vous de 14h avec Paul Martin', None),
+    ('Secrétaire de direction', None),
+    ('Je vous prie de bien vouloir', None),
+    ('Traitement de la commande 42', None),
+    ('Parti en congés', None),
+    ('Diagnostic de performance énergétique', None),
+    ('Fournisseur de FO', None),
+    ('Traitement des commandes', None),
+    ('Diagnostic réseau', None),
+    ('Traitement des factures fournisseurs', None),
+    ('Diagnostic comptable annuel', None),
+    ('Traitement des écritures comptables', None),
+    ('Diagnostic structurel du bâtiment', None),
+    ('Traitement des eaux du chantier', None),
+    ('Diagnostic de toiture avant travaux', None),
+    ('Traitement des inscriptions en formation', None),
+    ('Diagnostic des besoins de formation', None),
+    ('Traitement des données informatiques', None),
+    ('Diagnostic du serveur informatique', None),
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(('texte', 'categorie'), CORPUS_REPRISE)
+@pytest.mark.parametrize('voie', ['fiche', 'journal'])
+async def test_reprise_corpus_par_les_deux_services(db_session, texte, categorie, voie):
+    from app.services.action_journal import verifier_texte
+    from app.services.memory_cards import RefusMemoire, ecrire
+    from fastapi import HTTPException
+
+    if voie == 'fiche':
+        async def executer():
+            fiche = await ecrire({'kind': 'preference', 'subject': 'organisation',
+                                 'title': 'Organisation du travail', 'content': texte})
+            assert fiche['content'] == texte
+        exception = RefusMemoire
+    else:
+        async def executer():
+            verifier_texte('Organisation du travail', texte, None)
+        exception = HTTPException
+    if categorie is None:
+        await executer()
+    else:
+        with pytest.raises(exception) as refus:
+            await executer()
+        message = str(refus.value)
+        assert categorie.casefold() in message.casefold()
+        assert texte not in message
+        assert 'exemple-factice' not in message
