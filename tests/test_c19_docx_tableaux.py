@@ -52,3 +52,35 @@ def test_rejeu_grilles(tmp_path, produit, prix):
     texte = _extract_docx(path)
     assert f"{produit}\t{prix}" in texte
     assert texte.index("Catalogue") < texte.index(produit) < texte.index("Fin catalogue")
+
+
+def entourer_controle(element, profondeur=1):
+    from docx.oxml import OxmlElement
+
+    for _ in range(profondeur):
+        controle = OxmlElement("w:sdt")
+        contenu = OxmlElement("w:sdtContent")
+        controle.append(contenu)
+        element.addprevious(controle)
+        contenu.append(element)
+        element = controle
+
+
+@pytest.mark.parametrize("dans_cellule", [False, True])
+@pytest.mark.parametrize("profondeur", [1, 2])
+def test_controles_de_contenu_traverses_dans_ordre(tmp_path, dans_cellule, profondeur):
+    doc = Document()
+    parent = doc.add_table(rows=1, cols=1).cell(0, 0) if dans_cellule else doc
+    parent.add_paragraph("Avant")
+    intro = parent.add_paragraph("Début du contrôle")
+    table = parent.add_table(rows=1, cols=2)
+    table.cell(0, 0).text = "Chêne"
+    table.cell(0, 1).text = "7500 euros"
+    fin = parent.add_paragraph("Fin du contrôle")
+    for element in (intro._p, table._tbl, fin._p):
+        entourer_controle(element, profondeur)
+    parent.add_paragraph("Après")
+    path = tmp_path / "controle.docx"
+    doc.save(path)
+
+    assert _extract_docx(path) == "Avant\n\nDébut du contrôle\n\nChêne\t7500 euros\n\nFin du contrôle\n\nAprès"

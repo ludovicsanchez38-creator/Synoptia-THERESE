@@ -223,18 +223,22 @@ def _extract_docx(file_path: Path) -> str:
         return "[DOCX extraction unavailable - install python-docx]"
 
     doc = Document(file_path)
-    from docx.oxml.document import CT_Body
     from docx.oxml.ns import qn
     from docx.oxml.table import CT_Tc
+    from docx.oxml.xmlchemy import BaseOxmlElement
     from docx.table import Table
     from docx.text.paragraph import Paragraph
     from docx.types import ProvidesStoryPart
 
-    def extraire_blocs(element: CT_Body | CT_Tc, parent: ProvidesStoryPart) -> str:
+    def extraire_blocs(element: BaseOxmlElement, parent: ProvidesStoryPart) -> str:
         morceaux: list[str] = []
         for enfant in element.iterchildren():
             if enfant.tag == qn("w:p"):
                 texte = Paragraph(enfant, parent).text
+                if texte.strip():
+                    morceaux.append(texte)
+            elif enfant.tag in {qn("w:sdt"), qn("w:sdtContent")}:
+                texte = extraire_blocs(enfant, parent)
                 if texte.strip():
                     morceaux.append(texte)
             elif enfant.tag == qn("w:tbl"):
