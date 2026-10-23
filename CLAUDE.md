@@ -92,6 +92,8 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **v0.80.0-alpha RELEASÉE le 23/10/2026 (21:28, prerelease)** - cycle 19 de la boucle (lots C19-A à E, Astra contradicteur, décision de Ludo de sortir avant le plateau). Premier build rouge : parcours e2e 09 resté sur l'ancien nom du bouton Retour (B-1071), pytest coupé à 720 s (seuil CI porté à 18 min), DOMPurify critique (3.4.17). **Leçon** : les portes locales de la boucle ne lancent pas les parcours de bout en bout, les ajouter avant tout tag. Rapport `docs/releases/v0.80.0-alpha.md`. **Reste** : P-104 à P-108 acceptés pour le cycle suivant (PDF depuis le chat, couleurs, confirmation MCP, un arrêt de tabulation, confirmation mémoire au lieu du refus), B-1109, B-1113 suite, B-1116, B-1118, B-1119, prismjs (modéré).
+
 > **Cycle 15, v0.77.0-alpha en préparation après GO** : consulter
 > `docs/releases/v0.77.0-alpha.md` pour les portes actuelles, la correction
 > B1760 et les limites. P161 reste un cadrage ; B1558/B1635 et les 295 fiches
