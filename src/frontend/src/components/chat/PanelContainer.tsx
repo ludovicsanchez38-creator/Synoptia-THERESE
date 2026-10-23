@@ -80,6 +80,7 @@ interface PanelContainerProps {
 }
 
 export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
+  const commandeRef = useRef<HTMLDivElement>(null);
   const {
     showSettings,
     requestedSettingsTab,
@@ -99,6 +100,8 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
     closeSaveCommand,
     closePromptLibrary,
   } = usePanelStore();
+
+  useDialogFocusTrap(commandeRef, { active: showSaveCommand && Boolean(saveCommandData), onEscape: closeSaveCommand, isolateBackground: true });
 
   const handleMemorySaved = useCallback(() => {
     // Les vues persistantes (Projets en content-swap) détiennent leur propre cache et
@@ -195,6 +198,8 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
             onClick={closeSaveCommand}
           >
             <motion.div
+              ref={commandeRef}
+              tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-label="Enregistrer comme commande"
@@ -207,6 +212,8 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
             >
               {/* Bouton fermer */}
               <button
+                type="button"
+                aria-label="Fermer la commande"
                 onClick={closeSaveCommand}
                 className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-surface text-text-muted hover:text-text transition-colors"
               >

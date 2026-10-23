@@ -42,3 +42,21 @@ describe('B-1726 : bibliothèque modale', () => {
     expect(declencheur.closest('[inert]')).toBeNull();
   });
 });
+
+it('B-1056 : la commande reçoit le focus, le piège et nomme sa fermeture', async () => {
+  usePanelStore.setState({ showSaveCommand: true, saveCommandData: { userPrompt: 'Résume ce document.', assistantContent: 'Résumé factice' } });
+  render(<PanelContainer onUserCommandsRefresh={vi.fn()} />);
+  const dialogue = await screen.findByRole('dialog', { name: 'Enregistrer comme commande' });
+  expect(dialogue).toContainElement(document.activeElement as HTMLElement);
+  expect(screen.getByRole('button', { name: 'Fermer la commande' })).toBeInTheDocument();
+});
+
+it.each(['Résumer ce courrier', 'Relire le devis', 'Préparer un rendez-vous', 'Expliquer la facture', 'Classer cette note', 'Lister les travaux', 'Traduire le paragraphe', 'Comparer les offres', 'Rédiger une relance', 'Préparer la visite'])('Rejeu B-1056 : %s', async (userPrompt) => {
+  usePanelStore.setState({ showPromptLibrary: false, showSaveCommand: true, saveCommandData: { userPrompt, assistantContent: 'Réponse factice capturée' } });
+  render(<PanelContainer onUserCommandsRefresh={vi.fn()} />);
+  const dialogue = await screen.findByRole('dialog', { name: 'Enregistrer comme commande' });
+  expect(dialogue).toContainElement(document.activeElement as HTMLElement);
+  expect(screen.getByRole('button', { name: 'Fermer la commande' })).toHaveAttribute('type', 'button');
+  fireEvent.keyDown(document, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Enregistrer comme commande' })).toBeNull());
+});
