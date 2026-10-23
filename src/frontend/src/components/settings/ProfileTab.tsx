@@ -131,6 +131,8 @@ export function ProfileTab({
                 )}
               </div>
               <button
+                type="button"
+                aria-label="Fermer l’aperçu THERESE.md"
                 onClick={closeMdModal}
                 className="p-1 rounded-md hover:bg-border/30 text-text-muted hover:text-text transition-colors"
               >
