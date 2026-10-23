@@ -11,6 +11,7 @@ import logging
 import re
 from collections.abc import Iterable
 from contextvars import ContextVar
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -195,7 +196,8 @@ CREATE_CALENDAR_EVENT_TOOL = {
         "description": (
             "Cree un evenement dans le calendrier de l'utilisateur. "
             "Utilise cet outil quand l'utilisateur demande de planifier "
-            "un RDV, une reunion, ou un evenement."
+            "un RDV, une reunion, ou un evenement. "
+            "Écris chaque heure comme une heure murale du poste à la date du rendez-vous, sans décalage ni Z."
         ),
         "parameters": {
             "type": "object",
@@ -206,11 +208,11 @@ CREATE_CALENDAR_EVENT_TOOL = {
                 },
                 "start": {
                     "type": "string",
-                    "description": "Date et heure de debut au format ISO 8601 (ex: 2026-03-26T14:00:00)",
+                    "description": "Date de début : heure murale du poste à la date du rendez-vous, sans décalage ni Z, au format ISO 8601 (ex: 2026-03-26T14:00:00)",
                 },
                 "end": {
                     "type": "string",
-                    "description": "Date et heure de fin au format ISO 8601 (ex: 2026-03-26T15:00:00)",
+                    "description": "Date de fin : heure murale du poste à la date du rendez-vous, sans décalage ni Z, au format ISO 8601 (ex: 2026-03-26T15:00:00)",
                 },
                 "description": {
                     "type": "string",
@@ -1692,6 +1694,19 @@ async def _list_calendar_events(
                 "Dis que tu ne peux pas confirmer l'agenda et propose d'ouvrir Agenda pour relancer la synchronisation.")
 
 
+def _heure_outil_agenda(texte: str, maintenant: datetime) -> datetime:
+    """Relit le décalage courant recopié sur une autre saison comme heure murale du poste."""
+    from app.services.civil_time import PARIS
+
+    heure = datetime.fromisoformat(texte)
+    heure_poste = heure.replace(tzinfo=None).astimezone()
+    if (not texte.endswith("Z") and heure.tzinfo is not None
+            and heure.utcoffset() == maintenant.utcoffset()
+            and heure.utcoffset() != heure_poste.utcoffset()):
+        heure = heure_poste
+    return heure.astimezone(PARIS).replace(tzinfo=None)
+
+
 async def _create_calendar_event(
     args: dict, session: AsyncSession, project_id: str | None = None
 ) -> str:
@@ -1701,8 +1716,6 @@ async def _create_calendar_event(
     une conversation rattachee le portent ; ceux d'avant la 0.56 n'en ont pas,
     et restent visibles partout.
     """
-    from datetime import datetime
-
     from app.services.calendar.base_provider import CreateEventRequest
 
     # BUG-133 : creer un evenement doit pouvoir amorcer un calendrier local.
@@ -1722,20 +1735,11 @@ async def _create_calendar_event(
         return "Erreur : titre, debut et fin sont obligatoires."
 
     try:
-        start = datetime.fromisoformat(start_str)
-        end = datetime.fromisoformat(end_str)
+        maintenant = datetime.now().astimezone()
+        start = _heure_outil_agenda(start_str, maintenant)
+        end = _heure_outil_agenda(end_str, maintenant)
     except ValueError as e:
         return f"Erreur de format de date : {e}. Utilise le format ISO 8601 (ex: 2026-03-26T14:00:00)."
-
-    # B-1500 : l'agenda range une heure murale de Paris sans fuseau (B-275) et
-    # SQLite jette le décalage. Une heure datée du modèle (Z, +02:00) est donc
-    # ramenée à Paris. B-1669 : depuis B-1528 le modèle reçoit l'heure du
-    # POSTE ; une heure sans fuseau est la sienne (astimezone lit une heure
-    # naïve comme heure locale, heure d'été comprise). À Paris, rien ne change.
-    from app.services.civil_time import PARIS
-
-    start = start.astimezone(PARIS).replace(tzinfo=None)
-    end = end.astimezone(PARIS).replace(tzinfo=None)
 
     if end <= start:
         return "Erreur : la fin du rendez-vous doit être postérieure au début."
