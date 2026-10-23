@@ -77,11 +77,11 @@ async def test_refus_de_fiche_non_repete_par_la_continuation(db_session, monkeyp
     assert suites == [True]
 
 
-async def appliquer_correction(db_session, contenu, message, **changements):
+async def appliquer_correction(db_session, contenu, message, titre="Livraison", **changements):
     conv = Conversation(title="Livraison")
     db_session.add(conv)
     await db_session.commit()
-    fiche = await service.ecrire({"kind": "fait", "subject": "livraison", "title": "Livraison", "content": contenu})
+    fiche = await service.ecrire({"kind": "fait", "subject": "livraison", "title": titre, "content": contenu})
     source = Message(conversation_id=conv.id, role="user", content=message)
     db_session.add(source)
     await db_session.commit()
@@ -174,3 +174,28 @@ async def test_reprise3_inventions_nombres_et_polarite_refusees(db_session, cont
 async def test_reprise3_corrections_explicites_acceptees(db_session, contenu, message, proposition):
     fiche = await appliquer_correction(db_session, contenu, message, content=proposition)
     assert fiche["content"] == proposition
+
+
+# Astra v4 : les nombres se lisent champ par champ (sinon « 30 » du titre et
+# « 500 » du contenu fabriquent « 30 500 »), et le signe fait partie du nombre.
+async def test_nombres_lus_champ_par_champ(db_session):
+    fiche = await appliquer_correction(db_session, "500 euros", "Correction : paiement le mardi",
+                                      titre="Commande 30", title="Paiement", content="500 euros le mardi")
+    assert fiche["content"] == "500 euros le mardi"
+
+
+@pytest.mark.parametrize("titre,contenu,message,changements", [
+    ("Commande 30", "500 euros", "Correction : paiement le mardi", {"title": "Paiement", "content": "30 500 euros le mardi"}),
+    ("Stockage", "Température de stockage : -5 degrés", "Correction : contrôle le mardi",
+     {"content": "Température de stockage : 5 degrés le mardi"}),
+])
+async def test_nombre_fabrique_ou_signe_perdu_refuse(db_session, titre, contenu, message, changements):
+    with pytest.raises(service.RefusMemoire, match="uniquement une information"):
+        await appliquer_correction(db_session, contenu, message, titre=titre, **changements)
+
+
+async def test_signe_corrige_par_le_message_accepte(db_session):
+    fiche = await appliquer_correction(db_session, "Température de stockage : -5 degrés",
+                                      "Correction : température de stockage 5 degrés", titre="Stockage",
+                                      content="Température de stockage : 5 degrés")
+    assert fiche["content"] == "Température de stockage : 5 degrés"

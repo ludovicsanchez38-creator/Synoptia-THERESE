@@ -39,8 +39,11 @@ def mots(texte: str) -> set[str]:
     return {m for m in re.findall(r'[^\W_]+', normaliser(texte)) if m.isdigit() or (len(m) >= 3 and m not in MOTS_VIDES)}
 
 
-def nombres(texte: str) -> set[str]:
-    return set(re.findall(r'\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?', texte))
+def nombres(*textes: str) -> set[str]:
+    # Lus champ par champ (deux champs collés fabriqueraient « 30 500 ») ; un
+    # moins en tête de mot (après une espace, « ( » ou « : ») fait partie du nombre, « -5 » n'autorise pas « 5 ».
+    motif = r'(?:(?<![^\s(:])[-\u2212])?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)'
+    return {n.replace('\u2212', '-') for texte in textes for n in re.findall(motif, texte or '')}
 
 
 def negations(texte: str) -> set[tuple[str, str]]:
@@ -240,7 +243,9 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         mots_message = set(re.findall(r'[^\W_]+', normaliser(source.content)))
         # Un titre résume librement ; seuls ses nombres doivent avoir une source.
         if (not mots(factuel) <= mots(provenance)
-                or not (nombres(factuel) | nombres(donnees.get('title', ''))) <= nombres(provenance)
+                or not nombres(*(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason')),
+                               str(donnees.get('title', ''))) <= nombres(
+                    source.content, *((existante.title, existante.content, existante.reason) if existante else ()))
                 or any(mot not in mots_message for _, mot in polarites_modifiees)):
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
     if existante and donnees.get('version') != existante.version:
