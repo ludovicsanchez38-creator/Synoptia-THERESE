@@ -269,22 +269,11 @@ export async function lesInteractifs(page) {
             .filter(([, valeur]) => valeur),
         ),
       })).catch(() => ({ deja: false, natif: false, identites: {} }));
-      const nom = await locator.evaluate((el) => {
-        const aria = el.getAttribute('aria-label') || '';
-        const labelledby = el.getAttribute('aria-labelledby');
-        const parLien = labelledby
-          ? labelledby.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' ')
-          : '';
-        const title = el.getAttribute('title') || '';
-        const texte = (el.textContent || '').trim();
-        const label = el.id ? (document.querySelector(`label[for="${CSS.escape(el.id)}"]`)?.textContent ?? '') : '';
-        const labelEnglobant = el.closest('label')?.textContent ?? '';
-        const valeur = el.getAttribute('placeholder') || '';
-        return (aria || parLien || texte || label || labelEnglobant || title || valeur).replace(/\s+/g, ' ').trim();
-      }).catch(() => '');
-      // Le texte ci-dessus sert au rapport, mais n'est pas forcément le nom
-      // accessible calculé par le navigateur (23 gestes ratés au cycle 14).
+      // Le snapshot accessible fournit aussi le nom des images alt et des
+      // libellés liés ; textContent ne sait pas calculer ces noms.
       const signature = await locator.ariaSnapshot().then((s) => s.split('\n')[0]).catch(() => '');
+      const nomEncode = signature.match(/^-\s+[\w-]+\s+("(?:[^"\\]|\\.)*")/);
+      const nom = nomEncode ? JSON.parse(nomEncode[1]) : '';
       const zoneGlobale = await locator.evaluate(zoneGlobalePourNoeud).catch(() => null);
       const cleSignature = JSON.stringify([role, signature, zoneGlobale]);
       const signatureOccurrence = occurrences.get(cleSignature) ?? 0;
