@@ -10,7 +10,7 @@
  * en barre nommée, commandes dans le flux de la carte.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Circle, Clock, GripVertical, User } from 'lucide-react';
 import { useContactsStore } from '../../stores/contactsStore';
 import { nomDeLaPersonneLiee } from './personneLiee';
@@ -55,6 +55,18 @@ export function TaskKanban() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask } = useTaskStore();
   const { maskText } = useDemoMask();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  // Le capteur pointeur annule sur Échap sans preventDefault. Marquer cette
+  // touche avant qu'elle atteigne la navigation de la coque ; le capteur
+  // dnd-kit continue de recevoir l'événement et d'annuler le déplacement.
+  useEffect(() => {
+    if (!activeTask) return;
+    const consommerAnnulation = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') event.preventDefault();
+    };
+    document.addEventListener('keydown', consommerAnnulation);
+    return () => document.removeEventListener('keydown', consommerAnnulation);
+  }, [activeTask]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

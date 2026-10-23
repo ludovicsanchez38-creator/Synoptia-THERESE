@@ -1684,6 +1684,7 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (event.defaultPrevented) return;
         // Remédiation NO-GO J0 : la cascade locale ignorait les modales gérées
         // par la pile unifiée (Réglages, contact, projet, bibliothèque, Actions,
         // Atelier). Échap fermait alors le chat DERRIÈRE la modale, ou ne
