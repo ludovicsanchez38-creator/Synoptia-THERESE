@@ -34,7 +34,7 @@ describe('B-1037 : la vue Fichiers en navigateur ne propose pas de gestes natifs
   it('les boutons qui exigent l’application native sont désactivés', async () => {
     render(<FileBrowser />);
     expect(await screen.findByText(/accessibles depuis l’application THÉRÈSE/)).toBeInTheDocument();
-    for (const nom of ['Répertoire personnel', 'Actualiser', 'Ouvrir un dossier', 'Dossier racine']) {
+    for (const nom of ['Répertoire personnel', 'Actualiser', 'Ouvrir un dossier', 'Répertoire personnel (~)']) {
       expect(screen.getByRole('button', { name: nom })).toBeDisabled();
     }
   });
