@@ -100,13 +100,13 @@ export function LimitsTab() {
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
-                {(status.daily_usage.input_tokens / 1000).toFixed(1)}K
+                {(status.daily_usage.input_tokens / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} K
               </p>
               <p className="text-xs text-text-muted">Tokens entrée</p>
             </div>
             <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
-                {(status.daily_usage.output_tokens / 1000).toFixed(1)}K
+                {(status.daily_usage.output_tokens / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} K
               </p>
               <p className="text-xs text-text-muted">Tokens sortie</p>
             </div>
@@ -143,7 +143,7 @@ export function LimitsTab() {
             <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
                 {/* B-1475 : le total compte l'entrée ET la sortie. */}
-                {(status.monthly_usage.total_tokens / 1000).toFixed(1)}K
+                {(status.monthly_usage.total_tokens / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} K
               </p>
               <p className="text-xs text-text-muted">Tokens totaux</p>
             </div>
