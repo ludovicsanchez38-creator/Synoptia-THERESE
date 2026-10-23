@@ -132,3 +132,59 @@ async def test_les_autres_types_gardent_leur_regle(db_session, kind):
     if kind == "fait":
         # Même type, même sujet : le doublon existant donne désormais aussi l'id.
         assert "id " in resultat["detail"] and "version 1" in resultat["detail"]
+
+
+async def _deux_clients(db_session, fiches_de):
+    from app.models.entities import Contact
+    alice, bernard = Contact(first_name="Alice"), Contact(first_name="Bernard")
+    db_session.add_all([alice, bernard])
+    await db_session.commit()
+    conv = Conversation(title="Livraisons")
+    db_session.add(conv)
+    await db_session.commit()
+    ids = {}
+    for personne in fiches_de:
+        contact = alice if personne == "Alice" else bernard
+        db_session.add(Message(conversation_id=conv.id, role="user", content=f"Retiens : la livraison de {personne} se fait le lundi."))
+        await db_session.commit()
+        r = await memory_card_tools.executer_outil(
+            {"kind": "fait", "subject": "livraison", "title": f"Livraison {personne}", "contact_id": contact.id,
+             "content": f"La livraison de {personne} se fait le lundi."},
+            scope="global", scope_id=None, conversation_id=conv.id)
+        assert r["success"], r
+        ids[personne] = r["receipt"]["id"]
+    db_session.add(Message(conversation_id=conv.id, role="user",
+                           content="Correction : la livraison de Bernard se fait désormais le mardi."))
+    await db_session.commit()
+    return conv.id, alice, bernard, ids
+
+
+async def _corriger_livraison(conv, contact=None):
+    return await memory_card_tools.executer_outil(
+        {"kind": "correction", "subject": "livraison", "title": "Livraison Bernard",
+         "content": "La livraison de Bernard se fait désormais le mardi.",
+         **({"contact_id": contact.id} if contact else {})},
+        scope="global", scope_id=None, conversation_id=conv)
+
+
+async def test_correction_d_un_autre_contact_n_est_pas_renvoyee(db_session):
+    # Astra c19e v1 : la fiche « livraison » d'Alice faisait refuser la correction de Bernard.
+    conv, _, bernard, ids = await _deux_clients(db_session, ["Alice"])
+    resultat = await _corriger_livraison(conv, bernard)
+    assert resultat["success"], resultat
+    alice = await db_session.get(MemoryCard, ids["Alice"])
+    await db_session.refresh(alice)
+    assert alice.content == "La livraison de Alice se fait le lundi." and alice.version == 1
+
+
+async def test_correction_ambigue_n_est_pas_renvoyee(db_session):
+    conv, _, _, _ = await _deux_clients(db_session, ["Alice", "Bernard"])
+    resultat = await _corriger_livraison(conv)
+    assert resultat["success"], resultat
+
+
+async def test_correction_du_meme_contact_est_renvoyee_vers_sa_fiche(db_session):
+    conv, _, bernard, ids = await _deux_clients(db_session, ["Alice", "Bernard"])
+    refus = await _corriger_livraison(conv, bernard)
+    assert not refus["success"]
+    assert refus["card_id"] == ids["Bernard"]

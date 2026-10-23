@@ -36,6 +36,7 @@ async def test_consignation_en_echec_retire_les_vecteurs(monkeypatch, reindexati
     qdrant, consignations = QdrantFactice(), []
     monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
     monkeypatch.setattr(indexation, "_consigner_resultat", _verrouillee(consignations))
+    monkeypatch.setattr(indexation, "_DELAIS_CONSIGNATION", (0, 0))
 
     with pytest.raises(OperationalError):
         await indexation._ecrire_et_consigner(
@@ -43,8 +44,27 @@ async def test_consignation_en_echec_retire_les_vecteurs(monkeypatch, reindexati
 
     assert qdrant.ajouts == ["f1"]
     assert qdrant.retraits[-1] == "f1"
-    # La base ne promet plus de fragments : le résultat vide est consigné.
-    assert consignations == [1, 0]
+    # Trois essais du résultat, puis la base ne promet plus de fragments.
+    assert consignations == [1, 1, 1, 0]
+
+
+async def test_verrou_passager_garde_l_indexation(monkeypatch):
+    # Astra c19e v1 (réserve) : un verrou court ne doit pas coûter l'indexation.
+    qdrant, consignations = QdrantFactice(), []
+
+    async def consigner(file_id, chunk_count, indexed_at, figer_perimetre=False):
+        consignations.append(chunk_count)
+        if len(consignations) == 1:
+            raise OperationalError("UPDATE file_metadata", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
+    monkeypatch.setattr(indexation, "_consigner_resultat", consigner)
+    monkeypatch.setattr(indexation, "_DELAIS_CONSIGNATION", (0, 0))
+
+    assert (await indexation._ecrire_et_consigner(
+        "f1", "doc.md", [{"entity_id": "f1", "text": "x"}], True, False))[0] == 1
+    assert consignations == [1, 1]
+    assert qdrant.retraits == ["f1"]  # le seul retrait est celui de la réindexation
 
 
 async def test_consignation_reussie_garde_les_vecteurs(monkeypatch):

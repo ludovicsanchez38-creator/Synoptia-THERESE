@@ -253,15 +253,6 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         source_content = source.content
         if refus := message_refus(source_content):
             raise RefusMemoire(refus)
-        if not existante and donnees.get('kind') == 'correction':
-            # B-1114 : une correction sans id créait une seconde fiche active à
-            # côté de celle qu'elle corrige ; elle est renvoyée vers cette fiche.
-            sujet = normaliser(str(donnees.get('subject', ''))).strip()
-            cible = next((f for f in autorisees_chat if f.state == 'active' and sujet
-                          and normaliser(f.subject).strip() == sujet), None)
-            if cible:
-                raise RefusMemoire('Cette correction doit modifier la fiche existante, pas en créer une seconde.', 409,
-                                   cible.id, f'Fiche « {cible.title} » : id {cible.id}, version {cible.version}.')
         # Une correction peut conserver les faits de la fiche autorisée.
         # Aucun mot nouveau hors de ces deux sources n'est accepté.
         provenance = source.content
@@ -314,6 +305,17 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             if _recouvre(f, protegee, contacts_projet):
                 raise RefusMemoire('Cette fiche est protégée par ta correction. Tu peux la modifier dans Mémoire.',
                                    409, protegee.id if protegee.id in {c.id for c in autorisees_chat} else None)
+        if not existante and f.kind == 'correction':
+            # B-1114 : une correction sans id créait une seconde fiche active à
+            # côté de celle qu'elle corrige. Renvoi vers l'UNIQUE fiche active
+            # visible du même sujet dont contact et dossier recouvrent ceux de
+            # la correction (Astra : la fiche d'Alice ne vise pas Bernard).
+            cibles = [c for c in autorisees_chat if c.state == 'active' and c.subject == f.subject
+                      and _recouvre(f, c, contacts_projet)]
+            if len(cibles) == 1:
+                cible = cibles[0]
+                raise RefusMemoire('Cette correction doit modifier la fiche existante, pas en créer une seconde.', 409,
+                                   cible.id, f'Fiche « {cible.title} » : id {cible.id}, version {cible.version}.')
     cle = _cle(f)
     doublon = (await session.execute(select(MemoryCard).where(col(MemoryCard.dedup_key) == cle))).scalars().first()
     if doublon and doublon.id != f.id:

@@ -3900,10 +3900,16 @@ async def _execute_tools_and_continue(
 
         yield f"data: {json.dumps(tool_status.model_dump())}\n\n"
 
-        # Build ToolResult for LLM
+        # Build ToolResult for LLM. Un refus de fiche garde son résultat
+        # structuré (détail, id et version de la fiche visée) : réduit à
+        # « Error: message », le modèle ne savait pas quoi corriger (B-1104).
+        lu_par_le_modele = (
+            result.result if result.success or tc.name == "upsert_memory_card"
+            else f"Error: {result.error}"
+        )
         tool_results.append(ToolResult(
             tool_call_id=tc.id,
-            result=result.result if result.success else f"Error: {result.error}",
+            result=lu_par_le_modele,
             is_error=not result.success,
         ))
         exec_records.append(

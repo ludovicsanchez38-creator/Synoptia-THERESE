@@ -448,6 +448,27 @@ async def _proteger_le_geste(coro: "Any") -> FileResponse:
     return await asyncio.shield(geste)
 
 
+# B-1113 : un verrou SQLite passager (« database is locked ») ne doit pas coûter
+# une indexation réussie ; au-delà, les vecteurs écrits sont retirés.
+_DELAIS_CONSIGNATION = (0.5, 1.0)
+
+
+async def _consigner_avec_reprises(
+    file_id: str, chunk_count: int, indexed_at: datetime, figer_perimetre: bool = False
+) -> None:
+    for delai in (*_DELAIS_CONSIGNATION, None):
+        try:
+            await _consigner_resultat(file_id, chunk_count, indexed_at, figer_perimetre=figer_perimetre)
+            return
+        except HTTPException:
+            raise
+        except Exception:
+            if delai is None:
+                raise
+            logger.warning("Consignation de l'indexation refusée, nouvel essai")
+            await asyncio.sleep(delai)
+
+
 async def _ecrire_et_consigner(
     file_id: str,
     file_name: str,
@@ -481,7 +502,7 @@ async def _ecrire_et_consigner(
         logger.warning(f"No text extracted for {file_name}")
     indexed_at = datetime.now(UTC)
     try:
-        await _consigner_resultat(
+        await _consigner_avec_reprises(
             file_id, chunk_count, indexed_at, figer_perimetre=figer_perimetre
         )
     except HTTPException:
@@ -493,8 +514,10 @@ async def _ecrire_et_consigner(
         if chunk_count:
             await get_qdrant_service().async_delete_by_entity(file_id)
             try:
-                await _consigner_resultat(file_id, 0, datetime.now(UTC))
+                await _consigner_avec_reprises(file_id, 0, datetime.now(UTC))
             except Exception:
+                # Réserve Astra : un verrou persistant laisse l'ancien compteur
+                # d'une réindexation ; l'index, lui, est vide.
                 logger.warning("Index vidé, consignation du résultat vide impossible")
         raise
     return chunk_count, indexed_at

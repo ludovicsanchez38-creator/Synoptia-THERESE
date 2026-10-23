@@ -25,7 +25,7 @@ async def _jouer(db_session, monkeypatch, resultats, appels, suite=("C'est mis �
 
     class Modele:
         async def continue_with_tool_results(self, *args, **kwargs):
-            recus.append(kwargs.get("tool_results") or args)
+            recus.append((args, kwargs))
             if relance and len(recus) == 1:
                 # Le modèle lit le refus et reprend avec un nouvel appel.
                 yield StreamEvent(type="tool_call", tool_call=ToolCall(id="reprise", name="upsert_memory_card",
@@ -55,7 +55,7 @@ async def test_refus_apres_ecriture_de_la_meme_fiche_non_affiche(db_session, mon
     assert texte.strip() == "C'est mis à jour."
     assert [c["receipt"]["id"] for c in chunks if c["type"] == "memory_receipt"] == ["f1"]
     # Le modèle a bien reçu le refus du second appel.
-    assert REFUS in json.dumps(recus, default=str, ensure_ascii=False)
+    assert any(REFUS in r.result for r in _resultats_lus(recus))
 
 
 async def test_refus_d_une_autre_fiche_reste_affiche(db_session, monkeypatch):
@@ -76,7 +76,7 @@ async def test_refus_puis_reprise_reussie_au_tour_suivant_non_affiche(db_session
     assert REFUS not in texte
     assert texte.strip() == "C'est mis à jour."
     assert [c["receipt"]["id"] for c in chunks if c["type"] == "memory_receipt"] == ["f1"]
-    assert "utilisateur" in json.dumps(recus, default=str, ensure_ascii=False)
+    assert "utilisateur" in _resultats_lus(recus)[0].result
 
 
 async def test_refus_dans_le_meme_appel_puis_ecriture_non_affiche(db_session, monkeypatch):
@@ -101,3 +101,34 @@ async def test_refus_d_une_creation_reste_immediat(db_session, monkeypatch):
     ], [{"content": "a"}], suite=(" Je n'ai rien retenu.",))
     assert texte.count(REFUS) == 1
     assert texte.index(REFUS) < texte.index("Je n'ai rien retenu")
+
+
+
+def _resultats_lus(recus):
+    from app.services.providers.base import ToolResult
+    vus = []
+
+    def fouiller(objet):
+        if isinstance(objet, ToolResult):
+            vus.append(objet)
+        elif isinstance(objet, (list, tuple)):
+            for element in objet:
+                fouiller(element)
+        elif isinstance(objet, dict):
+            for element in objet.values():
+                fouiller(element)
+    fouiller(recus)
+    return vus
+
+
+async def test_le_modele_recoit_le_detail_et_la_fiche_visee(db_session, monkeypatch):
+    # Astra c19e v1 : la boucle remplaçait le résultat refusé par « Error: message » ;
+    # le détail (mots sans source, id et version de la fiche) n'arrivait pas au modèle.
+    _, _, recus = await _jouer(db_session, monkeypatch, [
+        {"success": False, "message": REFUS, "card_id": "f9", "detail": "Fiche « Livraison » : id f9, version 3."},
+    ], [{"kind": "correction", "subject": "livraison", "title": "t", "content": "c"}])
+    (lu,) = _resultats_lus(recus)
+    assert lu.is_error
+    contenu = json.loads(lu.result)
+    assert contenu["detail"] == "Fiche « Livraison » : id f9, version 3."
+    assert contenu["card_id"] == "f9" and contenu["message"] == REFUS
