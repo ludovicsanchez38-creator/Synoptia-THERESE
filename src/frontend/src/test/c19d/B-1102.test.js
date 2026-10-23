@@ -40,6 +40,6 @@ it.each([
   [`- 'button "Supprimer : Facture"'`, 'Supprimer : Facture'],
   [`- 'button "Supprimer : Facture d''acompte"'`, "Supprimer : Facture d'acompte"],
   ['- ' + JSON.stringify('button "Lire : le devis"'), 'Lire : le devis'],
-])('B-1102 : formes YAML simples et citées (%s)', async (snapshot, nom) => {
+].flatMap(([cle, nom]) => ['', ':', ': PDF'].map((suffixe) => [cle + suffixe, nom])))('B-1102 : formes YAML simples et citées (%s)', async (snapshot, nom) => {
   expect((await lesInteractifs(pageFactice('', '', snapshot)))[0].nom).toBe(nom);
 });

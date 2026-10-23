@@ -2,7 +2,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
-import { lesInteractifs, choisirGestes } from './couverture-ecran.mjs';
+import { lesInteractifs, choisirGestes, gesteExclu } from './couverture-ecran.mjs';
+
+// Couples aria-label / texte visible de InvoicesPanel.tsx (B-1080).
+export const COUPLES_FACTURES = [
+  ['Générer et ouvrir le PDF : Facture', 'PDF'],
+  ['Supprimer : Facture', 'Supprimer'],
+  ["Générer et ouvrir le PDF : Facture d'acompte", 'PDF'],
+  ["Supprimer : Facture d'acompte", 'Supprimer'],
+  ['Générer et ouvrir le PDF : Facture, FAC-2026-001, 01/10/2026, 1 055,00 €, Marie Dupont', 'PDF'],
+  ['Supprimer : Facture, FAC-2026-001, 01/10/2026, 1 055,00 €, Marie Dupont', 'Supprimer'],
+];
+
+export async function verifierCouples(couples = COUPLES_FACTURES) {
+  const navigateur = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
+  try {
+    const page = await navigateur.newPage();
+    await page.route('**/*', (route) => route.abort());
+    await page.setContent('<main></main>');
+    await page.evaluate((valeurs) => {
+      for (const [nom, texte] of valeurs) {
+        const bouton = document.createElement('button');
+        bouton.setAttribute('aria-label', nom);
+        bouton.textContent = texte;
+        document.querySelector('main').append(bouton);
+      }
+    }, couples);
+    const releve = await lesInteractifs(page);
+    assert.deepEqual(releve.map((el) => el.nom), couples.map(([nom]) => nom));
+    assert.deepEqual(choisirGestes(releve, new Set()).map((el) => el.nom), couples.map(([nom]) => nom));
+    // La sélection de couverture reste séparée de l'autorisation du geste.
+    for (const el of releve) {
+      if (el.nom.startsWith('Supprimer :')) assert.equal(gesteExclu(el.nom, el), true);
+    }
+    assert.equal(gesteExclu('Envoyer la facture', { role: 'button' }), true);
+    return releve.map(({ nom, signature }) => ({ nom, signature }));
+  } finally {
+    await navigateur.close();
+  }
+}
 
 export const NOMS = [
   'Ouvrir',
@@ -47,4 +85,10 @@ test('B-1102 : le relevé lit les vrais ariaSnapshot de Chromium', async () => {
   const releve = await verifierNoms();
   assert.ok(releve.some((el) => el.signature.startsWith("- '")), 'Chromium doit exercer le scalaire YAML cité');
   assert.ok(releve.some((el) => el.signature.includes("d''acompte")), 'apostrophe doublée par YAML');
+});
+
+test('B-1102 : nom ARIA et texte visible distincts dans Factures, clé YAML suivie de sa valeur', async () => {
+  const releve = await verifierCouples();
+  assert.ok(releve.some((el) => el.signature.endsWith("': PDF")));
+  assert.ok(releve.some((el) => el.signature.includes("d''acompte")));
 });

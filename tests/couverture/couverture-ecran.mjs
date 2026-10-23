@@ -275,8 +275,9 @@ export async function lesInteractifs(page) {
       // ariaSnapshot est du YAML : le rôle et son nom peuvent être réunis
       // dans un scalaire cité, notamment dès que le nom contient « : ».
       let scalaire = signature.replace(/^-\s+/, '').trim();
-      const simple = scalaire.match(/^'((?:[^']|'')*)'(?:\s*:)?$/);
-      const double = scalaire.match(/^("(?:[^"\\]|\\.)*")(?:\s*:)?$/);
+      // Décoder la clé, indépendamment du texte visible placé après « : ».
+      const simple = scalaire.match(/^'((?:[^']|'')*)'(?:\s*:(?:\s.*)?)?$/);
+      const double = scalaire.match(/^("(?:[^"\\]|\\.)*")(?:\s*:(?:\s.*)?)?$/);
       if (simple) scalaire = simple[1].replace(/''/g, "'");
       else if (double) scalaire = JSON.parse(double[1]);
       const nomEncode = scalaire.match(/^[\w-]+\s+("(?:[^"\\]|\\.)*")/);
