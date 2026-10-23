@@ -65,6 +65,9 @@ const modelesGeneres = Object.values(catalogueGenere).flat();
 
 /** B-1097 : mêmes règles que libelle_modele, y compris hors catalogue. */
 function libelleHorsCatalogue(id: string): string {
+  // Un identifiant à étiquette (Ollama : « qwen3:8b ») est le nom que
+  // l'utilisateur a installé : il s'affiche tel quel, comme avant B-1097.
+  if (id.includes(':')) return id;
   const position = id.lastIndexOf('/');
   const prefixe = position < 0 ? '' : id.slice(0, position);
   const natif = id.slice(position + 1);
@@ -85,8 +88,10 @@ function libelleHorsCatalogue(id: string): string {
   return (natif.startsWith('gpt-') ? rendu.replace('GPT ', 'GPT-') : rendu) + repere;
 }
 
-export function decorer(ids: string[]): ModeleDecore[] {
+/** Un modèle local (Ollama) garde le nom installé par l'utilisateur. */
+export function decorer(ids: string[], fournisseur?: string): ModeleDecore[] {
   return ids.map((id) => {
+    if (fournisseur === 'ollama') return { id, name: id };
     const defaut = Object.values(catalogueGenere).some((modeles) => modeles[0]?.id === id);
     let badge = DECORATIONS[id]?.badge;
     if (badge === 'Recommandé' && !defaut) badge = undefined;
