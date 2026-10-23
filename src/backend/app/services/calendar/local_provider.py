@@ -9,6 +9,7 @@ Part of the "Local First" architecture.
 import logging
 from dataclasses import replace
 from datetime import UTC, date, datetime
+from importlib import import_module
 from itertools import islice
 
 import pytz
@@ -21,9 +22,10 @@ from app.services.calendar.base_provider import (
     UpdateEventRequest,
 )
 from app.services.civil_time import PARIS
-from dateutil.rrule import rrulestr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+
+rrulestr = import_module("dateutil.rrule").rrulestr
 
 logger = logging.getLogger(__name__)
 

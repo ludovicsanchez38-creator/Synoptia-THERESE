@@ -1643,7 +1643,7 @@ async def _list_calendar_events(
     )
 
     try:
-        supplement = {}
+        supplement: dict[str, bool | str] = {}
         # B-476 : le cloisonnement dépendait du NOM de la classe ; une sous-classe
         # ou un renommage retombait en silence dans le régime sans périmètre.
         from app.services.calendar.local_provider import LocalCalendarProvider
