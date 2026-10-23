@@ -45,7 +45,7 @@ export function ExplicationDuScore({ contactId }: { contactId?: string }) {
         type="button"
         aria-label="Expliquer le score"
         aria-expanded={ouverte}
-        aria-controls={idExplication}
+        aria-controls={ouverte ? idExplication : undefined}
         // Dans une carte du Pipeline : le clic ouvrirait la fiche et Entrée
         // ou Espace lanceraient un glisser (même garde que « Ouvrir la fiche »).
         onClick={(e) => { e.stopPropagation(); setOuverte((v) => !v); }}
