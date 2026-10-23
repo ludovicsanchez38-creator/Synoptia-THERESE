@@ -29,15 +29,15 @@ def test_le_deb_perd_la_cible_generique_et_garde_la_cible_deb():
 def test_un_generique_non_appimage_fait_echouer_sans_ecrire(tmp_path):
     chemin = tmp_path / "latest.json"
     contenu = json.dumps({"platforms": {"linux-aarch64": {"url": "https://exemple.test/update.rpm"}}})
-    chemin.write_text(contenu)
+    chemin.write_text(contenu, encoding="utf-8")
     retour = subprocess.run([sys.executable, str(SCRIPT), str(chemin)], capture_output=True, text=True)
     assert retour.returncode != 0
     assert "AppImage" in retour.stderr
-    assert chemin.read_text() == contenu
+    assert chemin.read_text(encoding="utf-8") == contenu
 
 
 def test_workflow_nettoie_avant_de_publier():
-    workflow = yaml.safe_load((RACINE / ".github/workflows/release.yml").read_text())
+    workflow = yaml.safe_load((RACINE / ".github/workflows/release.yml").read_text(encoding="utf-8"))
     construction = workflow["jobs"]["build"]
     action = next(e for e in construction["steps"] if e.get("uses", "").startswith("tauri-apps/tauri-action@"))
     # La matrice ne doit jamais publier un manifeste dangereux, même provisoire.
@@ -80,20 +80,20 @@ def _release_et_signatures(dossier):
     for nom in ["THERESE_aarch64.app.tar.gz", "THERESE_x64-setup.exe", "THERESE_x64.msi", "THERESE_amd64.deb"]:
         assets.append({"name": nom, "url": f"https://github.com/exemple/app/releases/download/untagged-123/{nom}"})
         assets.append({"name": nom + ".sig", "url": f"https://exemple.test/{nom}.sig"})
-        (dossier / (nom + ".sig")).write_text("signature-factice\n")
+        (dossier / (nom + ".sig")).write_text("signature-factice\n", encoding="utf-8")
     return {"tagName": "v1.2.3-alpha", "body": "Notes", "publishedAt": "2026-10-23T00:00:00Z", "assets": assets}
 
 
 def test_assemblage_ci_conserve_les_trois_os_et_les_signatures(tmp_path):
     release = tmp_path / "release.json"
-    release.write_text(json.dumps(_release_et_signatures(tmp_path)))
+    release.write_text(json.dumps(_release_et_signatures(tmp_path)), encoding="utf-8")
     manifeste = tmp_path / "latest.json"
     retour = subprocess.run([
         sys.executable, str(SCRIPT), str(manifeste), "--release-assets", str(release),
         "--signatures", str(tmp_path), "--version", "1.2.3",
     ], capture_output=True, text=True)
     assert retour.returncode == 0, retour.stderr
-    resultat = json.loads(manifeste.read_text())
+    resultat = json.loads(manifeste.read_text(encoding="utf-8"))
     assert resultat["version"] == "1.2.3"
     assert set(resultat["platforms"]) == {
         "darwin-aarch64", "darwin-aarch64-app", "windows-x86_64", "windows-x86_64-msi",
@@ -107,7 +107,7 @@ def test_signature_absente_bloque_la_creation_du_manifeste(tmp_path):
     release = _release_et_signatures(tmp_path)
     release["assets"] = [a for a in release["assets"] if not a["name"].endswith(".deb.sig")]
     donnees = tmp_path / "release.json"
-    donnees.write_text(json.dumps(release))
+    donnees.write_text(json.dumps(release), encoding="utf-8")
     manifeste = tmp_path / "latest.json"
     retour = subprocess.run([
         sys.executable, str(SCRIPT), str(manifeste), "--release-assets", str(donnees),
@@ -118,7 +118,7 @@ def test_signature_absente_bloque_la_creation_du_manifeste(tmp_path):
 
 
 def test_les_architectures_du_constructeur_correspondent_a_la_matrice():
-    workflow = yaml.safe_load((RACINE / ".github/workflows/release.yml").read_text())
+    workflow = yaml.safe_load((RACINE / ".github/workflows/release.yml").read_text(encoding="utf-8"))
     cibles = workflow["jobs"]["build"]["strategy"]["matrix"]["platform"]
     assert {c["target"] for c in cibles} == {
         "aarch64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu",
