@@ -51,18 +51,19 @@ _LONGUEURS_IBAN = {
     'UA': 29, 'VA': 22, 'VG': 24, 'XK': 20, 'YE': 30,
 }
 # Le lookahead ne consomme rien : un début invalide ne masque pas le suivant.
-_DEBUT_IBAN = re.compile(r'(?<![A-Za-z0-9])(?=([A-Z][\W_]*[A-Z][\W_]*[0-9][\W_]*[0-9]))')
+_DEBUT_IBAN = re.compile(r'(?<![A-Za-z0-9])(?=([A-Za-z][\W_]*[A-Za-z][\W_]*[0-9][\W_]*[0-9]))')
 _SUITES_IBAN = {longueur: re.compile(
     r'(?:[\W_]*[A-Za-z0-9]){' + str(longueur - 4) + r'}(?![A-Za-z0-9])'
 ) for longueur in set(_LONGUEURS_IBAN.values())}
 
 
 def _contient_iban(texte: str) -> bool:
-    # Conserver la casse du pays, y compris après normalisation Unicode.
+    # Un IBAN tapé en minuscules reste un IBAN : longueur nationale et clé
+    # suffisent à écarter les phrases (« de14havecpaulmartin »).
     texte = ''.join(c for c in unicodedata.normalize('NFKC', texte)
                     if unicodedata.category(c) != 'Cf')
     for debut in _DEBUT_IBAN.finditer(texte):
-        entete = re.sub(r'[^A-Z0-9]', '', debut.group(1))
+        entete = re.sub(r'[^A-Z0-9]', '', debut.group(1).upper())
         longueur = _LONGUEURS_IBAN.get(entete[:2])
         if longueur is None:
             continue

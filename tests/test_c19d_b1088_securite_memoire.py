@@ -102,13 +102,12 @@ def test_coordonnees_bancaires_avec_ponctuation(separateur):
 
 
 @pytest.mark.parametrize('coordonnee', [
-    'be68539007547034',  # Pays en minuscules, malgré une clé correcte.
     'ZZ22ABCDEFGHIJKLMNOP',  # Modulo 97 correct, pays absent du registre.
     'BE10ABCDEFGHIJKLMNOP',  # Modulo 97 correct, mauvaise longueur belge.
     'BE68 5390 0754 7035',  # Longueur correcte, clé incorrecte.
     'BE685390075470340',  # Un caractère supplémentaire, sans espace.
 ])
-def test_iban_exige_pays_majuscules_longueur_nationale_et_cle(coordonnee):
+def test_iban_exige_pays_connu_longueur_nationale_et_cle(coordonnee):
     from app.services.memory_card_security import _contient_iban
     assert not _contient_iban(coordonnee)
 
@@ -269,3 +268,16 @@ async def test_reprise_corpus_par_les_deux_services(db_session, texte, categorie
 def test_faux_positifs_differes_et_contre_exemples_v5(texte, categorie):
     motif = motif_sensible(texte)
     assert motif is not None and categorie in motif
+
+
+# Vérification différentielle du 23/10 : un IBAN valide tapé en minuscules,
+# refusé par la base, passait. Il est de nouveau refusé ; les phrases à heure
+# restent acceptées (longueur nationale et clé les écartent).
+@pytest.mark.parametrize(('texte', 'refuse'), [
+    ('be68539007547034', True), ('be68 5390 0754 7034', True), ('fr76 3000 6000 0112 3456 7890 189', True),
+    ('Iban : de89 3704 0044 0532 0130 00', True),
+    ('Rendez-vous de 14h avec Paul Martin', False), ('Départ de 12h pour la visite', False),
+    ('Réunion de 11h avec Rose Bernard', False), ('rendez-vous de 10h avec luc petit', False),
+])
+def test_iban_en_minuscules(texte, refuse):
+    assert contient_sensible(texte) == refuse
