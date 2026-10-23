@@ -442,7 +442,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
 
         # Sous-texte
         p = text_frame.add_paragraph()
-        p.text = "Généré par THERESE - Synoptia"
+        p.text = "Généré par THÉRÈSE - Synoptïa"
         p.font.name = "Inter"
         p.font.size = Pt(14)
         p.font.color.rgb = SYNOPTIA_COLORS["muted"]
