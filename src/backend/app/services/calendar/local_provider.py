@@ -10,7 +10,6 @@ import logging
 from dataclasses import replace
 from datetime import UTC, date, datetime
 from importlib import import_module
-from itertools import islice
 
 import pytz
 from app.models.entities import Calendar, CalendarEvent, generate_uuid
@@ -53,7 +52,7 @@ def _occurrences_locales(
 
     Les heures stockées sont murales à Paris : garder ce fuseau pendant le
     calcul préserve 10 h après un changement d'heure. dateutil est déjà fourni
-    par CalDAV. Une règle illisible remonte comme erreur de lecture locale.
+    par CalDAV. Les journées entières se calculent en dates civiles flottantes.
     """
     if event.start is None:
         return []
@@ -64,35 +63,73 @@ def _occurrences_locales(
     if not event.recurrence:
         return [event] if debut <= start < fin else []
     regles = []
+    jours_exclus: set[date] = set()
     for regle in event.recurrence:
-        if regle.startswith("RDATE"):
-            # dateutil ne lit pas TZID sur RDATE ; icalendar connaît ce format.
+        regle = regle if ":" in regle else f"RRULE:{regle}"
+        propriete, contenu = regle.split(":", 1)
+        nom = propriete.split(";", 1)[0]
+        if nom in ("RRULE", "EXRULE"):
+            morceaux = contenu.split(";")
+            for i, morceau in enumerate(morceaux):
+                if not morceau.startswith("UNTIL="):
+                    continue
+                valeur_until = morceau.removeprefix("UNTIL=")
+                if len(valeur_until) == 8:
+                    until = datetime.strptime(valeur_until, "%Y%m%d")
+                    if not event.all_day:
+                        until = until.replace(hour=23, minute=59, second=59)
+                else:
+                    until = datetime.strptime(valeur_until.rstrip("Z"), "%Y%m%dT%H%M%S")
+                    if valeur_until.endswith("Z"):
+                        until = until.replace(tzinfo=UTC).astimezone(PARIS)
+                if event.all_day:
+                    morceaux[i] = "UNTIL=" + until.strftime("%Y%m%dT%H%M%S")
+                else:
+                    until = until.replace(tzinfo=PARIS).astimezone(UTC)
+                    morceaux[i] = "UNTIL=" + until.strftime("%Y%m%dT%H%M%SZ")
+            regle = nom + ":" + ";".join(morceaux)
+        elif nom in ("RDATE", "EXDATE"):
+            # icalendar lit VALUE=DATE, les heures flottantes et TZID.
             from icalendar import Event
 
-            dates = Event.from_ical(f"BEGIN:VEVENT\n{regle}\nEND:VEVENT")["RDATE"].dts
+            dates = Event.from_ical(f"BEGIN:VEVENT\n{regle}\nEND:VEVENT")[nom].dts
             instants = []
             for valeur in dates:
                 instant = valeur.dt
                 if not isinstance(instant, datetime):
+                    if nom == "EXDATE":
+                        jours_exclus.add(instant)
+                        continue
                     instant = datetime.combine(instant, datetime.min.time())
                 if instant.tzinfo is None:
                     instant = instant.replace(tzinfo=PARIS)
-                instants.append(instant.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ"))
-            regle = "RDATE:" + ",".join(instants)
-        regles.append(regle if ":" in regle else f"RRULE:{regle}")
-    serie = rrulestr("\n".join(regles), dtstart=start.replace(tzinfo=PARIS), forceset=True)
+                if event.all_day:
+                    instants.append(instant.astimezone(PARIS).strftime("%Y%m%dT000000"))
+                else:
+                    instants.append(instant.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ"))
+            if not instants:
+                continue
+            regle = nom + ":" + ",".join(instants)
+        regles.append(regle)
+    depart = start if event.all_day else start.replace(tzinfo=PARIS)
+    borne = debut if event.all_day else debut.replace(tzinfo=PARIS)
+    serie = rrulestr("\n".join(regles), dtstart=depart, forceset=True)
     duree = event.end - event.start if event.end else None
     occurrences = []
-    for instant in islice(serie.xafter(debut.replace(tzinfo=PARIS), inc=True), limite):
-        mural = instant.astimezone(PARIS).replace(tzinfo=None)
+    for instant in serie.xafter(borne, inc=True):
+        mural = instant if event.all_day else instant.astimezone(PARIS).replace(tzinfo=None)
         if mural >= fin:
             break
+        if mural.date() in jours_exclus:
+            continue
         nouveau_debut = mural.date() if event.all_day else mural
         occurrences.append(replace(
             event, start=nouveau_debut,
             end=nouveau_debut + duree if duree is not None else None,
             recurring_event_id=event.id,
         ))
+        if len(occurrences) >= limite:
+            break
     return occurrences
 
 
@@ -111,6 +148,7 @@ class LocalCalendarProvider(CalendarProvider):
             session: AsyncSession for database access
         """
         self._session = session
+        self.recurrence_warnings: list[str] = []
 
     @property
     def provider_name(self) -> str:
@@ -302,13 +340,20 @@ class LocalCalendarProvider(CalendarProvider):
         if expand_recurring:
             if time_min is None or time_max is None:
                 raise ValueError("Le développement des récurrences exige une période bornée")
-            dtos = [
-                occurrence for event in events
-                for occurrence in _occurrences_locales(
-                    self._event_to_dto(event), _borne_murale_paris(time_min),
-                    _borne_murale_paris(time_max), offset + max_results + 1,
-                )
-            ]
+            self.recurrence_warnings = []
+            dtos = []
+            for event in events:
+                try:
+                    dtos.extend(_occurrences_locales(
+                        self._event_to_dto(event), _borne_murale_paris(time_min),
+                        _borne_murale_paris(time_max), offset + max_results + 1,
+                    ))
+                except Exception:
+                    logger.warning("Récurrence locale illisible : événement %s", event.id)
+                    self.recurrence_warnings.append(
+                        f"Événement ignoré (récurrence illisible) : {event.summary}. "
+                        "Ouvre Agenda pour vérifier cette série."
+                    )
             dtos.sort(key=lambda evt: (
                 evt.start if isinstance(evt.start, datetime) else datetime.combine(evt.start, datetime.min.time()), evt.id,
             ))

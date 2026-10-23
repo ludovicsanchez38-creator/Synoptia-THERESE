@@ -1660,7 +1660,8 @@ async def _list_calendar_events(
             **supplement,
         )
 
-        if not events:
+        avertissements = provider.recurrence_warnings if isinstance(provider, LocalCalendarProvider) else []
+        if not events and not avertissements:
             if isinstance(calendrier, Calendar) and calendrier.provider == "local":
                 return (
                     f"Aucun evenement dans {periode} du calendrier local. "
@@ -1669,7 +1670,7 @@ async def _list_calendar_events(
                 )
             return f"Aucun evenement dans {periode}. N'invente AUCUN autre événement."
 
-        lines = [f"**{len(events)} evenement(s) dans {periode} :**\n"]
+        lines = [f"**{len(events)} evenement(s) dans {periode} :**\n", *avertissements]
         for event in events:
             if event.all_day:
                 date_str = event.start.strftime("%d/%m") if event.start else ""

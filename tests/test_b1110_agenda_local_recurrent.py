@@ -171,3 +171,42 @@ async def test_journee_entiere_visible_meme_apres_minuit(db_session, regles):
         "local", datetime(2026, 10, 26, 14), datetime(2026, 10, 27), expand_recurring=True,
     )
     assert [e.start.isoformat() for e in events] == ["2026-10-26"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("regles,jours", [
+    (["RRULE:FREQ=DAILY;UNTIL=20261028"], [26, 27, 28]),
+    (["RRULE:FREQ=DAILY;COUNT=10", "EXDATE;VALUE=DATE:20261026"], [27, 28]),
+])
+async def test_dates_ics_creees_par_api_restent_lisibles(client, db_session, regles, jours):
+    await _agenda(db_session)
+    for evenement in [
+        {"summary": "Séjour", "start_date": "2026-10-19", "end_date": "2026-10-19", "recurrence": regles},
+        {"summary": "Rendez-vous indépendant", "start_datetime": "2026-10-27T15:00:00+01:00", "end_datetime": "2026-10-27T16:00:00+01:00"},
+    ]:
+        cree = await client.post("/api/calendar/events", json={"calendar_id": "local", **evenement})
+        assert cree.status_code == 200, cree.text
+    resultat = await _list_calendar_events(_periode(), db_session)
+    assert "Rendez-vous indépendant" in resultat, resultat
+    assert "27/10 15:00-16:00" in resultat
+    for jour in range(26, 32):
+        assert (f"{jour}/10 (journee)" in resultat) == (jour in jours), resultat
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("independant", [True, False])
+async def test_serie_illisible_signalee_sans_masquer_les_autres(client, db_session, independant):
+    await _agenda(db_session)
+    for evenement in [
+        {"summary": "Série illisible", "start_date": "2026-10-19", "end_date": "2026-10-19", "recurrence": ["RRULE:FREQ=INCONNUE"]},
+        {"summary": "Rendez-vous indépendant", "start_datetime": "2026-10-27T15:00:00+01:00", "end_datetime": "2026-10-27T16:00:00+01:00"},
+    ]:
+        if evenement["summary"] == "Rendez-vous indépendant" and not independant:
+            continue
+        cree = await client.post("/api/calendar/events", json={"calendar_id": "local", **evenement})
+        assert cree.status_code == 200, cree.text
+    resultat = await _list_calendar_events(_periode(), db_session)
+    assert ("Rendez-vous indépendant" in resultat) == independant, resultat
+    assert "Série illisible" in resultat
+    assert "ignoré" in resultat.lower()
+    assert "période est vide" not in resultat
