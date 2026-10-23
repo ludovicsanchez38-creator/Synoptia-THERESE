@@ -3478,6 +3478,7 @@ async def _execute_tools_and_continue(
     contexte: ContexteExecution | None = None,
     assistant_content_brut: list[Any] | None = None,
     echec_suite: dict[str, bool] | None = None,
+    refus_fiches_affiches: set[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -3519,7 +3520,8 @@ async def _execute_tools_and_continue(
     from app.services.execution_truth import enforce_create_cap, summarize_executions
     allowed_calls, blocked_calls = enforce_create_cap(tool_calls)
     exec_records: list[tuple[str, str, bool]] = []
-    refus_fiches_affiches: set[str] = set()
+    if refus_fiches_affiches is None:
+        refus_fiches_affiches = set()
     # BUG-121 : une fois une action sensible mise en attente de confirmation, on
     # ne relance pas la chaîne d'outils (voir plus bas). Sinon le modèle - surtout
     # les modèles faibles - re-émet send_email en boucle et empile plusieurs
@@ -3870,11 +3872,6 @@ async def _execute_tools_and_continue(
     if tool_outcomes is not None:
         tool_outcomes.extend(exec_records)
 
-    # Le refus d'une écriture mémoire seule est déjà rendu à l'écran.
-    # Une continuation le répétait, et pouvait redemander la même écriture.
-    if refus_fiches_affiches and all(nom == "upsert_memory_card" and erreur for nom, _, erreur in exec_records):
-        return
-
     # Résumé DÉTERMINISTE de ce qui a réellement été créé (indépendant de la prose du LLM)
     recap = summarize_executions(exec_records)
     if recap:
@@ -3925,6 +3922,7 @@ async def _execute_tools_and_continue(
     new_tool_calls: list[ToolCall] = []
     new_assistant_brut: list[Any] | None = None
     continued_content = ""
+    texte_en_attente = ""
 
     async for event in llm_service.continue_with_tool_results(
         context,
@@ -3938,13 +3936,19 @@ async def _execute_tools_and_continue(
         assistant_content_brut=assistant_content_brut,
     ):
         if event.type == "text" and event.content:
-            continued_content += event.content
-            data = StreamChunk(
-                type="text",
-                content=event.content,
-                conversation_id=conversation_id,
-            )
-            yield f"data: {json.dumps(data.model_dump())}\n\n"
+            # Retirer uniquement les refus déjà rendus, même coupés entre deux chunks.
+            texte_en_attente += event.content
+            for refus in refus_fiches_affiches:
+                texte_en_attente = texte_en_attente.replace(refus, "")
+            retenus = max((n for refus in refus_fiches_affiches
+                           for n in range(1, min(len(refus), len(texte_en_attente)) + 1)
+                           if texte_en_attente.endswith(refus[:n])), default=0)
+            texte = texte_en_attente[:-retenus] if retenus else texte_en_attente
+            texte_en_attente = texte_en_attente[-retenus:] if retenus else ""
+            continued_content += texte
+            if texte:
+                data = StreamChunk(type="text", content=texte, conversation_id=conversation_id)
+                yield f"data: {json.dumps(data.model_dump())}\n\n"
 
         elif event.type == "tool_call" and event.tool_call:
             new_tool_calls.append(event.tool_call)
@@ -3952,6 +3956,11 @@ async def _execute_tools_and_continue(
                 new_assistant_brut = event.assistant_content_brut
 
         elif event.type == "done":
+            if texte_en_attente:
+                continued_content += texte_en_attente
+                data = StreamChunk(type="text", content=texte_en_attente, conversation_id=conversation_id)
+                yield f"data: {json.dumps(data.model_dump())}\n\n"
+                texte_en_attente = ""
             if usage_totals is not None:
                 _noter_usage_d_appel(usage_totals, event)
 
@@ -3980,6 +3989,7 @@ async def _execute_tools_and_continue(
                     tool_outcomes=tool_outcomes,
                     contexte=contexte,
                     echec_suite=echec_suite,
+                    refus_fiches_affiches=refus_fiches_affiches,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.

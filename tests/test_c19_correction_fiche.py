@@ -74,4 +74,79 @@ async def test_refus_de_fiche_non_repete_par_la_continuation(db_session, monkeyp
     )]
     texte = "".join(c.get("content", "") for c in chunks if c["type"] == "text")
     assert texte.count(refus) == 1
-    assert suites == []
+    assert suites == [True]
+
+
+async def appliquer_correction(db_session, contenu, message, **changements):
+    conv = Conversation(title="Livraison")
+    db_session.add(conv)
+    await db_session.commit()
+    fiche = await service.ecrire({"kind": "fait", "subject": "livraison", "title": "Livraison", "content": contenu})
+    source = Message(conversation_id=conv.id, role="user", content=message)
+    db_session.add(source)
+    await db_session.commit()
+    # Fiche non protégée pour isoler la vérification de provenance automatique.
+    from app.models.entities import MemoryCard
+    stockee = await db_session.get(MemoryCard, fiche["id"])
+    stockee.protected = False
+    await db_session.commit()
+    return await service.ecrire({"id": fiche["id"], "version": 1, **changements},
+                               automatique=True, conversation_id=conv.id, message_id=source.id)
+
+
+@pytest.mark.parametrize("contenu,changements", [
+    ("Livraison le lundi sous 30 jours", {"content": "Livraison le mardi sous 90 jours"}),
+    ("La livraison n'est pas gratuite", {"content": "La livraison est gratuite le mardi"}),
+    ("Livraison le lundi sous 30 jours", {"title": "Livraison sous 90 jours", "content": "Livraison le mardi sous 30 jours"}),
+])
+async def test_contre_exemples_astra_refuses(db_session, contenu, changements):
+    with pytest.raises(service.RefusMemoire, match="uniquement une information"):
+        await appliquer_correction(db_session, contenu, "Correction : livraison le mardi", **changements)
+
+
+async def test_correction_affirmant_le_contraire_acceptee(db_session):
+    fiche = await appliquer_correction(db_session, "La livraison n'est pas gratuite",
+                                      "Correction : la livraison est désormais gratuite",
+                                      content="La livraison est gratuite")
+    assert fiche["content"] == "La livraison est gratuite"
+
+
+async def test_refus_memoire_conserve_la_reponse_a_une_autre_demande(db_session, monkeypatch):
+    from app.routers import chat
+    from app.services import memory_card_tools
+    from app.services.providers.base import StreamEvent, ToolCall
+
+    refus = "Cette fiche doit reprendre uniquement une information donnée dans ton message."
+    monkeypatch.setattr(memory_card_tools, "executer_outil", AsyncMock(return_value={"success": False, "message": refus}))
+    monkeypatch.setattr(chat, "_perimetre_de_conversation", AsyncMock(return_value=("global", None)))
+
+    class Modele:
+        async def continue_with_tool_results(self, *args, **kwargs):
+            for fragment in [refus[:24], refus[24:], "\nPour ton autre question : 7 × 8 = 56."]:
+                yield StreamEvent(type="text", content=fragment)
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    chunks = [json.loads(c.removeprefix("data: ")) async for c in chat._execute_tools_and_continue(
+        Modele(), None, context=SimpleNamespace(memory_cards_enabled=True), assistant_content="",
+        tool_calls=[ToolCall(id="fiche", name="upsert_memory_card", arguments={})],
+        tools=[memory_card_tools.MEMORY_CARD_TOOL], conversation_id="conv-factice", session=db_session,
+        remaining_iterations=3,
+    )]
+    texte = "".join(c.get("content", "") for c in chunks if c["type"] == "text")
+    assert "7 × 8 = 56" in texte
+    assert texte.count(refus) == 1
+
+
+@pytest.mark.parametrize("titre", ["Fournisseur de bois", "Livraison gratuite"])
+async def test_titre_reste_un_resume_libre(db_session, titre):
+    fiche = await appliquer_correction(db_session, "Le bois viendra de la scierie Rarelbrou",
+                                      "Correction : le bois viendra de la scierie Naccanset",
+                                      title=titre, content="Le bois viendra de la scierie Naccanset")
+    assert fiche["title"] == titre
+
+
+async def test_nombre_du_titre_donne_dans_le_message_accepte(db_session):
+    fiche = await appliquer_correction(db_session, "Livraison sous 30 jours",
+                                      "Correction : livraison sous 9 jours",
+                                      title="Livraison sous 9 jours", content="Livraison sous 9 jours")
+    assert fiche["title"] == "Livraison sous 9 jours"

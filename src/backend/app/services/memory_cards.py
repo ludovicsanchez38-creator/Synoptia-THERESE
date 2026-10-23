@@ -36,7 +36,12 @@ MOTS_VIDES = frozenset(['les', 'des', 'une', 'avec', 'dans', 'pour', 'que', 'qui
 
 
 def mots(texte: str) -> set[str]:
-    return {m for m in re.findall(r'[^\W_]+', normaliser(texte)) if len(m) >= 3 and m not in MOTS_VIDES}
+    return {m for m in re.findall(r'[^\W_]+', normaliser(texte)) if m.isdigit() or (len(m) >= 3 and m not in MOTS_VIDES)}
+
+
+def negations(texte: str) -> set[tuple[str, str]]:
+    # Une négation porte sur le mot qui la suit ; seul un message sur ce mot peut la corriger.
+    return set(re.findall(r"\b(pas|jamais|plus|aucun|aucune|sans|ni)\s+([^\W_]+)", normaliser(texte)))
 
 
 def date_utc(valeur: datetime) -> datetime:
@@ -217,7 +222,13 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         provenance = source.content
         if existante:
             provenance += f' {existante.title} {existante.content} {existante.reason}'
-        if not mots(' '.join(str(donnees.get(k, '')) for k in ('content', 'reason'))) <= mots(provenance):
+        factuel = ' '.join(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason'))
+        nombres_titre = set(re.findall(r'\d+', donnees.get('title', '')))
+        negations_perdues = (negations(f'{existante.content} {existante.reason}') - negations(factuel)) if existante else set()
+        # Un titre résume librement ; seuls ses nombres doivent avoir une source.
+        if (not mots(factuel) <= mots(provenance)
+                or not nombres_titre <= set(re.findall(r'\d+', provenance))
+                or any(mot not in mots(source.content) for _, mot in negations_perdues)):
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
