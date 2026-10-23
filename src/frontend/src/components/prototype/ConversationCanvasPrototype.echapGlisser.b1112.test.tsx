@@ -25,7 +25,8 @@ beforeEach(() => {
   usePanelStore.setState(usePanelStore.getInitialState());
   usePersonalisationStore.setState({ skipDashboard: false });
   useTaskStore.setState({ ...useTaskStore.getInitialState(), viewMode: 'kanban', tasks: [
-    { id: 't1', title: donnees.titre, status: 'todo', priority: 'medium', tags: [] } as Task,
+    { id: 't1', title: donnees.titre, description: null, status: 'todo', priority: 'medium', due_date: null,
+      project_id: null, tags: [], completed_at: null, created_at: '2026-10-23T08:00:00Z', updated_at: '2026-10-23T08:00:00Z' } satisfies Task,
   ] });
   _clearEscapeHandlers();
   vi.clearAllMocks();
