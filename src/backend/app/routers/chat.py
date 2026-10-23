@@ -2011,7 +2011,10 @@ async def send_message(
                 created_at=assistant_message.created_at,
             )
 
-    # Après substitution : une liste vide ne doit pas devenir un appel modèle vide.
+    # Le contrôle commun porte sur le texte final, après variables et balise d'action.
+    from app.services.skills.intent_detector import parse_action_syntax
+
+    _, llm_user_message = parse_action_syntax(llm_user_message)
     _verifier_message_non_vide(llm_user_message, request.file_paths)
 
     # Handle streaming response
