@@ -204,7 +204,7 @@ async def test_signe_corrige_par_le_message_accepte(db_session):
 # Astra v5 : le signe se lit après tout séparateur (=, «, [), pas seulement
 # après une espace ; un simple reformatage garde donc la même valeur.
 @pytest.mark.parametrize("contenu", ["Température de stockage=-5 degrés", "Température de stockage «-5» degrés",
-                                     "Température de stockage [-5] degrés"])
+                                     "Température de stockage [-5] degrés", "Température de stockage : _-5_ degrés"])
 async def test_signe_apres_separateur_refuse_sans_source(db_session, contenu):
     with pytest.raises(service.RefusMemoire, match="uniquement une information"):
         await appliquer_correction(db_session, contenu, "Correction : contrôle le mardi", titre="Stockage",

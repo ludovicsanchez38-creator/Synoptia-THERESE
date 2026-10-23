@@ -43,7 +43,7 @@ def nombres(*textes: str) -> set[str]:
     # Lus champ par champ (deux champs collés fabriqueraient « 30 500 ») ; un
     # moins qui ne suit ni lettre ni chiffre fait partie du nombre (« -5 » n'autorise
     # pas « 5 ») ; « A-15 », « 10-12 » et les dates gardent leurs nombres positifs.
-    motif = r'(?:(?<!\w)[-\u2212])?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)'
+    motif = r'(?:(?<![^\W_])[-\u2212])?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)'
     return {n.replace('\u2212', '-') for texte in textes for n in re.findall(motif, texte or '')}
 
 
