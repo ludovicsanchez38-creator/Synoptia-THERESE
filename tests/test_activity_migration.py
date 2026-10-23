@@ -89,7 +89,7 @@ def connecter(chemin, pilote):
     return sqlite3.connect(chemin)
 
 
-def preparer(conn, schema, lignes, foreign_keys, *, sans=None, autre_fk=False, tables_absentes=()):
+def preparer(conn, schema, lignes, foreign_keys, *, sans=None, autre_fk=None, tables_absentes=()):
     for table, identifiant in (
         ('contacts', 'contact-valide'), ('projects', 'projet-valide'),
         ('conversations', 'conversation-valide'),
@@ -108,7 +108,7 @@ def preparer(conn, schema, lignes, foreign_keys, *, sans=None, autre_fk=False, t
     if sans:
         colonnes.pop(sans)
     if autre_fk:
-        colonnes['title'] += ' REFERENCES contacts(id)'
+        colonnes['title'] += f' REFERENCES {autre_fk}(id)'
     definition = ', '.join(f'{n} {d}' for n, d in colonnes.items())
     conn.execute(f'CREATE TABLE activities ({definition})')
     for ligne in lignes:
@@ -269,7 +269,7 @@ def test_migration_annule_toute_autre_incoherence(tmp_path, caplog, pilote, fore
              activite('a2', execution_id='execution-a1' if panne == 'execution-dupliquee' else 'execution-a2')],
             foreign_keys,
             sans='title' if panne == 'colonne-obligatoire-absente' else None,
-            autre_fk=panne.startswith('autre-fk'),
+            autre_fk='contacts' if panne.startswith('autre-fk') else None,
             tables_absentes=('projects',) if panne == 'autre-fk-table-absente' else (),
         )
         avant = etat(conn)
@@ -286,6 +286,27 @@ def test_migration_annule_toute_autre_incoherence(tmp_path, caplog, pilote, fore
         assert conn.execute('PRAGMA foreign_keys').fetchone()[0] == foreign_keys
         assert not conn.in_transaction
         assert not [r for r in caplog.records if r.name == 'app.models.activity_migration']
+
+
+@pytest.mark.parametrize('pilote', ['sqlite', 'sqlcipher'])
+@pytest.mark.parametrize('foreign_keys', [0, 1], ids=['fk-off', 'fk-on'])
+@pytest.mark.parametrize('table', ['anciens_titres', 'contacts'])
+def test_migration_annule_une_fk_de_titre_vers_une_table_absente(
+    tmp_path, caplog, pilote, foreign_keys, table,
+):
+    with closing(connecter(tmp_path / 'titre-table-absente.db', pilote)) as conn:
+        preparer(
+            conn, 'migre', [activite(contact_id='contact-absent', project_id='projet-absent')],
+            foreign_keys, autre_fk=table, tables_absentes=(table,),
+        )
+        avant = etat(conn)
+        for _ in range(2):
+            with pytest.raises(ValueError, match='liens incohérents'):
+                migrer_activites(conn)
+            assert etat(conn) == avant
+            assert conn.execute('PRAGMA foreign_keys').fetchone()[0] == foreign_keys
+            assert not conn.in_transaction
+            assert not [r for r in caplog.records if r.name == 'app.models.activity_migration']
 
 
 def test_absence_table_ne_modifie_rien():
