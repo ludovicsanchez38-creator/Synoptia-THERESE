@@ -537,6 +537,17 @@ def _attacher_images(
     return ecartees
 
 
+def _verifier_message_non_vide(texte: str, chemins: list[str] | None) -> None:
+    if texte.strip():
+        return
+    from app.services.images_jointes import charger_images_jointes
+
+    _, chemins_images = separer_images_et_documents(chemins)
+    images, _ = charger_images_jointes(chemins_images)
+    if not images:
+        raise HTTPException(status_code=400, detail="Écris un message avant de l'envoyer.")
+
+
 def _memoriser_pieces_jointes(message: Message, chemins: list[str] | None) -> None:
     """Consigne les pièces jointes d'un tour sur le message qui les portait."""
     if not chemins:
@@ -1552,8 +1563,7 @@ async def send_message(
     Supports both streaming (SSE) and non-streaming responses.
     Also handles /fichier and /analyse slash commands.
     """
-    if not request.message.strip():
-        raise HTTPException(status_code=400, detail="Écris un message avant de l'envoyer.")
+    _verifier_message_non_vide(request.message, request.file_paths)
 
     # Get or create conversation
     if request.conversation_id:
@@ -1998,6 +2008,9 @@ async def send_message(
                 content=borne_message,
                 created_at=assistant_message.created_at,
             )
+
+    # Après substitution : une liste vide ne doit pas devenir un appel modèle vide.
+    _verifier_message_non_vide(llm_user_message, request.file_paths)
 
     # Handle streaming response
     if request.stream:
