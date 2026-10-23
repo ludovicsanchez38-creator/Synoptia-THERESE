@@ -177,7 +177,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
               <button
                 onClick={handleClose}
                 className="ml-auto grid h-11 w-11 place-items-center rounded-sm text-text-muted transition-colors hover:bg-surface-elevated/60 hover:text-text"
-                title="Fermer (Échap)"
+                title="Fermer"
                 aria-label="Fermer"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
