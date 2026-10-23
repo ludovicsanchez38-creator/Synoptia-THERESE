@@ -30,19 +30,26 @@ export function ProjectDeliverablesSection({
   const [livrables, setLivrables] = useState<DeliverableResponse[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [erreurLecture, setErreurLecture] = useState(false);
+  const [relecture, setRelecture] = useState(0);
+  const [lectureEnCours, setLectureEnCours] = useState(false);
   const [titre, setTitre] = useState('');
   const [enCours, setEnCours] = useState(false);
 
   useEffect(() => {
-    let vivant = true;
     setLivrables(null);
     setErreur(null);
     setErreurLecture(false);
-    listDeliverables({ project_id: projectId })
-      .then((liste) => { if (vivant) setLivrables(liste); })
-      .catch(() => { if (vivant) { setErreurLecture(true); setErreur('Les livrables n’ont pas pu être lus.'); } });
-    return () => { vivant = false; };
   }, [projectId]);
+
+  useEffect(() => {
+    let vivant = true;
+    setLectureEnCours(true);
+    listDeliverables({ project_id: projectId })
+      .then((liste) => { if (vivant) { setLivrables(liste); setErreurLecture(false); } })
+      .catch(() => { if (vivant) setErreurLecture(true); })
+      .finally(() => { if (vivant) setLectureEnCours(false); });
+    return () => { vivant = false; };
+  }, [projectId, relecture]);
 
   async function ajouter(e: FormEvent) {
     e.preventDefault();
@@ -78,6 +85,13 @@ export function ProjectDeliverablesSection({
       ) : livrables && !erreurLecture ? (
         <p className="text-sm text-text-muted">Aucun livrable pour ce projet.</p>
       ) : null}
+      {erreurLecture && (
+        <div role="alert" className="space-y-2 text-sm text-error">
+          <p>Les livrables n’ont pas pu être lus. La liste peut être incomplète.</p>
+          <Button type="button" variant="secondary" size="md" disabled={lectureEnCours}
+            onClick={() => setRelecture((valeur) => valeur + 1)}>Relire les livrables</Button>
+        </div>
+      )}
       {erreur && <p role="alert" className="text-sm text-error">{erreur}</p>}
       {!lectureSeule && (
         <form onSubmit={ajouter} className="flex items-end gap-2">

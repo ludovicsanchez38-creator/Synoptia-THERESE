@@ -61,3 +61,29 @@ it.each(['projet-terrasse', 'projet-grange', 'projet-atelier', 'projet-toiture',
   await screen.findByRole('alert');
   expect(screen.queryByText('Aucun livrable pour ce projet.')).toBeNull();
 });
+
+it('B-1094 : un ajout ne répare pas une lecture ; seule une relecture réussie efface l’alerte', async () => {
+  api.listDeliverables.mockClear().mockRejectedValue(new Error('500'));
+  api.createDeliverable.mockResolvedValue({ id: 'ajout', title: 'Notice de montage', status: 'a_faire' });
+  render(<ProjectDeliverablesSection projectId="p-incomplet" />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Les livrables n’ont pas pu être lus.');
+  fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Notice de montage' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Ajouter le livrable' }));
+  await screen.findByText('Notice de montage');
+  expect(screen.getByRole('alert')).toHaveTextContent('Les livrables n’ont pas pu être lus.');
+  expect(screen.getByRole('alert')).toHaveTextContent('La liste peut être incomplète.');
+  expect(screen.queryByText('Aucun livrable pour ce projet.')).toBeNull();
+  // Une autre panne garde l'alerte.
+  fireEvent.click(screen.getByRole('button', { name: 'Relire les livrables' }));
+  await waitFor(() => expect(api.listDeliverables).toHaveBeenCalledTimes(2));
+  expect(screen.getByRole('alert')).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Relire les livrables' })).not.toBeDisabled());
+  api.listDeliverables.mockResolvedValue([
+    { id: 'ancien', title: 'Rapport existant', status: 'valide' },
+    { id: 'ajout', title: 'Notice de montage', status: 'a_faire' },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: 'Relire les livrables' }));
+  await screen.findByText('Rapport existant');
+  expect(screen.getByText('Notice de montage')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).toBeNull();
+});
