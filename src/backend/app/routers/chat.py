@@ -3595,6 +3595,10 @@ async def _execute_tools_and_continue(
         if requires_confirmation(tc.name):
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
             outil_base = tc.name.split("__", 1)[-1]
+            if tc.name == "create_calendar_event":
+                from app.services.workspace_tools import normaliser_arguments_agenda
+
+                pending_arguments = normaliser_arguments_agenda(pending_arguments)
             if outil_base == "create_calendar_event" and session is not None:
                 from app.services.workspace_tools import (
                     get_calendar_confirmation_destination,

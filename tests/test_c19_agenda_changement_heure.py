@@ -71,3 +71,66 @@ async def test_z_reste_absolu_si_le_decalage_courant_est_zero(client, db_session
     resultat = await _creer(db_session, "2026-03-30T14:30:00Z", "2026-03-30T15:30:00Z")
     assert not resultat.startswith("Erreur"), resultat
     assert (await _stocke(db_session)).start_datetime == datetime(2026, 3, 30, 16, 30)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="time.tzset absent sous Windows")
+@pytest.mark.parametrize("maintenant,debut,fin,attendu,fuseau", [
+    ("2026-10-23T12:00:00+02:00", "2026-10-30T14:30:00+02:00", "2026-10-30T15:30:00+02:00", "2026-10-30T14:30:00", "Europe/Paris"),
+    ("2026-03-20T12:00:00+01:00", "2026-03-30T14:30:00+01:00", "2026-03-30T15:30:00+01:00", "2026-03-30T14:30:00", "Europe/Paris"),
+    ("2026-10-23T12:00:00+02:00", "2026-10-30T14:30:00Z", "2026-10-30T15:30:00Z", "2026-10-30T15:30:00", "Europe/Paris"),
+    ("2026-10-23T12:00:00+02:00", "2026-10-30T14:30:00", "2026-10-30T15:30:00", "2026-10-30T14:30:00", "Europe/Paris"),
+    ("2026-10-23T12:00:00+02:00", "2026-10-30T14:30:00-05:00", "2026-10-30T15:30:00-05:00", "2026-10-30T20:30:00", "Europe/Paris"),
+    ("2026-10-23T12:00:00-04:00", "2026-10-30T10:30:00", "2026-10-30T11:30:00", "2026-10-30T15:30:00", "America/Martinique"),
+    ("2026-10-23T12:00:00+01:00", "2026-10-30T14:30:00", "2026-10-30T15:30:00", "2026-10-30T15:30:00", "Europe/London"),
+])
+async def test_carte_confirmation_et_heure_enregistree_identiques(
+    client, db_session, monkeypatch, horloge, maintenant, debut, fin, attendu, fuseau,
+):
+    import json
+    from zoneinfo import ZoneInfo
+
+    from app.models.entities import CalendarEvent, Conversation
+    from app.routers import chat
+    from app.services.providers.base import ToolCall
+    from sqlmodel import select
+
+    from tests.test_chat_tool_confirmation import _FakeLLM
+
+    horloge(maintenant, fuseau)
+    conv = Conversation(title="Confirmation agenda")
+    db_session.add(conv)
+    await db_session.commit()
+    appel = ToolCall(id="agenda-c19", name="create_calendar_event", arguments={
+        "summary": "Point chantier", "start": debut, "end": fin,
+    })
+    chunks = [json.loads(c.removeprefix("data: ")) async for c in chat._execute_tools_and_continue(
+        _FakeLLM(), None, None, "", [appel], [workspace_tools.CREATE_CALENDAR_EVENT_TOOL],
+        conv.id, 3, session=db_session,
+    )]
+    carte, = [c["confirmation"] for c in chunks if c["type"] == "confirmation_required"]
+    assert not (await db_session.execute(select(CalendarEvent))).scalars().all()
+    affiches = carte["arguments"]
+    # L'interface affiche un ISO daté dans ce fuseau, une heure sans fuseau telle quelle.
+    def heure_affichee(valeur):
+        heure = datetime.fromisoformat(valeur)
+        return heure.astimezone(ZoneInfo(affiches.get("timezone", "Europe/Paris"))).replace(tzinfo=None) if heure.tzinfo else heure
+    attendu_dt = datetime.fromisoformat(attendu)
+    assert heure_affichee(affiches["start"]) == attendu_dt
+    assert (heure_affichee(affiches["end"]) - attendu_dt).total_seconds() == 3600
+    executes = []
+    executer = chat.execute_workspace_tool
+    async def capturer(nom, arguments, *args, **kwargs):
+        executes.append(dict(arguments))
+        return await executer(nom, arguments, *args, **kwargs)
+    monkeypatch.setattr(chat, "execute_workspace_tool", capturer)
+    # L'heure courante peut changer entre préparation et accord humain.
+    horloge("2026-11-01T12:00:00+01:00", fuseau)
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": carte["confirmation_id"], "approved": True,
+    })
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["status"] == "executed"
+    assert executes == [affiches]
+    evenement = await _stocke(db_session)
+    assert evenement.start_datetime == attendu_dt
+    assert (evenement.end_datetime - evenement.start_datetime).total_seconds() == 3600

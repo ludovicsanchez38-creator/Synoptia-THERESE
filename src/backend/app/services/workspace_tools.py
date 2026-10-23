@@ -11,7 +11,7 @@ import logging
 import re
 from collections.abc import Iterable
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -1705,6 +1705,24 @@ def _heure_outil_agenda(texte: str, maintenant: datetime) -> datetime:
             and heure.utcoffset() != heure_poste.utcoffset()):
         heure = heure_poste
     return heure.astimezone(PARIS).replace(tzinfo=None)
+
+
+def normaliser_arguments_agenda(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Fige avant confirmation les heures interprétées par le moteur."""
+    from app.services.civil_time import PARIS
+
+    normalises = dict(arguments)
+    maintenant = datetime.now().astimezone()
+    for champ in ("start", "end"):
+        valeur = normalises.get(champ)
+        if isinstance(valeur, str) and valeur:
+            try:
+                heure = _heure_outil_agenda(valeur, maintenant)
+                # Z reste absolu à la confirmation, quel que soit le fuseau du poste.
+                normalises[champ] = heure.replace(tzinfo=PARIS).astimezone(UTC).isoformat().replace("+00:00", "Z")
+            except ValueError:
+                pass  # Le moteur conserve son erreur de format existante.
+    return normalises
 
 
 async def _create_calendar_event(
