@@ -3481,6 +3481,16 @@ class _ResultatOutil(Protocol):
     def execution_time_ms(self) -> float: ...
 
 
+def _evenement_terminal(morceau: str) -> bool:
+    """Vrai pour un événement SSE après lequel le client cesse de lire."""
+    if not morceau.startswith("data:"):
+        return False
+    try:
+        return json.loads(morceau[5:].strip()).get("type") in ("error", "done")
+    except (json.JSONDecodeError, AttributeError):
+        return False
+
+
 async def _execute_tools_and_continue(
     llm_service: LLMService,
     mcp_service,
@@ -3524,25 +3534,42 @@ async def _execute_tools_and_continue(
         # B-1115 : point d'entrée du tour. Le refus d'une MODIFICATION de fiche
         # attend la fin du tour : quand le modèle reprend et que la même fiche
         # est écrite, la bulle ne montre plus un refus au-dessus de la réussite.
+        # Revue Astra c19e v2 : les refus en attente passent AVANT tout
+        # événement terminal (le client cesse de lire à « error » ou « done »),
+        # et aussi sur une exception ou une annulation.
         differes: dict[str, str] = {}
         ecrites = set() if fiches_ecrites is None else fiches_ecrites
         affiches = set() if refus_fiches_affiches is None else refus_fiches_affiches
-        async for morceau in _execute_tools_and_continue(
-            llm_service, mcp_service, context, assistant_content, tool_calls, tools,
-            conversation_id, remaining_iterations, session=session, prior_turns=prior_turns,
-            usage_totals=usage_totals, tool_outcomes=tool_outcomes, contexte=contexte,
-            assistant_content_brut=assistant_content_brut, echec_suite=echec_suite,
-            refus_fiches_affiches=affiches, fiches_ecrites=ecrites, refus_differes=differes,
-        ):
-            yield morceau
-        annule = contexte.annulation_observee() if contexte is not None else _is_cancelled(conversation_id)
-        for message in dict.fromkeys(m for fiche, m in differes.items() if fiche not in ecrites):
-            if not annule and message not in affiches:
-                affiches.add(message)
-                yield 'data: ' + json.dumps({
-                    'type': 'text', 'conversation_id': conversation_id,
-                    'content': '\n\n' + message + '\n\n',
-                }, ensure_ascii=False) + '\n\n'
+
+        def refus_en_attente() -> list[str]:
+            restants = []
+            for message in dict.fromkeys(m for fiche, m in differes.items() if fiche not in ecrites):
+                if message not in affiches:
+                    affiches.add(message)
+                    restants.append('data: ' + json.dumps({
+                        'type': 'text', 'conversation_id': conversation_id,
+                        'content': '\n\n' + message + '\n\n',
+                    }, ensure_ascii=False) + '\n\n')
+            return restants
+
+        try:
+            async for morceau in _execute_tools_and_continue(
+                llm_service, mcp_service, context, assistant_content, tool_calls, tools,
+                conversation_id, remaining_iterations, session=session, prior_turns=prior_turns,
+                usage_totals=usage_totals, tool_outcomes=tool_outcomes, contexte=contexte,
+                assistant_content_brut=assistant_content_brut, echec_suite=echec_suite,
+                refus_fiches_affiches=affiches, fiches_ecrites=ecrites, refus_differes=differes,
+            ):
+                if _evenement_terminal(morceau):
+                    for bulle in refus_en_attente():
+                        yield bulle
+                yield morceau
+        except Exception:
+            for bulle in refus_en_attente():
+                yield bulle
+            raise
+        for bulle in refus_en_attente():
+            yield bulle
         return
 
     if remaining_iterations <= 0:

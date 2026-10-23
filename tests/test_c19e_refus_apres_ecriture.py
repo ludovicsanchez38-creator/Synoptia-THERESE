@@ -132,3 +132,83 @@ async def test_le_modele_recoit_le_detail_et_la_fiche_visee(db_session, monkeypa
     contenu = json.loads(lu.result)
     assert contenu["detail"] == "Fiche « Livraison » : id f9, version 3."
     assert contenu["card_id"] == "f9" and contenu["message"] == REFUS
+
+
+# Revue Astra c19e v2 : le refus différé se perdait quand le tour s'interrompt
+# (le client cesse de lire à « error » ou « done »). Il passe désormais avant.
+REFUS_MODIF = [{"success": False, "message": REFUS, "card_id": None}]
+APPEL_MODIF = [{"id": "f1", "version": 1, "content": "a", "reason": "b"}]
+
+
+async def _flux(db_session, monkeypatch, modele, contexte=None, resultats=None):
+    monkeypatch.setattr(memory_card_tools, "executer_outil",
+                        AsyncMock(side_effect=resultats or list(REFUS_MODIF)))
+    monkeypatch.setattr(chat, "_perimetre_de_conversation", AsyncMock(return_value=("global", None)))
+    morceaux = []
+    try:
+        async for c in chat._execute_tools_and_continue(
+            modele, None, context=SimpleNamespace(memory_cards_enabled=True), assistant_content="",
+            tool_calls=[ToolCall(id="fiche-0", name="upsert_memory_card", arguments=APPEL_MODIF[0])],
+            tools=[memory_card_tools.MEMORY_CARD_TOOL], conversation_id="conv-factice", session=db_session,
+            remaining_iterations=3, contexte=contexte,
+        ):
+            morceaux.append(json.loads(c.removeprefix("data: ")))
+    except RuntimeError as erreur:
+        morceaux.append({"type": "exception", "content": str(erreur)})
+    return morceaux
+
+
+def _position(morceaux, predicat):
+    return next(i for i, m in enumerate(morceaux) if predicat(m))
+
+
+async def test_refus_avant_l_erreur_du_fournisseur(db_session, monkeypatch):
+    class Modele:
+        async def continue_with_tool_results(self, *args, **kwargs):
+            yield StreamEvent(type="text", content="Je mets ta mémoire à jour.")
+            yield StreamEvent(type="error", content="Overloaded (529)")
+
+    morceaux = await _flux(db_session, monkeypatch, Modele())
+    refus = _position(morceaux, lambda m: m["type"] == "text" and REFUS in m.get("content", ""))
+    assert refus < _position(morceaux, lambda m: m["type"] == "error")
+
+
+async def test_refus_avant_l_exception_de_la_suite(db_session, monkeypatch):
+    class Modele:
+        async def continue_with_tool_results(self, *args, **kwargs):
+            yield StreamEvent(type="text", content="Je mets ta mémoire à jour.")
+            raise RuntimeError("coupure")
+
+    morceaux = await _flux(db_session, monkeypatch, Modele())
+    assert morceaux[-1] == {"type": "exception", "content": "coupure"}
+    assert any(m["type"] == "text" and REFUS in m.get("content", "") for m in morceaux[:-1])
+
+
+async def test_refus_avant_le_budget_refuse(db_session, monkeypatch):
+    monkeypatch.setattr(chat, "_controle_du_prompt", lambda *a, **k: {"allowed": False, "errors": ["Budget atteint."]})
+
+    class Modele:
+        async def continue_with_tool_results(self, *args, **kwargs):
+            raise AssertionError("aucune suite attendue")
+            yield  # pragma: no cover
+
+    morceaux = await _flux(db_session, monkeypatch, Modele())
+    refus = _position(morceaux, lambda m: m["type"] == "text" and REFUS in m.get("content", ""))
+    assert refus < _position(morceaux, lambda m: m["type"] == "error")
+
+
+async def test_refus_conserve_apres_une_annulation(db_session, monkeypatch):
+    etat = {"annule": False}
+
+    async def refuser_puis_annuler(*args, **kwargs):
+        etat["annule"] = True
+        return dict(REFUS_MODIF[0])
+
+    class Modele:
+        async def continue_with_tool_results(self, *args, **kwargs):
+            raise AssertionError("aucune suite après une annulation")
+            yield  # pragma: no cover
+
+    contexte = SimpleNamespace(annulation_observee=lambda: etat["annule"])
+    morceaux = await _flux(db_session, monkeypatch, Modele(), contexte=contexte, resultats=refuser_puis_annuler)
+    assert sum(REFUS in m.get("content", "") for m in morceaux if m["type"] == "text") == 1
