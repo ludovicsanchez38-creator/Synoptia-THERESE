@@ -29,14 +29,18 @@ export function ProjectDeliverablesSection({
 }) {
   const [livrables, setLivrables] = useState<DeliverableResponse[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreurLecture, setErreurLecture] = useState(false);
   const [titre, setTitre] = useState('');
   const [enCours, setEnCours] = useState(false);
 
   useEffect(() => {
     let vivant = true;
+    setLivrables(null);
+    setErreur(null);
+    setErreurLecture(false);
     listDeliverables({ project_id: projectId })
       .then((liste) => { if (vivant) setLivrables(liste); })
-      .catch(() => { if (vivant) { setLivrables([]); setErreur('Les livrables n’ont pas pu être lus.'); } });
+      .catch(() => { if (vivant) { setErreurLecture(true); setErreur('Les livrables n’ont pas pu être lus.'); } });
     return () => { vivant = false; };
   }, [projectId]);
 
@@ -71,7 +75,7 @@ export function ProjectDeliverablesSection({
             </li>
           ))}
         </ul>
-      ) : livrables ? (
+      ) : livrables && !erreurLecture ? (
         <p className="text-sm text-text-muted">Aucun livrable pour ce projet.</p>
       ) : null}
       {erreur && <p role="alert" className="text-sm text-error">{erreur}</p>}

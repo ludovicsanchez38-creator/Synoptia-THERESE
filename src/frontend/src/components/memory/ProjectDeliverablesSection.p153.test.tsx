@@ -47,3 +47,17 @@ describe('P-153 : les livrables dans la fenêtre du projet', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter le livrable' })).toBeNull();
   });
 });
+
+it('B-1094 : une lecture échouée ne dit pas que la liste est vide', async () => {
+  api.listDeliverables.mockRejectedValue(new Error('500'));
+  render(<ProjectDeliverablesSection projectId="erreur" lectureSeule />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Les livrables n’ont pas pu être lus.');
+  expect(screen.queryByText('Aucun livrable pour ce projet.')).toBeNull();
+});
+
+it.each(['projet-terrasse', 'projet-grange', 'projet-atelier', 'projet-toiture', 'projet-cuisine', 'projet-salon', 'projet-jardin', 'projet-bureau', 'projet-garage', 'projet-cave'])('Rejeu B-1094 : %s', async (projectId) => {
+  api.listDeliverables.mockRejectedValue(new Error(`Lecture impossible pour ${projectId}`));
+  render(<ProjectDeliverablesSection projectId={projectId} lectureSeule />);
+  await screen.findByRole('alert');
+  expect(screen.queryByText('Aucun livrable pour ce projet.')).toBeNull();
+});
