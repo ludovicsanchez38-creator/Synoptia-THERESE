@@ -23,7 +23,7 @@ MOTIFS = tuple(re.compile(m) for m in (
     r'access\W*token|refresh\W*token|bearer\W|jeton\W|secret\W|\biban\b',
     r'\bakia[a-z0-9]{16}\b|\baiza[a-z0-9_-]{20,}|\beyj[a-z0-9_-]{6,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}',
     r'\b(?:sk|pk)[-_][\w-]{8,}|\bgh[pousr]_[\w]{12,}|\bxox[baprs]-[\w-]+',
-    r'\b(?:sante|medical\w*|medic\w*|diabet\w*|cancer\w*|oncolog\w*|anxiolyti\w*|maladie\w*|patholog\w*|hospital\w*|handicap\w*|vih|enceinte|grossesse|psychiatri\w*|antidepresseur\w*|chimiotherapi\w*|neurolog\w*)\b',
+    r'\b(?:sante|medical\w*|medic\w*|diagnostic\w*|traitement\w*|diabet\w*|cancer\w*|oncolog\w*|anxiolyti\w*|maladie\w*|patholog\w*|hospital\w*|handicap\w*|vih|enceinte|grossesse|psychiatri\w*|antidepresseur\w*|chimiotherapi\w*|neurolog\w*)\b',
     r'ethni\w*|\brac(?:e|ial\w*)\b|\borigine\W+(?:raciale|ethnique)',
     r'politi\w*|electora\w*|\bvote\b|\bparti\b',
     r'religi\w*|\bprie\b|\bmesse\b|philosoph\w*|\bconviction\w*\b',
@@ -110,37 +110,6 @@ def _contient_identifiant_secret(valeur: str) -> bool:
                for m in _IDENTIFIANT_SECRET.finditer(identifiants))
 
 
-# « Traitement » et « diagnostic » restent une information de santé par défaut :
-# seul un objet professionnel juste après eux (petits mots sautés) les lève.
-_OBJETS_PROFESSIONNELS = (
-    'commande', 'facture', 'devis', 'donnee', 'fichier', 'dossier', 'demande', 'courrier', 'mail',
-    'message', 'paie', 'salaire', 'reseau', 'performance', 'energetique', 'thermique', 'structurel',
-    'systeme', 'panne', 'incident', 'securite', 'chantier', 'projet', 'stock', 'reclamation',
-    'candidature', 'informatique', 'vehicule', 'moteur', 'batiment', 'toiture', 'technique',
-    'comptable', 'ecriture', 'rapprochement', 'amortissement', 'texte', 'image', 'eau', 'dechet',
-    'surface', 'bois', 'charpente', 'signal', 'requete', 'ticket', 'litige', 'sinistre', 'contrat',
-    'paiement', 'virement', 'operation', 'flux', 'lot', 'inscription', 'information', 'contenu',
-    'document', 'photo', 'video', 'audio', 'prospect', 'client', 'fournisseur', 'reserve', 'besoin',
-    'pedagogique', 'serveur', 'stockage', 'amiante', 'plomb', 'termite', 'electri', 'gaz',
-    'immobilier', 'assainissement', 'humidite', 'acoustique', 'accessibilite', 'achat', 'vente',
-    'compte', 'tresorerie', 'budget', 'fiscal', 'juridique', 'administratif', 'recrutement',
-    'formation', 'competence', 'organisation', 'process', 'entreprise', 'site', 'logiciel',
-    'application', 'code', 'erreur', 'alerte', 'colis', 'livraison', 'expedition', 'mobilier',
-)
-_PETITS_MOTS = frozenset({'de', 'des', 'du', 'd', 'la', 'le', 'les', 'l', 'un', 'une', 'en', 'au', 'aux'})
-
-
-def _traitement_ou_diagnostic_medical(texte: str) -> bool:
-    jetons = re.findall(r'[a-z0-9]+', texte)
-    for i, jeton in enumerate(jetons):
-        if not jeton.startswith(('traitement', 'diagnostic')):
-            continue
-        objet = next((j for j in jetons[i + 1:] if j not in _PETITS_MOTS), '')
-        if not objet.startswith(_OBJETS_PROFESSIONNELS):
-            return True
-    return False
-
-
 def motif_sensible(valeur: Any) -> str | None:
     if isinstance(valeur, dict):
         return next((motif for k, v in valeur.items() if (motif := motif_sensible([k, v]))), None)
@@ -157,12 +126,13 @@ def motif_sensible(valeur: Any) -> str | None:
         return 'un mot de passe ou une clé secrète'
     if any(m.search(texte) for m in MOTIFS[1:4]):
         return 'une coordonnée bancaire ou un jeton secret'
-    # Termes médicaux, puis traitement ou diagnostic sans objet professionnel.
-    if MOTIFS[4].search(texte) or _traitement_ou_diagnostic_medical(texte):
+    # Comme la base : traitement et diagnostic restent des motifs de santé
+    # (faux positifs professionnels différés au portail humain, B-1088).
+    if MOTIFS[4].search(texte):
         return 'une information de santé'
-    # « prie de » ou « prie d’ » est une formule de politesse, élision comprise.
-    contexte = re.sub(r"\bprie\s+d(?:e\b|['\u2019])", ' ', texte)
-    contexte = re.sub(r'\bparti(?:e|s|es)?\s+(?=en\b)', '', contexte)
+    # « prie » reste une conviction religieuse comme dans la base (politesse
+    # différée au portail humain, B-1088) ; « parti en » n'est pas un parti.
+    contexte = re.sub(r'\bparti(?:e|s|es)?\s+(?=en\b)', '', texte)
     categories = ('une origine ethnique ou raciale', 'une opinion politique',
                   'une conviction religieuse ou philosophique', 'une appartenance syndicale',
                   'une donnée génétique ou biométrique', 'une information de vie sexuelle')
