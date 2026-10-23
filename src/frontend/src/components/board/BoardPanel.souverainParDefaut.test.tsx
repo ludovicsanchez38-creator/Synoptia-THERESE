@@ -59,3 +59,17 @@ describe('Décision : Souverain par défaut quand Ollama est le service choisi',
     await waitFor(() => expect(screen.getByRole('radio', { name: /Souverain/ })).toHaveAttribute('aria-checked', 'true'));
   });
 });
+
+it('B-1051 : les deux noms accessibles reprennent les libellés visibles', async () => {
+  render(<BoardPanel isOpen onClose={vi.fn()} />);
+  expect(screen.getByLabelText('Ta question stratégique')).toHaveAccessibleName('Ta question stratégique');
+  expect(screen.getByLabelText('Contexte (optionnel)')).toHaveAccessibleName('Contexte (optionnel)');
+});
+it('B-1052 : les deux logos suivent les couleurs du thème', () => {
+  const { container } = render(<BoardPanel isOpen onClose={vi.fn()} />);
+  const cercles = [...container.querySelectorAll('svg[viewBox="0 0 40 40"] circle')];
+  expect(cercles.length).toBeGreaterThanOrEqual(12);
+  for (const cercle of cercles) {
+    expect(cercle.getAttribute('fill') ?? cercle.getAttribute('stroke')).toMatch(/^var\(--color-/);
+  }
+});

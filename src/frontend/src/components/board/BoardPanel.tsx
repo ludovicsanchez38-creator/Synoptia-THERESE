@@ -520,12 +520,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                 )}
                 <div className="flex items-center gap-2">
                   <svg viewBox="0 0 40 40" className="w-5 h-5" fill="none">
-                    <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
-                    <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
-                    <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />
-                    <circle cx="27.1" cy="29.7" r="3" stroke="#EF4444" strokeWidth="1.5" />
-                    <circle cx="12.9" cy="29.7" r="3" stroke="#F59E0B" strokeWidth="1.5" />
-                    <circle cx="8.6" cy="16.3" r="3" stroke="#E11D8D" strokeWidth="1.5" />
+                    <circle cx="20" cy="20" r="5.5" fill="var(--color-text)" />
+                    <circle cx="20" cy="8" r="3" stroke="var(--color-accent-cyan-ink)" strokeWidth="1.5" />
+                    <circle cx="31.4" cy="16.3" r="3" stroke="var(--color-agent-purple)" strokeWidth="1.5" />
+                    <circle cx="27.1" cy="29.7" r="3" stroke="var(--color-error)" strokeWidth="1.5" />
+                    <circle cx="12.9" cy="29.7" r="3" stroke="var(--color-warning)" strokeWidth="1.5" />
+                    <circle cx="8.6" cy="16.3" r="3" stroke="var(--color-accent-magenta-ink)" strokeWidth="1.5" />
                   </svg>
                   <h2 className="text-lg font-semibold text-text">
                     Décision
@@ -591,12 +591,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         <div className="absolute inset-0 rounded-md bg-accent-cyan/30 blur-xl animate-pulse" />
                         <div className="relative w-full h-full rounded-md bg-accent-cyan/20 border-2 border-accent-cyan/30 flex items-center justify-center">
                           <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
-                            <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
-                            <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
-                            <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />
-                            <circle cx="27.1" cy="29.7" r="3" stroke="#EF4444" strokeWidth="1.5" />
-                            <circle cx="12.9" cy="29.7" r="3" stroke="#F59E0B" strokeWidth="1.5" />
-                            <circle cx="8.6" cy="16.3" r="3" stroke="#E11D8D" strokeWidth="1.5" />
+                            <circle cx="20" cy="20" r="5.5" fill="var(--color-text)" />
+                            <circle cx="20" cy="8" r="3" stroke="var(--color-accent-cyan-ink)" strokeWidth="1.5" />
+                            <circle cx="31.4" cy="16.3" r="3" stroke="var(--color-agent-purple)" strokeWidth="1.5" />
+                            <circle cx="27.1" cy="29.7" r="3" stroke="var(--color-error)" strokeWidth="1.5" />
+                            <circle cx="12.9" cy="29.7" r="3" stroke="var(--color-warning)" strokeWidth="1.5" />
+                            <circle cx="8.6" cy="16.3" r="3" stroke="var(--color-accent-magenta-ink)" strokeWidth="1.5" />
                           </svg>
                         </div>
                       </div>
@@ -630,10 +630,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     {/* Question input */}
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-text mb-2">
+                        <label htmlFor="board-question" className="block text-sm font-medium text-text mb-2">
                           Ta question stratégique
                         </label>
-                        <textarea aria-label="Question soumise au Board"
+                        <textarea id="board-question"
                           ref={textareaRef}
                           value={question}
                           onChange={(e) => { setQuestion(e.target.value); setConfirmationOpen(false); setRunError(null); }}
@@ -650,10 +650,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-text mb-2">
+                        <label htmlFor="board-contexte" className="block text-sm font-medium text-text mb-2">
                           Contexte (optionnel)
                         </label>
-                        <textarea aria-label="Contexte de la décision"
+                        <textarea id="board-contexte"
                           value={context}
                           onChange={(e) => { setContext(e.target.value); setConfirmationOpen(false); }}
                           placeholder="Informations supplémentaires sur ta situation..."

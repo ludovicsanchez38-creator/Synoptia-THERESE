@@ -33,7 +33,7 @@ describe('B-642 : la confirmation décrit le mode réellement choisi', () => {
   it('en mode souverain, elle parle d’Ollama local et pas de crédits cloud', async () => {
     render(<BoardPanel isOpen onClose={vi.fn()} />);
     fireEvent.click(await screen.findByRole('button', { name: /Souverain/ }));
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
     const confirmation = await screen.findByTestId('board-confirmation');
     expect(confirmation).toHaveTextContent(/Ollama/);
@@ -43,7 +43,7 @@ describe('B-642 : la confirmation décrit le mode réellement choisi', () => {
 
   it('en mode cloud, elle garde l’avertissement sur les crédits', async () => {
     render(<BoardPanel isOpen onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
     expect(await screen.findByTestId('board-confirmation')).toHaveTextContent(/crédits/i);
   });

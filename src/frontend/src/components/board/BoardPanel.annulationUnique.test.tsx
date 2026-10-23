@@ -43,7 +43,7 @@ describe('B-652 : une demande d’arrêt par délibération, jamais sur une dél
   it('après « Annuler », fermer puis rouvrir et refermer n’envoie plus l’identifiant', async () => {
     const onClose = vi.fn();
     const { rerender } = render(<BoardPanel isOpen onClose={onClose} />);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
     fireEvent.click(await screen.findByRole('button', { name: /Confirmer et lancer/ }));
     await screen.findByTestId('board-result', {}, { timeout: 3000 });
