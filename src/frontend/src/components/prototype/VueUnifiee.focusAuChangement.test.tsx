@@ -51,7 +51,7 @@ describe('B-1370 : le focus suit le changement d’écran', () => {
 
   it('un focus posé dans le nouvel écran n’est pas repris', async () => {
     const { rerender } = render(<PrototypeUnifiedViewCanvas view="tasks" onClose={() => {}} />);
-    const retour = document.querySelector<HTMLButtonElement>('button[aria-label="Revenir à l’écran précédent"]');
+    const retour = document.querySelector<HTMLButtonElement>('button[aria-label="Retour à l’écran précédent"]');
     retour?.focus();
 
     await act(async () => {

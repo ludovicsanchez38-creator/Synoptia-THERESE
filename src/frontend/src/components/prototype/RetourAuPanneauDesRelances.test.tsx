@@ -68,7 +68,7 @@ describe('B-1386 : revenir au panneau des relances', () => {
     await creerDepuisUnEmail();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Revenir à l’écran précédent' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retour à l’écran précédent' }));
     });
 
     await screen.findByTestId('follow-ups-workspace-canvas');
@@ -91,7 +91,7 @@ describe('B-1386 : revenir au panneau des relances', () => {
     await creerDepuisUnEmail();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Revenir à l’écran précédent' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retour à l’écran précédent' }));
     });
 
     await screen.findByTestId('follow-ups-workspace-canvas');
@@ -122,11 +122,11 @@ describe('B-1386 : revenir au panneau des relances', () => {
     });
     await waitFor(() => expect(ecranAffiche()).toBe('tasks'));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Revenir à l’écran précédent' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retour à l’écran précédent' }));
     });
     await waitFor(() => expect(ecranAffiche()).toBe('email'));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Revenir à l’écran précédent' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retour à l’écran précédent' }));
     });
     await waitFor(() => expect(ecranAffiche()).toBeNull());
     expect(screen.queryByTestId('follow-ups-workspace-canvas')).not.toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('B-1386 : revenir au panneau des relances', () => {
     await waitFor(() => expect(ecranAffiche()).toBe('tasks'));
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Revenir à l’écran précédent' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retour à l’écran précédent' }));
     });
 
     await waitFor(() => expect(ecranAffiche()).toBe('crm'));
