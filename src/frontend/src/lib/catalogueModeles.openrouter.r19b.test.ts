@@ -14,8 +14,8 @@ describe('R1-9b : noms OpenRouter issus du catalogue', () => {
     expect(decorer([id])[0].name).toBe(name);
   });
 
-  it('préserve les noms sans modèle natif connu', () => {
-    expect(decorer(['meta-llama/llama-4-maverick'])[0].name).toBe('Meta Llama/llama 4 Maverick');
+  it('retire le préfixe des modèles du catalogue et conserve les inconnus', () => {
+    expect(decorer(['meta-llama/llama-4-maverick'])[0].name).toBe('Llama 4 Maverick');
     expect(decorer(['inconnu/modele-1-2'])[0].name).toBe('inconnu/modele-1-2');
   });
 });

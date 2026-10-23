@@ -440,18 +440,19 @@ def fenetre_de_contexte(provider: str, model: str | None) -> int:
 
 def libelle_modele(modele: str) -> str:
     """Nom lisible dérivé de l'identifiant, partagé par les trois sélecteurs."""
-    # OpenRouter reprend le nom natif quand le catalogue le connaît.
-    _, separateur, natif = modele.partition("/")
-    if separateur and any(
-        natif in fiche.modeles for nom, fiche in CATALOGUE.items() if nom != "openrouter"
-    ):
-        return libelle_modele(natif)
-    texte = re.sub(r"-\d{8}$", "", modele)
-    texte = re.sub(r"(\d)-(\d)", r"\1.\2", texte)
+    # Un espace de noms OpenRouter ne fait pas partie du nom affiché.
+    natif = modele.rsplit("/", 1)[-1]
+    # Les dates d'identifiant ne sont pas des décimales de version.
+    texte = re.sub(r"-(?:\d{8}|\d{4})(?=-|$)", "", natif)
+    texte = re.sub(r"(\d)-(\d+)(?=-|$)", r"\1.\2", texte)
     morceaux = texte.replace("-", " ").split()
-    marques = {"gpt": "GPT", "glm": "GLM", "qwen": "Qwen", "grok": "Grok", "minimax": "MiniMax"}
-    rendu = " ".join(marques.get(m.lower(), m.capitalize()) for m in morceaux)
-    return rendu.replace("GPT ", "GPT-", 1) if modele.startswith("gpt-") else rendu
+    marques = {"gpt": "GPT", "glm": "GLM", "qwen": "Qwen", "grok": "Grok",
+               "minimax": "MiniMax", "deepseek": "DeepSeek"}
+    rendu = " ".join(
+        m.upper() if re.fullmatch(r"\d+(?:\.\d+)?b", m, re.IGNORECASE)
+        else marques.get(m.lower(), m.capitalize()) for m in morceaux
+    )
+    return rendu.replace("GPT ", "GPT-", 1) if natif.startswith("gpt-") else rendu
 
 
 def catalogue_pour_interface() -> dict[str, list[dict[str, str]]]:
