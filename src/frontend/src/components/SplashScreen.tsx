@@ -200,13 +200,13 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     return (
       <div className="h-screen w-screen bg-bg flex items-center justify-center" data-tauri-drag-region>
         <div className="text-center max-w-md px-6">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold text-text mb-2">
             THÉRÈSE
           </h1>
           {appVersion && (
             <p className="text-text-muted text-xs mb-4">v{appVersion}-alpha</p>
           )}
-          <div className="bg-error/10 border border-error/30 rounded-md p-4">
+          <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4">
             <p className="text-error text-sm">{error}</p>
           </div>
         </div>
@@ -219,7 +219,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
       <div className="text-center">
         {/* Logo animé */}
         <h1
-          className="text-5xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-2"
+          className="text-5xl font-bold text-text mb-2"
           style={reducedMotion ? {} : {
             animation: 'pulse 2s ease-in-out infinite',
           }}
@@ -237,14 +237,10 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           et l'apparition de la fenêtre pleinement opérationnelle.
         */}
         <div
-          className="mx-auto mb-5"
+          className="mx-auto mb-5 border-[2.5px] border-border border-t-accent-cyan border-r-accent-magenta rounded-full"
           style={{
             width: '28px',
             height: '28px',
-            border: '2.5px solid rgba(255,255,255,0.12)',
-            borderTopColor: 'var(--color-accent-cyan, #00d4ff)',
-            borderRightColor: 'var(--color-accent-magenta, #ff00aa)',
-            borderRadius: '50%',
             animation: reducedMotion ? 'none' : 'spin 0.8s linear infinite',
           }}
           role="status"
@@ -253,7 +249,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
         {/* Barre de progression */}
         <div className="w-64 mx-auto mb-4">
-          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+          <div role="progressbar" aria-label="Démarrage" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-1 bg-border rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta rounded-full transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
@@ -262,7 +258,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         </div>
 
         {/* Message */}
-        <p className="text-text-muted text-sm">{message}</p>
+        <p aria-live="polite" className="text-text-muted text-sm">{message}</p>
       </div>
     </div>
   );
