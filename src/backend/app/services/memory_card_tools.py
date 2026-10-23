@@ -38,6 +38,15 @@ MEMORY_CARD_TOOL: dict[str, Any] = {
 }
 
 
+async def message_du_tour(conversation_id: str) -> str | None:
+    """Le dernier message utilisateur de la conversation : la source du tour."""
+    async with get_session_context() as session:
+        source = (await session.execute(select(Message).where(
+            Message.conversation_id == conversation_id, Message.role == 'user'
+        ).order_by(col(Message.created_at).desc(), col(Message.id).desc()).limit(1))).scalars().first()
+        return source.id if source else None
+
+
 async def executer_outil(arguments: dict[str, Any], *, scope: str, scope_id: str | None,
                          conversation_id: str, include_memory: bool = True,
                          contexte: Any = None) -> dict[str, Any]:
@@ -49,11 +58,7 @@ async def executer_outil(arguments: dict[str, Any], *, scope: str, scope_id: str
         autorises = set(MEMORY_CARD_TOOL['function']['parameters']['properties'])
         if set(arguments) - autorises:
             raise RefusMemoire('Les métadonnées de la fiche sont réservées au serveur.')
-        async with get_session_context() as session:
-            source = (await session.execute(select(Message).where(
-                Message.conversation_id == conversation_id, Message.role == 'user'
-            ).order_by(col(Message.created_at).desc(), col(Message.id).desc()).limit(1))).scalars().first()
-            message_id = source.id if source else None
+        message_id = await message_du_tour(conversation_id)
         fiche = await ecrire(arguments, automatique=True, scope=scope, scope_id=scope_id,
                               conversation_id=conversation_id, message_id=message_id, contexte=contexte, generation_attendue=generation)
         return {'success': True, 'receipt': fiche['receipt']}
