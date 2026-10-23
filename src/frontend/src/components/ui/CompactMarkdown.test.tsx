@@ -29,3 +29,11 @@ describe('CompactMarkdown', () => {
     expect(screen.getByText(/Image non affichée : pixel/)).toBeInTheDocument();
   });
 });
+
+it('B-1084 : le bloc de code peut défiler et ne reçoit pas le style de puce en ligne', () => {
+  const { container } = render(<CompactMarkdown>{'```python\n' + 'chaine = "' + 'x'.repeat(120) + '"\n```\n\n`code court`'}</CompactMarkdown>);
+  const pre = container.querySelector('pre');
+  expect(pre).toHaveClass('overflow-x-auto', 'max-w-full');
+  expect(pre?.querySelector('code')).toHaveClass('block');
+  expect(screen.getByText('code court')).toHaveClass('px-1');
+});
