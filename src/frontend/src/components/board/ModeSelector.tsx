@@ -1,3 +1,4 @@
+import { useId } from 'react';
 /**
  * THÉRÈSE v2 - Board Mode Selector
  *
@@ -21,8 +22,9 @@ interface ModeSelectorProps {
 }
 
 export function ModeSelector({ mode, onChange, ollamaAvailable, raisonIndisponible, onRefreshOllama }: ModeSelectorProps) {
+  const raisonId = useId();
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {/* B-1422 : le mode actif s'annonce (aria-pressed), pas seulement par la couleur. */}
       <button
         type="button"
@@ -56,6 +58,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, raisonIndisponib
         aria-pressed={mode === 'sovereign'}
         onClick={() => ollamaAvailable && onChange('sovereign')}
         disabled={!ollamaAvailable}
+        aria-describedby={!ollamaAvailable ? raisonId : undefined}
         title={ollamaAvailable ? 'Mode souverain - Ollama local' : raisonIndisponible ?? 'Ollama non disponible'}
         className={cn(
           'relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
@@ -76,8 +79,11 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, raisonIndisponib
         <span className="relative z-10">Souverain</span>
       </button>
 
+      {!ollamaAvailable && <p id={raisonId} className="basis-full text-xs text-text-muted">{raisonIndisponible ?? 'Ollama non disponible'}</p>}
       {!ollamaAvailable && onRefreshOllama && (
         <button
+          type="button"
+          aria-label="Vérifier Ollama"
           onClick={onRefreshOllama}
           title="Vérifier Ollama"
           className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors"
