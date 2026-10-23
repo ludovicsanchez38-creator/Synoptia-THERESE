@@ -4,7 +4,7 @@
  * Displays detected entities and offers to save them to memory.
  */
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, FolderPlus, Check, X } from 'lucide-react';
 import type { ExtractedContact, ExtractedProject } from '../../services/api';
@@ -31,6 +31,7 @@ interface EntityItemProps {
 }
 
 function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: EntityItemProps) {
+  const confianceId = useId();
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'ignored' | 'error'>('idle');
 
   const handleSave = async () => {
@@ -79,13 +80,16 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       </div>
 
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-text-muted">{confidencePercent}%</span>
+        <span id={confianceId} className="text-xs text-text-muted"><span className="sr-only">Confiance pour {name} : </span>{' '}{confidencePercent} %</span>
 
         {status === 'saving' ? (
           <Spinner taille="bouton" className="text-agent-cyan" />
         ) : (
           <>
             <button
+              type="button"
+              aria-label={`Sauvegarder ${name}`}
+              aria-describedby={confianceId}
               onClick={handleSave}
               className="p-1 rounded-sm hover:bg-agent-cyan/20 text-agent-cyan transition-colors"
               title="Sauvegarder"
@@ -93,6 +97,9 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
               <Check className="w-4 h-4" />
             </button>
             <button
+              type="button"
+              aria-label={`Ignorer ${name}`}
+              aria-describedby={confianceId}
               onClick={handleIgnore}
               className="p-1 rounded-sm hover:bg-error/20 text-text-muted hover:text-error transition-colors"
               title="Ignorer"
