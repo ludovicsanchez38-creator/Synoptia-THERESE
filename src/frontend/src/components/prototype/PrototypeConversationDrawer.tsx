@@ -333,7 +333,7 @@ export function PrototypeConversationDrawer({
       // contrôles tabulables SOUS un panneau opaque - le finding S1-2 du hotfix.
       // `xl:left-0` annule le décalage du rail, qui n'a plus lieu d'être une fois
       // le tiroir placé dans le flux.
-      className="absolute inset-y-0 left-16 z-30 flex w-[22rem] flex-col border-r border-border bg-surface shadow-lg xl:relative xl:left-0 xl:shrink-0 xl:shadow-none"
+      className="absolute inset-y-0 left-14 z-30 flex w-[22rem] flex-col border-r border-border bg-surface shadow-lg xl:relative xl:left-0 xl:shrink-0 xl:shadow-none"
       data-testid="prototype-conversation-drawer"
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">

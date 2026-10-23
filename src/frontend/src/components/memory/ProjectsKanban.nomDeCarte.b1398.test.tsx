@@ -24,7 +24,7 @@ function makeProject(overrides: Partial<Project> & Pick<Project, 'id' | 'name' |
 
 
 describe('B-1398 : la carte de projet a un nom', () => {
-  it('le conteneur déplaçable porte le nom du projet', () => {
+  it('la poignée déplaçable porte le nom du projet', () => {
     render(
       <ProjectsKanban
         projects={[makeProject({ id: 'p-veille', name: 'Veille IA', status: 'active' })]}
@@ -33,7 +33,7 @@ describe('B-1398 : la carte de projet a un nom', () => {
     );
     const carte = document.querySelector('[aria-roledescription]') as HTMLElement;
     expect(carte).not.toBeNull();
-    expect(carte.getAttribute('aria-label')).toBe('Veille IA');
+    expect(carte.getAttribute('aria-label')).toBe('Déplacer Veille IA');
     expect(screen.getAllByRole('button').filter((b) => !(b.getAttribute('aria-label') || b.textContent?.trim()))).toHaveLength(0);
   });
 });

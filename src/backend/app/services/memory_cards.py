@@ -191,12 +191,12 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
 
 async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, scope: str,
                   scope_id: str | None, conversation_id: str | None, message_id: str | None) -> dict[str, Any]:
-    from app.services.memory_card_security import MESSAGE_REFUS, contient_sensible
+    from app.services.memory_card_security import message_refus
     for champ in ("title", "content", "reason", "subject", "kind", "state"):
         if champ in donnees and not isinstance(donnees[champ], str):
             raise RefusMemoire("Les champs de la fiche doivent être du texte.")
-    if contient_sensible([donnees.get(champ, '') for champ in ('title', 'content', 'reason', 'subject')]):
-        raise RefusMemoire(MESSAGE_REFUS)
+    if refus := message_refus([donnees.get(champ, '') for champ in ('title', 'content', 'reason', 'subject')]):
+        raise RefusMemoire(refus)
     if automatique:
         source_verifiee = await session.get(Message, message_id) if message_id else None
         if not source_verifiee or source_verifiee.role != 'user' or source_verifiee.conversation_id != conversation_id:
@@ -231,8 +231,8 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         if not source or source.role != 'user' or source.conversation_id != conversation_id:
             raise RefusMemoire('Une source utilisateur vérifiable est nécessaire.')
         source_content = source.content
-        if contient_sensible(source_content):
-            raise RefusMemoire(MESSAGE_REFUS)
+        if refus := message_refus(source_content):
+            raise RefusMemoire(refus)
         # Une correction peut conserver les faits de la fiche autorisée.
         # Aucun mot nouveau hors de ces deux sources n'est accepté.
         provenance = source.content
@@ -273,8 +273,8 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
     if len(f.title) > 120 or len(f.content) > 1200 or len(f.reason) > 600 or (f.kind == 'decision' and not f.reason.strip()):
         raise RefusMemoire('Cette fiche dépasse les limites ou la décision manque de raison.')
     await _liens(session, f, automatique, scope, scope_id, conversation_id)
-    if contient_sensible([f.title, f.content, f.reason, f.subject]):
-        raise RefusMemoire(MESSAGE_REFUS)
+    if refus := message_refus([f.title, f.content, f.reason, f.subject]):
+        raise RefusMemoire(refus)
     if automatique:
         protegees = (await session.execute(select(MemoryCard).where(col(MemoryCard.protected) == True))).scalars().all()  # noqa: E712
         contacts_projet = {c.id: c.scope_id for c in (await session.execute(select(Contact).where(col(Contact.scope) == 'project'))).scalars().all()}

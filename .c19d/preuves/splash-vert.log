@@ -1,0 +1,30 @@
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+stdout | src/components/SplashScreen.sidecarFatal.test.tsx > B-757 - erreur fatale du sidecar au démarrage > annule le polling en cours, ne relance aucun health check et ne signale jamais ready
+[probeHealth] GET http://127.0.0.1:17293/health
+
+stdout | src/components/SplashScreen.sidecarFatal.test.tsx > B-757 - erreur fatale du sidecar au démarrage > annule le polling en cours, ne relance aucun health check et ne signale jamais ready
+[probeHealth] status=200 ok=true
+
+stdout | src/components/SplashScreen.sidecarFatal.test.tsx > B-757 - erreur fatale du sidecar au démarrage > annule le polling en cours, ne relance aucun health check et ne signale jamais ready
+[probeHealth] body={"status":"healthy","version":"0.72.0"}
+[probeHealth] status=healthy version=0.72.0 valid=true
+
+stdout | src/components/SplashScreen.sidecarFatal.test.tsx > B-757 - erreur fatale du sidecar au démarrage > B-1085 : la commande de secours vise le vrai nom de l’application (THERESE.app)
+[probeHealth] GET http://127.0.0.1:17293/health
+
+stdout | src/components/SplashScreen.sidecarFatal.test.tsx > B-1053 : les pistes suivent le thème, sans texte découpé dans un dégradé
+[probeHealth] GET http://127.0.0.1:17293/health
+
+stdout | src/components/SplashScreen.sidecarFatal.test.tsx > B-1055 : progression, étape et erreur fatale sont annoncées
+[probeHealth] GET http://127.0.0.1:17293/health
+
+ ✓ src/components/SplashScreen.sidecarFatal.test.tsx (4 tests) 588ms
+     ✓ annule le polling en cours, ne relance aucun health check et ne signale jamais ready  368ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  02:07:36
+   Duration  6.15s (transform 866ms, setup 855ms, import 1.03s, tests 588ms, environment 2.91s)
+

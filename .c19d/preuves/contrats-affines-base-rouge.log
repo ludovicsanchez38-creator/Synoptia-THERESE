@@ -1,0 +1,58 @@
+Commande : npx vitest run src/test/c19d/contrats-base-temp.test.ts
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ❯ src/test/c19d/contrats-base-temp.test.ts (2 tests | 2 failed) 112ms
+   × B-1065 : le contrat affiné échoue aussi sur la base f01582fa 87ms
+   × B-1067 : le contrat tient compte de la conjugaison interpolée et échoue sur la base 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/c19d/contrats-base-temp.test.ts > B-1065 : le contrat affiné échoue aussi sur la base f01582fa
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/test/c19d/contrats-base-temp.test.ts:6:70
+      4| it('B-1065 : le contrat affiné échoue aussi sur la base f01582fa', () …
+      5|   const original = execFileSync('git', ['show', 'f01582fa:src/frontend…
+      6|   expect(original.includes('aria-label="Répertoire personnel (~)"')).t…
+       |                                                                      ^
+      7| });
+      8| it('B-1067 : le contrat tient compte de la conjugaison interpolée et é…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/test/c19d/contrats-base-temp.test.ts > B-1067 : le contrat tient compte de la conjugaison interpolée et échoue sur la base
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/test/c19d/contrats-base-temp.test.ts:10:42
+      8| it('B-1067 : le contrat tient compte de la conjugaison interpolée et é…
+      9|   const original = execFileSync('git', ['show', 'f01582fa:src/frontend…
+     10|   expect(original.includes('} bientôt')).toBe(true);
+       |                                          ^
+     11| });
+     12| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  02:32:25
+   Duration  3.80s (transform 226ms, setup 521ms, import 73ms, tests 112ms, environment 2.57s)
+
+
+Code de sortie : 1

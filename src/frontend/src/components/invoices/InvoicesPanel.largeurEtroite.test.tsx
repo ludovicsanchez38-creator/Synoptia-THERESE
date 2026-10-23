@@ -44,7 +44,7 @@ describe('B-1387 : montant et actions restent dans le cadre', () => {
     const derniere = cellules[cellules.length - 1];
 
     expect(derniere).toHaveTextContent(/360,00/);
-    expect(within(derniere).getByRole('button', { name: 'Supprimer' })).toBeInTheDocument();
+    expect(within(derniere).getByRole('button', { name: /^Supprimer :/ })).toBeInTheDocument();
     expect(within(derniere).getByRole('button', { name: /PDF/ })).toBeInTheDocument();
     expect(derniere.className).toMatch(/\bsticky\b/);
     expect(derniere.className).toMatch(/\bright-0\b/);

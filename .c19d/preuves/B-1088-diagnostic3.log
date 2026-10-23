@@ -1,0 +1,144 @@
+.FFF..                                                                   [100%]
+=================================== FAILURES ===================================
+_____________ test_correction_et_paraphrases_independantes_du_type _____________
+tests/test_r2_2_protection.py:64: in test_correction_et_paraphrases_independantes_du_type
+    fiche = await service.ecrire(donnees(), **origine)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_cards.py:164: in ecrire
+    resultat = json.loads(await _proteger_le_geste(geste()))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_tools.py:1281: in _proteger_le_geste
+    return await asyncio.shield(geste)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_cards.py:154: in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+src/backend/app/services/memory_cards.py:213: in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+E   NameError: name 'contient_sensible' is not defined
+----------------------------- Captured stdout call -----------------------------
+2026-10-23 01:54:35 - app.services.memory_tools - WARNING - Geste de création détaché terminé en échec
+Traceback (most recent call last):
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 154, in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 213, in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+NameError: name 'contient_sensible' is not defined
+------------------------------ Captured log call -------------------------------
+WARNING  app.services.memory_tools:memory_tools.py:1215 Geste de création détaché terminé en échec
+Traceback (most recent call last):
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 154, in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 213, in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+NameError: name 'contient_sensible' is not defined
+_________________ test_correction_chat_de_fait_et_rejeu_efface _________________
+tests/test_r2_2_protection.py:81: in test_correction_chat_de_fait_et_rejeu_efface
+    fiche = await service.ecrire(donnees(kind='fait', content='Délai de paiement de 30 jours.'), **origine)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_cards.py:164: in ecrire
+    resultat = json.loads(await _proteger_le_geste(geste()))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_tools.py:1281: in _proteger_le_geste
+    return await asyncio.shield(geste)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_cards.py:154: in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+src/backend/app/services/memory_cards.py:213: in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+E   NameError: name 'contient_sensible' is not defined
+----------------------------- Captured stdout call -----------------------------
+2026-10-23 01:54:36 - app.services.memory_tools - WARNING - Geste de création détaché terminé en échec
+Traceback (most recent call last):
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 154, in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 213, in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+NameError: name 'contient_sensible' is not defined
+------------------------------ Captured log call -------------------------------
+WARNING  app.services.memory_tools:memory_tools.py:1215 Geste de création détaché terminé en échec
+Traceback (most recent call last):
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 154, in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 213, in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+NameError: name 'contient_sensible' is not defined
+_____________________ test_matrice_recouvrement_global_a_b _____________________
+tests/test_r2_2_protection.py:103: in test_matrice_recouvrement_global_a_b
+    await service.ecrire(donnees(subject='autre'), **origine)
+src/backend/app/services/memory_cards.py:164: in ecrire
+    resultat = json.loads(await _proteger_le_geste(geste()))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_tools.py:1281: in _proteger_le_geste
+    return await asyncio.shield(geste)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/backend/app/services/memory_cards.py:154: in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+src/backend/app/services/memory_cards.py:213: in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+E   NameError: name 'contient_sensible' is not defined
+----------------------------- Captured stdout call -----------------------------
+2026-10-23 01:54:37 - app.services.memory_tools - WARNING - Geste de création détaché terminé en échec
+Traceback (most recent call last):
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 154, in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 213, in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+NameError: name 'contient_sensible' is not defined
+------------------------------ Captured log call -------------------------------
+WARNING  app.services.memory_tools:memory_tools.py:1215 Geste de création détaché terminé en échec
+Traceback (most recent call last):
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 154, in geste
+    resultat = await _ecrire(session, donnees, automatique=automatique,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/memory_cards.py", line 213, in _ecrire
+    if contient_sensible(source_content):
+       ^^^^^^^^^^^^^^^^^
+NameError: name 'contient_sensible' is not defined
+=============================== warnings summary ===============================
+../wt-recette-20261020/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-recette-20261020/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/backend/app/services/skills/base.py:59
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/skills/base.py:59: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class SkillResult(BaseModel):
+
+../wt-recette-20261020/.venv/lib/python3.14/site-packages/sqlmodel/main.py:534
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-recette-20261020/.venv/lib/python3.14/site-packages/sqlmodel/main.py:534: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    new_cls = super().__new__(cls, name, bases, dict_used, **config_kwargs)
+
+../wt-recette-20261020/.venv/lib/python3.14/site-packages/pydantic/_internal/_generate_schema.py:319
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-recette-20261020/.venv/lib/python3.14/site-packages/pydantic/_internal/_generate_schema.py:319: PydanticDeprecatedSince20: `json_encoders` is deprecated. See https://docs.pydantic.dev/2.12/concepts/serialization/#custom-serializers for alternatives. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_r2_2_protection.py::test_correction_et_paraphrases_independantes_du_type
+FAILED tests/test_r2_2_protection.py::test_correction_chat_de_fait_et_rejeu_efface
+FAILED tests/test_r2_2_protection.py::test_matrice_recouvrement_global_a_b - ...
+3 failed, 3 passed, 4 warnings in 6.85s

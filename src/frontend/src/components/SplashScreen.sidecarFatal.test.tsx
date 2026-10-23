@@ -90,3 +90,24 @@ describe('B-757 - erreur fatale du sidecar au démarrage', () => {
     expect(container.textContent).not.toContain('THÉRÈSE.app');
   });
 });
+
+it('B-1053 : les pistes suivent le thème, sans texte découpé dans un dégradé', async () => {
+  harness.sidecarErrorHandler = null;
+  vi.mocked(fetch).mockImplementation(() => new Promise<Response>(() => {}));
+  const { container } = render(<SplashScreen onReady={vi.fn()} />);
+  const anneau = container.querySelector('[role="status"]') as HTMLElement;
+  expect(anneau).toHaveClass('border-border');
+  expect(container.querySelector('[class*="bg-white/10"]')).toBeNull();
+  expect(container.querySelector('.bg-clip-text')).toBeNull();
+  await waitFor(() => expect(harness.sidecarErrorHandler).not.toBeNull());
+});
+it('B-1055 : progression, étape et erreur fatale sont annoncées', async () => {
+  harness.sidecarErrorHandler = null;
+  vi.mocked(fetch).mockImplementation(() => new Promise<Response>(() => {}));
+  const { container } = render(<SplashScreen onReady={vi.fn()} />);
+  expect(container.querySelector('[role="progressbar"]')).toHaveAttribute('aria-valuenow');
+  expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+  await waitFor(() => expect(harness.sidecarErrorHandler).not.toBeNull());
+  act(() => harness.sidecarErrorHandler?.({ payload: 'Échec factice du moteur' }));
+  expect(container.querySelector('[role="alert"]')).not.toBeNull();
+});

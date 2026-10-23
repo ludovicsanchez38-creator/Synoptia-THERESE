@@ -78,7 +78,7 @@ describe('B-208 : la ligne d’un document est une commande atteignable au clavi
     mockListInvoices.mockResolvedValue([devis]);
     render(<InvoicesPanel standalone />);
 
-    const commande = await screen.findByRole('button', { name: /Sophie Garcia/ });
+    const commande = await screen.findByRole('button', { name: /^Devis,.*Sophie Garcia$/ });
     expect(commande).toBeInTheDocument();
 
     fireEvent.click(commande);
@@ -90,7 +90,7 @@ describe('B-208 : la ligne d’un document est une commande atteignable au clavi
     mockListInvoices.mockResolvedValue([sansClient]);
     render(<InvoicesPanel standalone />);
 
-    const commande = await screen.findByRole('button', { name: /DEV-2026-002/ });
+    const commande = await screen.findByRole('button', { name: /^Devis, DEV-2026-002,/ });
     fireEvent.click(commande);
 
     expect(await screen.findByTestId('invoice-form')).toHaveTextContent('DEV-2026-002');
@@ -103,7 +103,7 @@ describe('B-208 : la ligne d’un document est une commande atteignable au clavi
     mockListInvoices.mockResolvedValue([devis]);
     render(<InvoicesPanel standalone />);
 
-    await screen.findByRole('button', { name: /Sophie Garcia/ });
+    await screen.findByRole('button', { name: /^Devis,.*Sophie Garcia$/ });
     fireEvent.click(screen.getByTitle('Générer et ouvrir le PDF'));
 
     expect(screen.queryByTestId('invoice-form')).not.toBeInTheDocument();

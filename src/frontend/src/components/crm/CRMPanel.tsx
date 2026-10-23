@@ -203,7 +203,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           Nouveau contact
         </Button>
         {!standalone && (
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} type="button" aria-label="Fermer le Pipeline">
             <X className="w-5 h-5 text-text-muted" />
           </Button>
         )}
@@ -532,7 +532,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-primary">Nouveau contact</h3>
-          <Button variant="ghost" size="icon" onClick={onClose} type="button">
+          <Button variant="ghost" size="icon" onClick={onClose} type="button" aria-label="Fermer le nouveau contact">
             <X className="w-5 h-5 text-text-muted" />
           </Button>
         </div>
@@ -727,6 +727,7 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
               key={chip.id}
               type="button"
               onClick={() => setFilter(chip.id)}
+              aria-pressed={isActive}
               className={classeSegment(isActive)}
             >
               {ChipIcon && <ChipIcon size={18} />}
@@ -891,7 +892,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-primary">Nouvelle activité</h3>
-          <Button variant="ghost" size="icon" onClick={onClose} type="button">
+          <Button variant="ghost" size="icon" onClick={onClose} type="button" aria-label="Fermer la nouvelle activité">
             <X className="w-5 h-5 text-text-muted" />
           </Button>
         </div>
@@ -909,7 +910,8 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
                     key={at.id}
                     type="button"
                     onClick={() => setType(at.id)}
-                    className={classeSegment(isActive)}
+                    aria-pressed={isActive}
+              className={classeSegment(isActive)}
                   >
                     <AtIcon size={18} />
                     {at.label}

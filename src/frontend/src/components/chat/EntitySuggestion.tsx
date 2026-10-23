@@ -4,7 +4,7 @@
  * Displays detected entities and offers to save them to memory.
  */
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, FolderPlus, Check, X } from 'lucide-react';
 import type { ExtractedContact, ExtractedProject } from '../../services/api';
@@ -31,6 +31,7 @@ interface EntityItemProps {
 }
 
 function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: EntityItemProps) {
+  const confianceId = useId();
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'ignored' | 'error'>('idle');
 
   const handleSave = async () => {
@@ -66,7 +67,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-surface-elevated border border-border"
     >
       <div className="flex-shrink-0">
-        <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-agent-cyan/20' : 'bg-magenta-500/20'}`}>
+        <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-agent-cyan/20' : 'bg-accent-magenta/20'}`}>
           <Icon className={`w-4 h-4 ${type === 'contact' ? 'text-agent-cyan' : 'text-accent-magenta-ink'}`} />
         </div>
       </div>
@@ -79,13 +80,16 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       </div>
 
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-text-muted">{confidencePercent}%</span>
+        <span id={confianceId} className="text-xs text-text-muted"><span className="sr-only">Confiance pour {name} : </span>{' '}{confidencePercent} %</span>
 
         {status === 'saving' ? (
           <Spinner taille="bouton" className="text-agent-cyan" />
         ) : (
           <>
             <button
+              type="button"
+              aria-label={`Sauvegarder ${name}`}
+              aria-describedby={confianceId}
               onClick={handleSave}
               className="p-1 rounded-sm hover:bg-agent-cyan/20 text-agent-cyan transition-colors"
               title="Sauvegarder"
@@ -93,6 +97,9 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
               <Check className="w-4 h-4" />
             </button>
             <button
+              type="button"
+              aria-label={`Ignorer ${name}`}
+              aria-describedby={confianceId}
               onClick={handleIgnore}
               className="p-1 rounded-sm hover:bg-error/20 text-text-muted hover:text-error transition-colors"
               title="Ignorer"
@@ -192,7 +199,7 @@ export function EntitySuggestion({
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-medium text-text-muted">
-            {totalCount === 1 ? "J'ai detecte une entite" : `J'ai detecte ${totalCount} entites`}
+            {totalCount === 1 ? "J'ai détecté une entité" : `J'ai détecté ${totalCount} entités`}
           </p>
           <button
             onClick={onDismiss}

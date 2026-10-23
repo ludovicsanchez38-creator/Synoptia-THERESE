@@ -1,0 +1,10 @@
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/components/prototype/composeur.c19d.test.ts (1 test) 14ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  01:55:21
+   Duration  3.05s (transform 260ms, setup 501ms, import 67ms, tests 14ms, environment 1.83s)
+

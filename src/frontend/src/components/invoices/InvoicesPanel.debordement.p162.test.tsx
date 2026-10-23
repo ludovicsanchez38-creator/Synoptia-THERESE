@@ -237,7 +237,7 @@ describe('P162 : indice passif sur le vrai scroller du tableau', () => {
     const cell = within(ligne).getAllByRole('cell').at(-1)!;
     expect(cell.className).toMatch(/sticky/);
     expect(cell.className).toMatch(/right-0/);
-    expect(within(cell).getByRole('button', { name: 'Supprimer' })).toBeInTheDocument();
+    expect(within(cell).getByRole('button', { name: /^Supprimer :/ })).toBeInTheDocument();
     expect(within(cell).getByRole('button', { name: /PDF/ })).toBeInTheDocument();
     unmount();
     expect(observers.every(o => o.disconnect.mock.calls.length > 0)).toBe(true);

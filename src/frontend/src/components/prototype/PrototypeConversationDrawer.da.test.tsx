@@ -88,8 +88,8 @@ describe('Lot 3 DA : coque du tiroir', () => {
     poser([conversation('c1', 'Relance clients', new Date())]);
     const panneau = screen.getByTestId('prototype-conversation-drawer');
     expect(panneau.className).toMatch(/w-\[22rem\]/);
-    expect(panneau.className).toMatch(/\bleft-16\b/);
-    expect(panneau.className).not.toMatch(/\bleft-14\b/);
+    expect(panneau.className).toMatch(/\bleft-14\b/);
+    expect(panneau.className).not.toMatch(/\bleft-16\b/);
     const titre = screen.getByRole('heading', { level: 2, name: 'Conversations' });
     expect(titre.id).toBe('prototype-conversation-drawer-title');
     expect(titre.className).toMatch(/\btext-base\b/);

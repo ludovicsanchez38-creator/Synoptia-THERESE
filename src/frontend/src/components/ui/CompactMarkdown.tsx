@@ -1,3 +1,4 @@
+import { Children, isValidElement } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -18,6 +19,9 @@ const components: Components = {
     <blockquote className="my-2 border-l-2 border-border pl-3 text-text-muted">
       {children}
     </blockquote>
+  ),
+  pre: ({ children }) => (
+    <pre className="my-2 max-w-full overflow-x-auto rounded-sm bg-surface-2 p-3">{Children.map(children, (enfant) => isValidElement<{ children?: React.ReactNode }>(enfant) ? <code className="block font-mono text-[0.92em] text-text">{enfant.props.children}</code> : enfant)}</pre>
   ),
   code: ({ children }) => (
     <code className="rounded-sm bg-surface-2 px-1 py-0.5 font-mono text-[0.92em] text-text">

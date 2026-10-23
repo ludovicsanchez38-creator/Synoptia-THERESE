@@ -1,0 +1,86 @@
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/components/prototype/InvoiceConversationCard.test.tsx (9 tests) 3136ms
+     ✓ affiche le détail chargé par l’API sans action externe  749ms
+     ✓ demande confirmation et ignore un double clic avant de créer le devis brouillon  1326ms
+Not implemented: navigation to another Document
+Not implemented: navigation to another Document
+ ✓ src/components/settings/PrivacyTab.test.tsx (5 tests) 6519ms
+     ✓ expose export, sauvegarde, restauration confirmée et effacement doublement confirmé  4464ms
+     ✓ après effacement global, annonce honnêtement les sauvegardes conservées (revue 0.40)  1171ms
+     ✓ permet d’autoriser la dictée cloud Groq depuis les réglages (fin de l’impasse)  407ms
+stderr | src/components/settings/LimitsTab.cycle6.test.tsx > #187 : les pannes de l’onglet Limites sont dites > une lecture en panne affiche une alerte avec reprise, et la reprise relit
+Échec du chargement des données de limites: Error: boom
+    at /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/settings/LimitsTab.cycle6.test.tsx:41:51
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/components/memory/ProjectsKanban.test.tsx > ProjectsKanban drag & drop (BUG-041) > démarre un drag au pointeur depuis le corps de la carte (pas seulement la poignée)
+An update to AnimationManager inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/memory/ProjectsKanban.test.tsx > ProjectsKanban drag & drop (BUG-041) > démarre un drag au clavier depuis la carte focusée (Entrée)
+An update to DndContext inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DndContext inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/memory/ProjectsKanban.test.tsx (4 tests) 2816ms
+     ✓ démarre un drag au pointeur depuis le corps de la carte (pas seulement la poignée)  1777ms
+     ✓ démarre un drag au clavier depuis la carte focusée (Entrée)  838ms
+stderr | src/components/settings/LimitsTab.cycle6.test.tsx > #187 : les pannes de l’onglet Limites sont dites > un enregistrement en panne affiche une alerte
+Échec de la sauvegarde des limites: Error: boom
+    at /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/settings/LimitsTab.cycle6.test.tsx:53:42
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12/src/frontend/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+ ✓ src/components/settings/LimitsTab.cycle6.test.tsx (5 tests) 1878ms
+     ✓ une lecture en panne affiche une alerte avec reprise, et la reprise relit  1321ms
+ ✓ src/components/memory/ProjectDeliverablesSection.p153.test.tsx (4 tests) 1187ms
+     ✓ liste les livrables du projet  311ms
+     ✓ en ajoute un sans quitter la fenêtre  782ms
+
+ Test Files  5 passed (5)
+      Tests  27 passed (27)
+   Start at  02:04:21
+   Duration  23.95s (transform 4.44s, setup 1.91s, import 9.40s, tests 15.54s, environment 12.48s)
+

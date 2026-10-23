@@ -77,8 +77,8 @@ describe('B-1615 : libellé accessible d’une pièce', () => {
     ]);
     ouvrir();
 
-    const premier = await screen.findByRole('button', { name: /120,00/ });
-    const second = screen.getByRole('button', { name: /80,00/ });
+    const premier = await screen.findByRole('button', { name: /^(?:Facture|Devis|Avoir),.*120,00/ });
+    const second = screen.getByRole('button', { name: /^(?:Facture|Devis|Avoir),.*80,00/ });
     for (const bouton of [premier, second]) {
       expect(bouton).toHaveAccessibleName(/Facture/);
       expect(bouton).toHaveAccessibleName(/Brouillon, numéro à l'émission/);
@@ -99,7 +99,7 @@ describe('B-1615 : libellé accessible d’une pièce', () => {
     }]);
     ouvrir();
 
-    const bouton = await screen.findByRole('button', { name: /Sophie Garcia/ });
+    const bouton = await screen.findByRole('button', { name: /^(?:Facture|Devis|Avoir),.*Sophie Garcia$/ });
     expect(bouton).toHaveAccessibleName(/Facture/);
     expect(bouton).toHaveAccessibleName(/FACT-2026-004/);
     expect(bouton).toHaveAccessibleName(/198,00/);

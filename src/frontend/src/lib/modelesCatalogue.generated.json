@@ -148,23 +148,23 @@
     },
     {
       "id": "mistral-large-2512",
-      "name": "Mistral Large 2512"
+      "name": "Mistral Large"
     },
     {
       "id": "mistral-small-2603",
-      "name": "Mistral Small 2603"
+      "name": "Mistral Small"
     },
     {
       "id": "codestral-2508",
-      "name": "Codestral 2508"
+      "name": "Codestral"
     },
     {
       "id": "ministral-8b-2512",
-      "name": "Ministral 8b 2512"
+      "name": "Ministral 8B"
     },
     {
       "id": "ministral-3b-2512",
-      "name": "Ministral 3b 2512"
+      "name": "Ministral 3B"
     }
   ],
   "grok": [
@@ -186,11 +186,11 @@
     },
     {
       "id": "grok-4.20-0309-reasoning",
-      "name": "Grok 4.20.0309 Reasoning"
+      "name": "Grok 4.20 Reasoning"
     },
     {
       "id": "grok-4.20-0309-non-reasoning",
-      "name": "Grok 4.20.0309 Non Reasoning"
+      "name": "Grok 4.20 Non Reasoning"
     }
   ],
   "glm": [
@@ -292,11 +292,11 @@
   "deepseek": [
     {
       "id": "deepseek-v4-pro",
-      "name": "Deepseek V4 Pro"
+      "name": "DeepSeek V4 Pro"
     },
     {
       "id": "deepseek-v4-flash",
-      "name": "Deepseek V4 Flash"
+      "name": "DeepSeek V4 Flash"
     }
   ],
   "infomaniak": [
@@ -326,7 +326,7 @@
     },
     {
       "id": "google/gemini-3.1-pro",
-      "name": "Google/gemini 3.1 Pro"
+      "name": "Gemini 3.1 Pro"
     },
     {
       "id": "google/gemini-3.5-flash",
@@ -334,7 +334,7 @@
     },
     {
       "id": "meta-llama/llama-4-maverick",
-      "name": "Meta Llama/llama 4 Maverick"
+      "name": "Llama 4 Maverick"
     }
   ]
 }

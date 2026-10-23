@@ -1,3 +1,4 @@
+import { libelleStatutPiece } from './statutsFacture';
 /**
  * THERESE v2 - Invoice Form
  *
@@ -494,14 +495,14 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       && invoice.status !== status
       && (status === 'paid' || status === 'accepted' || status === 'refused');
     if (sensitiveStatusChange) {
-      const statusLabel = status === 'paid' ? 'Payée' : status === 'accepted' ? 'Accepté' : 'Refusé';
+      const statusLabel = libelleStatutPiece(status, documentType);
       requestExternalAction({
         title: `Confirmer le passage au statut « ${statusLabel} »`,
         description: 'La mise à jour du document ne sera enregistrée qu’après ta confirmation.',
         confirmLabel: 'Confirmer le changement de statut',
         details: [
           { label: 'Document', value: numeroAffiche(invoice.invoice_number) },
-          { label: 'Statut actuel', value: invoice.status },
+          { label: 'Statut actuel', value: libelleStatutPiece(invoice.status, invoice.document_type) },
           { label: 'Nouveau statut', value: statusLabel },
           { label: 'Montant TTC', value: montantAvecDevise(totalTTC, currency) },
         ],
@@ -514,9 +515,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
   function handleMarkPaid() {
     if (!invoice) return;
+    const estAvoir = invoice.document_type === 'avoir';
     const aujourdhui = localDateKey(new Date());
     if (!datePaiement || datePaiement > aujourdhui) {
-      addNotification({ type: 'error', title: 'Date du paiement', message: 'Indique une date passée ou celle d’aujourd’hui.' });
+      addNotification({ type: 'error', title: estAvoir ? 'Date du remboursement' : 'Date du paiement', message: 'Indique une date passée ou celle d’aujourd’hui.' });
       return;
     }
     const [annee, mois, jour] = datePaiement.split('-');
@@ -524,25 +526,31 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     const brouillon = invoice.status === 'draft';
 
     requestExternalAction({
-      title: 'Confirmer le paiement de la facture',
-      description: brouillon
-        ? 'Cette facture est encore un brouillon : elle n’a jamais été émise. La confirmation la marque payée à la date indiquée.'
-        : 'Cette action changera le statut de la facture et enregistrera sa date de paiement.',
-      confirmLabel: 'Confirmer le paiement',
+      title: estAvoir ? 'Confirmer le remboursement de l’avoir' : 'Confirmer le paiement de la facture',
+      description: estAvoir
+        ? brouillon
+          ? 'Cet avoir est encore un brouillon : il n’a jamais été émis. La confirmation le marque remboursé à la date indiquée.'
+          : 'Cette action changera le statut de l’avoir et enregistrera sa date de remboursement.'
+        : brouillon
+          ? 'Cette facture est encore un brouillon : elle n’a jamais été émise. La confirmation la marque payée à la date indiquée.'
+          : 'Cette action changera le statut de la facture et enregistrera sa date de paiement.',
+      confirmLabel: estAvoir ? 'Confirmer le remboursement' : 'Confirmer le paiement',
       details: [
-        { label: 'Facture', value: numeroAffiche(invoice.invoice_number) },
+        { label: estAvoir ? 'Avoir' : 'Facture', value: numeroAffiche(invoice.invoice_number) },
         { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
-        { label: 'Date du paiement', value: `${jour}/${mois}/${annee}` },
-        { label: 'Nouveau statut', value: 'Payée' },
+        { label: estAvoir ? 'Date du remboursement' : 'Date du paiement', value: `${jour}/${mois}/${annee}` },
+        { label: 'Nouveau statut', value: libelleStatutPiece('paid', invoice.document_type) },
       ],
     }, async () => {
       try {
         const updatedInvoice = await markInvoicePaid(invoice.id, datePaiement);
-        addNotification({ type: 'success', title: 'Facture payée', message: `La facture ${numeroAffiche(updatedInvoice.invoice_number)} est marquée payée.` });
+        addNotification({ type: 'success', title: estAvoir ? 'Avoir remboursé' : 'Facture payée', message: estAvoir
+          ? `L’avoir ${numeroAffiche(updatedInvoice.invoice_number)} est marqué remboursé.`
+          : `La facture ${numeroAffiche(updatedInvoice.invoice_number)} est marquée payée.` });
         onSave(updatedInvoice);
       } catch (error) {
         console.error('Failed to mark paid:', error);
-        addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de marquer comme payée' });
+        addNotification({ type: 'error', title: 'Erreur', message: estAvoir ? 'Impossible de marquer comme remboursé' : 'Impossible de marquer comme payée' });
       }
     });
   }
@@ -763,7 +771,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   data-dialog-autofocus={pieceEmise ? true : undefined}
                   value={status}
                   onChange={(e) => setStatus(e.target.value as typeof status)}
-                  options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).filter(
+                  options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).map(
+                    (option) => ({ ...option, label: libelleStatutPiece(option.value, documentType) }),
+                  ).filter(
                     (option) => {
                       if (pieceEmise && option.value === 'draft') return false;
                       // B-1671 : une facture ou un avoir émis ne propose plus Annulée.
@@ -1028,11 +1038,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             {erreurValidation}
           </p>
         )}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-border flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted">Payée le</label>
+              <div className="flex flex-wrap items-center gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+                <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted whitespace-nowrap">{invoice.document_type === 'avoir' ? 'Remboursé le' : 'Payée le'}</label>
                 <input
                   id="invoiceform-date-paiement"
                   type="date"
@@ -1042,7 +1052,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   className="min-h-9 rounded-md border border-border bg-surface px-2 text-sm text-text"
                 />
                 <Button variant="secondary" size="md" type="button" onClick={handleMarkPaid}>
-                  Marquer comme payée
+                  {invoice.document_type === 'avoir' ? 'Marquer comme remboursé' : 'Marquer comme payée'}
                 </Button>
               </div>
             )}
@@ -1073,13 +1083,13 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           </div>
 
           {abandonDemande && (
-            <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+            <div className="flex w-full basis-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
               <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
               <Button variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
               <Button variant="danger" size="md" type="button" onClick={abandonner}>Abandonner</Button>
             </div>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 ml-auto whitespace-nowrap">
             <Button variant="secondary" size="md" type="button" onClick={demanderFermeture}>
               Annuler
             </Button>

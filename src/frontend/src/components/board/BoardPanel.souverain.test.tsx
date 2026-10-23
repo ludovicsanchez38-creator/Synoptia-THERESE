@@ -45,7 +45,7 @@ function fluxQuiAttend() {
 
 async function lancerUneDeliberation() {
   render(<BoardPanel isOpen onClose={vi.fn()} />);
-  fireEvent.change(screen.getByLabelText('Question soumise au Board'), {
+  fireEvent.change(screen.getByLabelText('Ta question stratégique'), {
     target: { value: 'Dois-je passer ma société en SASU cette année ?' },
   });
   fireEvent.click(screen.getByTestId('board-submit-btn'));
@@ -85,7 +85,7 @@ describe('B-640 : fermer pendant la délibération demande confirmation', () => 
   it('Échap affiche l’avertissement au lieu de fermer, et « Continuer » le retire', async () => {
     const onClose = vi.fn();
     render(<BoardPanel isOpen onClose={onClose} />);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), {
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), {
       target: { value: 'Dois-je passer ma société en SASU cette année ?' },
     });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
@@ -107,7 +107,7 @@ describe('B-640 : fermer pendant la délibération demande confirmation', () => 
   it('« Annuler et fermer » confirme la fermeture et annule la délibération', async () => {
     const onClose = vi.fn();
     render(<BoardPanel isOpen onClose={onClose} />);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), {
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), {
       target: { value: 'Dois-je passer ma société en SASU cette année ?' },
     });
     fireEvent.click(screen.getByTestId('board-submit-btn'));

@@ -39,11 +39,7 @@ const TACHE: Task = {
 } as unknown as Task;
 
 function carte(): HTMLElement {
-  // Le conteneur focalisable posé par useSortable, au-dessus de la carte.
-  const item = screen.getByTestId('task-item');
-  const conteneur = item.parentElement;
-  if (!conteneur) throw new Error('conteneur sortable introuvable');
-  return conteneur;
+  return screen.getByRole('button', { name: `Déplacer ${TACHE.title}` });
 }
 
 describe('B-209 - les commandes de la carte Kanban existent aussi au clavier', () => {

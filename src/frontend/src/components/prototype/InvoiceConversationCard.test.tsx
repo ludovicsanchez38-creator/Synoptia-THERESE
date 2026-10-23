@@ -235,3 +235,29 @@ describe('Le titre annoncé par la coque est celui que la surface affiche', () =
     expect(screen.getByRole('heading', { level: 2, name: TITRES_ETABLI.invoice })).toBeInTheDocument();
   });
 });
+
+it('B-1082 : les taux de TVA du détail utilisent la notation française', () => {
+  const piece = { ...invoice, lines: [{ ...invoice.lines[0], tva_rate: 5.5 }] };
+  render(<InvoiceWorkspaceCanvas resource={{ status: 'ready', data: data(), error: null }} invoiceResource={{ status: 'ready', data: piece, error: null }} selection="invoice-1" onRetry={vi.fn()} onRetryInvoice={vi.fn()} onCreateDraft={vi.fn()} onCreateContact={vi.fn()} onOpenClassic={vi.fn()} />);
+  expect(screen.getByTestId('invoice-detail')).toHaveTextContent('TVA 5,5 %');
+});
+it('B-1083 : la carte accorde les statuts des factures au féminin', () => {
+  render(<InvoiceWorkspaceCard resource={{ status: 'ready', data: data({ invoices: [{ ...invoice, document_type: 'facture', status: 'sent' }] }), error: null }} onRetry={vi.fn()} onOpenInvoice={vi.fn()} onCreateDevis={vi.fn()} onOpenClassic={vi.fn()} />);
+  expect(screen.getByText('Envoyée')).toBeInTheDocument();
+});
+
+it.each([0, 2.1, 5.5, 10, 20, 4.5, 7.7, 8.1, 12.25, 19.6])('Rejeu B-1082 : TVA %s', (taux) => {
+  const piece = { ...invoice, lines: [{ ...invoice.lines[0], tva_rate: taux }] };
+  render(<InvoiceWorkspaceCanvas resource={{ status: 'ready', data: data(), error: null }} invoiceResource={{ status: 'ready', data: piece, error: null }} selection="invoice-1" onRetry={vi.fn()} onRetryInvoice={vi.fn()} onCreateDraft={vi.fn()} onCreateContact={vi.fn()} onOpenClassic={vi.fn()} />);
+  expect(screen.getByTestId('invoice-detail')).toHaveTextContent(`TVA ${taux.toLocaleString('fr-FR')} %`);
+});
+it.each([
+  ['sent', 'facture', 'Envoyée'], ['paid', 'facture', 'Payée'], ['cancelled', 'facture', 'Annulée'],
+  ['sent', 'devis', 'Envoyé'], ['accepted', 'devis', 'Accepté'], ['refused', 'devis', 'Refusé'],
+  ['expired', 'devis', 'Expiré'], ['sent', 'avoir', 'Envoyé'], ['paid', 'avoir', 'Remboursé'], ['draft', 'facture', 'Brouillon'],
+] as const)('Rejeu B-1081/B-1083 : %s %s', async (statut, type, attendu) => {
+  const { libelleStatutPiece } = await import('../invoices/statutsFacture');
+  expect(libelleStatutPiece(statut, type)).toBe(attendu);
+  render(<InvoiceWorkspaceCard resource={{ status: 'ready', data: data({ invoices: [{ ...invoice, document_type: type, status: statut }] }), error: null }} onRetry={vi.fn()} onOpenInvoice={vi.fn()} onCreateDevis={vi.fn()} onOpenClassic={vi.fn()} />);
+  expect(screen.getByText(attendu)).toBeInTheDocument();
+});

@@ -5,7 +5,7 @@
  * saisit (jamais dans le futur), la confirmation la reprend et signale un
  * brouillon.
  */
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
@@ -38,6 +38,7 @@ vi.mock('../../services/api', async () => {
     createInvoice: createInvoiceMock,
     updateInvoice: updateInvoiceMock,
     markInvoicePaid: markInvoicePaidMock,
+    listInvoices: vi.fn().mockResolvedValue([]),
     updateDevisStatus: updateDevisStatusMock,
     getBillingProfileStatus: getBillingProfileStatusMock,
   };
@@ -104,5 +105,42 @@ describe('P-155 : la date réelle du paiement', () => {
     rendre({ ...invoice, status: 'draft' });
     fireEvent.click(screen.getByRole('button', { name: 'Marquer comme payée' }));
     expect(screen.getByTestId('external-action-confirmation')).toHaveTextContent(/brouillon/i);
+  });
+});
+
+describe('B-1081 B-1083 : la commande de remboursement d’un avoir', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useBillingProfileStore.setState({ missing: null });
+    useStatusStore.setState({ notifications: [] });
+    markInvoicePaidMock.mockResolvedValue({ ...invoice, document_type: 'avoir', invoice_number: 'AV-2026-013', status: 'paid' });
+  });
+
+  it.each(['sent', 'draft'] as const)('bouton, confirmation et succès nomment l’avoir remboursé (%s)', async (status) => {
+    rendre({ ...invoice, document_type: 'avoir', invoice_number: 'AV-2026-013', status });
+    fireEvent.change(screen.getByLabelText('Remboursé le'), { target: { value: '2026-07-21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Marquer comme remboursé' }));
+    const confirmation = screen.getByTestId('external-action-confirmation');
+    expect(confirmation).toHaveTextContent('Confirmer le remboursement de l’avoir');
+    expect(confirmation).toHaveTextContent('AV-2026-013');
+    expect(confirmation).toHaveTextContent('Date du remboursement');
+    expect(confirmation).toHaveTextContent('21/07/2026');
+    expect(confirmation).toHaveTextContent('Remboursé');
+    expect(confirmation).not.toHaveTextContent(/facture|payée/i);
+    if (status === 'draft') expect(confirmation).toHaveTextContent(/brouillon.*jamais été émis/i);
+    expect(markInvoicePaidMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le remboursement' }));
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', '2026-07-21'));
+    await waitFor(() => expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'success', title: 'Avoir remboursé', message: 'L’avoir AV-2026-013 est marqué remboursé.' }),
+    ])));
+  });
+
+  it('annuler la confirmation ne rembourse pas l’avoir', () => {
+    rendre({ ...invoice, document_type: 'avoir' });
+    fireEvent.click(screen.getByRole('button', { name: 'Marquer comme remboursé' }));
+    fireEvent.click(within(screen.getByTestId('external-action-confirmation')).getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByTestId('external-action-confirmation')).toBeNull();
+    expect(markInvoicePaidMock).not.toHaveBeenCalled();
   });
 });

@@ -43,7 +43,7 @@ describe('#110 : une délibération en erreur n’est plus « en cours »', () =
   it('après l’erreur, Échap ferme sans demander de confirmation et « Annuler » disparaît', async () => {
     const onClose = vi.fn();
     render(<BoardPanel isOpen onClose={onClose} />);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
     fireEvent.click(await screen.findByRole('button', { name: /Confirmer et lancer/ }));
     await screen.findByTestId('board-result', {}, { timeout: 3000 });

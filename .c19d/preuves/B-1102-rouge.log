@@ -1,0 +1,33 @@
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ❯ src/test/c19d/B-1102.test.js (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/c19d/B-1102.test.js [ src/test/c19d/B-1102.test.js ]
+Error: Failed to resolve import "@playwright/test" from "../../tests/couverture/couverture-ecran.mjs". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/tests/couverture/couverture-ecran.mjs:35:26
+  33 |  import { isAbsolute, join, resolve, sep } from 'node:path';
+  34 |  import { fileURLToPath } from 'node:url';
+  35 |  import { chromium } from '@playwright/test';
+     |                            ^
+  36 |  
+  37 |  const PORT_REEL = 17293;
+ ❯ TransformPluginContext._formatLog ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:29079:43
+ ❯ TransformPluginContext.error ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:29076:14
+ ❯ normalizeUrl ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:27199:18
+ ❯ ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:27257:32
+ ❯ TransformPluginContext.transform ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:27225:4
+ ❯ EnvironmentPluginContainer.transform ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:28877:14
+ ❯ loadAndTransform ../../../wt-c12/src/frontend/node_modules/vite/dist/node/chunks/config.js:22746:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  02:03:53
+   Duration  3.84s (transform 247ms, setup 521ms, import 0ms, tests 0ms, environment 2.76s)
+

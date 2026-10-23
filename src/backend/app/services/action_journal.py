@@ -4,7 +4,7 @@ from typing import Any
 
 from app.models.database import get_session_context
 from app.models.entities import Activity, Contact, Conversation, Project
-from app.services.memory_card_security import contient_sensible
+from app.services.memory_card_security import contient_sensible, message_refus
 from fastapi import HTTPException
 from sqlmodel import col, select
 
@@ -14,8 +14,8 @@ def verifier_texte(title: str, description: str | None, extra_data: str | None) 
         extra = json.loads(extra_data) if extra_data else None
     except (ValueError, TypeError):
         raise HTTPException(422, 'Les informations de la trace doivent être un objet JSON.') from None
-    if contient_sensible([title, description, extra]):
-        raise HTTPException(422, 'Cette donnée sensible ne peut pas être conservée dans Mémoire.')
+    if refus := message_refus([title, description, extra]):
+        raise HTTPException(422, refus)
 
 
 def issue_structuree(tool_name: str, resultat: str) -> dict[str, Any]:

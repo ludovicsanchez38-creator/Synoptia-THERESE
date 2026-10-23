@@ -7,8 +7,8 @@
  * parce que son API ne supporte pas chat/completions. La LISTE vient
  * désormais de `GET /api/config/llm/models/{provider}`, la même source que
  * le backend utilise pour valider ; les noms lisibles et les badges restent
- * une décoration locale, et un identifiant sans décoration s'affiche tel
- * quel plutôt que de disparaître.
+ * une décoration locale. Les modèles hors catalogue gardent un nom lisible
+ * et un repère lorsque leur fournisseur est inconnu.
  *
  * Les listes statiques des composants deviennent un REPLI hors-ligne : si la
  * route échoue, on affiche ce qu'on connaît plutôt qu'un sélecteur vide.
@@ -23,7 +23,7 @@ export interface ModeleDecore {
   badge?: string;
 }
 
-/** Décorations connues - un id absent d'ici s'affiche par son identifiant. */
+/** Décorations connues ; les autres noms sont dérivés de leur identifiant. */
 export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   // GLM (Z.ai)
   'glm-5.3': { name: 'GLM 5.3', badge: 'Recommandé' },
@@ -63,6 +63,28 @@ const cache = new Map<string, ModeleDecore[]>();
 
 const modelesGeneres = Object.values(catalogueGenere).flat();
 
+/** B-1097 : mêmes règles que libelle_modele, y compris hors catalogue. */
+function libelleHorsCatalogue(id: string): string {
+  const position = id.lastIndexOf('/');
+  const prefixe = position < 0 ? '' : id.slice(0, position);
+  const natif = id.slice(position + 1);
+  const espacesConnus = new Set([
+    ...Object.keys(catalogueGenere),
+    ...modelesGeneres.filter((m) => m.id.includes('/')).map((m) => m.id.split('/')[0]),
+  ]);
+  const repere = prefixe && !espacesConnus.has(prefixe) ? ` (${prefixe})` : '';
+  const marques: Record<string, string> = {
+    gpt: 'GPT', glm: 'GLM', qwen: 'Qwen', grok: 'Grok', minimax: 'MiniMax', deepseek: 'DeepSeek',
+  };
+  const texte = natif.replace(/-(?:\d{8}|\d{4})(?=-|$)/g, '')
+    .replace(/(\d)-(\d+)(?=-|$)/g, '$1.$2');
+  const rendu = texte.replace(/-/g, ' ').split(/\s+/).filter(Boolean).map((m) =>
+    /^\d+(?:\.\d+)?b$/i.test(m) ? m.toUpperCase()
+      : marques[m.toLowerCase()] ?? m[0].toUpperCase() + m.slice(1).toLowerCase(),
+  ).join(' ');
+  return (natif.startsWith('gpt-') ? rendu.replace('GPT ', 'GPT-') : rendu) + repere;
+}
+
 export function decorer(ids: string[]): ModeleDecore[] {
   return ids.map((id) => {
     const defaut = Object.values(catalogueGenere).some((modeles) => modeles[0]?.id === id);
@@ -71,7 +93,7 @@ export function decorer(ids: string[]): ModeleDecore[] {
     if (defaut && !badge) badge = 'Recommandé';
     return {
       id,
-      name: modelesGeneres.find((m) => m.id === id)?.name ?? DECORATIONS[id]?.name ?? id,
+      name: modelesGeneres.find((m) => m.id === id)?.name ?? DECORATIONS[id]?.name ?? libelleHorsCatalogue(id),
       ...(badge ? { badge } : {}),
     };
   });

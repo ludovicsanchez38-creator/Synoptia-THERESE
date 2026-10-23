@@ -1,3 +1,4 @@
+import { libelleStatutPiece } from '../invoices/statutsFacture';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { auCentime } from '../../lib/auCentime';
 import { montantAvecDevise } from '../../lib/devise';
@@ -59,11 +60,6 @@ function validateDevisSnapshot(snapshot: DevisDraftSnapshot): string | null {
   return null;
 }
 
-const statusLabels: Record<string, string> = {
-  draft: 'Brouillon', sent: 'Envoyé', paid: 'Payé', overdue: 'En retard',
-  cancelled: 'Annulé', converted: 'Converti', accepted: 'Accepté',
-  refused: 'Refusé', expired: 'Expiré',
-};
 
 function StateShell({ children }: { children: ReactNode }) {
   return <div className="flex min-h-48 items-center justify-center px-5 py-8">{children}</div>;
@@ -230,7 +226,7 @@ export function InvoiceWorkspaceCard({
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <strong className="text-sm text-text">{numeroAffiche(invoice.invoice_number)}</strong>
-                    <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
+                    <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold text-text-muted">{libelleStatutPiece(invoice.status, invoice.document_type)}</span>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-text-muted">{nomDuClient(invoice, contact, resource.data.unavailableSources.includes('contacts'))} · {invoice.document_type}</span>
                 </span>
@@ -263,7 +259,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
             <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{nomDuClient(invoice, contact, data.unavailableSources.includes('contacts'))}</p>
           </div>
           <div className="text-right">
-            <span className="rounded-full bg-bg px-2.5 py-1 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
+            <span className="rounded-full bg-bg px-2.5 py-1 text-xs font-semibold text-text-muted">{libelleStatutPiece(invoice.status, invoice.document_type)}</span>
             <div className="mt-2 text-xl font-bold text-text">{formatMoney(invoice.total_ttc, invoice.currency)}</div>
           </div>
         </div>
@@ -278,7 +274,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
         <div className="divide-y divide-border">
           {invoice.lines.map((line) => (
             <div key={line.id} className="grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-xs">
-              <div><strong className="text-text">{line.description}</strong><p className="mt-0.5 text-text-muted">{line.quantity} × {formatMoney(line.unit_price_ht, invoice.currency)} · TVA {line.tva_rate}%</p></div>
+              <div><strong className="text-text">{line.description}</strong><p className="mt-0.5 text-text-muted">{line.quantity} × {formatMoney(line.unit_price_ht, invoice.currency)} · TVA {line.tva_rate.toLocaleString('fr-FR')} %</p></div>
               <strong className="text-text">{formatMoney(line.total_ttc, invoice.currency)}</strong>
             </div>
           ))}
@@ -626,7 +622,7 @@ function DevisDraftForm({
               <input id={`devis-quantity-${index}`} aria-label={`Quantité ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-quantity-${index}`} aria-describedby={errorFieldId === `devis-quantity-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.quantity} onChange={(event) => updateLine(index, { quantity: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
               <input id={`devis-price-${index}`} aria-label={`Prix HT ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-price-${index}`} aria-describedby={errorFieldId === `devis-price-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.unitPrice} onChange={(event) => updateLine(index, { unitPrice: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
               <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="min-w-0 rounded-sm border border-border bg-surface px-2 py-2 text-sm">
-                {[20, 10, 5.5, 2.1, 0].map((rate) => <option key={rate} value={rate}>{rate}%</option>)}
+                {[20, 10, 5.5, 2.1, 0].map((rate) => <option key={rate} value={rate}>{rate.toLocaleString('fr-FR')} %</option>)}
               </select>
               <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => { invalidateDraft(); setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }} className="grid h-8 w-8 min-w-0 place-items-center rounded-sm text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>

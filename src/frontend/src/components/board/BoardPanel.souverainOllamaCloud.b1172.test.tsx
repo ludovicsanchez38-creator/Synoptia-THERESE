@@ -56,7 +56,7 @@ function sonde(models: Array<{ name: string; size: number | null }>) {
 async function lancerSouverain() {
   render(<BoardPanel isOpen onClose={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: /Souverain/ }));
-  fireEvent.change(screen.getByLabelText('Question soumise au Board'), {
+  fireEvent.change(screen.getByLabelText('Ta question stratégique'), {
     target: { value: 'Dois-je passer ma société en SASU cette année ?' },
   });
   // Laisse la sonde et la déclaration B-110 se poser.
@@ -136,7 +136,7 @@ describe('B-1172 : Board souverain et modèles Ollama Cloud', () => {
       });
     });
     fireEvent.click(souverain);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), {
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), {
       target: { value: 'Dois-je passer ma société en SASU cette année ?' },
     });
     fireEvent.click(screen.getByTestId('board-submit-btn'));

@@ -69,7 +69,7 @@ describe('Le retour est déterministe', () => {
     });
     await waitFor(() => expect(ecranAffiche()).toBe('projects'));
 
-    const retour = await screen.findByRole('button', { name: /Revenir/i });
+    const retour = await screen.findByRole('button', { name: 'Retour à l’écran précédent' });
     await act(async () => {
       fireEvent.click(retour);
     });

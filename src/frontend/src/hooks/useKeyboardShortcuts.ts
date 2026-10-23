@@ -35,6 +35,8 @@ interface ShortcutHandlers {
 export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      // Un glisser ou une commande locale a déjà consommé cette frappe.
+      if (event.defaultPrevented) return;
       // Determine the correct modifier key
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modKey = isMac ? event.metaKey : event.ctrlKey;

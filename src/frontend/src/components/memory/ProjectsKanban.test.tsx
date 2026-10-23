@@ -50,7 +50,7 @@ function renderKanban() {
 /** Le wrapper sortable de la carte (élément portant role + tabIndex posés par useSortable). */
 function getSortableWrapper(projectName: string): HTMLElement {
   const title = screen.getByText(projectName);
-  const wrapper = title.closest('[aria-roledescription="sortable"]');
+  const wrapper = title.closest('.cursor-grab')?.querySelector('[aria-roledescription="sortable"]');
   if (!(wrapper instanceof HTMLElement)) {
     throw new Error(`Wrapper sortable introuvable pour ${projectName}`);
   }
@@ -104,4 +104,22 @@ describe('ProjectsKanban drag & drop (BUG-041)', () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect.mock.calls[0][0].id).toBe('p-alpha');
   });
+});
+
+it('B-1068 : aucun bouton sortable ne contient une autre commande', () => {
+  renderKanban();
+  const commandes = [...document.querySelectorAll('[role="button"]')];
+  expect(commandes.length).toBeGreaterThan(0);
+  for (const commande of commandes) expect(commande.querySelector('button, [role="button"]')).toBeNull();
+});
+
+it.each(['Terrasse', 'Charpente', 'Cuisine', 'Bureau', 'Jardin', 'Façade', 'Salon', 'Garage', 'Atelier', 'Grenier'])('Rejeu B-1068 : %s', (name) => {
+  const onSelect = vi.fn();
+  render(<ProjectsKanban projects={[makeProject({ id: name, name, status: 'active' })]} onSelect={onSelect} onDelete={vi.fn()} onStatusChange={vi.fn()} />);
+  const titre = screen.getByText(name);
+  expect(fireEvent.keyDown(titre.closest('button')!, { key: 'Enter', code: 'Enter' })).toBe(true);
+  fireEvent.click(titre);
+  expect(onSelect).toHaveBeenCalledTimes(1);
+  const poignee = screen.getByRole('button', { name: `Déplacer ${name}` });
+  expect(poignee.querySelector('button')).toBeNull();
 });

@@ -71,7 +71,7 @@ describe('lot 11 - accessibilité, jetons et robustesse frontend', () => {
 
   it("B-417 : la racine du fil d'Ariane a un nom et une cible", () => {
     const src = lire('components/files/FileBrowser.tsx');
-    expect(src).toMatch(/aria-label="Dossier racine"/);
+    expect(src).toMatch(/aria-label="Répertoire personnel \(~\)"/);
   });
 
   it('B-418 : le bouton Contrôle des données ne se replie pas', () => {

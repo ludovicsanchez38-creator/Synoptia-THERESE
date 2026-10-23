@@ -47,7 +47,7 @@ describe('B-914 : synthèse illisible', () => {
 
   it('l’indicateur s’arrête et l’échec est dit', async () => {
     render(<BoardPanel isOpen onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText('Question soumise au Board'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
+    fireEvent.change(screen.getByLabelText('Ta question stratégique'), { target: { value: 'Dois-je passer ma société en SASU cette année ?' } });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
     fireEvent.click(await screen.findByRole('button', { name: /Confirmer et lancer/ }));
     const alerte = await screen.findByRole('alert', {}, { timeout: 3000 });

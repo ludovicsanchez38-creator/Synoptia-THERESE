@@ -80,6 +80,24 @@ describe('B-1475 : les tokens totaux du mois comptent entrée et sortie', () => 
     api.getTokenLimits.mockResolvedValue(limites);
     render(<LimitsTab />);
     const libelle = await screen.findByText('Tokens totaux');
-    expect(libelle.parentElement).toHaveTextContent('15.0K');
+    expect(libelle.parentElement).toHaveTextContent('15,0 K');
   });
+});
+
+it('B-1086 : les jetons utilisent une virgule et une espace', async () => {
+  api.getEscalationStatus.mockResolvedValue(statut(0, 50));
+  api.getTokenLimits.mockResolvedValue(limites);
+  render(<LimitsTab />);
+  expect(await screen.findByText('15,0 K')).toBeInTheDocument();
+});
+
+it.each([0, 100, 999, 1000, 1550, 12000, 28345, 100000, 1234567, 9999999])('Rejeu B-1086 : %s jetons', async (total) => {
+  const donnees = statut(0, 50);
+  donnees.monthly_usage.total_tokens = total;
+  api.getEscalationStatus.mockResolvedValue(donnees);
+  api.getTokenLimits.mockResolvedValue(limites);
+  render(<LimitsTab />);
+  const libelle = await screen.findByText('Tokens totaux');
+  const nombre = libelle.parentElement!.querySelector('p')!.textContent!.replace(/\s/g, ' ');
+  expect(nombre).toBe((total / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).replace(/\s/g, ' ') + ' K');
 });

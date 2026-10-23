@@ -386,7 +386,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           variant="ghost"
           size="sm"
           onClick={goHome}
-          aria-label="Dossier racine"
+          aria-label="Répertoire personnel (~)"
           disabled={!natif}
         >
           ~

@@ -1,0 +1,411 @@
+Commande : npx vitest run --maxWorkers=2 --testTimeout=15000 src/components/tasks/TaskKanban.test.tsx src/components/tasks/TaskKanban.da.test.tsx src/components/invoices/InvoicesPanel.da.test.tsx src/components/invoices/InvoicesPanel.debordement.p162.test.tsx src/components/invoices/InvoicesPanel.largeurEtroite.test.tsx src/components/calendar/EventForm.da.test.tsx src/test/lot11.test.ts
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/components/invoices/InvoicesPanel.debordement.p162.test.tsx (18 tests) 8265ms
+     ✓ annonce les colonnes à droite au cadrage initial de 800 px  1719ms
+     ✓ annonce les deux côtés au milieu puis seulement la gauche au bord  470ms
+     ✓ nomme et focalise le cadre qui fait réellement défiler le tableau  347ms
+     ✓ décrit le défilement avant les lignes sans ajouter de bouton  374ms
+     ✓ réagit à un changement de cadre et retire toute description lorsque le tableau tient  484ms
+     ✓ préserve le focus d’un filtre pendant le défilement et le recalcul  362ms
+     ✓ retire l’indice pendant le rechargement puis recalcule après une liste remplacée  892ms
+     ✓ ne garde aucun indice périmé après un chargement échoué  689ms
+     ✓ retire indice et arrêt clavier quand le filtre ne contient aucune pièce  673ms
+     ✓ observe de nouveau après fermeture puis réouverture du panneau modal  605ms
+     ✓ nettoie son observateur au démontage et garde TTC/PDF/Supprimer collés  452ms
+ ❯ src/components/invoices/InvoicesPanel.da.test.tsx (11 tests | 2 failed) 10737ms
+     × invoice-item est un tr sans tabIndex, le clic Pièce ouvre, client + PDF + Supprimer 1787ms
+     ✓ une facture overdue a deux étiquettes et une td d’échéance échue  335ms
+     ✓ un devis sent, un avoir sent/paid/overdue accordent envoi et paiement  312ms
+     ✓ accorde pièce / pièces, dont échues, et 100+ sans dont  4024ms
+     ✓ un brouillon devis montre l’échéance avec l’année et la validité, pas « Non envoyé » 214ms
+     ✓ Tout et Toutes sont pressés au départ ; Devis assainit comme aujourd’hui  1005ms
+     ✓ un seul Réessayer sur l’erreur ; squelettes 7 pistes ; trois vides distincts  1768ms
+     ✓ aucun interactif en text-xs ; source sans couleur en dur hors voile /60 163ms
+     ✓ Nouveau devis est h-11 ; les autres Button du panneau sont h-9 (hors Segments et commande client)  666ms
+     × sans client, la commande porte le numéro en muted et la hauteur de la rangée 315ms
+     ✓ la rangée reste cliquable et le dit au pointeur 116ms
+stderr | src/components/tasks/TaskKanban.da.test.tsx > Lot 6 DA : la carte de tâche > task-item est sur la carte, jamais sur celle du glisser
+An update to AnimationManager inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/tasks/TaskKanban.da.test.tsx (10 tests) 4311ms
+     ✓ trois h3, chacun une Etiquette et un compte nu  1682ms
+     ✓ task-item est sur la carte, jamais sur celle du glisser  813ms
+     ✓ le focus sur une tâche à faire révèle « Marquer en cours » et « Marquer terminé »  415ms
+ ✓ src/components/calendar/EventForm.da.test.tsx (11 tests) 5230ms
+     ✓ chaque champ répond à son libellé par `htmlFor`  893ms
+     ✓ le titre et le geste d’enregistrement sont ceux du lot  1470ms
+     ✓ les cinq champs obligatoires portent `required`  308ms
+     ✓ sur toute la journée, les deux heures sortent du DOM et les trois autres restent requis  356ms
+     ✓ l’erreur de saisie s’affiche une seule fois  1110ms
+stderr | src/components/tasks/TaskKanban.test.tsx > TaskKanban drag & drop (jumeau BUG-041) > démarre un drag au pointeur depuis le corps de la carte (pas seulement la poignée)
+An update to AnimationManager inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/tasks/TaskKanban.test.tsx > TaskKanban drag & drop (jumeau BUG-041) > démarre un drag au clavier depuis la carte focusée (Entrée)
+An update to SortableTaskCard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DndContext inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DndContext inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/tasks/TaskKanban.test.tsx (3 tests) 5885ms
+     ✓ un clic simple sur le titre ouvre toujours la tâche (pas de drag parasite)  1326ms
+     ✓ démarre un drag au pointeur depuis le corps de la carte (pas seulement la poignée)  3227ms
+     ✓ démarre un drag au clavier depuis la carte focusée (Entrée)  1320ms
+ ✓ src/components/invoices/InvoicesPanel.largeurEtroite.test.tsx (2 tests) 4679ms
+     ✓ le montant et les boutons partagent la dernière colonne, collée à droite  3844ms
+     ✓ seule la date de l’échéance est insécable  803ms
+ ✓ src/test/lot11.test.ts (19 tests) 63ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/invoices/InvoicesPanel.da.test.tsx > Lot 5 DA : une ligne est un tr > invoice-item est un tr sans tabIndex, le clic Pièce ouvre, client + PDF + Supprimer
+TestingLibraryElementError: Found multiple elements with the role "button" and name `/Marie Test/`
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Facture, FAC-001, 14/03/2026, 120,00 €, Marie Test"[39m
+  [33mclass[39m=[32m"inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [0mMarie Test[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Générer et ouvrir le PDF : Facture, FAC-001, 14/03/2026, 120,00 €, Marie Test"[39m
+  [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-9 px-4 text-sm rounded-md"[39m
+  [33mtitle[39m=[32m"Générer et ouvrir le PDF"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [0mPDF[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Supprimer : Facture, FAC-001, 14/03/2026, 120,00 €, Marie Test"[39m
+  [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent hover:bg-accent-tint h-9 px-4 text-sm rounded-md text-error"[39m
+  [33mtitle[39m=[32m"Supprimer"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [0mSupprimer[0m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"cursor-pointer hover:[&>td]:bg-surface-2"[39m
+  [33mdata-testid[39m=[32m"invoice-item"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"font-mono text-sm whitespace-nowrap"[39m
+    [36m>[39m
+      [0mFAC-001[0m
+    [36m</span>[39m
+    [36m<p[39m
+      [33mclass[39m=[32m"text-xs font-medium text-text-muted"[39m
+    [36m>[39m
+      [0mFacture · mars[0m
+    [36m</p>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<button[39m
+      [33maria-label[39m=[32m"Facture, FAC-001, 14/03/2026, 120,00 €, Marie Test"[39m
+      [33mclass[39m=[32m"inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"[39m
+      [33mtype[39m=[32m"button"[39m
+    [36m>[39m
+      [0mMarie Test[0m
+    [36m</button>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-semibold whitespace-nowrap bg-surface-2 text-text-muted"[39m
+      [33mdata-etiquette[39m=[32m""[39m
+    [36m>[39m
+      [0mBrouillon[0m
+    [36m</span>[39m
+    [36m<p[39m
+      [33mclass[39m=[32m"text-xs text-text-muted"[39m
+    [36m>[39m
+      [0mDatée du 14/03/2026[0m
+    [36m</p>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"text-sm text-text-muted"[39m
+    [36m>[39m
+      [0mSans objet[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle tabular-nums text-text-muted"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"whitespace-nowrap"[39m
+    [36m>[39m
+      [0m31/03/2026[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"sticky right-0 z-[1] bg-surface border-l px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex items-center justify-end gap-2"[39m
+    [36m>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"font-semibold tabular-nums whitespace-nowrap text-text"[39m
+      [36m>[39m
+        [0m120,00 €[0m
+      [36m</span>[39m
+      [36m<button[39m
+        [33maria-label[39m=[32m"Générer et ouvrir le PDF : Facture, FAC-001, 14/03/2026, 120,00 €, Marie Test"[39m
+        [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-9 px-4 text-sm rounded-md"[39m
+        [33mtitle[39m=[32m"Générer et ouvrir le PDF"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mPDF[0m
+      [36m</button>[39m
+      [36m<button[39m
+        [33maria-label[39m=[32m"Supprimer : Facture, FAC-001, 14/03/2026, 120,00 €, Marie Test"[39m
+        [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent hover:bg-accent-tint h-9 px-4 text-sm rounded-md text-error"[39m
+        [33mtitle[39m=[32m"Supprimer"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mSupprimer[0m
+      [36m</button>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+[36m</tr>[39m
+ ❯ Object.getElementError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/invoices/InvoicesPanel.da.test.tsx:118:32
+    116|     expect(row.getAttribute('tabIndex')).toBeNull();
+    117| 
+    118|     const client = within(row).getByRole('button', { name: /Marie Test…
+       |                                ^
+    119|     expect(client).toHaveAccessibleName(/Facture, FAC-001,/);
+    120|     expect(client).toHaveTextContent('Marie Test');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/invoices/InvoicesPanel.da.test.tsx > Lot 5 DA : plancher, jetons, hauteurs > sans client, la commande porte le numéro en muted et la hauteur de la rangée
+TestingLibraryElementError: Found multiple elements with the role "button" and name `/Facture, FAC-777,/`
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Facture, FAC-777, 14/03/2026, 120,00 €, Client non nommé"[39m
+  [33mclass[39m=[32m"inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"text-text-muted"[39m
+  [36m>[39m
+    [0mFAC-777[0m
+  [36m</span>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Générer et ouvrir le PDF : Facture, FAC-777, 14/03/2026, 120,00 €, Client non nommé"[39m
+  [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-9 px-4 text-sm rounded-md"[39m
+  [33mtitle[39m=[32m"Générer et ouvrir le PDF"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [0mPDF[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Supprimer : Facture, FAC-777, 14/03/2026, 120,00 €, Client non nommé"[39m
+  [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent hover:bg-accent-tint h-9 px-4 text-sm rounded-md text-error"[39m
+  [33mtitle[39m=[32m"Supprimer"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [0mSupprimer[0m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"cursor-pointer hover:[&>td]:bg-surface-2"[39m
+  [33mdata-testid[39m=[32m"invoice-item"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"font-mono text-sm whitespace-nowrap"[39m
+    [36m>[39m
+      [0mFAC-777[0m
+    [36m</span>[39m
+    [36m<p[39m
+      [33mclass[39m=[32m"text-xs font-medium text-text-muted"[39m
+    [36m>[39m
+      [0mFacture · mars[0m
+    [36m</p>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<button[39m
+      [33maria-label[39m=[32m"Facture, FAC-777, 14/03/2026, 120,00 €, Client non nommé"[39m
+      [33mclass[39m=[32m"inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"[39m
+      [33mtype[39m=[32m"button"[39m
+    [36m>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"text-text-muted"[39m
+      [36m>[39m
+        [0mFAC-777[0m
+      [36m</span>[39m
+    [36m</button>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-semibold whitespace-nowrap bg-surface-2 text-text-muted"[39m
+      [33mdata-etiquette[39m=[32m""[39m
+    [36m>[39m
+      [0mBrouillon[0m
+    [36m</span>[39m
+    [36m<p[39m
+      [33mclass[39m=[32m"text-xs text-text-muted"[39m
+    [36m>[39m
+      [0mDatée du 14/03/2026[0m
+    [36m</p>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"text-sm text-text-muted"[39m
+    [36m>[39m
+      [0mSans objet[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"px-4 py-2.5 border-b border-border align-middle tabular-nums text-text-muted"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"whitespace-nowrap"[39m
+    [36m>[39m
+      [0m31/03/2026[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"sticky right-0 z-[1] bg-surface border-l px-4 py-2.5 border-b border-border align-middle"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex items-center justify-end gap-2"[39m
+    [36m>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"font-semibold tabular-nums whitespace-nowrap text-text"[39m
+      [36m>[39m
+        [0m120,00 €[0m
+      [36m</span>[39m
+      [36m<button[39m
+        [33maria-label[39m=[32m"Générer et ouvrir le PDF : Facture, FAC-777, 14/03/2026, 120,00 €, Client non nommé"[39m
+        [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-9 px-4 text-sm rounded-md"[39m
+        [33mtitle[39m=[32m"Générer et ouvrir le PDF"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mPDF[0m
+      [36m</button>[39m
+      [36m<button[39m
+        [33maria-label[39m=[32m"Supprimer : Facture, FAC-777, 14/03/2026, 120,00 €, Client non nommé"[39m
+        [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent hover:bg-accent-tint h-9 px-4 text-sm rounded-md text-error"[39m
+        [33mtitle[39m=[32m"Supprimer"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mSupprimer[0m
+      [36m</button>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+[36m</tr>[39m
+ ❯ Object.getElementError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/invoices/InvoicesPanel.da.test.tsx:472:46
+    470|       [1, 'FAC-778'],
+    471|     ] as const) {
+    472|       const commande = within(rangees[rang]).getByRole('button', { nam…
+       |                                              ^
+    473|       expect(commande.textContent?.trim(), numero).toBe(numero);
+    474|       expect(commande.className, numero).toMatch(/\bmin-h-9\b/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 6 passed (7)
+      Tests  2 failed | 72 passed (74)
+   Start at  02:14:29
+   Duration  48.15s (transform 7.67s, setup 3.36s, import 20.84s, tests 39.17s, environment 24.63s)
+
+
+Code de sortie : 1

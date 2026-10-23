@@ -114,3 +114,20 @@ describe('B-205 : une activité affichée nomme toujours son contact', () => {
     await waitFor(() => expect(screen.getByText(/2 contacts/)).toBeInTheDocument());
   });
 });
+
+it('B-1062 : le nouveau contact nomme sa fermeture', async () => {
+  const { fireEvent } = await import('@testing-library/react');
+  render(<CRMPanel standalone />);
+  fireEvent.click(screen.getByRole('button', { name: 'Nouveau contact' }));
+  expect(screen.getByRole('button', { name: 'Fermer le nouveau contact' })).toBeInTheDocument();
+});
+it('B-1063 : le filtre expose son état', async () => {
+  const { fireEvent } = await import('@testing-library/react');
+  useCRMStore.setState({ activeTab: 'activities' });
+  render(<CRMPanel standalone />);
+  const tous = screen.getByRole('button', { name: 'Tous' });
+  expect(tous).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'Appel' }));
+  expect(tous).toHaveAttribute('aria-pressed', 'false');
+  expect(screen.getByRole('button', { name: 'Appel' })).toHaveAttribute('aria-pressed', 'true');
+});

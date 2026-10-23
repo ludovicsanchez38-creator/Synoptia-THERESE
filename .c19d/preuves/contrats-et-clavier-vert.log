@@ -1,0 +1,140 @@
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/test/c19d/B-1091.test.tsx (11 tests) 1709ms
+   ✓ B-1091 : aria-controls référence un contenu présent  962ms
+stderr | src/components/crm/CRMPanel.activitesNommees.test.tsx > B-1062 : le nouveau contact nomme sa fermeture
+An update to CRMPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/crm/CRMPanel.activitesNommees.test.tsx > B-1062 : le nouveau contact nomme sa fermeture
+An update to CRMPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to CRMPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/crm/CRMPanel.activitesNommees.test.tsx > B-1063 : le filtre expose son état
+An update to GlobalActivityView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to GlobalActivityView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to GlobalActivityView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to CRMPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/crm/CRMPanel.activitesNommees.test.tsx > B-1063 : le filtre expose son état
+An update to CRMPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to CRMPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/crm/CRMPanel.activitesNommees.test.tsx (5 tests) 4112ms
+     ✓ le fil global nomme aussi le contact venu du chemin Contacts  1050ms
+     ✓ distingue une activité sans contact d’une référence à un contact inconnu  442ms
+     ✓ le pipeline utilise le même magasin complet  403ms
+   ✓ B-1062 : le nouveau contact nomme sa fermeture  1727ms
+   ✓ B-1063 : le filtre expose son état  487ms
+ ✓ src/components/chat/PanelContainer.b1726.test.tsx (2 tests) 2180ms
+     ✓ isole le fond, piège le clavier et restitue le focus à la fermeture  1409ms
+   ✓ B-1056 : la commande reçoit le focus, le piège et nomme sa fermeture  766ms
+ ✓ src/components/board/ModeSelector.c19d.test.tsx (2 tests) 1457ms
+   ✓ B-1049 : la vérification possède un nom explicite et un type  1111ms
+   ✓ B-1050 : la raison du refus est visible et décrit le mode indisponible  344ms
+ ✓ src/components/chat/EntitySuggestion.actions.c19d.test.tsx (1 test) 1419ms
+   ✓ B-1061 : les actions et leur confiance nomment leur entité  1415ms
+ ✓ src/test/c19d/B-1093.test.tsx (1 test) 896ms
+   ✓ B-1093 : le profil emploie le bouton secondaire commun  887ms
+ ✓ src/components/ui/CompactMarkdown.test.tsx (3 tests) 1186ms
+     ✓ rend la structure Markdown sans afficher ses marqueurs  1025ms
+ ✓ src/components/chat/EntitySuggestion.c19d.test.tsx (2 tests) 354ms
+ ✓ src/test/c19d/B-1096.test.tsx (2 tests) 206ms
+ ✓ src/test/c19d/B-1102.test.js (13 tests) 87ms
+ ✓ src/test/c19d/B-1081.test.ts (1 test) 11ms
+ ✓ src/test/c19d/B-1087.test.ts (1 test) 11ms
+ ✓ src/test/c19d/B-1080.test.ts (1 test) 13ms
+ ✓ src/test/c19d/B-1072.test.ts (1 test) 25ms
+ ✓ src/test/c19d/B-1065.test.ts (1 test) 8ms
+ ✓ src/test/c19d/B-1074.test.ts (1 test) 10ms
+ ✓ src/test/c19d/B-1069.test.ts (1 test) 21ms
+ ✓ src/test/c19d/B-1071.test.ts (1 test) 18ms
+ ✓ src/test/c19d/B-1067.test.ts (1 test) 18ms
+ ✓ src/test/c19d/B-1085.test.ts (1 test) 12ms
+
+ Test Files  20 passed (20)
+      Tests  52 passed (52)
+   Start at  02:08:13
+   Duration  56.76s (transform 9.16s, setup 7.87s, import 17.50s, tests 13.75s, environment 57.60s)
+

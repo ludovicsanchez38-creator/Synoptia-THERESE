@@ -1684,6 +1684,7 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (event.defaultPrevented) return;
         // Remédiation NO-GO J0 : la cascade locale ignorait les modales gérées
         // par la pile unifiée (Réglages, contact, projet, bibliothèque, Actions,
         // Atelier). Échap fermait alors le chat DERRIÈRE la modale, ou ne
@@ -2534,7 +2535,7 @@ export function ConversationCanvasPrototype() {
                           rail (« Plus d'outils »). */}
                       <div className="flex items-center gap-1" />
                       <div className="flex items-center gap-2">
-                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Thérèse te demande confirmation avant tout envoi ou modification externe.</span>
+                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Dans la conversation, les cartes de confirmation précisent les actions à autoriser.</span>
                         {destinationUsesChat && (
                           <VoiceDictationButton
                             onTranscript={handleComposerTranscript}

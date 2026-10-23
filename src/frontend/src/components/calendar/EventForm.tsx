@@ -52,7 +52,7 @@ export function EventForm() {
   const [reference, setReference] = useState<string | null>(null);
 
   const { execute, error: guardError, loading: guardLoading, clearError } = useGuardedAction([
-    { check: currentCalendarId, message: 'Aucun calendrier sélectionné. Choisis un calendrier dans le menu déroulant.' },
+    { check: currentCalendarId, message: 'Aucun agenda sélectionné. Choisis un agenda dans le menu déroulant.' },
   ]);
 
   const error = formError || guardError;
@@ -217,7 +217,7 @@ export function EventForm() {
         { label: 'Titre', value: summary },
         { label: 'Début', value: allDay ? startDate : `${startDate} ${startTime}` },
         { label: 'Fin', value: allDay ? endDate : `${endDate} ${endTime}` },
-        { label: 'Calendrier', value: selectedCalendar?.summary || currentCalendarId },
+        { label: 'Agenda', value: selectedCalendar?.summary || currentCalendarId },
         { label: 'Fournisseur', value: selectedCalendar?.provider || 'Destination locale' },
         { label: 'Compte', value: currentAccountId || 'Compte local' },
         { label: 'Participants', value: attendees.join(', ') },

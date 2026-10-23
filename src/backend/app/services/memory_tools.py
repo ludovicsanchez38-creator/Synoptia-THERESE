@@ -761,7 +761,7 @@ async def execute_create_project(
         budget_retenu = _budget_de_projet(arguments.get("budget"))
         ecarte: list[str] = []
         if arguments.get("status") not in (None, "") and statut_retenu is None:
-            ecarte.append(f"statut « {arguments.get('status')} » inconnu, projet créé « active »")
+            ecarte.append(f"statut « {arguments.get('status')} » inconnu, projet créé « actif »")
         if arguments.get("budget") not in (None, "") and budget_retenu is None:
             ecarte.append(f"budget « {arguments.get('budget')} » illisible, non enregistré")
         async with _ctx() as session_geste:

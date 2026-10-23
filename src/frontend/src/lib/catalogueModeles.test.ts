@@ -23,9 +23,8 @@ describe('La liste vient du backend', () => {
 
     expect(modeles?.map((m) => m.id)).toEqual(['glm-5.3', 'glm-x-inconnu']);
     expect(modeles?.[0].name).toBe('GLM 5.3');
-    // Un id sans décoration s'affiche tel quel : un nouveau modèle publié
-    // par le backend apparaît sans MAJ frontend, il n'est jamais masqué.
-    expect(modeles?.[1].name).toBe('glm-x-inconnu');
+    // B-1097 : les identifiants hors catalogue reçoivent aussi un nom lisible.
+    expect(modeles?.[1].name).toBe('GLM X Inconnu');
   });
 
   it('ne rappelle pas la route deux fois pour le même fournisseur', async () => {

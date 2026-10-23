@@ -4,7 +4,7 @@
  * client »). Même création que la vue des livrables (P-048), statut « À
  * faire » ; en lecture seule (démo), la liste seule.
  */
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Package } from 'lucide-react';
 
 import { createDeliverable, listDeliverables, type DeliverableResponse } from '../../services/api/crm-extended';
@@ -29,16 +29,42 @@ export function ProjectDeliverablesSection({
 }) {
   const [livrables, setLivrables] = useState<DeliverableResponse[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreurLecture, setErreurLecture] = useState(false);
+  const [relecture, setRelecture] = useState(0);
+  const [lectureEnCours, setLectureEnCours] = useState(false);
   const [titre, setTitre] = useState('');
   const [enCours, setEnCours] = useState(false);
+  const versionEcritures = useRef(0);
+
+  useEffect(() => {
+    setLivrables(null);
+    setErreur(null);
+    setErreurLecture(false);
+  }, [projectId]);
 
   useEffect(() => {
     let vivant = true;
+    const versionLue = versionEcritures.current;
+    setLectureEnCours(true);
     listDeliverables({ project_id: projectId })
-      .then((liste) => { if (vivant) setLivrables(liste); })
-      .catch(() => { if (vivant) { setLivrables([]); setErreur('Les livrables n’ont pas pu être lus.'); } });
+      .then((liste) => {
+        if (!vivant) return;
+        if (versionLue === versionEcritures.current) {
+          setLivrables(liste);
+          setErreurLecture(false);
+          return;
+        }
+        // Une réponse antérieure à un ajout ne connaît pas ce livrable, mais
+        // elle seule connaît les existants : fusion par identifiant.
+        setLivrables((courants) => {
+          const lus = new Set(liste.map((livrable) => livrable.id));
+          return [...liste, ...(courants ?? []).filter((livrable) => !lus.has(livrable.id))];
+        });
+      })
+      .catch(() => { if (vivant) setErreurLecture(true); })
+      .finally(() => { if (vivant) setLectureEnCours(false); });
     return () => { vivant = false; };
-  }, [projectId]);
+  }, [projectId, relecture]);
 
   async function ajouter(e: FormEvent) {
     e.preventDefault();
@@ -47,7 +73,10 @@ export function ProjectDeliverablesSection({
     setErreur(null);
     try {
       const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: 'a_faire' });
-      setLivrables((courants) => [...(courants ?? []), cree]);
+      versionEcritures.current += 1;
+      // Une lecture arrivée avant cette réponse peut déjà contenir l'ajout.
+      setLivrables((courants) => ((courants ?? []).some((livrable) => livrable.id === cree.id)
+        ? courants : [...(courants ?? []), cree]));
       setTitre('');
     } catch (reason) {
       setErreur(reason instanceof Error ? reason.message : 'Le livrable n’a pas pu être ajouté.');
@@ -71,9 +100,16 @@ export function ProjectDeliverablesSection({
             </li>
           ))}
         </ul>
-      ) : livrables ? (
+      ) : livrables && !erreurLecture ? (
         <p className="text-sm text-text-muted">Aucun livrable pour ce projet.</p>
       ) : null}
+      {erreurLecture && (
+        <div role="alert" className="space-y-2 text-sm text-error">
+          <p>Les livrables n’ont pas pu être lus. La liste peut être incomplète.</p>
+          <Button type="button" variant="secondary" size="md" disabled={lectureEnCours}
+            onClick={() => setRelecture((valeur) => valeur + 1)}>Relire les livrables</Button>
+        </div>
+      )}
       {erreur && <p role="alert" className="text-sm text-error">{erreur}</p>}
       {!lectureSeule && (
         <form onSubmit={ajouter} className="flex items-end gap-2">

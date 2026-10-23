@@ -651,7 +651,7 @@ class CRMImportService:
                 sample_rows=[],
                 detected_columns=[],
                 column_mapping={},
-                validation_errors=[ImportError(row=0, column=None, message="Aucune donnee trouvee")],
+                validation_errors=[ImportError(row=0, column=None, message="Aucune donnée trouvée")],
                 can_import=False,
             )
 

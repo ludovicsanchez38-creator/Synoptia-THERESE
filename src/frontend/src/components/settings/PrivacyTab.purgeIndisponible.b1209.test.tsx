@@ -41,7 +41,7 @@ describe('B-1209 : réglages de purge illisibles', () => {
     render(<PrivacyTab />);
     await screen.findByRole('button', { name: 'Réessayer le chargement' });
     const interrupteur = screen.getByRole('switch');
-    const curseur = screen.getByLabelText('Ancienneté des données à purger, en mois');
+    const curseur = screen.getByLabelText('Durée de rétention : 36 mois');
     expect({
       interrupteurInactif: (interrupteur as HTMLButtonElement).disabled,
       curseurInactif: (curseur as HTMLInputElement).disabled,
