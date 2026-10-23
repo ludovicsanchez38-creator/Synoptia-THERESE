@@ -3756,9 +3756,16 @@ async def _execute_tools_and_continue(
             )
             if not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
                 refus_fiches_affiches.add(resultat_fiche['message'])
+                affiche = resultat_fiche['message']
+                if isinstance(tc.arguments.get('id'), str):
+                    # B-1115 : le modèle reprend souvent la modification refusée et
+                    # réussit. Annoncé comme une tentative, le refus reste affiché
+                    # tout de suite (rien ne se perd) sans contredire la réussite
+                    # qui suit (trois essais de report, trois NO GO d'Astra).
+                    affiche = 'Tentative de modification refusée : ' + affiche[:1].lower() + affiche[1:]
                 yield 'data: ' + json.dumps({
                     'type': 'text', 'conversation_id': conversation_id,
-                    'content': '\n\n' + resultat_fiche['message'] + '\n\n',
+                    'content': '\n\n' + affiche + '\n\n',
                 }, ensure_ascii=False) + '\n\n'
             if resultat_fiche.get('receipt'):
                 yield "data: " + json.dumps({
@@ -3865,10 +3872,16 @@ async def _execute_tools_and_continue(
 
         yield f"data: {json.dumps(tool_status.model_dump())}\n\n"
 
-        # Build ToolResult for LLM
+        # Build ToolResult for LLM. Un refus de fiche garde son résultat
+        # structuré (détail, id et version de la fiche visée) : réduit à
+        # « Error: message », le modèle ne savait pas quoi corriger (B-1104).
+        lu_par_le_modele = (
+            result.result if result.success or tc.name == "upsert_memory_card"
+            else f"Error: {result.error}"
+        )
         tool_results.append(ToolResult(
             tool_call_id=tc.id,
-            result=result.result if result.success else f"Error: {result.error}",
+            result=lu_par_le_modele,
             is_error=not result.success,
         ))
         exec_records.append(

@@ -19,10 +19,29 @@ KINDS = ('preference', 'fait', 'decision', 'correction')
 
 
 class RefusMemoire(Exception):
-    def __init__(self, message: str, status: int = 422, card_id: str | None = None):
+    # `detail` n'est lu que par le modèle (résultat de l'outil) : le message
+    # affiché reste le même d'un essai à l'autre.
+    def __init__(self, message: str, status: int = 422, card_id: str | None = None,
+                 detail: str | None = None):
         super().__init__(message)
         self.status = status
         self.card_id = card_id
+        self.detail = detail
+
+
+def _sans_source(texte: str, manquants: set[str], nombres_seuls: set[str],
+                 negations_seules: list[tuple[str, str]]) -> str:
+    """B-1104 : nomme ce qui manque aux sources, dans la graphie du modèle."""
+    vus: dict[str, str] = {}
+    for jeton in re.findall(r'[^\W_]+', texte):
+        if normaliser(jeton) in manquants and normaliser(jeton) not in vus:
+            vus[normaliser(jeton)] = jeton
+    graphie = {normaliser(j): j for j in re.findall(r'[^\W_]+', texte)}
+    elements = [*vus.values(), *sorted(nombres_seuls - set(vus.values())),
+                *(f'{marqueur} {graphie.get(mot, mot)}' for marqueur, mot in negations_seules)]
+    liste = ', '.join(f'« {e} »' for e in elements[:8])
+    return ('Sans source dans le message ni dans la fiche : ' + liste + ('…' if len(elements) > 8 else '.')
+            + ' Retire-les, ou reprends les mots du message ; la raison est facultative.')
 
 
 def normaliser(texte: str) -> str:
@@ -181,11 +200,12 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
         except SQLAlchemyError:
             return json.dumps({'refus': 'La fiche n’a pas pu être enregistrée. Réessaie.', 'status': 409})
         except RefusMemoire as erreur:
-            return json.dumps({'refus': str(erreur), 'status': erreur.status, 'card_id': erreur.card_id})
+            return json.dumps({'refus': str(erreur), 'status': erreur.status, 'card_id': erreur.card_id,
+                               'detail': erreur.detail})
     resultat = json.loads(await _proteger_le_geste(geste()))
     if 'card' not in resultat:
         raise RefusMemoire(resultat.get('refus') or resultat.get('error') or 'Écriture mémoire indisponible.',
-                           resultat.get('status', 409), resultat.get('card_id'))
+                           resultat.get('status', 409), resultat.get('card_id'), resultat.get('detail'))
     return dict(resultat['card'])
 
 
@@ -243,12 +263,15 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         polarites_modifiees = negations(ancien_factuel) ^ negations(factuel)
         mots_message = set(re.findall(r'[^\W_]+', normaliser(source.content)))
         # Un titre résume librement ; seuls ses nombres doivent avoir une source.
-        if (not mots(factuel) <= mots(provenance)
-                or not nombres(*(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason')),
-                               str(donnees.get('title', ''))) <= nombres(
-                    source.content, *((existante.title, existante.content, existante.reason) if existante else ()))
-                or any(mot not in mots_message for _, mot in polarites_modifiees)):
-            raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
+        manquants = mots(factuel) - mots(provenance)
+        nombres_seuls = nombres(*(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason')),
+                                str(donnees.get('title', ''))) - nombres(
+            source.content, *((existante.title, existante.content, existante.reason) if existante else ()))
+        negations_seules = sorted(p for p in polarites_modifiees if p[1] not in mots_message)
+        if manquants or nombres_seuls or negations_seules:
+            raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.',
+                               detail=_sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
+                                                  nombres_seuls, negations_seules))
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
     f = existante or MemoryCard(kind=donnees.get('kind', ''), subject='', title='', content='',
@@ -282,11 +305,24 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             if _recouvre(f, protegee, contacts_projet):
                 raise RefusMemoire('Cette fiche est protégée par ta correction. Tu peux la modifier dans Mémoire.',
                                    409, protegee.id if protegee.id in {c.id for c in autorisees_chat} else None)
+        if not existante and f.kind == 'correction':
+            # B-1114 : une correction sans id créait une seconde fiche active à
+            # côté de celle qu'elle corrige. Renvoi vers l'UNIQUE fiche active
+            # visible du même sujet dont contact et dossier recouvrent ceux de
+            # la correction (Astra : la fiche d'Alice ne vise pas Bernard).
+            cibles = [c for c in autorisees_chat if c.state == 'active' and c.subject == f.subject
+                      and _recouvre(f, c, contacts_projet)]
+            if len(cibles) == 1:
+                cible = cibles[0]
+                raise RefusMemoire('Cette correction doit modifier la fiche existante, pas en créer une seconde.', 409,
+                                   cible.id, f'Fiche « {cible.title} » : id {cible.id}, version {cible.version}.')
     cle = _cle(f)
     doublon = (await session.execute(select(MemoryCard).where(col(MemoryCard.dedup_key) == cle))).scalars().first()
     if doublon and doublon.id != f.id:
+        visible = not automatique or doublon.id in {c.id for c in autorisees_chat}
         raise RefusMemoire('Une fiche correspond déjà à ce sujet. Ouvre-la pour la modifier.', 409,
-            doublon.id if not automatique or doublon.id in {c.id for c in autorisees_chat} else None)
+            doublon.id if visible else None,
+            f'Fiche « {doublon.title} » : id {doublon.id}, version {doublon.version}.' if visible else None)
     f.dedup_key = cle
     f.last_author = 'therese' if automatique else 'utilisateur'
     f.protected = bool(f.protected or not automatique or existante or f.kind == 'correction'
