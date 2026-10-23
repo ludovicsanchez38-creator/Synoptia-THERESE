@@ -88,7 +88,7 @@ async def test_la_commande_projet_dit_ce_qu_elle_ecarte(db_session):
     from app.services.slash_commands import execute_slash_command
 
     reponse = await execute_slash_command("projet", "Chantier flou statut=gelé", db_session)
-    assert "gelé" in reponse and "active" in reponse, reponse
+    assert "gelé" in reponse and "actif" in reponse, reponse
 
 
 def test_l_import_de_fichier_n_accepte_pas_un_budget_infini():
