@@ -143,8 +143,8 @@ async def _check_overdue_invoices(session: AsyncSession) -> int:
 
         await create_notification(
             session,
-            title="Facture impayee",
-            message=f"Facture {inv.invoice_number} impayee depuis {days_overdue} jours",
+            title="Facture impayée",
+            message=f"Facture {inv.invoice_number} impayée depuis {days_overdue} jours",
             type="warning",
             source="invoice",
             action_url=f"/invoices/{inv.id}",
@@ -188,12 +188,12 @@ async def _check_inactive_prospects(session: AsyncSession) -> int:
 
         await create_notification(
             session,
-            title="Relance echue",
+            title="Relance échue",
             message=(
-                f"Relance de {contact.display_name} prevue il y a {jours_de_retard} jour"
+                f"Relance de {contact.display_name} prévue il y a {jours_de_retard} jour"
                 f"{'s' if jours_de_retard > 1 else ''}"
                 if jours_de_retard > 0
-                else f"Relance de {contact.display_name} prevue aujourd'hui"
+                else f"Relance de {contact.display_name} prévue aujourd'hui"
             ),
             type="action",
             source="crm",
@@ -234,8 +234,8 @@ async def _check_overdue_tasks(session: AsyncSession) -> int:
 
         await create_notification(
             session,
-            title="Tache en retard",
-            message=f"Tache '{task.title}' en retard de {days_overdue} jour" + ("s" if days_overdue > 1 else ""),
+            title="Tâche en retard",
+            message=f"Tâche '{task.title}' en retard de {days_overdue} jour" + ("s" if days_overdue > 1 else ""),
             type="warning",
             source="task",
             action_url=f"/tasks/{task.id}",
@@ -279,7 +279,7 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
         await create_notification(
             session,
             title="RDV demain",
-            message=f"RDV demain a {time_str} : {event.summary}",
+            message=f"RDV demain à {time_str} : {event.summary}",
             type="reminder",
             source="calendar",
             action_url=f"/calendar/events/{event.id}",
