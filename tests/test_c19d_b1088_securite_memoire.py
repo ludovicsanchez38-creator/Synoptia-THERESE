@@ -209,6 +209,18 @@ CORPUS_REPRISE = [
     ('Diagnostic des besoins de formation', None),
     ('Traitement des données informatiques', None),
     ('Diagnostic du serveur informatique', None),
+    # Astra v4 : santé refusée par défaut, objet professionnel seul accepté.
+    ('Paul suit un traitement à l’insuline', 'santé'),
+    ('Diagnostic de dépression', 'santé'),
+    ('Traitement contre l’asthme', 'santé'),
+    ('Elle a reçu un diagnostic d’autisme', 'santé'),
+    ('Traitement hormonal en cours', 'santé'),
+    ('Le traitement de Paul est terminé', 'santé'),
+    ('Je vous prie d’accepter le devis', None),
+    ('Je te prie de m’envoyer le devis', None),
+    ('Diagnostic amiante avant travaux', None),
+    ('Traitement des déchets du chantier', None),
+    ('Diagnostic électrique du local', None),
 ]
 
 

@@ -110,6 +110,37 @@ def _contient_identifiant_secret(valeur: str) -> bool:
                for m in _IDENTIFIANT_SECRET.finditer(identifiants))
 
 
+# « Traitement » et « diagnostic » restent une information de santé par défaut :
+# seul un objet professionnel juste après eux (petits mots sautés) les lève.
+_OBJETS_PROFESSIONNELS = (
+    'commande', 'facture', 'devis', 'donnee', 'fichier', 'dossier', 'demande', 'courrier', 'mail',
+    'message', 'paie', 'salaire', 'reseau', 'performance', 'energetique', 'thermique', 'structurel',
+    'systeme', 'panne', 'incident', 'securite', 'chantier', 'projet', 'stock', 'reclamation',
+    'candidature', 'informatique', 'vehicule', 'moteur', 'batiment', 'toiture', 'technique',
+    'comptable', 'ecriture', 'rapprochement', 'amortissement', 'texte', 'image', 'eau', 'dechet',
+    'surface', 'bois', 'charpente', 'signal', 'requete', 'ticket', 'litige', 'sinistre', 'contrat',
+    'paiement', 'virement', 'operation', 'flux', 'lot', 'inscription', 'information', 'contenu',
+    'document', 'photo', 'video', 'audio', 'prospect', 'client', 'fournisseur', 'reserve', 'besoin',
+    'pedagogique', 'serveur', 'stockage', 'amiante', 'plomb', 'termite', 'electri', 'gaz',
+    'immobilier', 'assainissement', 'humidite', 'acoustique', 'accessibilite', 'achat', 'vente',
+    'compte', 'tresorerie', 'budget', 'fiscal', 'juridique', 'administratif', 'recrutement',
+    'formation', 'competence', 'organisation', 'process', 'entreprise', 'site', 'logiciel',
+    'application', 'code', 'erreur', 'alerte', 'colis', 'livraison', 'expedition', 'mobilier',
+)
+_PETITS_MOTS = frozenset({'de', 'des', 'du', 'd', 'la', 'le', 'les', 'l', 'un', 'une', 'en', 'au', 'aux'})
+
+
+def _traitement_ou_diagnostic_medical(texte: str) -> bool:
+    jetons = re.findall(r'[a-z0-9]+', texte)
+    for i, jeton in enumerate(jetons):
+        if not jeton.startswith(('traitement', 'diagnostic')):
+            continue
+        objet = next((j for j in jetons[i + 1:] if j not in _PETITS_MOTS), '')
+        if not objet.startswith(_OBJETS_PROFESSIONNELS):
+            return True
+    return False
+
+
 def motif_sensible(valeur: Any) -> str | None:
     if isinstance(valeur, dict):
         return next((motif for k, v in valeur.items() if (motif := motif_sensible([k, v]))), None)
@@ -126,15 +157,11 @@ def motif_sensible(valeur: Any) -> str | None:
         return 'un mot de passe ou une clé secrète'
     if any(m.search(texte) for m in MOTIFS[1:4]):
         return 'une coordonnée bancaire ou un jeton secret'
-    # « Traitement » et « diagnostic » sont ambigus ; les termes médicaux,
-    # au singulier comme au pluriel, portent la catégorie de santé.
-    if MOTIFS[4].search(texte):
+    # Termes médicaux, puis traitement ou diagnostic sans objet professionnel.
+    if MOTIFS[4].search(texte) or _traitement_ou_diagnostic_medical(texte):
         return 'une information de santé'
-    # « prie de » suivi d'un infinitif est une formule de politesse.
-    contexte = re.sub(
-        r'\bprie\s+de\s+(?:(?:bien|ne|pas|vous|nous|le|la|les|lui|leur|me|te|se)\s+)*'
-        r'[a-z]+(?:er|ir|re)\b', '', texte
-    )
+    # « prie de » ou « prie d’ » est une formule de politesse, élision comprise.
+    contexte = re.sub(r"\bprie\s+d(?:e\b|['\u2019])", ' ', texte)
     contexte = re.sub(r'\bparti(?:e|s|es)?\s+(?=en\b)', '', contexte)
     categories = ('une origine ethnique ou raciale', 'une opinion politique',
                   'une conviction religieuse ou philosophique', 'une appartenance syndicale',
