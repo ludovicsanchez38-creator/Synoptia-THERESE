@@ -237,6 +237,31 @@ async def test_rdate_seul_inclut_dtstart_avant_exclusions(client, db_session, jo
     assert resultat.count("RDATE seul") == (1 if exclure_depart else 2)
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("journee", "exclusion"), [
+    (False, "EXDATE;VALUE=DATE:20261027"),
+    (True, "EXDATE;VALUE=DATE:20261027"),
+    (False, "EXDATE;VALUE=DATE:20261026"),
+])
+async def test_exclusion_date_seule_garde_dtstart(client, db_session, journee, exclusion):
+    # Réserve d'Astra (c19 v3) : une série faite d'une seule exclusion DATE
+    # laissait la liste de règles vide, et le départ devenait illisible.
+    await _agenda(db_session)
+    if journee:
+        dates = {"start_date": "2026-10-26", "end_date": "2026-10-26"}
+    else:
+        dates = {"start_datetime": "2026-10-26T10:00:00+01:00", "end_datetime": "2026-10-26T11:00:00+01:00"}
+    cree = await client.post("/api/calendar/events", json={
+        "calendar_id": "local", "summary": "Exclusion seule", **dates, "recurrence": [exclusion],
+    })
+    assert cree.status_code == 200, cree.text
+    resultat = await _list_calendar_events(_periode(), db_session)
+    assert "illisible" not in resultat.lower(), resultat
+    depart_exclu = exclusion.endswith("20261026")
+    assert ("26/10" in resultat) == (not depart_exclu), resultat
+    assert resultat.count("Exclusion seule") == (0 if depart_exclu else 1), resultat
+
+
 @pytest.mark.parametrize("regles", [
     ["RRULE:FREQ=MINUTELY"],
     ["RRULE:FREQ=MINUTELY;BYMONTH=2;BYMONTHDAY=30"],

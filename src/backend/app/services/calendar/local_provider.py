@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 rrulestr = import_module("dateutil.rrule").rrulestr
+rruleset = import_module("dateutil.rrule").rruleset
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,9 @@ def _developper_occurrences_locales(
         regles.append(regle)
     depart = start if event.all_day else start.replace(tzinfo=PARIS)
     borne = debut if event.all_day else debut.replace(tzinfo=PARIS)
-    serie = rrulestr("\n".join(regles), dtstart=depart, forceset=True)
+    # Une série faite des seules exclusions DATE ne laisse aucune règle :
+    # l'ensemble part vide, DTSTART s'y ajoute ci-dessous.
+    serie = rrulestr("\n".join(regles), dtstart=depart, forceset=True) if regles else rruleset()
     # DTSTART appartient à l'ensemble, y compris sans RRULE ; EXDATE/EXRULE
     # restent appliquées par rruleset, comme pour les dates ajoutées par RDATE.
     serie.rdate(depart)
