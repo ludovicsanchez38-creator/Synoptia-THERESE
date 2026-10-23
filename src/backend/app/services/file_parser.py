@@ -12,6 +12,8 @@ from typing import Generator
 logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 Mo
+ERREUR_TAILLE_FICHIER = "Le fichier dépasse la limite de 50 Mo"
+
 MAX_PDF_PAGES = 100
 # Inventaire des capacités du 13/08/2026 : le PDF était plafonné à 100 pages et
 # le CSV à 500 lignes, chacun avec une mention de troncature. Le tableur, lui,
@@ -72,6 +74,15 @@ PRESENTATION_EXTENSIONS = {".pptx"}
 CSV_EXTENSIONS = {".csv", ".tsv"}
 
 
+
+class ErreurTailleFichier(ValueError):
+    """Dépassement de taille, distingué des autres erreurs d'extraction."""
+
+
+class AvisTailleFichier(str):
+    """Avis de taille affichable, identifié sans analyser son libellé."""
+
+
 def extract_text(file_path: Path) -> str | None:
     """
     Extract text content from a file.
@@ -89,7 +100,7 @@ def extract_text(file_path: Path) -> str | None:
     # Vérification de la taille maximale (SEC-016, PERF-009)
     file_size = file_path.stat().st_size
     if file_size > MAX_FILE_SIZE_BYTES:
-        raise ValueError("Le fichier dépasse la limite de 50 Mo")
+        raise ErreurTailleFichier(ERREUR_TAILLE_FICHIER)
 
     ext = file_path.suffix.lower()
 
@@ -212,13 +223,40 @@ def _extract_docx(file_path: Path) -> str:
         return "[DOCX extraction unavailable - install python-docx]"
 
     doc = Document(file_path)
-    text_parts = []
+    from docx.oxml.ns import qn
+    from docx.oxml.table import CT_Tc
+    from docx.oxml.xmlchemy import BaseOxmlElement
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+    from docx.types import ProvidesStoryPart
 
-    for para in doc.paragraphs:
-        if para.text.strip():
-            text_parts.append(para.text)
+    def extraire_blocs(element: BaseOxmlElement, parent: ProvidesStoryPart) -> str:
+        morceaux: list[str] = []
+        for enfant in element.iterchildren():
+            if enfant.tag == qn("w:p"):
+                texte = Paragraph(enfant, parent).text
+                if texte.strip():
+                    morceaux.append(texte)
+            elif enfant.tag in {qn("w:sdt"), qn("w:sdtContent")}:
+                texte = extraire_blocs(enfant, parent)
+                if texte.strip():
+                    morceaux.append(texte)
+            elif enfant.tag == qn("w:tbl"):
+                tableau = Table(enfant, parent)
+                vues: set[CT_Tc] = set()
+                for ligne in tableau.rows:
+                    cellules: list[str] = []
+                    for cellule in ligne.cells:
+                        # Les fusions réutilisent le même élément XML.
+                        if cellule._tc in vues:
+                            continue
+                        vues.add(cellule._tc)
+                        cellules.append(extraire_blocs(cellule._tc, cellule))
+                    if cellules:
+                        morceaux.append("\t".join(cellules))
+        return "\n\n".join(morceaux)
 
-    return "\n\n".join(text_parts)
+    return extraire_blocs(doc.element.body, doc)
 
 
 def _extract_pptx(file_path: Path) -> str:

@@ -40,7 +40,7 @@ from app.services.entity_extractor import (
     get_entity_extractor,
 )
 from app.services.error_handler import message_pour_ecran
-from app.services.file_parser import extract_text
+from app.services.file_parser import AvisTailleFichier, ErreurTailleFichier, extract_text
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,
@@ -440,6 +440,8 @@ async def _get_file_context(
         # « Erreur lors de la lecture » mentait deux fois (au journal et
         # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
         raise
+    except ErreurTailleFichier as e:
+        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name}: {e}")
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
         return None, f"Erreur lors de la lecture de {path.name}: {str(e)}"
@@ -535,6 +537,17 @@ def _attacher_images(
     if images:
         messages[-1].images = list(images)
     return ecartees
+
+
+def _verifier_message_non_vide(texte: str, chemins: list[str] | None) -> None:
+    if texte.strip():
+        return
+    from app.services.images_jointes import charger_images_jointes
+
+    _, chemins_images = separer_images_et_documents(chemins)
+    images, _ = charger_images_jointes(chemins_images)
+    if not images:
+        raise HTTPException(status_code=400, detail="Écris un message avant de l'envoyer.")
 
 
 def _memoriser_pieces_jointes(message: Message, chemins: list[str] | None) -> None:
@@ -1552,6 +1565,8 @@ async def send_message(
     Supports both streaming (SSE) and non-streaming responses.
     Also handles /fichier and /analyse slash commands.
     """
+    _verifier_message_non_vide(request.message, request.file_paths)
+
     # Get or create conversation
     if request.conversation_id:
         result = await session.execute(
@@ -1996,6 +2011,12 @@ async def send_message(
                 created_at=assistant_message.created_at,
             )
 
+    # Le contrôle commun porte sur le texte final, après variables et balise d'action.
+    from app.services.skills.intent_detector import parse_action_syntax
+
+    _, llm_user_message = parse_action_syntax(llm_user_message)
+    _verifier_message_non_vide(llm_user_message, request.file_paths)
+
     # Handle streaming response
     if request.stream:
         return StreamingResponse(
@@ -2075,6 +2096,7 @@ async def send_message(
         [] if produce_prompt is not None else _parse_file_commands(llm_user_message)
     )
     file_contexts = []
+    file_errors = []
     for cmd, path in file_commands:
         file_ctx, error = await _get_file_context(
             path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
@@ -2082,6 +2104,7 @@ async def send_message(
         if file_ctx:
             file_contexts.append(file_ctx)
         elif error:
+            file_errors.append(error)
             logger.warning(f"File command error: {error}")
 
     # BUG-044 : Traiter les fichiers joints (drag & drop)
@@ -2091,6 +2114,7 @@ async def send_message(
         request.file_paths
     )
     for _ecartee in _attacher_images(messages, _images_jointes):
+        file_errors.append(_ecartee)
         logger.warning("Image non transmise au modèle : %s", _ecartee)
     if _documents_joints:
         for fp in _documents_joints:
@@ -2101,6 +2125,7 @@ async def send_message(
             if file_ctx:
                 file_contexts.append(file_ctx)
             elif error:
+                file_errors.append(error)
                 logger.warning(f"Attached file error: {error}")
 
     # BUG-160 : même rappel que sur le chemin streaming. Pas de contexte
@@ -2135,6 +2160,16 @@ async def send_message(
             memory_context = f"{memory_context}\n\n{file_context_str}"
         else:
             memory_context = file_context_str
+
+    # Le rejet de taille est annoncé ; les autres erreurs gardent leur traitement.
+    file_errors = [erreur for erreur in file_errors if isinstance(erreur, AvisTailleFichier)]
+    if file_errors:
+        from app.services.prompt_security import get_prompt_security
+
+        avis_fichiers = get_prompt_security().sanitize_for_context(
+            "Pièces jointes non transmises :\n" + "\n".join(file_errors), source="fichier",
+        )
+        memory_context = f"{memory_context or ''}\n\n{avis_fichiers}"
 
     # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
     if actions_context:
@@ -2194,6 +2229,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
+    if file_errors:
+        assistant_content = "\n\n".join(file_errors) + "\n\n" + assistant_content
     # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
     assistant_content += _suffixe_arret(assistant_content, motif_sink.get("stop_reason"))
 
@@ -2785,7 +2822,7 @@ async def _do_stream_response(
     # 31/08 : voir le chemin non-stream, une image se montre, elle ne s'indexe pas.
     _documents_joints, _images_jointes = separer_images_et_documents(file_paths)
     for _ecartee in _attacher_images(messages, _images_jointes):
-        file_errors.append(f"Image non transmise au modèle : {_ecartee}")
+        file_errors.append(_ecartee)
     if _documents_joints:
         for fp in _documents_joints:
             file_ctx, error = await _get_file_context(
@@ -2849,6 +2886,17 @@ async def _do_stream_response(
             memory_context = f"{memory_context}\n\n{file_context_str}"
         else:
             memory_context = file_context_str
+
+    # Le statut ci-dessus compte toutes les erreurs, l'avis vise la taille.
+    file_errors = [erreur for erreur in file_errors if isinstance(erreur, AvisTailleFichier)]
+    if file_errors:
+        from app.services.prompt_security import get_prompt_security
+
+        avis_fichiers = get_prompt_security().sanitize_for_context(
+            "Pièces jointes non transmises :\n" + "\n".join(file_errors), source="fichier",
+        )
+        memory_context = f"{memory_context or ''}\n\n{avis_fichiers}"
+        preamble = "\n\n".join(file_errors) + "\n\n" + preamble
 
     # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
     if actions_context:
@@ -3449,6 +3497,7 @@ async def _execute_tools_and_continue(
     contexte: ContexteExecution | None = None,
     assistant_content_brut: list[Any] | None = None,
     echec_suite: dict[str, bool] | None = None,
+    refus_fiches_affiches: set[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -3490,6 +3539,8 @@ async def _execute_tools_and_continue(
     from app.services.execution_truth import enforce_create_cap, summarize_executions
     allowed_calls, blocked_calls = enforce_create_cap(tool_calls)
     exec_records: list[tuple[str, str, bool]] = []
+    if refus_fiches_affiches is None:
+        refus_fiches_affiches = set()
     # BUG-121 : une fois une action sensible mise en attente de confirmation, on
     # ne relance pas la chaîne d'outils (voir plus bas). Sinon le modèle - surtout
     # les modèles faibles - re-émet send_email en boucle et empile plusieurs
@@ -3547,6 +3598,10 @@ async def _execute_tools_and_continue(
         if requires_confirmation(tc.name):
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
             outil_base = tc.name.split("__", 1)[-1]
+            if tc.name == "create_calendar_event":
+                from app.services.workspace_tools import normaliser_arguments_agenda
+
+                pending_arguments = normaliser_arguments_agenda(pending_arguments)
             if outil_base == "create_calendar_event" and session is not None:
                 from app.services.workspace_tools import (
                     get_calendar_confirmation_destination,
@@ -3699,7 +3754,8 @@ async def _execute_tools_and_continue(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
                 error=resultat_fiche.get('message'), execution_time_ms=0,
             )
-            if not resultat_fiche['success']:
+            if not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
+                refus_fiches_affiches.add(resultat_fiche['message'])
                 yield 'data: ' + json.dumps({
                     'type': 'text', 'conversation_id': conversation_id,
                     'content': '\n\n' + resultat_fiche['message'] + '\n\n',
@@ -3889,6 +3945,7 @@ async def _execute_tools_and_continue(
     new_tool_calls: list[ToolCall] = []
     new_assistant_brut: list[Any] | None = None
     continued_content = ""
+    texte_en_attente = ""
 
     async for event in llm_service.continue_with_tool_results(
         context,
@@ -3902,13 +3959,19 @@ async def _execute_tools_and_continue(
         assistant_content_brut=assistant_content_brut,
     ):
         if event.type == "text" and event.content:
-            continued_content += event.content
-            data = StreamChunk(
-                type="text",
-                content=event.content,
-                conversation_id=conversation_id,
-            )
-            yield f"data: {json.dumps(data.model_dump())}\n\n"
+            # Retirer uniquement les refus déjà rendus, même coupés entre deux chunks.
+            texte_en_attente += event.content
+            for refus in refus_fiches_affiches:
+                texte_en_attente = texte_en_attente.replace(refus, "")
+            retenus = max((n for refus in refus_fiches_affiches
+                           for n in range(1, min(len(refus), len(texte_en_attente)) + 1)
+                           if texte_en_attente.endswith(refus[:n])), default=0)
+            texte = texte_en_attente[:-retenus] if retenus else texte_en_attente
+            texte_en_attente = texte_en_attente[-retenus:] if retenus else ""
+            continued_content += texte
+            if texte:
+                data = StreamChunk(type="text", content=texte, conversation_id=conversation_id)
+                yield f"data: {json.dumps(data.model_dump())}\n\n"
 
         elif event.type == "tool_call" and event.tool_call:
             new_tool_calls.append(event.tool_call)
@@ -3916,6 +3979,11 @@ async def _execute_tools_and_continue(
                 new_assistant_brut = event.assistant_content_brut
 
         elif event.type == "done":
+            if texte_en_attente:
+                continued_content += texte_en_attente
+                data = StreamChunk(type="text", content=texte_en_attente, conversation_id=conversation_id)
+                yield f"data: {json.dumps(data.model_dump())}\n\n"
+                texte_en_attente = ""
             if usage_totals is not None:
                 _noter_usage_d_appel(usage_totals, event)
 
@@ -3944,6 +4012,7 @@ async def _execute_tools_and_continue(
                     tool_outcomes=tool_outcomes,
                     contexte=contexte,
                     echec_suite=echec_suite,
+                    refus_fiches_affiches=refus_fiches_affiches,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.

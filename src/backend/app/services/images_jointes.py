@@ -14,6 +14,7 @@ import base64
 import logging
 from pathlib import Path
 
+from app.services.file_parser import AvisTailleFichier
 from app.services.path_security import validate_file_path
 from app.services.providers.base import ImageJointe
 
@@ -76,10 +77,10 @@ def charger_images_jointes(
             valide = validate_file_path(str(chemin), None)
             taille = valide.stat().st_size
             if taille > TAILLE_MAX_IMAGE:
-                ecartees.append(
+                ecartees.append(AvisTailleFichier(
                     f"{chemin.name} ({taille // (1024 * 1024)} Mo, limite "
                     f"{TAILLE_MAX_IMAGE // (1024 * 1024)} Mo)"
-                )
+                ))
                 continue
             octets = valide.read_bytes()
         except (OSError, ValueError, PermissionError) as e:

@@ -668,8 +668,28 @@ async def search_memory(
                     metadata={"status": project.status, "budget": project.budget},
                 )
 
-    # Sans embeddings, le nom reste consultable ; le contenu nécessite l'index.
+    # Un mot exact de l'index doit précéder les rapprochements sémantiques.
+    fichiers_exacts: set[str] = set()
     if not request.entity_types or "file" in request.entity_types:
+        try:
+            fragments = await get_qdrant_service().async_rechercher_contenu_fichiers(
+                request.query, PLAFOND_ILIKE_MEMOIRE
+            )
+            ilike_tronque |= len(fragments) >= PLAFOND_ILIKE_MEMOIRE
+            textes = {f["entity_id"]: f["text"] for f in fragments}
+            if textes:
+                charge = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(textes)))
+                for fichier in charge.scalars().all():
+                    fichiers_exacts.add(fichier.id)
+                    results_map[fichier.id] = MemorySearchResult(
+                        id=fichier.id, entity_type="file", title=fichier.name,
+                        content=textes[fichier.id], score=1.0,
+                        metadata={"path": fichier.path, "extension": fichier.extension},
+                    )
+        except Exception as erreur:
+            logger.warning("Recherche littérale dans l'index indisponible : %s", erreur)
+
+        # Sans index, le nom reste consultable.
         fichiers_mot_cle = await session.execute(select(FileMetadata).where(
             col(FileMetadata.name).ilike(f"%{request.query}%")
         ).limit(PLAFOND_ILIKE_MEMOIRE))
@@ -682,7 +702,7 @@ async def search_memory(
                     metadata={"path": fichier_nom.path, "extension": fichier_nom.extension})
 
     # Sort by score and limit
-    results = sorted(results_map.values(), key=lambda x: x.score, reverse=True)
+    results = sorted(results_map.values(), key=lambda x: (x.id in fichiers_exacts, x.score), reverse=True)
     total = len(results)
     results = results[: request.limit]
 

@@ -542,7 +542,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
             f"{self.DATA_HONESTY_BLOCK}\n\n"
             "Tutoie l'utilisateur par défaut, sauf demande explicite de sa part "
             "ou consigne personnelle contraire. Le registre d'un courrier destiné "
-            "à un tiers suit sa demande et son destinataire."
+            "à un tiers suit sa demande et son destinataire.\n"
+            "Dans les outils d'agenda, écris chaque heure comme une heure murale du poste à la date du rendez-vous, "
+            "sans décalage ni Z (exemple : 2026-10-30T14:30:00)."
         )
 
         if not profile or not profile.name:

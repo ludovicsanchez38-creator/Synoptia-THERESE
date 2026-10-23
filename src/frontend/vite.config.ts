@@ -25,7 +25,7 @@ export default defineConfig(({ command }) => ({
     },
   },
   // Env prefix for Tauri
-  envPrefix: ['VITE_', 'TAURI_'],
+  envPrefix: ['VITE_', 'TAURI_ENV_'],
   // B-264 : les neuf surfaces chargées en lazy() faisaient découvrir des
   // dépendances en cours de session ; Vite ré-optimisait et rechargeait la
   // page (~3 % des parcours de bout en bout). Le crawl couvre toutes les sources.

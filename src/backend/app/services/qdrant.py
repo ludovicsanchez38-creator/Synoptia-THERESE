@@ -6,6 +6,8 @@ Manages vector storage for semantic memory search.
 
 import asyncio
 import logging
+import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -438,6 +440,39 @@ class QdrantService:
             }
             for hit in results
         ]
+
+    def rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
+        """Retrouve un mot ou une expression littérale sans embeddings."""
+        if not query.strip():
+            return []
+        requete = unicodedata.normalize("NFC", query.strip()).casefold()
+        # Sans espaces (CJK), la sous-chaîne est le mot ; les termes latins gardent leurs frontières.
+        sans_espaces = any("\u3400" <= c <= "\u9fff" or "\u3040" <= c <= "\u30ff"
+                           or "\uac00" <= c <= "\ud7af" for c in requete)
+        motif = re.compile(re.escape(requete) if sans_espaces
+                           else r"(?<!\w)" + re.escape(requete) + r"(?!\w)")
+        trouves: dict[str, dict[str, Any]] = {}
+        # En local, chaque scroll retrie/refiltre tout : un seul passage, borné par la collection.
+        total = self.client.get_collection(settings.qdrant_collection).points_count or 0
+        if not total:
+            return []
+        points, _ = self.client.scroll(
+            collection_name=settings.qdrant_collection,
+            scroll_filter=Filter(must=[FieldCondition(key="type", match=MatchValue(value="file"))]),
+            limit=total, with_payload=["entity_id", "text"], with_vectors=False,
+        )
+        for point in points:
+            contenu = point.payload or {}
+            identifiant = contenu.get("entity_id")
+            texte = contenu.get("text") or ""
+            if identifiant and identifiant not in trouves and motif.search(unicodedata.normalize("NFC", texte).casefold()):
+                trouves[identifiant] = {"entity_id": identifiant, "text": texte}
+                if len(trouves) >= limite:
+                    break
+        return list(trouves.values())
+
+    async def async_rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(self.rechercher_contenu_fichiers, query, limite)
 
     def points_sans_perimetre(
         self, limite: int = 10000

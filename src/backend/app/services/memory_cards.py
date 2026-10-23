@@ -36,7 +36,28 @@ MOTS_VIDES = frozenset(['les', 'des', 'une', 'avec', 'dans', 'pour', 'que', 'qui
 
 
 def mots(texte: str) -> set[str]:
-    return {m for m in re.findall(r'[^\W_]+', normaliser(texte)) if len(m) >= 3 and m not in MOTS_VIDES}
+    return {m for m in re.findall(r'[^\W_]+', normaliser(texte)) if m.isdigit() or (len(m) >= 3 and m not in MOTS_VIDES)}
+
+
+def nombres(*textes: str) -> set[str]:
+    # Lus champ par champ (deux champs collés fabriqueraient « 30 500 ») ; un
+    # moins qui ne suit ni lettre ni chiffre fait partie du nombre (« -5 » n'autorise
+    # pas « 5 ») ; « A-15 », « 10-12 » et les dates gardent leurs nombres positifs.
+    motif = r'(?:(?<![^\W_])[-\u2212])?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)'
+    return {n.replace('\u2212', '-') for texte in textes for n in re.findall(motif, texte or '')}
+
+
+def negations(texte: str) -> set[tuple[str, str]]:
+    # Nombres entiers avec décimales/séparateurs sourcés tels quels ; polarité = (marqueur, premier mot hors de/d'/du/des/la/le/les/l'/un/une/en/y), ajout ou retrait autorisé seulement si ce mot figure dans le message.
+    jetons = re.findall(r'[^\W_]+', normaliser(texte))
+    petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'en', 'y'}
+    resultat = set()
+    for index, jeton in enumerate(jetons):
+        if jeton in {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'sans', 'ni'}:
+            vise = next((mot for mot in jetons[index + 1:] if mot not in petits_mots), None)
+            if vise is not None:
+                resultat.add((jeton, vise))
+    return resultat
 
 
 def date_utc(valeur: datetime) -> datetime:
@@ -212,9 +233,21 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         source_content = source.content
         if contient_sensible(source_content):
             raise RefusMemoire(MESSAGE_REFUS)
-        # Le modèle ne peut ajouter un fait absent de la source utilisateur.
-        # Un titre résume, le contenu et la raison doivent rester dans la source.
-        if not mots(' '.join(str(donnees.get(k, '')) for k in ('content', 'reason'))) <= mots(source.content):
+        # Une correction peut conserver les faits de la fiche autorisée.
+        # Aucun mot nouveau hors de ces deux sources n'est accepté.
+        provenance = source.content
+        if existante:
+            provenance += f' {existante.title} {existante.content} {existante.reason}'
+        factuel = ' '.join(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason'))
+        ancien_factuel = f'{existante.content} {existante.reason}' if existante else ''
+        polarites_modifiees = negations(ancien_factuel) ^ negations(factuel)
+        mots_message = set(re.findall(r'[^\W_]+', normaliser(source.content)))
+        # Un titre résume librement ; seuls ses nombres doivent avoir une source.
+        if (not mots(factuel) <= mots(provenance)
+                or not nombres(*(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason')),
+                               str(donnees.get('title', ''))) <= nombres(
+                    source.content, *((existante.title, existante.content, existante.reason) if existante else ()))
+                or any(mot not in mots_message for _, mot in polarites_modifiees)):
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.')
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
