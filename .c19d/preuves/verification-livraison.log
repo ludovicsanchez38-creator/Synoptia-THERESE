@@ -1,3 +1,0 @@
-Commande : git diff --check f01582fa..HEAD -- src/backend/ src/frontend/ tests/
-Code de sortie : 0
-Les espaces des sorties brutes de tests sont conservés.
