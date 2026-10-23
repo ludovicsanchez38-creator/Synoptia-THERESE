@@ -272,7 +272,14 @@ export async function lesInteractifs(page) {
       // Le snapshot accessible fournit aussi le nom des images alt et des
       // libellés liés ; textContent ne sait pas calculer ces noms.
       const signature = await locator.ariaSnapshot().then((s) => s.split('\n')[0]).catch(() => '');
-      const nomEncode = signature.match(/^-\s+[\w-]+\s+("(?:[^"\\]|\\.)*")/);
+      // ariaSnapshot est du YAML : le rôle et son nom peuvent être réunis
+      // dans un scalaire cité, notamment dès que le nom contient « : ».
+      let scalaire = signature.replace(/^-\s+/, '').trim();
+      const simple = scalaire.match(/^'((?:[^']|'')*)'(?:\s*:)?$/);
+      const double = scalaire.match(/^("(?:[^"\\]|\\.)*")(?:\s*:)?$/);
+      if (simple) scalaire = simple[1].replace(/''/g, "'");
+      else if (double) scalaire = JSON.parse(double[1]);
+      const nomEncode = scalaire.match(/^[\w-]+\s+("(?:[^"\\]|\\.)*")/);
       const nom = nomEncode ? JSON.parse(nomEncode[1]) : '';
       const zoneGlobale = await locator.evaluate(zoneGlobalePourNoeud).catch(() => null);
       const cleSignature = JSON.stringify([role, signature, zoneGlobale]);
