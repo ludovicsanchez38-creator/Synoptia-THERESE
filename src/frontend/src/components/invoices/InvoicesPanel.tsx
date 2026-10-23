@@ -562,7 +562,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       size="md"
                       type="button"
                       title="Générer et ouvrir le PDF"
-                      aria-label="Générer et ouvrir le PDF"
+                      aria-label={`Générer et ouvrir le PDF : ${libelleAccessiblePiece(invoice)}`}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -577,6 +577,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       type="button"
                       className="text-error"
                       title="Supprimer"
+                      aria-label={`Supprimer : ${libelleAccessiblePiece(invoice)}`}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
