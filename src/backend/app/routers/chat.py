@@ -3498,6 +3498,7 @@ async def _execute_tools_and_continue(
     assistant_content_brut: list[Any] | None = None,
     echec_suite: dict[str, bool] | None = None,
     refus_fiches_affiches: set[str] | None = None,
+    fiches_ecrites: set[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -3541,6 +3542,11 @@ async def _execute_tools_and_continue(
     exec_records: list[tuple[str, str, bool]] = []
     if refus_fiches_affiches is None:
         refus_fiches_affiches = set()
+    if fiches_ecrites is None:
+        fiches_ecrites = set()
+    # B-1115 : refus d'une fiche déjà écrite dans ce tour, lus par le modèle
+    # mais jamais affichés (ni par la bulle, ni repris dans sa suite).
+    refus_masques: set[str] = set()
     # BUG-121 : une fois une action sensible mise en attente de confirmation, on
     # ne relance pas la chaîne d'outils (voir plus bas). Sinon le modèle - surtout
     # les modèles faibles - re-émet send_email en boucle et empile plusieurs
@@ -3754,13 +3760,16 @@ async def _execute_tools_and_continue(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
                 error=resultat_fiche.get('message'), execution_time_ms=0,
             )
-            if not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
+            if not resultat_fiche['success'] and tc.arguments.get('id') in fiches_ecrites:
+                refus_masques.add(resultat_fiche['message'])
+            elif not resultat_fiche['success'] and resultat_fiche['message'] not in refus_fiches_affiches:
                 refus_fiches_affiches.add(resultat_fiche['message'])
                 yield 'data: ' + json.dumps({
                     'type': 'text', 'conversation_id': conversation_id,
                     'content': '\n\n' + resultat_fiche['message'] + '\n\n',
                 }, ensure_ascii=False) + '\n\n'
             if resultat_fiche.get('receipt'):
+                fiches_ecrites.add(resultat_fiche['receipt']['id'])
                 yield "data: " + json.dumps({
                     "type": "memory_receipt", "conversation_id": conversation_id,
                     "receipt": resultat_fiche['receipt'],
@@ -3961,9 +3970,9 @@ async def _execute_tools_and_continue(
         if event.type == "text" and event.content:
             # Retirer uniquement les refus déjà rendus, même coupés entre deux chunks.
             texte_en_attente += event.content
-            for refus in refus_fiches_affiches:
+            for refus in refus_fiches_affiches | refus_masques:
                 texte_en_attente = texte_en_attente.replace(refus, "")
-            retenus = max((n for refus in refus_fiches_affiches
+            retenus = max((n for refus in refus_fiches_affiches | refus_masques
                            for n in range(1, min(len(refus), len(texte_en_attente)) + 1)
                            if texte_en_attente.endswith(refus[:n])), default=0)
             texte = texte_en_attente[:-retenus] if retenus else texte_en_attente
@@ -4013,6 +4022,7 @@ async def _execute_tools_and_continue(
                     contexte=contexte,
                     echec_suite=echec_suite,
                     refus_fiches_affiches=refus_fiches_affiches,
+                    fiches_ecrites=fiches_ecrites,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.
