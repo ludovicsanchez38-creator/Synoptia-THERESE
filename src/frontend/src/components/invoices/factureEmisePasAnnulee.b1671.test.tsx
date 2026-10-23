@@ -110,11 +110,12 @@ describe('B-1671 : Annulée sort du sélecteur d’une facture émise', () => {
     expect(valeursStatut()).not.toContain('cancelled');
   });
 
-  it('un avoir déjà annulé affiche Annulée', async () => {
+  // B-1083 : un avoir est masculin, comme un devis (l'ancien attendu accordait au féminin).
+  it('un avoir déjà annulé affiche Annulé', async () => {
     render(<InvoiceForm invoice={piece('avoir', 'cancelled') as never} onClose={vi.fn()} onSave={vi.fn()} />);
     const statut = await screen.findByLabelText('Statut') as HTMLSelectElement;
     expect(statut).toHaveValue('cancelled');
-    expect(statut.selectedOptions[0]?.textContent).toBe('Annulée');
+    expect(statut.selectedOptions[0]?.textContent).toBe('Annulé');
   });
 
   it('un devis déjà annulé affiche Annulé', async () => {
