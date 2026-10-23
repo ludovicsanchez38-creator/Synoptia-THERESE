@@ -151,6 +151,6 @@ describe('lot 8 : un seul bandeau d’erreur, pour les deux sources', () => {
     fireEvent.click(screen.getByRole('button', { name: /Enregistrer/ }));
     const bandeaux = screen.getAllByRole('alert');
     expect(bandeaux).toHaveLength(1);
-    expect(bandeaux[0].textContent).toMatch(/Aucun calendrier sélectionné/);
+    expect(bandeaux[0].textContent).toMatch(/Aucun agenda sélectionné/);
   });
 });
