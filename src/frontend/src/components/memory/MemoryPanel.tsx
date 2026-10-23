@@ -519,7 +519,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span>
-                    <strong>{rgpdStats.expires_ou_bientot}</strong> contact{rgpdStats.expires_ou_bientot > 1 ? 's' : ''} RGPD expire{rgpdStats.expires_ou_bientot > 1 ? 'nt' : ''} bientot
+                    <strong>{rgpdStats.expires_ou_bientot}</strong> contact{rgpdStats.expires_ou_bientot > 1 ? 's' : ''} RGPD expire{rgpdStats.expires_ou_bientot > 1 ? 'nt' : ''} bientôt
                   </span>
                 </div>
               </div>
