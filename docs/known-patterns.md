@@ -833,3 +833,21 @@ Les reçus détaillés sont centralisés dans le suivi du cycle et ses preuves
   d'anonymisation RGPD qui passe seul et dans la commande canonique (B-1786,
   [rapport 0.78.0](releases/v0.78.0-alpha.md)). Un rouge hors isolation se
   consigne ; il ne se masque pas par un rejeu, et un vert isolé ne l'explique pas.
+
+## Gate de release 0.80.0 : ce que les portes locales ne voient pas (23/10/2026)
+
+- Un renommage de nom accessible (B-1071, « Retour » ajouté au bouton
+  d'en-tête) avait mis à jour les tests Vitest mais pas le parcours Playwright
+  qui ciblait l'ancien nom. Les portes locales de la boucle ne lancent pas
+  `tests/e2e` : le défaut n'est apparu qu'à la gate de release. Toute
+  modification d'un nom accessible se cherche aussi dans `tests/e2e`, et les
+  parcours de bout en bout (`npx playwright test --project=desktop`) se jouent
+  avant le tag.
+- Le seuil de session pytest de la CI se mesure contre la taille de la suite :
+  628 s pour ~4 700 tests en 0.79, coupure à 720 s et 97 % pour ~5 350 tests
+  en 0.80. Un timeout de session est une alarme de croissance, pas un défaut
+  de test ; le relever avec la marge mesurée et le dire dans le rapport.
+- Un avis npm critique publié entre deux releases fait rougir la gate sans
+  aucun changement de code. Lancer `npm audit --audit-level=high` dans
+  `src/frontend` avant le tag. Le détail est dans le
+  [rapport 0.80.0](releases/v0.80.0-alpha.md).
