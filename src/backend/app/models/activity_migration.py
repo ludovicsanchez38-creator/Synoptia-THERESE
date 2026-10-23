@@ -42,15 +42,19 @@ def migrer_activites(conn: Any) -> None:
         # Une ancienne suppression peut avoir laissé ces liens sans cible.
         # Les annulations valides, y compris vers une ligne copiée plus tard,
         # restent intactes : toutes les activités sont déjà dans la table finale.
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         for colonne, table in (
             ('contact_id', 'contacts'), ('project_id', 'projects'),
             ('conversation_id', 'conversations'), ('remplace_id', 'activities'),
         ):
+            # Une base partielle ne permet pas de conclure à un lien orphelin.
+            if table not in tables:
+                continue
             reparations += conn.execute(
                 f'UPDATE activities SET {colonne}=NULL WHERE {colonne} IS NOT NULL '
                 f'AND NOT EXISTS (SELECT 1 FROM {table} AS cible WHERE cible.id=activities.{colonne})'
             ).rowcount
-        if conn.execute('PRAGMA foreign_key_check(activities)').fetchall():
+        if any(r[2] in tables for r in conn.execute('PRAGMA foreign_key_check(activities)')):
             raise ValueError('Migration des activités : liens incohérents.')
         conn.commit()
     except Exception:

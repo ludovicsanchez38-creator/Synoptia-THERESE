@@ -89,11 +89,13 @@ def connecter(chemin, pilote):
     return sqlite3.connect(chemin)
 
 
-def preparer(conn, schema, lignes, foreign_keys, *, sans=None, autre_fk=False):
+def preparer(conn, schema, lignes, foreign_keys, *, sans=None, autre_fk=False, tables_absentes=()):
     for table, identifiant in (
         ('contacts', 'contact-valide'), ('projects', 'projet-valide'),
         ('conversations', 'conversation-valide'),
     ):
+        if table in tables_absentes:
+            continue
         conn.execute(f'CREATE TABLE {table} (id VARCHAR PRIMARY KEY)')
         conn.execute(f'INSERT INTO {table} VALUES (?)', (identifiant,))
     colonnes = dict(COLONNES)
@@ -190,6 +192,52 @@ def test_migration_repare_sans_perte_et_reste_idempotente(
             sans_cle.execute('SELECT * FROM activities').fetchall()
 
 
+@pytest.mark.parametrize('pilote', ['sqlite', 'sqlcipher'])
+@pytest.mark.parametrize('foreign_keys', [0, 1], ids=['fk-off', 'fk-on'])
+@pytest.mark.parametrize('schema', ['ancien', 'migre'])
+@pytest.mark.parametrize('tables_absentes', [
+    ('projects',), ('conversations',), ('contacts',), ('projects', 'conversations', 'contacts'),
+], ids=['sans-projects', 'sans-conversations', 'sans-contacts', 'sans-les-trois'])
+def test_migration_preserve_les_liens_vers_les_tables_absentes(
+    tmp_path, caplog, pilote, foreign_keys, schema, tables_absentes,
+):
+    with closing(connecter(tmp_path / 'partielle.db', pilote)) as conn:
+        lignes = [activite('a1', statut='annulee'), activite(
+            'a2', contact_id='contact-absent', project_id='projet-absent',
+            conversation_id='conversation-absente', remplace_id='a1',
+        ), activite('a3', remplace_id='activite-absente')]
+        preparer(conn, schema, lignes, foreign_keys, tables_absentes=tables_absentes)
+        attendues = [dict(ligne) for ligne in lignes]
+        reparations = 1
+        for colonne, table in (
+            ('contact_id', 'contacts'), ('project_id', 'projects'),
+            ('conversation_id', 'conversations'),
+        ):
+            if table not in tables_absentes:
+                attendues[1][colonne] = None
+                reparations += 1
+        attendues[2]['remplace_id'] = None
+        with caplog.at_level(logging.WARNING, logger='app.models.activity_migration'):
+            migrer_activites(conn)
+        assert lire(conn) == attendues
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert tables == {'activities', 'contacts', 'projects', 'conversations'} - set(tables_absentes)
+        assert {r[2] for r in conn.execute('PRAGMA foreign_key_check(activities)')} == set(tables_absentes)
+        assert conn.execute('PRAGMA foreign_keys').fetchone()[0] == foreign_keys
+        assert not conn.in_transaction
+        assert [r.getMessage() for r in caplog.records if r.name == 'app.models.activity_migration'] == [
+            f'Migration des activités : {reparations} lien(s) orphelin(s) remis à NULL.',
+        ]
+        instantane, changements = etat(conn), conn.total_changes
+        caplog.clear()
+        migrer_activites(conn)
+        assert etat(conn) == instantane
+        assert conn.total_changes == changements
+        assert conn.execute('PRAGMA foreign_keys').fetchone()[0] == foreign_keys
+        assert not conn.in_transaction
+        assert not [r for r in caplog.records if r.name == 'app.models.activity_migration']
+
+
 class ConnexionDefaillante:
     """Injecter une panne après copie, ou simuler une copie tronquée."""
 
@@ -211,23 +259,26 @@ class ConnexionDefaillante:
 @pytest.mark.parametrize('foreign_keys', [0, 1], ids=['fk-off', 'fk-on'])
 @pytest.mark.parametrize('panne', [
     'erreur-sql', 'copie-incomplete', 'colonne-obligatoire-absente', 'autre-fk', 'execution-dupliquee',
+    'autre-fk-table-absente',
 ])
 def test_migration_annule_toute_autre_incoherence(tmp_path, caplog, pilote, foreign_keys, panne):
     with closing(connecter(tmp_path / 'rollback.db', pilote)) as conn:
         preparer(
-            conn, 'migre' if panne == 'autre-fk' else 'ancien',
+            conn, 'migre' if panne.startswith('autre-fk') else 'ancien',
             [activite(contact_id='contact-valide' if panne == 'copie-incomplete' else 'contact-absent'),
              activite('a2', execution_id='execution-a1' if panne == 'execution-dupliquee' else 'execution-a2')],
             foreign_keys,
             sans='title' if panne == 'colonne-obligatoire-absente' else None,
-            autre_fk=panne == 'autre-fk',
+            autre_fk=panne.startswith('autre-fk'),
+            tables_absentes=('projects',) if panne == 'autre-fk-table-absente' else (),
         )
         avant = etat(conn)
-        erreur = ValueError if panne in {'copie-incomplete', 'autre-fk'} else Exception
+        erreur = ValueError if panne == 'copie-incomplete' or panne.startswith('autre-fk') else Exception
         message = {
             'erreur-sql': 'syntax error', 'copie-incomplete': 'copie incomplète',
             'colonne-obligatoire-absente': 'NOT NULL constraint failed.*title',
             'autre-fk': 'liens incohérents', 'execution-dupliquee': 'UNIQUE constraint failed.*execution_id',
+            'autre-fk-table-absente': 'liens incohérents',
         }[panne]
         with pytest.raises(erreur, match=message):
             migrer_activites(ConnexionDefaillante(conn, panne))
