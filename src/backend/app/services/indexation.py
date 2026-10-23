@@ -480,9 +480,23 @@ async def _ecrire_et_consigner(
     else:
         logger.warning(f"No text extracted for {file_name}")
     indexed_at = datetime.now(UTC)
-    await _consigner_resultat(
-        file_id, chunk_count, indexed_at, figer_perimetre=figer_perimetre
-    )
+    try:
+        await _consigner_resultat(
+            file_id, chunk_count, indexed_at, figer_perimetre=figer_perimetre
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # B-1113 : la base n'a pas consigné ce qui vient d'être écrit (campagne
+        # du 22/10, « database is locked »). Sans retrait, le document annoncé
+        # en échec restait interrogeable par la recherche et le chat.
+        if chunk_count:
+            await get_qdrant_service().async_delete_by_entity(file_id)
+            try:
+                await _consigner_resultat(file_id, 0, datetime.now(UTC))
+            except Exception:
+                logger.warning("Index vidé, consignation du résultat vide impossible")
+        raise
     return chunk_count, indexed_at
 
 
