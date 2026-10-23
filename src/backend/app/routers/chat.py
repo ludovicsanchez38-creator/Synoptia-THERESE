@@ -40,7 +40,7 @@ from app.services.entity_extractor import (
     get_entity_extractor,
 )
 from app.services.error_handler import message_pour_ecran
-from app.services.file_parser import ERREUR_TAILLE_FICHIER, extract_text
+from app.services.file_parser import AvisTailleFichier, ErreurTailleFichier, extract_text
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,
@@ -440,6 +440,8 @@ async def _get_file_context(
         # « Erreur lors de la lecture » mentait deux fois (au journal et
         # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
         raise
+    except ErreurTailleFichier as e:
+        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name}: {e}")
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
         return None, f"Erreur lors de la lecture de {path.name}: {str(e)}"
@@ -2109,6 +2111,7 @@ async def send_message(
         request.file_paths
     )
     for _ecartee in _attacher_images(messages, _images_jointes):
+        file_errors.append(_ecartee)
         logger.warning("Image non transmise au modèle : %s", _ecartee)
     if _documents_joints:
         for fp in _documents_joints:
@@ -2156,7 +2159,7 @@ async def send_message(
             memory_context = file_context_str
 
     # Le rejet de taille est annoncé ; les autres erreurs gardent leur traitement.
-    file_errors = [erreur for erreur in file_errors if erreur.endswith(ERREUR_TAILLE_FICHIER)]
+    file_errors = [erreur for erreur in file_errors if isinstance(erreur, AvisTailleFichier)]
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 
@@ -2816,7 +2819,7 @@ async def _do_stream_response(
     # 31/08 : voir le chemin non-stream, une image se montre, elle ne s'indexe pas.
     _documents_joints, _images_jointes = separer_images_et_documents(file_paths)
     for _ecartee in _attacher_images(messages, _images_jointes):
-        file_errors.append(f"Image non transmise au modèle : {_ecartee}")
+        file_errors.append(_ecartee)
     if _documents_joints:
         for fp in _documents_joints:
             file_ctx, error = await _get_file_context(
@@ -2882,7 +2885,7 @@ async def _do_stream_response(
             memory_context = file_context_str
 
     # Le statut ci-dessus compte toutes les erreurs, l'avis vise la taille.
-    file_errors = [erreur for erreur in file_errors if erreur.endswith(ERREUR_TAILLE_FICHIER)]
+    file_errors = [erreur for erreur in file_errors if isinstance(erreur, AvisTailleFichier)]
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 

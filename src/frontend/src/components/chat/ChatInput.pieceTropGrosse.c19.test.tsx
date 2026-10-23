@@ -17,6 +17,11 @@ const apiMocks = vi.hoisted(() => ({
   createConversation: vi.fn().mockResolvedValue({ id: 'conv-serveur', title: 'Nouvelle conversation' }),
 }));
 vi.mock('../../services/api', () => ({ ...apiMocks, ApiError: class ApiError extends Error { status = 500; } }));
+// L'animation d'apparition ne fait pas partie du rejet de pièce jointe testé.
+vi.mock('../../lib/animations', async () => ({
+  ...await vi.importActual<typeof import('../../lib/animations')>('../../lib/animations'),
+  messageVariants: { initial: { opacity: 1 }, animate: { opacity: 1 }, exit: { opacity: 1 } },
+}));
 vi.mock('../../hooks/useFileDrop', () => ({ useFileDrop: () => ({ isDragging: false }) }));
 vi.mock('./SlashCommandsMenu', () => ({ SlashCommandsMenu: () => null, detectSlashCommand: () => false }));
 vi.mock('./ActionChips', () => ({ ActionChips: () => null }));
@@ -24,6 +29,12 @@ vi.mock('../files/DropZone', () => ({ InlineDropZone: () => null, FileChip: () =
 vi.mock('./VoiceDictationButton', () => ({ VoiceDictationButton: () => null }));
 
 import { ChatInput } from './ChatInput';
+import { MessageBubble } from './MessageBubble';
+
+function Bulles() {
+  const conversations = useChatStore((state) => state.conversations);
+  return <>{conversations.flatMap((c) => c.messages).map((m) => <MessageBubble key={m.id} message={m} />)}</>;
+}
 
 describe('ChatInput - pièce jointe trop volumineuse (B-1107)', () => {
   beforeEach(() => {
@@ -37,23 +48,21 @@ describe('ChatInput - pièce jointe trop volumineuse (B-1107)', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('conserve le nom et la limite dans la réponse après le message du modèle', async () => {
+  it.each([['inventaire.txt', '50 Mo'], ['scan-plan.png', '5 Mo']])(
+    'rend une bulle pour %s avec sa limite %s après le flux', async (nom, limite) => {
     apiMocks.streamMessage.mockImplementation(async function* () {
-      yield { type: 'text', content: 'inventaire.txt : le fichier dépasse la limite de 50 Mo.\n\n', conversation_id: 'conv-1' };
+      yield { type: 'text', content: `${nom} : le fichier dépasse la limite de ${limite}.\n\n`, conversation_id: 'conv-1' };
       yield { type: 'text', content: 'Réponse du modèle.', conversation_id: 'conv-1' };
       yield { type: 'done', conversation_id: 'conv-1' };
     });
-    render(<ChatInput />);
+    render(<><ChatInput /><Bulles /></>);
     const champ = await screen.findByTestId('chat-message-input');
     fireEvent.change(champ, { target: { value: 'Lis mon inventaire.' } });
     fireEvent.keyDown(champ, { key: 'Enter' });
 
     await waitFor(() => {
-      const messages = useChatStore.getState().conversations[0]?.messages ?? [];
-      const reponse = messages.find((m) => m.role === 'assistant');
-      expect(reponse?.content).toContain('inventaire.txt');
-      expect(reponse?.content).toContain('50 Mo');
-      expect(reponse?.content).toContain('Réponse du modèle.');
+      expect(screen.getByText(`${nom} : le fichier dépasse la limite de ${limite}.`)).toBeVisible();
+      expect(screen.getByText('Réponse du modèle.')).toBeVisible();
     });
 
   });

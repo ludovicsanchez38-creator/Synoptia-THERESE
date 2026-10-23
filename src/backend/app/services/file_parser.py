@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 Mo
 ERREUR_TAILLE_FICHIER = "Le fichier dépasse la limite de 50 Mo"
+
 MAX_PDF_PAGES = 100
 # Inventaire des capacités du 13/08/2026 : le PDF était plafonné à 100 pages et
 # le CSV à 500 lignes, chacun avec une mention de troncature. Le tableur, lui,
@@ -73,6 +74,15 @@ PRESENTATION_EXTENSIONS = {".pptx"}
 CSV_EXTENSIONS = {".csv", ".tsv"}
 
 
+
+class ErreurTailleFichier(ValueError):
+    """Dépassement de taille, distingué des autres erreurs d'extraction."""
+
+
+class AvisTailleFichier(str):
+    """Avis de taille affichable, identifié sans analyser son libellé."""
+
+
 def extract_text(file_path: Path) -> str | None:
     """
     Extract text content from a file.
@@ -90,7 +100,7 @@ def extract_text(file_path: Path) -> str | None:
     # Vérification de la taille maximale (SEC-016, PERF-009)
     file_size = file_path.stat().st_size
     if file_size > MAX_FILE_SIZE_BYTES:
-        raise ValueError(ERREUR_TAILLE_FICHIER)
+        raise ErreurTailleFichier(ERREUR_TAILLE_FICHIER)
 
     ext = file_path.suffix.lower()
 
