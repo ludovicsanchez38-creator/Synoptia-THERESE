@@ -254,7 +254,7 @@ it.each([0, 2.1, 5.5, 10, 20, 4.5, 7.7, 8.1, 12.25, 19.6])('Rejeu B-1082 : TVA %
 it.each([
   ['sent', 'facture', 'Envoyée'], ['paid', 'facture', 'Payée'], ['cancelled', 'facture', 'Annulée'],
   ['sent', 'devis', 'Envoyé'], ['accepted', 'devis', 'Accepté'], ['refused', 'devis', 'Refusé'],
-  ['expired', 'devis', 'Expiré'], ['sent', 'avoir', 'Envoyé'], ['paid', 'avoir', 'Payé'], ['draft', 'facture', 'Brouillon'],
+  ['expired', 'devis', 'Expiré'], ['sent', 'avoir', 'Envoyé'], ['paid', 'avoir', 'Remboursé'], ['draft', 'facture', 'Brouillon'],
 ] as const)('Rejeu B-1081/B-1083 : %s %s', async (statut, type, attendu) => {
   const { libelleStatutPiece } = await import('../invoices/statutsFacture');
   expect(libelleStatutPiece(statut, type)).toBe(attendu);

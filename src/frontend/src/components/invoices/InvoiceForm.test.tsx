@@ -284,3 +284,16 @@ describe('InvoiceForm - lot F plafond contacts', () => {
     });
   });
 });
+
+
+
+it('B-1081 : la confirmation d’un avoir payé dit Remboursé', async () => {
+  useBillingProfileStore.setState({ missing: null });
+  const avoir = { ...invoice, invoice_number: 'AV-2026-008', document_type: 'avoir' } as Invoice;
+  render(<PrototypeExternalActionConfirmationProvider>
+    <InvoiceForm invoice={avoir} onClose={vi.fn()} onSave={vi.fn()} />
+  </PrototypeExternalActionConfirmationProvider>);
+  fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+  expect(screen.getByTestId('external-action-confirmation')).toHaveTextContent('Nouveau statutRemboursé');
+});

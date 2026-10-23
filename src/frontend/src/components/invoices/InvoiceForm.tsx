@@ -495,7 +495,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       && invoice.status !== status
       && (status === 'paid' || status === 'accepted' || status === 'refused');
     if (sensitiveStatusChange) {
-      const statusLabel = status === 'paid' ? 'Payée' : status === 'accepted' ? 'Accepté' : 'Refusé';
+      const statusLabel = libelleStatutPiece(status, documentType);
       requestExternalAction({
         title: `Confirmer le passage au statut « ${statusLabel} »`,
         description: 'La mise à jour du document ne sera enregistrée qu’après ta confirmation.',
@@ -764,7 +764,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   data-dialog-autofocus={pieceEmise ? true : undefined}
                   value={status}
                   onChange={(e) => setStatus(e.target.value as typeof status)}
-                  options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).filter(
+                  options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).map(
+                    (option) => ({ ...option, label: libelleStatutPiece(option.value, documentType) }),
+                  ).filter(
                     (option) => {
                       if (pieceEmise && option.value === 'draft') return false;
                       // B-1671 : une facture ou un avoir émis ne propose plus Annulée.
