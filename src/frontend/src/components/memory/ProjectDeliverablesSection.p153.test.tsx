@@ -115,3 +115,42 @@ it.each(['lecture puis écriture', 'écriture puis lecture'])('B-1094 : une lect
   expect(screen.getByText('Dossier de réception')).toBeInTheDocument();
   expect(screen.queryByText('Aucun livrable pour ce projet.')).toBeNull();
 });
+
+it('B-1094 : une première lecture lente terminée après un ajout garde les livrables existants', async () => {
+  // Astra v4 : la réponse antérieure à l'ajout était jetée, les livrables
+  // qu'elle seule connaissait disparaissaient sans alerte.
+  let relire!: (liste: unknown[]) => void;
+  const lecture = new Promise<unknown[]>((resolve) => { relire = resolve; });
+  api.listDeliverables.mockReset().mockReturnValueOnce(lecture);
+  api.createDeliverable.mockReset().mockResolvedValueOnce({ id: 'notice', title: 'Notice après travaux', status: 'a_faire' });
+  render(<ProjectDeliverablesSection projectId="p-lent" />);
+  fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Notice après travaux' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Ajouter le livrable' }));
+  expect(await screen.findByText('Notice après travaux')).toBeInTheDocument();
+  await act(async () => { relire([{ id: 'plans', title: 'Plans déjà déposés', status: 'valide' }]); });
+  expect(screen.getByText('Plans déjà déposés')).toBeInTheDocument();
+  expect(screen.getByText('Notice après travaux')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).toBeNull();
+});
+
+// Rejeu de la fusion, entrées inventées après le correctif : existants de 0 à
+// 4, ajout déjà présent ou non dans la réponse tardive (jamais en double).
+it.each([
+  [[], false], [['Devis signé'], false], [['Devis signé', 'Plans'], false], [['A', 'B', 'C'], false],
+  [['A', 'B', 'C', 'D'], false], [[], true], [['Devis signé'], true], [['Métré', 'Photos'], true],
+  [['Réception'], false], [['Réserves', 'Levée des réserves'], true],
+])('Rejeu fusion B-1094 : existants %j, ajout déjà relu %s', async (titres, dejaRelu) => {
+  let relire!: (liste: unknown[]) => void;
+  api.listDeliverables.mockReset().mockReturnValueOnce(new Promise<unknown[]>((resolve) => { relire = resolve; }));
+  const ajout = { id: 'ajout', title: 'Notice', status: 'a_faire' };
+  api.createDeliverable.mockReset().mockResolvedValueOnce(ajout);
+  render(<ProjectDeliverablesSection projectId={`p-${titres.length}-${dejaRelu}`} />);
+  fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Notice' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Ajouter le livrable' }));
+  await screen.findByText('Notice');
+  const lus = (titres as string[]).map((t, i) => ({ id: `e${i}`, title: t, status: 'a_faire' }));
+  await act(async () => { relire(dejaRelu ? [...lus, ajout] : lus); });
+  for (const t of titres as string[]) expect(screen.getByText(t)).toBeInTheDocument();
+  expect(screen.getAllByText('Notice')).toHaveLength(1);
+  expect(screen.queryByRole('alert')).toBeNull();
+});

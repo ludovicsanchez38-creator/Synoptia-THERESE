@@ -48,11 +48,18 @@ export function ProjectDeliverablesSection({
     setLectureEnCours(true);
     listDeliverables({ project_id: projectId })
       .then((liste) => {
-        // Une réponse antérieure à un ajout ne connaît pas ce livrable.
-        if (vivant && versionLue === versionEcritures.current) {
+        if (!vivant) return;
+        if (versionLue === versionEcritures.current) {
           setLivrables(liste);
           setErreurLecture(false);
+          return;
         }
+        // Une réponse antérieure à un ajout ne connaît pas ce livrable, mais
+        // elle seule connaît les existants : fusion par identifiant.
+        setLivrables((courants) => {
+          const lus = new Set(liste.map((livrable) => livrable.id));
+          return [...liste, ...(courants ?? []).filter((livrable) => !lus.has(livrable.id))];
+        });
       })
       .catch(() => { if (vivant) setErreurLecture(true); })
       .finally(() => { if (vivant) setLectureEnCours(false); });
