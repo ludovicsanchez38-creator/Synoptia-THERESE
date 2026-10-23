@@ -440,8 +440,13 @@ def fenetre_de_contexte(provider: str, model: str | None) -> int:
 
 def libelle_modele(modele: str) -> str:
     """Nom lisible dérivé de l'identifiant, partagé par les trois sélecteurs."""
-    # Un espace de noms OpenRouter ne fait pas partie du nom affiché.
-    natif = modele.rsplit("/", 1)[-1]
+    # Les espaces de noms connus ne font pas partie du nom. Un fournisseur
+    # inconnu reste indiqué pour distinguer deux modèles natifs homonymes.
+    prefixe, separateur, natif = modele.rpartition("/")
+    espaces_connus = set(CATALOGUE) | {
+        m.split("/", 1)[0] for fiche in CATALOGUE.values() for m in fiche.modeles if "/" in m
+    }
+    repere = f" ({prefixe})" if separateur and prefixe not in espaces_connus else ""
     # Les dates d'identifiant ne sont pas des décimales de version.
     texte = re.sub(r"-(?:\d{8}|\d{4})(?=-|$)", "", natif)
     texte = re.sub(r"(\d)-(\d+)(?=-|$)", r"\1.\2", texte)
@@ -452,7 +457,8 @@ def libelle_modele(modele: str) -> str:
         m.upper() if re.fullmatch(r"\d+(?:\.\d+)?b", m, re.IGNORECASE)
         else marques.get(m.lower(), m.capitalize()) for m in morceaux
     )
-    return rendu.replace("GPT ", "GPT-", 1) if natif.startswith("gpt-") else rendu
+    nom = rendu.replace("GPT ", "GPT-", 1) if natif.startswith("gpt-") else rendu
+    return nom + repere
 
 
 def catalogue_pour_interface() -> dict[str, list[dict[str, str]]]:
