@@ -78,6 +78,6 @@ describe('P-090 lot 10C : contrat DA des écrans agents', () => {
     expect(source).not.toMatch(/<motion\.button\b/);
     expect(source).toMatch(/aria-label=\{`Ouvrir la session/);
     expect(source).toContain('aria-label="Annuler cette session"');
-    expect(source).toContain('aria-label="Relancer cette tache"');
+    expect(source).toContain('aria-label="Relancer cette tâche"');
   });
 });

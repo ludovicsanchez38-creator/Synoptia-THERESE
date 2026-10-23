@@ -293,8 +293,8 @@ export function SessionList() {
                       onClick={(e) => void handleRetry(e, session.instruction)}
                       disabled={relanceEnCours}
                       className="absolute right-2 top-2 h-8 w-8 text-warning"
-                      title="Relancer cette tache"
-                      aria-label="Relancer cette tache"
+                      title="Relancer cette tâche"
+                      aria-label="Relancer cette tâche"
                     >
                       <RotateCcw size={14} />
                     </Button>
