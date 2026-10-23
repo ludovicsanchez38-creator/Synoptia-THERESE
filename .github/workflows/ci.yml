@@ -145,7 +145,7 @@ jobs:
   backend-tests:
     name: Tests Backend (Python)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     env:
       THERESE_ENV: test
@@ -178,18 +178,20 @@ jobs:
           # 04/09/2026 : la suite a atteint 97 % avant d etre coupee au
           # plafond historique de 8 min. Le seuil de session passe a 12 min ;
           # le timeout de 30 s par test continue de detecter les vrais blocages.
+          # 23/10/2026 (0.80.0) : 628 s pour ~4 700 tests en 0.79, coupée à 97 %
+          # avec ~5 350 tests ; seuil de session porté à 18 min.
           # `src/backend/tests/` tourne directement dans le job parallèle
           # backend-autonomous. Ici, on garde ses collectes fichier par fichier
           # mais on écarte le seul cas qui relancerait toute cette racine.
-          timeout 720 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider -k "not test_le_dossier_src_backend_tests_tient_seul" --junitxml=pytest-ci.xml
+          timeout 1080 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider -k "not test_le_dossier_src_backend_tests_tient_seul" --junitxml=pytest-ci.xml
           EXIT_CODE=$?
           set -e
           if [ $EXIT_CODE -eq 124 ]; then
-            echo "::warning::pytest tué après 12 min (possible threads orphelins)"
+            echo "::warning::pytest tué après 18 min (possible threads orphelins)"
             exit 1
           fi
           exit $EXIT_CODE
-        timeout-minutes: 14
+        timeout-minutes: 20
 
       - name: Nommer les tests rouges (le junit, pas la console tronquee)
         if: failure()
