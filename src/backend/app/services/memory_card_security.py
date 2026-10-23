@@ -23,33 +23,72 @@ MOTIFS = tuple(re.compile(m) for m in (
     r'access\W*token|refresh\W*token|bearer\W|jeton\W|secret\W|\biban\b',
     r'\bakia[a-z0-9]{16}\b|\baiza[a-z0-9_-]{20,}|\beyj[a-z0-9_-]{6,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}',
     r'\b(?:sk|pk)[-_][\w-]{8,}|\bgh[pousr]_[\w]{12,}|\bxox[baprs]-[\w-]+',
-    r'\b(?:sante|medical\w*|medic\w*|diabet\w*|cancer\w*|oncolog\w*|anxiolyti\w*|maladie\w*|patholog\w*|hospital\w*|handicap\w*|vih|enceinte|grossesse)\b',
+    r'\b(?:sante|medical\w*|medic\w*|diabet\w*|cancer\w*|oncolog\w*|anxiolyti\w*|maladie\w*|patholog\w*|hospital\w*|handicap\w*|vih|enceinte|grossesse|psychiatri\w*|antidepresseur\w*|chimiotherapi\w*|neurolog\w*)\b',
     r'ethni\w*|\brac(?:e|ial\w*)\b|\borigine\W+(?:raciale|ethnique)',
     r'politi\w*|electora\w*|\bvote\b|\bparti\b',
     r'religi\w*|\bprie\b|\bmesse\b|philosoph\w*|\bconviction\w*\b',
-    r'syndi[cq]\w*|\b(?:cgt|cfdt|cftc)\b',
+    r'syndi[cq]\w*',
     r'geneti\w*|\badn\b|biometri\w*|reconnaissance\W+faciale|empreinte\W+digitale',
     r'sexu\w*|homosex\w*|heterosex\w*|bisex\w*|\bintim\w*\b',
 ))
 
 
-# Une coordonnée de 15 à 34 caractères (ISO 13616), sans table nationale.
-# Les bornes restent celles du texte d'origine ; seule la coordonnée candidate
-# est compactée. La clé modulo 97 distingue les phrases telles que « de 14h ».
-_MOTIFS_IBAN = tuple(re.compile(
-    r'(?<![a-z0-9])([a-z][\W_]*[a-z][\W_]*\d[\W_]*\d'
-    + r'(?:[\W_]*[a-z0-9]){' + str(longueur - 4) + r'})(?![a-z0-9])'
-) for longueur in range(15, 35))
+# ISO 13616, registre SWIFT, version 103 (septembre 2026), longueurs compactes.
+# https://www.swift.com/swift-resource/9606/download
+_LONGUEURS_IBAN = {
+    'AD': 24, 'AE': 23, 'AL': 28, 'AT': 20, 'AZ': 28, 'BA': 20, 'BE': 16,
+    'BG': 22, 'BH': 22, 'BI': 27, 'BR': 29, 'BY': 28, 'CH': 21, 'CR': 22,
+    'CY': 28, 'CZ': 24, 'DE': 22, 'DJ': 27, 'DK': 18, 'DO': 28, 'EE': 20,
+    'EG': 29, 'ES': 24, 'FI': 18, 'FK': 18, 'FO': 18, 'FR': 27, 'GB': 22,
+    'GE': 22, 'GI': 23, 'GL': 18, 'GR': 27, 'GT': 28, 'HN': 28, 'HR': 21,
+    'HU': 28, 'IE': 22, 'IL': 23, 'IQ': 23, 'IS': 26, 'IT': 27, 'JO': 30,
+    'KW': 30, 'KZ': 20, 'LB': 28, 'LC': 32, 'LI': 21, 'LT': 20, 'LU': 20,
+    'LV': 21, 'LY': 25, 'MC': 27, 'MD': 24, 'ME': 22, 'MK': 19, 'MN': 20,
+    'MR': 27, 'MT': 31, 'MU': 30, 'NI': 28, 'NL': 18, 'NO': 15, 'OM': 23,
+    'PK': 24, 'PL': 28, 'PS': 29, 'PT': 25, 'QA': 29, 'RO': 24, 'RS': 22,
+    'RU': 33, 'SA': 24, 'SC': 31, 'SD': 18, 'SE': 24, 'SI': 19, 'SK': 24,
+    'SM': 27, 'SO': 23, 'ST': 25, 'SV': 28, 'TL': 23, 'TN': 24, 'TR': 26,
+    'UA': 29, 'VA': 22, 'VG': 24, 'XK': 20, 'YE': 30,
+}
+# Le lookahead ne consomme rien : un début invalide ne masque pas le suivant.
+_DEBUT_IBAN = re.compile(r'(?<![A-Za-z0-9])(?=([A-Z][\W_]*[A-Z][\W_]*[0-9][\W_]*[0-9]))')
+_SUITES_IBAN = {longueur: re.compile(
+    r'(?:[\W_]*[A-Za-z0-9]){' + str(longueur - 4) + r'}(?![A-Za-z0-9])'
+) for longueur in set(_LONGUEURS_IBAN.values())}
 
 
 def _contient_iban(texte: str) -> bool:
-    for motif in _MOTIFS_IBAN:
-        for candidat in motif.finditer(texte):
-            compact = re.sub(r'[^a-z0-9]', '', candidat.group(1))
-            rearrange = compact[4:] + compact[:4]
-            chiffres = ''.join(c if c.isdigit() else str(ord(c) - ord('a') + 10) for c in rearrange)
-            if int(chiffres) % 97 == 1:
-                return True
+    # Conserver la casse du pays, y compris après normalisation Unicode.
+    texte = ''.join(c for c in unicodedata.normalize('NFKC', texte)
+                    if unicodedata.category(c) != 'Cf')
+    for debut in _DEBUT_IBAN.finditer(texte):
+        entete = re.sub(r'[^A-Z0-9]', '', debut.group(1))
+        longueur = _LONGUEURS_IBAN.get(entete[:2])
+        if longueur is None:
+            continue
+        suite = _SUITES_IBAN[longueur].match(texte, debut.start() + len(debut.group(1)))
+        if suite is None:
+            continue
+        compact = entete + re.sub(r'[^A-Za-z0-9]', '', suite.group()).upper()
+        rearrange = compact[4:] + compact[:4]
+        chiffres = ''.join(c if c.isdigit() else str(ord(c) - ord('A') + 10) for c in rearrange)
+        if int(chiffres) % 97 == 1:
+            return True
+    return False
+
+
+_SYNDICAT = re.compile(r'\b(?:cgt|cfdt|fo|cfe[\W_]*cgc|cftc|unsa|sud|solidaires|fsu|force\s+ouvriere)\b')
+_APPARTENANCE = re.compile(r'\b(?:adher\w*|adhesion\w*|syndiqu\w*|membres?|cartes?|encart\w*|militant\w*|delegu\w*|cotis\w*)\b')
+
+
+def _appartenance_syndicale(texte: str) -> bool:
+    # Même proposition, au plus six mots intercalés, dans les deux sens.
+    for proposition in re.split(r'[.;!?\n]', texte):
+        for syndicat in _SYNDICAT.finditer(proposition):
+            for appartenance in _APPARTENANCE.finditer(proposition):
+                gauche, droite = sorted([syndicat, appartenance], key=lambda m: m.start())
+                if len(re.findall(r'\w+', proposition[gauche.end():droite.start()])) <= 6:
+                    return True
     return False
 
 
@@ -87,27 +126,25 @@ def motif_sensible(valeur: Any) -> str | None:
         return 'un mot de passe ou une clé secrète'
     if any(m.search(texte) for m in MOTIFS[1:4]):
         return 'une coordonnée bancaire ou un jeton secret'
-    # Exceptions métier ciblées : on retire seulement le groupe ambigu, puis
-    # on cherche encore les catégories sensibles dans le reste de la phrase.
-    contexte = re.sub(
-        r'\bdiagnostics? (?:de performance energetique|reseau|comptable|structurel|de toiture'
-        r'|des besoins de formation|du serveur informatique)\b'
-        r'|\btraitements? (?:de (?:la |une )?commande|des commandes|des factures fournisseurs'
-        r'|des ecritures comptables|des eaux du chantier|des inscriptions en formation'
-        r'|des donnees informatiques)\b', '', texte
-    )
-    if MOTIFS[4].search(texte) or re.search(r'\b(?:diagnostic\w*|traitement\w*|psychiatri\w*)\b', contexte):
+    # « Traitement » et « diagnostic » sont ambigus ; les termes médicaux,
+    # au singulier comme au pluriel, portent la catégorie de santé.
+    if MOTIFS[4].search(texte):
         return 'une information de santé'
-    contexte = re.sub(r'\bparti en conges\b|\bje vous prie\b', '', contexte)
+    # « prie de » suivi d'un infinitif est une formule de politesse.
+    contexte = re.sub(
+        r'\bprie\s+de\s+(?:(?:bien|ne|pas|vous|nous|le|la|les|lui|leur|me|te|se)\s+)*'
+        r'[a-z]+(?:er|ir|re)\b', '', texte
+    )
+    contexte = re.sub(r'\bparti(?:e|s|es)?\s+(?=en\b)', '', contexte)
     categories = ('une origine ethnique ou raciale', 'une opinion politique',
                   'une conviction religieuse ou philosophique', 'une appartenance syndicale',
                   'une donnée génétique ou biométrique', 'une information de vie sexuelle')
     for motif_categorie, categorie in zip(MOTIFS[5:], categories, strict=True):
         if motif_categorie.search(contexte):
             return categorie
-    if re.search(r'\b(?:adherent(?:e|s|es)?|membres?|syndique(?:e|s|es)?|syndicat)\W+(?:(?:a|de|du)\W+)?fo\b', texte):
+    if _appartenance_syndicale(texte):
         return 'une appartenance syndicale'
-    if _contient_iban(texte):
+    if _contient_iban(valeur):
         return 'une coordonnée bancaire (IBAN)'
     # Cartes : Luhn, pas les identifiants métier (SIRET) admis par le corpus.
     for suite in re.findall(r'(?<!\d)(?:\d[ .-]?){13,19}(?!\d)', texte):
