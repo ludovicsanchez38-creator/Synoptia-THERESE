@@ -9,6 +9,11 @@ def migrer_activites(conn: Any) -> None:
     colonnes = {r[1]: r for r in conn.execute('PRAGMA table_info(activities)')}
     if not colonnes:
         return
+    # Aucun déclencheur n'appartient au schéma standard. Préserver aussi ceux
+    # d'une ancienne table, qu'une reconstruction ferait disparaître.
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE type='trigger' AND tbl_name='activities'").fetchone():
+        logger.warning('Migration des activités : réparations des liens non effectuées (déclencheur présent).')
+        return
     reconstruire = colonnes['contact_id'][3] or not {
         'project_id', 'conversation_id', 'execution_id', 'statut', 'remplace_id',
     } <= colonnes.keys()

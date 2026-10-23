@@ -309,6 +309,38 @@ def test_migration_annule_une_fk_de_titre_vers_une_table_absente(
             assert not [r for r in caplog.records if r.name == 'app.models.activity_migration']
 
 
+@pytest.mark.parametrize('pilote', ['sqlite', 'sqlcipher'])
+@pytest.mark.parametrize('foreign_keys', [0, 1], ids=['fk-off', 'fk-on'])
+@pytest.mark.parametrize('schema', ['ancien', 'migre'])
+@pytest.mark.parametrize('action', [
+    'DELETE FROM activities WHERE id=NEW.id;',
+    'UPDATE activities SET description=NULL WHERE id=NEW.id;',
+], ids=['suppression', 'note-null'])
+def test_migration_ne_repare_pas_en_presence_d_un_declencheur(
+    tmp_path, caplog, pilote, foreign_keys, schema, action,
+):
+    with closing(connecter(tmp_path / 'declencheur.db', pilote)) as conn:
+        preparer(conn, schema, [activite(contact_id='contact-absent', project_id='projet-absent',
+                                       remplace_id='activite-absente')], foreign_keys)
+        conn.execute(f'''CREATE TRIGGER modification_lien
+            AFTER UPDATE OF contact_id ON activities
+            WHEN NEW.contact_id IS NULL
+            BEGIN {action} END''')
+        conn.commit()
+        avant, changements = etat(conn), conn.total_changes
+        for _ in range(2):
+            caplog.clear()
+            with caplog.at_level(logging.WARNING, logger='app.models.activity_migration'):
+                migrer_activites(conn)
+            assert etat(conn) == avant
+            assert conn.total_changes == changements
+            assert conn.execute('PRAGMA foreign_keys').fetchone()[0] == foreign_keys
+            assert not conn.in_transaction
+            assert [r.getMessage() for r in caplog.records if r.name == 'app.models.activity_migration'] == [
+                'Migration des activités : réparations des liens non effectuées (déclencheur présent).',
+            ]
+
+
 def test_absence_table_ne_modifie_rien():
     with closing(sqlite3.connect(':memory:')) as conn:
         conn.execute('PRAGMA foreign_keys=ON')
@@ -319,7 +351,10 @@ def test_absence_table_ne_modifie_rien():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('pilote', ['sqlite', 'sqlcipher'])
-async def test_init_db_redemarre_avec_des_activites_orphelines(tmp_path, monkeypatch, caplog, pilote):
+@pytest.mark.parametrize('declencheur', [None, 'suppression', 'note-null'])
+async def test_init_db_redemarre_avec_des_activites_orphelines(
+    tmp_path, monkeypatch, caplog, pilote, declencheur,
+):
     from app.models import database
 
     monkeypatch.setattr(database.settings, 'data_dir', tmp_path)
@@ -339,18 +374,29 @@ async def test_init_db_redemarre_avec_des_activites_orphelines(tmp_path, monkeyp
                     f'INSERT INTO activities ({",".join(COLONNES)}) '
                     f'VALUES ({",".join("?" for _ in COLONNES)})', tuple(ligne.values()),
                 )
+            if declencheur:
+                action = ('DELETE FROM activities WHERE id=NEW.id;' if declencheur == 'suppression'
+                          else 'UPDATE activities SET description=NULL WHERE id=NEW.id;')
+                conn.execute(f'''CREATE TRIGGER modification_lien
+                    AFTER UPDATE OF contact_id ON activities
+                    WHEN NEW.contact_id IS NULL
+                    BEGIN {action} END''')
             conn.commit()
         caplog.clear()
         with caplog.at_level(logging.WARNING, logger='app.models.activity_migration'):
             await database.init_db()
         assert database._db_cipher_active == (pilote == 'sqlcipher')
         with closing(database.db_connect(database.settings.db_path)) as conn:
-            attendues = [ligne | dict.fromkeys(LIENS) for ligne in lignes]
-            attendues[0]['remplace_id'] = None
+            attendues = [dict(ligne) for ligne in lignes]
+            if not declencheur:
+                attendues = [ligne | dict.fromkeys(LIENS) for ligne in lignes]
+                attendues[0]['remplace_id'] = None
             assert lire(conn) == attendues
-            assert not conn.execute('PRAGMA foreign_key_check(activities)').fetchall()
+            if not declencheur:
+                assert not conn.execute('PRAGMA foreign_key_check(activities)').fetchall()
         assert [r.getMessage() for r in caplog.records if r.name == 'app.models.activity_migration'] == [
-            'Migration des activités : 7 lien(s) orphelin(s) remis à NULL.',
+            'Migration des activités : réparations des liens non effectuées (déclencheur présent).'
+            if declencheur else 'Migration des activités : 7 lien(s) orphelin(s) remis à NULL.',
         ]
     finally:
         await database.close_db()
