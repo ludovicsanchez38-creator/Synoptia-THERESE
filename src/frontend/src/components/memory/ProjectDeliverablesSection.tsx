@@ -4,7 +4,7 @@
  * client »). Même création que la vue des livrables (P-048), statut « À
  * faire » ; en lecture seule (démo), la liste seule.
  */
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Package } from 'lucide-react';
 
 import { createDeliverable, listDeliverables, type DeliverableResponse } from '../../services/api/crm-extended';
@@ -34,6 +34,7 @@ export function ProjectDeliverablesSection({
   const [lectureEnCours, setLectureEnCours] = useState(false);
   const [titre, setTitre] = useState('');
   const [enCours, setEnCours] = useState(false);
+  const versionEcritures = useRef(0);
 
   useEffect(() => {
     setLivrables(null);
@@ -43,9 +44,16 @@ export function ProjectDeliverablesSection({
 
   useEffect(() => {
     let vivant = true;
+    const versionLue = versionEcritures.current;
     setLectureEnCours(true);
     listDeliverables({ project_id: projectId })
-      .then((liste) => { if (vivant) { setLivrables(liste); setErreurLecture(false); } })
+      .then((liste) => {
+        // Une réponse antérieure à un ajout ne connaît pas ce livrable.
+        if (vivant && versionLue === versionEcritures.current) {
+          setLivrables(liste);
+          setErreurLecture(false);
+        }
+      })
       .catch(() => { if (vivant) setErreurLecture(true); })
       .finally(() => { if (vivant) setLectureEnCours(false); });
     return () => { vivant = false; };
@@ -58,6 +66,7 @@ export function ProjectDeliverablesSection({
     setErreur(null);
     try {
       const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: 'a_faire' });
+      versionEcritures.current += 1;
       setLivrables((courants) => [...(courants ?? []), cree]);
       setTitre('');
     } catch (reason) {

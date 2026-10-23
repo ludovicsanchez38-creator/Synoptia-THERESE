@@ -3,7 +3,7 @@
  * passait par la capacité « Livrables et suivi client » ; la fenêtre du
  * projet ne montrait ni ne créait ses livrables.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ listDeliverables: vi.fn(), createDeliverable: vi.fn() }));
@@ -86,4 +86,32 @@ it('B-1094 : un ajout ne répare pas une lecture ; seule une relecture réussie 
   await screen.findByText('Rapport existant');
   expect(screen.getByText('Notice de montage')).toBeInTheDocument();
   expect(screen.queryByRole('alert')).toBeNull();
+});
+
+it.each(['lecture puis écriture', 'écriture puis lecture'])('B-1094 : une lecture commencée avant un ajout ne l’efface pas (%s)', async (ordre) => {
+  let relire!: (liste: unknown[]) => void;
+  let creer!: (livrable: object) => void;
+  const lecture = new Promise<unknown[]>((resolve) => { relire = resolve; });
+  const ecriture = new Promise<object>((resolve) => { creer = resolve; });
+  api.listDeliverables.mockReset().mockRejectedValueOnce(new Error('500')).mockReturnValueOnce(lecture);
+  api.createDeliverable.mockReset().mockReturnValueOnce(ecriture);
+  render(<ProjectDeliverablesSection projectId="p-course" />);
+  await screen.findByRole('alert');
+  fireEvent.click(screen.getByRole('button', { name: 'Relire les livrables' }));
+  await waitFor(() => expect(api.listDeliverables).toHaveBeenCalledTimes(2));
+  fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Dossier de réception' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Ajouter le livrable' }));
+  const nouveau = { id: 'nouveau', title: 'Dossier de réception', status: 'a_faire' };
+  if (ordre === 'lecture puis écriture') {
+    await act(async () => { relire([]); });
+    await act(async () => { creer(nouveau); });
+  } else {
+    await act(async () => { creer(nouveau); });
+    expect(screen.getByText('Dossier de réception')).toBeInTheDocument();
+    await act(async () => { relire([]); });
+    // La réponse antérieure n'a pas relu l'ajout : l'alerte reste justifiée.
+    expect(screen.getByRole('alert')).toHaveTextContent('La liste peut être incomplète.');
+  }
+  expect(screen.getByText('Dossier de réception')).toBeInTheDocument();
+  expect(screen.queryByText('Aucun livrable pour ce projet.')).toBeNull();
 });
