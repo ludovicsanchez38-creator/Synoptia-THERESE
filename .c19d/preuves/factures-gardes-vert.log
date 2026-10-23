@@ -1,0 +1,39 @@
+Commande : npx vitest run --maxWorkers=2 --testTimeout=15000 src/components/invoices/InvoicesPanel.da.test.tsx src/components/invoices/InvoicesPanel.debordement.p162.test.tsx src/components/invoices/InvoicesPanel.largeurEtroite.test.tsx
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/components/invoices/InvoicesPanel.da.test.tsx (11 tests) 8001ms
+     ✓ invoice-item est un tr sans tabIndex, le clic Pièce ouvre, client + PDF + Supprimer  1453ms
+     ✓ accorde pièce / pièces, dont échues, et 100+ sans dont  3253ms
+     ✓ Tout et Toutes sont pressés au départ ; Devis assainit comme aujourd’hui  498ms
+     ✓ un seul Réessayer sur l’erreur ; squelettes 7 pistes ; trois vides distincts  1106ms
+     ✓ Nouveau devis est h-11 ; les autres Button du panneau sont h-9 (hors Segments et commande client)  363ms
+     ✓ sans client, la commande porte le numéro en muted et la hauteur de la rangée  402ms
+ ✓ src/components/invoices/InvoicesPanel.debordement.p162.test.tsx (18 tests) 9324ms
+     ✓ annonce les colonnes à droite au cadrage initial de 800 px  1972ms
+     ✓ annonce les deux côtés au milieu puis seulement la gauche au bord  468ms
+     ✓ nomme et focalise le cadre qui fait réellement défiler le tableau  344ms
+     ✓ décrit le défilement avant les lignes sans ajouter de bouton  349ms
+     ✓ réagit à un changement de cadre et retire toute description lorsque le tableau tient  436ms
+     ✓ recalcule la largeur de contenu observée même lorsque le cadre ne change pas  324ms
+     ✓ n’annonce aucune largeur cachée avant qu’un cadre mesurable existe  328ms
+     ✓ garde exactement le focus lors de la disparition de l’indice  354ms
+     ✓ préserve le focus d’un filtre pendant le défilement et le recalcul  549ms
+     ✓ retire l’indice pendant le rechargement puis recalcule après une liste remplacée  772ms
+     ✓ ne garde aucun indice périmé après un chargement échoué  736ms
+     ✓ retire indice et arrêt clavier quand le filtre ne contient aucune pièce  649ms
+     ✓ observe de nouveau après fermeture puis réouverture du panneau modal  678ms
+     ✓ nettoie son observateur au démontage et garde TTC/PDF/Supprimer collés  315ms
+ ✓ src/components/invoices/InvoicesPanel.largeurEtroite.test.tsx (2 tests) 2271ms
+     ✓ le montant et les boutons partagent la dernière colonne, collée à droite  1841ms
+     ✓ seule la date de l’échéance est insécable  427ms
+
+ Test Files  3 passed (3)
+      Tests  31 passed (31)
+   Start at  02:16:24
+   Duration  25.28s (transform 4.24s, setup 1.45s, import 10.93s, tests 19.60s, environment 8.75s)
+
+
+Code de sortie : 0

@@ -1,0 +1,79 @@
+Commande : npx eslint src --max-warnings 27
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/atelier/AgentCatalog.tsx
+  193:6  warning  React Hook useEffect has missing dependencies: 'customModel' and 'selectedModel'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/calendar/CalendarPanel.tsx
+  135:6  warning  React Hook useEffect has missing dependencies: 'setAccounts' and 'setCurrentAccount'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  158:6  warning  React Hook useEffect has a missing dependency: 'loadCalendars'. Either include it or remove the dependency array                          react-hooks/exhaustive-deps
+  165:6  warning  React Hook useEffect has a missing dependency: 'loadEvents'. Either include it or remove the dependency array                             react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/chat/ChatInput.tsx
+  1366:6  warning  React Hook useEffect has a missing dependency: 'initialSkillId'. Either include it or remove the dependency array. If 'setPendingSkillId' needs the current value of 'initialSkillId', you can also switch to useReducer instead of useState and read 'initialSkillId' in the reducer  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/chat/MessageBubble.tsx
+  201:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  288:6   warning  React Hook useCallback has a missing dependency: 'message'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/chat/MessageList.tsx
+  125:6  warning  React Hook useEffect has a missing dependency: 'conversation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/chat/SlashCommandsMenu.tsx
+   42:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  413:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/crm/ActivityTimeline.tsx
+  54:6  warning  React Hook useEffect has a missing dependency: 'loadActivities'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/crm/CRMPanel.tsx
+  83:6  warning  React Hook useEffect has a missing dependency: 'loadContacts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/crm/DeliverablesList.tsx
+  29:6  warning  React Hook useEffect has a missing dependency: 'loadDeliverables'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/email/EmailDetail.tsx
+  74:6  warning  React Hook useEffect has missing dependencies: 'markAsRead' and 'message'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/email/EmailList.tsx
+  67:6  warning  React Hook useEffect has a missing dependency: 'loadMessages'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/email/EmailPanel.tsx
+  106:6  warning  React Hook useEffect has missing dependencies: 'loadAccounts' and 'triggerRefresh'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/email/ResponseGeneratorModal.tsx
+  142:6  warning  React Hook React.useEffect has a missing dependency: 'generateResponse'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/email/wizard/VerifyStep.tsx
+  45:6  warning  React Hook useEffect has a missing dependency: 'startOAuthFlow'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/home/RecentConversations.tsx
+  9:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/invoices/InvoicesPanel.tsx
+  120:6  warning  React Hook useEffect has a missing dependency: 'loadInvoices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/memory/MemoryPanel.tsx
+  261:6  warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/prototype/PrototypeUnifiedViewCanvas.tsx
+  18:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/settings/LLMTab.tsx
+  43:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/settings/SettingsModal.tsx
+   49:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  220:6   warning  React Hook useEffect has a missing dependency: 'loadSettings'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/settings/ToolsPanel.tsx
+  275:6  warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/tasks/TasksPanel.tsx
+  150:6  warning  React Hook useEffect has a missing dependency: 'loadTasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 27 problems (0 errors, 27 warnings)
+
+
+Code de sortie : 0

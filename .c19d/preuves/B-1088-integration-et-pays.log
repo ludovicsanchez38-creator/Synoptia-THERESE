@@ -1,0 +1,45 @@
+Commande : .venv/bin/pytest -o addopts= -q tests/test_c19d_b1088_securite_memoire.py tests/test_r2_2_protection.py --cov= --no-cov -p pytest_finish --timeout=30
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel
+
+..................................F.....................                 [100%]
+=================================== FAILURES ===================================
+____ test_formats_des_dix_pays_maintenus[IT60 X054 2811 1010 0000 0123 456] ____
+
+iban = 'IT60 X054 2811 1010 0000 0123 456'
+
+    @pytest.mark.parametrize('iban', [
+        'ES91 2100 0418 4502 0005 1332', 'IT60 X054 2811 1010 0000 0123 456',
+        'CH93 0076 2011 6238 5295 7', 'LU28 0019 4006 4475 0000',
+        'PT50 0002 0123 1234 5678 9015 4', 'BE68 5390 0754 7034',
+        'NL91 ABNA 0417 1643 00', 'DE89 3704 0044 0532 0130 00',
+        'GB82 WEST 1234 5698 7654 32', 'ＦＲ７６３０００６００００１１２３４５６７８９０１８９',
+    ])
+    def test_formats_des_dix_pays_maintenus(iban):
+>       assert contient_sensible(iban)
+E       AssertionError: assert False
+E        +  where False = contient_sensible('IT60 X054 2811 1010 0000 0123 456')
+
+tests/test_c19d_b1088_securite_memoire.py:63: AssertionError
+=============================== warnings summary ===============================
+../wt-recette-20261020/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-recette-20261020/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/backend/app/services/skills/base.py:59
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/backend/app/services/skills/base.py:59: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class SkillResult(BaseModel):
+
+../wt-recette-20261020/.venv/lib/python3.14/site-packages/sqlmodel/main.py:534
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-recette-20261020/.venv/lib/python3.14/site-packages/sqlmodel/main.py:534: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    new_cls = super().__new__(cls, name, bases, dict_used, **config_kwargs)
+
+../wt-recette-20261020/.venv/lib/python3.14/site-packages/pydantic/_internal/_generate_schema.py:319
+  /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-recette-20261020/.venv/lib/python3.14/site-packages/pydantic/_internal/_generate_schema.py:319: PydanticDeprecatedSince20: `json_encoders` is deprecated. See https://docs.pydantic.dev/2.12/concepts/serialization/#custom-serializers for alternatives. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_c19d_b1088_securite_memoire.py::test_formats_des_dix_pays_maintenus[IT60 X054 2811 1010 0000 0123 456]
+1 failed, 55 passed, 4 warnings in 33.89s
+
+Code de sortie : 1

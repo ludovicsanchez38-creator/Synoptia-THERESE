@@ -1,0 +1,15 @@
+src/components/chat/EntitySuggestion.actions.c19d.test.tsx(5,39): error TS2739: Type '{ name: string; confidence: number; }' is missing the following properties from type 'ExtractedProject': description, budget, status
+src/components/chat/EntitySuggestion.c19d.test.tsx(6,33): error TS2322: Type '{ projects: { name: string; confidence: number; }[]; contacts: never[]; messageId: string; onDismiss: Mock<Procedure>; onSaved: Mock<Procedure>; }' is not assignable to type 'EntitySuggestionProps'.
+  Types of property 'projects' are incompatible.
+    Type '{ name: string; confidence: number; }[]' is not assignable to type 'ExtractedProject[]'.
+      Type '{ name: string; confidence: number; }' is missing the following properties from type 'ExtractedProject': description, budget, status
+src/components/chat/EntitySuggestion.c19d.test.tsx(10,11): error TS2322: Type '{ projects: { name: string; confidence: number; }[]; contacts: never[]; messageId: string; onDismiss: Mock<Procedure>; onSaved: Mock<Procedure>; }' is not assignable to type 'EntitySuggestionProps'.
+  Types of property 'projects' are incompatible.
+    Type '{ name: string; confidence: number; }[]' is not assignable to type 'ExtractedProject[]'.
+      Type '{ name: string; confidence: number; }' is missing the following properties from type 'ExtractedProject': description, budget, status
+src/components/memory/ProjectsKanban.tsx(288,7): error TS2322: Type 'Function | undefined' is not assignable to type 'PointerEventHandler<HTMLDivElement> | undefined'.
+  Type 'Function' is not assignable to type 'PointerEventHandler<HTMLDivElement>'.
+    Type 'Function' provides no match for the signature '(event: PointerEvent<HTMLDivElement>): void'.
+src/components/tasks/TaskKanban.tsx(294,7): error TS2322: Type 'Function | undefined' is not assignable to type 'PointerEventHandler<HTMLDivElement> | undefined'.
+  Type 'Function' is not assignable to type 'PointerEventHandler<HTMLDivElement>'.
+    Type 'Function' provides no match for the signature '(event: PointerEvent<HTMLDivElement>): void'.

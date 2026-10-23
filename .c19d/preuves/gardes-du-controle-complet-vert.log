@@ -1,0 +1,65 @@
+Commande : npx vitest run --maxWorkers=2 --testTimeout=15000 src/lib/catalogueModeles.openrouter.r19b.test.ts src/components/invoices/InvoicesPanel.da.test.tsx src/components/invoices/InvoicesPanel.clavier.test.tsx src/components/invoices/InvoicesPanel.libelleAccessible.b1615.test.tsx src/components/invoices/nomDuClientAffiche.test.tsx src/components/prototype/PrototypeConversationDrawer.da.test.tsx src/components/prototype/RetourNavigation.test.tsx
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/components/invoices/InvoicesPanel.da.test.tsx (11 tests) 8360ms
+     ✓ invoice-item est un tr sans tabIndex, le clic Pièce ouvre, client + PDF + Supprimer  1631ms
+     ✓ accorde pièce / pièces, dont échues, et 100+ sans dont  2827ms
+     ✓ Tout et Toutes sont pressés au départ ; Devis assainit comme aujourd’hui  763ms
+     ✓ un seul Réessayer sur l’erreur ; squelettes 7 pistes ; trois vides distincts  1548ms
+     ✓ Nouveau devis est h-11 ; les autres Button du panneau sont h-9 (hors Segments et commande client)  498ms
+     ✓ sans client, la commande porte le numéro en muted et la hauteur de la rangée  318ms
+ ✓ src/components/prototype/RetourNavigation.test.tsx (4 tests) 4111ms
+     ✓ au lancement, la pile est vide et aucune vue n’est empilée  696ms
+     ✓ ouvrir une vue puis revenir ramène à l’accueil en UN seul geste  2446ms
+     ✓ la PREMIÈRE navigation depuis l’accueil ouvre bien la vue  488ms
+     ✓ l’historique reflète l’écran affiché, jamais un écran fantôme  468ms
+ ✓ src/components/invoices/InvoicesPanel.clavier.test.tsx (3 tests) 2466ms
+     ✓ expose une commande nommée par le client, qui ouvre le formulaire  1252ms
+     ✓ retombe sur la référence pour nommer la commande quand le client manque  650ms
+     ✓ ouvrir le PDF depuis la ligne n’ouvre pas aussi le formulaire  553ms
+stdout | handleGeneratePDF (/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/invoices/InvoicesPanel.tsx:159:17)
+PDF generated but local opening is unavailable: TypeError: Cannot read properties of undefined (reading 'pdf_path')
+    at handleGeneratePDF (/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/invoices/InvoicesPanel.tsx:154:27)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+stderr | handleGeneratePDF (/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/invoices/InvoicesPanel.tsx:168:15)
+Failed to generate PDF: TypeError: Cannot read properties of undefined (reading 'pdf_path')
+    at handleGeneratePDF (/home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend/src/components/invoices/InvoicesPanel.tsx:163:51)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+stderr | src/components/prototype/PrototypeConversationDrawer.da.test.tsx > Lot 3 DA : lignes de conversation > une ligne courante porte aria-current et bg-accent-tint, le kebab 36 px muted, Entrée ouvre encore le chat
+An update to PrototypeConversationDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/invoices/InvoicesPanel.libelleAccessible.b1615.test.tsx (2 tests) 2151ms
+     ✓ deux brouillons sans nom se distinguent par la date et le montant  1869ms
+ ✓ src/components/prototype/PrototypeConversationDrawer.da.test.tsx (9 tests) 4502ms
+     ✓ le panneau fait 22 rem, le titre est un h2 text-base qui nomme la région  1040ms
+     ✓ « Nouvelle conversation » est le Button primary du pied, et surface=new lui donne le focus  542ms
+     ✓ une ligne courante porte aria-current et bg-accent-tint, le kebab 36 px muted, Entrée ouvre encore le chat  433ms
+     ✓ updatedLabel : heure du jour civil, heure d’hier, jour de la semaine, puis jour et mois  682ms
+     ✓ Alerte sur verrouillage, zéro Réessayer ; la confirmation de suppression n’est pas une alerte  542ms
+     ✓ aucune classe text-xs sur un interactif ni dans son sous-arbre  915ms
+ ✓ src/lib/catalogueModeles.openrouter.r19b.test.ts (5 tests) 19ms
+ ✓ src/components/invoices/nomDuClientAffiche.test.tsx (4 tests) 1451ms
+     ✓ écrit le nom du client dans la ligne du document  371ms
+     ✓ écrit la référence quand le client est inconnu  1071ms
+
+ Test Files  7 passed (7)
+      Tests  38 passed (38)
+   Start at  02:52:37
+   Duration  39.07s (transform 17.99s, setup 2.67s, import 27.62s, tests 23.06s, environment 17.65s)
+
+
+Code de sortie : 0

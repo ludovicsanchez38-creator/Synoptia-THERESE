@@ -1,0 +1,190 @@
+Commande : npx vitest run src/components/board/BoardPanel.diagnostic.c19d.test.tsx -t la fenêtre Décision coche Souverain
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ❯ src/components/board/BoardPanel.diagnostic.c19d.test.tsx (5 tests | 1 failed | 4 skipped) 4487ms
+     × la fenêtre Décision coche Souverain 4462ms
+     ↓ avec un service en ligne, Cloud reste coché
+     ↓ le canevas Décision coche Souverain
+   ↓ B-1051 : les deux noms accessibles reprennent les libellés visibles
+   ↓ B-1052 : les deux logos suivent les couleurs du thème
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/board/BoardPanel.diagnostic.c19d.test.tsx > Décision : Souverain par défaut quand Ollama est le service choisi > la fenêtre Décision coche Souverain
+Error: expect(element).toHaveAttribute("aria-pressed", "true") // element.getAttribute("aria-pressed") === "true"
+
+Expected the element to have attribute:
+  aria-pressed="true"
+Received:
+  aria-pressed="false"
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"fixed inset-0 bg-black/60 backdrop-blur-sm z-50"[39m
+        [33minert[39m=[32m""[39m
+        [33mstyle[39m=[32m"opacity: 0;"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Décision"[39m
+        [33maria-modal[39m=[32m"true"[39m
+        [33mclass[39m=[32m"fixed inset-4 md:inset-8 lg:inset-12 bg-surface rounded-md border border-border z-50 overflow-hidden flex flex-col shadow-2xl"[39m
+        [33mdata-testid[39m=[32m"board-panel"[39m
+        [33mrole[39m=[32m"dialog"[39m
+        [33mstyle[39m=[32m"opacity: 0; transform: translateY(20px) scale(0.95);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between px-6 py-4 border-b border-border/50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-3"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"w-5 h-5"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mviewBox[39m=[32m"0 0 40 40"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"20"[39m
+                  [33mcy[39m=[32m"20"[39m
+                  [33mfill[39m=[32m"var(--color-text)"[39m
+                  [33mr[39m=[32m"5.5"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"20"[39m
+                  [33mcy[39m=[32m"8"[39m
+                  [33mr[39m=[32m"3"[39m
+                  [33mstroke[39m=[32m"var(--color-accent-cyan-ink)"[39m
+                  [33mstroke-width[39m=[32m"1.5"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"31.4"[39m
+                  [33mcy[39m=[32m"16.3"[39m
+                  [33mr[39m=[32m"3"[39m
+                  [33mstroke[39m=[32m"var(--color-agent-purple)"[39m
+                  [33mstroke-width[39m=[32m"1.5"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"27.1"[39m
+                  [33mcy[39m=[32m"29.7"[39m
+                  [33mr[39m=[32m"3"[39m
+                  [33mstroke[39m=[32m"var(--color-error)"[39m
+                  [33mstroke-width[39m=[32m"1.5"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12.9"[39m
+                  [33mcy[39m=[32m"29.7"[39m
+                  [33mr[39m=[32m"3"[39m
+                  [33mstroke[39m=[32m"var(--color-warning)"[39m
+                  [33mstroke-width[39m=[32m"1.5"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"8.6"[39m
+                  [33mcy[39m=[32m"16.3"[39m
+                  [33mr[39m=[32m"3"[39m
+                  [33mstroke[39m=[32m"var(--color-accent-magenta-ink)"[39m
+                  [33mstroke-width[39m=[32m"1.5"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"text-lg font-semibold text-text"[39m
+              [36m>[39m
+                [0mDécision[0m
+              [36m</h2>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-8 px-3 text-sm rounded-sm"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide lucide-history w-4 h-4 mr-2"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 3v5h5"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 7v5l4 2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mHistorique[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Fermer le Board"[39m
+              [33mclass[39m=[32m"inline-flex items-center justify-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-transparent text-accent hover:bg-accent-tint h-9 w-9 rounded-md"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide lucide-x w-5 h-5"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M18 6 6 18"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m6 6 12 12"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto p-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"max-w-2xl mx-auto"[39m
+            [33mstyle[39m=[32m"opacity: 0; transform: translateY(20px);"[39m
+          [36m>[39m
+            [36m<...
+ ❯ src/components/board/BoardPanel.diagnostic.c19d.test.tsx:45:83
+     43|     expect(await modeDuBoardParDefaut()).toBe('sovereign');
+     44|     render(<BoardPanel isOpen onClose={vi.fn()} />);
+     45|     await waitFor(() => expect(screen.getByRole('button', { name: /Sou…
+       |                                                                                   ^
+     46|   });
+     47| 
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../wt-c12/src/frontend/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 skipped (5)
+   Start at  02:14:55
+   Duration  17.69s (transform 4.17s, setup 944ms, import 7.80s, tests 4.49s, environment 3.40s)
+
+
+Code de sortie : 1

@@ -1,0 +1,28 @@
+Commande : npx vitest run --maxWorkers=2 --testTimeout=15000 src/components/chat/PanelContainer.b1726.test.tsx src/test/c19d/B-1102.test.js
+Dossier : /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+
+ RUN  v4.0.17 /home/synoptia/Bureau/passation-THERESE-2026-09-23/THERESE-pour-Syn-2026-09-23/run-dq/wt-c12-visuel/src/frontend
+
+ ✓ src/test/c19d/B-1102.test.js (13 tests) 139ms
+ ✓ src/components/chat/PanelContainer.b1726.test.tsx (12 tests) 7237ms
+     ✓ isole le fond, piège le clavier et restitue le focus à la fermeture  1043ms
+   ✓ B-1056 : la commande reçoit le focus, le piège et nomme sa fermeture  600ms
+   ✓ Rejeu B-1056 : Résumer ce courrier  715ms
+   ✓ Rejeu B-1056 : Relire le devis  595ms
+   ✓ Rejeu B-1056 : Préparer un rendez-vous  603ms
+   ✓ Rejeu B-1056 : Expliquer la facture  597ms
+   ✓ Rejeu B-1056 : Classer cette note  610ms
+   ✓ Rejeu B-1056 : Lister les travaux  540ms
+   ✓ Rejeu B-1056 : Traduire le paragraphe  470ms
+   ✓ Rejeu B-1056 : Comparer les offres  520ms
+   ✓ Rejeu B-1056 : Rédiger une relance  481ms
+   ✓ Rejeu B-1056 : Préparer la visite  454ms
+
+ Test Files  2 passed (2)
+      Tests  25 passed (25)
+   Start at  02:17:27
+   Duration  14.70s (transform 4.44s, setup 958ms, import 3.05s, tests 7.38s, environment 5.83s)
+
+
+Code de sortie : 0
