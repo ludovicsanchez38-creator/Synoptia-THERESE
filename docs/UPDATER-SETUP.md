@@ -22,7 +22,7 @@ GitHub Actions (release.yml)
    │    (activé SEULEMENT en CI : les builds locaux `make build` ne sont pas
    │     impactés et n'ont pas besoin de la clé)
    ├─ génère les .sig signés avec la clé privée
-   └─ tauri-action assemble et publie latest.json (asset de la release)
+   └─ job manifeste-updater : assemble, valide puis publie latest.json
    │
    ▼
 /release-therese (skill, local)
@@ -41,6 +41,25 @@ que GitHub fait pointer `/releases/latest/` uniquement sur la dernière release
 **stable** (ni draft, ni prerelease). Toutes les versions THÉRÈSE étant des
 `-alpha` (prerelease), cette URL renvoyait toujours un 404 : c'était la cause du
 canal de mise à jour cassé.
+
+## Contrôle du manifeste Linux (B-1111)
+
+La matrice Tauri ne publie plus elle-même `latest.json`. Le job final attend
+les trois builds, conserve les signatures et publie uniquement le manifeste
+validé par `scripts/nettoyer_latest_json.py`. Le `.deb` n'a que la cible
+`linux-x86_64-deb` : une cible Linux générique doit désigner un AppImage.
+
+Le workflow local `/release-therese` qui copie le manifeste sur synoptia.fr
+n'est pas versionné dans ce dépôt. Avant cette copie, exécuter sur le fichier
+téléchargé, et interrompre la publication si la commande échoue :
+
+```bash
+python3 scripts/nettoyer_latest_json.py latest.json
+```
+
+Le nettoyeur retire les alias génériques pointant vers un `.deb` et refuse
+les autres formats Linux génériques qui ne sont pas des AppImage. Il ne
+télécharge aucun paquet et ne remplace pas la vérification des signatures.
 
 ## Clés
 

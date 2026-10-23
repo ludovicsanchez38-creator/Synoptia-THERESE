@@ -6,8 +6,14 @@ No external dependencies, works completely offline.
 Part of the "Local First" architecture.
 """
 
+import asyncio
 import logging
+import sys
+from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, date, datetime
+from importlib import import_module
+from types import FrameType
 
 import pytz
 from app.models.entities import Calendar, CalendarEvent, generate_uuid
@@ -22,7 +28,17 @@ from app.services.civil_time import PARIS
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+rrulestr = import_module("dateutil.rrule").rrulestr
+rruleset = import_module("dateutil.rrule").rruleset
+
 logger = logging.getLogger(__name__)
+
+_MAX_ETAPES_RECURRENCE = 100_000
+_TraceurRecurrence = Callable[[FrameType, str, object], "_TraceurRecurrence | None"]
+
+
+class LimiteCalculRecurrence(ValueError):
+    """La série dépasse le travail autorisé pour un événement local."""
 
 
 def _borne_murale_paris(borne: datetime) -> datetime:
@@ -41,6 +57,131 @@ def _borne_murale_paris(borne: datetime) -> datetime:
     return borne.astimezone(PARIS).replace(tzinfo=None)
 
 
+def _occurrences_locales(
+    event: CalendarEventDTO, debut: datetime, fin: datetime, limite: int,
+) -> list[CalendarEventDTO]:
+    """Borne le travail interne, même avant la première occurrence produite.
+
+    dateutil n'expose pas de budget : limiter ses seuls résultats laisse
+    sans borne les filtres impossibles ou les séries entièrement exclues.
+    Le compteur de lignes couvre aussi ces boucles internes. Le traceur est
+    propre au fil de calcul et restauré à la sortie, y compris en cas d'erreur.
+    """
+    etapes = 0
+
+    def compter(frame: FrameType, evenement: str, argument: object) -> _TraceurRecurrence | None:
+        nonlocal etapes
+        if frame.f_globals.get("__name__") != "dateutil.rrule":
+            return None
+        if evenement == "line":
+            etapes += 1
+            if etapes > _MAX_ETAPES_RECURRENCE:
+                raise LimiteCalculRecurrence(
+                    f"Limite de calcul des récurrences atteinte ({_MAX_ETAPES_RECURRENCE} étapes)"
+                )
+        return compter
+
+    precedent = sys.gettrace()
+    sys.settrace(compter)
+    try:
+        return _developper_occurrences_locales(event, debut, fin, limite)
+    finally:
+        sys.settrace(precedent)
+
+
+def _developper_occurrences_locales(
+    event: CalendarEventDTO, debut: datetime, fin: datetime, limite: int,
+) -> list[CalendarEventDTO]:
+    """B-1110 : développe une série dans une fenêtre, sans modifier sa souche.
+
+    Les heures stockées sont murales à Paris : garder ce fuseau pendant le
+    calcul préserve 10 h après un changement d'heure. dateutil est déjà fourni
+    par CalDAV. Les journées entières se calculent en dates civiles flottantes.
+    """
+    if event.start is None:
+        return []
+    if event.all_day:
+        # Comme le filtre SQL historique, une journée reste visible à 14 h.
+        debut = datetime.combine(debut.date(), datetime.min.time())
+    start = event.start if isinstance(event.start, datetime) else datetime.combine(event.start, datetime.min.time())
+    if not event.recurrence:
+        return [event] if debut <= start < fin else []
+    regles = []
+    jours_exclus: set[date] = set()
+    for regle in event.recurrence:
+        regle = regle if ":" in regle else f"RRULE:{regle}"
+        propriete, contenu = regle.split(":", 1)
+        nom = propriete.split(";", 1)[0]
+        if nom in ("RRULE", "EXRULE"):
+            morceaux = contenu.split(";")
+            for i, morceau in enumerate(morceaux):
+                if not morceau.startswith("UNTIL="):
+                    continue
+                valeur_until = morceau.removeprefix("UNTIL=")
+                if len(valeur_until) == 8:
+                    until = datetime.strptime(valeur_until, "%Y%m%d")
+                    if not event.all_day:
+                        until = until.replace(hour=23, minute=59, second=59)
+                else:
+                    until = datetime.strptime(valeur_until.rstrip("Z"), "%Y%m%dT%H%M%S")
+                    if valeur_until.endswith("Z"):
+                        until = until.replace(tzinfo=UTC).astimezone(PARIS)
+                if event.all_day:
+                    morceaux[i] = "UNTIL=" + until.strftime("%Y%m%dT%H%M%S")
+                else:
+                    until = until.replace(tzinfo=PARIS).astimezone(UTC)
+                    morceaux[i] = "UNTIL=" + until.strftime("%Y%m%dT%H%M%SZ")
+            regle = nom + ":" + ";".join(morceaux)
+        elif nom in ("RDATE", "EXDATE"):
+            # icalendar lit VALUE=DATE, les heures flottantes et TZID.
+            from icalendar import Event
+
+            dates = Event.from_ical(f"BEGIN:VEVENT\n{regle}\nEND:VEVENT")[nom].dts
+            instants = []
+            for valeur in dates:
+                instant = valeur.dt
+                if not isinstance(instant, datetime):
+                    if nom == "EXDATE":
+                        jours_exclus.add(instant)
+                        continue
+                    instant = datetime.combine(instant, datetime.min.time())
+                if instant.tzinfo is None:
+                    instant = instant.replace(tzinfo=PARIS)
+                if event.all_day:
+                    instants.append(instant.astimezone(PARIS).strftime("%Y%m%dT000000"))
+                else:
+                    instants.append(instant.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ"))
+            if not instants:
+                continue
+            regle = nom + ":" + ",".join(instants)
+        regles.append(regle)
+    depart = start if event.all_day else start.replace(tzinfo=PARIS)
+    borne = debut if event.all_day else debut.replace(tzinfo=PARIS)
+    # Une série faite des seules exclusions DATE ne laisse aucune règle :
+    # l'ensemble part vide, DTSTART s'y ajoute ci-dessous.
+    serie = rrulestr("\n".join(regles), dtstart=depart, forceset=True) if regles else rruleset()
+    # DTSTART appartient à l'ensemble, y compris sans RRULE ; EXDATE/EXRULE
+    # restent appliquées par rruleset, comme pour les dates ajoutées par RDATE.
+    serie.rdate(depart)
+    duree = event.end - event.start if event.end else None
+    occurrences = []
+    for instant in serie.xafter(borne, inc=True):
+        mural = instant if event.all_day else instant.astimezone(PARIS).replace(tzinfo=None)
+        if mural >= fin:
+            break
+        if mural.date() in jours_exclus:
+            continue
+        nouveau_debut = mural.date() if event.all_day else mural
+        occurrences.append(replace(
+            event, start=nouveau_debut,
+            end=nouveau_debut + duree if duree is not None else None,
+            recurring_event_id=event.id,
+        ))
+        if len(occurrences) >= limite:
+            break
+    return occurrences
+
+
 class LocalCalendarProvider(CalendarProvider):
     """
     Local SQLite implementation of CalendarProvider.
@@ -56,6 +197,7 @@ class LocalCalendarProvider(CalendarProvider):
             session: AsyncSession for database access
         """
         self._session = session
+        self.recurrence_warnings: list[str] = []
 
     @property
     def provider_name(self) -> str:
@@ -190,6 +332,7 @@ class LocalCalendarProvider(CalendarProvider):
         max_results: int = 100,
         page_token: str | None = None,
         project_id: str | None = None,
+        expand_recurring: bool = False,
     ) -> tuple[list[CalendarEventDTO], str | None]:
         """List events from a local calendar.
 
@@ -214,10 +357,14 @@ class LocalCalendarProvider(CalendarProvider):
         # connaître la convention de SA table.
         if time_min:
             borne_min = _borne_murale_paris(time_min)
-            statement = statement.where(
+            filtre = (
                 (CalendarEvent.start_datetime >= borne_min) |
                 (CalendarEvent.start_date >= borne_min.strftime("%Y-%m-%d"))
             )
+            # Une souche ancienne peut encore produire des occurrences futures.
+            if expand_recurring:
+                filtre = filtre | CalendarEvent.recurrence.is_not(None)
+            statement = statement.where(filtre)
         if time_max:
             borne_max = _borne_murale_paris(time_max)
             statement = statement.where(
@@ -233,10 +380,40 @@ class LocalCalendarProvider(CalendarProvider):
 
         # Pagination
         offset = int(page_token) if page_token else 0
-        statement = statement.offset(offset).limit(max_results)
+        if not expand_recurring:
+            statement = statement.offset(offset).limit(max_results)
 
         result = await self._session.execute(statement)
         events = result.scalars().all()
+
+        if expand_recurring:
+            if time_min is None or time_max is None:
+                raise ValueError("Le développement des récurrences exige une période bornée")
+            self.recurrence_warnings = []
+            dtos = []
+            for event in events:
+                try:
+                    dtos.extend(await asyncio.to_thread(
+                        _occurrences_locales,
+                        self._event_to_dto(event), _borne_murale_paris(time_min),
+                        _borne_murale_paris(time_max), offset + max_results + 1,
+                    ))
+                except LimiteCalculRecurrence as exc:
+                    self.recurrence_warnings.append(
+                        f"Événement ignoré : {event.summary}. {exc}. "
+                        "Ouvre Agenda pour vérifier cette série."
+                    )
+                except Exception:
+                    logger.warning("Récurrence locale illisible : événement %s", event.id)
+                    self.recurrence_warnings.append(
+                        f"Événement ignoré (récurrence illisible) : {event.summary}. "
+                        "Ouvre Agenda pour vérifier cette série."
+                    )
+            dtos.sort(key=lambda evt: (
+                evt.start if isinstance(evt.start, datetime) else datetime.combine(evt.start, datetime.min.time()), evt.id,
+            ))
+            suivant = str(offset + max_results) if len(dtos) > offset + max_results else None
+            return dtos[offset:offset + max_results], suivant
 
         # Calculate next page token
         next_token = None

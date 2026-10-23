@@ -11,11 +11,28 @@ const STARTUP_DELAY_MS = 5_000;
 
 type UpdateState =
   | { phase: 'idle' }
+  | { phase: 'manual' }
   | { phase: 'available'; version: string; body: string }
   | { phase: 'downloading'; version: string; progress: number }
   | { phase: 'ready'; version: string }
   | { phase: 'restart-required'; version: string }
   | { phase: 'error'; message: string };
+
+const DOWNLOAD_URL = 'https://synoptia.fr/therese/alpha/';
+
+async function installationAutomatiqueAutorisee(): Promise<boolean> {
+  try {
+    // B-1111 : même type d'installation que celui utilisé par le plugin Rust.
+    // Un .deb extrait à la main ne doit pas tomber dans install_appimage.
+    const { getBundleType } = await import('@tauri-apps/api/app');
+    const type = await getBundleType();
+    if (/linux/i.test(navigator.platform)) return type === 'deb';
+    return ['deb', 'app', 'nsis', 'msi'].includes(type);
+  } catch {
+    // Type inconnu ou API indisponible : proposer l'installation manuelle.
+    return false;
+  }
+}
 
 /**
  * Bandeau discret en haut de l'app pour les mises a jour automatiques.
@@ -36,6 +53,10 @@ export function UpdateBanner() {
     if (!('__TAURI__' in window)) return;
 
     try {
+      if (!(await installationAutomatiqueAutorisee())) {
+        setState({ phase: 'manual' });
+        return;
+      }
       const { check } = await import('@tauri-apps/plugin-updater');
       const update = await check();
 
@@ -69,6 +90,11 @@ export function UpdateBanner() {
     if (!('__TAURI__' in window)) return;
 
     try {
+      // Revérifier au clic avant tout téléchargement ou arrêt du moteur.
+      if (!(await installationAutomatiqueAutorisee())) {
+        setState({ phase: 'manual' });
+        return;
+      }
       const { check } = await import('@tauri-apps/plugin-updater');
       const update = await check();
 
@@ -210,6 +236,27 @@ export function UpdateBanner() {
       }}
     >
       {/* Contenu selon la phase */}
+      {state.phase === 'manual' && (
+        <>
+          <span className="text-text">
+            Pour cette installation, télécharge la nouvelle version puis installe-la manuellement.
+          </span>
+          <a
+            href={DOWNLOAD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent-cyan-ink underline"
+            onClick={(event) => {
+              event.preventDefault();
+              import('@tauri-apps/plugin-shell').then(({ open }) => open(DOWNLOAD_URL)).catch(() => {
+                window.open(DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
+              });
+            }}
+          >
+            Télécharger THÉRÈSE
+          </a>
+        </>
+      )}
       {state.phase === 'available' && (
         <>
           <Download size={16} className="text-accent-cyan-ink shrink-0" />

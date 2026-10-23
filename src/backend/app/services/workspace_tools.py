@@ -182,6 +182,14 @@ LIST_CALENDAR_EVENTS_TOOL = {
                     "type": "integer",
                     "description": "Nombre de jours a consulter (defaut: 30, max: 90)",
                 },
+                "time_min": {
+                    "type": "string",
+                    "description": "Début inclus ISO 8601 avec décalage horaire. Pour la semaine prochaine : lundi à 00 h dans le fuseau du poste.",
+                },
+                "time_max": {
+                    "type": "string",
+                    "description": "Fin exclue ISO 8601 avec décalage horaire (max. 90 jours). Pour une semaine : lundi suivant à 00 h.",
+                },
             },
             "required": [],
         },
@@ -1618,36 +1626,51 @@ async def _list_calendar_events(
             "qu'aucun calendrier n'est connecte et propose d'en configurer un."
         )
 
-    days = min(args.get("days", 30), 90)
-    now = datetime.now(timezone.utc)
-    time_max = now + timedelta(days=days)
+    try:
+        days = max(1, min(int(args.get("days", 30)), 90))
+        now = datetime.now(timezone.utc)
+        # B-1110 : les bornes explicites permettent une semaine civile précise.
+        # Sans décalage, même convention que la création : le fuseau du poste.
+        time_min = datetime.fromisoformat(args["time_min"]).astimezone() if args.get("time_min") else now
+        time_max = datetime.fromisoformat(args["time_max"]).astimezone() if args.get("time_max") else time_min + timedelta(days=days)
+        if not timedelta(0) < time_max - time_min <= timedelta(days=90):
+            raise ValueError("bornes inversées ou période supérieure à 90 jours")
+    except (ValueError, TypeError, OverflowError):
+        return "Période invalide : indique un début antérieur à la fin et une durée maximale de 90 jours (ISO 8601)."
+    periode = (
+        f"la période du {time_min.isoformat()} inclus au {time_max.isoformat()} exclu"
+        if args.get("time_min") or args.get("time_max") else f"les {days} prochains jours"
+    )
 
     try:
-        supplement = {}
+        supplement: dict[str, bool | str] = {}
         # B-476 : le cloisonnement dépendait du NOM de la classe ; une sous-classe
         # ou un renommage retombait en silence dans le régime sans périmètre.
         from app.services.calendar.local_provider import LocalCalendarProvider
 
-        if project_id is not None and isinstance(provider, LocalCalendarProvider):
-            supplement["project_id"] = project_id
+        if isinstance(provider, LocalCalendarProvider):
+            supplement["expand_recurring"] = True
+            if project_id is not None:
+                supplement["project_id"] = project_id
         events, _ = await provider.list_events(
             calendar_id=cal_id,
-            time_min=now,
+            time_min=time_min,
             time_max=time_max,
             max_results=50,
             **supplement,
         )
 
-        if not events:
-            if isinstance(calendrier, Calendar) and calendrier.provider == "local" and calendrier.synced_at is None:
+        avertissements = provider.recurrence_warnings if isinstance(provider, LocalCalendarProvider) else []
+        if not events and not avertissements:
+            if isinstance(calendrier, Calendar) and calendrier.provider == "local":
                 return (
-                    f"Aucun evenement dans les {days} prochains jours. Aucun calendrier synchronisé à une source externe. "
+                    f"Aucun evenement dans {periode} du calendrier local. "
                     "N'invente AUCUN événement, date ni rendez-vous. "
-                    "Dis que cette période est vide ; si tu attends des rendez-vous externes, configure leur calendrier dans Agenda."
+                    "Dis que cette période est vide. Les événements de ce calendrier sont enregistrés sur ce poste."
                 )
-            return f"Aucun evenement dans les {days} prochains jours. N'invente AUCUN autre événement."
+            return f"Aucun evenement dans {periode}. N'invente AUCUN autre événement."
 
-        lines = [f"**{len(events)} evenement(s) dans les {days} prochains jours :**\n"]
+        lines = [f"**{len(events)} evenement(s) dans {periode} :**\n", *avertissements]
         for event in events:
             if event.all_day:
                 date_str = event.start.strftime("%d/%m") if event.start else ""
@@ -1682,6 +1705,11 @@ async def _list_calendar_events(
             return "Erreur lors de la lecture du calendrier."
     except Exception:
         logger.exception("Erreur lecture calendrier")
+        if isinstance(calendrier, Calendar) and calendrier.provider == "local":
+            return (
+                "La lecture du calendrier local est impossible. N'invente AUCUN événement, date ni rendez-vous. "
+                "Propose d'ouvrir Agenda et de réessayer la lecture locale."
+            )
         if isinstance(calendrier, Calendar) and calendrier.provider != "local":
             calendrier.sync_status = "error"
             calendrier.last_sync_error = "La dernière synchronisation a échoué. Ouvre Agenda et relance la synchronisation."
