@@ -154,3 +154,18 @@ it.each([
   expect(screen.getAllByText('Notice')).toHaveLength(1);
   expect(screen.queryByRole('alert')).toBeNull();
 });
+
+it('B-1094 : une lecture qui contient déjà l’ajout, arrivée avant la réponse de création, ne le double pas', async () => {
+  let relire!: (liste: unknown[]) => void;
+  let creer!: (livrable: object) => void;
+  api.listDeliverables.mockReset().mockReturnValueOnce(new Promise<unknown[]>((resolve) => { relire = resolve; }));
+  api.createDeliverable.mockReset().mockReturnValueOnce(new Promise<object>((resolve) => { creer = resolve; }));
+  render(<ProjectDeliverablesSection projectId="p-ordre" />);
+  fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Notice' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Ajouter le livrable' }));
+  const ajout = { id: 'ajout', title: 'Notice', status: 'a_faire' };
+  await act(async () => { relire([{ id: 'plans', title: 'Plans', status: 'valide' }, ajout]); });
+  await act(async () => { creer(ajout); });
+  expect(screen.getAllByText('Notice')).toHaveLength(1);
+  expect(screen.getByText('Plans')).toBeInTheDocument();
+});

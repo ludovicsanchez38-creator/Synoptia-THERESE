@@ -74,7 +74,9 @@ export function ProjectDeliverablesSection({
     try {
       const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: 'a_faire' });
       versionEcritures.current += 1;
-      setLivrables((courants) => [...(courants ?? []), cree]);
+      // Une lecture arrivée avant cette réponse peut déjà contenir l'ajout.
+      setLivrables((courants) => ((courants ?? []).some((livrable) => livrable.id === cree.id)
+        ? courants : [...(courants ?? []), cree]));
       setTitre('');
     } catch (reason) {
       setErreur(reason instanceof Error ? reason.message : 'Le livrable n’a pas pu être ajouté.');
