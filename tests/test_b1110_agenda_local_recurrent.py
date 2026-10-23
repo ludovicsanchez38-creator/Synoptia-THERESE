@@ -210,3 +210,28 @@ async def test_serie_illisible_signalee_sans_masquer_les_autres(client, db_sessi
     assert "Série illisible" in resultat
     assert "ignoré" in resultat.lower()
     assert "période est vide" not in resultat
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("journee", [False, True])
+@pytest.mark.parametrize("exclure_depart", [False, True])
+async def test_rdate_seul_inclut_dtstart_avant_exclusions(client, db_session, journee, exclure_depart):
+    await _agenda(db_session)
+    if journee:
+        dates = {"start_date": "2026-10-26", "end_date": "2026-10-26"}
+        regles = ["RDATE;VALUE=DATE:20261027"]
+        exclusion = "EXDATE;VALUE=DATE:20261026"
+    else:
+        dates = {"start_datetime": "2026-10-26T10:00:00+01:00", "end_datetime": "2026-10-26T11:00:00+01:00"}
+        regles = ["RDATE;TZID=Europe/Paris:20261027T100000"]
+        exclusion = "EXDATE:20261026T100000"
+    if exclure_depart:
+        regles.append(exclusion)
+    cree = await client.post("/api/calendar/events", json={
+        "calendar_id": "local", "summary": "RDATE seul", **dates, "recurrence": regles,
+    })
+    assert cree.status_code == 200, cree.text
+    resultat = await _list_calendar_events(_periode(), db_session)
+    assert ("26/10" in resultat) == (not exclure_depart), resultat
+    assert "27/10" in resultat, resultat
+    assert resultat.count("RDATE seul") == (1 if exclure_depart else 2)

@@ -114,6 +114,9 @@ def _occurrences_locales(
     depart = start if event.all_day else start.replace(tzinfo=PARIS)
     borne = debut if event.all_day else debut.replace(tzinfo=PARIS)
     serie = rrulestr("\n".join(regles), dtstart=depart, forceset=True)
+    # DTSTART appartient à l'ensemble, y compris sans RRULE ; EXDATE/EXRULE
+    # restent appliquées par rruleset, comme pour les dates ajoutées par RDATE.
+    serie.rdate(depart)
     duree = event.end - event.start if event.end else None
     occurrences = []
     for instant in serie.xafter(borne, inc=True):
