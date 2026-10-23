@@ -66,7 +66,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-surface-elevated border border-border"
     >
       <div className="flex-shrink-0">
-        <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-agent-cyan/20' : 'bg-magenta-500/20'}`}>
+        <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-agent-cyan/20' : 'bg-accent-magenta/20'}`}>
           <Icon className={`w-4 h-4 ${type === 'contact' ? 'text-agent-cyan' : 'text-accent-magenta-ink'}`} />
         </div>
       </div>
@@ -192,7 +192,7 @@ export function EntitySuggestion({
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-medium text-text-muted">
-            {totalCount === 1 ? "J'ai detecte une entite" : `J'ai detecte ${totalCount} entites`}
+            {totalCount === 1 ? "J'ai détecté une entité" : `J'ai détecté ${totalCount} entités`}
           </p>
           <button
             onClick={onDismiss}
