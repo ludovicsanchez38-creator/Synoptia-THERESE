@@ -57,3 +57,46 @@ def test_recherche_litterale_pagine_sans_sous_mot():
         assert qdrant.rechercher_contenu_fichiers("   ") == []
     finally:
         qdrant._client.close()
+
+
+@pytest.mark.parametrize("texte,requete,attendu", [
+    ("e\u0301be\u0301nisterie", "ébénisterie", True),
+    ("ébénisterie", "e\u0301be\u0301nisterie", True),
+    ("客户在北京工作。", "北京", True),
+    ("tarifs", "tarif", False),
+    ("STRASSE", "Straße", True),
+])
+def test_normalisation_et_frontieres(texte, requete, attendu):
+    qdrant = object.__new__(QdrantService)
+    qdrant._client = QdrantClient(location=":memory:")
+    qdrant._client.create_collection(settings.qdrant_collection, vectors_config=VectorParams(size=1, distance=Distance.COSINE))
+    try:
+        qdrant._client.upsert(settings.qdrant_collection, points=[
+            PointStruct(id=0, vector=[1.0], payload={"type": "file", "entity_id": "fiche", "text": texte})
+        ])
+        assert bool(qdrant.rechercher_contenu_fichiers(requete)) == attendu
+    finally:
+        qdrant._client.close()
+
+
+def test_recherche_absente_16384_fragments_en_moins_d_une_seconde():
+    from time import perf_counter
+    from unittest.mock import patch
+
+    qdrant = object.__new__(QdrantService)
+    qdrant._client = QdrantClient(location=":memory:")
+    qdrant._client.create_collection(settings.qdrant_collection, vectors_config=VectorParams(size=1, distance=Distance.COSINE))
+    try:
+        qdrant._client.upsert(settings.qdrant_collection, points=[
+            PointStruct(id=i, vector=[1.0], payload={"type": "file", "entity_id": "document", "text": "Fragment ordinaire."})
+            for i in range(16384)
+        ])
+        with patch.object(qdrant._client, "scroll", wraps=qdrant._client.scroll) as parcours:
+            debut = perf_counter()
+            assert qdrant.rechercher_contenu_fichiers("absent-du-corpus") == []
+            duree = perf_counter() - debut
+        print(f"16384 fragments, absent : {duree:.6f} s ; scroll={parcours.call_count}")
+        assert duree < 1
+        assert parcours.call_count == 1
+    finally:
+        qdrant._client.close()
