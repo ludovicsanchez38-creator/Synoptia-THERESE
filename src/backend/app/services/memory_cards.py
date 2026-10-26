@@ -94,6 +94,35 @@ def negations(texte: str) -> set[tuple[str, str]]:
     return resultat
 
 
+def _polarites_propositions(*textes: str) -> set[tuple[str, str]]:
+    """Complément borné au contrôle local : garder sujet, verbe et ordre des mots.
+
+    On compare des propositions entières, avec seulement les raccourcis des
+    régressions B-1142. On ne propage pas une négation à tous les noms du texte.
+    """
+    resultat = set()
+    petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'avec'}
+    for texte in textes:
+        for proposition in re.split(r'[.!?;,\n]', normaliser(texte)):
+            marqueurs = {m for m, _ in negations(proposition)}
+            if len(marqueurs) > 1:
+                # Ne pas escamoter ce morceau lors du contrôle « tout est sourcé ».
+                resultat.add((proposition.strip(), ' '.join(sorted(marqueurs))))
+                continue
+            marqueur = next(iter(marqueurs), '')
+            proposition = re.sub(r'\baucun nouveau\b', 'aucun', proposition)
+            proposition = re.sub(r'\bsans le moindre\b', 'sans', proposition)
+            ignores = petits_mots | ({'ne', 'n', marqueur} if marqueur else set())
+            jetons = [j for j in re.findall(r'[^\W_]+', proposition) if j not in ignores]
+            # « veut recevoir un devis » et « veut un devis », dans les deux
+            # polarités ; aucun autre verbe ou adjectif n'est supprimé.
+            jetons = [j for i, j in enumerate(jetons)
+                      if not (j == 'recevoir' and i and jetons[i - 1] == 'veut')]
+            if jetons:
+                resultat.add((' '.join(jetons), marqueur))
+    return resultat
+
+
 def date_utc(valeur: datetime) -> datetime:
     # SQLite rend les DateTime sans zone ; leur convention de stockage est UTC.
     return valeur.replace(tzinfo=UTC) if valeur.tzinfo is None else valeur.astimezone(UTC)
@@ -294,7 +323,20 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
                     or any(n[1] == p[1] for n in source_negations)}
         mots_factuels = set(re.findall(r'[^\W_]+', normaliser(factuel)))
         omissions = {p for p in source_negations - nouvelles if p[1] in mots_factuels}
-        negations_seules = sorted(ajouts | retraits | omissions)
+        propositions = _polarites_propositions(*champs_factuels)
+        propositions_source = _polarites_propositions(source.content)
+        # Cette garde supplémentaire porte sur le message courant. Les faits
+        # anciens restent couverts par ajouts/retraits : leur opposer aussi une
+        # égalité de proposition bloquerait « désormais gratuite », par exemple.
+        inversions = {(marqueur or autre, phrase)
+                      for phrase, marqueur in propositions - propositions_source
+                      for origine, autre in propositions_source
+                      if phrase == origine and bool(marqueur) != bool(autre)}
+        # Une correction entièrement affirmée dans le nouveau message n'a pas
+        # à répéter « recevoir », « nouveau » ou « moindre » de l'ancienne fiche.
+        if propositions and propositions <= propositions_source:
+            retraits = set()
+        negations_seules = sorted(ajouts | retraits | omissions | inversions)
         if manquants or nombres_seuls or negations_seules:
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.',
                                detail=_sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
