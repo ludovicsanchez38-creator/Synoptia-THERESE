@@ -62,20 +62,26 @@ def nombres(*textes: str) -> set[str]:
     # Lus champ par champ (deux champs collés fabriqueraient « 30 500 ») ; un
     # moins qui ne suit ni lettre ni chiffre fait partie du nombre (« -5 » n'autorise
     # pas « 5 ») ; « A-15 », « 10-12 » et les dates gardent leurs nombres positifs.
-    motif = r'(?:(?<![^\W_])[-\u2212])?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)'
-    return {n.replace('\u2212', '-') for texte in textes for n in re.findall(motif, texte or '')}
+    motif = r'(?:(?<![^\W_])[-\u2212])?(?:\d{1,3}(?:[ \u00a0\u202f\u2009]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)'
+    return {re.sub(r'[\u00a0\u202f\u2009]', ' ', n).replace('\u2212', '-')
+            for texte in textes for n in re.findall(motif, texte or '')}
 
 
 def negations(texte: str) -> set[tuple[str, str]]:
-    # Nombres entiers avec décimales/séparateurs sourcés tels quels ; polarité = (marqueur, premier mot hors de/d'/du/des/la/le/les/l'/un/une/en/y), ajout ou retrait autorisé seulement si ce mot figure dans le message.
-    jetons = re.findall(r'[^\W_]+', normaliser(texte))
+    # Polarité = (marqueur, mot visé). En fin de proposition, la négation
+    # porte sur le mot précédent (« ne répond pas »), jamais la phrase suivante.
     petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'en', 'y'}
     resultat = set()
-    for index, jeton in enumerate(jetons):
-        if jeton in {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'sans', 'ni'}:
-            vise = next((mot for mot in jetons[index + 1:] if mot not in petits_mots), None)
-            if vise is not None:
-                resultat.add((jeton, vise))
+    for proposition in re.split(r'[.!?;\n]', normaliser(texte)):
+        jetons = re.findall(r'[^\W_]+', proposition)
+        for index, jeton in enumerate(jetons):
+            if jeton in {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'sans', 'ni'}:
+                vise = next((mot for mot in jetons[index + 1:] if mot not in petits_mots), None)
+                if vise is None:
+                    vise = next((mot for mot in reversed(jetons[:index])
+                                 if mot not in petits_mots | {'ne', 'n'}), None)
+                if vise is not None:
+                    resultat.add((jeton, vise))
     return resultat
 
 
@@ -260,14 +266,23 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             provenance += f' {existante.title} {existante.content} {existante.reason}'
         factuel = ' '.join(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason'))
         ancien_factuel = f'{existante.content} {existante.reason}' if existante else ''
-        polarites_modifiees = negations(ancien_factuel) ^ negations(factuel)
+        anciennes, nouvelles, source_negations = (
+            negations(ancien_factuel), negations(factuel), negations(source.content))
         mots_message = set(re.findall(r'[^\W_]+', normaliser(source.content)))
         # Un titre résume librement ; seuls ses nombres doivent avoir une source.
         manquants = mots(factuel) - mots(provenance)
         nombres_seuls = nombres(*(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason')),
                                 str(donnees.get('title', ''))) - nombres(
             source.content, *((existante.title, existante.content, existante.reason) if existante else ()))
-        negations_seules = sorted(p for p in polarites_modifiees if p[1] not in mots_message)
+        # B-1142 : citer le mot ne suffit pas à sourcer sa négation. Un retrait
+        # exige au contraire une affirmation dans le message. À la création
+        # aussi, un fait repris du message ne doit pas perdre sa négation.
+        ajouts = nouvelles - anciennes - source_negations
+        retraits = {p for p in anciennes - nouvelles if p[1] not in mots_message
+                    or any(n[1] == p[1] for n in source_negations)}
+        mots_factuels = set(re.findall(r'[^\W_]+', normaliser(factuel)))
+        omissions = {p for p in source_negations - nouvelles if p[1] in mots_factuels}
+        negations_seules = sorted(ajouts | retraits | omissions)
         if manquants or nombres_seuls or negations_seules:
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.',
                                detail=_sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
