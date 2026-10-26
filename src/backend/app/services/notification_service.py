@@ -8,6 +8,7 @@ factures impayees oubliees, RDV rates.
 
 import logging
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from app.models.database import get_session_context
 from app.models.entities import (
@@ -235,7 +236,11 @@ async def _check_overdue_tasks(session: AsyncSession) -> int:
         await create_notification(
             session,
             title="Tâche en retard",
-            message=f"Tâche '{task.title}' en retard de {days_overdue} jour" + ("s" if days_overdue > 1 else ""),
+            message=(
+                f"Tâche '{task.title}' en retard de {days_overdue} jour" + ("s" if days_overdue > 1 else "")
+                if days_overdue > 0
+                else f"Tâche '{task.title}' en retard de moins d'un jour"
+            ),
             type="warning",
             source="task",
             action_url=f"/tasks/{task.id}",
@@ -250,14 +255,16 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
     """Genere des notifications pour les RDV du lendemain."""
     count = 0
     now = datetime.now(UTC)
-    tomorrow_start = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    paris = ZoneInfo("Europe/Paris")
+    # Les deux minuits sont civils : le lendemain peut durer 23 ou 25 heures.
+    tomorrow_start = (now.astimezone(paris) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow_end = tomorrow_start + timedelta(days=1)
 
     result = await session.execute(
         select(CalendarEvent).where(
             CalendarEvent.start_datetime != None,  # noqa: E711
-            CalendarEvent.start_datetime >= tomorrow_start,
-            CalendarEvent.start_datetime < tomorrow_end,
+            CalendarEvent.start_datetime >= tomorrow_start.astimezone(UTC),
+            CalendarEvent.start_datetime < tomorrow_end.astimezone(UTC),
             CalendarEvent.status == "confirmed",
         )
     )
@@ -275,7 +282,7 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
         if existing.scalar_one_or_none():
             continue
 
-        time_str = event.start_datetime.strftime("%Hh%M") if event.start_datetime else ""
+        time_str = _as_aware_utc(event.start_datetime).astimezone(paris).strftime("%Hh%M") if event.start_datetime else ""
         await create_notification(
             session,
             title="RDV demain",
