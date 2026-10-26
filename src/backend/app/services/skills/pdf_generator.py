@@ -11,7 +11,7 @@ from app.services.pdf_theme import SYNOPTIA_THEME
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import Flowable, HRFlowable, Paragraph, SimpleDocTemplate, Table, TableStyle
 
 from .base import BaseSkill, FileFormat, SkillParams, SkillResult
 
@@ -119,6 +119,7 @@ class PdfSkill(BaseSkill):
             "DocumentListe", parent=corps, leftIndent=14, firstLineIndent=0,
             bulletFontName=theme.font_regular, bulletFontSize=10, spaceAfter=4,
         )
+        citation = ParagraphStyle("DocumentCitation", parent=corps, leftIndent=14)
         titres = {
             niveau: ParagraphStyle(
                 f"DocumentTitre{niveau}", parent=styles["heading"],
@@ -138,7 +139,7 @@ class PdfSkill(BaseSkill):
 
         def terminer_paragraphe() -> None:
             if paragraphe:
-                elements.append(Paragraph(_texte(" ".join(paragraphe)), corps))
+                elements.append(Paragraph(_texte("\n".join(paragraphe)).replace("\n", "<br/>"), corps))
                 paragraphe.clear()
 
         i = 0
@@ -148,6 +149,15 @@ class PdfSkill(BaseSkill):
             puce = re.match(r"^(?:([-*+])|([0-9]+)[.)])\s+(.+)$", ligne)
             if not ligne:
                 terminer_paragraphe()
+            elif re.fullmatch(r"-{3,}|\*{3,}|_{3,}", ligne):
+                terminer_paragraphe()
+                elements.append(HRFlowable(
+                    width="100%", color=theme.c_border, thickness=0.5,
+                    spaceBefore=7, spaceAfter=7,
+                ))
+            elif ligne.startswith("> "):
+                terminer_paragraphe()
+                elements.append(Paragraph(f"<i>{_texte(ligne[2:])}</i>", citation))
             elif titre:
                 terminer_paragraphe()
                 # Le registre reprend souvent le premier titre du contenu.
