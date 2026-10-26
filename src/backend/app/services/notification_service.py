@@ -259,15 +259,16 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
     count = 0
     now = datetime.now(UTC)
     paris = ZoneInfo("Europe/Paris")
-    # Les deux minuits sont civils : le lendemain peut durer 23 ou 25 heures.
-    tomorrow_start = (now.astimezone(paris) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    # L'API stocke start_datetime en heure murale de Paris naïve.
+    # Comparer deux minuits civils dans cette même convention, même au changement d'heure.
+    tomorrow_start = (now.astimezone(paris) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
     tomorrow_end = tomorrow_start + timedelta(days=1)
 
     result = await session.execute(
         select(CalendarEvent).where(
             CalendarEvent.start_datetime != None,  # noqa: E711
-            CalendarEvent.start_datetime >= tomorrow_start.astimezone(UTC),
-            CalendarEvent.start_datetime < tomorrow_end.astimezone(UTC),
+            CalendarEvent.start_datetime >= tomorrow_start,
+            CalendarEvent.start_datetime < tomorrow_end,
             CalendarEvent.status == "confirmed",
         )
     )
@@ -285,7 +286,7 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
         if existing.scalar_one_or_none():
             continue
 
-        time_str = _as_aware_utc(event.start_datetime).astimezone(paris).strftime("%Hh%M") if event.start_datetime else ""
+        time_str = event.start_datetime.strftime("%Hh%M") if event.start_datetime else ""
         await create_notification(
             session,
             title="RDV demain",
