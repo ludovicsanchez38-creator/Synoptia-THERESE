@@ -9,7 +9,7 @@
  * plus par un fond d'agent.
  */
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { GripVertical, Trash2, ChevronRight } from 'lucide-react';
 import {
   DndContext,
@@ -291,8 +291,10 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
         project={project}
         onSelect={onSelect}
         onDelete={onDelete}
+        isDragging={isDragging}
         showDragHandle
-        poignee={<button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners}
+        poignee={(tabIndex) => <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners}
+          tabIndex={tabIndex}
           aria-label={`Déplacer ${nomAccessible}`}
           className="text-text-muted flex-shrink-0 cursor-grab active:cursor-grabbing">
           <GripVertical className="w-4 h-4" aria-hidden />
@@ -311,11 +313,12 @@ interface ProjectCardProps {
   onSelect: (project: Project) => void;
   onDelete: (project: Project) => void;
   isOverlay?: boolean;
+  isDragging?: boolean;
   showDragHandle?: boolean;
-  poignee?: React.ReactNode;
+  poignee?: (tabIndex: number) => React.ReactNode;
 }
 
-function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle, poignee }: ProjectCardProps) {
+function ProjectCard({ project, onSelect, onDelete, isOverlay, isDragging, showDragHandle, poignee }: ProjectCardProps) {
   // B-752 : le masque du mode démo s'arrêtait aux tâches et aux contacts. Les
   // projets arrivent BRUTS du panneau, et cette carte est le seul endroit où
   // leur nom est rendu - ici pour les cartes de la liste comme pour celle du
@@ -324,9 +327,36 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle, p
   // ne masque rien (même reprise que `TaskList`, D105 et D106).
   const { maskText } = useDemoMask();
   const nom = maskText(project.name);
+  const aideId = useId();
+  // P-107 : ordre poignée, nom, corbeille ; le nom est l'arrêt initial.
+  const [commandeActive, setCommandeActive] = useState(1);
 
   return (
     <div
+      role="group"
+      aria-label={nom || 'Projet'}
+      aria-describedby={aideId}
+      aria-hidden={isOverlay || undefined}
+      onFocus={(event) => {
+        if (!(event.target instanceof HTMLButtonElement)) return;
+        const commandes = Array.from(event.currentTarget.querySelectorAll('button'));
+        const index = commandes.indexOf(event.target);
+        if (index !== -1) setCommandeActive(index);
+      }}
+      onKeyDown={(event) => {
+        // Pendant un glisser, dnd-kit garde les flèches pour déplacer la carte.
+        // Tab et les touches d'activation conservent leur comportement natif.
+        if (isDragging || isOverlay || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+        if (!(event.target instanceof HTMLButtonElement)) return;
+        const commandes = Array.from(event.currentTarget.querySelectorAll('button'));
+        const index = commandes.indexOf(event.target);
+        if (index === -1) return;
+        event.preventDefault();
+        event.stopPropagation();
+        // Sans boucle : une flèche vers l'extérieur reste sur le bouton de bord.
+        const suivant = Math.max(0, Math.min(commandes.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)));
+        commandes[suivant].focus();
+      }}
       // `group` porte la révélation de la corbeille : sans lui, elle reste à
       // opacité 0 au survol comme au focus. Pas de `transition-colors` : la
       // carte n'a plus aucune couleur qui change (la maquette ne pose pas de
@@ -337,9 +367,12 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle, p
         isOverlay && 'shadow-lg ring-2 ring-ring/30',
       )}
     >
+      <span id={aideId} className="sr-only">
+        Flèches gauche et droite : choisir entre déplacer, ouvrir ou supprimer le projet.
+      </span>
       <div className="flex items-center gap-2">
         {/* Poignée (repère visuel : toute la carte est draggable) */}
-        {poignee ?? (showDragHandle && (
+        {poignee?.(!isOverlay && commandeActive === 0 ? 0 : -1) ?? (showDragHandle && (
           <div className="text-text-muted flex-shrink-0">
             <GripVertical className="w-4 h-4" />
           </div>
@@ -347,6 +380,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle, p
 
         {/* Clickable area */}
         <button
+          tabIndex={!isOverlay && commandeActive === 1 ? 0 : -1}
           onClick={() => onSelect(project)}
           className="flex-1 min-w-0 min-h-9 text-left"
         >
@@ -378,6 +412,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle, p
           <Button
             variant="ghost"
             size="icon"
+            tabIndex={!isOverlay && commandeActive === 2 ? 0 : -1}
             onClick={(e) => { e.stopPropagation(); onDelete(project); }}
             aria-label={`Supprimer ${nom}`}
             title="Supprimer"
