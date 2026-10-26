@@ -6,7 +6,6 @@ Phase 4 - Invoicing
 """
 
 import logging
-import re
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -130,7 +129,7 @@ async def _generate_invoice_number(
     prefix = prefix_map.get(document_type, "FACT")
     # B-1757 : l'année et la date imprimée viennent du même instant, même
     # lorsqu'une première émission traverse minuit le 31 décembre.
-    current_year = (emission if emission is not None else datetime.now(UTC)).year
+    current_year = date_civile_paris(emission if emission is not None else datetime.now(UTC)).year
 
     statement = select(Invoice.invoice_number).where(
         Invoice.invoice_number.like(f"{prefix}-{current_year}-%")
@@ -242,45 +241,6 @@ async def _inserer_piece(
     )
 
 
-def _rang_de_numero(numero: str) -> int | None:
-    try:
-        return int(numero.rsplit("-", 1)[-1])
-    except (ValueError, AttributeError):
-        return None
-
-
-async def _est_le_dernier_de_sa_serie(session: AsyncSession, numero: str) -> bool:
-    """Vrai si ce numéro est le plus haut de son préfixe et de son année.
-
-    Une convention illisible est laissée en place : on ne la renumérote pas.
-    """
-    morceaux = numero.split("-")
-    rang = _rang_de_numero(numero)
-    if rang is None or len(morceaux) < 3:
-        return True
-    prefixe = "-".join(morceaux[:-1])
-    statement = select(Invoice.invoice_number).where(Invoice.invoice_number.like(f"{prefixe}-%"))
-    maximum = rang
-    for autre in (await session.execute(statement)).scalars().all():
-        autre_rang = _rang_de_numero(autre)
-        if autre_rang is not None:
-            maximum = max(maximum, autre_rang)
-    return rang == maximum
-
-
-def _numero_de_la_serie_courante(numero: str, emission: datetime) -> bool:
-    """Seul un FACT de l'année d'émission peut conserver son rang au brouillon.
-
-    P160 : les anciens AV et les conventions importées ne sont plus prolongés.
-    Une pièce déjà émise reste conservée avant que cette règle soit consultée.
-    """
-    reconnu = re.fullmatch(rf"FACT-{emission.year}-([0-9]+)", numero)
-    if reconnu is None:
-        return False
-    rang = int(reconnu.group(1))
-    return rang > 0 and reconnu.group(1) == f"{rang:03d}"
-
-
 async def _attribuer_numero_definitif(
     session: AsyncSession,
     invoice: Invoice,
@@ -290,11 +250,8 @@ async def _attribuer_numero_definitif(
     """Pose un FACT commun aux factures et avoirs à la première émission.
 
     Un brouillon annulé n'est plus « draft », mais son jeton PROV- n'a jamais
-    été émis : cette première sortie le numérote. Un brouillon qui porte déjà
-    un numéro définitif hérité le garde s'il est un FACT de l'année courante,
-    encore dernier de sa série. Sinon il en reçoit un nouveau, à la suite : l'émettre tel quel
-    après un numéro plus haut casserait l'ordre du § 90. L'ancien numéro,
-    inférieur au maximum, n'est pas réattribué.
+    été émis : cette première sortie le numérote. B-1164 : tout numéro déjà
+    attribué reste inchangé, y compris sur un brouillon hérité.
 
     Appelé avant les autres écritures. Une collision annule seulement son
     SAVEPOINT, pour conserver la réservation SQLite jusqu’au commit final.
@@ -305,14 +262,10 @@ async def _attribuer_numero_definitif(
         return invoice
     if invoice.document_type not in ("facture", "avoir"):
         return invoice
-    if _facture_emise(invoice):
+    if _facture_emise(invoice) or not _numero_provisoire(invoice.invoice_number):
         return invoice
     if emission is None:
         emission = datetime.now(UTC)
-    if _numero_de_la_serie_courante(invoice.invoice_number, emission) and await _est_le_dernier_de_sa_serie(
-        session, invoice.invoice_number
-    ):
-        return invoice
 
     identifiant = invoice.id
     type_document = invoice.document_type
@@ -331,11 +284,7 @@ async def _attribuer_numero_definitif(
             if rechargee is None:
                 raise HTTPException(status_code=404, detail="Invoice not found") from collision
             invoice = rechargee
-            if _facture_emise(invoice):
-                return invoice
-            if _numero_de_la_serie_courante(invoice.invoice_number, emission) and await _est_le_dernier_de_sa_serie(
-                session, invoice.invoice_number
-            ):
+            if _facture_emise(invoice) or not _numero_provisoire(invoice.invoice_number):
                 return invoice
             type_document = invoice.document_type
             continue
@@ -368,20 +317,19 @@ def _poser_dates_demission(invoice: Invoice, emission: datetime) -> None:
     convenu. Appelé après la copie des champs : une date ancienne envoyée
     avec le changement de statut ne reste pas sur la pièce émise.
     """
-    maintenant = emission
-    ancienne = invoice.issue_date
-    if ancienne.tzinfo is None:
-        ancienne = ancienne.replace(tzinfo=UTC)
-    else:
-        ancienne = ancienne.astimezone(UTC)
-    jours = (maintenant.date() - ancienne.date()).days
-    invoice.issue_date = maintenant
-    echeance = invoice.due_date
-    if echeance.tzinfo is None:
-        echeance = echeance.replace(tzinfo=UTC)
-    else:
-        echeance = echeance.astimezone(UTC)
-    _poser_echeance(invoice, echeance + timedelta(days=jours))
+    jour = _date_demission(emission)
+    jours = (jour.date() - invoice.issue_date.date()).days
+    invoice.issue_date = jour
+    _poser_echeance(invoice, invoice.due_date + timedelta(days=jours))
+
+
+def _date_demission(instant: datetime | None = None) -> datetime:
+    """B-1164 : date civile stockée telle qu'imprimée, sans heure UTC.
+
+    Les horodatages d'audit (sent_at, updated_at) restent des instants UTC.
+    """
+    jour = date_civile_paris(instant if instant is not None else datetime.now(UTC))
+    return datetime.combine(jour, datetime.min.time())
 
 
 def _premiere_emission(invoice: Invoice, nouveau_statut: str | None) -> bool:
@@ -704,7 +652,7 @@ async def create_invoice(
     await _verifier_la_facture_d_origine(session, document_type, request.converted_from_id)
 
     # Dates par défaut
-    issue_date = _date_du_client(request.issue_date, "Date d'émission") if request.issue_date else datetime.now(UTC)
+    issue_date = _date_du_client(request.issue_date, "Date d'émission") if request.issue_date else _date_demission()
     due_date = _date_du_client(request.due_date, "Date d'échéance") if request.due_date else issue_date + timedelta(days=30)
 
     # Validité par défaut pour les devis
@@ -1137,7 +1085,7 @@ async def convert_invoice(
     # Le rollback d'une reprise de numéro expire la pièce source : tout ce
     # qu'on relit après l'insertion est copié ici, en valeurs.
     source_numero, source_type = source.invoice_number, source.document_type
-    emission = datetime.now(UTC)
+    emission = _date_demission()
     copie = {
         "document_type": target_type,
         "contact_id": source.contact_id,
@@ -1435,7 +1383,7 @@ async def convert_devis_to_invoice(
     late_penalty_rate = 11.62  # 3x taux BCE approximatif
 
     # 4. Creer la facture
-    issue_date = datetime.now(UTC)
+    issue_date = _date_demission()
     due_date = issue_date + timedelta(days=payment_days)
 
     legal_mentions = generate_legal_mentions(

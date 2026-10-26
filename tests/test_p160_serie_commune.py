@@ -14,6 +14,7 @@ from app.main import app
 from app.models import database as db
 from app.models.entities import Invoice
 from app.routers import invoices as factures
+from app.services.civil_time import date_civile_paris
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -79,7 +80,7 @@ async def test_facture_avoir_facture_suivent_une_seule_serie(client: Any) -> Non
 @pytest.mark.parametrize("convention", [
     "AV-courant", "FACT-ancien", "import", "FACT-zero", "FACT-alias", "FACT-courant",
 ])
-async def test_brouillon_herite_rejoint_la_serie_sans_modifier_les_pieces_emises(
+async def test_numeros_herites_conserves_sans_modifier_les_pieces_emises(
     client: Any, convention: str,
 ) -> None:
     contact_id = await _contact(client)
@@ -117,9 +118,10 @@ async def test_brouillon_herite_rejoint_la_serie_sans_modifier_les_pieces_emises
         "avant": avant, "apres": apres, "brouillon": notes.json(), "emis": emis, "suivante": suivante,
     })
     assert apres == avant
-    premier_rang = 8 if convention == "FACT-alias" else 7 if convention == "FACT-courant" else 1
-    assert emis["invoice_number"] == f"FACT-{annee}-{premier_rang:03d}", emis
-    assert suivante["invoice_number"] == f"FACT-{annee}-{premier_rang + 1:03d}", suivante
+    # B-1164 : aucun numéro historique n'est migré, même au brouillon.
+    assert emis["invoice_number"] == numeros[convention], emis
+    rang_suivant = 8 if convention in ("FACT-alias", "FACT-courant") else 1
+    assert suivante["invoice_number"] == f"FACT-{annee}-{rang_suivant:03d}", suivante
 
 
 @pytest.mark.asyncio
@@ -194,8 +196,8 @@ async def test_frontiere_annee_garde_numero_et_date_dans_la_meme_annee(
 ) -> None:
     contact_id = await _contact(client)
     brouillon = await _cree(client, contact_id)
-    avant = datetime(2026, 12, 31, 23, 59, 59, 999999, tzinfo=UTC)
-    apres = datetime(2027, 1, 1, 0, 0, 0, tzinfo=UTC)
+    avant = datetime(2026, 12, 31, 22, 59, 59, 999999, tzinfo=UTC)
+    apres = datetime(2026, 12, 31, 23, 0, 0, tzinfo=UTC)
     phase = {"apres_allocation": False}
     lectures: list[dict[str, Any]] = []
 
@@ -231,12 +233,12 @@ async def test_frontiere_annee_garde_numero_et_date_dans_la_meme_annee(
     annee_numero = int(corps["invoice_number"].split("-")[1])
     annee_date = datetime.fromisoformat(corps["issue_date"].replace("Z", "+00:00")).year
     assert annee_numero == annee_date, corps
-    assert datetime.fromisoformat(corps["issue_date"].replace("Z", "+00:00")) == avant, corps
+    assert datetime.fromisoformat(corps["issue_date"]).date() == date_civile_paris(avant), corps
     if operation == "sent":
         assert datetime.fromisoformat(corps["sent_at"].replace("Z", "+00:00")) == avant, corps
     ancienne_date = datetime.fromisoformat(brouillon["issue_date"].replace("Z", "+00:00"))
     ancienne_echeance = datetime.fromisoformat(brouillon["due_date"].replace("Z", "+00:00"))
     nouvelle_echeance = datetime.fromisoformat(corps["due_date"].replace("Z", "+00:00"))
     assert nouvelle_echeance.date() == ancienne_echeance.date() + timedelta(
-        days=(avant.date() - ancienne_date.date()).days,
+        days=(date_civile_paris(avant) - ancienne_date.date()).days,
     ), corps
