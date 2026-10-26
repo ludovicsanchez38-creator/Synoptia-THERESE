@@ -212,6 +212,7 @@ async def deep_research(
     service = get_web_search_service()
     all_sources: list[ResearchSource] = []
     seen_urls: set[str] = set()
+    recherche_en_echec = False
 
     for i, query in enumerate(queries, 1):
         yield ResearchProgress(
@@ -256,6 +257,7 @@ async def deep_research(
             return
         except Exception as e:
             logger.error(f"Erreur recherche '{query}': {e}")
+            recherche_en_echec = True
 
         yield ResearchProgress(
             type="search_done",
@@ -268,7 +270,11 @@ async def deep_research(
     if not all_sources:
         yield ResearchProgress(
             type="error",
-            content="Aucun résultat trouvé. Vérifie ta clé Brave Search ou reformule la question.",
+            content=(
+                "La recherche web n'a pas pu aboutir. Réessaie plus tard."
+                if recherche_en_echec
+                else "Aucun résultat trouvé. Essaie de reformuler la question."
+            ),
         )
         return
 
