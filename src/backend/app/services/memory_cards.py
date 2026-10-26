@@ -273,10 +273,13 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         provenance = source.content
         if existante:
             provenance += f' {existante.title} {existante.content} {existante.reason}'
-        factuel = ' '.join(str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason'))
-        ancien_factuel = f'{existante.content} {existante.reason}' if existante else ''
-        anciennes, nouvelles, source_negations = (
-            negations(ancien_factuel), negations(factuel), negations(source.content))
+        champs_factuels = [str(donnees.get(k, getattr(existante, k, ''))) for k in ('content', 'reason')]
+        factuel = ' '.join(champs_factuels)
+        # B-1142 : la fin du contenu ne prend jamais la raison pour complément,
+        # ni dans la proposition ni dans la fiche précédente.
+        anciennes = negations(existante.content) | negations(existante.reason) if existante else set()
+        nouvelles: set[tuple[str, str]] = set().union(*(negations(champ) for champ in champs_factuels))
+        source_negations = negations(source.content)
         mots_message = set(re.findall(r'[^\W_]+', normaliser(source.content)))
         # Un titre résume librement ; seuls ses nombres doivent avoir une source.
         manquants = mots(factuel) - mots(provenance)
