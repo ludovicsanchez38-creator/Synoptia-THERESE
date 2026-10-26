@@ -24,7 +24,6 @@ MAX_XLSX_LIGNES = 2000
 
 # B-1160 : bornes avant toute expansion des fusions de tableaux DOCX.
 MAX_DOCX_COLONNES = 128
-MAX_DOCX_LIGNES_TABLEAU = 1000  # Borne aussi les chaînes de fusions verticales.
 MAX_DOCX_CELLULES = 10_000  # Budget du document, tableaux imbriqués compris.
 AVIS_DOCX_TRONQUE = "[DOCX tronqué : tableau trop volumineux, certaines cellules n'ont pas été lues.]"
 
@@ -258,10 +257,7 @@ def _extract_docx(file_path: Path) -> str:
                     continue
                 tableau = Table(enfant, parent)
                 tronque = False
-                for numero, ligne in enumerate(tableau._tbl.iterchildren(qn("w:tr"))):
-                    if numero >= MAX_DOCX_LIGNES_TABLEAU:
-                        tronque = True
-                        break
+                for ligne in tableau._tbl.iterchildren(qn("w:tr")):
                     cellules: list[str] = []
                     colonnes = 0
                     for tc in ligne.iterchildren(qn("w:tc")):

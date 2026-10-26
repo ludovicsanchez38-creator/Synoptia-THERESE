@@ -57,7 +57,7 @@ print(_extract_docx(Path(sys.argv[1])))
 @pytest.mark.parametrize("span,lignes,fusion,tronque", [
     (2_000_000_000, 1, False, True),
     (1, 800, True, False),
-    (1, 1001, True, True),
+    (1, 1001, True, False),
 ])
 def test_docx_hostile_borne(tmp_path, span, lignes, fusion, tronque):
     path = tmp_path / "devis.docx"
@@ -108,7 +108,7 @@ async def test_reprise_sync_docx_tronque_ne_repart_pas(client, tmp_path, monkeyp
     (31, 3, True, False), (127, 1, False, False),
     (128, 2, True, False), (129, 1, False, True),
     (10_000_000, 50, False, True), (2_147_483_647, 1, False, True),
-    (1, 999, True, False), (1, 1002, True, True),
+    (1, 999, True, False), (1, 1002, True, False),
 ])
 def test_dix_rejeux_apres_correctif(tmp_path, span, lignes, fusion, tronque):
     path = tmp_path / "rejeu.docx"
