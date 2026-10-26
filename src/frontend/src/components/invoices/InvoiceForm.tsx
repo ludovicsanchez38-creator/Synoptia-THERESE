@@ -197,8 +197,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // B-1039 : un champ requis manquant se dit dans le pied de la modale. Une
   // notification, en bas à droite, recouvrait entièrement le bouton « Créer ».
   const [erreurValidation, setErreurValidation] = useState<string | null>(null);
-  // P-155 : la date réelle du paiement, jamais dans le futur ; aujourd'hui par défaut.
-  const [datePaiement, setDatePaiement] = useState(() => localDateKey(new Date()));
+  // B-1147 : reprendre la date enregistrée lors d'un aller-retour de statut.
+  const [datePaiement, setDatePaiement] = useState(
+    () => invoice?.payment_date?.split('T')[0] || localDateKey(new Date()),
+  );
   // Lecteur C de la carte c12 : le message restait affiché une fois la saisie
   // corrigée. Il s'efface dès que le client ou une ligne change.
   useEffect(() => {

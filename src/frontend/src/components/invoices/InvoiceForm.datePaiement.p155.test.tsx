@@ -12,6 +12,7 @@ import { InvoiceForm } from './InvoiceForm';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { type Invoice } from '../../services/api';
+import { localDateKey } from '../../lib/civilDate';
 import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
 
 const { createInvoiceMock, updateInvoiceMock, getBillingProfileStatusMock, markInvoicePaidMock, updateDevisStatusMock } = vi.hoisted(() => ({
@@ -96,6 +97,38 @@ describe('P-155 : la date réelle du paiement', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement de statut' }));
     await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', '2026-06-18'));
     expect(updateInvoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('B-1147 reprise : payée puis envoyée, la date enregistrée repart sans saisie', async () => {
+    rendre({ ...invoice, status: 'sent', payment_date: '2026-07-20T00:00:00' });
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement de statut' }));
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalled());
+    // Trace du contrat front, rejouée par les routes réelles pendant la recette.
+    console.info('B1147_PAYMENT_PAYLOAD', JSON.stringify({ payment_date: markInvoicePaidMock.mock.calls[0][1] }));
+    expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', '2026-07-20');
+  });
+
+  it.each([
+    ['facture', 'sent', '2024-02-29T12:40:00Z'],
+    ['facture', 'overdue', '2025-11-30T00:00:00'],
+    ['avoir', 'sent', '2026-01-31'],
+    ['avoir', 'overdue', '2026-02-28T23:00:00Z'],
+    ['facture', 'sent', '2026-03-29T01:15:00+01:00'],
+    ['avoir', 'sent', '2026-06-30T22:30:00Z'],
+    ['facture', 'sent', '2026-08-15T00:00:00'],
+    ['avoir', 'sent', '2026-09-01'],
+    ['facture', 'sent', null],
+    ['avoir', 'sent', null],
+  ] as const)('B-1147 reprise après correctif : %s %s %s', async (type, status, date) => {
+    rendre({ ...invoice, document_type: type, status, payment_date: date });
+    const attendue = date?.split('T')[0] ?? localDateKey(new Date());
+    expect(screen.getByLabelText(type === 'avoir' ? 'Remboursé le' : 'Payée le')).toHaveValue(attendue);
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement de statut' }));
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', attendue));
   });
 
   it('la confirmation dit le numéro définitif renvoyé, pas le jeton provisoire', async () => {
