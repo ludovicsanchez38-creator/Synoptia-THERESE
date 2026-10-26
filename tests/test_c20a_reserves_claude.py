@@ -58,3 +58,47 @@ async def test_b1241_dix_entrees_apres_vert(registre_pdf, contenu, lignes):
              if ligne not in {"Synthèse française", "Généré par THÉRÈSE - Synoptïa"}
              and not ligne.startswith("Page ")]
     assert corps == lignes
+
+
+@pytest.mark.asyncio
+async def test_b1242_bloc_code_preformate_sans_titre(registre_pdf):
+    code = '# commentaire\nfor nom in ["Zoé", "Noël"]:\n    print(nom)\n    total = 2 * 3'
+    lecteur = await generer(registre_pdf, f"Avant\n```python\n{code}\n```\nAprès")
+    texte = lecteur.pages[0].extract_text()
+    assert code in texte
+    assert "```" not in texte
+    for ligne in code.splitlines():
+        fontes = [f for t, f, _ in fragments_pdf(lecteur) if ligne in t]
+        assert fontes and all("Courier" in f for f in fontes), (ligne, fontes)
+
+
+# Inventées après le vert B-1242, y compris une clôture absente et la pagination.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("langue", "code", "ferme"), [
+    ("bash", "# préparer\nprintf '%s' 'été'\nprintf '%s' 'fin'", True),
+    ("python", "def saluer():\n    nom = 'Anaïs'\n    return nom", True),
+    ("txt", "<img src='file:///absent'/> & **brut**\n> brut\n---", True),
+    ("sql", "SELECT nom, montant\n  FROM prestations\n WHERE montant > 7;", True),
+    ("", "  colonne A  colonne B  \n    17         29", True),
+    ("python", "if valide:\n\tprint('accord')", True),
+    ("text", "| A | B |\n|:-|-:|\n| x | y |", True),
+    ("python", "# sans clôture\nvaleur = 4 ** 3\n    suite", False),
+    ("text", "x" * 1800, True),
+    ("text", "\n".join(f"# instruction {i:03d}" for i in range(130)), True),
+])
+async def test_b1242_dix_entrees_apres_vert(registre_pdf, monkeypatch, langue, code, ferme):
+    def interdire(*args, **kwargs):
+        pytest.fail("Lecture externe depuis un bloc préformaté")
+
+    monkeypatch.setattr("reportlab.lib.utils.open_for_read", interdire)
+    contenu = f"```{langue}\n{code}" + ("\n```" if ferme else "")
+    lecteur = await generer(registre_pdf, contenu)
+    fragments = [(t, f) for t, f, _ in fragments_pdf(lecteur) if "Courier" in f]
+    extrait = "\n".join(t for t, _ in fragments)
+    if len(code) == 1800:
+        assert extrait.replace("\n", "") == code
+    else:
+        assert extrait == code.expandtabs(4)
+    assert "```" not in "\n".join(p.extract_text() for p in lecteur.pages)
+    if code.startswith("# instruction"):
+        assert len(lecteur.pages) >= 2

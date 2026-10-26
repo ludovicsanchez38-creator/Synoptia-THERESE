@@ -11,7 +11,16 @@ from app.services.pdf_theme import SYNOPTIA_THEME
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import Flowable, HRFlowable, Paragraph, SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import (
+    Flowable,
+    HRFlowable,
+    Paragraph,
+    Preformatted,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from .base import BaseSkill, FileFormat, SkillParams, SkillResult
 
@@ -120,6 +129,10 @@ class PdfSkill(BaseSkill):
             bulletFontName=theme.font_regular, bulletFontSize=10, spaceAfter=4,
         )
         citation = ParagraphStyle("DocumentCitation", parent=corps, leftIndent=14)
+        code = ParagraphStyle(
+            "DocumentCode", parent=corps, fontName="Courier", fontSize=9,
+            leading=12, spaceAfter=0,
+        )
         titres = {
             niveau: ParagraphStyle(
                 f"DocumentTitre{niveau}", parent=styles["heading"],
@@ -149,6 +162,19 @@ class PdfSkill(BaseSkill):
             puce = re.match(r"^(?:([-*+])|([0-9]+)[.)])\s+(.+)$", ligne)
             if not ligne:
                 terminer_paragraphe()
+            elif ligne.startswith("```"):
+                terminer_paragraphe()
+                i += 1
+                # Le code est du texte brut, même avec une clôture manquante.
+                while i < len(lignes) and not lignes[i].strip().startswith("```"):
+                    elements.append(
+                        Preformatted(
+                            lignes[i].expandtabs(4), code,
+                            maxLineLength=int((document.width - 12) / (code.fontSize * 0.6)),
+                        ) if lignes[i].strip() else Spacer(1, code.leading)
+                    )
+                    i += 1
+                elements.append(Spacer(1, 7))
             elif re.fullmatch(r"-{3,}|\*{3,}|_{3,}", ligne):
                 terminer_paragraphe()
                 elements.append(HRFlowable(
