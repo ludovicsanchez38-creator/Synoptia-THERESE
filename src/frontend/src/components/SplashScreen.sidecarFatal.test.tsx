@@ -111,3 +111,52 @@ it('B-1055 : progression, étape et erreur fatale sont annoncées', async () => 
   act(() => harness.sidecarErrorHandler?.({ payload: 'Échec factice du moteur' }));
   expect(container.querySelector('[role="alert"]')).not.toBeNull();
 });
+
+it('B-1155 : un échec de résolution du port affiche une erreur et arrête le démarrage', async () => {
+  vi.mocked(fetch).mockClear();
+  harness.initApiBase.mockRejectedValueOnce(new Error('IPC indisponible'));
+  const onReady = vi.fn();
+  const { container } = render(<SplashScreen onReady={onReady} />);
+  await waitFor(() => expect(container.querySelector('[role="alert"]')).toHaveTextContent(
+    "Impossible de joindre le moteur. Relance THÉRÈSE.",
+  ));
+  expect(fetch).not.toHaveBeenCalled();
+  expect(onReady).not.toHaveBeenCalled();
+});
+
+it.each([
+  new Error('Connexion interrompue'), new TypeError('Port illisible'),
+  new DOMException('Pont fermé', 'NetworkError'), 'Moteur absent',
+  null, undefined, 42, { code: 'IPC_INDISPONIBLE' },
+])('B-1155 : rejet de forme variable (%s)', async (raison) => {
+  vi.mocked(fetch).mockClear();
+  harness.initApiBase.mockRejectedValueOnce(raison);
+  const onReady = vi.fn();
+  const { container } = render(<SplashScreen onReady={onReady} />);
+  await waitFor(() => expect(container.querySelector('[role="alert"]')).toHaveTextContent(
+    'Impossible de joindre le moteur. Relance THÉRÈSE.',
+  ));
+  expect(fetch).not.toHaveBeenCalled();
+  expect(onReady).not.toHaveBeenCalled();
+});
+
+it.each([false, true])('B-1155 : rejet différé, démontage=%s', async (demonter) => {
+  vi.mocked(fetch).mockClear();
+  let rejeter!: (raison: unknown) => void;
+  harness.initApiBase.mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+    rejeter = reject;
+  }));
+  const onReady = vi.fn();
+  const { container, unmount } = render(<SplashScreen onReady={onReady} />);
+  if (demonter) unmount();
+  await act(async () => rejeter('Échec différé'));
+  if (demonter) {
+    expect(container).toBeEmptyDOMElement();
+  } else {
+    expect(container.querySelector('[role="alert"]')).toHaveTextContent(
+      'Impossible de joindre le moteur. Relance THÉRÈSE.',
+    );
+  }
+  expect(fetch).not.toHaveBeenCalled();
+  expect(onReady).not.toHaveBeenCalled();
+});

@@ -138,7 +138,14 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     async function poll() {
       // Résoudre le port backend avant de commencer le polling
       if (!apiBaseReady.current) {
-        await initApiBase();
+        try {
+          await initApiBase();
+        } catch {
+          if (!cancelled && !fatalSidecarError.current) {
+            setError('Impossible de joindre le moteur. Relance THÉRÈSE.');
+          }
+          return;
+        }
         apiBaseReady.current = true;
       }
 
