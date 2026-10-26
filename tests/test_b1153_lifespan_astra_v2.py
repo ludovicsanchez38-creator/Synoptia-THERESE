@@ -1,22 +1,60 @@
 """Exerce init_db et le lifespan de production sur une ancienne table enrichie."""
-from contextlib import closing
+import sqlite3
+import tempfile
+from contextlib import AsyncExitStack, closing
 
+import aiosqlite.core
 import pytest
 from app import main
 from app.models import database
 from app.models.entities import Contact
+from app.services import http_client, project_sync_service, qdrant
+from starlette.datastructures import State
 
 from tests.test_activity_migration import COLONNES, MINIMALES
+
+
+@pytest.fixture
+async def lifespan_isole(tmp_path, monkeypatch, pilote):
+    """Rendre les globals d'entrée, même si le vrai démarrage ou le test échoue."""
+    with monkeypatch.context() as patch:
+        patch.setenv('THERESE_SKIP_SERVICES', '1')
+        patch.setenv('THERESE_DATA_DIR', str(tmp_path))
+        patch.setattr(database.settings, 'data_dir', tmp_path)
+        patch.setattr(database.settings, 'db_path', tmp_path / 'therese.db')
+        # Le ménage des audios du vrai lifespan doit lui aussi rester local.
+        patch.setattr(tempfile, 'tempdir', str(tmp_path))
+        patch.setattr(database, 'db_encryption_enabled', lambda: pilote == 'sqlcipher')
+
+        # Détacher les ressources précédentes AVANT init_db/close_db : les
+        # restaurer après les avoir fermées ou annulées ne les préserverait pas.
+        for nom in ('sync_engine', 'async_engine', 'AsyncSessionLocal'):
+            patch.setattr(database, nom, None)
+        patch.setattr(database, '_db_cipher_active', False)
+        # init_db substitue ce pilote global en SQLCipher ; close_db ne le rend
+        # pas. Chaque cas SQLite doit aussi repartir avec le vrai pilote SQLite.
+        patch.setattr(aiosqlite.core, 'sqlite3', sqlite3)
+        patch.setattr(http_client, '_http_client', None)
+        patch.setattr(qdrant, '_qdrant_service', None)
+        patch.setattr(project_sync_service, '_applies_en_cours', set())
+
+        # Le shutdown efface le fichier du jeton, mais laisse session_token
+        # dans app.state : les clients suivants recevaient alors tous un 401.
+        patch.setattr(main.app, 'state', State(dict(main.app.state._state)))
+        patch.setattr(main.app, 'dependency_overrides', dict(main.app.dependency_overrides))
+
+        async with AsyncExitStack() as nettoyage:
+            nettoyage.push_async_callback(database.close_db)
+            nettoyage.push_async_callback(qdrant.close_qdrant)
+            nettoyage.push_async_callback(http_client.close_http_client)
+            yield
+        # Les pools du cas sont fermés avant que monkeypatch rende les globals.
 
 
 @pytest.mark.parametrize('pilote', ['sqlite', 'sqlcipher'])
 @pytest.mark.parametrize('schema', ['ancien', 'minimal'])
 @pytest.mark.parametrize('impossible', ['', 'declencheur', 'collation'], ids=['colonne-preservee', 'declencheur-preserve', 'collation-indisponible'])
-async def test_refus_reconstruction_ne_bloque_pas_le_demarrage(tmp_path, monkeypatch, caplog, pilote, schema, impossible):
-    await database.close_db()
-    monkeypatch.setattr(database.settings, 'data_dir', tmp_path)
-    monkeypatch.setattr(database.settings, 'db_path', tmp_path / 'therese.db')
-    monkeypatch.setattr(database, 'db_encryption_enabled', lambda: pilote == 'sqlcipher')
+async def test_refus_reconstruction_ne_bloque_pas_le_demarrage(lifespan_isole, caplog, pilote, schema, impossible):
     try:
         await database.init_db()
         async with database.get_session_context() as session:
