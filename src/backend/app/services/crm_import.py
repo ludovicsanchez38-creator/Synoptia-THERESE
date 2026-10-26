@@ -813,7 +813,9 @@ class CRMImportService:
                     if etape_ecartee:
                         result.errors.append(etape_ecartee)
                     perimetre = _perimetre_ou_none(mapped.get("scope"))
-                    if perimetre:
+                    # B-1127 : changer de type sans nouvelle cible réinterpréterait
+                    # l'ancien identifiant. Conserver alors le couple entier.
+                    if perimetre and (perimetre == "global" or mapped.get("scope_id")):
                         existing.scope = perimetre
                     # B-1127 : une cellule vide ne détache pas une fiche
                     # cloisonnée ; le général ne porte aucun identifiant.
