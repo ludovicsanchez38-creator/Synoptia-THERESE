@@ -6,6 +6,7 @@ Phase 4 - Invoicing
 """
 
 import logging
+import re
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -241,6 +242,45 @@ async def _inserer_piece(
     )
 
 
+def _rang_de_numero(numero: str) -> int | None:
+    try:
+        return int(numero.rsplit("-", 1)[-1])
+    except (ValueError, AttributeError):
+        return None
+
+
+async def _est_le_dernier_de_sa_serie(session: AsyncSession, numero: str) -> bool:
+    """Vrai si ce numéro est le plus haut de son préfixe et de son année.
+
+    Une convention illisible est laissée en place : on ne la renumérote pas.
+    """
+    morceaux = numero.split("-")
+    rang = _rang_de_numero(numero)
+    if rang is None or len(morceaux) < 3:
+        return True
+    prefixe = "-".join(morceaux[:-1])
+    statement = select(Invoice.invoice_number).where(Invoice.invoice_number.like(f"{prefixe}-%"))
+    maximum = rang
+    for autre in (await session.execute(statement)).scalars().all():
+        autre_rang = _rang_de_numero(autre)
+        if autre_rang is not None:
+            maximum = max(maximum, autre_rang)
+    return rang == maximum
+
+
+def _numero_de_la_serie_courante(numero: str, emission: datetime) -> bool:
+    """Seul un FACT de l'année d'émission peut conserver son rang au brouillon.
+
+    P160 : les anciens AV et les conventions importées ne sont plus prolongés.
+    Une pièce déjà émise reste conservée avant que cette règle soit consultée.
+    """
+    reconnu = re.fullmatch(rf"FACT-{date_civile_paris(emission).year}-([0-9]+)", numero)
+    if reconnu is None:
+        return False
+    rang = int(reconnu.group(1))
+    return rang > 0 and reconnu.group(1) == f"{rang:03d}"
+
+
 async def _attribuer_numero_definitif(
     session: AsyncSession,
     invoice: Invoice,
@@ -250,8 +290,11 @@ async def _attribuer_numero_definitif(
     """Pose un FACT commun aux factures et avoirs à la première émission.
 
     Un brouillon annulé n'est plus « draft », mais son jeton PROV- n'a jamais
-    été émis : cette première sortie le numérote. B-1164 : tout numéro déjà
-    attribué reste inchangé, y compris sur un brouillon hérité.
+    été émis : cette première sortie le numérote. Un brouillon qui porte déjà
+    un numéro définitif hérité le garde s'il est un FACT de l'année courante,
+    encore dernier de sa série. Sinon il en reçoit un nouveau, à la suite : l'émettre tel quel
+    après un numéro plus haut casserait l'ordre du § 90. L'ancien numéro,
+    inférieur au maximum, n'est pas réattribué.
 
     Appelé avant les autres écritures. Une collision annule seulement son
     SAVEPOINT, pour conserver la réservation SQLite jusqu’au commit final.
@@ -262,10 +305,14 @@ async def _attribuer_numero_definitif(
         return invoice
     if invoice.document_type not in ("facture", "avoir"):
         return invoice
-    if _facture_emise(invoice) or not _numero_provisoire(invoice.invoice_number):
+    if _facture_emise(invoice):
         return invoice
     if emission is None:
         emission = datetime.now(UTC)
+    if _numero_de_la_serie_courante(invoice.invoice_number, emission) and await _est_le_dernier_de_sa_serie(
+        session, invoice.invoice_number
+    ):
+        return invoice
 
     identifiant = invoice.id
     type_document = invoice.document_type
@@ -284,7 +331,11 @@ async def _attribuer_numero_definitif(
             if rechargee is None:
                 raise HTTPException(status_code=404, detail="Invoice not found") from collision
             invoice = rechargee
-            if _facture_emise(invoice) or not _numero_provisoire(invoice.invoice_number):
+            if _facture_emise(invoice):
+                return invoice
+            if _numero_de_la_serie_courante(invoice.invoice_number, emission) and await _est_le_dernier_de_sa_serie(
+                session, invoice.invoice_number
+            ):
                 return invoice
             type_document = invoice.document_type
             continue

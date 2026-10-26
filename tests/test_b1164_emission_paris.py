@@ -1,4 +1,4 @@
-"""B-1164 : jour d'émission parisien, sans renumérotation de l'existant."""
+"""B-1164 : jour d'émission parisien, avec la règle P160 à la première émission."""
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -74,18 +74,23 @@ async def test_emission_civile_par_les_routes_et_pdf(client, monkeypatch, instan
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("statut", ["draft", "sent", "paid"])
-async def test_numero_deja_attribue_ne_change_jamais(client, monkeypatch, statut):
+@pytest.mark.parametrize("statut,numero,attendu", [
+    ("draft", "FACT-2026-007", "FACT-2027-001"),
+    ("draft", "FACT-2027-007", "FACT-2027-007"),
+    ("sent", "FACT-2026-007", "FACT-2026-007"),
+    ("paid", "FACT-2026-007", "FACT-2026-007"),
+])
+async def test_numero_herite_suit_p160_a_minuit_paris(client, monkeypatch, statut, numero, attendu):
     piece = await creer(client)
     async with db.AsyncSessionLocal() as session:
         stockee = await session.get(Invoice, piece["id"])
-        stockee.invoice_number = "FACT-2026-007"
+        stockee.invoice_number = numero
         stockee.status = statut
         await session.commit()
-    figer(monkeypatch, datetime(2027, 1, 1, 0, 30, tzinfo=UTC))
+    figer(monkeypatch, datetime(2026, 12, 31, 23, 30, tzinfo=UTC))
     response = await client.put(f"/api/invoices/{piece['id']}", json={"status": "sent"})
     assert response.status_code == 200, response.text
-    assert response.json()["invoice_number"] == "FACT-2026-007"
+    assert response.json()["invoice_number"] == attendu
 
 
 @pytest.mark.asyncio

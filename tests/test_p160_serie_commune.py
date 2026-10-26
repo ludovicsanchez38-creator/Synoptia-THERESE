@@ -80,7 +80,7 @@ async def test_facture_avoir_facture_suivent_une_seule_serie(client: Any) -> Non
 @pytest.mark.parametrize("convention", [
     "AV-courant", "FACT-ancien", "import", "FACT-zero", "FACT-alias", "FACT-courant",
 ])
-async def test_numeros_herites_conserves_sans_modifier_les_pieces_emises(
+async def test_brouillon_herite_rejoint_la_serie_sans_modifier_les_pieces_emises(
     client: Any, convention: str,
 ) -> None:
     contact_id = await _contact(client)
@@ -118,10 +118,9 @@ async def test_numeros_herites_conserves_sans_modifier_les_pieces_emises(
         "avant": avant, "apres": apres, "brouillon": notes.json(), "emis": emis, "suivante": suivante,
     })
     assert apres == avant
-    # B-1164 : aucun numéro historique n'est migré, même au brouillon.
-    assert emis["invoice_number"] == numeros[convention], emis
-    rang_suivant = 8 if convention in ("FACT-alias", "FACT-courant") else 1
-    assert suivante["invoice_number"] == f"FACT-{annee}-{rang_suivant:03d}", suivante
+    premier_rang = 8 if convention == "FACT-alias" else 7 if convention == "FACT-courant" else 1
+    assert emis["invoice_number"] == f"FACT-{annee}-{premier_rang:03d}", emis
+    assert suivante["invoice_number"] == f"FACT-{annee}-{premier_rang + 1:03d}", suivante
 
 
 @pytest.mark.asyncio
