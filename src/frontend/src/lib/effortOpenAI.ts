@@ -11,16 +11,20 @@
 /** Ces modèles gardent l'effort choisi quand des outils sont là : leurs
  * appels passent par Responses, qui accepte l'effort. gpt-6.1-sol refuse
  * none et minimal (fiche du 09/10/2026). gpt-6-astra exige Responses pour
- * les outils et refuse none (guides du 09/10/2026, B-1774). */
-const EFFORT_CONSERVE_AVEC_OUTILS = new Set(['gpt-6.1-sol', 'gpt-6-astra']);
+ * les outils et refuse none (guides du 09/10/2026, B-1774). gpt-6.1-terra
+ * exige Responses pour les outils (fiche du 26/10/2026). */
+const EFFORT_CONSERVE_AVEC_OUTILS = new Set(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra']);
 
 export function effortConserveAvecOutils(modele: string): boolean {
   return EFFORT_CONSERVE_AVEC_OUTILS.has(modele.toLowerCase());
 }
 
-/** Fiche gpt-6.1-sol : xhigh est un palier à part, entre élevé et maximal. */
+/** Fiches gpt-6.1-sol et gpt-6.1-terra : xhigh est un palier à part, entre
+ * élevé et maximal. */
+const EFFORT_XHIGH_PROPOSE = new Set(['gpt-6.1-sol', 'gpt-6.1-terra']);
+
 export function effortXhighPropose(modele: string): boolean {
-  return modele.trim().toLowerCase() === 'gpt-6.1-sol';
+  return EFFORT_XHIGH_PROPOSE.has(modele.trim().toLowerCase());
 }
 
 /** Famille qui envoie max_completion_tokens. Astra y reste, témoin compris.
@@ -47,7 +51,7 @@ export function effortRetireParLesOutils(modele: string, outilsUtilises: boolean
 /** Sans outils, l'effort n'est transmis qu'aux modèles dont le support est
  * vérifié dans le catalogue backend (fiches GPT-5.6 « tel quel »). */
 // P-122 (25/09/2026) : gpt-6-sol et gpt-6-luna, même contrat que gpt-6-astra.
-const EFFORT_TRANSMIS_SANS_OUTILS = new Set(['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna', 'gpt-6.1-sol', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+const EFFORT_TRANSMIS_SANS_OUTILS = new Set(['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna', 'gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
 
 export function effortTransmisSansOutils(modele: string): boolean {
   return EFFORT_TRANSMIS_SANS_OUTILS.has(modele.toLowerCase());

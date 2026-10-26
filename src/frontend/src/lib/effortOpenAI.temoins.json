@@ -4,6 +4,7 @@
     "gpt-6-sol": true,
     "gpt-6-luna": true,
     "gpt-6-astra": true,
+    "gpt-6.1-terra": true,
     "gpt-5.6-luna": true,
     "gpt-5.6-sol": true,
     "gpt-5.5": true,
@@ -18,12 +19,13 @@
     "grok-4.6": false,
     "qwen3:8b": false
   },
-  "transport_avec_outils": ["gpt-6.1-sol", "gpt-6-astra"],
+  "transport_avec_outils": ["gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-astra"],
   "effort_transmis_sans_outils": [
     "gpt-6-sol",
     "gpt-6-luna",
     "gpt-6-astra",
     "gpt-6.1-sol",
+    "gpt-6.1-terra",
     "gpt-5.6-sol",
     "gpt-5.6-terra",
     "gpt-5.6-luna"

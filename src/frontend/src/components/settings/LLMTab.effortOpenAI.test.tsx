@@ -49,6 +49,19 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
   });
 
+  it('gpt-6.1-terra propose très élevé et garde l’effort avec les outils', async () => {
+    render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6.1-terra" />);
+    await screen.findByLabelText('Effort de raisonnement');
+    expect(screen.getByRole('option', { name: /Très élevé/ })).toBeTruthy();
+    const mention = await screen.findByTestId('effort-mention-conserve');
+    expect(mention).toHaveTextContent(/Avec des outils, l'effort que tu choisis est conservé pour ce modèle/);
+    expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
+    fireEvent.change(screen.getByLabelText('Effort de raisonnement'), { target: { value: 'xhigh' } });
+    await waitFor(() => {
+      expect(apiMocks.setLLMConfig).toHaveBeenCalledWith('openai', 'gpt-6.1-terra', 'xhigh');
+    });
+  });
+
   it('gpt-6-astra : l’effort reste quand la conversation utilise des outils', async () => {
     render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6-astra" />);
     const mention = await screen.findByTestId('effort-mention-conserve');

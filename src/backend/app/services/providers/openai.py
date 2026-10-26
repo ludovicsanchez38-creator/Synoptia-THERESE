@@ -33,7 +33,9 @@ OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 #   Responses pour les outils. Poser none renvoie HTTP 400.
 # - gpt-6-sol : la fiche dit que Chat Completions accepte les outils avec
 #   reasoning_effort=none. On ne le migre pas.
-_MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol", "gpt-6-astra"})
+# - gpt-6.1-terra (fiche lue le 26/10/2026) : « Tool calling requires the
+#   Responses API ».
+_MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-astra"})
 
 def _sortie_responses(modele: str, demande: int) -> int:
     """Borne la sortie au plafond publié, le même que Chat Completions."""

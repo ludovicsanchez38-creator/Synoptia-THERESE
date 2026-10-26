@@ -122,6 +122,9 @@ TOKEN_PRICES = {
     # dans PALIERS_TARIF. Cache, Fast, Flex, Batch, Ultrafast et régional
     # ne sont pas ici.
     "gpt-6.1-sol": {"input": 2.00, "output": 10.00},
+    # gpt-6.1-terra : fiche developers.openai.com/api/docs/models/gpt-6.1-terra
+    # le 26/10/2026, tarif texte standard (1 $ / 5 $). Même palier >272k.
+    "gpt-6.1-terra": {"input": 1.00, "output": 5.00},
     "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
     "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
     "gpt-5.6-luna": {"input": 0.20, "output": 1.20},
@@ -200,6 +203,13 @@ PALIERS_TARIF: dict[str, PalierTarif] = {
         multiplicateur_entree=2.0,
         multiplicateur_sortie=1.5,
         source="https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    ),
+    # gpt-6.1-terra : même règle, lue sur sa fiche le 26/10/2026.
+    "gpt-6.1-terra": PalierTarif(
+        seuil_entree=272_000,
+        multiplicateur_entree=2.0,
+        multiplicateur_sortie=1.5,
+        source="https://developers.openai.com/api/docs/models/gpt-6.1-terra",
     ),
 }
 

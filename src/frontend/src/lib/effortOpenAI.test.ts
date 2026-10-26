@@ -6,6 +6,7 @@ import {
   effortConserveAvecOutils,
   effortRetireParLesOutils,
   effortTransmisSansOutils,
+  effortXhighPropose,
   familleDeParametres,
   modeleOpenAIRaisonnant,
 } from './effortOpenAI';
@@ -36,6 +37,15 @@ describe('effortOpenAI (P-045)', () => {
     expect(effortConserveAvecOutils('gpt-6.1-sol')).toBe(true);
     expect(effortTransmisSansOutils('gpt-6.1-sol')).toBe(true);
     expect(effortConserveAvecOutils('gpt-6-sol')).toBe(false);
+  });
+
+  it('gpt-6.1-terra garde l’effort avec les outils, le transmet sans outils et propose xhigh', () => {
+    expect(modeleOpenAIRaisonnant('gpt-6.1-terra')).toBe(false);
+    expect(effortConserveAvecOutils('gpt-6.1-terra')).toBe(true);
+    expect(effortTransmisSansOutils('gpt-6.1-terra')).toBe(true);
+    expect(effortRetireParLesOutils('gpt-6.1-terra', true)).toBe(false);
+    expect(effortXhighPropose(' GPT-6.1-Terra ')).toBe(true);
+    expect(effortXhighPropose('gpt-5.6-terra')).toBe(false);
   });
 
   it('les outils retirent l’effort seulement sur Chat Completions', () => {

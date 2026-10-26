@@ -153,6 +153,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gpt-6-luna",        # Le plus économique de la génération 6
             # P-c18-m2 (09/10/2026) : après la tête. Les outils exigent Responses.
             "gpt-6.1-sol",
+            # 26/10/2026 (Ludo) : remplace gpt-5.6-terra chez OpenAI.
+            "gpt-6.1-terra",     # Équilibre intelligence/coût, génération 6.1
             "gpt-5.6-sol",       # Génération précédente
             "gpt-5.6-terra",     # Équilibre intelligence/coût
             "gpt-5.6-luna",      # Le plus économique de la génération 5.6
@@ -172,6 +174,14 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # none et minimal sont refusés : absents de la table, donc jamais émis.
             "gpt-6.1-sol": FicheModele(
                 effort=_EFFORT_GPT6,
+                context_window=1_050_000,
+                limite_sortie_fournisseur=128_000,
+            ),
+            # gpt-6.1-terra (fiche developers.openai.com du 26/10/2026) :
+            # none, low, medium (défaut), high, xhigh, max : transmis tels quels.
+            # Contexte 1 050 000 (entrée 922 000), sortie 128 000.
+            "gpt-6.1-terra": FicheModele(
+                effort=TEL_QUEL,
                 context_window=1_050_000,
                 limite_sortie_fournisseur=128_000,
             ),

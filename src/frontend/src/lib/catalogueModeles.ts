@@ -181,7 +181,7 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'openai',
     name: 'GPT (OpenAI)',
-    description: 'GPT-6.1 Sol, GPT-6 (Sol, Astra, Luna) et 5.6 - Polyvalent et puissant',
+    description: 'GPT-6.1 (Sol, Terra), GPT-6 (Sol, Astra, Luna) et 5.6 - Polyvalent et puissant',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
