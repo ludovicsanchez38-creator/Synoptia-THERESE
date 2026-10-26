@@ -80,3 +80,31 @@ async def test_rejeu_apres_correctif(db_session, message, contenu, accepte):
     else:
         with pytest.raises(service.RefusMemoire, match="uniquement une information"):
             await creer(db_session, message, contenu)
+
+
+@pytest.mark.parametrize("message", [
+    "Le client veut de plus en plus de détails",
+    "Le client veut plus de détails",
+    "Le client veut des détails en plus",
+    "Le client veut le plus de détails",
+])
+async def test_plus_affirmatif_ne_cree_pas_de_negation(db_session, message):
+    fiche = await creer(db_session, message, "Le client veut des détails")
+    assert fiche["receipt"]["operation"] == "creation"
+
+
+# Dix entrées inventées après le correctif des comparatifs.
+@pytest.mark.parametrize("message,contenu,accepte", [
+    ("Aline veut de plus en plus de photos", "Aline veut des photos", True),
+    ("Bruno demande plus de cartes", "Bruno demande des cartes", True),
+    ("Célia commande des boîtes en plus", "Célia commande des boîtes", True),
+    ("Dario veut le plus de plans", "Dario veut des plans", True),
+    ("Elsa veut des plans de plus en plus précis", "Elsa veut des plans précis", True),
+    ("Farid ne veut plus de photos", "Farid veut des photos", False),
+    ("Gaëlle n'imprime plus de cartes", "Gaëlle imprime des cartes", False),
+    ("Hugo ne téléphone plus", "Hugo téléphone", False),
+    ("Ida veut plus de plans", "Ida ne veut plus de plans", False),
+    ("Joël ne veut plus de détails", "Joël ne veut plus de détails", True),
+])
+async def test_rejeu_astra_plus(db_session, message, contenu, accepte):
+    await test_rejeu_apres_correctif(db_session, message, contenu, accepte)

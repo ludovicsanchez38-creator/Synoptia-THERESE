@@ -75,6 +75,15 @@ def negations(texte: str) -> set[tuple[str, str]]:
     for proposition in re.split(r'[.!?;\n]', normaliser(texte)):
         jetons = re.findall(r'[^\W_]+', proposition)
         for index, jeton in enumerate(jetons):
+            # B-1142 : comparatifs et ajouts affirmatifs. « ne… plus de »
+            # reste négatif ; « de plus en plus » et « le plus » ne le sont pas.
+            if jeton == 'plus' and (
+                jetons[max(0, index - 1):index] in (['en'], ['le'], ['la'], ['les'])
+                or jetons[index:index + 3] == ['plus', 'en', 'plus']
+                or (jetons[index + 1:index + 2] == ['de']
+                    and not {'ne', 'n'} & set(jetons[:index]))
+            ):
+                continue
             if jeton in {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'sans', 'ni'}:
                 vise = next((mot for mot in jetons[index + 1:] if mot not in petits_mots), None)
                 if vise is None:
