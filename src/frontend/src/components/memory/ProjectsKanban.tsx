@@ -293,9 +293,11 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
         onDelete={onDelete}
         isDragging={isDragging}
         showDragHandle
-        poignee={(tabIndex) => <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners}
+        poignee={(tabIndex, aideId) => <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners}
           tabIndex={tabIndex}
           aria-label={`Déplacer ${nomAccessible}`}
+          // P-107 / B-217 : lire les deux aides au focus de la poignée.
+          aria-describedby={[aideId, attributes['aria-describedby']].filter(Boolean).join(' ')}
           className="text-text-muted flex-shrink-0 cursor-grab active:cursor-grabbing">
           <GripVertical className="w-4 h-4" aria-hidden />
         </button>}
@@ -315,7 +317,7 @@ interface ProjectCardProps {
   isOverlay?: boolean;
   isDragging?: boolean;
   showDragHandle?: boolean;
-  poignee?: (tabIndex: number) => React.ReactNode;
+  poignee?: (tabIndex: number, aideId: string) => React.ReactNode;
 }
 
 function ProjectCard({ project, onSelect, onDelete, isOverlay, isDragging, showDragHandle, poignee }: ProjectCardProps) {
@@ -372,7 +374,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, isDragging, showD
       </span>
       <div className="flex items-center gap-2">
         {/* Poignée (repère visuel : toute la carte est draggable) */}
-        {poignee?.(!isOverlay && commandeActive === 0 ? 0 : -1) ?? (showDragHandle && (
+        {poignee?.(!isOverlay && commandeActive === 0 ? 0 : -1, aideId) ?? (showDragHandle && (
           <div className="text-text-muted flex-shrink-0">
             <GripVertical className="w-4 h-4" />
           </div>

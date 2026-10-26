@@ -37,12 +37,17 @@ const TACHE = {
 
 /** Le texte que @dnd-kit sert aux technologies d'assistance. */
 function instructionsRendues(): string {
-  const carte = document.querySelector('[aria-describedby]');
+  // P-107 : le groupe Projets décrit aussi la navigation entre commandes.
+  // Les consignes de glisser sont portées par le contrôle sortable lui-même.
+  const carte = document.querySelector('[aria-roledescription="sortable"][aria-describedby]');
   if (!carte) throw new Error('aucune carte déplaçable rendue');
-  const id = carte.getAttribute('aria-describedby') as string;
-  const element = document.getElementById(id);
-  if (!element) throw new Error(`élément ${id} introuvable`);
-  return element.textContent || '';
+  // aria-describedby accepte plusieurs références : lire toutes les aides.
+  const ids = carte.getAttribute('aria-describedby')!.trim().split(/\s+/);
+  return ids.map((id) => {
+    const element = document.getElementById(id);
+    if (!element) throw new Error(`élément ${id} introuvable`);
+    return element.textContent || '';
+  }).join(' ');
 }
 
 const TABLEAUX: [string, () => void][] = [

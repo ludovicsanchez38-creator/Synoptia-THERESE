@@ -98,6 +98,20 @@ describe('P-107 : un seul arrêt de tabulation par carte de projet', () => {
     }
   });
 
+  it('B-217 : décrit la navigation et le glisser en français au focus de chaque poignée', () => {
+    monter();
+    for (const projet of [PROJET, SUIVANT]) {
+      const [poignee, nom] = commandes(projet);
+      focaliser(nom);
+      fireEvent.keyDown(nom, { key: 'ArrowLeft', code: 'ArrowLeft' });
+      expect(poignee).toHaveFocus();
+      expect(poignee).toHaveAccessibleDescription(
+        /Flèches gauche et droite : choisir entre déplacer, ouvrir ou supprimer le projet\. Pour saisir un élément, appuie sur la barre d[’']espace\..*flèches du clavier.*barre d[’']espace pour le déposer.*Échap pour annuler\./,
+      );
+      expect(poignee).not.toHaveAccessibleDescription(/press the space bar/i);
+    }
+  });
+
   it('parcourt poignée, nom et corbeille dans les deux sens, sans boucle', () => {
     const { onSelect, onDelete, onStatusChange } = monter();
     const [poignee, nom, corbeille] = commandes();
