@@ -9,7 +9,7 @@ import importlib.util
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 
@@ -36,6 +36,7 @@ class SearchResponse:
     # la recherche indisponible, au lieu de passer pour une recherche vide.
     indisponible: bool = False
     raison: str | None = None
+    code_erreur: Literal["cle_refusee", "quota"] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -244,7 +245,21 @@ class BraveSearchService:
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Brave Search error: {e.response.status_code}")
-            return SearchResponse(query=query, results=[], total_results=0, indisponible=True, raison="le service de recherche n'a pas répondu")
+            code_erreur: Literal["cle_refusee", "quota"] | None = None
+            raison = "le service de recherche n'a pas répondu"
+            if e.response.status_code in {401, 403}:
+                code_erreur = "cle_refusee"
+                raison = "Brave Search a refusé la clé. Vérifie ta clé Brave Search dans Paramètres > Services."
+            elif e.response.status_code == 429:
+                code_erreur = "quota"
+                raison = (
+                    "La limite de requêtes Brave Search est atteinte. Vérifie le quota de ton compte "
+                    "Brave Search ou réessaie après le délai de limitation."
+                )
+            return SearchResponse(
+                query=query, results=[], total_results=0, indisponible=True,
+                raison=raison, code_erreur=code_erreur,
+            )
         except Exception as e:
             logger.error(f"Brave Search error: {e}")
             return SearchResponse(query=query, results=[], total_results=0, indisponible=True, raison="le service de recherche n'a pas répondu")

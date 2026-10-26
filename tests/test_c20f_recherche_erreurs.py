@@ -117,3 +117,77 @@ async def test_dix_rejeux_indisponible_apres_astra(monkeypatch, reponses, type_f
     assert texte in events[-1].content
     if type_final == "done":
         assert len(events[-1].sources) == 1
+
+
+CLE_REFUSEE = "Brave Search a refusé la clé. Vérifie ta clé Brave Search dans Paramètres > Services."
+QUOTA_ATTEINT = (
+    "La limite de requêtes Brave Search est atteinte. Vérifie le quota de ton compte "
+    "Brave Search ou réessaie après le délai de limitation."
+)
+PANNE_RESEAU = "La recherche web n'a pas pu aboutir. Réessaie plus tard."
+
+
+async def rechercher_avec_brave_simule(monkeypatch, reponses):
+    reponses_http = iter(reponses)
+    appels = []
+
+    def transport(request):
+        appels.append(request.url.path)
+        reponse = next(reponses_http)
+        if isinstance(reponse, Exception):
+            raise reponse
+        if reponse == "source":
+            return httpx.Response(200, json={"web": {"results": [{
+                "title": "Source simulée", "url": "https://example.invalid/brave",
+                "description": "Extrait simulé",
+            }]}})
+        return httpx.Response(reponse, json={"web": {"results": []}, "error": "corps-serveur-non-affichable"})
+
+    async def synthese(*args, **kwargs):
+        yield "Synthèse simulée"
+
+    service = web_search.BraveSearchService("cle-brave-factice")
+    monkeypatch.setattr(web_search, "verifier_autorisation_recherche", lambda: None)
+    monkeypatch.setattr(module, "get_web_search_service", lambda: service)
+    monkeypatch.setattr(module, "decompose_question", AsyncMock(return_value=[
+        f"Axe {i}" for i in range(len(reponses))
+    ]))
+    llm = SimpleNamespace(prepare_context=lambda messages: messages, stream_response=synthese)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+        monkeypatch.setattr(service, "_get_client", AsyncMock(return_value=client))
+        events = [event async for event in module.deep_research("Question locale", llm)]
+    assert len(appels) == len(reponses)
+    assert all("corps-serveur-non-affichable" not in event.content for event in events)
+    return events
+
+
+@pytest.mark.parametrize("reponse,attendu", [
+    (401, CLE_REFUSEE), (403, CLE_REFUSEE), (429, QUOTA_ATTEINT),
+    (httpx.ConnectError("Réseau factice"), PANNE_RESEAU),
+])
+async def test_b1325_brave_distingue_cle_quota_et_reseau(monkeypatch, reponse, attendu):
+    events = await rechercher_avec_brave_simule(monkeypatch, [reponse])
+    assert events[-1].type == "error"
+    assert events[-1].content == attendu
+
+
+@pytest.mark.parametrize("reponses,type_final,attendu", [
+    ([401, 503], "error", CLE_REFUSEE),
+    ([503, 403], "error", CLE_REFUSEE),
+    ([429, httpx.ReadTimeout("Lecture factice")], "error", QUOTA_ATTEINT),
+    ([httpx.ConnectError("Connexion factice"), 429], "error", QUOTA_ATTEINT),
+    ([429, 401], "error", CLE_REFUSEE),
+    ([403, 429], "error", CLE_REFUSEE),
+    ([200, 200], "error", "Aucun résultat trouvé. Essaie de reformuler la question."),
+    ([503], "error", PANNE_RESEAU),
+    ([401, "source"], "done", "Synthèse simulée"),
+    (["source", 429], "done", "Synthèse simulée"),
+])
+async def test_b1325_dix_rejeux_apres_correctif(monkeypatch, reponses, type_final, attendu):
+    events = await rechercher_avec_brave_simule(monkeypatch, reponses)
+    assert events[-1].type == type_final
+    assert events[-1].content == attendu
+    if type_final == "done":
+        assert [source.url for source in events[-1].sources] == ["https://example.invalid/brave"]
+    else:
+        assert not any(event.type == "synthesizing" for event in events)

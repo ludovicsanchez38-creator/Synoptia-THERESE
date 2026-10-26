@@ -213,6 +213,7 @@ async def deep_research(
     all_sources: list[ResearchSource] = []
     seen_urls: set[str] = set()
     recherche_en_echec = False
+    erreurs_actionnables: dict[str, str] = {}
 
     for i, query in enumerate(queries, 1):
         yield ResearchProgress(
@@ -227,6 +228,8 @@ async def deep_research(
             resp = await service.search(query, max_results=max_results_per_query)
             if resp.indisponible:
                 recherche_en_echec = True
+                if resp.code_erreur and resp.raison:
+                    erreurs_actionnables[resp.code_erreur] = resp.raison
             for result in resp.results:
                 if result.url not in seen_urls:
                     seen_urls.add(result.url)
@@ -273,9 +276,13 @@ async def deep_research(
         yield ResearchProgress(
             type="error",
             content=(
-                "La recherche web n'a pas pu aboutir. Réessaie plus tard."
-                if recherche_en_echec
-                else "Aucun résultat trouvé. Essaie de reformuler la question."
+                erreurs_actionnables.get("cle_refusee")
+                or erreurs_actionnables.get("quota")
+                or (
+                    "La recherche web n'a pas pu aboutir. Réessaie plus tard."
+                    if recherche_en_echec
+                    else "Aucun résultat trouvé. Essaie de reformuler la question."
+                )
             ),
         )
         return
