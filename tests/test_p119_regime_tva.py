@@ -54,6 +54,12 @@ def test_exoneration_formation_imprime_sa_reference(tmp_path):
     assert "293 B" not in texte
 
 
+def test_b1144_une_piece_sans_tva_respecte_l_exoneration_formation(tmp_path):
+    texte = _texte_du_pdf(tmp_path, regime="exoneration_formation", tva_applicable=False)
+    assert FORMATION in texte
+    assert "293 B" not in texte
+
+
 def test_sans_regime_declare_le_pdf_se_borne_au_constat(tmp_path):
     texte = _texte_du_pdf(tmp_path, regime="normal")
     assert "Aucune TVA facturée" in texte
