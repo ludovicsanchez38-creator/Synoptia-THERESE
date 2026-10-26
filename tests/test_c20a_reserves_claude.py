@@ -1,5 +1,8 @@
 """Contre-relecture C20-A : vrais PDF via generate_document, sans modèle."""
 
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 from tests import test_p104_pdf_depuis_chat as p104
@@ -139,3 +142,66 @@ async def test_b1243_dix_entrees_apres_vert(registre_pdf, separateur, entete, va
     assert "|" not in texte and separateur not in texte
     for cellule in entete:
         assert any(cellule in t and "Bold" in f for t, f, _ in fragments_pdf(lecteur))
+
+
+async def verifier_refus_route_pdf(registre, monkeypatch, mode, contenu, requete):
+    from app.routers import skills
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+
+    # Le parcours chat reste disponible et son fichier est relu avant le refus.
+    lecteur = await generer(registre, contenu)
+    assert p104.texte_du_corps(lecteur) == "".join(contenu.split())
+    fichiers_avant = {p: p.read_bytes() for p in registre.output_dir.iterdir()}
+    cache_avant = set(registre._file_cache)
+    llm = SimpleNamespace(
+        config=SimpleNamespace(provider=SimpleNamespace(value="simulé"), model="sans-réseau"),
+        generate_content=AsyncMock(return_value=contenu),
+    )
+    monkeypatch.setattr(skills, "get_llm_service", lambda: llm)
+    monkeypatch.setattr(skills, "get_model_capability", lambda *_: mode)
+    monkeypatch.setattr(skills, "get_cached_profile", lambda: None)
+    monkeypatch.setattr(skills, "enregistrer_usage_llm", lambda *args: None)
+    session = AsyncMock()
+    resultat = MagicMock()
+    resultat.scalars.return_value.all.return_value = []
+    session.execute.return_value = resultat
+    app = FastAPI()
+    app.include_router(skills.router, prefix="/api/skills")
+    app.dependency_overrides[skills.get_session] = lambda: session
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        reponse = await client.post("/api/skills/execute/pdf-pro", json=requete)
+    assert {p: p.read_bytes() for p in registre.output_dir.iterdir()} == fichiers_avant
+    assert set(registre._file_cache) == cache_avant
+    assert reponse.status_code == 400, reponse.text
+    assert "chat" in reponse.json()["detail"].lower()
+    llm.generate_content.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["code", "markdown"])
+async def test_b1245_route_pdf_refuse_sans_orphelin(registre_pdf, monkeypatch, mode):
+    await verifier_refus_route_pdf(
+        registre_pdf, monkeypatch, mode, "Attestation remise à Maëlle.",
+        {"prompt": "Prépare une attestation PDF", "title": "Attestation"},
+    )
+
+
+# Dix demandes nouvelles après le vert B-1245, avec variantes des paramètres HTTP.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("mode", "contenu", "options"), [
+    ("code", "Bon de remise : cinq dossiers.", {}),
+    ("markdown", "Attestation de présence : Chloé.", {"title": "Présence"}),
+    ("code", "Planning de décembre : atelier le jeudi.", {"title": ""}),
+    ("markdown", "Procès-verbal : résolution adoptée.", {"title": None}),
+    ("code", "Bordereau : matériel réceptionné.", {"template": "synoptia-dark"}),
+    ("markdown", "Note de frais : 63 € remboursés.", {"template": "inconnu"}),
+    ("code", "Lettre de mission : diagnostic initial.", {"context": {"client": "Atelier Boréal"}}),
+    ("markdown", "Inventaire : trois tables et huit chaises.", {"context": {"lignes": [3, 8]}}),
+    ("code", "Synthèse : réouverture mardi.", {"title": "../../ailleurs/Été"}),
+    ("markdown", "Compte rendu : prochaine séance à Nîmes.", {"title": "Réunion", "context": {}}),
+])
+async def test_b1245_dix_entrees_apres_vert(registre_pdf, monkeypatch, mode, contenu, options):
+    await verifier_refus_route_pdf(
+        registre_pdf, monkeypatch, mode, contenu, {"prompt": contenu, **options},
+    )

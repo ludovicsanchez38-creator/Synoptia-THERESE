@@ -95,6 +95,14 @@ async def execute_skill(
             detail=f"Skill '{skill_id}' not found. Available: [{ ','.join([s['skill_id'] for s in registry.list_skills()]) }]"
         )
 
+    # P-104 : ce moteur rend le contenu du chat ; il ne participe pas au
+    # pipeline de génération de code et de relance Markdown de l'établi.
+    if skill_id == "pdf-pro":
+        raise HTTPException(
+            status_code=400,
+            detail="Pour générer un PDF, demandez-le dans le chat de THÉRÈSE.",
+        )
+
     try:
         # 1. Récupérer le profil utilisateur
         user_profile = get_cached_profile()
