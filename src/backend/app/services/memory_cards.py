@@ -72,18 +72,21 @@ def negations(texte: str) -> set[tuple[str, str]]:
     # porte sur le mot précédent (« ne répond pas »), jamais la phrase suivante.
     petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'en', 'y'}
     resultat = set()
-    for proposition in re.split(r'[.!?;\n]', normaliser(texte)):
+    # Un marqueur cité isolément désigne le mot, pas une négation du fait.
+    texte = re.sub(r'[«“"]\s*(pas|jamais|plus|aucun|aucune|sans|ni)\s*[»”"]', '', normaliser(texte))
+    for proposition in re.split(r'[.!?;,\n]|\bmais\b', texte):
         jetons = re.findall(r'[^\W_]+', proposition)
         for index, jeton in enumerate(jetons):
             # B-1142 : comparatifs et ajouts affirmatifs. « ne… plus de »
             # reste négatif ; « de plus en plus » et « le plus » ne le sont pas.
-            if jeton == 'plus' and (
-                jetons[max(0, index - 1):index] in (['en'], ['le'], ['la'], ['les'])
-                or jetons[index:index + 3] == ['plus', 'en', 'plus']
-                or (jetons[index + 1:index + 2] == ['de']
-                    and not {'ne', 'n'} & set(jetons[:index]))
-            ):
-                continue
+            if jeton == 'plus':
+                amorce = max((i for i, mot in enumerate(jetons[:index]) if mot in {'ne', 'n', 'non'}), default=-1)
+                if (amorce < 0
+                    or {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'rien', 'personne'}
+                        & set(jetons[amorce + 1:index])
+                    or jetons[max(0, index - 1):index] in (['en'], ['le'], ['la'], ['les'])
+                    or jetons[index:index + 3] == ['plus', 'en', 'plus']):
+                    continue
             if jeton in {'pas', 'jamais', 'plus', 'aucun', 'aucune', 'sans', 'ni'}:
                 vise = next((mot for mot in jetons[index + 1:] if mot not in petits_mots), None)
                 if vise is None:
@@ -101,7 +104,7 @@ def _polarites_propositions(*textes: str) -> set[tuple[str, str]]:
     régressions B-1142. On ne propage pas une négation à tous les noms du texte.
     """
     resultat = set()
-    petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'avec'}
+    petits_mots = {'de', 'd', 'du', 'des', 'la', 'le', 'les', 'l', 'un', 'une', 'avec', 'mais'}
     for texte in textes:
         for proposition in re.split(r'[.!?;,\n]', normaliser(texte)):
             marqueurs = {m for m, _ in negations(proposition)}
@@ -121,6 +124,21 @@ def _polarites_propositions(*textes: str) -> set[tuple[str, str]]:
             if jetons:
                 resultat.add((' '.join(jetons), marqueur))
     return resultat
+
+
+def _reprise_negative(proposition: str, sources: list[str]) -> bool:
+    """Une négation conservée peut déplacer ou raccourcir son complément.
+
+    Ce témoin assouplit seulement l'ancrage au mot voisin. Les inversions de
+    propositions restent vérifiées séparément, avec l'ordre et le sujet.
+    """
+    phrases = _polarites_propositions(proposition.replace(',', ' '))
+    origines = _polarites_propositions(*(source.replace(',', ' ') for source in sources))
+    return bool(phrases) and all(
+        marqueur and any(marqueur == autre and set(phrase.split()) <= set(origine.split())
+                        for origine, autre in origines)
+        for phrase, marqueur in phrases
+    )
 
 
 def date_utc(valeur: datetime) -> datetime:
@@ -335,7 +353,18 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         # Une correction entièrement affirmée dans le nouveau message n'a pas
         # à répéter « recevoir », « nouveau » ou « moindre » de l'ancienne fiche.
         if propositions and propositions <= propositions_source:
+            ajouts = set()
             retraits = set()
+            omissions = set()
+        elif all(not champ or _polarites_propositions(champ) <= propositions_source
+                 or _reprise_negative(champ, [source.content,
+                 *((existante.content, existante.reason) if existante else ())])
+                 for champ in champs_factuels):
+            # Le voisin lexical a changé, mais la négation est reprise avec
+            # les mots d'une même phrase source. Ce n'est pas une invention.
+            ajouts = set()
+            retraits = set()
+            omissions = set()
         negations_seules = sorted(ajouts | retraits | omissions | inversions)
         if manquants or nombres_seuls or negations_seules:
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.',
