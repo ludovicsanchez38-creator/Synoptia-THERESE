@@ -739,7 +739,7 @@ class InvoicePDFGenerator:
             # B-1357 : « à réception de facture, net à 30 jours » se contredisait.
             reglement = "Paiement à 30 jours à compter de la réception de la facture.<br/>"
         if legal_mentions:
-            penalty_lines = legal_mentions.replace("\n", "<br/>") + "<br/>"
+            penalty_lines = _texte_pdf(legal_mentions) + "<br/>"
 
         if self._current_document_type == "avoir":
             # P-154 : un avoir ne réclame rien : ni délai de paiement, ni

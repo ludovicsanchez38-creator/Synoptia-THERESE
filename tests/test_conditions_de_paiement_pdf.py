@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from app.services.invoice_pdf import InvoicePDFGenerator
 from pypdf import PdfReader
 
@@ -78,3 +79,14 @@ def test_les_chevrons_des_conditions_sont_imprimes_et_ne_cassent_pas_le_pdf(tmp_
     )
     assert "fin de mois" in texte, "la précision entre chevrons a disparu du PDF"
     assert "Virement" in texte
+
+
+@pytest.mark.parametrize("mentions", [
+    "Référence <CONTRAT-82> & annexe\nÉchéance convenue.",
+    "Modalité <b> à confirmer",
+    "Le texte &amp; reste littéral.",
+])
+def test_b1145_les_mentions_libres_sont_imprimees_integralement(tmp_path: Path, mentions: str):
+    texte = _texte_du_pdf(tmp_path, legal_mentions=mentions)
+    for ligne in mentions.splitlines():
+        assert ligne in texte
