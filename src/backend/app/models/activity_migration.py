@@ -5,6 +5,17 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _verifier_liens(conn: Any, tables: set[str], liens: dict[str, str]) -> None:
+    contraintes: dict[int, set[tuple[str, str]]] = {}
+    for r in conn.execute('PRAGMA foreign_key_list(activities)'):
+        contraintes.setdefault(r[0], set()).add((r[3], r[2]))
+    if any(
+        r[2] in tables or any(lien not in liens.items() for lien in contraintes[r[3]])
+        for r in conn.execute('PRAGMA foreign_key_check(activities)')
+    ):
+        raise ValueError('Migration des activités : liens incohérents.')
+
+
 def migrer_activites(conn: Any) -> None:
     colonnes = {r[1]: r for r in conn.execute('PRAGMA table_info(activities)')}
     if not colonnes:
@@ -17,6 +28,22 @@ def migrer_activites(conn: Any) -> None:
     reconstruire = colonnes['contact_id'][3] or not {
         'project_id', 'conversation_id', 'execution_id', 'statut', 'remplace_id',
     } <= colonnes.keys()
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    liens = {
+        'contact_id': 'contacts', 'project_id': 'projects',
+        'conversation_id': 'conversations', 'remplace_id': 'activities',
+    }
+    # B-1140 : la base déjà migrée et sans réparation reste en lecture seule.
+    # Les contraintes inhabituelles doivent toujours être vérifiées.
+    if not reconstruire and not any(
+        conn.execute(
+            f'SELECT 1 FROM activities WHERE {colonne} IS NOT NULL '
+            f'AND NOT EXISTS (SELECT 1 FROM {table} AS cible WHERE cible.id=activities.{colonne}) LIMIT 1'
+        ).fetchone()
+        for colonne, table in liens.items() if table in tables
+    ):
+        _verifier_liens(conn, tables, liens)
+        return
     # SQLite exige une reconstruction pour retirer NOT NULL. Aucune copie
     # hors SQLCipher ; les ids, annulations et notes CRM restent identiques.
     conn.commit()
@@ -47,11 +74,6 @@ def migrer_activites(conn: Any) -> None:
         # Une ancienne suppression peut avoir laissé ces liens sans cible.
         # Les annulations valides, y compris vers une ligne copiée plus tard,
         # restent intactes : toutes les activités sont déjà dans la table finale.
-        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        liens = {
-            'contact_id': 'contacts', 'project_id': 'projects',
-            'conversation_id': 'conversations', 'remplace_id': 'activities',
-        }
         for colonne, table in liens.items():
             # Une base partielle ne permet pas de conclure à un lien orphelin.
             if table not in tables:
@@ -60,14 +82,7 @@ def migrer_activites(conn: Any) -> None:
                 f'UPDATE activities SET {colonne}=NULL WHERE {colonne} IS NOT NULL '
                 f'AND NOT EXISTS (SELECT 1 FROM {table} AS cible WHERE cible.id=activities.{colonne})'
             ).rowcount
-        contraintes: dict[int, set[tuple[str, str]]] = {}
-        for r in conn.execute('PRAGMA foreign_key_list(activities)'):
-            contraintes.setdefault(r[0], set()).add((r[3], r[2]))
-        if any(
-            r[2] in tables or any(lien not in liens.items() for lien in contraintes[r[3]])
-            for r in conn.execute('PRAGMA foreign_key_check(activities)')
-        ):
-            raise ValueError('Migration des activités : liens incohérents.')
+        _verifier_liens(conn, tables, liens)
         conn.commit()
     except Exception:
         conn.rollback()
