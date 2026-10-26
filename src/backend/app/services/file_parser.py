@@ -22,6 +22,12 @@ MAX_PDF_PAGES = 100
 # à découper et coûteux à envoyer, sans que rien ne le signale.
 MAX_XLSX_LIGNES = 2000
 
+# B-1160 : bornes avant toute expansion des fusions de tableaux DOCX.
+MAX_DOCX_COLONNES = 128
+MAX_DOCX_LIGNES_TABLEAU = 1000  # Borne aussi les chaînes de fusions verticales.
+MAX_DOCX_CELLULES = 10_000  # Budget du document, tableaux imbriqués compris.
+AVIS_DOCX_TRONQUE = "[DOCX tronqué : tableau trop volumineux, certaines cellules n'ont pas été lues.]"
+
 
 # Supported extensions
 #
@@ -224,13 +230,15 @@ def _extract_docx(file_path: Path) -> str:
 
     doc = Document(file_path)
     from docx.oxml.ns import qn
-    from docx.oxml.table import CT_Tc
     from docx.oxml.xmlchemy import BaseOxmlElement
-    from docx.table import Table
+    from docx.table import Table, _Cell
     from docx.text.paragraph import Paragraph
     from docx.types import ProvidesStoryPart
 
+    cellules_lues = 0
+
     def extraire_blocs(element: BaseOxmlElement, parent: ProvidesStoryPart) -> str:
+        nonlocal cellules_lues
         morceaux: list[str] = []
         for enfant in element.iterchildren():
             if enfant.tag == qn("w:p"):
@@ -243,17 +251,32 @@ def _extract_docx(file_path: Path) -> str:
                     morceaux.append(texte)
             elif enfant.tag == qn("w:tbl"):
                 tableau = Table(enfant, parent)
-                vues: set[CT_Tc] = set()
-                for ligne in tableau.rows:
+                tronque = False
+                for numero, ligne in enumerate(tableau._tbl.iterchildren(qn("w:tr"))):
+                    if numero >= MAX_DOCX_LIGNES_TABLEAU:
+                        tronque = True
+                        break
                     cellules: list[str] = []
-                    for cellule in ligne.cells:
-                        # Les fusions réutilisent le même élément XML.
-                        if cellule._tc in vues:
+                    colonnes = 0
+                    for tc in ligne.iterchildren(qn("w:tc")):
+                        span = tc.grid_span
+                        colonnes += span
+                        if not 1 <= span <= MAX_DOCX_COLONNES or colonnes > MAX_DOCX_COLONNES or cellules_lues >= MAX_DOCX_CELLULES:
+                            tronque = True
+                            break
+                        cellules_lues += 1
+                        # Une continuation verticale a déjà été lue en tête.
+                        # row.cells démultiplie gridSpan et remonte récursivement
+                        # les vMerge : lire chaque w:tc directement évite les deux.
+                        if tc.vMerge == "continue":
                             continue
-                        vues.add(cellule._tc)
-                        cellules.append(extraire_blocs(cellule._tc, cellule))
+                        cellules.append(extraire_blocs(tc, _Cell(tc, tableau)))
                     if cellules:
                         morceaux.append("\t".join(cellules))
+                    if tronque:
+                        break
+                if tronque:
+                    morceaux.append(AVIS_DOCX_TRONQUE)
         return "\n\n".join(morceaux)
 
     return extraire_blocs(doc.element.body, doc)
