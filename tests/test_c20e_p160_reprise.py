@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from app.models import database as db
 from app.models.entities import Invoice
+
 from tests.test_b1164_emission_paris import creer, figer
 
 
