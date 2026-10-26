@@ -132,7 +132,7 @@ async def _check_overdue_invoices(session: AsyncSession) -> int:
         days_overdue = (datetime.now(UTC) - _as_aware_utc(inv.due_date)).days
         # Verifier quon na pas deja une notif recente pour cette facture
         existing = await session.execute(
-            select(Notification).where(
+            select(Notification).limit(1).where(
                 Notification.source == "invoice",
                 Notification.action_url == f"/invoices/{inv.id}",
                 Notification.created_at > datetime.now(UTC) - timedelta(days=7),
@@ -177,7 +177,7 @@ async def _check_inactive_prospects(session: AsyncSession) -> int:
         jours_de_retard = (datetime.now(UTC) - _as_aware_utc(contact.next_follow_up)).days
         # Verifier quon na pas deja une notif recente pour ce contact
         existing = await session.execute(
-            select(Notification).where(
+            select(Notification).limit(1).where(
                 Notification.source == "crm",
                 Notification.action_url == f"/crm/contacts/{contact.id}",
                 Notification.created_at > datetime.now(UTC) - timedelta(days=7),
@@ -223,7 +223,7 @@ async def _check_overdue_tasks(session: AsyncSession) -> int:
         days_overdue = (now - _as_aware_utc(task.due_date)).days
         # Verifier quon na pas deja une notif recente pour cette tache
         existing = await session.execute(
-            select(Notification).where(
+            select(Notification).limit(1).where(
                 Notification.source == "task",
                 Notification.action_url == f"/tasks/{task.id}",
                 Notification.created_at > now - timedelta(days=3),
@@ -266,7 +266,7 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
     for event in events:
         # Verifier quon na pas deja une notif pour cet evenement
         existing = await session.execute(
-            select(Notification).where(
+            select(Notification).limit(1).where(
                 Notification.source == "calendar",
                 Notification.action_url == f"/calendar/events/{event.id}",
                 Notification.created_at > now - timedelta(hours=12),
