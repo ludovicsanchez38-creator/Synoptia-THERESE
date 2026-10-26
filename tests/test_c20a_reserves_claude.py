@@ -205,3 +205,45 @@ async def test_b1245_dix_entrees_apres_vert(registre_pdf, monkeypatch, mode, con
     await verifier_refus_route_pdf(
         registre_pdf, monkeypatch, mode, contenu, {"prompt": contenu, **options},
     )
+
+
+def commandes_pdf_du_menu():
+    from app.services.command_registry import CommandRegistry
+
+    registre = CommandRegistry()
+    registre._register_skill_commands()
+    return {c.id: c for c in registre.list(show_in_slash=True)
+            if c.id in {"analyze-pdf", "pdf-pro"}}
+
+
+@pytest.mark.asyncio
+async def test_b1246_commandes_analyser_et_generer_distinctes(registre_pdf):
+    lecteur = await generer(registre_pdf, "Compte rendu : le devis est approuvé.")
+    assert "Compte rendu : le devis est approuvé." in lecteur.pages[0].extract_text()
+    commandes = commandes_pdf_du_menu()
+    assert {k: c.name for k, c in commandes.items()} == {
+        "analyze-pdf": "Analyser un PDF", "pdf-pro": "Générer un PDF",
+    }
+
+
+# Dix contenus inédits après le vert B-1246, avec génération et relecture réelles.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("contenu", "attendu"), [
+    ("Avis de fermeture : mercredi à 16 h.", "Avis de fermeture : mercredi à 16 h."),
+    ("Reçu\nLivraison à Orléans\nSix colis", "Reçu Livraison à Orléans Six colis"),
+    ("# Offre\n**Audit** à 730 €.", "Offre Audit à 730 €."),
+    ("> Engagement de l'équipe\nRetour sous cinq jours.", "Engagement de l'équipe Retour sous cinq jours."),
+    ("Plan de visite\n---\nRendez-vous au portail.", "Plan de visite Rendez-vous au portail."),
+    ("| Lot | Date |\n|:-|-:|\n| Façade | Février |", "Lot Date Façade Février"),
+    ("```text\n# Référence\n  lot_37\n```", "# Référence lot_37"),
+    ("Mesure : `largeur*hauteur`.", "Mesure : largeur*hauteur."),
+    ("Dossier d'Œdipe : « réception à Noël ».", "Dossier d'Œdipe : « réception à Noël »."),
+    ("Point A : approuvé.\n\nPoint B : à revoir.", "Point A : approuvé. Point B : à revoir."),
+])
+async def test_b1246_dix_entrees_apres_vert(registre_pdf, contenu, attendu):
+    lecteur = await generer(registre_pdf, contenu)
+    assert p104.texte_du_corps(lecteur) == "".join(attendu.split())
+    commandes = commandes_pdf_du_menu()
+    assert {k: f"/{c.name} " for k, c in commandes.items()} == {
+        "analyze-pdf": "/Analyser un PDF ", "pdf-pro": "/Générer un PDF ",
+    }
