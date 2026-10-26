@@ -275,8 +275,8 @@ def _detect_format(content: bytes, filename: str | None = None) -> ImportFormat:
 
 def _parse_csv(content: bytes) -> list[dict]:
     """Parse CSV content to list of dicts."""
-    # Try different encodings
-    for encoding in ["utf-8-sig", "utf-8", "latin-1", "cp1252"]:
+    # B-1149 : latin-1 accepte tous les octets et masquerait Windows-1252.
+    for encoding in ["utf-8-sig", "utf-8", "cp1252", "latin-1"]:
         try:
             text = content.decode(encoding)
             break
