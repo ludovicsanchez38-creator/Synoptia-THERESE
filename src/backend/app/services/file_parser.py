@@ -24,7 +24,7 @@ MAX_XLSX_LIGNES = 2000
 
 # B-1160 : bornes avant toute expansion des fusions de tableaux DOCX.
 MAX_DOCX_COLONNES = 128
-MAX_DOCX_CELLULES = 10_000  # Budget du document, tableaux imbriqués compris.
+MAX_DOCX_CELLULES = 25_000  # Budget du document, tableaux imbriqués compris.
 AVIS_DOCX_TRONQUE = "[DOCX tronqué : tableau trop volumineux, certaines cellules n'ont pas été lues.]"
 
 

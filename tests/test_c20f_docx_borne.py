@@ -123,7 +123,7 @@ def test_dix_rejeux_apres_correctif(tmp_path, span, lignes, fusion, tronque):
 
 def test_budget_cellules_partage_entre_tableaux(tmp_path):
     doc = Document()
-    table = doc.add_table(rows=1000, cols=10)
+    table = doc.add_table(rows=1000, cols=25)
     table.cell(0, 0).text = "Premier tableau"
     doc.add_table(rows=1, cols=1).cell(0, 0).text = "Hors budget"
     path = tmp_path / "cellules.docx"
@@ -211,9 +211,9 @@ async def test_reprise_sync_40000_tableaux_un_seul_avis(client, tmp_path, monkey
 
 @pytest.mark.parametrize("nombre,span,enveloppe,tronque", [
     (9999, 1, False, False), (10_000, 1, False, False),
-    (10_001, 1, False, True), (10_002, 1, True, True),
-    (12_001, 1, False, True), (16_384, 1, True, True),
-    (25_000, 1, False, True), (40_001, 1, True, True),
+    (10_001, 1, False, False), (10_002, 1, True, False),
+    (12_001, 1, False, False), (16_384, 1, True, False),
+    (25_000, 1, False, False), (40_001, 1, True, True),
     (3, 129, False, True), (5, 129, True, True),
 ])
 def test_dix_rejeux_budget_apres_astra(tmp_path, nombre, span, enveloppe, tronque):

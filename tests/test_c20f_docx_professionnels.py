@@ -54,3 +54,28 @@ def test_b1323_dix_catalogues_apres_correctif(tmp_path, lignes, colonnes):
     path = tmp_path / "catalogue-rejeu.docx"
     attendu = creer_document_professionnel(path, [(lignes, colonnes)])
     assert extraire_borne(path) == attendu
+
+
+def test_b1324_duerp_10800_cellules_complet(tmp_path):
+    path = tmp_path / "duerp.docx"
+    attendu = creer_document_professionnel(path, [(150, 6)] * 12)
+    assert extraire_borne(path) == attendu
+
+
+@pytest.mark.parametrize("tableaux,lignes,colonnes", [
+    (16, 120, 6), (20, 100, 8), (8, 400, 6), (12, 250, 8),
+    (1, 3125, 8), (5, 1000, 5), (1, 24_999, 1), (1, 25_001, 1),
+    (2, 12_500, 1), (2, 12_501, 1),
+])
+def test_b1324_dix_budgets_apres_correctif(tmp_path, tableaux, lignes, colonnes):
+    path = tmp_path / "budget-rejeu.docx"
+    attendu = creer_document_professionnel(path, [(lignes, colonnes)] * tableaux)
+    # Les deux dépassements ont une seule colonne : on peut vérifier chaque
+    # cellule conservée, la coupure exacte et le paragraphe qui suit le tableau.
+    if tableaux * lignes * colonnes > 25_000:
+        attendu = "\n\n".join([
+            *attendu.split("\n\n")[:25_001],
+            "[DOCX tronqué : tableau trop volumineux, certaines cellules n'ont pas été lues.]",
+            "Après",
+        ])
+    assert extraire_borne(path, timeout=8) == attendu
