@@ -41,7 +41,7 @@ async def test_b1147_aller_retour_du_selecteur_conserve_la_date(client: AsyncCli
     assert relue["payment_date"].startswith("2026-07-20")
     # La recette rouge/verte peut rejouer le vrai payload capturé par Vitest.
     preuve = os.environ.get("B1147_FRONT_PAYLOAD")
-    payload = json.loads(Path(preuve).read_text()) if preuve else {
+    payload = json.loads(Path(preuve).read_text(encoding="utf-8")) if preuve else {
         "payment_date": relue["payment_date"].split("T")[0],
     }
     repassee_payee = await client.patch(chemin + "/mark-paid", json=payload)
