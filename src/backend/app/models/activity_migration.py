@@ -4,6 +4,11 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+_COLONNES_RECONSTRUITES = (
+    'id', 'contact_id', 'project_id', 'conversation_id', 'execution_id',
+    'type', 'title', 'description', 'statut', 'remplace_id', 'extra_data', 'created_at',
+)
+
 
 def _verifier_liens(conn: Any, tables: set[str], liens: dict[str, str]) -> None:
     contraintes: dict[int, set[tuple[str, str]]] = {}
@@ -17,7 +22,8 @@ def _verifier_liens(conn: Any, tables: set[str], liens: dict[str, str]) -> None:
 
 
 def migrer_activites(conn: Any) -> None:
-    colonnes = {r[1]: r for r in conn.execute('PRAGMA table_info(activities)')}
+    # table_xinfo inclut les colonnes générées, également perdues par un DROP.
+    colonnes = {r[1]: r for r in conn.execute('PRAGMA table_xinfo(activities)')}
     if not colonnes:
         return
     # Aucun déclencheur n'appartient au schéma standard. Préserver aussi ceux
@@ -28,6 +34,13 @@ def migrer_activites(conn: Any) -> None:
     reconstruire = colonnes['contact_id'][3] or not {
         'project_id', 'conversation_id', 'execution_id', 'statut', 'remplace_id',
     } <= colonnes.keys()
+    if reconstruire and (inconnues := colonnes.keys() - set(_COLONNES_RECONSTRUITES)):
+        # B-1153 : refuser avant toute transaction plutôt que perdre des données
+        # ou inventer la définition et les contraintes des colonnes inconnues.
+        message = ('Migration des activités refusée : colonnes non prises en charge : '
+                   + ', '.join(sorted(inconnues)) + '. Aucune reconstruction effectuée.')
+        logger.error(message)
+        raise ValueError(message)
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     liens = {
         'contact_id': 'contacts', 'project_id': 'projects',
@@ -61,8 +74,7 @@ def migrer_activites(conn: Any) -> None:
                 execution_id VARCHAR, type VARCHAR NOT NULL, title VARCHAR NOT NULL,
                 description VARCHAR, statut VARCHAR NOT NULL DEFAULT 'en_vigueur',
                 remplace_id VARCHAR REFERENCES activities(id), extra_data VARCHAR, created_at DATETIME NOT NULL)''')
-            communs = ','.join(n for n in ('id', 'contact_id', 'project_id', 'conversation_id', 'execution_id',
-                'type', 'title', 'description', 'statut', 'remplace_id', 'extra_data', 'created_at') if n in colonnes)
+            communs = ','.join(n for n in _COLONNES_RECONSTRUITES if n in colonnes)
             conn.execute(f'INSERT INTO activities_r5 ({communs}) SELECT {communs} FROM activities')
             if conn.execute('SELECT COUNT(*) FROM activities_r5').fetchone()[0] != nombre:
                 raise ValueError('Migration des activités : copie incomplète.')

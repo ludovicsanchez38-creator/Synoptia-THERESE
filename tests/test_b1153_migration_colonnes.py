@@ -1,0 +1,105 @@
+"""B-1153 : la reconstruction refuse explicitement toute colonne non recopiée."""
+import logging
+from contextlib import closing
+
+import pytest
+from app.models.activity_migration import migrer_activites
+
+from tests.test_activity_migration import activite, connecter, etat, preparer
+
+
+@pytest.mark.parametrize("pilote", ["sqlite", "sqlcipher"])
+@pytest.mark.parametrize("schema", ["ancien", "minimal"])
+def test_reconstruction_ne_perd_pas_de_colonne(tmp_path, caplog, pilote, schema):
+    with closing(connecter(tmp_path / "activites.db", pilote)) as conn:
+        preparer(conn, schema, [activite()], 1)
+        conn.execute("ALTER TABLE activities ADD COLUMN origine_archive TEXT")
+        conn.execute("UPDATE activities SET origine_archive='archive-locale-42'")
+        conn.commit()
+        avant = etat(conn)
+        requetes = []
+        conn.set_trace_callback(requetes.append)
+        with caplog.at_level(logging.ERROR, logger="app.models.activity_migration"):
+            try:
+                migrer_activites(conn)
+            except ValueError as erreur:
+                assert "colonnes non prises en charge" in str(erreur)
+        assert etat(conn) == avant, "La reconstruction a perdu une colonne et son contenu"
+        assert "origine_archive" in caplog.text
+        assert "archive-locale-42" not in caplog.text
+        assert not any(sql.startswith(("BEGIN", "COMMIT", "UPDATE", "CREATE", "DROP")) for sql in requetes)
+        assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+        assert not conn.in_transaction
+
+
+# Dix entrées inventées après le correctif, dont les colonnes générées.
+@pytest.mark.parametrize("schema,definitions,valeurs", [
+    ("ancien", {"annotation": "TEXT"}, {"annotation": "archivé à Lyon"}),
+    ("minimal", {"revision": "INTEGER"}, {"revision": 42}),
+    ("partiel", {"poids": "REAL"}, {"poids": 12.75}),
+    ("ancien", {"empreinte": "BLOB"}, {"empreinte": b"\x00\xff\x42"}),
+    ("minimal", {"option": "TEXT"}, {"option": None}),
+    ("ancien", {'note "locale"': "TEXT"}, {'note "locale"': "citation"}),
+    ("partiel", {"source": "TEXT", "revision": "INTEGER"}, {"source": "papier", "revision": 3}),
+    ("ancien", {"priorite": "INTEGER NOT NULL DEFAULT 7 CHECK (priorite > 0)"}, {}),
+    ("minimal", {"titre_calcule": "TEXT GENERATED ALWAYS AS (lower(title)) VIRTUAL"}, {}),
+    ("ancien", {"taille_titre": "INTEGER GENERATED ALWAYS AS (length(title)) STORED"}, {}),
+])
+def test_rejeu_astra_colonnes(tmp_path, caplog, schema, definitions, valeurs):
+    with closing(connecter(tmp_path / "rejeu.db", "sqlite")) as conn:
+        preparer(conn, schema, [activite()], 1)
+        for nom, definition in definitions.items():
+            identifiant = '"' + nom.replace('"', '""') + '"'
+            if "STORED" in definition:
+                # SQLite n'ajoute une colonne STORED que sur une table vide.
+                conn.execute("DELETE FROM activities")
+            conn.execute(f"ALTER TABLE activities ADD COLUMN {identifiant} {definition}")
+            if nom in valeurs:
+                conn.execute(f"UPDATE activities SET {identifiant}=?", (valeurs[nom],))
+        if any("STORED" in d for d in definitions.values()):
+            conn.execute("INSERT INTO activities (id, contact_id, type, title, created_at) "
+                         "VALUES ('a1', 'contact-valide', 'note', 'Titre généré', '2026-01-01')")
+        conn.commit()
+        avant = etat(conn)
+        with pytest.raises(ValueError, match="colonnes non prises en charge"):
+            migrer_activites(conn)
+        assert etat(conn) == avant
+        assert all(nom in caplog.text for nom in definitions)
+        assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+        assert not conn.in_transaction
+
+
+@pytest.mark.parametrize("pilote", ["sqlite", "sqlcipher"])
+@pytest.mark.parametrize("mode", ["lecture-seule", "verrou"])
+def test_table_saine_avec_colonne_en_plus_ne_demande_pas_de_verrou(tmp_path, pilote, mode):
+    chemin = tmp_path / "saine.db"
+    with closing(connecter(chemin, pilote)) as conn, closing(connecter(chemin, pilote)) as autre:
+        preparer(conn, "migre", [activite()], 1)
+        conn.execute("ALTER TABLE activities ADD COLUMN provenance TEXT DEFAULT 'archive'")
+        conn.commit()
+        avant = etat(conn)
+        if mode == "lecture-seule":
+            conn.execute("PRAGMA query_only=ON")
+        else:
+            autre.execute("BEGIN IMMEDIATE")
+            conn.execute("PRAGMA busy_timeout=0")
+        requetes = []
+        conn.set_trace_callback(requetes.append)
+        migrer_activites(conn)
+        assert etat(conn) == avant
+        assert not any(sql.startswith(("BEGIN", "COMMIT", "UPDATE", "INSERT", "DELETE", "CREATE", "DROP")) for sql in requetes)
+        assert not conn.in_transaction
+
+
+def test_refus_ne_commite_pas_la_transaction_appelante(tmp_path):
+    with closing(connecter(tmp_path / "transaction.db", "sqlite")) as conn:
+        preparer(conn, "ancien", [activite()], 1)
+        conn.execute("ALTER TABLE activities ADD COLUMN origine TEXT DEFAULT 'avant'")
+        conn.commit()
+        conn.execute("UPDATE activities SET origine='en cours'")
+        assert conn.in_transaction
+        with pytest.raises(ValueError, match="colonnes non prises en charge"):
+            migrer_activites(conn)
+        assert conn.in_transaction
+        conn.rollback()
+        assert conn.execute("SELECT origine FROM activities").fetchone()[0] == "avant"
