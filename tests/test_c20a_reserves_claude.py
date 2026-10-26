@@ -102,3 +102,40 @@ async def test_b1242_dix_entrees_apres_vert(registre_pdf, monkeypatch, langue, c
     assert "```" not in "\n".join(p.extract_text() for p in lecteur.pages)
     if code.startswith("# instruction"):
         assert len(lecteur.pages) >= 2
+
+
+@pytest.mark.asyncio
+async def test_b1243_tableau_separateur_court(registre_pdf):
+    lecteur = await generer(registre_pdf, "| Poste | Montant |\n|:--|--:|\n"
+                            "| Conseil | 490 € |\n| Formation | 2 490 € |")
+    texte = lecteur.pages[0].extract_text()
+    assert "Poste\nMontant\nConseil\n490 €\nFormation\n2 490 €" in texte
+    assert "|" not in texte and "--" not in texte
+    assert any("Poste" in t and "Bold" in f for t, f, _ in fragments_pdf(lecteur))
+
+
+# Dix entrées créées après le vert B-1243 : tirets et deux-points combinés.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("separateur", "entete", "valeurs"), [
+    ("|-|-|", ["Agence", "Ville"], ["Aube", "Troyes"]),
+    ("|:-|-:|", ["Lot", "Prix"], ["Bougies", "31 €"]),
+    ("|:-:|:-:|", ["Auteure", "Œuvre"], ["Inès", "Éclosion"]),
+    ("|--|--|", ["Produit", "Quantité"], ["Tisane", "24"]),
+    ("|:--|--:|", ["Poste", "Montant"], ["Transport", "87 €"]),
+    ("| :--: | ---: |", ["Équipe", "Effectif"], ["Création", "12"]),
+    ("- | :-:", ["Horaire", "Activité"], ["09 h", "Accueil"]),
+    ("|-:|", ["Solde"], ["176 €"]),
+    ("|:-|--:|:-:|", ["Article", "Stock", "Rayon"], ["Cahier", "57", "Sud"]),
+    ("|---|:-|", ["Projet", "Clôture"], ["Rénovation", "Noël"]),
+])
+async def test_b1243_dix_entrees_apres_vert(registre_pdf, separateur, entete, valeurs):
+    contenu = " | ".join(entete) + "\n" + separateur + "\n" + " | ".join(valeurs)
+    # Une colonne doit garder ses barres pour être identifiée comme tableau.
+    if len(entete) == 1:
+        contenu = f"|{entete[0]}|\n{separateur}\n|{valeurs[0]}|"
+    lecteur = await generer(registre_pdf, contenu)
+    texte = lecteur.pages[0].extract_text()
+    assert "\n".join(entete + valeurs) in texte
+    assert "|" not in texte and separateur not in texte
+    for cellule in entete:
+        assert any(cellule in t and "Bold" in f for t, f, _ in fragments_pdf(lecteur))

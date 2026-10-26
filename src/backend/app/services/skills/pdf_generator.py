@@ -198,7 +198,7 @@ class PdfSkill(BaseSkill):
                 "|" in ligne and i + 1 < len(lignes)
                 and 1 <= len(_cellules(ligne)) <= 12
                 and len(_cellules(lignes[i + 1])) == len(_cellules(ligne))
-                and all(re.fullmatch(r":?-{3,}:?", c) for c in _cellules(lignes[i + 1]))
+                and all(re.fullmatch(r":?-+:?", c) for c in _cellules(lignes[i + 1]))
             ):
                 terminer_paragraphe()
                 entete = _cellules(ligne)
