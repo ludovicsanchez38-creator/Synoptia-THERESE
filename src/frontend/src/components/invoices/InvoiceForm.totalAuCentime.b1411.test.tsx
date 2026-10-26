@@ -1,10 +1,4 @@
-/**
- * B-1411 (relevé par la RFC P-121, reproduit ici) : la modale sommait des
- * montants bruts et n'arrondissait qu'à l'affichage. Trois lignes de 33,33 €
- * à 20 % affichaient 119,99 € pour une pièce que le serveur enregistre à
- * 120,00 € (`_montants_de_ligne`, arrondi à la ligne). Le panneau Facturer
- * arrondissait déjà là où le montant naît (B-017) ; la modale fait de même.
- */
+/** B-1165 : la TVA est arrondie par taux ; une pièce émise garde ses montants stockés. */
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -31,12 +25,20 @@ const piece = {
 } as unknown as Invoice;
 
 describe('B-1411 : la modale annonce le total que le serveur enregistre', () => {
-  it('trois lignes de 33,33 € à 20 % : 120,00 € TTC, pas 119,99 €', async () => {
+  it('B-1165 : trois lignes de 33,33 € à 20 % donnent 119,99 € TTC', async () => {
     render(<InvoiceForm invoice={piece} onClose={vi.fn()} onSave={vi.fn()} />);
     await screen.findByDisplayValue('DEV-2026-001').catch(() => null);
 
     const texte = document.body.textContent ?? '';
-    expect(texte).toMatch(/120[,.]00/);
-    expect(texte).not.toMatch(/119[,.]99/);
+    expect(texte).toMatch(/119[,.]99/);
+    expect(texte).not.toMatch(/120[,.]00/);
   });
+});
+
+
+it('B-1165 : une facture déjà émise garde 120,00 € et 20,01 € de TVA', () => {
+  render(<InvoiceForm invoice={{ ...piece, document_type: 'facture', status: 'sent' }} onClose={vi.fn()} onSave={vi.fn()} />);
+  expect(document.body.textContent).toMatch(/120[,.]00/);
+  expect(document.body.textContent).toMatch(/20[,.]01/);
+  expect(document.body.textContent).not.toMatch(/119[,.]99/);
 });

@@ -11,6 +11,7 @@ avec la palette Synoptia (primary #2451FF, cyan #22D3EE, dark #0B1226).
 import logging
 import os
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -591,6 +592,25 @@ class InvoicePDFGenerator:
                 ("Total TTC", f"{_montant_fr(invoice_data['subtotal_ht'])} {currency_symbol}"),
             ]
 
+        if tva_applicable:
+            # Ventiler les montants STOCKÉS, sans recalculer une pièce émise.
+            # Les anciennes factures gardent donc leur arrondi historique.
+            groupes: dict[Decimal, tuple[Decimal, Decimal]] = {}
+            for line in invoice_data.get("lines", []):
+                taux = Decimal(str(line["tva_rate"]))
+                base, taxe = groupes.get(taux, (Decimal(0), Decimal(0)))
+                ht = Decimal(str(line["total_ht"]))
+                groupes[taux] = (base + ht, taxe + Decimal(str(line["total_ttc"])) - ht)
+            if len(groupes) > 1:
+                ventilation = []
+                for taux, (base, taxe) in sorted(groupes.items()):
+                    libelle_taux = _taux_fr(float(taux))
+                    ventilation.extend([
+                        (f"Base HT à {libelle_taux} %", f"{_montant_fr(float(base))} {currency_symbol}"),
+                        (f"TVA à {libelle_taux} %", f"{_montant_fr(float(taxe))} {currency_symbol}"),
+                    ])
+                rows_data = ventilation + rows_data
+
         table_rows = []
         for i, (label, value) in enumerate(rows_data):
             is_ttc = i == len(rows_data) - 1
@@ -605,7 +625,8 @@ class InvoicePDFGenerator:
                     Paragraph(value, s["total_value"]),
                 ])
 
-        t = Table(table_rows, colWidths=[30 * mm, 35 * mm])
+        largeur_libelle = 40 if len(rows_data) > 3 else 30
+        t = Table(table_rows, colWidths=[largeur_libelle * mm, 35 * mm])
         t.setStyle(
             TableStyle([
                 ("ALIGN", (0, 0), (-1, -1), "RIGHT"),

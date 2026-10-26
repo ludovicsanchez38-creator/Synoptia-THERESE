@@ -1,4 +1,5 @@
 import { libelleStatutPiece } from '../invoices/statutsFacture';
+import { invoiceTotals } from '../../lib/invoiceTotals';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { auCentime } from '../../lib/auCentime';
 import { montantAvecDevise } from '../../lib/devise';
@@ -346,24 +347,11 @@ function DevisDraftForm({
   const [contactError, setContactError] = useState<string | null>(null);
 
   const totals = useMemo(() => {
-    // B-017 : miroir exact de `routers/invoices.py::_montants_de_ligne` puis
-    // `_calculate_invoice_totals`. L'argent n'a pas de troisième décimale : on
-    // arrondit LÀ OÙ LE MONTANT NAÎT (la ligne), puis on somme des lignes déjà
-    // arrondies. Sommer des montants bruts et n'arrondir qu'à l'affichage
-    // faisait confirmer « Montant TTC : 119,99 € » pour un document que le
-    // serveur créait à 120,00 € - trois lignes de 33,33 € à 20 %.
-    const cumul = lines.reduce((result, line) => {
-      const quantity = parseDecimal(line.quantity) || 0;
-      const unitPrice = parseDecimal(line.unitPrice) || 0;
-      const ligneHt = arrondirCentimes(quantity * unitPrice);
-      const ligneTtc = arrondirCentimes(ligneHt * (1 + line.tvaRate / 100));
-      return { ht: result.ht + ligneHt, ttc: result.ttc + ligneTtc };
-    }, { ht: 0, ttc: 0 });
-    const ht = arrondirCentimes(cumul.ht);
-    const ttc = arrondirCentimes(cumul.ttc);
-    // La TVA se DÉDUIT du TTC et du HT, comme côté serveur : la somme des
-    // parts égale ainsi toujours le tout affiché.
-    return { ht, tax: arrondirCentimes(ttc - ht), ttc };
+    const montants = invoiceTotals(lines.map((line) => ({
+      totalHT: arrondirCentimes((parseDecimal(line.quantity) || 0) * (parseDecimal(line.unitPrice) || 0)),
+      tvaRate: line.tvaRate,
+    })));
+    return { ht: montants.subtotalHT, tax: montants.totalTax, ttc: montants.totalTTC };
   }, [lines]);
 
   function invalidateDraft() {

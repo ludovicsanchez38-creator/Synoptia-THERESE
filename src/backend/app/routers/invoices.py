@@ -375,15 +375,9 @@ def _montants_de_ligne(
     que le PDF remis au client imprimait 100. Le PDF est la pièce juridique :
     c'est la base qui mentait. En franchise, le TTC d'une ligne EST son HT.
 
-    F1 (0.55) : `total_ttc` etait stocke non arrondi. Trois lignes de 33,33 EUR
-    a 20 % donnaient 119.98799999999999 en base, pendant que le PDF imprimait
-    119,99, que l'encours disait 119,99 et que la somme des lignes affichees
-    faisait 119,99. Un client qui additionne les lignes de son PDF ne
-    retrouvait pas le total du document.
-
-    L'argent n'a pas de troisieme decimale : on arrondit ou le montant NAIT,
-    pas a chaque affichage. Les totaux du document somment ensuite des lignes
-    deja arrondies, donc la somme des parts egale toujours le tout.
+    Le TTC isolé est provisoire : B-1165 répartit ensuite la TVA calculée
+    sur la base de chaque taux dans `_calculate_invoice_totals`, à l'écriture
+    seulement. La somme des lignes affichées reste égale au total (F1).
     """
     total_ht = _au_centime(ligne.quantity * ligne.unit_price_ht)
     if not tva_applicable:
@@ -392,18 +386,28 @@ def _montants_de_ligne(
     return total_ht, total_ttc
 
 
-def _calculate_invoice_totals(lines: list[InvoiceLine]) -> tuple[float, float, float]:
-    """
-    Calcule les totaux d'une facture, a partir de lignes DEJA arrondies.
+def _calculate_invoice_totals(
+    lines: list[InvoiceLine], tva_applicable: bool = True,
+) -> tuple[float, float, float]:
+    """B-1165 : arrondir la TVA sur la base HT de chaque taux à l'écriture.
 
-    Returns:
-        (subtotal_ht, total_tax, total_ttc)
+    Répartir par différence de cumuls arrondis conserve des lignes au centime
+    dont la somme égale le TTC du document. Les lectures, PDF et changements
+    de statut ne passent jamais ici : les montants historiques restent figés.
     """
-    subtotal_ht = _au_centime(sum(line.total_ht for line in lines))
-    total_ttc = _au_centime(sum(line.total_ttc for line in lines))
-    total_tax = _au_centime(total_ttc - subtotal_ht)
-
-    return subtotal_ht, total_tax, total_ttc
+    bases: dict[Decimal, Decimal] = {}
+    taxes: dict[Decimal, Decimal] = {}
+    centime = Decimal("0.01")
+    for line in lines:
+        taux = Decimal(str(line.tva_rate)) if tva_applicable else Decimal(0)
+        ht = Decimal(str(line.total_ht))
+        base = bases.get(taux, Decimal(0)) + ht
+        taxe = (base * taux / 100).quantize(centime, rounding=ROUND_HALF_UP)
+        line.total_ttc = float(ht + taxe - taxes.get(taux, Decimal(0)))
+        bases[taux], taxes[taux] = base, taxe
+    subtotal_ht = sum(bases.values(), Decimal(0))
+    total_tax = sum(taxes.values(), Decimal(0))
+    return float(subtotal_ht), float(total_tax), float(subtotal_ht + total_tax)
 
 
 def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
@@ -702,7 +706,7 @@ async def create_invoice(
         db_lines.append(line)
 
     # Calculer les totaux a partir des lignes en memoire (evite lazy load)
-    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)
+    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines, invoice.tva_applicable)
     invoice.subtotal_ht = subtotal_ht
     invoice.total_tax = total_tax
     invoice.total_ttc = total_ttc
@@ -886,7 +890,7 @@ async def update_invoice(
         invoice.lines = db_lines
 
         # Recalculer les totaux a partir des lignes en memoire
-        subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)
+        subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines, invoice.tva_applicable)
         invoice.subtotal_ht = subtotal_ht
         invoice.total_tax = total_tax
         invoice.total_ttc = total_ttc
@@ -1121,9 +1125,13 @@ async def convert_invoice(
         session, target_type, lambda numero: Invoice(invoice_number=numero, **copie)
     )
 
-    # Copier les lignes
-    for ligne in lignes_source:
-        session.add(InvoiceLine(invoice_id=new_invoice.id, **ligne))
+    # La copie est une nouvelle pièce : appliquer la règle par taux sans
+    # modifier les lignes ni les montants de la source, même déjà émise.
+    db_lines = [InvoiceLine(invoice_id=new_invoice.id, **ligne) for ligne in lignes_source]
+    session.add_all(db_lines)
+    new_invoice.subtotal_ht, new_invoice.total_tax, new_invoice.total_ttc = _calculate_invoice_totals(
+        db_lines, new_invoice.tva_applicable,
+    )
 
     await session.commit()
 
@@ -1432,7 +1440,7 @@ async def convert_devis_to_invoice(
         db_lines.append(new_line)
 
     # 6. Calculer les totaux
-    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)
+    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines, new_invoice.tva_applicable)
     new_invoice.subtotal_ht = subtotal_ht
     new_invoice.total_tax = total_tax
     new_invoice.total_ttc = total_ttc

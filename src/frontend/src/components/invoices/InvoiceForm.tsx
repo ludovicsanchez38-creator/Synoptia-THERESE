@@ -8,6 +8,7 @@ import { libelleStatutPiece } from './statutsFacture';
  */
 
 import { auCentime } from '../../lib/auCentime';
+import { invoiceTotals } from '../../lib/invoiceTotals';
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
@@ -337,36 +338,23 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     return { quantity, unitPrice };
   }
 
-  // B-1411 : l'argent n'a pas de troisième décimale. On arrondit là où le
-  // montant naît (la ligne), comme le serveur (`_montants_de_ligne`) et le
-  // panneau Facturer (B-017) ; trois lignes de 33,33 € à 20 % affichaient
-  // 119,99 € pour une pièce enregistrée à 120,00 €.
-  function calculateLineTotals(line: InvoiceLineRequest, index: number) {
+  function calculateLineTotals(index: number) {
+    if (pieceEmise && invoice) {
+      return { totalHT: invoice.lines[index].total_ht };
+    }
     const { quantity, unitPrice } = getLineNumericValues(index);
-    const totalHT = arrondirAuCentime(quantity * unitPrice);
-    // B-1518 : une pièce sans TVA applicable a TTC = HT, comme le moteur et
-    // le PDF ; appliquer le taux des lignes affichait un TTC inexistant.
-    const tauxApplique = invoice?.tva_applicable === false ? 0 : line.tva_rate;
-    const totalTTC = arrondirAuCentime(totalHT * (1 + tauxApplique / 100));
-    return { totalHT, totalTTC };
+    return { totalHT: arrondirAuCentime(quantity * unitPrice) };
   }
 
   function calculateInvoiceTotals() {
-    let subtotalHT = 0;
-    let sommeTTC = 0;
-
-    for (const [index, line] of lines.entries()) {
-      const { totalHT, totalTTC } = calculateLineTotals(line, index);
-      subtotalHT += totalHT;
-      sommeTTC += totalTTC;
+    // Une pièce émise se relit avec ses montants historiques, sans recalcul.
+    if (pieceEmise && invoice) {
+      return { subtotalHT: invoice.subtotal_ht, totalTax: invoice.total_tax, totalTTC: invoice.total_ttc };
     }
-
-    subtotalHT = arrondirAuCentime(subtotalHT);
-    const totalTTC = arrondirAuCentime(sommeTTC);
-    // La TVA se déduit du TTC et du HT, comme côté serveur.
-    const totalTax = arrondirAuCentime(totalTTC - subtotalHT);
-
-    return { subtotalHT, totalTax, totalTTC };
+    return invoiceTotals(lines.map((line, index) => ({
+      ...calculateLineTotals(index),
+      tvaRate: invoice?.tva_applicable === false ? 0 : line.tva_rate,
+    })));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -910,7 +898,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               </thead>
               <tbody>
                 {lines.map((line, index) => {
-                  const { totalHT } = calculateLineTotals(line, index);
+                  const { totalHT } = calculateLineTotals(index);
                   const erreurDescription = lignesSansDescription.includes(index);
                   return (
                     <tr key={index}>
