@@ -1,4 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentTaskResponse, DiffResponse } from '../../services/api/agents';
 import { AtelierHistoryCard, AtelierWorkspaceCanvas } from './AtelierConversationCard';
@@ -38,6 +40,59 @@ const diff: DiffResponse = {
   files: [{ file_path: 'src/onboarding.ts', change_type: 'modified', diff_hunk: '-ancien\n+nouveau', additions: 1, deletions: 1 }],
   total_additions: 1, total_deletions: 1,
 };
+
+// B-1070 : lire la cascade réelle des jetons, y compris l'encre héritée
+// en contraste élevé, plutôt que recopier des couleurs dans le test.
+const css = readFileSync(join(__dirname, '../../styles/globals.css'), 'utf-8');
+function jetons(selecteur: string): Record<string, string> {
+  const debut = css.indexOf(`${selecteur} {`);
+  if (debut === -1) throw new Error(`Thème introuvable : ${selecteur}`);
+  const bloc = css.slice(debut, css.indexOf('\n}', debut));
+  return Object.fromEntries([...bloc.matchAll(/--color-([\w-]+):\s*(#[\da-f]{6})/gi)]
+    .map(([, nom, valeur]) => [nom, valeur]));
+}
+
+function luminance(hex: string): number {
+  const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+}
+
+describe('B-1070 : la confirmation Atelier reprend les jetons des boutons primaires', () => {
+  it.each([
+    ['review', 'Appliquer sur main'],
+    ['review', 'Refuser'],
+    ['merged', 'Annuler les changements'],
+  ])('%s : %s garde le couple d’action commun', (status, action) => {
+    render(<AtelierWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      taskResource={{ status: 'ready', data: { ...task, status }, error: null }}
+      diffResource={{ status: 'ready', data: diff, error: null }}
+      run={idleRun} target={task.id} actionPending={null} onRetry={vi.fn()}
+      onRetryTask={vi.fn()} onStart={vi.fn()} onCancel={vi.fn()} onReset={vi.fn()}
+      onMutate={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    fireEvent.click(screen.getByRole('button', { name: action }));
+    const confirmer = screen.getByRole('button', { name: 'Confirmer l’action' });
+    expect(confirmer).toHaveClass('bg-accent-fill', 'text-accent-ink');
+    expect(confirmer).not.toHaveClass('bg-text', 'text-success-ink');
+  });
+
+  const clair = jetons('@theme');
+  const sombre = { ...clair, ...jetons('[data-theme="dark"]') };
+  const contrasteEleve = jetons('[data-high-contrast="true"]');
+  it.each([
+    ['clair', clair], ['sombre', sombre],
+    ['contraste élevé sur clair', { ...clair, ...contrasteEleve }],
+    ['contraste élevé sur sombre', { ...sombre, ...contrasteEleve }],
+  ] as const)('%s : le contraste du couple commun atteint 4,5:1', (theme, couleurs) => {
+    const [haut, bas] = [luminance(couleurs['accent-fill']), luminance(couleurs['accent-ink'])]
+      .sort((a, b) => b - a);
+    const ratio = (haut + 0.05) / (bas + 0.05);
+    console.info(`${theme} : ${couleurs['accent-fill']} / ${couleurs['accent-ink']} = ${ratio.toFixed(4)}:1`);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
 
 describe('Atelier 0.40 conversationnel', () => {
   it('affiche l’historique réel sans chiffres de démonstration', () => {
