@@ -54,7 +54,7 @@ function validateDevisSnapshot(snapshot: DevisDraftSnapshot): string | null {
   if (!request.contact_id) return 'Le destinataire figé est introuvable.';
   if (!request.lines.length) return 'Le devis figé ne contient aucune ligne.';
   if (request.lines.some((line) => !line.description.trim())) return 'Une ligne figée n’a pas de description.';
-  if (request.lines.some((line) => line.quantity < 1 || line.unit_price_ht < 0)) return 'Un montant figé est invalide.';
+  if (request.lines.some((line) => line.quantity <= 0 || line.unit_price_ht < 0)) return 'Un montant figé est invalide.';
   if (!request.issue_date || !request.due_date || request.due_date < request.issue_date) return 'Les dates figées sont incohérentes.';
   if (!request.validite_jours || request.validite_jours < 1) return 'La validité figée est invalide.';
   return null;
@@ -400,8 +400,8 @@ function DevisDraftForm({
     if (lines.length === 0) return { message: 'Ajoute au moins une ligne.', fieldId: 'devis-add-line' };
     const descriptionIndex = lines.findIndex((line) => !line.description.trim());
     if (descriptionIndex >= 0) return { message: 'Chaque ligne doit avoir une description.', fieldId: `devis-description-${descriptionIndex}` };
-    const quantityIndex = lines.findIndex((line) => (parseDecimal(line.quantity) || 0) < 1);
-    if (quantityIndex >= 0) return { message: 'Chaque quantité doit être supérieure ou égale à 1.', fieldId: `devis-quantity-${quantityIndex}` };
+    const quantityIndex = lines.findIndex((line) => (parseDecimal(line.quantity) || 0) <= 0);
+    if (quantityIndex >= 0) return { message: 'Chaque quantité doit être strictement positive.', fieldId: `devis-quantity-${quantityIndex}` };
     const priceIndex = lines.findIndex((line) => parseDecimal(line.unitPrice) === null || (parseDecimal(line.unitPrice) || 0) < 0);
     if (priceIndex >= 0) return { message: 'Chaque prix HT doit être un nombre positif ou nul.', fieldId: `devis-price-${priceIndex}` };
     if (!issueDate) return { message: 'La date d’émission est obligatoire.', fieldId: 'devis-issue-date' };

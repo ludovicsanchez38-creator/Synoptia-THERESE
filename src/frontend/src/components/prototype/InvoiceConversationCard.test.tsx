@@ -34,6 +34,57 @@ function data(overrides: Partial<InvoiceWorkspaceData> = {}): InvoiceWorkspaceDa
   };
 }
 
+function saisirQuantite(quantite: string) {
+  const onCreateDraft = vi.fn().mockResolvedValue(invoice);
+  render(
+    <InvoiceWorkspaceCanvas
+      resource={{ status: 'ready', data: data({ invoices: [] }), error: null }}
+      invoiceResource={null} selection="new-devis"
+      onRetry={vi.fn()} onRetryInvoice={vi.fn()} onCreateDraft={onCreateDraft}
+      onCreateContact={vi.fn()} onOpenClassic={vi.fn()}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText('Client du devis'), { target: { value: contact.id } });
+  fireEvent.change(screen.getByLabelText('Description ligne 1'), { target: { value: 'Demi-journée de formation' } });
+  fireEvent.change(screen.getByLabelText('Quantité ligne 1'), { target: { value: quantite } });
+  fireEvent.change(screen.getByLabelText('Prix HT ligne 1'), { target: { value: '320' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
+  return onCreateDraft;
+}
+
+it.each(['0,5', '0.5'])('B-1148 : une quantité %s se confirme puis se transmet', async (quantite) => {
+  const onCreateDraft = saisirQuantite(quantite);
+  expect(screen.getByTestId('devis-draft-confirmation')).toHaveTextContent('192,00');
+  expect(onCreateDraft).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+  await waitFor(() => expect(onCreateDraft).toHaveBeenCalledWith(expect.objectContaining({
+    lines: [{ description: 'Demi-journée de formation', quantity: 0.5, unit_price_ht: 320, tva_rate: 20 }],
+  })));
+  expect(await screen.findByTestId('devis-draft-saved')).toBeInTheDocument();
+});
+
+it.each([
+  ['0,1', 0.1, '38,40'], ['0.25', 0.25, '96,00'], ['0,75', 0.75, '288,00'],
+  ['0.01', 0.01, '3,84'], ['0,125', 0.125, '48,00'], ['0.333', 0.333, '127,87'],
+  ['0,90', 0.9, '345,60'], ['0.99', 0.99, '380,16'], ['1', 1, '384,00'], ['2,5', 2.5, '960,00'],
+])('Rejeu B-1148 après correction : quantité %s', async (saisie, quantite, montant) => {
+  const onCreateDraft = saisirQuantite(String(saisie));
+  expect(screen.getByTestId('devis-draft-confirmation')).toHaveTextContent(String(montant));
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+  await waitFor(() => expect(onCreateDraft).toHaveBeenCalledWith(expect.objectContaining({
+    lines: [expect.objectContaining({ quantity: quantite })],
+  })));
+  expect(await screen.findByTestId('devis-draft-saved')).toBeInTheDocument();
+});
+
+it.each(['0', '-0,1', '', 'abc', 'Infinity', 'NaN'])('B-1148 : refuse la quantité invalide %s', async (quantite) => {
+  const onCreateDraft = saisirQuantite(quantite);
+  expect(screen.getByRole('alert')).toHaveTextContent('Chaque quantité doit être strictement positive.');
+  expect(screen.queryByTestId('devis-draft-confirmation')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.getByLabelText('Quantité ligne 1')).toHaveFocus());
+  expect(onCreateDraft).not.toHaveBeenCalled();
+});
+
 describe('InvoiceWorkspaceCard', () => {
   it('affiche uniquement les documents et contacts réels puis ouvre le détail', () => {
     const onOpenInvoice = vi.fn();
