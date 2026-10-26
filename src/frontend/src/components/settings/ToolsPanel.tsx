@@ -229,6 +229,13 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   useDialogFocusTrap(questionSuppressionRef, { active: Boolean(serverToDelete) });
   const [installingPreset, setInstallingPreset] = useState<string | null>(null);
   const [presetToConfig, setPresetToConfig] = useState<api.MCPPreset | null>(null);
+  const [presetToConfirm, setPresetToConfirm] = useState<api.MCPPreset | null>(null);
+  const questionInstallationRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(questionInstallationRef, {
+    active: Boolean(presetToConfirm),
+    onEscape: () => setPresetToConfirm(null),
+    isolateBackground: true,
+  });
   const [presetFilter, setPresetFilter] = useState('');
   // BUG-083 : vérification des prérequis système (npx, etc.)
   const [requirementsCheck, setRequirementsCheck] = useState<api.MCPRequirementsCheck | null>(null);
@@ -403,6 +410,17 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       }
     }
 
+    // P-106 : un risque élevé exige un accord avant toute installation,
+    // même lorsque le connecteur ne demande aucun paramètre.
+    if (preset.risk_level === 'high') {
+      setPresetToConfirm(preset);
+      return;
+    }
+
+    await continueInstallPreset(preset);
+  }
+
+  async function continueInstallPreset(preset: api.MCPPreset) {
     // Check for required env vars - ouvrir modal si nécessaire
     if (preset.env_required && preset.env_required.length > 0) {
       setPresetToConfig(preset);
@@ -410,7 +428,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
     }
 
     // Pas de clés requises, installer directement
-    await doInstallPreset(presetId, {});
+    await doInstallPreset(preset.id, {});
   }
 
   async function handleEnvVarSubmit(envVars: Record<string, string>) {
@@ -937,6 +955,41 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
           En savoir plus
         </a>
       </p>
+
+      {/* P-106 : Annuler reçoit le focus ; Échap et Tab passent par le piège commun. */}
+      {presetToConfirm && (
+        <div className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center p-4`}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
+          <div
+            ref={questionInstallationRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mcp-installation-title"
+            aria-describedby="mcp-installation-description"
+            className="relative bg-surface border border-border rounded-md p-6 max-w-md w-full shadow-2xl"
+          >
+            <h3 id="mcp-installation-title" className="font-semibold text-text">
+              Installer {presetToConfirm.name} ?
+            </h3>
+            <div id="mcp-installation-description" className="mt-3 space-y-2 text-sm">
+              <p className="text-text-muted">{presetToConfirm.description}</p>
+              <p className="text-error"><strong>Risque élevé.</strong> {presetToConfirm.risk_warning}</p>
+              <p className="text-text-muted">L’installation démarrera ce connecteur et rendra ses outils disponibles dans THÉRÈSE.</p>
+            </div>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <Button variant="ghost" size="sm" data-dialog-autofocus onClick={() => setPresetToConfirm(null)}>
+                Annuler
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => {
+                setPresetToConfirm(null);
+                void continueInstallPreset(presetToConfirm);
+              }}>
+                Installer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EnvVar Configuration Modal */}
       <AnimatePresence>

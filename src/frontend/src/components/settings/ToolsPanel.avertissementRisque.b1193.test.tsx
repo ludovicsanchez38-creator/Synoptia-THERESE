@@ -11,7 +11,7 @@
  * repro-c13b/g1/b1193_hit_test.mjs le charge dans Chromium avec la CSS
  * compilée par Vite pour mesurer le hit-test (JSDOM n'en fait pas).
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
 
@@ -83,7 +83,9 @@ describe('B-1193 : avertissement de risque des presets MCP', () => {
       decritLaCarte: (carte.getAttribute('aria-describedby') ?? '').split(' ').includes(texte.id),
     }).toEqual({ avertissementEnTexte: true, decritLaCarte: true });
     fireEvent.click(carte);
-    await waitFor(() => expect(apiMocks.installMCPPreset).toHaveBeenCalled());
+    const confirmation = await screen.findByRole('dialog', { name: 'Installer Playwright ?' });
+    expect(confirmation).toHaveTextContent(AVERTISSEMENT_PLAYWRIGHT);
+    expect(apiMocks.installMCPPreset).not.toHaveBeenCalled();
   });
 
   it('même mesure pour Filesystem (« Moyen », pas de clé requise)', async () => {
@@ -105,7 +107,11 @@ describe('B-1193 : avertissement de risque des presets MCP', () => {
   it('Stripe (clé requise) : la modale des variables devrait porter l’avertissement', async () => {
     await ouvrirPresets();
     fireEvent.click(screen.getByRole('button', { name: 'Installer Stripe' }));
-    const modale = await screen.findByRole('dialog');
+    const confirmation = await screen.findByRole('dialog', { name: 'Installer Stripe ?' });
+    expect(confirmation).toHaveTextContent(AVERTISSEMENT_STRIPE);
+    expect(apiMocks.installMCPPreset).not.toHaveBeenCalled();
+    fireEvent.click(within(confirmation).getByRole('button', { name: 'Installer' }));
+    const modale = await screen.findByRole('dialog', { name: 'Configuration Stripe' });
     expect({
       installAppele: apiMocks.installMCPPreset.mock.calls.length,
       avertissementDansLaModale: (modale.textContent ?? '').includes(AVERTISSEMENT_STRIPE),
