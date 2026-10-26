@@ -66,6 +66,7 @@ async def mark_notification_read(
     notif = await notification_service.mark_as_read(session, notification_id)
     if not notif:
         raise HTTPException(status_code=404, detail="Notification introuvable")
+    await session.commit()
     return _notification_to_response(notif)
 
 
@@ -75,6 +76,7 @@ async def mark_all_notifications_read(
 ) -> dict:
     """Marque toutes les notifications comme lues."""
     count = await notification_service.mark_all_read(session)
+    await session.commit()
     return {"marked_read": count}
 
 
