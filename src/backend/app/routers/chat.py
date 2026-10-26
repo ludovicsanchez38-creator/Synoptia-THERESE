@@ -3117,6 +3117,17 @@ async def _do_stream_response(
                                 event_data = json.loads(continued_event[6:].strip())
                                 if event_data.get("type") == "text":
                                     full_content += event_data.get("content", "")
+                                elif event_data.get("type") == "error" and echec_suite.get("refus"):
+                                    # B-1119 : sauver le texte avant le terminal, qui
+                                    # fait cesser la lecture du client. Aucun repli
+                                    # ni effet de fin de réponse après ce refus.
+                                    if full_content.strip():
+                                        fournisseur, modele = _attribution(llm_service)
+                                        await _ecrire_reponse(session, Message(
+                                            conversation_id=conversation_id,
+                                            role="assistant", content=full_content,
+                                            model=modele, provider=fournisseur,
+                                        ))
                             except json.JSONDecodeError:
                                 pass
                         yield continued_event
