@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { SHORTCUT_GROUPS } from './raccourcisAnnonces';
 
 const RACINE = path.join(__dirname, '..');
 
@@ -25,10 +26,13 @@ describe('Entrée 6 : ⌘O cesse d’être une touche morte', () => {
   });
 
   it('la fiche des raccourcis n’annonce plus un groupe vide', () => {
-    const fiche = lire('components/chat/ShortcutsModal.tsx');
-    // Si le groupe Fichiers est déclaré, il porte au moins un raccourci.
-    const groupe = fiche.match(/Fichiers[\s\S]{0,400}/);
-    if (groupe) expect(groupe[0]).toMatch(/⌘\s*\+?\s*O|Ctrl\s*\+\s*O/i);
+    expect.hasAssertions();
+    // La fiche lit désormais cette table partagée. Une disparition du groupe
+    // ou du geste doit faire échouer le test, sans assertion conditionnelle.
+    const groupe = SHORTCUT_GROUPS.find((g) => g.title === 'Fichiers');
+    expect(groupe?.shortcuts).toContainEqual({
+      keys: '⌘ + O', description: 'Ouvrir les Fichiers',
+    });
   });
 });
 
