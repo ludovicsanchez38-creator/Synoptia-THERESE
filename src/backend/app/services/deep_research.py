@@ -225,6 +225,8 @@ async def deep_research(
 
         try:
             resp = await service.search(query, max_results=max_results_per_query)
+            if resp.indisponible:
+                recherche_en_echec = True
             for result in resp.results:
                 if result.url not in seen_urls:
                     seen_urls.add(result.url)
