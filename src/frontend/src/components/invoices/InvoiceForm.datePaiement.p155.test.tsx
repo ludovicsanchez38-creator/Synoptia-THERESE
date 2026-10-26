@@ -86,6 +86,18 @@ describe('P-155 : la date réelle du paiement', () => {
     await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', '2026-07-20'));
   });
 
+  it('B-1147 : le sélecteur transmet aussi la date saisie au paiement', async () => {
+    updateInvoiceMock.mockResolvedValue({ ...invoice, status: 'paid' });
+    rendre(invoice);
+    fireEvent.change(screen.getByLabelText('Payée le'), { target: { value: '2026-06-18' } });
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    expect(screen.getByTestId('external-action-confirmation')).toHaveTextContent('18/06/2026');
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement de statut' }));
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', '2026-06-18'));
+    expect(updateInvoiceMock).not.toHaveBeenCalled();
+  });
+
   it('la confirmation dit le numéro définitif renvoyé, pas le jeton provisoire', async () => {
     useStatusStore.setState({ notifications: [] });
     markInvoicePaidMock.mockResolvedValue({ ...invoice, invoice_number: 'FACT-2026-009', status: 'paid' });
@@ -105,6 +117,81 @@ describe('P-155 : la date réelle du paiement', () => {
     rendre({ ...invoice, status: 'draft' });
     fireEvent.click(screen.getByRole('button', { name: 'Marquer comme payée' }));
     expect(screen.getByTestId('external-action-confirmation')).toHaveTextContent(/brouillon/i);
+  });
+});
+
+describe('B-1147 : entrées supplémentaires après correction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useBillingProfileStore.setState({ missing: null });
+    updateInvoiceMock.mockResolvedValue(invoice);
+    markInvoicePaidMock.mockResolvedValue({ ...invoice, status: 'paid' });
+  });
+
+  it.each([
+    ['facture', 'sent', '2024-02-29'],
+    ['facture', 'overdue', '2025-12-31'],
+    ['facture', 'draft', '2026-01-01'],
+    ['avoir', 'sent', '2026-01-07'],
+    ['avoir', 'overdue', '2026-01-13'],
+    ['avoir', 'draft', '2026-02-02'],
+    ['facture', 'sent', '2026-02-14'],
+    ['facture', 'draft', '2026-03-08'],
+    ['avoir', 'sent', '2026-04-30'],
+    ['avoir', 'draft', '2026-05-19'],
+  ] as const)('%s %s : date %s conservée', async (documentType, status, date) => {
+    rendre({ ...invoice, document_type: documentType, status });
+    fireEvent.change(screen.getByLabelText(documentType === 'avoir' ? 'Remboursé le' : 'Payée le'), { target: { value: date } });
+    if (status === 'draft') {
+      fireEvent.change(screen.getByDisplayValue('Accompagnement'), { target: { value: 'Atelier retouché avant paiement' } });
+    }
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    expect(screen.getByTestId('external-action-confirmation')).toHaveTextContent(date.split('-').reverse().join('/'));
+    expect(markInvoicePaidMock).not.toHaveBeenCalled();
+    expect(updateInvoiceMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement de statut' }));
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', date));
+    if (status === 'draft') {
+      expect(updateInvoiceMock).toHaveBeenCalledWith('invoice-1', expect.objectContaining({
+        status: undefined,
+        lines: [expect.objectContaining({ description: 'Atelier retouché avant paiement' })],
+      }));
+      expect(updateInvoiceMock.mock.invocationCallOrder[0]).toBeLessThan(markInvoicePaidMock.mock.invocationCallOrder[0]);
+    } else {
+      expect(updateInvoiceMock).not.toHaveBeenCalled();
+    }
+  });
+
+  it.each(['', '2999-01-01'])('refuse une date vide ou future : %s', async (date) => {
+    rendre(invoice);
+    fireEvent.change(screen.getByLabelText('Payée le'), { target: { value: date } });
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Indique une date passée ou celle d’aujourd’hui.');
+    expect(markInvoicePaidMock).not.toHaveBeenCalled();
+    expect(updateInvoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('annuler la confirmation ne déclenche aucune écriture', async () => {
+    rendre(invoice);
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    fireEvent.click(within(screen.getByTestId('external-action-confirmation')).getByRole('button', { name: 'Annuler' }));
+    expect(markInvoicePaidMock).not.toHaveBeenCalled();
+    expect(updateInvoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('un brouillon dont la sauvegarde échoue ne passe pas payé', async () => {
+    updateInvoiceMock.mockRejectedValueOnce(new Error('Sauvegarde impossible'));
+    rendre({ ...invoice, status: 'draft' });
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement de statut' }));
+    await waitFor(() => expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'error', message: 'Sauvegarde impossible' }),
+    ])));
+    expect(markInvoicePaidMock).not.toHaveBeenCalled();
   });
 });
 

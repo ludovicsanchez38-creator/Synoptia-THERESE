@@ -445,6 +445,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       }));
     }
 
+    const passagePaye = invoice && invoice.status !== 'paid' && status === 'paid';
+    if (passagePaye && (!datePaiement || datePaiement > localDateKey(new Date()))) {
+      setErreurValidation('Indique une date passée ou celle d’aujourd’hui.');
+      return;
+    }
+
     const data = {
       contact_id: contactId,
       document_type: documentType,
@@ -469,11 +475,18 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
         if (invoice) {
           // Mise a jour
-          // B-1614 : une pièce émise est figée ; seul son statut part.
-          savedInvoice = await updateInvoice(
-            invoice.id,
-            pieceEmise ? { status: status !== invoice.status ? status : undefined } : data,
-          );
+          if (passagePaye) {
+            // B-1147 : la commande de paiement conserve la date saisie.
+            // Les retouches du brouillon sont sauvées avant son émission.
+            if (!pieceEmise) await updateInvoice(invoice.id, { ...data, status: undefined });
+            savedInvoice = await markInvoicePaid(invoice.id, datePaiement);
+          } else {
+            // B-1614 : une pièce émise est figée ; seul son statut part.
+            savedInvoice = await updateInvoice(
+              invoice.id,
+              pieceEmise ? { status: status !== invoice.status ? status : undefined } : data,
+            );
+          }
           addNotification({ type: 'success', title: libellesDeLaPiece(documentType).misAJour, message: numeroAffiche(savedInvoice.invoice_number) });
         } else {
           // Creation
@@ -504,6 +517,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           { label: 'Document', value: numeroAffiche(invoice.invoice_number) },
           { label: 'Statut actuel', value: libelleStatutPiece(invoice.status, invoice.document_type) },
           { label: 'Nouveau statut', value: statusLabel },
+          ...(passagePaye ? [{
+            label: documentType === 'avoir' ? 'Date du remboursement' : 'Date du paiement',
+            value: datePaiement.split('-').reverse().join('/'),
+          }] : []),
           { label: 'Montant TTC', value: montantAvecDevise(totalTTC, currency) },
         ],
       }, persistInvoice);

@@ -73,8 +73,8 @@ describe('B-1614 : une facture émise est figée dans le formulaire', () => {
     expect(screen.getByText(/émets un avoir/)).toBeInTheDocument();
   });
 
-  it('seul le statut part à l’enregistrement', async () => {
-    updateInvoiceMock.mockResolvedValue({ ...invoice, status: 'paid' });
+  it('le paiement ne renvoie pas le contenu figé de la pièce', async () => {
+    markInvoicePaidMock.mockResolvedValue({ ...invoice, status: 'paid' });
     render(
       <PrototypeExternalActionConfirmationProvider>
         <InvoiceForm invoice={invoice} onClose={vi.fn()} onSave={vi.fn()} />
@@ -85,7 +85,8 @@ describe('B-1614 : une facture émise est figée dans le formulaire', () => {
     const confirmer = screen.queryByRole('button', { name: 'Confirmer le changement de statut' });
     if (confirmer) fireEvent.click(confirmer);
 
-    await waitFor(() => expect(updateInvoiceMock).toHaveBeenCalledWith('invoice-1', { status: 'paid' }));
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)));
+    expect(updateInvoiceMock).not.toHaveBeenCalled();
   });
 
   // B-1677 : les lignes figées ne se valident plus ; une ligne héritée à
