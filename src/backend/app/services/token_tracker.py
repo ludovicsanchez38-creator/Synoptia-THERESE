@@ -13,6 +13,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
+from app.services.civil_time import date_civile_paris
+
 
 @dataclass(frozen=True)
 class PalierTarif:
@@ -362,16 +364,17 @@ class TokenTracker:
         self._usage_history: deque[TokenUsageRecord] = deque(maxlen=1000)
 
         # Daily counters
+        jour_paris = date_civile_paris(datetime.now(UTC))
         self._today_input: int = 0
         self._today_output: int = 0
         self._today_cost: float = 0.0
-        self._today_date: str = datetime.now(UTC).strftime("%Y-%m-%d")
+        self._today_date: str = jour_paris.isoformat()
 
         # Monthly counters
         self._month_input: int = 0
         self._month_output: int = 0
         self._month_cost: float = 0.0
-        self._current_month: str = datetime.now(UTC).strftime("%Y-%m")
+        self._current_month: str = jour_paris.strftime("%Y-%m")
 
         # B-500 (05/09/2026) : ces compteurs ne vivaient qu'en mémoire ; le
         # plafond mensuel s'appliquait à un compteur remis à zéro à chaque
@@ -417,7 +420,7 @@ class TokenTracker:
 
     def _reset_daily_if_needed(self) -> None:
         """Reset daily counters if date has changed."""
-        today = datetime.now(UTC).strftime("%Y-%m-%d")
+        today = date_civile_paris(datetime.now(UTC)).isoformat()
         if today != self._today_date:
             self._today_input = 0
             self._today_output = 0
@@ -426,7 +429,7 @@ class TokenTracker:
 
     def _reset_monthly_if_needed(self) -> None:
         """Reset monthly counters if month has changed."""
-        month = datetime.now(UTC).strftime("%Y-%m")
+        month = date_civile_paris(datetime.now(UTC)).strftime("%Y-%m")
         if month != self._current_month:
             self._month_input = 0
             self._month_output = 0
