@@ -246,19 +246,20 @@ GENERATE_DOCUMENT_TOOL = {
     "function": {
         "name": "generate_document",
         "description": (
-            "Genere un fichier Word/DOCX, PowerPoint/PPTX ou Excel/XLSX telechargeable, "
+            "Génère un fichier PDF, Word/DOCX, PowerPoint/PPTX ou Excel/XLSX téléchargeable, "
             "UNIQUEMENT si demande EXPLICITEMENT DANS CE MESSAGE. Nommer, preparer, planifier "
             "ou discuter d'un document ne suffit pas : en cas de doute, demande confirmation. "
             "Ne fabrique JAMAIS de lien : l'outil renvoie l'URL reelle. Fournis tout le "
-            "contenu dans content."
+            "contenu dans content. Pour un PDF, fournis du texte ou du Markdown "
+            "(titres, paragraphes, listes et tableaux simples), sans code Python."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "format": {
                     "type": "string",
-                    "enum": ["docx", "pptx", "xlsx"],
-                    "description": "Format : docx (Word), pptx (PowerPoint) ou xlsx (Excel)",
+                    "enum": ["docx", "pptx", "xlsx", "pdf"],
+                    "description": "Format : pdf, docx (Word), pptx (PowerPoint) ou xlsx (Excel)",
                 },
                 "title": {"type": "string", "description": "Titre du document"},
                 "content": {
@@ -361,7 +362,7 @@ WORKSPACE_TOOLS = [
 
 # P8 (2e passage personas) : routage chat -> skill Office en OUTIL appelable
 # (avant : detection d'intention fragile -> aucun fichier produit / faux lien).
-_DOC_SKILL_IDS = {"docx": "docx-pro", "pptx": "pptx-pro", "xlsx": "xlsx-pro"}
+_DOC_SKILL_IDS = {"docx": "docx-pro", "pptx": "pptx-pro", "xlsx": "xlsx-pro", "pdf": "pdf-pro"}
 
 # Passe 2 de revue (P2-5) : gestes de génération détachés (référence forte).
 _generations_en_cours: set["asyncio.Task[Any]"] = set()
@@ -873,7 +874,7 @@ async def _generate_document(
     session: AsyncSession,
     contexte: ContexteExecution | None = None,
 ) -> str:
-    """Génère un vrai fichier Office via le registre de skills (P8).
+    """Génère un vrai fichier Office ou PDF via le registre de skills (P8, P-104).
 
     Avant : le chat « bluffait » un faux lien faute de routage fiable. Désormais
     le LLM appelle cet outil, qui produit réellement le fichier et renvoie l'URL.
@@ -884,7 +885,7 @@ async def _generate_document(
     fmt = (args.get("format") or "docx").lower()
     skill_id = _DOC_SKILL_IDS.get(fmt)
     if not skill_id:
-        return f"Format non supporte : {fmt}. Formats disponibles : docx, pptx, xlsx."
+        return f"Format non supporte : {fmt}. Formats disponibles : docx, pptx, xlsx, pdf."
 
     content = (args.get("content") or "").strip()
     if not content:

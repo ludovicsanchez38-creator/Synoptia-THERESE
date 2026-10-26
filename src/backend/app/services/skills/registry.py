@@ -380,6 +380,7 @@ async def init_skills() -> None:
     )
     from app.services.skills.docx_generator import DocxSkill
     from app.services.skills.html_generator import HtmlSkill
+    from app.services.skills.pdf_generator import PdfSkill
     from app.services.skills.planning_skills import (
         PlanGoalsSkill,
         PlanMeetingSkill,
@@ -398,6 +399,7 @@ async def init_skills() -> None:
     registry.register(PptxSkill(registry.output_dir))
     registry.register(XlsxSkill(registry.output_dir))
     registry.register(HtmlSkill(registry.output_dir))
+    registry.register(PdfSkill(registry.output_dir))
 
     # Enregistrer les skills TEXT (génération de contenu textuel)
     registry.register(EmailProSkill(registry.output_dir))
