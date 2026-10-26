@@ -60,6 +60,10 @@ app.state.auth_disabled = True  # noqa: E402
 async def _test_lifespan(_app):
     from app.models.database import close_db, init_db
     _app.state.auth_disabled = True
+    # B-1116 : db_session peut laisser des pools ouverts entre deux tests.
+    # init_db les remplacerait sans les fermer ; un restore pourrait alors
+    # tronquer leur SHM encore mappé et provoquer SIGBUS au prochain accès.
+    await close_db()
     await init_db()
     yield
     await close_db()
