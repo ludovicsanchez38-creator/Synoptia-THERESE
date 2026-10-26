@@ -19,6 +19,15 @@ from .base import BaseSkill, FileFormat, SkillParams, SkillResult
 def _texte(texte: str) -> str:
     """Emphases équilibrées ; tout passage ambigu reste du texte échappé."""
     texte = _texte_pdf(unicodedata.normalize("NFC", texte))
+    # Le code déjà échappé reste littéral, même dans une emphase. Les entités
+    # protègent ses astérisques de la pile et ses espaces du repli de Paragraph.
+    texte = re.sub(
+        r"(?<!`)`([^`]+)`(?!`)",
+        lambda code: '<font name="Courier">'
+        + code[1].replace("*", "&#42;").replace(" ", "&#160;")
+        + "</font>",
+        texte,
+    )
     balises = {1: "i", 2: "b"}
     ouvertures = {1: [1], 2: [2], 3: [2, 1]}
     pile: list[int] = []

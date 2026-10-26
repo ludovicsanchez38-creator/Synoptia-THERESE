@@ -141,6 +141,12 @@ async def test_une_emphase_triple_produit_un_pdf_et_sa_carte(registre_pdf):
 
 
 @pytest.mark.asyncio
+async def test_une_formule_en_code_conserve_ses_asterisques(registre_pdf):
+    lecteur = await generer(registre_pdf, "Formule : `=B2*C2*(1-D2)`.")
+    assert "Formule : =B2*C2*(1-D2)." in lecteur.pages[0].extract_text()
+
+
+@pytest.mark.asyncio
 async def test_un_entete_geant_conserve_son_texte_et_les_cellules(registre_pdf):
     entete = "é" * 4000
     lecteur = await generer(
@@ -232,6 +238,80 @@ async def test_dix_emphases_apres_correctif(registre_pdf, monkeypatch, contenu, 
         assert fontes, mot
         assert all(("Bold" in fonte) == gras for fonte in fontes), (mot, fontes)
         assert all(("Oblique" in fonte or "Italic" in fonte) == italique for fonte in fontes)
+
+
+# Inventées après le vert de la formule signalée par Astra v2.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("contenu", "attendu", "codes"), [
+    pytest.param(
+        "Total : `=SUM(A3:A9)*$F$2`.", "Total : =SUM(A3:A9)*$F$2.",
+        ["=SUM(A3:A9)*$F$2"], id="excel-reference-absolue",
+    ),
+    pytest.param(
+        'Choix : `=IF(C4<0,"*",C4*D4)`.', 'Choix : =IF(C4<0,"*",C4*D4).',
+        ['=IF(C4<0,"*",C4*D4)'], id="excel-comparaison-et-guillemets",
+    ),
+    pytest.param(
+        r"Sources : `C:\Exports\2027\*.csv` ; `D:\Archives\*\bilan.*`.",
+        r"Sources : C:\Exports\2027\*.csv ; D:\Archives\*\bilan.*.",
+        [r"C:\Exports\2027\*.csv", r"D:\Archives\*\bilan.*"], id="chemins-windows",
+    ),
+    pytest.param(
+        r"Motifs : `^[A-Z]*\d+$` et `a\*b.*`.", r"Motifs : ^[A-Z]*\d+$ et a\*b.*.",
+        [r"^[A-Z]*\d+$", r"a\*b.*"], id="regex-et-asterisque-echappe",
+    ),
+    pytest.param(
+        "| Expression | `x*y*z` |\n| --- | --- |\n| `items[0]*2` | `p*q*r` |",
+        "Expression\nx*y*z\nitems[0]*2\np*q*r",
+        ["x*y*z", "items[0]*2", "p*q*r"], id="code-entete-et-cellules",
+    ),
+    pytest.param(
+        "Calcul `r*s*t`, puis `reste **lisible**.", "Calcul r*s*t, puis `reste lisible.",
+        ["r*s*t"], id="backtick-non-ferme",
+    ),
+    pytest.param(
+        "***Calcul `h*i*j` confirmé*** et *`u*v*w`*.",
+        "Calcul h*i*j confirmé et u*v*w.", ["h*i*j", "u*v*w"], id="code-dans-emphases",
+    ),
+    pytest.param(
+        "Copier : ` total  =  prix * 2 `.", "Copier :  total  =  prix * 2 .",
+        [" total  =  prix * 2 "], id="espaces-du-code",
+    ),
+    pytest.param(
+        'Balises : `<img src="file:///absent"/> & *.*`.',
+        'Balises : <img src="file:///absent"/> & *.*.',
+        ['<img src="file:///absent"/> & *.*'], id="balise-litterale-sans-lecture",
+    ),
+    pytest.param(
+        "## `p**q`\n\n2. Appliquer `x***y`.\n\nHors code : 7 * 8, étoile \\*.",
+        "p**q\n2. Appliquer x***y.\nHors code : 7 * 8, étoile \\*.",
+        ["p**q", "x***y"], id="titre-liste-et-asterisques-hors-code",
+    ),
+])
+async def test_dix_codes_apres_astra_v2(registre_pdf, monkeypatch, contenu, attendu, codes):
+    def interdire_ressource(*args, **kwargs):
+        pytest.fail("Le code imprimé a déclenché une lecture externe")
+
+    monkeypatch.setattr("reportlab.lib.utils.open_for_read", interdire_ressource)
+    lecteur = await generer(registre_pdf, contenu)
+    lignes = (ligne for page in lecteur.pages for ligne in page.extract_text().splitlines())
+    texte = "\n".join(
+        ligne for ligne in lignes
+        if ligne not in {"Synthèse française", "Généré par THÉRÈSE - Synoptïa"}
+        and not ligne.startswith("Page ")
+    )
+    # Comparer aussi les espaces : ils font partie du code à recopier.
+    assert texte == attendu
+    fragments_code = []
+
+    def relever_code(texte, matrice, transformation, police, taille):
+        if police and police["/BaseFont"] == "/Courier":
+            fragments_code.append(texte)
+
+    for page in lecteur.pages:
+        page.extract_text(visitor_text=relever_code)
+    for code in codes:
+        assert code in "".join(fragments_code)
 
 
 def tableau_markdown(entete, lignes):
