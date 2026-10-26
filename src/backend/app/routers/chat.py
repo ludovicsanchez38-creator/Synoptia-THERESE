@@ -1501,6 +1501,23 @@ def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
     usage_totals["appels"].append((entree, sortie))
 
 
+def _usage_du_tour(
+    usage_totals: dict[str, Any], user_message: str, full_content: str
+) -> tuple[int, int, list[tuple[int, int]] | None]:
+    """Usage réel accumulé sur tous les tours d'outils, sinon estimation.
+
+    Estimation ~1 mot = 2 tokens en filet (providers pas encore migrés).
+    Partagé par la fin nominale et la sortie sur refus de budget.
+    """
+    if usage_totals["estimated"] or usage_totals["input_tokens"] == 0:
+        return len(user_message.split()) * 2, len(full_content.split()) * 2, None
+    return (
+        usage_totals["input_tokens"],
+        usage_totals["output_tokens"],
+        usage_totals["appels"],
+    )
+
+
 def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
     """Lit la fenêtre réellement rendue par prepare_context.
 
@@ -3121,13 +3138,38 @@ async def _do_stream_response(
                                     # B-1119 : sauver le texte avant le terminal, qui
                                     # fait cesser la lecture du client. Aucun repli
                                     # ni effet de fin de réponse après ce refus.
-                                    if full_content.strip():
-                                        fournisseur, modele = _attribution(llm_service)
-                                        await _ecrire_reponse(session, Message(
+                                    # Revue Grok 0.81 : un fichier écrit par un outil
+                                    # de ce tour (PDF, Word...) garde sa carte, comme
+                                    # sur les autres sorties en erreur (B-147), et la
+                                    # dépense qui a déclenché le refus est comptée.
+                                    cartes_outils, fichiers_outils = _cartes_des_fichiers_outils()
+                                    for carte in cartes_outils:
+                                        yield carte
+                                    fournisseur, modele = _attribution(llm_service)
+                                    if full_content.strip() or fichiers_outils:
+                                        message_refus = Message(
                                             conversation_id=conversation_id,
-                                            role="assistant", content=full_content,
+                                            role="assistant",
+                                            content=full_content if full_content.strip()
+                                            else str(event_data.get("content") or ""),
                                             model=modele, provider=fournisseur,
-                                        ))
+                                        )
+                                        if fichiers_outils:
+                                            message_refus.extra_data = json.dumps(
+                                                {"skill_files": fichiers_outils}
+                                            )
+                                        await _ecrire_reponse(session, message_refus)
+                                    entree, sortie, appels_refus = _usage_du_tour(
+                                        usage_totals, user_message, full_content
+                                    )
+                                    get_token_tracker().record_usage(
+                                        conversation_id=conversation_id,
+                                        model=modele,
+                                        provider=fournisseur,
+                                        input_tokens=entree,
+                                        output_tokens=sortie,
+                                        appels=appels_refus,
+                                    )
                             except json.JSONDecodeError:
                                 pass
                         yield continued_event
@@ -3258,14 +3300,9 @@ async def _do_stream_response(
 
     # Usage réel accumulé sur tous les tours d'outils (dette 14/06/2026), sinon
     # estimation ~1 mot = 2 tokens en filet (providers pas encore migrés).
-    if usage_totals["estimated"] or usage_totals["input_tokens"] == 0:
-        input_tokens = len(user_message.split()) * 2
-        output_tokens = len(full_content.split()) * 2
-        appels = None
-    else:
-        input_tokens = usage_totals["input_tokens"]
-        output_tokens = usage_totals["output_tokens"]
-        appels = usage_totals["appels"]
+    input_tokens, output_tokens, appels = _usage_du_tour(
+        usage_totals, user_message, full_content
+    )
 
     usage_record = token_tracker.record_usage(
         conversation_id=conversation_id,
