@@ -55,7 +55,7 @@ def verifier_bascule(suivi, avant, apres, *, mensuel=False):
     assert mois["input_tokens"] == (0 if mensuel else 1000)
     record = consommer(tracker, 20, 10)
     assert record.timestamp == horloge[0].astimezone(UTC)
-    charge = json.loads(fichier.read_text())
+    charge = json.loads(fichier.read_text(encoding="utf-8"))
     assert charge["today_date"] == apres[:10]
     assert charge["current_month"] == apres[:7]
     assert charge["today_input"] == 20
@@ -80,7 +80,7 @@ def test_demarrage_a_minuit_charge_le_jour_et_le_mois_de_paris(suivi):
     fichier.write_text(json.dumps({
         "today_date": "2026-11-01", "today_input": 321, "today_output": 123,
         "current_month": "2026-11", "month_input": 321, "month_output": 123,
-    }))
+    }), encoding="utf-8")
     tracker = creer_suivi()
     assert tracker.get_daily_usage()["total_tokens"] == 444
     assert tracker.get_monthly_usage()["total_tokens"] == 444
