@@ -1,13 +1,67 @@
 """Migration desktop idempotente, sans commande Alembic au démarrage."""
 import logging
+import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_COLONNES_RECONSTRUITES = (
-    'id', 'contact_id', 'project_id', 'conversation_id', 'execution_id',
-    'type', 'title', 'description', 'statut', 'remplace_id', 'extra_data', 'created_at',
-)
+_COLONNES_RECONSTRUITES = {
+    'id': 'VARCHAR PRIMARY KEY NOT NULL', 'contact_id': 'VARCHAR REFERENCES contacts(id)',
+    'project_id': 'VARCHAR REFERENCES projects(id)',
+    'conversation_id': 'VARCHAR REFERENCES conversations(id) ON DELETE SET NULL',
+    'execution_id': 'VARCHAR', 'type': 'VARCHAR NOT NULL', 'title': 'VARCHAR NOT NULL',
+    'description': 'VARCHAR', 'statut': "VARCHAR NOT NULL DEFAULT 'en_vigueur'",
+    'remplace_id': 'VARCHAR REFERENCES activities(id)', 'extra_data': 'VARCHAR',
+    'created_at': 'DATETIME NOT NULL',
+}
+
+# Les chaînes, identifiants cités et commentaires restent des jetons indivisibles.
+_JETONS_SQL = re.compile(r"' (?:''|[^'])* ' | \" (?:\"\"|[^\"])* \" | ` (?:``|[^`])* ` "
+                         r"| \[ [^\]]* \] | --[^\n]* | /\*.*?\*/ | \w+ | [^\s]", re.X | re.S)
+
+
+def _schema_enrichi(conn: Any, colonnes: dict[str, Any]) -> str | None:
+    """Reprendre le DDL exact, en ne retirant que NOT NULL de contact_id.
+
+    Ainsi CHECK, DEFAULT, COLLATE, contraintes et colonnes calculées ne sont
+    pas réinventés à partir de table_info, qui ne sait pas les restituer.
+    """
+    sql: str = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='activities'").fetchone()[0]
+    jetons = list(_JETONS_SQL.finditer(sql))
+    profondeur = 0
+    debut = fin = None
+    contact = False
+    retraits = []
+    for i, jeton in enumerate(jetons):
+        mot = jeton.group()
+        if mot == '(':
+            profondeur += 1
+            if profondeur == 1:
+                debut = jeton.end()
+        elif mot == ')':
+            profondeur -= 1
+            if profondeur == 0:
+                fin = jeton.start()
+        elif profondeur == 1:
+            if jetons[i - 1].group() in ('(', ','):
+                contact = mot.strip('"`[]').lower() == 'contact_id'
+            if contact and mot.upper() == 'NOT' and jetons[i + 1].group().upper() == 'NULL':
+                # Une contrainte nommée exige aussi de retirer son nom.
+                start = jetons[i - 2].start() if jetons[i - 2].group().upper() == 'CONSTRAINT' else jeton.start()
+                end = jetons[i + 1].end()
+                if [j.group().upper() for j in jetons[i + 2:i + 4]] == ['ON', 'CONFLICT']:
+                    end = jetons[i + 4].end()
+                retraits.append((start, end))
+    if (debut is None or fin is None or 'VIRTUAL TABLE' in sql[:debut].upper()
+            or (colonnes['contact_id'][3] and len(retraits) != 1)):
+        return None
+    corps = sql[debut:fin]
+    for start, end in reversed(retraits):
+        corps = corps[:start - debut] + corps[end - debut:]
+    ajouts = [f'{nom} {definition}' for nom, definition in _COLONNES_RECONSTRUITES.items()
+              if nom not in colonnes]
+    # Les colonnes doivent précéder les contraintes de table déjà présentes.
+    return 'CREATE TABLE activities_r5 (' + ', '.join([*ajouts, corps]) + ')' + sql[fin + 1:]
 
 
 def _verifier_liens(conn: Any, tables: set[str], liens: dict[str, str]) -> None:
@@ -34,13 +88,16 @@ def migrer_activites(conn: Any) -> None:
     reconstruire = colonnes['contact_id'][3] or not {
         'project_id', 'conversation_id', 'execution_id', 'statut', 'remplace_id',
     } <= colonnes.keys()
-    if reconstruire and (inconnues := colonnes.keys() - set(_COLONNES_RECONSTRUITES)):
-        # B-1153 : refuser avant toute transaction plutôt que perdre des données
-        # ou inventer la définition et les contraintes des colonnes inconnues.
-        message = ('Migration des activités refusée : colonnes non prises en charge : '
-                   + ', '.join(sorted(inconnues)) + '. Aucune reconstruction effectuée.')
-        logger.error(message)
-        raise ValueError(message)
+    definition = 'CREATE TABLE activities_r5 (' + ', '.join(
+        f'{nom} {ddl}' for nom, ddl in _COLONNES_RECONSTRUITES.items()) + ')'
+    schema_enrichi = bool(colonnes.keys() - _COLONNES_RECONSTRUITES.keys())
+    if reconstruire and schema_enrichi:
+        enrichie = _schema_enrichi(conn, colonnes)
+        if enrichie is None or conn.in_transaction:
+            logger.warning('Migration des activités refusée : schéma enrichi non reconstructible '
+                           'ou transaction en cours. Migration sautée, table conservée.')
+            return
+        definition = enrichie
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     liens = {
         'contact_id': 'contacts', 'project_id': 'projects',
@@ -67,22 +124,22 @@ def migrer_activites(conn: Any) -> None:
         conn.execute('BEGIN IMMEDIATE')
         if reconstruire:
             nombre = conn.execute('SELECT COUNT(*) FROM activities').fetchone()[0]
-            conn.execute('''CREATE TABLE activities_r5 (
-                id VARCHAR PRIMARY KEY NOT NULL, contact_id VARCHAR REFERENCES contacts(id),
-                project_id VARCHAR REFERENCES projects(id),
-                conversation_id VARCHAR REFERENCES conversations(id) ON DELETE SET NULL,
-                execution_id VARCHAR, type VARCHAR NOT NULL, title VARCHAR NOT NULL,
-                description VARCHAR, statut VARCHAR NOT NULL DEFAULT 'en_vigueur',
-                remplace_id VARCHAR REFERENCES activities(id), extra_data VARCHAR, created_at DATETIME NOT NULL)''')
-            communs = ','.join(n for n in _COLONNES_RECONSTRUITES if n in colonnes)
+            indexes = conn.execute("SELECT sql FROM sqlite_master WHERE type='index' "
+                                   "AND tbl_name='activities' AND sql IS NOT NULL").fetchall()
+            conn.execute(definition)
+            communs = ','.join('"' + r[1].replace('"', '""') + '"'
+                               for r in conn.execute('PRAGMA table_xinfo(activities_r5)')
+                               if r[1] in colonnes and r[6] == 0)
             conn.execute(f'INSERT INTO activities_r5 ({communs}) SELECT {communs} FROM activities')
             if conn.execute('SELECT COUNT(*) FROM activities_r5').fetchone()[0] != nombre:
                 raise ValueError('Migration des activités : copie incomplète.')
             conn.execute('DROP TABLE activities')
             conn.execute('ALTER TABLE activities_r5 RENAME TO activities')
+            for (sql,) in indexes:
+                conn.execute(sql)
             for nom in ('contact_id', 'project_id', 'conversation_id', 'statut', 'execution_id'):
                 unique = 'UNIQUE ' if nom == 'execution_id' else ''
-                conn.execute(f'CREATE {unique}INDEX ix_activities_{nom} ON activities ({nom})')
+                conn.execute(f'CREATE {unique}INDEX IF NOT EXISTS ix_activities_{nom} ON activities ({nom})')
         # Une ancienne suppression peut avoir laissé ces liens sans cible.
         # Les annulations valides, y compris vers une ligne copiée plus tard,
         # restent intactes : toutes les activités sont déjà dans la table finale.
@@ -96,8 +153,17 @@ def migrer_activites(conn: Any) -> None:
             ).rowcount
         _verifier_liens(conn, tables, liens)
         conn.commit()
-    except Exception:
+    except Exception as erreur:
         conn.rollback()
+        # Une extension locale absente empêche de recréer son DDL, mais la
+        # table d'origine reste lisible. Ne pas masquer les autres erreurs
+        # (disque, intégrité, copie incomplète, etc.).
+        if schema_enrichi and str(erreur).lower().startswith((
+            'no such collation sequence:', 'no such function:', 'unknown datatype for ',
+        )):
+            logger.warning('Migration des activités refusée : définition enrichie indisponible. '
+                           'Migration sautée, table conservée après annulation.')
+            return
         raise
     finally:
         conn.execute(f'PRAGMA foreign_keys={int(foreign_keys)}')
