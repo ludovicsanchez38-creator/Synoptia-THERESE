@@ -801,7 +801,6 @@ class CRMImportService:
                         "source",
                         "notes",
                         "rgpd_base_legale",
-                        "scope_id",
                     ):
                         if field_name in mapped:
                             setattr(existing, field_name, mapped[field_name])
@@ -816,6 +815,12 @@ class CRMImportService:
                     perimetre = _perimetre_ou_none(mapped.get("scope"))
                     if perimetre:
                         existing.scope = perimetre
+                    # B-1127 : une cellule vide ne détache pas une fiche
+                    # cloisonnée ; le général ne porte aucun identifiant.
+                    if existing.scope == "global":
+                        existing.scope_id = None
+                    elif mapped.get("scope_id"):
+                        existing.scope_id = mapped["scope_id"]
                     if "score" in mapped:
                         score = _parse_value(mapped["score"], "int")
                         if score is not None:
@@ -889,6 +894,7 @@ class CRMImportService:
                     ]
                     created_at = _parse_value(mapped.get("created_at"), "datetime")
                     updated_at = _parse_value(mapped.get("updated_at"), "datetime")
+                    perimetre = _perimetre_ou_none(mapped.get("scope")) or "global"
                     contact = Contact(
                         id=contact_id or generate_uuid(),
                         first_name=mapped.get("first_name"),
@@ -924,8 +930,8 @@ class CRMImportService:
                             _parse_value(mapped.get("purge_excluded"), "bool")
                             or False
                         ),
-                        scope=_perimetre_ou_none(mapped.get("scope")) or "global",
-                        scope_id=mapped.get("scope_id"),
+                        scope=perimetre,
+                        scope_id=mapped.get("scope_id") if perimetre != "global" else None,
                         created_at=created_at or datetime.now(UTC),
                         updated_at=updated_at or datetime.now(UTC),
                     )
