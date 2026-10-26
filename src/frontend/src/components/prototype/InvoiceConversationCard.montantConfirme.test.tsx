@@ -1,4 +1,21 @@
-/** B-1165 : le montant confirmé suit la TVA arrondie sur la base de chaque taux. */
+/**
+ * B-017 - le montant confirmé est celui que le document portera.
+ *
+ * Constat du 02/09/2026 (reproduction RP10, Playwright, sans appel au
+ * modèle) : trois lignes de 33,33 € à 20 % faisaient annoncer « Montant TTC :
+ * 119,99 € » au pavé de confirmation, puis le devis créé par le serveur
+ * portait 120,00 € et la liste affichait « DEV-2026-001 … 120,00 € ». Un
+ * centime de plus que ce qui avait été confirmé.
+ *
+ * Le serveur arrondit AU CENTIME LIGNE PAR LIGNE
+ * (`routers/invoices.py::_montants_de_ligne`, dont le commentaire raconte
+ * exactement ce cas : « 119.98799999999999 en base pendant que le PDF
+ * imprimait 119,99 »), puis somme des lignes déjà arrondies. Le formulaire,
+ * lui, sommait des montants NON arrondis et n'arrondissait qu'à l'affichage.
+ *
+ * `formatMoney` insère une espace fine insécable avant le symbole : on
+ * cherche le nombre, jamais la chaîne complète.
+ */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -50,26 +67,28 @@ function texteRendu(): string {
 }
 
 describe('B-017 - le pavé annonce le montant que le serveur produira', () => {
-  it('B-1165 : trois lignes de 33,33 € à 20 % confirment 119,99 €', () => {
+  it('trois lignes de 33,33 € à 20 % confirment 120,00 €, pas 119,99 €', () => {
     rendreFormulaire();
     for (let index = 0; index < 3; index += 1) saisirLigne(index, '33,33');
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
 
     const pave = screen.getByTestId('devis-draft-confirmation');
-    expect(pave.textContent).toContain('119,99');
-    expect(pave.textContent).not.toContain('120,00');
+    expect(pave.textContent).toContain('120,00');
+    expect(pave.textContent).not.toContain('119,99');
   });
 
   it('le récapitulatif du formulaire dit la même chose que le pavé', () => {
-    // La base de 99,99 € à 20 % donne 20,00 € de TVA par taux.
+    // Les deux chiffres viennent du même calcul : le récapitulatif annonçait
+    // « TTC 119,99 € » sous les yeux de l'utilisateur avant même la
+    // confirmation. La TVA suit la même règle : 20,01 € et non 20,00 €.
     rendreFormulaire();
     for (let index = 0; index < 3; index += 1) saisirLigne(index, '33,33');
 
     const texte = texteRendu();
     expect(texte).toContain('99,99');
-    expect(texte).toContain('20,00');
-    expect(texte).toContain('119,99');
-    expect(texte).not.toContain('120,00');
+    expect(texte).toContain('20,01');
+    expect(texte).toContain('120,00');
+    expect(texte).not.toContain('119,99');
   });
 
   it('témoin : un cas sans troisième décimale reste inchangé', () => {
