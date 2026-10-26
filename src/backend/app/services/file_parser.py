@@ -236,9 +236,10 @@ def _extract_docx(file_path: Path) -> str:
     from docx.types import ProvidesStoryPart
 
     cellules_lues = 0
+    avis_emis = False
 
     def extraire_blocs(element: BaseOxmlElement, parent: ProvidesStoryPart) -> str:
-        nonlocal cellules_lues
+        nonlocal cellules_lues, avis_emis
         morceaux: list[str] = []
         for enfant in element.iterchildren():
             if enfant.tag == qn("w:p"):
@@ -250,6 +251,11 @@ def _extract_docx(file_path: Path) -> str:
                 if texte.strip():
                     morceaux.append(texte)
             elif enfant.tag == qn("w:tbl"):
+                if cellules_lues >= MAX_DOCX_CELLULES:
+                    if not avis_emis:
+                        morceaux.append(AVIS_DOCX_TRONQUE)
+                        avis_emis = True
+                    continue
                 tableau = Table(enfant, parent)
                 tronque = False
                 for numero, ligne in enumerate(tableau._tbl.iterchildren(qn("w:tr"))):
@@ -275,8 +281,9 @@ def _extract_docx(file_path: Path) -> str:
                         morceaux.append("\t".join(cellules))
                     if tronque:
                         break
-                if tronque:
+                if tronque and not avis_emis:
                     morceaux.append(AVIS_DOCX_TRONQUE)
+                    avis_emis = True
         return "\n\n".join(morceaux)
 
     return extraire_blocs(doc.element.body, doc)
