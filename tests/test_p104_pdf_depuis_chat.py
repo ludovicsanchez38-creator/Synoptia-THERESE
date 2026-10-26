@@ -135,6 +135,148 @@ async def test_une_ligne_sans_espace_se_replie_sur_plusieurs_pages(registre_pdf)
 
 
 @pytest.mark.asyncio
+async def test_une_emphase_triple_produit_un_pdf_et_sa_carte(registre_pdf):
+    lecteur = await generer(registre_pdf, "Décision ***très importante*** à confirmer.")
+    assert "Décision très importante à confirmer." in lecteur.pages[0].extract_text()
+
+
+@pytest.mark.asyncio
+async def test_un_entete_geant_conserve_son_texte_et_les_cellules(registre_pdf):
+    entete = "é" * 4000
+    lecteur = await generer(
+        registre_pdf, f"| {entete} | B |\n| --- | --- |\n| A | C |",
+    )
+    lignes = "\n".join(page.extract_text() for page in lecteur.pages).splitlines()
+    assert "".join(ligne for ligne in lignes if set(ligne) == {"é"}) == entete
+    assert {"A", "B", "C"} <= set(lignes)
+
+
+def texte_du_corps(lecteur):
+    """Relire tout le contenu, sans titre ni pied de page, malgré les coupures."""
+    lignes = (ligne for page in lecteur.pages for ligne in page.extract_text().splitlines())
+    return "".join(
+        "".join(ligne.split()) for ligne in lignes
+        if ligne not in {"Synthèse française", "Généré par THÉRÈSE - Synoptïa"}
+        and not ligne.startswith("Page ")
+    )
+
+
+# Inventées après le vert des deux régressions d'Astra : dix par défaut.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("contenu", "attendu", "polices"), [
+    pytest.param(
+        "**Ferme** puis *souple* et ***résolu***.", "Ferme puis souple et résolu.",
+        [("Ferme", True, False), ("souple", False, True), ("résolu", True, True)],
+        id="emphases-cote-a-cote",
+    ),
+    pytest.param(
+        "**Accord *prioritaire*** et **délai *ajustable* demain**.",
+        "Accord prioritaire et délai ajustable demain.",
+        [("Accord", True, False), ("prioritaire", True, True), ("demain", True, False)],
+        id="italique-dans-gras",
+    ),
+    pytest.param(
+        "*Accord **prioritaire*** puis *délai **ajustable** demain*.",
+        "Accord prioritaire puis délai ajustable demain.",
+        [("Accord", False, True), ("prioritaire", True, True), ("demain", False, True)],
+        id="gras-dans-italique",
+    ),
+    pytest.param(
+        "## ***Relevé***\n\n3. **À *relire***\n\n| ***Avis*** | *Suite* |\n"
+        "| --- | --- |\n| **<validé>** | *été* |",
+        "Relevé 3. À relire Avis Suite <validé> été", [], id="titres-listes-cellules",
+    ),
+    pytest.param(
+        "Une **décision *contestée** à confirmer* & <avis>.",
+        "Une **décision *contestée** à confirmer* & <avis>.", [], id="emphases-croisees",
+    ),
+    pytest.param(
+        "Début *isolé et **inachevé puis ***suspendu <fin> & suite.",
+        "Début *isolé et **inachevé puis ***suspendu <fin> & suite.", [], id="asterisques-orphelins",
+    ),
+    pytest.param(
+        "Avis ****trouble****, *****vraiment***** et ******oui******.",
+        "Avis ****trouble****, *****vraiment***** et ******oui******.", [], id="longues-series-ambigues",
+    ),
+    pytest.param(
+        r"Texte \*littéral\* et ** stable ** puis * *.",
+        r"Texte \*littéral\* et ** stable ** puis * *.", [], id="echappements-et-espaces",
+    ),
+    pytest.param(
+        "Une **décision\n*révisée* demain**.", "Une décision révisée demain.",
+        [("révisée", True, True)], id="emphases-sur-plusieurs-lignes",
+    ),
+    pytest.param(
+        '***<img src="https://exemple.invalid/sceau"/>*** et *&inconnue; <b>été</b>*.',
+        '<img src="https://exemple.invalid/sceau"/> et &inconnue; <b>été</b>.', [],
+        id="balises-litterales-dans-emphases",
+    ),
+])
+async def test_dix_emphases_apres_correctif(registre_pdf, monkeypatch, contenu, attendu, polices):
+    def interdire_ressource(*args, **kwargs):
+        pytest.fail("Le balisage du PDF a déclenché une lecture externe")
+
+    monkeypatch.setattr("reportlab.lib.utils.open_for_read", interdire_ressource)
+    lecteur = await generer(registre_pdf, contenu)
+    assert texte_du_corps(lecteur) == "".join(attendu.split())
+    fragments = []
+
+    def relever_police(texte, matrice, transformation, police, taille):
+        if police:
+            fragments.append((texte, str(police["/BaseFont"])))
+
+    for page in lecteur.pages:
+        page.extract_text(visitor_text=relever_police)
+    for mot, gras, italique in polices:
+        fontes = [fonte for texte, fonte in fragments if mot in texte]
+        assert fontes, mot
+        assert all(("Bold" in fonte) == gras for fonte in fontes), (mot, fontes)
+        assert all(("Oblique" in fonte or "Italic" in fonte) == italique for fonte in fontes)
+
+
+def tableau_markdown(entete, lignes):
+    contenu = "\n".join(
+        "| " + " | ".join(ligne) + " |"
+        for ligne in [entete, ["---"] * len(entete), *lignes]
+    )
+    attendu = " ".join(cellule for ligne in [entete, *lignes] for cellule in ligne)
+    return contenu, attendu
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("contenu", "attendu", "pages_min"), [
+    pytest.param(*tableau_markdown(["é" * 10000], [["Première"], ["Dernière"]]),
+                 2, id="entete-une-colonne"),
+    pytest.param(*tableau_markdown([c * (1000 + i) for i, c in enumerate("abcdefgh")],
+                                  [[f"Valeur{i}" for i in range(8)]]),
+                 2, id="entetes-huit-colonnes"),
+    pytest.param(*tableau_markdown(["Gauche", "Droite"], [["ü" * 12000, "ç" * 11000]]),
+                 2, id="deux-cellules-geantes"),
+    pytest.param(*tableau_markdown(["Récit"], [["Œuvre achevée à Noël. " * 800], ["Clôture"]]),
+                 2, id="cellule-avec-espaces"),
+    pytest.param(*tableau_markdown([f"Col{i}" for i in range(8)],
+                                  [[c * 3000 for c in "abcdefgh"]]),
+                 2, id="cellules-huit-colonnes"),
+    pytest.param(*tableau_markdown(["ê" * 9000], [["à" * 13000], ["œ" * 7000]]),
+                 2, id="entete-et-corps-geants"),
+    pytest.param(*tableau_markdown(["é" * 2700, "Repère"], [["Suite", "Fin"]]),
+                 1, id="entete-proche-hauteur-page"),
+    pytest.param(*tableau_markdown(["A", "B", "C", "D", "E", "F", "G", "H"],
+                                  [["", "", "z" * 9000, "", "Fin", "", "", ""]]),
+                 2, id="cellules-geantes-et-vides"),
+    pytest.param(*tableau_markdown(["Accent", "Repère"],
+                                  [["é" * 6000, "Premier"], ["à" * 6000, "Dernier"]]),
+                 2, id="plusieurs-lignes-geantes"),
+    pytest.param("œ" * 20000, "œ" * 20000, 2, id="mot-unique-20000-hors-tableau"),
+])
+async def test_dix_volumes_apres_correctif(registre_pdf, contenu, attendu, pages_min):
+    lecteur = await generer(registre_pdf, contenu)
+    assert len(lecteur.pages) >= pages_min
+    # Égalité de tout le texte : ni troncature, ni duplication, ni cellule perdue.
+    assert texte_du_corps(lecteur) == "".join(attendu.split())
+
+
+@pytest.mark.asyncio
 async def test_le_vide_est_refuse_sans_fichier(registre_pdf):
     workspace_tools.start_generated_files_collection()
     message = await workspace_tools.execute_workspace_tool(

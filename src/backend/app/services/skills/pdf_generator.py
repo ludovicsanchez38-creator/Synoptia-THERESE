@@ -17,10 +17,44 @@ from .base import BaseSkill, FileFormat, SkillParams, SkillResult
 
 
 def _texte(texte: str) -> str:
-    """Échapper les balises avant d'appliquer le gras et l'italique Markdown."""
+    """Emphases équilibrées ; tout passage ambigu reste du texte échappé."""
     texte = _texte_pdf(unicodedata.normalize("NFC", texte))
-    texte = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", texte)
-    return re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<i>\1</i>", texte)
+    balises = {1: "i", 2: "b"}
+    ouvertures = {1: [1], 2: [2], 3: [2, 1]}
+    pile: list[int] = []
+    resultat: list[str] = []
+    position = 0
+    for marqueur in re.finditer(r"\*+", texte):
+        taille = len(marqueur[0])
+        avant = texte[position:marqueur.start()]
+        apres = texte[marqueur.end():marqueur.end() + 1]
+        if taille not in ouvertures or avant.endswith("\\"):
+            return texte
+        resultat.append(avant)
+        fermeture = 0
+        nombre = 0
+        for ouverture in reversed(pile):
+            fermeture += ouverture
+            nombre += 1
+            if fermeture >= taille:
+                break
+        if fermeture == taille and avant and not avant[-1].isspace():
+            for _ in range(nombre):
+                resultat.append(f"</{balises[pile.pop()]}>")
+        elif (
+            apres and not apres.isspace()
+            and not any(o in pile for o in ouvertures[taille])
+        ):
+            for ouverture in ouvertures[taille]:
+                pile.append(ouverture)
+                resultat.append(f"<{balises[ouverture]}>")
+        else:
+            return texte
+        position = marqueur.end()
+    if pile:
+        return texte
+    resultat.append(texte[position:])
+    return "".join(resultat)
 
 
 def _cellules(ligne: str) -> list[str]:
@@ -131,6 +165,19 @@ class PdfSkill(BaseSkill):
                         break
                     donnees.append([Paragraph(_texte(c), styles["cell"]) for c in cellules])
                     i += 1
+                largeur_cellule = document.width / len(entete) - 12
+                if any(
+                    cellule.wrap(largeur_cellule, document.height)[1] > document.height / 2
+                    for rang in donnees for cellule in rang
+                ):
+                    # Une cellule géante (notamment l'en-tête répété) peut empêcher
+                    # Table de se scinder. Les paragraphes gardent chaque cellule
+                    # dans l'ordre et coupent les mots longs sur autant de pages
+                    # que nécessaire, sans répétition ni suppression de texte.
+                    elements.extend(
+                        Paragraph(cellule.text, corps) for rang in donnees for cellule in rang
+                    )
+                    continue
                 tableau = Table(
                     donnees, colWidths=[document.width / len(entete)] * len(entete),
                     repeatRows=1, splitByRow=1, splitInRow=1, spaceAfter=8,
