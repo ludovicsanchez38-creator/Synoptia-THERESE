@@ -17,6 +17,7 @@ from app.models.entities import (
     Notification,
     Task,
 )
+from app.services.civil_time import date_civile_paris
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import func, select
 
@@ -175,7 +176,9 @@ async def _check_inactive_prospects(session: AsyncSession) -> int:
     for contact in contacts:
         # `last_interaction` peut etre vide : le filtre ne porte plus sur elle.
         # Le retard se compte depuis la date de relance, qui est toujours posee.
-        jours_de_retard = (datetime.now(UTC) - _as_aware_utc(contact.next_follow_up)).days
+        jours_de_retard = (
+            date_civile_paris(datetime.now(UTC)) - date_civile_paris(contact.next_follow_up)
+        ).days
         # Verifier quon na pas deja une notif recente pour ce contact
         existing = await session.execute(
             select(Notification).limit(1).where(

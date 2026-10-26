@@ -4,8 +4,10 @@ from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
-from app.models.entities import Calendar, CalendarEvent, Notification, Task
+from app.models import entities
+from app.models.entities import Calendar, CalendarEvent, Contact, Notification, Task
 from app.services import notification_service as module
+from app.services import relances
 from sqlmodel import select
 
 PARIS = ZoneInfo("Europe/Paris")
@@ -76,3 +78,58 @@ async def test_quatre_rejeux_taches(db_session, monkeypatch, minutes, retard):
     assert await module._check_overdue_tasks(db_session) == 1
     notif = (await db_session.execute(select(Notification))).scalar_one()
     assert notif.message == f"Tâche 'Livraison' en retard de {retard}"
+
+
+async def verifier_relance(db_session, monkeypatch, date_locale, echeance, retard, rappel=False):
+    maintenant = datetime.fromisoformat(date_locale).replace(tzinfo=PARIS)
+    figer(monkeypatch, maintenant)
+    monkeypatch.setattr(relances, "datetime", module.datetime)
+    monkeypatch.setattr(entities, "datetime", module.datetime)
+    contact = Contact(first_name="Camille", next_follow_up=datetime.fromisoformat(echeance))
+    db_session.add(contact)
+    db_session.add(Contact(first_name="Demain", next_follow_up=(
+        maintenant + timedelta(days=1)
+    ).replace(hour=9, tzinfo=None)))
+    await db_session.flush()
+    await db_session.refresh(contact)
+    assert contact.next_follow_up.tzinfo is None  # Heure murale relue depuis SQLite.
+    if rappel:
+        db_session.add(Notification(
+            title="Ancien rappel", message="Relance précédente", source="crm",
+            action_url=f"/crm/contacts/{contact.id}",
+            created_at=(maintenant - timedelta(days=8)).astimezone(UTC).replace(tzinfo=None),
+        ))
+        await db_session.flush()
+    assert await module._check_inactive_prospects(db_session) == 1
+    notifications = (await db_session.execute(select(Notification).where(
+        Notification.title == "Relance échue",
+    ))).scalars().all()
+    assert len(notifications) == 1
+    attendu = "aujourd'hui" if retard == 0 else f"il y a {retard} jour{'s' if retard > 1 else ''}"
+    assert notifications[0].message == f"Relance de Camille prévue {attendu}"
+    assert await module._check_inactive_prospects(db_session) == 0
+
+
+@pytest.mark.parametrize("maintenant,retard", [
+    ("2026-10-24T10:30", 1), ("2026-10-26T08:00", 3),
+])
+async def test_relance_retard_en_jours_civils(db_session, monkeypatch, maintenant, retard):
+    await verifier_relance(db_session, monkeypatch, maintenant, "2026-10-23T09:00", retard)
+
+
+@pytest.mark.parametrize("maintenant,echeance,retard,rappel", [
+    ("2026-10-24T00:01", "2026-10-23T09:00", 1, False),
+    ("2026-11-06T08:00", "2026-11-05T09:00", 1, False),
+    ("2026-07-14T08:00", "2026-07-13T09:00", 1, False),
+    ("2026-03-29T08:00", "2026-03-28T09:00", 1, False),
+    ("2026-03-30T00:30", "2026-03-28T09:00", 2, False),
+    ("2026-10-25T08:00", "2026-10-24T09:00", 1, False),
+    ("2026-11-01T00:30", "2026-10-31T09:00", 1, False),
+    ("2027-01-01T00:01", "2026-12-31T09:00", 1, False),
+    ("2026-11-06T00:01", "2026-11-06T09:00", 0, False),
+    ("2026-11-06T08:00", "2026-10-23T09:00", 14, True),
+])
+async def test_dix_rejeux_relances_apres_astra(
+    db_session, monkeypatch, maintenant, echeance, retard, rappel,
+):
+    await verifier_relance(db_session, monkeypatch, maintenant, echeance, retard, rappel)
