@@ -458,3 +458,8 @@ jobs:
       - name: Clippy - BLOQUANT (zéro warning)
         working-directory: src/frontend/src-tauri
         run: cargo clippy --all-targets -- -D warnings
+
+      # B-1261 : clippy compile les tests Rust sans les exécuter.
+      - name: Tests Rust (bibliothèque)
+        working-directory: src/frontend/src-tauri
+        run: cargo test --lib

@@ -29,6 +29,9 @@ dirs = "5"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 tauri-plugin-window-state = "2"
+# B-1261 : un second lancement rend la main à la fenêtre ouverte. Branche
+# 2.4 : la 2.5 exige tauri 2.12, ce dépôt est en 2.10.
+tauri-plugin-single-instance = "~2.4.5"
 
 [features]
 default = ["custom-protocol"]

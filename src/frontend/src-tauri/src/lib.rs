@@ -43,6 +43,57 @@ fn backend_ecoute_encore(port: u16) -> bool {
     std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(200)).is_ok()
 }
 
+/// B-1261 : la ligne de commande d'un moteur THÉRÈSE, et rien d'autre.
+///
+/// L'ancienne chasse (`pgrep -f "backend.*--host.*127.0.0.1"`) tuait toute
+/// commande qui contenait ces mots : le moteur d'une autre fenêtre THÉRÈSE,
+/// mais aussi un autre logiciel ou un shell. On exige ici un exécutable
+/// nommé `backend` (ou `backend-<cible>`, `.exe` toléré), écoutant sur
+/// 127.0.0.1 et sur le port de THÉRÈSE. Le chemin de l'exécutable peut
+/// contenir des espaces : il s'arrête au premier argument « -- ».
+#[cfg(any(unix, test))]
+#[cfg_attr(debug_assertions, allow(dead_code))]
+fn est_moteur_therese(args: &str) -> bool {
+    let args = args.trim();
+    let (executable, reste) = match args.find(" --") {
+        Some(i) => (&args[..i], &args[i..]),
+        None => return false,
+    };
+    // Découpage à la main : `Path` ne connaît pas `\\` hors de Windows.
+    let nom = executable.trim().rsplit(['/', '\\']).next().unwrap_or("");
+    let nom = nom.strip_suffix(".exe").unwrap_or(nom);
+    if nom != "backend" && !nom.starts_with("backend-") {
+        return false;
+    }
+    let mots: Vec<&str> = reste.split_whitespace().collect();
+    let port = BACKEND_PORT.to_string();
+    mots.windows(2).any(|w| w[0] == "--host" && w[1] == "127.0.0.1")
+        && mots.windows(2).any(|w| w[0] == "--port" && w[1] == port)
+}
+
+/// B-1261 : les PID des moteurs THÉRÈSE en cours, hors le processus courant.
+#[cfg(unix)]
+#[cfg_attr(debug_assertions, allow(dead_code))]
+fn pids_moteurs_therese() -> Vec<u32> {
+    let courant = std::process::id();
+    let sortie = match std::process::Command::new("ps")
+        .args(["-eo", "pid=,args="])
+        .output()
+    {
+        Ok(sortie) => sortie,
+        Err(_) => return Vec::new(),
+    };
+    String::from_utf8_lossy(&sortie.stdout)
+        .lines()
+        .filter_map(|ligne| {
+            let ligne = ligne.trim_start();
+            let (pid, args) = ligne.split_once(char::is_whitespace)?;
+            let pid: u32 = pid.parse().ok()?;
+            (pid != courant && est_moteur_therese(args)).then_some(pid)
+        })
+        .collect()
+}
+
 /// Tue les anciens process backend THÉRÈSE zombies restés actifs.
 /// Nécessaire lors des mises à jour (ex: v0.1.4 → v0.1.5+).
 /// Appelée uniquement en release (bloc not(debug_assertions)).
@@ -52,54 +103,26 @@ fn kill_zombie_backends() {
 
     #[cfg(unix)]
     {
-        let output = std::process::Command::new("pgrep")
-            .args(["-f", "backend.*--host.*127\\.0\\.0\\.1"])
-            .output();
+        let zombies = pids_moteurs_therese();
+        for pid in &zombies {
+            log_sidecar(&format!("Zombie détecté (PID: {}), envoi SIGTERM...", pid));
+            let _ = std::process::Command::new("kill")
+                .args(["-15", &pid.to_string()])
+                .output();
+        }
 
-        if let Ok(output) = output {
-            let pids_str = String::from_utf8_lossy(&output.stdout);
-            let current_pid = std::process::id();
+        if !zombies.is_empty() {
+            std::thread::sleep(std::time::Duration::from_secs(2));
 
-            let mut found = false;
-            for line in pids_str.lines() {
-                if let Ok(pid) = line.trim().parse::<u32>() {
-                    if pid == current_pid {
-                        continue;
-                    }
-                    found = true;
-                    log_sidecar(&format!("Zombie détecté (PID: {}), envoi SIGTERM...", pid));
-                    let _ = std::process::Command::new("kill")
-                        .args(["-15", &pid.to_string()])
-                        .output();
-                }
-            }
-
-            if found {
-                std::thread::sleep(std::time::Duration::from_secs(2));
-
-                // Force kill les survivants
-                let output = std::process::Command::new("pgrep")
-                    .args(["-f", "backend.*--host.*127\\.0\\.0\\.1"])
+            // Force kill les survivants
+            for pid in pids_moteurs_therese() {
+                log_sidecar(&format!("Zombie résistant (PID: {}), SIGKILL...", pid));
+                let _ = std::process::Command::new("kill")
+                    .args(["-9", &pid.to_string()])
                     .output();
-
-                if let Ok(output) = output {
-                    let remaining = String::from_utf8_lossy(&output.stdout);
-                    let current_pid = std::process::id();
-                    for line in remaining.lines() {
-                        if let Ok(pid) = line.trim().parse::<u32>() {
-                            if pid == current_pid {
-                                continue;
-                            }
-                            log_sidecar(&format!("Zombie résistant (PID: {}), SIGKILL...", pid));
-                            let _ = std::process::Command::new("kill")
-                                .args(["-9", &pid.to_string()])
-                                .output();
-                            let _ = std::process::Command::new("pkill")
-                                .args(["-9", "-P", &pid.to_string()])
-                                .output();
-                        }
-                    }
-                }
+                let _ = std::process::Command::new("pkill")
+                    .args(["-9", "-P", &pid.to_string()])
+                    .output();
             }
         }
     }
@@ -114,7 +137,8 @@ fn kill_zombie_backends() {
         let wmic_result = std::process::Command::new("wmic")
             .args([
                 "process", "where",
-                "name='backend.exe' and commandline like '%--host%127.0.0.1%'",
+                // B-1261 : le port de THÉRÈSE en plus de l'hôte.
+                "name='backend.exe' and commandline like '%--host%127.0.0.1%' and commandline like '%--port%17293%'",
                 "get", "processid", "/format:list",
             ])
             .stdin(std::process::Stdio::null())
@@ -472,6 +496,17 @@ fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32) {
 /// Initialize Tauri plugins and setup
 pub fn run() {
     let app = tauri::Builder::default()
+        // B-1261 : en premier (exigence du plugin). Un second lancement ne
+        // démarre rien : il rend la main à la fenêtre ouverte et se ferme.
+        // Sans lui, chaque instance tuait le moteur de l'autre en boucle, et
+        // fermer l'une éteignait le moteur partagé de l'autre.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(fenetre) = app.get_webview_window("main") {
+                let _ = fenetre.unminimize();
+                let _ = fenetre.show();
+                let _ = fenetre.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         // Les dossiers choisis via le dialogue natif entrent dans la portée
@@ -665,4 +700,43 @@ pub fn run() {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests_b1261 {
+    use super::est_moteur_therese;
+
+    #[test]
+    fn les_moteurs_therese_sont_reconnus() {
+        for ligne in [
+            "/usr/lib/THERESE/binaries/backend-libs/backend --host 127.0.0.1 --port 17293",
+            "/Applications/THERESE.app/Contents/MacOS/backend --host 127.0.0.1 --port 17293",
+            "/Users/jo/Mes Apps/THERESE.app/Contents/MacOS/backend --host 127.0.0.1 --port 17293",
+            "C:\\Program Files\\THERESE\\backend.exe --host 127.0.0.1 --port 17293",
+            "/tmp/x/backend-x86_64-unknown-linux-gnu --port 17293 --host 127.0.0.1",
+            "  /usr/lib/THERESE/binaries/backend-libs/backend --host 127.0.0.1 --port 17293  ",
+        ] {
+            assert!(est_moteur_therese(ligne), "{ligne}");
+        }
+    }
+
+    #[test]
+    fn rien_d_autre_n_est_vise() {
+        for ligne in [
+            // Le shell tué pendant la reproduction du 27/10/2026.
+            "/bin/bash -c pgrep -f backend.*--host.*127.0.0.1 && curl http://127.0.0.1:17293/health",
+            "python -m backend --host 127.0.0.1 --port 17293",
+            "uvicorn backend.main:app --host 127.0.0.1 --port 8000",
+            "/opt/autre/backend --host 127.0.0.1 --port 8000",
+            "/opt/autre/backend --host 0.0.0.0 --port 17293",
+            "/usr/bin/vim backend --host 127.0.0.1 --port 17293",
+            "grep backend --host 127.0.0.1 --port 17293",
+            "/opt/backendeur --host 127.0.0.1 --port 17293",
+            "/usr/lib/THERESE/binaries/backend-libs/backend",
+            "/usr/lib/THERESE/binaries/backend-libs/backend --host 127.0.0.1 --port 172930",
+            "",
+        ] {
+            assert!(!est_moteur_therese(ligne), "{ligne}");
+        }
+    }
 }
