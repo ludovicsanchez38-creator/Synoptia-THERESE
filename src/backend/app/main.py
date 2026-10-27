@@ -902,6 +902,8 @@ app.add_middleware(PrivateNetworkAccessMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
+from starlette.types import ASGIApp, Receive, Scope, Send  # noqa: E402
+
 # B-1336 : contrôle de l'en-tête Host contre le DNS rebinding.
 # Une page web piégée fait pointer son propre nom vers 127.0.0.1 : ses requêtes
 # arrivent ici avec `Host: <nom de l'attaquant>` et, en GET même-origine, sans
@@ -924,10 +926,10 @@ def _nom_hote(valeur: str) -> str:
 class HoteLocalMiddleware:
     """Refuse toute requête HTTP ou WebSocket dont le Host n'est pas la boucle locale."""
 
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return

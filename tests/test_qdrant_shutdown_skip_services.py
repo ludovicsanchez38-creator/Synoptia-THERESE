@@ -74,7 +74,7 @@ assert settings.port == 17394
 async def verifier():
     async with lifespan(app):
         async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+            transport=httpx.ASGITransport(app=app), base_url="http://127.0.0.1:17394"
         ) as client:
             reponse = await client.get("/health")
         assert reponse.status_code == 200, reponse.text

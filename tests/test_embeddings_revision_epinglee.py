@@ -45,7 +45,7 @@ def test_modele_par_defaut_charge_a_la_revision_auditee(chargeur_espion, monkeyp
     service, appels = chargeur_espion
     monkeypatch.setattr(settings, "embedding_model", "nomic-ai/nomic-embed-text-v1.5")
 
-    service.model
+    _ = service.model
 
     (args, kwargs), = appels
     assert kwargs["revision"] == REVISION_MODELE
@@ -62,7 +62,7 @@ def test_modele_personnalise_ne_recoit_pas_de_code_distant(chargeur_espion, monk
     service, appels = chargeur_espion
     monkeypatch.setattr(settings, "embedding_model", "sentence-transformers/all-MiniLM-L6-v2")
 
-    service.model
+    _ = service.model
 
     (args, kwargs), = appels
     assert kwargs.get("trust_remote_code") is False

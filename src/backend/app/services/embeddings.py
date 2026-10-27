@@ -7,7 +7,7 @@ Generates embeddings for semantic search using sentence-transformers.
 import asyncio
 import logging
 from functools import lru_cache
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 from app.config import settings
 
@@ -28,7 +28,7 @@ _REVISIONS_AUDITEES: dict[str, tuple[str, str]] = {
 }
 
 
-def _options_de_chargement(nom_modele: str) -> dict:
+def _options_de_chargement(nom_modele: str) -> dict[str, Any]:
     """Révisions épinglées du modèle audité ; aucun code distant pour un autre."""
     revisions = _REVISIONS_AUDITEES.get(nom_modele)
     if revisions is None:
