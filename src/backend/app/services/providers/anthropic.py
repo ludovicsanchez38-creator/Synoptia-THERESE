@@ -13,6 +13,7 @@ import httpx
 
 from .base import (
     BaseProvider,
+    LLMProvider,
     StreamEvent,
     ToolCall,
     ToolResult,
@@ -25,6 +26,35 @@ logger = logging.getLogger(__name__)
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
+
+
+def _message_erreur_anthropic(provider: LLMProvider | None, status_code: int, corps: str) -> str:
+    """B-1343 : deux refus d'Anthropic méritent une phrase qui dit quoi faire.
+
+    Documentation lue le 27/10/2026 (« Authentication », « Claude API errors ») :
+    une clé non rattachée à un espace de travail est refusée en 400 sans
+    l'en-tête `anthropic-workspace-id`, et un 402 `billing_error` signale un
+    problème de paiement. Le corps ne sert qu'à classer : il ne s'affiche
+    jamais (frontière 0.48). Tout le reste garde `message_erreur_http`.
+    """
+    try:
+        erreur = json.loads(corps).get("error") or {}
+        type_erreur = str(erreur.get("type") or "")
+        detail = str(erreur.get("message") or "")
+    except (ValueError, AttributeError):
+        type_erreur = detail = ""
+    if status_code == 400 and "not scoped to a workspace" in detail:
+        return (
+            "Ta clé Claude n'est rattachée à aucun espace de travail. Dans la Console "
+            "Claude, crée une clé rattachée à un espace (par exemple « Default "
+            "Workspace »), puis colle-la dans Paramètres, onglet Service d'IA."
+        )
+    if status_code == 402 or type_erreur == "billing_error":
+        return (
+            "Le compte Claude lié à ta clé a un problème de paiement. Vérifie la "
+            "facturation (Billing) dans la Console Claude."
+        )
+    return message_erreur_http(provider, status_code)
 
 
 # Familles de modèles qui REFUSENT les paramètres de sampling (temperature,
@@ -274,8 +304,8 @@ class AnthropicProvider(BaseProvider):
             logger.error(f"Anthropic API error: {e.response.status_code} - {error_text}")
             yield StreamEvent(
                 type="error",
-                content=message_erreur_http(
-                    self.config.provider, e.response.status_code
+                content=_message_erreur_anthropic(
+                    self.config.provider, e.response.status_code, error_text
                 ),
             )
         except Exception as e:
