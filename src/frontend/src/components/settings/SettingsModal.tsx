@@ -8,6 +8,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import { nettoyerCle } from '../../lib/cleApi';
+import { ETATS_CLE_BLOQUANTS } from '../../services/api/config';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 
@@ -426,6 +427,13 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
       setApiKeyInput('');
       window.dispatchEvent(new Event('therese:llm-config-changed'));
       setTimeout(() => setSaved(false), 3000);
+      // B-1348 (boucle DQ) : un refus du fournisseur se dit tout de suite.
+      void api.verifierCle(selectedProvider).then((resultat) => {
+        if (ETATS_CLE_BLOQUANTS.has(resultat.etat)) {
+          setError(resultat.message);
+          setCleInvalide(true);
+        }
+      }).catch(() => { /* vérification indisponible : rien n'est affirmé */ });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
       setCleInvalide(true);

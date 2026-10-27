@@ -368,6 +368,39 @@ async def set_api_key(
     return {"success": True, "provider": request.provider}
 
 
+class VerificationCleRequest(BaseModel):
+    provider: str
+
+
+@router.post("/api-key/verifier")
+async def verifier_api_key(request: VerificationCleRequest) -> dict[str, str]:
+    """B-1348 (boucle DQ) : la clé enregistrée est-elle acceptée par son fournisseur ?
+
+    Appelée juste après POST /api-key. Interroge la liste des modèles (aucune
+    génération, aucune donnée de l'utilisateur) ; la clé et le corps des
+    réponses ne reviennent jamais à l'écran.
+    """
+    import asyncio
+
+    from app.services import verification_cle
+    from app.services.llm import _cle_depuis_environnement, _get_api_key_from_db
+    from app.services.providers.base import LLMProvider, nom_fournisseur
+
+    try:
+        provider = LLMProvider(request.provider)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Fournisseur inconnu : {request.provider}")
+    cle = await asyncio.to_thread(_get_api_key_from_db, provider.value)
+    cle = cle or _cle_depuis_environnement(provider.value)
+    async with verification_cle.creer_client() as client:
+        etat = await verification_cle.verifier_cle(provider.value, cle, client)
+    return {
+        "provider": provider.value,
+        "etat": etat,
+        "message": verification_cle.message_verification(etat, nom_fournisseur(provider)),
+    }
+
+
 @router.delete("/api-key/{provider}")
 async def delete_api_key(
     provider: str,

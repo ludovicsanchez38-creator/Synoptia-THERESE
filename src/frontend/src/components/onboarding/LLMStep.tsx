@@ -11,6 +11,7 @@ import * as api from '../../services/api';
 import { TEXTES_ONBOARDING } from './textes';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, modeleParDefaut, type ModeleDecore } from '../../lib/catalogueModeles';
 import { nettoyerCle } from '../../lib/cleApi';
+import { ETATS_CLE_BLOQUANTS } from '../../services/api/config';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { assessLocalModelFeasibility } from '../llm/modelFeasibility';
@@ -114,6 +115,8 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   const [erreurDuChampCle, setErreurDuChampCle] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // B-1348 (boucle DQ) : la réponse du fournisseur à la clé qu'on vient d'enregistrer.
+  const [verification, setVerification] = useState<{ etat: string; message: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const loadRequestRef = useRef(0);
   // B-068 : le retour visuel « clé enregistrée » s'efface au bout de 3 s ; le
@@ -227,6 +230,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
       setApiKeyInput('');
       if (effacerLeSauveRef.current) clearTimeout(effacerLeSauveRef.current);
       effacerLeSauveRef.current = setTimeout(() => setSaved(false), 3000);
+      void verifierLaCle(selectedProvider);
     } catch (err) {
       setErreurDuChampCle(true);
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
@@ -299,7 +303,19 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     setSelectedModel(modeleLocalParDefaut());
   }, [ollamaModels, selectedProvider, selectedModel, modeleLocalParDefaut]);
 
+  async function verifierLaCle(fournisseur: api.LLMProvider) {
+    setVerification({ etat: 'en_cours', message: 'Vérification de la clé auprès du service…' });
+    try {
+      const resultat = await api.verifierCle(fournisseur);
+      setVerification({ etat: resultat.etat, message: resultat.message });
+    } catch {
+      // Vérification indisponible : la clé reste enregistrée, rien n'est affirmé.
+      setVerification(null);
+    }
+  }
+
   async function handleSelectProvider(provider: api.LLMProvider) {
+    setVerification(null);
     setSelectedProvider(provider);
     fournisseurChoisiParLUtilisateur.current = true;
     modeleChoisiParLUtilisateur.current = false;
@@ -513,6 +529,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
                       setApiKeyInput(e.target.value);
                       setErreurDuChampCle(false);
                       setError(null);
+                      setVerification(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && apiKeyInput.trim()) {
@@ -570,11 +587,27 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
             </>
           )}
 
-          {saved && (
+          {saved && !verification && (
             <div className="flex items-center gap-2 text-sm text-success">
               <Check className="w-3 h-3" />
               Clé API enregistrée
             </div>
+          )}
+          {verification && (
+            <p
+              role={ETATS_CLE_BLOQUANTS.has(verification.etat) ? 'alert' : 'status'}
+              data-testid="verification-cle"
+              data-etat={verification.etat}
+              className={`text-sm ${
+                ETATS_CLE_BLOQUANTS.has(verification.etat)
+                  ? 'text-error'
+                  : verification.etat === 'acceptee' || verification.etat === 'limite'
+                    ? 'text-success'
+                    : 'text-text-muted'
+              }`}
+            >
+              {verification.message}
+            </p>
           )}
         </div>
       )}

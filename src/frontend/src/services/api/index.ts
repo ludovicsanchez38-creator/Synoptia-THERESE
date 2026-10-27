@@ -136,6 +136,9 @@ export {
   type OnboardingStatus,
   type WebSearchStatus,
   type ApiKeysResult,
+  verifierCle,
+  ETATS_CLE_BLOQUANTS,
+  type VerificationCle,
 } from './config';
 
 // Files - File management

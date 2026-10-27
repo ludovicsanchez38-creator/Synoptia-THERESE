@@ -119,6 +119,23 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
   };
 }
 
+/** B-1348 (boucle DQ) : réponse du fournisseur à la clé enregistrée. */
+export interface VerificationCle {
+  provider: string;
+  etat: 'acceptee' | 'refusee' | 'non_rattachee' | 'paiement' | 'limite' | 'injoignable' | 'non_verifiable' | 'incertaine';
+  message: string;
+}
+
+export async function verifierCle(provider: string): Promise<VerificationCle> {
+  return request<VerificationCle>('/api/config/api-key/verifier', {
+    method: 'POST',
+    body: JSON.stringify({ provider }),
+  });
+}
+
+/** États où la clé ne permettra pas de répondre : à dire comme une erreur. */
+export const ETATS_CLE_BLOQUANTS: ReadonlySet<string> = new Set(['refusee', 'non_rattachee', 'paiement']);
+
 export async function setApiKey(
   provider: string,
   key: string
