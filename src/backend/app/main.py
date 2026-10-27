@@ -902,6 +902,57 @@ app.add_middleware(PrivateNetworkAccessMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
+# B-1336 : contrôle de l'en-tête Host contre le DNS rebinding.
+# Une page web piégée fait pointer son propre nom vers 127.0.0.1 : ses requêtes
+# arrivent ici avec `Host: <nom de l'attaquant>` et, en GET même-origine, sans
+# Origin, ce que `_origine_refusee` laisse passer. Les appelants légitimes
+# s'adressent au moteur par 127.0.0.1 (webview, TcpStream de lib.rs) ou
+# localhost (retour OAuth) : tout autre nom se refuse avant tout traitement.
+_HOTES_LOCAUX = {"127.0.0.1", "localhost", "::1"}
+if settings.therese_env == "test":
+    _HOTES_LOCAUX |= {"testserver", "test"}  # hôtes des clients de test
+
+
+def _nom_hote(valeur: str) -> str:
+    """Nom d'hôte d'un en-tête Host, sans port ni crochets IPv6, en minuscules."""
+    valeur = valeur.strip().lower()
+    if valeur.startswith("["):
+        return valeur[1:valeur.find("]")] if "]" in valeur else ""
+    return valeur.rsplit(":", 1)[0] if valeur.count(":") == 1 else valeur
+
+
+class HoteLocalMiddleware:
+    """Refuse toute requête HTTP ou WebSocket dont le Host n'est pas la boucle locale."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+        hote = next(
+            (valeur.decode("latin-1") for nom, valeur in scope.get("headers", []) if nom == b"host"),
+            "",
+        )
+        if _nom_hote(hote) in _HOTES_LOCAUX:
+            await self.app(scope, receive, send)
+            return
+        logger.warning("Requête refusée : en-tête Host non local (%r)", hote[:80])
+        if scope["type"] == "websocket":
+            await send({"type": "websocket.close", "code": 1008})
+            return
+        reponse = JSONResponse(
+            status_code=400,
+            content={"code": "HOTE_NON_AUTORISE", "message": "Hôte non autorisé."},
+        )
+        await reponse(scope, receive, send)
+
+
+# Dernier ajouté = le plus externe : le contrôle passe avant CORS et les pré-vols.
+app.add_middleware(HoteLocalMiddleware)
+
+
 # Include routers
 app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(memory_router, prefix="/api/memory", tags=["Memory"])
