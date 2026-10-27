@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
+import { nettoyerCle } from '../../lib/cleApi';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 
@@ -399,14 +400,16 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   }
 
   async function handleSaveApiKey() {
-    if (!apiKeyInput.trim()) {
+    // Audit bêta 27/10 (A2-22) : contrôle et envoi sur la saisie nettoyée.
+    const cle = nettoyerCle(apiKeyInput);
+    if (!cle) {
       setError('Entre une clé API');
       setCleInvalide(true);
       return;
     }
 
     const providerConfig = PROVIDERS.find(p => p.id === selectedProvider);
-    if (providerConfig?.keyPrefix && !apiKeyInput.startsWith(providerConfig.keyPrefix)) {
+    if (providerConfig?.keyPrefix && !cle.startsWith(providerConfig.keyPrefix)) {
       setError(`La clé API doit commencer par "${providerConfig.keyPrefix}"`);
       setCleInvalide(true);
       return;
@@ -416,7 +419,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     setError(null);
 
     try {
-      await api.setApiKey(selectedProvider, apiKeyInput);
+      await api.setApiKey(selectedProvider, cle);
       setSaved(true);
       setApiKeys(prev => ({ ...prev, [selectedProvider]: true }));
       setCorruptedKeys(prev => prev.filter(k => k !== selectedProvider));
@@ -432,11 +435,12 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   }
 
   async function handleSaveGroqKey() {
-    if (!groqKeyInput.trim()) {
+    const cle = nettoyerCle(groqKeyInput);
+    if (!cle) {
       setError('Entre une clé API Groq');
       return;
     }
-    if (!groqKeyInput.startsWith('gsk_')) {
+    if (!cle.startsWith('gsk_')) {
       setError('La clé API Groq doit commencer par "gsk_"');
       return;
     }
@@ -445,7 +449,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     setError(null);
 
     try {
-      await api.setApiKey('groq', groqKeyInput);
+      await api.setApiKey('groq', cle);
       setGroqSaved(true);
       setHasGroqKey(true);
       setGroqKeyInput('');
@@ -458,7 +462,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   }
 
   async function handleSaveBraveKey() {
-    if (!braveKeyInput.trim()) {
+    const cle = nettoyerCle(braveKeyInput);
+    if (!cle) {
       setError('Entre une clé API Brave Search');
       return;
     }
@@ -467,7 +472,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     setError(null);
 
     try {
-      await api.setApiKey('brave', braveKeyInput);
+      await api.setApiKey('brave', cle);
       setBraveSaved(true);
       setHasBraveKey(true);
       setBraveKeyInput('');
@@ -480,8 +485,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   }
 
   async function handleSaveImageKey(apiKeyId: 'openai_image' | 'gemini_image' | 'fal') {
-    const keyInput = imageKeyInputs[apiKeyId] || '';
-    if (!keyInput.trim()) {
+    const keyInput = nettoyerCle(imageKeyInputs[apiKeyId] || '');
+    if (!keyInput) {
       setError('Entre une clé API');
       return;
     }

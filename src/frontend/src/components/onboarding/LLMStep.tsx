@@ -10,6 +10,7 @@ import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, AlertTriangle } from 'lucide
 import * as api from '../../services/api';
 import { TEXTES_ONBOARDING } from './textes';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, modeleParDefaut, type ModeleDecore } from '../../lib/catalogueModeles';
+import { nettoyerCle } from '../../lib/cleApi';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { assessLocalModelFeasibility } from '../llm/modelFeasibility';
@@ -196,10 +197,8 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     : catalogueDynamique ?? (currentProviderConfig?.models || []);
 
   async function handleSaveApiKey() {
-    // Audit bêta 27/10 (A2-22) : une copie emporte souvent une espace ou un
-    // retour à la ligne. On contrôle et on envoie ce que l'utilisateur lit,
-    // comme le moteur le fait déjà (B-510).
-    const cle = apiKeyInput.trim();
+    // Audit bêta 27/10 (A2-22) : contrôle et envoi sur la saisie nettoyée.
+    const cle = nettoyerCle(apiKeyInput);
     if (!cle) {
       setErreurDuChampCle(true);
       setError('Entre une clé API');
