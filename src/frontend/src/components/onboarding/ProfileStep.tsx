@@ -45,6 +45,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   // Un champ ne se déclare pas en faute parce que le serveur a refusé.
   const [nomEnFaute, setNomEnFaute] = useState(false);
   const savingRef = useRef(false);
+  const champNomRef = useRef<HTMLInputElement>(null);
   const continueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileForm, setProfileForm] = useState({
     name: '',
@@ -116,6 +117,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       setError('Le nom est obligatoire');
       setSaveState('error');
       setNomEnFaute(true);
+      // Audit bêta 27/10 (A2-06) : le message s'affichait hors de vue et rien
+      // ne bougeait ; le refus ramène le focus et l'écran sur le champ.
+      champNomRef.current?.focus();
+      champNomRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
     setNomEnFaute(false);
@@ -193,6 +198,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Nom complet" htmlFor="profile-name" required error={nomEnFaute && error ? error : undefined}>
             <Input
+              ref={champNomRef}
               id="profile-name"
               type="text"
               aria-label="Nom complet *"
