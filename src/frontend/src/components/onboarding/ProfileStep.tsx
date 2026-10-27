@@ -119,8 +119,13 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       setNomEnFaute(true);
       // Audit bêta 27/10 (A2-06) : le message s'affichait hors de vue et rien
       // ne bougeait ; le refus ramène le focus et l'écran sur le champ.
-      champNomRef.current?.focus();
-      champNomRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const champ = champNomRef.current;
+      champ?.focus();
+      // jsdom (et quelques webviews anciennes) n'ont pas scrollIntoView : le
+      // focus suffit alors, le refus ne doit jamais casser le formulaire.
+      if (typeof champ?.scrollIntoView === 'function') {
+        champ.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
       return;
     }
     setNomEnFaute(false);

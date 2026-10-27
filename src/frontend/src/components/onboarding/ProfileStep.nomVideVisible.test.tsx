@@ -31,6 +31,28 @@ describe('ProfileStep : le refus du nom vide se voit', () => {
     expect(apiMocks.setProfile).not.toHaveBeenCalled();
   });
 
+  it('sans scrollIntoView (jsdom, webview ancienne), le refus garde le focus et ne lève rien', async () => {
+    // Portes du 27/10 : le correctif appelait scrollIntoView sans garde, quatre rejets non
+    // gérés dans ProfileStep.champObligatoire, et vitest sort en échec. Le gestionnaire est
+    // asynchrone : l'erreur sort en rejet, d'où l'écoute explicite.
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    const rejets: unknown[] = [];
+    const ecoute = (raison: unknown) => { rejets.push(raison); };
+    process.on('unhandledRejection', ecoute);
+    try {
+      render(<ProfileStep onNext={vi.fn()} onBack={vi.fn()} />);
+      fireEvent.click(screen.getByTestId('onboarding-next-btn'));
+      await new Promise((r) => setTimeout(r, 20));
+    } finally {
+      process.off('unhandledRejection', ecoute);
+    }
+
+    expect(rejets).toEqual([]);
+    const champ = screen.getByLabelText('Nom complet *');
+    expect(document.activeElement).toBe(champ);
+    expect(screen.getByText('Le nom est obligatoire')).toBeInTheDocument();
+  });
+
   it('un nom renseigné ne déplace pas le focus vers le champ', () => {
     apiMocks.setProfile.mockReturnValue(new Promise(() => {}));
     render(<ProfileStep onNext={vi.fn()} onBack={vi.fn()} />);
