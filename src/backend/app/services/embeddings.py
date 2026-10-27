@@ -16,6 +16,35 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# B-1337 : le code distant d'un modèle s'exécute avec les droits de
+# l'utilisateur. Seul le modèle par défaut a une révision auditée (cycle 15,
+# docs/SECURITE-DEPENDANCES-CYCLE15.md) : modèle et code y sont épinglés, le
+# code de nomic-ai/nomic-bert-2048 vivant dans un autre dépôt (code_revision).
+_REVISIONS_AUDITEES: dict[str, tuple[str, str]] = {
+    "nomic-ai/nomic-embed-text-v1.5": (
+        "e9b6763023c676ca8431644204f50c2b100d9aab",  # modèle
+        "7710840340a098cfb869c4f65e87cf2b1b70caca",  # code (nomic-bert-2048)
+    ),
+}
+
+
+def _options_de_chargement(nom_modele: str) -> dict:
+    """Révisions épinglées du modèle audité ; aucun code distant pour un autre."""
+    revisions = _REVISIONS_AUDITEES.get(nom_modele)
+    if revisions is None:
+        logger.warning(
+            "Modèle d'embeddings sans révision auditée (%s) : chargé sans code distant",
+            nom_modele,
+        )
+        return {"trust_remote_code": False}
+    revision_modele, revision_code = revisions
+    return {
+        "trust_remote_code": True,
+        "revision": revision_modele,
+        "model_kwargs": {"code_revision": revision_code},
+        "config_kwargs": {"code_revision": revision_code},
+    }
+
 
 class EmbeddingsService:
     """Service for generating text embeddings."""
@@ -43,8 +72,8 @@ class EmbeddingsService:
             logger.info(f"Loading embedding model: {settings.embedding_model}")
             self._model = SentenceTransformer(
                 settings.embedding_model,
-                trust_remote_code=True,  # Required for nomic models
                 device="cpu",  # Force CPU : MPS (Metal) crash silencieusement sur certains Mac (M4 Max)
+                **_options_de_chargement(settings.embedding_model),
             )
             logger.info("Embedding model loaded successfully")
         return self._model
