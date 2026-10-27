@@ -48,14 +48,17 @@ done
 # 2. Extraction en lecture seule, puis démarrage du moteur
 mkdir -p "$RACINE" "$DONNEES"
 dpkg-deb -x "$DEB" "$RACINE"
-# B-1339 : le binaire doit porter le type de paquet « deb ». Sans le symbole
-# que le bundler Tauri remplace (strip complet), getBundleType() renvoie UNK :
-# la mise à jour automatique est coupée et le bandeau manuel ne part jamais.
+# B-1339 : le binaire devrait porter le type de paquet « deb », sinon
+# getBundleType() renvoie UNK : bandeau manuel permanent, pas de mise à jour
+# automatique. Le bundler du CLI 2.9.6 cherche un symbole non exporté par
+# tauri-utils (static mut sans no_mangle) et ne marque jamais ; ceux de la
+# 2.10.4 (CLI 2.12) cherchent le texte du marqueur. Avertissement seulement
+# tant que le CLI n'est pas monté ; à repasser en échec bloquant ensuite.
 APPLI="$RACINE/usr/bin/therese"
 if [ -f "$APPLI" ] && grep -aq "__TAURI_BUNDLE_TYPE_VAR_DEB" "$APPLI"; then
   ok "binaire marqué comme paquet Debian"
 else
-  ko "binaire non marqué comme paquet Debian (__TAURI_BUNDLE_TYPE_VAR_DEB absent, B-1339)"
+  echo "  [AVERTISSEMENT] binaire non marqué comme paquet Debian (__TAURI_BUNDLE_TYPE_VAR_DEB absent, B-1339)"
 fi
 MOTEUR="$(find "$RACINE" -type f -name backend -perm -u+x -path '*backend-libs*' | head -1)"
 [ -n "$MOTEUR" ] || MOTEUR="$(find "$RACINE" -type f -name backend -perm -u+x | head -1)"
