@@ -851,6 +851,12 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     UserCommandsService.get_instance().purger_tout()
     get_command_registry().retirer_commandes_utilisateur()
 
+    # B-1341 : les copies automatiques d'avant démarrage contiennent toute la
+    # base ; l'utilisateur ne les a pas créées, elles partent avec ses données.
+    from app.services.copie_auto import purger_copies_auto
+
+    purger_copies_auto(data_dir)
+
     backups_dir = data_dir / "backups"
     backups_kept = len(list(backups_dir.glob("*.json"))) if backups_dir.exists() else 0
 

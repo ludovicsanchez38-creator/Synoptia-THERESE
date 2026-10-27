@@ -181,6 +181,17 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     logger.info(f"Data directory: {settings.data_dir}")
 
+    # B-1341 : copie de la base et de sa clé avant que init_db ne les ouvre
+    # et ne les réécrive (nouvelle version, réparations). Ne lève jamais.
+    from app.services.copie_auto import copier_avant_demarrage
+
+    await asyncio.to_thread(
+        copier_avant_demarrage,
+        FilePath(str(settings.data_dir)),
+        settings.app_version,
+        base=FilePath(str(settings.db_path)) if settings.db_path else None,
+    )
+
     await init_db()
     logger.info("Database initialized")
 
