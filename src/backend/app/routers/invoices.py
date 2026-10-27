@@ -1371,8 +1371,11 @@ def generate_legal_mentions(
     ]
     if currency == "EUR":
         lines += [
+            # B-1338 : la parenthèse « 3 fois le taux d'intérêt légal » était
+            # fausse (3 x 2,75 % = 8,25 % au 2e semestre 2026). Le taux convenu
+            # reste imprimé ; L441-10 fixe seulement son plancher.
             f"En cas de retard de paiement, une pénalité de {taux} % annuel sera appliquée "
-            "(3 fois le taux d'intérêt légal en vigueur).",
+            "(art. L441-10 du Code de commerce).",
             "Une indemnité forfaitaire de 40 EUR pour frais de recouvrement sera exigée "
             "(art. L441-10 du Code de commerce).",
             "Escompte pour paiement anticipé : néant.",

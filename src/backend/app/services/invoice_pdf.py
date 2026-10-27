@@ -692,7 +692,7 @@ class InvoicePDFGenerator:
     ) -> list[Any]:
         """Construit le bloc conditions de paiement et mentions legales.
 
-        Les mentions de droit francais (interets de retard au taux legal,
+        Les mentions de droit francais (penalites de retard L441-10, escompte,
         indemnite forfaitaire de 40 EUR art. L441-10) ne s'appliquent qu'a une
         facture en EUR / droit FR : sur une facture en devise etrangere (CAD,
         CHF...), on imprime une ligne neutre, comme generate_legal_mentions cote
@@ -732,9 +732,15 @@ class InvoicePDFGenerator:
         )
 
         if currency == "EUR":
+            # B-1338 : « au taux légal » était sous le plancher de L441-10
+            # (trois fois le taux d'intérêt légal) et l'escompte manquait
+            # (L441-9). Taux supplétif de L441-10, sans chiffre qui vieillit.
             penalty_lines = (
-                "En cas de retard de paiement, application d’intérêts de retard au taux légal.<br/>"
+                "En cas de retard de paiement, pénalités au taux de refinancement "
+                "le plus récent de la Banque centrale européenne, majoré de 10 points "
+                "(art. L441-10 du Code de commerce).<br/>"
                 f"Indemnité forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>"
+                "Escompte pour paiement anticipé : néant.<br/>"
             )
         else:
             penalty_lines = (
