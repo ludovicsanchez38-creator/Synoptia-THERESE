@@ -196,14 +196,18 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     : catalogueDynamique ?? (currentProviderConfig?.models || []);
 
   async function handleSaveApiKey() {
-    if (!apiKeyInput.trim()) {
+    // Audit bêta 27/10 (A2-22) : une copie emporte souvent une espace ou un
+    // retour à la ligne. On contrôle et on envoie ce que l'utilisateur lit,
+    // comme le moteur le fait déjà (B-510).
+    const cle = apiKeyInput.trim();
+    if (!cle) {
       setErreurDuChampCle(true);
       setError('Entre une clé API');
       return;
     }
 
     const providerConfig = PROVIDERS.find(p => p.id === selectedProvider);
-    if (providerConfig?.keyPrefix && !apiKeyInput.startsWith(providerConfig.keyPrefix)) {
+    if (providerConfig?.keyPrefix && !cle.startsWith(providerConfig.keyPrefix)) {
       setErreurDuChampCle(true);
       setError(`La clé API doit commencer par "${providerConfig.keyPrefix}"`);
       return;
@@ -214,7 +218,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     setError(null);
 
     try {
-      await api.setApiKey(selectedProvider, apiKeyInput);
+      await api.setApiKey(selectedProvider, cle);
       setSaved(true);
       setApiKeys(prev => ({ ...prev, [selectedProvider]: true }));
       // Une clé qu'on vient d'enregistrer EST passée par le coffre : sans cette
