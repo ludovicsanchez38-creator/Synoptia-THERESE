@@ -13,6 +13,7 @@ import logging
 import os
 import tempfile
 import threading
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Optional
 
@@ -94,6 +95,71 @@ def _try_keyring_available() -> bool:
     except Exception as e:
         logger.debug("Keyring non disponible: %s", e)
         return False
+
+
+class CleMaitresseIntrouvableError(RuntimeError):
+    """B-1340 : aucune clé lisible alors qu'une base chiffrée en dépend.
+
+    En fabriquer une neuve rendrait la base illisible pour de bon : l'ancienne
+    est peut-être encore au trousseau (lecture refusée, trousseau verrouillé),
+    et l'écrire par-dessus l'effacerait.
+    """
+
+
+_MESSAGE_CLE_INTROUVABLE = (
+    "La clé qui chiffre tes données n'a pas pu être lue dans le trousseau "
+    "(accès refusé ou trousseau verrouillé). THÉRÈSE n'en crée pas de nouvelle, "
+    "pour ne pas rendre ta base illisible : relance l'application et autorise "
+    "l'accès au trousseau."
+)
+
+
+def _bases_protegees() -> list[Path]:
+    """Les bases que la clé de KEY_FILE protège : celles de son dossier.
+
+    settings.db_path n'en fait partie que s'il relève du même profil (un
+    chemin de base personnalisé reste couvert, un autre profil non).
+    """
+    dossier = KEY_FILE.parent
+    chemins = [dossier / "therese.db"]
+    try:
+        if _settings.db_path and Path(str(_settings.data_dir)).resolve() == dossier.resolve():
+            chemins.append(Path(str(_settings.db_path)))
+    except (OSError, RuntimeError):
+        pass
+    return chemins
+
+
+def _base_chiffree_presente() -> bool:
+    """B-1340 : une therese.db non vide sans l'en-tête SQLite en clair.
+
+    Lecture locale de l'en-tête (pas d'import de app.models.database, qui
+    importe ce module) ; même règle que database.db_is_encrypted. Avec
+    THERESE_DB_KEY (tests, headless), la clé de la base ne dérive pas de la
+    clé maîtresse : la base n'en dépend pas.
+    """
+    if os.environ.get("THERESE_DB_KEY"):
+        return False
+    for chemin in _bases_protegees():
+        try:
+            if not chemin.exists() or chemin.stat().st_size == 0:
+                continue
+            with open(chemin, "rb") as f:
+                if f.read(16) != b"SQLite format 3\x00":
+                    return True
+        except OSError:
+            # Illisible : on la suppose chiffrée, refuser vaut mieux qu'écraser.
+            return True
+    return False
+
+
+def _lire_cle_fichier() -> bytes | None:
+    try:
+        cle = KEY_FILE.read_bytes()
+    except OSError as e:
+        logger.warning("Lecture de %s impossible : %s", KEY_FILE, e)
+        return None
+    return cle or None
 
 
 class EncryptionService:
@@ -190,6 +256,19 @@ class EncryptionService:
                 if key:
                     self._using_keychain = True
                     return key
+                # B-1340 : le trousseau refuse d'enregistrer la clé du
+                # fichier. Elle reste LA clé : en générer une neuve écraserait
+                # le fichier et rendrait la base illisible.
+                cle_fichier = _lire_cle_fichier()
+                if cle_fichier:
+                    logger.warning(
+                        "B-1340 : trousseau indisponible pour la migration, "
+                        "la clé du fichier de secours est conservée."
+                    )
+                    return cle_fichier
+
+            if _base_chiffree_presente():
+                raise CleMaitresseIntrouvableError(_MESSAGE_CLE_INTROUVABLE)
 
             # Generer nouvelle cle dans keychain (+ fichier backup)
             key = self._create_key_in_keychain()
@@ -235,6 +314,7 @@ class EncryptionService:
         """
         try:
             THERESE_DIR.mkdir(parents=True, exist_ok=True)
+            self._copier_fichier_de_secours_different(key)
             fd = os.open(KEY_FILE, _ECRITURE_BINAIRE, 0o600)
             try:
                 os.write(fd, key)
@@ -243,6 +323,23 @@ class EncryptionService:
             logger.debug("Fichier backup cle ecrit: %s", KEY_FILE)
         except Exception as e:
             logger.warning(f"Impossible d'ecrire le fichier backup cle: {e}")
+
+    @staticmethod
+    def _copier_fichier_de_secours_different(nouvelle: bytes) -> None:
+        """B-1340 : un .encryption_key différent n'est jamais écrasé sans copie."""
+        if not KEY_FILE.exists():
+            return
+        ancienne = _lire_cle_fichier()
+        if ancienne == nouvelle:
+            return
+        horodatage = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+        copie = KEY_FILE.with_name(f"{KEY_FILE.name}.avant-{horodatage}")
+        fd = os.open(copie, _ECRITURE_BINAIRE | os.O_EXCL, 0o600)
+        try:
+            os.write(fd, ancienne or KEY_FILE.read_bytes())
+        finally:
+            os.close(fd)
+        logger.warning("B-1340 : ancien fichier de clé conservé dans %s", copie.name)
 
     def _migrate_key_to_keychain(self) -> bytes | None:
         """Migre la cle du fichier vers le keychain (garde le fichier comme backup)."""
@@ -279,6 +376,10 @@ class EncryptionService:
             with open(KEY_FILE, "rb") as f:
                 return f.read()
         else:
+            # B-1340 : un fichier neuf serait préféré, au lancement suivant, à
+            # l'ancienne clé encore au trousseau (BUG-050) et l'écraserait.
+            if _base_chiffree_presente():
+                raise CleMaitresseIntrouvableError(_MESSAGE_CLE_INTROUVABLE)
             # Générer une nouvelle clé
             key = Fernet.generate_key()
 
