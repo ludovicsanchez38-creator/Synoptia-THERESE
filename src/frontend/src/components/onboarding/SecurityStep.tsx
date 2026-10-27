@@ -20,6 +20,8 @@ import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { Carte } from '../ui/Carte';
 
+export const LIEN_SECURITE = 'https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/blob/main/SECURITY.md';
+
 interface SecurityStepProps {
   provider: LLMProvider | null;
   onNext: () => void;
@@ -169,9 +171,10 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         })}
       </div>
 
-      {/* Best practices link */}
+      {/* B-1349 (audit bêta 27/10) : l'ancienne page du site répondait 404 ; la politique de
+          sécurité du dépôt public, en français, explique le local d'abord et le chiffrement. */}
       <a
-        href="https://synoptia.fr/therese/securite"
+        href={LIEN_SECURITE}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center justify-center gap-2 text-sm text-accent-cyan-ink hover:underline transition-colors"
