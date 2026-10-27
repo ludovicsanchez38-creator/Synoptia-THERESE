@@ -80,6 +80,8 @@ describe('B-757 - erreur fatale du sidecar au démarrage', () => {
   });
 
   it('B-1085 : la commande de secours vise le vrai nom de l’application (THERESE.app)', async () => {
+    // Audit bêta 27/10 : la commande n'est proposée que sous macOS.
+    Object.defineProperty(window.navigator, 'platform', { value: 'MacIntel', configurable: true });
     vi.mocked(fetch).mockImplementation(() => new Promise<Response>(() => {}));
     const { container } = render(<SplashScreen onReady={vi.fn()} />);
     await waitFor(() => expect(harness.sidecarErrorHandler).not.toBeNull());

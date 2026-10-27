@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { initApiBase, getApiBase } from '../services/api/core';
 import { prefersReducedMotion } from '../lib/accessibility';
+import { isMacPlatform, isWindowsPlatform } from '../lib/platform';
+import { Button } from './ui/Button';
 
 type UnlistenFn = () => void;
 
@@ -88,6 +90,10 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [appVersion, setAppVersion] = useState<string | null>(null);
+  // B-1262 : Rust a abandonné le moteur après ses trois relances.
+  const [moteurArrete, setMoteurArrete] = useState(false);
+  const [relance, setRelance] = useState(0);
+  const messageMoteur = useRef<string | null>(null);
   const apiBaseReady = useRef(false);
   const fatalSidecarError = useRef(false);
   const reducedMotion = prefersReducedMotion();
@@ -104,9 +110,14 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     return probeHealth(getApiBase());
   }, []);
 
-  // Écouter les erreurs sidecar émises par le Rust
+  // Écouter les erreurs et l'état du sidecar émis par le Rust
   useEffect(() => {
-    let unlisten: UnlistenFn | null = null;
+    let disposed = false;
+    const unlisteners: UnlistenFn[] = [];
+    const garder = (fn: UnlistenFn) => {
+      if (disposed) fn();
+      else unlisteners.push(fn);
+    };
 
     import('@tauri-apps/api/event')
       .then(({ listen }) => {
@@ -115,20 +126,56 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           // un autre effet ; ce ref partagé l'arrête et interdit un onReady
           // tardif si le health check déjà parti finit par répondre 200.
           fatalSidecarError.current = true;
-          setError(
-            `Le moteur n'a pas pu démarrer :\n${event.payload}\n\nDans le Terminal :\nxattr -cr /Applications/THERESE.app\npuis relance l'app.`
-          );
-        }).then((fn) => {
-          unlisten = fn;
-        });
+          // Audit bêta 27/10 : la commande de secours n'existe que sous macOS.
+          const secours = isMacPlatform()
+            ? "\n\nDans le Terminal :\nxattr -cr /Applications/THERESE.app\npuis relance l'app."
+            : "\n\nRelance THÉRÈSE. Si l'erreur revient, réinstalle-la depuis la page de téléchargement.";
+          setError(`Le moteur n'a pas pu démarrer :\n${event.payload}${secours}`);
+        }).then(garder);
+
+        // B-1262 : sans cet écouteur, l'abandon du moteur par Rust était perdu
+        // (le bandeau qui l'écoute n'est monté qu'après le démarrage) et le
+        // splash attendait dix minutes un port vide.
+        listen<unknown>('sidecar-status', (event) => {
+          const charge = event.payload as { state?: unknown; attempt?: unknown } | null;
+          if (!charge || typeof charge !== 'object') return;
+          if (charge.state === 'failed') {
+            fatalSidecarError.current = true;
+            setMoteurArrete(true);
+          } else if (charge.state === 'restarting') {
+            const tentative = typeof charge.attempt === 'number' && charge.attempt > 0
+              ? ` (tentative ${charge.attempt}/3)`
+              : '';
+            messageMoteur.current = `Le moteur local redémarre${tentative}…`;
+            setMessage(messageMoteur.current);
+          } else if (charge.state === 'running') {
+            messageMoteur.current = null;
+          }
+        }).then(garder);
       })
       .catch(() => {
         // Pas en contexte Tauri (mode dev)
       });
 
     return () => {
-      if (unlisten) unlisten();
+      disposed = true;
+      unlisteners.forEach((fn) => fn());
     };
+  }, []);
+
+  const relancerMoteur = useCallback(async () => {
+    setMoteurArrete(false);
+    messageMoteur.current = 'Le moteur local redémarre…';
+    setMessage(messageMoteur.current);
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('restart_backend');
+    } catch {
+      setMoteurArrete(true);
+      return;
+    }
+    fatalSidecarError.current = false;
+    setRelance((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -179,7 +226,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         for (const m of MESSAGES) {
           if (elapsed >= m.after) currentMsg = m.text;
         }
-        setMessage(currentMsg);
+        setMessage(messageMoteur.current ?? currentMsg);
 
         // Check
         const healthy = await checkHealth();
@@ -201,7 +248,35 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
     poll();
     return () => { cancelled = true; };
-  }, [checkHealth, onReady]);
+  }, [checkHealth, onReady, relance]);
+
+  if (moteurArrete) {
+    return (
+      <div className="h-screen w-screen bg-bg flex items-center justify-center" data-tauri-drag-region>
+        <div className="text-center max-w-md px-6">
+          <h1 className="text-4xl font-bold text-text mb-2">
+            THÉRÈSE
+          </h1>
+          {appVersion && (
+            <p className="text-text-muted text-xs mb-4">v{appVersion}-alpha</p>
+          )}
+          <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4 space-y-2">
+            <p className="text-error text-sm font-semibold">
+              Le moteur local s’est arrêté au démarrage, trois fois de suite.
+            </p>
+            {!isWindowsPlatform() && (
+              <p className="text-text-muted text-sm">
+                Si ton système te demande l’accès au trousseau, autorise-le avant de relancer.
+              </p>
+            )}
+          </div>
+          <Button className="mt-4" onClick={() => void relancerMoteur()}>
+            Relancer le moteur local
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
