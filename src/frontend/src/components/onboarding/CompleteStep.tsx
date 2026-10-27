@@ -12,6 +12,7 @@ import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { Button } from '../ui/Button';
 import { Alerte } from '../ui/Alerte';
 import { Carte } from '../ui/Carte';
+import { usePanelStore } from '../../stores/panelStore';
 
 interface CompleteStepProps {
   onComplete: () => void;
@@ -64,19 +65,25 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
     void loadSummary();
   }, [loadSummary]);
 
-  async function handleComplete() {
+  async function handleComplete({ ouvrirServiceIa = false }: { ouvrirServiceIa?: boolean } = {}) {
     setCompleting(true);
     setError(null);
     try {
       await api.completeOnboarding();
       window.dispatchEvent(new Event('therese:llm-config-changed'));
       onComplete();
+      if (ouvrirServiceIa) usePanelStore.getState().openSettings('ai');
     } catch (err) {
       console.error('Failed to complete onboarding:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la finalisation');
       setCompleting(false);
     }
   }
+
+  // Audit bêta 27/10 (A2-54) : sans service d'IA prêt, « THÉRÈSE est prête »
+  // était faux. Un récapitulatif illisible ne déclare rien manquant.
+  const iaPrete = !llmSkipped && !!summary.llmConfig?.available;
+  const iaManquante = !loading && !iaPrete && !summaryUnavailable.includes('Service d’IA');
 
   const summaryItems = [
     {
@@ -161,10 +168,12 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
         className="mb-8"
       >
         <h1 className="text-3xl font-bold text-text mb-3">
-          C'est parti !
+          {iaManquante ? 'Il reste une étape' : "C'est parti !"}
         </h1>
         <p className="text-text-muted text-lg max-w-md">
-          THÉRÈSE est prête à t'accompagner. Voici un résumé de ta configuration.
+          {iaManquante
+            ? "Pour que THÉRÈSE puisse te répondre, choisis un service d'IA : en ligne avec une clé, ou gratuit sur ton ordinateur. Voici où en est ta configuration."
+            : "THÉRÈSE est prête à t'accompagner. Voici un résumé de ta configuration."}
         </p>
       </motion.div>
 
@@ -244,9 +253,18 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
         <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
           Retour
         </Button>
+        {iaManquante && (
+          <Button
+            variant="secondary"
+            onClick={() => void handleComplete({ ouvrirServiceIa: true })}
+            disabled={completing}
+          >
+            Choisir mon service d’IA
+          </Button>
+        )}
         <Button
           variant="primary"
-          onClick={handleComplete}
+          onClick={() => void handleComplete()}
           disabled={completing}
           className="px-8"
           data-testid="onboarding-complete-btn"
