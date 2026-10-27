@@ -48,6 +48,15 @@ done
 # 2. Extraction en lecture seule, puis démarrage du moteur
 mkdir -p "$RACINE" "$DONNEES"
 dpkg-deb -x "$DEB" "$RACINE"
+# B-1339 : le binaire doit porter le type de paquet « deb ». Sans le symbole
+# que le bundler Tauri remplace (strip complet), getBundleType() renvoie UNK :
+# la mise à jour automatique est coupée et le bandeau manuel ne part jamais.
+APPLI="$RACINE/usr/bin/therese"
+if [ -f "$APPLI" ] && grep -aq "__TAURI_BUNDLE_TYPE_VAR_DEB" "$APPLI"; then
+  ok "binaire marqué comme paquet Debian"
+else
+  ko "binaire non marqué comme paquet Debian (__TAURI_BUNDLE_TYPE_VAR_DEB absent, B-1339)"
+fi
 MOTEUR="$(find "$RACINE" -type f -name backend -perm -u+x -path '*backend-libs*' | head -1)"
 [ -n "$MOTEUR" ] || MOTEUR="$(find "$RACINE" -type f -name backend -perm -u+x | head -1)"
 if [ -z "$MOTEUR" ]; then ko "exécutable du moteur introuvable dans le paquet"; echo "== $echecs échec(s)"; exit 1; fi
