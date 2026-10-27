@@ -762,9 +762,15 @@ async def _get_memory_context(
     limit: int = 8,
     conversation_id: str | None = None,
     session: AsyncSession | None = None,
+    inclure_fichiers: bool = False,
 ) -> str | None:
     """
     Search memory for context relevant to the user's message.
+
+    B-1201 : les extraits de fichiers indexés ne sont injectés qu'avec
+    `inclure_fichiers` (accord « documents » pour le fournisseur, ou modèle
+    local, cf. documents_autorises). Fermé par défaut : un nouvel appelant
+    qui l'oublie n'envoie aucun document.
 
     0.43 : la recherche est CLOISONNÉE quand la conversation est rattachée à un
     projet. Jusque-là elle balayait toute la mémoire, si bien qu'un document du
@@ -817,6 +823,8 @@ async def _get_memory_context(
                 status = metadata.get("status", "")
                 bloc = f"**Projet** ({status}): {name}\n{text}"
             elif memory_type == "file":
+                if not inclure_fichiers:
+                    continue
                 file_name = metadata.get("name", "fichier")
                 chunk_index = metadata.get("chunk_index", 0)
                 total_chunks = metadata.get("total_chunks", 1)
@@ -2089,8 +2097,11 @@ async def send_message(
     # Get relevant memory context (0d : même texte que le payload LLM,
     # parité avec le chemin stream)
     # B-1495 : include_memory=false n'injecte pas la mémoire.
+    from app.services.memory_card_context import documents_autorises
+
     memory_context = await _get_memory_context(
-        llm_user_message, conversation_id=conversation.id, session=session
+        llm_user_message, conversation_id=conversation.id, session=session,
+        inclure_fichiers=documents_autorises(llm_service.config, request.memory_card_grants),
     ) if request.include_memory else None
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
@@ -2798,8 +2809,11 @@ async def _do_stream_response(
 
     # Get relevant memory context for the user's message
     # B-1495 : include_memory=false n'injecte pas la mémoire.
+    from app.services.memory_card_context import documents_autorises
+
     memory_context = await _get_memory_context(
-        user_message, conversation_id=conversation_id, session=session
+        user_message, conversation_id=conversation_id, session=session,
+        inclure_fichiers=documents_autorises(llm_service.config, memory_card_grants),
     ) if include_memory else None
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle

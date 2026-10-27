@@ -35,6 +35,17 @@ def destination_cloud(config: Any) -> str | None:
     return 'ollama-cloud' if est_modele_ollama_cloud(config.model) or host not in ('localhost', '127.0.0.1', '::1') else None
 
 
+def documents_autorises(config: Any, grants: list[str] | None) -> bool:
+    """B-1201 : un extrait de document indexé peut-il partir avec ce message ?
+
+    Vers un modèle local, oui. Vers un fournisseur en ligne, seulement avec
+    l'accord « documents » donné pour CE fournisseur : envoyer un contrat ou
+    un devis est une finalité distincte du chat (lib/consent.ts).
+    """
+    destination = destination_cloud(config)
+    return destination is None or f"documents:{destination}" in (grants or [])
+
+
 def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, Any]] | None,
                     suite: Any = None) -> int:
     nom = config.provider.value

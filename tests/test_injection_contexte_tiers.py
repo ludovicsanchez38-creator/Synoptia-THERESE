@@ -86,7 +86,9 @@ async def test_extrait_qdrant_qui_ferme_le_delimiteur(monkeypatch):
     faux_qdrant = type("Faux", (), {"async_search": staticmethod(faux_search)})()
     monkeypatch.setattr(chat_router, "get_qdrant_service", lambda: faux_qdrant)
 
-    contexte = await chat_router._get_memory_context("le contrat")
+    # B-1201 : l'extrait n'est injecté qu'avec l'accord « documents » ; ce
+    # test porte sur son enveloppe une fois injecté.
+    contexte = await chat_router._get_memory_context("le contrat", inclure_fichiers=True)
 
     assert contexte is not None
     # Sans `[Source: memoire]`, count("[End memoire]") == 1 était déjà vrai
