@@ -84,4 +84,19 @@ describe('mise en route relue après les Paramètres (B-1348)', () => {
 
     expect(vi.mocked(fetchSetupStatus).mock.calls.length).toBe(lecturesAuMontage);
   });
+
+  it('la fin de la mise en route relit l\'état : la carte de clé IA disparaît (audit A2-34)', async () => {
+    const sansCle = { ...etat(true), has_llm_key: false };
+    vi.mocked(fetchSetupStatus)
+      .mockResolvedValueOnce(sansCle)
+      .mockResolvedValue(etat(true));
+    render(<ConversationCanvasPrototype />);
+    expect(await screen.findByText('Configurer une clé IA (ou Ollama)')).toBeInTheDocument();
+
+    act(() => { window.dispatchEvent(new CustomEvent('therese:profile-updated')); });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Configurer une clé IA (ou Ollama)')).not.toBeInTheDocument();
+    });
+  });
 });

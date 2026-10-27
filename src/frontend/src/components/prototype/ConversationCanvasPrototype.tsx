@@ -918,14 +918,23 @@ export function ConversationCanvasPrototype() {
   // Paramètres (« Compléter le profil de facturation » après l'avoir fait).
   // Tout ce que la mise en route mesure se règle dans Paramètres : on relit
   // à leur fermeture.
+  // Audit bêta 27/10 (A2-34) : la fin de la mise en route règle aussi la clé
+  // IA ; elle émet `therese:profile-updated`, qu'on écoute pour relire l'état.
   const parametresOuverts = usePanelStore((state) => state.showSettings);
   useEffect(() => {
     if (parametresOuverts) return;
     let annule = false;
-    fetchSetupStatus()
-      .then((statut) => { if (!annule) setSetupStatus(statut); })
-      .catch(() => { /* indisponible : l'état vide standard s'affiche */ });
-    return () => { annule = true; };
+    const relire = () => {
+      fetchSetupStatus()
+        .then((statut) => { if (!annule) setSetupStatus(statut); })
+        .catch(() => { /* indisponible : l'état vide standard s'affiche */ });
+    };
+    relire();
+    window.addEventListener('therese:profile-updated', relire);
+    return () => {
+      annule = true;
+      window.removeEventListener('therese:profile-updated', relire);
+    };
   }, [parametresOuverts]);
   const { resource: contactsResource, refresh: refreshContacts } = useContactsResource();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
