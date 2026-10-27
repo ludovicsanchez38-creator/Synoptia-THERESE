@@ -92,11 +92,21 @@ function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
         <div className="mt-1 rounded-md border border-error/30 bg-error/10 p-2 text-error">{erreurDestination}</div>
       )}
       <Detail label="À">{value(args, 'to')}</Detail>
+      {/* B-1293 : la copie part avec le message, elle se voit avant l'envoi. */}
+      <Detail label="Copie (Cc)">{value(args, 'cc')}</Detail>
       <Detail label="Objet">{value(args, 'subject')}</Detail>
       <Detail label="Message">{value(args, 'body')}</Detail>
+      {/* Tout autre argument public part aussi : on le montre plutôt que le taire. */}
+      {Object.entries(args)
+        .filter(([key]) => !key.startsWith('_') && !CHAMPS_EMAIL_AFFICHES.has(key))
+        .map(([key, raw]) => (
+          <Detail key={key} label={key}>{raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw)}</Detail>
+        ))}
     </dl>
   );
 }
+
+const CHAMPS_EMAIL_AFFICHES = new Set(['to', 'cc', 'subject', 'body', 'is_html']);
 
 // B-1480 : les actions natives se confirment en français, comme le document
 // (B-1454). Une clé inconnue (outil de connecteur) garde son nom.
