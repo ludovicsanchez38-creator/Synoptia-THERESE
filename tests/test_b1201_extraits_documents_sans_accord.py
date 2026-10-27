@@ -54,6 +54,15 @@ class TestLaRegle:
         assert documents_autorises(distant, []) is False
         assert documents_autorises(distant, ["documents:ollama-cloud"]) is True
 
+    def test_une_configuration_incomplete_ne_casse_pas_le_message(self):
+        """Constat des portes du 27/10 : un faux fournisseur sans base_url faisait échouer le chat."""
+        from app.services.memory_card_context import documents_autorises
+
+        sans_url = SimpleNamespace(provider=SimpleNamespace(value="ollama"), model="test")
+        assert documents_autorises(sans_url, []) is True, "Ollama sans adresse = local par défaut"
+        illisible = SimpleNamespace(provider=None)
+        assert documents_autorises(illisible, ["documents:anthropic"]) is False
+
     def test_sans_liste_d_accords_rien_ne_part(self):
         from app.services.memory_card_context import documents_autorises
 

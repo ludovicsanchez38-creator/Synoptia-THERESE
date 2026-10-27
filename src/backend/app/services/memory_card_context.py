@@ -31,8 +31,8 @@ def destination_cloud(config: Any) -> str | None:
     if config.provider.value != 'ollama':
         return str(config.provider.value)
     from app.services.ollama_capabilites import est_modele_ollama_cloud
-    host = urlsplit(config.base_url or 'http://127.0.0.1:11434').hostname
-    return 'ollama-cloud' if est_modele_ollama_cloud(config.model) or host not in ('localhost', '127.0.0.1', '::1') else None
+    host = urlsplit(getattr(config, 'base_url', None) or 'http://127.0.0.1:11434').hostname
+    return 'ollama-cloud' if est_modele_ollama_cloud(getattr(config, 'model', '')) or host not in ('localhost', '127.0.0.1', '::1') else None
 
 
 def documents_autorises(config: Any, grants: list[str] | None) -> bool:
@@ -42,7 +42,12 @@ def documents_autorises(config: Any, grants: list[str] | None) -> bool:
     l'accord « documents » donné pour CE fournisseur : envoyer un contrat ou
     un devis est une finalité distincte du chat (lib/consent.ts).
     """
-    destination = destination_cloud(config)
+    try:
+        destination = destination_cloud(config)
+    except Exception:
+        # Destination illisible : aucun document ne part (fermé par défaut),
+        # et le message, lui, continue.
+        return False
     return destination is None or f"documents:{destination}" in (grants or [])
 
 
