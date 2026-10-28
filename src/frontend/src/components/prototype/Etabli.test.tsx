@@ -117,7 +117,11 @@ describe('L’accueil est un établi', () => {
   it('la porte du rail s’appelle « Plus d’outils » et ouvre le tiroir', async () => {
     render(<ConversationCanvasPrototype />);
 
-    expect(screen.queryByRole('button', { name: 'Aide' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Aide' }));
+    expect(await screen.findByRole('dialog', { name: 'Aide' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ouvrir le guide (PDF)' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Capacités' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer l’aide' }));
     fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
     expect(
       await screen.findByRole('heading', { name: 'Capacités' }),
