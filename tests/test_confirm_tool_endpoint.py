@@ -3,8 +3,12 @@
 POST /api/chat/confirm-tool exécute (ou annule) une action send_email mise en
 attente par la boucle d'outils, après validation explicite de l'utilisateur.
 """
+from unittest.mock import MagicMock
+
 import app.routers.chat as chat_mod
 import pytest
+from app.services.context import ContextWindow
+from app.services.llm import StreamEvent
 from app.services.tool_confirmations import register_pending
 
 
@@ -108,8 +112,24 @@ async def test_confirm_tool_route_web_search_vers_le_moteur(client, monkeypatch)
     async def _fail_workspace(*args, **kwargs):
         raise AssertionError("web_search n'est pas un outil workspace")
 
+    class Modele:
+        config = None
+
+        def prepare_context(self, messages):
+            return ContextWindow(messages=messages)
+
+        async def continue_with_tool_results(self, context, **kwargs):
+            captured["context"] = context
+            captured["suite"] = kwargs
+            yield StreamEvent(type="text", content="Voici les horaires de Marseille issus de la recherche.")
+            yield StreamEvent(type="done", input_tokens=40, output_tokens=20)
+
     monkeypatch.setattr(chat_mod, "execute_web_search", _spy)
     monkeypatch.setattr(chat_mod, "execute_workspace_tool", _fail_workspace)
+    monkeypatch.setattr(chat_mod, "get_llm_service", lambda: Modele())
+    monkeypatch.setattr(chat_mod, "_attribution", lambda _: ("test", "test"))
+    tracker = MagicMock()
+    monkeypatch.setattr(chat_mod, "get_token_tracker", lambda: tracker)
 
     cid = register_pending("web_search", {"query": "horaire marseille"})
     resp = await client.post(
@@ -120,7 +140,12 @@ async def test_confirm_tool_route_web_search_vers_le_moteur(client, monkeypatch)
     data = resp.json()
     assert data["status"] == "executed"
     assert captured["args"] == {"query": "horaire marseille"}
-    assert "3 résultats" in data["result"]
+    assert data["result"] == "Voici les horaires de Marseille issus de la recherche."
+    assert captured["context"].messages[-1].content == "horaire marseille"
+    assert captured["suite"]["tool_results"][0].result == "3 résultats"
+    assert captured["suite"]["tool_calls"][0].name == "web_search"
+    assert captured["suite"]["tools"] is None
+    tracker.record_usage.assert_called_once()
 
 
 @pytest.mark.asyncio
