@@ -1211,8 +1211,9 @@ async def convert_invoice(
 async def billing_profile_status(session: AsyncSession = Depends(get_session)):
     """Statut de complétude du profil émetteur (P0-PROD-2).
 
-    Permet à l'UI de poser un garde-fou avant la 1re facture : raison sociale (ou
-    nom), SIRET et adresse sont requis pour une facture conforme et opposable.
+    Conserve le critère historique de configuration : raison sociale (ou nom),
+    SIRET et adresse. Les mentions supplémentaires du PDF sont contrôlées lors
+    de sa génération, sans déclasser les profils déjà configurés.
     """
     profile = get_cached_profile()
     if profile is None:
@@ -1228,8 +1229,8 @@ async def billing_profile_status(session: AsyncSession = Depends(get_session)):
             "tva_intra_renseigne": False,
         }
     return {
-        "is_complete": not profile.missing_invoice_identity_fields(),
-        "missing": profile.missing_invoice_identity_fields(),
+        "is_complete": profile.is_billing_complete(),
+        "missing": profile.missing_billing_fields(),
         # P-136 : le formulaire avertit (sans bloquer) d'une facture avec TVA
         # de plus de 150 € HT sans numéro de TVA de l'émetteur (F31808).
         "tva_intra_renseigne": bool((profile.tva_intra or "").strip()),
