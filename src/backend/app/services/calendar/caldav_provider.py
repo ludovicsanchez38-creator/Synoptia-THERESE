@@ -238,7 +238,7 @@ class CalDAVProvider(CalendarProvider):
                 for component in ical.walk('VEVENT'):
                     dto = self._vevent_to_dto(component, calendar_id)
                     result.append(dto)
-            def cle(evt):
+            def cle(evt: CalendarEventDTO) -> tuple[datetime, str]:
                 debut = evt.start
                 if isinstance(debut, datetime):
                     if debut.tzinfo is None:

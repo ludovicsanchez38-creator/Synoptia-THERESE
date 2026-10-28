@@ -1383,7 +1383,7 @@ async def generate_invoice_pdf(
 
 
 @router.get("/{invoice_id}/pdf-ouverture")
-async def pdf_pour_ouverture(invoice_id: str, session: AsyncSession = Depends(get_session)):
+async def pdf_pour_ouverture(invoice_id: str, session: AsyncSession = Depends(get_session)) -> dict[str, str]:
     """Le bureau demande un identifiant ; seul le moteur résout le fichier autorisé."""
     from app.services.invoice_pdf import chemin_pdf_a_ouvrir
 

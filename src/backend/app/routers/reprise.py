@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 _verrou = asyncio.Lock()
 
 
-def exiger_reprise(request: Request):
+def exiger_reprise(request: Request) -> None:
     if not getattr(request.app.state, 'reprise_donnees', None):
         raise HTTPException(409, 'La restauration automatique est réservée à un démarrage en échec.')
 
 
 @router.get('/copies')
-async def copies(request: Request):
+async def copies(request: Request) -> dict[str, list[dict[str, str]]]:
     exiger_reprise(request)
     return {'copies': await asyncio.to_thread(lister_copies, settings.data_dir)}
 
@@ -29,7 +29,7 @@ class Restauration(BaseModel):
 
 
 @router.post('/restaurer')
-async def restaurer(demande: Restauration, request: Request):
+async def restaurer(demande: Restauration, request: Request) -> dict[str, bool | str]:
     exiger_reprise(request)
     if not demande.confirmer:
         raise HTTPException(400, 'Confirme la restauration de cette copie.')

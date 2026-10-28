@@ -767,7 +767,9 @@ async def maintenance_middleware(
 
 
 @app.middleware("http")
-async def reprise_middleware(request: Request, call_next):
+async def reprise_middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
     if getattr(request.app.state, "reprise_donnees", None) and request.method != "OPTIONS":
         if request.url.path not in {
             "/health", "/api/auth/token", "/api/shutdown",

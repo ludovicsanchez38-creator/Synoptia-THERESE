@@ -827,7 +827,7 @@ async def list_events(
 
 def _id_calendrier_fournisseur(calendar: Calendar) -> str:
     """Le calendrier SQL garde son UUID, DAV reçoit son identifiant distant."""
-    return (calendar.remote_id or calendar.id) if calendar.provider == "caldav" else calendar.id
+    return str((calendar.remote_id or calendar.id) if calendar.provider == "caldav" else calendar.id)
 
 
 async def _list_events_provider(

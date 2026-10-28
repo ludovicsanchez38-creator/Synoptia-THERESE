@@ -144,7 +144,10 @@ class TestCliquetMypy:
         # de fichier ouvert puis de chemin), renommée : 937 à froid sur le Mac.
         # 09/10/2026 (cycle 18) : le chantier des derniers modèles retire une
         # erreur, 936 mesuré sur le runner.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "936"
+        # 28/10/2026 (lot 11) : référence c21 mesurée à 936 sous Linux,
+        # intégration corrigée à 935, sans diagnostic nouveau. La baisse
+        # vient de CalDAV dans c22b ; confirmation sur le runner à venir.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "935"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
