@@ -158,6 +158,15 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
                     <motion.span
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
+                      onAnimationComplete={() => {
+                        // La hauteur mesurée au clic était encore nulle.
+                        // Ne déplacer que le risque toujours ouvert : une autre
+                        // explication a pu être choisie pendant l'animation.
+                        const bouton = risquesRef.current[index];
+                        if (bouton?.getAttribute('aria-expanded') === 'true') {
+                          bouton.scrollIntoView?.({ block: 'nearest' });
+                        }
+                      }}
                       exit={{ opacity: 0, height: 0 }}
                       className="block text-sm text-text-muted mt-2"
                     >
