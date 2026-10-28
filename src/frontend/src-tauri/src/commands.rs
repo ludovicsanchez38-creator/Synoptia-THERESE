@@ -76,3 +76,41 @@ pub fn prepare_backend_shutdown(app: tauri::AppHandle) {
         .shutting_down
         .store(true, Ordering::SeqCst);
 }
+
+/// Ouvre seulement le PDF de la facture résolue par le moteur authentifié.
+/// Aucun chemin ni programme d'ouverture n'est accepté depuis la webview.
+#[tauri::command]
+pub async fn ouvrir_pdf_facture(
+    app: tauri::AppHandle,
+    invoice_id: String,
+    token: String,
+) -> Result<(), String> {
+    use tauri::Manager;
+    use tauri_plugin_opener::OpenerExt;
+
+    if invoice_id.is_empty() || !invoice_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+        return Err("Identifiant de facture invalide.".into());
+    }
+    let port = *app.state::<crate::BackendPort>().0.lock().unwrap();
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .timeout(std::time::Duration::from_secs(10))
+        .build().map_err(|_| "Impossible de joindre le moteur local.".to_string())?;
+    let response = client.get(format!("http://127.0.0.1:{port}/api/invoices/{invoice_id}/pdf-ouverture"))
+        .header("X-Therese-Token", token)
+        .send().await.map_err(|_| "Impossible de joindre le moteur local.".to_string())?;
+    if !response.status().is_success() {
+        return Err("Le moteur n’a pas autorisé l’ouverture de cette facture.".into());
+    }
+    #[derive(serde::Deserialize)]
+    struct Pdf { pdf_path: String }
+    let pdf: Pdf = response.json().await.map_err(|_| "Réponse du moteur illisible.".to_string())?;
+    let path = std::path::PathBuf::from(pdf.pdf_path);
+    if !path.is_absolute() || path.extension().and_then(|s| s.to_str()) != Some("pdf") || !path.is_file() {
+        return Err("Le fichier PDF de cette facture est introuvable.".into());
+    }
+    // La portée est le fichier que le moteur vient de résoudre pour cet ID.
+    app.opener().open_path(path.to_string_lossy(), None::<&str>)
+        .map_err(|_| "Le lecteur PDF n’a pas pu ouvrir cette facture.".to_string())
+}

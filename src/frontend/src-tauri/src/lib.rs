@@ -508,6 +508,7 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         // Les dossiers choisis via le dialogue natif entrent dans la portée
         // fs. Sans persistance, cette autorisation disparaissait au prochain
@@ -591,6 +592,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::greet,
+            commands::ouvrir_pdf_facture,
             commands::get_system_info,
             commands::get_backend_port,
             commands::restart_backend,

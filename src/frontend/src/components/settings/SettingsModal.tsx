@@ -1,3 +1,4 @@
+import { Aide } from '../Aide';
 // Modal Paramètres - Shell principal avec navigation sidebar
 // Refonte v0.4.0 : 8 onglets → 6, sidebar verticale, UX simplifiée
 
@@ -913,6 +914,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
               {/* `@layer base` pose déjà la famille de titres : pas de
                   `font-editorial` ici, la maquette est un h1 sans `.editorial`. */}
               <h1 id="settings-title" className="text-lg font-semibold text-text">Paramètres</h1>
+              <Aide />
               <Button variant="ghost" size="icon" onClick={onClose} data-testid="settings-close-btn" aria-label="Fermer les paramètres">
                 <X className="w-5 h-5" />
               </Button>

@@ -1,3 +1,4 @@
+import { Aide } from '../Aide';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -2111,6 +2112,7 @@ export function ConversationCanvasPrototype() {
                 (demande Dr_logic) - ils n'étaient joignables que par la palette
                 ou par le bouton Profil, dont la fonction n'était pas lisible. */}
             <div className="mt-auto flex flex-col items-center gap-1.5">
+              <Aide compact />
               <IconButton label="Paramètres" onClick={() => openSettings()}><Settings className="h-[18px] w-[18px]" /></IconButton>
               {/* Inventaire des capacités du 13/08/2026, deux défauts corrigés
                   d'un même geste.

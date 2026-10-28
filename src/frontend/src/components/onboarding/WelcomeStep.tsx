@@ -1,3 +1,4 @@
+import { Aide } from '../Aide';
 /**
  * THERESE v2 - Welcome Step
  *
@@ -83,6 +84,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       </motion.div>
 
       {/* CTA */}
+                    <Aide />
       <Button
         variant="primary"
         size="lg"

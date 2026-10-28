@@ -21,6 +21,10 @@
     "core:webview:allow-create-webview-window",
     "shell:allow-open",
     {
+      "identifier": "opener:allow-open-path",
+      "allow": [{ "path": "$RESOURCE/resources/guide-therese-0.82.pdf" }]
+    },
+    {
       "identifier": "shell:allow-execute",
       "allow": [
         {

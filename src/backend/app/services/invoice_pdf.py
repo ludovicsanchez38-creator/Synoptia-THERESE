@@ -99,6 +99,19 @@ def libelle_statut_pdf(statut: str, type_document: str) -> str:
     return cle.replace("_", " ").capitalize() or "Non renseigné"
 
 
+def chemin_pdf_a_ouvrir(dossier: str, numero: str) -> Path:
+    """Portée d'ouverture : uniquement le PDF de cette facture, sans lien sortant."""
+    if not numero or any(c in numero for c in ('/', '\\', '\x00')) or numero in ('.', '..'):
+        raise ValueError("Le numéro de facture ne désigne pas un fichier valide.")
+    racine = Path(dossier).expanduser().resolve()
+    fichier = (racine / f"{numero}.pdf").resolve()
+    if fichier.parent != racine:
+        raise ValueError("Le PDF doit rester dans le dossier des factures.")
+    if not fichier.is_file():
+        raise FileNotFoundError("Génère le PDF de cette facture avant de l’ouvrir.")
+    return fichier
+
+
 def resolve_invoice_output_dir() -> str:
     """
     Resout le repertoire de sortie des PDFs factures depuis la base de donnees.

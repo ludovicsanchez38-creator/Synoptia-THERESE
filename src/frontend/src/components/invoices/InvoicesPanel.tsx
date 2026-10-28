@@ -1,3 +1,4 @@
+import { ouvrirPdfFacture } from '../../lib/pdfLocaux';
 /**
  * THÉRÈSE v2 - Invoices Panel
  *
@@ -150,8 +151,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     try {
       const result = await generateInvoicePDF(invoice.id);
       try {
-        const { open } = await import('@tauri-apps/plugin-shell');
-        await open(result.pdf_path);
+        await ouvrirPdfFacture(invoice.id);
         addNotification({ type: 'success', title: 'PDF généré et ouvert', message: numeroAffiche(result.invoice_number) });
       } catch (openError) {
         // En prévisualisation web, le système ne peut pas ouvrir un chemin local.

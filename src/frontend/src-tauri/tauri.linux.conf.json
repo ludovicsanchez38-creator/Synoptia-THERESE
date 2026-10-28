@@ -1,6 +1,7 @@
 {
   "bundle": {
     "resources": [
+      "resources/guide-therese-0.82.pdf",
       "binaries/backend-libs/*",
       "binaries/backend-libs/_internal/**/*"
     ]

@@ -3,7 +3,8 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InvoicesPanel } from './InvoicesPanel';
 import { useInvoiceStore } from '../../stores/invoiceStore';
-import { open as openLocalFile } from '@tauri-apps/plugin-shell';
+import { ouvrirPdfFacture as openLocalFile } from '../../lib/pdfLocaux';
+vi.mock('../../lib/pdfLocaux', () => ({ ouvrirPdfFacture: vi.fn() }));
 
 const mockListInvoices = vi.fn();
 const mockDeleteInvoice = vi.fn();
@@ -129,7 +130,7 @@ describe('InvoicesPanel suppression', () => {
 
     await waitFor(() => {
       expect(mockGenerateInvoicePDF).toHaveBeenCalledWith('inv-1');
-      expect(openLocalFile).toHaveBeenCalledWith('/tmp/FAC-001.pdf');
+      expect(openLocalFile).toHaveBeenCalledWith('inv-1');
     });
   });
 

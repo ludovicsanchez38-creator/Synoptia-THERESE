@@ -1347,6 +1347,23 @@ async def generate_invoice_pdf(
     return {"pdf_path": pdf_path, "invoice_number": invoice.invoice_number}
 
 
+@router.get("/{invoice_id}/pdf-ouverture")
+async def pdf_pour_ouverture(invoice_id: str, session: AsyncSession = Depends(get_session)):
+    """Le bureau demande un identifiant ; seul le moteur résout le fichier autorisé."""
+    from app.services.invoice_pdf import chemin_pdf_a_ouvrir
+
+    facture = await _get_invoice_with_lines(session, invoice_id)
+    if not facture:
+        raise HTTPException(404, "Facture introuvable.")
+    try:
+        chemin = chemin_pdf_a_ouvrir(await _get_invoice_output_dir(session), facture.invoice_number)
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {"pdf_path": str(chemin)}
+
+
 def generate_legal_mentions(
     late_penalty_rate: float = 11.62,
     due_date_str: str = "",
