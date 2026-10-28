@@ -306,7 +306,10 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
         await create_notification(
             session,
             title="RDV demain",
-            message=f"RDV demain{f' à {time_str}' if time_str else ''} : {event.summary}",
+            message=(
+                f"RDV demain à {time_str} : {event.summary}"
+                if time_str else f"RDV demain : {event.summary}"
+            ),
             type="reminder",
             source="calendar",
             action_url=f"/calendar/events/{event.id}",
