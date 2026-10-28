@@ -17,6 +17,9 @@ from app.routers import agents as routeur_agents
 
 @pytest.fixture
 def depot_autorise(tmp_path, monkeypatch):
+    # Ce dossier n'est pas un dépôt. Si TMPDIR vit dans l'arbre de travail,
+    # Git ne doit pas découvrir le dépôt parent et ses gardes de branche.
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
     autorise = tmp_path / "depot-autorise"
     autorise.mkdir()
     monkeypatch.setattr(routeur_agents, "_get_source_path", lambda: str(autorise))

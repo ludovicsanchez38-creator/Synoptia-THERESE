@@ -242,9 +242,12 @@ class TestGitService:
     """Tests pour le service git."""
 
     @pytest.mark.asyncio
-    async def test_is_repo_false(self, tmp_path: Path):
+    async def test_is_repo_false(self, tmp_path: Path, monkeypatch):
         from app.services.agents.git_service import GitService
 
+        # TMPDIR peut vivre sous le dépôt du projet : ce cas porte seulement
+        # sur le dossier vierge, sans découvrir un éventuel dépôt ancêtre.
+        monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
         git = GitService(tmp_path)
         assert not await git.is_repo()
 
