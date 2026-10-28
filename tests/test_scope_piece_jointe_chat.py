@@ -21,7 +21,23 @@ Ces tests décrivent le comportement attendu, pas l'implémentation : peu import
 que le périmètre soit posé à l'indexation ou corrigé à l'envoi, un fichier joint
 dans une conversation de projet doit porter le périmètre de ce projet.
 """
+from datetime import UTC, datetime
+from pathlib import Path
+
 import pytest
+from app.models.schemas import FileResponse
+
+
+def _indexation_reussie(path, scope, scope_id):
+    """Même contrat que l'indexeur réel, sans embeddings ni stockage vectoriel."""
+    fichier = Path(path)
+    instant = datetime.now(UTC)
+    return FileResponse(
+        id="fichier-indexe", path=str(fichier), name=fichier.name,
+        extension=fichier.suffix, size=fichier.stat().st_size, mime_type="text/plain",
+        chunk_count=1, indexed_at=instant, created_at=instant,
+        scope=scope, scope_id=scope_id,
+    )
 
 
 class TestUnePieceJointeNaitDansLePerimetreDeSaConversation:
@@ -47,7 +63,7 @@ class TestUnePieceJointeNaitDansLePerimetreDeSaConversation:
             perimetre_provisoire=False,
         ):
             perimetres.append((scope, scope_id))
-            return None
+            return _indexation_reussie(path, scope, scope_id)
 
         monkeypatch.setattr(files_router, "index_payload", faux_index_payload)
 
@@ -86,7 +102,7 @@ class TestUnePieceJointeNaitDansLePerimetreDeSaConversation:
             perimetre_provisoire=False,
         ):
             perimetres.append((scope, scope_id))
-            return None
+            return _indexation_reussie(path, scope, scope_id)
 
         monkeypatch.setattr(files_router, "index_payload", faux_index_payload)
 
@@ -311,7 +327,7 @@ class TestLaProvenanceNEstJamaisDeduite:
             perimetre_provisoire=False,
         ):
             appels.append(perimetre_provisoire)
-            return None
+            return _indexation_reussie(path, scope, scope_id)
 
         monkeypatch.setattr(files_router, "index_payload", faux_index_payload)
 
@@ -346,7 +362,7 @@ class TestLaProvenanceNEstJamaisDeduite:
             perimetre_provisoire=False,
         ):
             appels.append(perimetre_provisoire)
-            return None
+            return _indexation_reussie(path, scope, scope_id)
 
         monkeypatch.setattr(files_router, "index_payload", faux_index_payload)
 
