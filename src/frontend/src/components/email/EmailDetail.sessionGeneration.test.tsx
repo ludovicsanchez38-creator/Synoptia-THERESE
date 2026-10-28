@@ -10,7 +10,7 @@ function attente() { let resolve!: (x: {
 }) => void; const promise = new Promise<{
     draft: string;
 }>(r => { resolve = r; }); return { promise, resolve }; }
-function message(id: string) { return { id, thread_id: id, subject: 'Sujet ' + id, from_email: id + '@exemple.test', from_name: id, to_emails: ['profil-jetable@exemple.test'], date: '2026-10-02T12:00:00Z', snippet: 'Texte synthétique', is_read: true, is_starred: false, body_plain: 'Message synthétique ' + id, body_html: null, labels: [], priority: null, priority_score: null }; }
+function message(id: string) { return { id, thread_id: id, subject: 'Sujet ' + id, from_email: id + '@exemple.test', from_name: id, reply_to_emails: [id + '-reponse@exemple.test'], to_emails: ['profil-jetable@exemple.test'], date: '2026-10-02T12:00:00Z', snippet: 'Texte synthétique', is_read: true, is_starred: false, body_plain: 'Message synthétique ' + id, body_html: null, labels: [], priority: null, priority_score: null }; }
 afterEach(cleanup);
 beforeEach(() => { vi.clearAllMocks(); useEmailStore.setState({ messages: [message('A'), message('B')], currentMessageId: 'A', isComposing: false, draftRecipients: [], draftSubject: '', draftBody: '' } as never); });
 describe('c16 : intégration EmailDetail réelle sans aucune transmission', () => {
@@ -28,12 +28,20 @@ describe('c16 : intégration EmailDetail réelle sans aucune transmission', () =
         await act(async () => { a.resolve({ draft: 'Contenu réservé au destinataire A' }); await a.promise; });
         fireEvent.click(screen.getByRole('button', { name: 'Utiliser' }));
         const s = useEmailStore.getState();
-        console.info('OBSERVÉ composition réelle', { recipients: s.draftRecipients, subject: s.draftSubject, body: s.draftBody, isComposing: s.isComposing });
         try {
             expect(s.draftBody).not.toBe('Contenu réservé au destinataire A');
+            expect(s.isComposing).toBe(false);
         }
         finally {
             await act(async () => { b.resolve({ draft: 'Contenu destiné à B' }); await b.promise; });
         }
+        fireEvent.click(screen.getByRole('button', { name: 'Utiliser' }));
+        expect(useEmailStore.getState()).toMatchObject({
+            isComposing: true,
+            draftRecipients: ['B-reponse@exemple.test'],
+            draftSubject: 'Re: Sujet B',
+            draftBody: 'Contenu destiné à B',
+        });
+        expect(api.getEmailMessage).not.toHaveBeenCalled();
     });
 });
