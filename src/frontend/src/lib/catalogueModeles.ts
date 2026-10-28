@@ -175,7 +175,7 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
     description: 'Excellent en français, pour écrire et analyser',
     keyPrefix: 'sk-ant-',
     keyPlaceholder: 'sk-ant-...',
-    consoleUrl: 'https://console.anthropic.com/settings/keys',
+    consoleUrl: 'https://platform.claude.com/settings/keys',
     models: [],
   },
   {

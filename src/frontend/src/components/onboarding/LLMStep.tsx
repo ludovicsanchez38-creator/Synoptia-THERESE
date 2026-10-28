@@ -1,3 +1,4 @@
+import { GuidePremierServiceIA } from '../llm/GuidePremierServiceIA';
 /**
  * THERESE v2 - LLM Step
  *
@@ -424,6 +425,8 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
           <p className="text-sm text-text-muted">{TEXTES_ONBOARDING.choixServiceIA.sousTitre}</p>
         </div>
       </div>
+
+      <GuidePremierServiceIA provider={selectedProvider} onRetest={() => void loadState()} />
 
       {/* Provider Selection */}
       {/* BUG-100 : pas de plafond de hauteur sur cette liste. Avec 10 providers et la

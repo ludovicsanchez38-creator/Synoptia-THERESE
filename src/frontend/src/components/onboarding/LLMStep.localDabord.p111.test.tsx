@@ -7,7 +7,7 @@
  * local capable d'agir tient en mémoire : proposer d'office un modèle que
  * l'écran déconseille serait pire que le service en ligne.
  */
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LLMStep } from './LLMStep';
@@ -83,6 +83,12 @@ describe('P-111 : le choix local proposé d’abord', () => {
     const radios = screen.getAllByRole('radio');
     expect(radios[0]).toHaveAccessibleName(/Claude \(Anthropic\)/);
     expect(radios[radios.length - 1]).toHaveAccessibleName(/Ollama \(Local\)/);
+    expect(radios[radios.length - 1]).toBeDisabled();
+    fireEvent.click(screen.getByText('Sur ton ordinateur : installer Ollama gratuitement'));
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Télécharger Ollama' })).toBeVisible());
+    expect(screen.getByText('ollama run qwen3.5:4b')).toBeVisible();
+    expect((screen.getByLabelText('Modèle') as HTMLSelectElement).value).toMatch(/^claude-opus/);
+
   });
 
   it('un service choisi avant une revérification n’est pas repris', async () => {

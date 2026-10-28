@@ -1,3 +1,4 @@
+import { GuidePremierServiceIA } from '../llm/GuidePremierServiceIA';
 // Onglet configuration LLM - Paramètres THERESE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
@@ -247,6 +248,8 @@ export function LLMTab({
   return (
     <div className="space-y-4">
       {/* La section : le titre, puis la grille des quatorze services. */}
+      <GuidePremierServiceIA provider={selectedProvider} onRetest={onRetestOllama} retesting={retestingOllama} />
+
       <Carte as="section" aria-labelledby="settings-ia-title">
         <CarteTete
           idTitre="settings-ia-title"
