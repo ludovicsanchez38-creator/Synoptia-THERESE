@@ -49,6 +49,7 @@ function makeMessage(overrides: Record<string, unknown> = {}) {
     thread_id: 't1',
     subject: 'Sujet',
     from_email: 'a@b.com',
+    reply_to_emails: [],
     from_name: 'A',
     to_emails: ['me@x.com'],
     date: '2026-06-09T09:00:00Z',

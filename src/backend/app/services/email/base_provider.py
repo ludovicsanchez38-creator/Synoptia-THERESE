@@ -35,6 +35,7 @@ class EmailMessageDTO:
     # Sender
     from_email: str = ""
     from_name: str | None = None
+    reply_to_emails: list[str] = field(default_factory=list)
 
     # Recipients
     to_emails: list[str] = field(default_factory=list)

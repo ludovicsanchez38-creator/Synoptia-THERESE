@@ -30,7 +30,7 @@ vi.mock('./ResponseGeneratorModal', () => ({ ResponseGeneratorModal: () => null 
 vi.mock('./EmailPriorityBadge', () => ({ EmailPriorityBadge: () => null }));
 
 const message = {
-  id: 'h1', thread_id: 't1', subject: 'Devis', from_email: 'a@b.com', from_name: 'A',
+  id: 'h1', thread_id: 't1', subject: 'Devis', from_email: 'a@b.com', from_name: 'A', reply_to_emails: [],
   to_emails: ['me@x.com'], date: '2026-06-09T09:00:00Z', snippet: 'Bonjour Ma…',
   is_read: true, is_starred: false, body_plain: '',
   body_html: '<style>p{color:red}</style><p>Bonjour <b>Marie</b>,</p><p>voici le devis.</p>',

@@ -42,6 +42,7 @@ interface EmailStore {
   /** Identifiant du brouillon sauvegardé en cours de correction, en mémoire vive uniquement. */
   editingDraftId: string | null;
   draftRecipients: string[];
+  draftReplyTo: string[];
   draftCc: string[];
   draftBcc: string[];
   draftSubject: string;
@@ -56,7 +57,7 @@ interface EmailStore {
   setDraftBody: (body: string) => void;
   setDraftIsHtml: (isHtml: boolean) => void;
   clearDraft: () => void;
-  startComposing: (recipients: string[], subject: string, body: string) => void;
+  startComposing: (recipients: string[], subject: string, body: string, replyTo?: string[]) => void;
 
   // Auth
   needsReauth: boolean;
@@ -157,6 +158,7 @@ export const useEmailStore = create<EmailStore>()(
       isEmailPanelOpen: false,
       isComposing: false,
       draftRecipients: [],
+      draftReplyTo: [],
       draftCc: [],
       draftBcc: [],
       draftSubject: '',
@@ -174,6 +176,7 @@ export const useEmailStore = create<EmailStore>()(
         set({
           editingDraftId: null,
           draftRecipients: [],
+          draftReplyTo: [],
           draftCc: [],
           draftBcc: [],
           draftSubject: '',
@@ -181,10 +184,11 @@ export const useEmailStore = create<EmailStore>()(
           draftIsHtml: false,
           isComposing: false,
         }),
-      startComposing: (recipients, subject, body) =>
+      startComposing: (recipients, subject, body, replyTo = []) =>
         set({
           editingDraftId: null,
           draftRecipients: recipients,
+          draftReplyTo: replyTo,
           draftCc: [],
           draftBcc: [],
           draftSubject: subject,

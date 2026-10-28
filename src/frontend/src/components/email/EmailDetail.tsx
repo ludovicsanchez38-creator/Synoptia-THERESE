@@ -40,7 +40,7 @@ interface EmailDetailProps {
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const requestExternalAction = useExternalActionConfirmation();
-  const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
+  const { messages, accounts = [], setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
   const [_loading, _setLoading] = useState(false);
   const [bodyLoading, setBodyLoading] = useState(false);
   const [bodyError, setBodyError] = useState(false);
@@ -78,7 +78,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   // le mail s'affiche vide et la réponse ne peut rien citer de l'original.
   useEffect(() => {
     if (!message) return;
-    if (message.body_html || message.body_plain) return; // déjà chargé
+    if ((message.body_html || message.body_plain) && message.reply_to_emails != null) return;
     let cancelled = false;
     setBodyLoading(true);
     setBodyError(false);
@@ -90,6 +90,8 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           body_html: full.body_html,
           body_plain: full.body_plain,
           snippet: full.snippet ?? message.snippet,
+          reply_to_emails: full.reply_to_emails ?? [],
+          cc_emails: full.cc_emails ?? message.cc_emails,
         });
       })
       .catch((err) => {
@@ -170,10 +172,11 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   function handleUseResponse(response: string) {
     // Un seul set() atomique pour éviter les problèmes de timing
     // entre le démontage d'EmailDetail et le montage d'EmailCompose
-    const recipients = message ? [message.from_email] : [];
+    if (!message || message.reply_to_emails == null) return;
+    const recipients = adressesDeReponse();
     const subject = message ? `Re: ${message.subject || ''}` : '';
     setShowResponseModal(false);
-    startComposing(recipients, subject, response);
+    startComposing(recipients, subject, response, message.reply_to_emails);
   }
 
   // BUG-102 : construit une réponse citant le message d'origine (comme un vrai
@@ -189,17 +192,26 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     return `\n\n\nLe ${formatDate(message.date)}, ${message.from_name || message.from_email} a écrit :\n${quoted}`;
   }
 
+  function adressesDeReponse() {
+    return message?.reply_to_emails?.length ? message.reply_to_emails : message ? [message.from_email] : [];
+  }
+
   function handleReply() {
-    if (!message) return;
-    startComposing([message.from_email], `Re: ${message.subject || ''}`, buildQuotedReply());
+    if (!message || message.reply_to_emails == null) return;
+    startComposing(adressesDeReponse(), `Re: ${message.subject || ''}`, buildQuotedReply(), message.reply_to_emails);
   }
 
   function handleReplyAll() {
-    if (!message) return;
-    const allRecipients = [message.from_email, ...message.to_emails].filter(
-      (email, index, self) => self.indexOf(email) === index
-    );
-    startComposing(allRecipients, `Re: ${message.subject || ''}`, buildQuotedReply());
+    if (!message || message.reply_to_emails == null) return;
+    const moi = accounts.find((a) => a.id === accountId)?.email.toLowerCase();
+    const vus = new Set<string>();
+    const allRecipients = [...adressesDeReponse(), ...message.to_emails, ...(message.cc_emails || [])].filter((email) => {
+      const cle = email.toLowerCase();
+      if (cle === moi || vus.has(cle)) return false;
+      vus.add(cle);
+      return true;
+    });
+    startComposing(allRecipients, `Re: ${message.subject || ''}`, buildQuotedReply(), message.reply_to_emails);
   }
 
   function handleForward() {
@@ -319,6 +331,8 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
               À : {message.to_emails.join(', ')}
             </div>
           )}
+          {!!message.reply_to_emails?.length && <p className="text-xs text-text-muted">Adresse de réponse : {message.reply_to_emails.join(', ')}</p>}
+          {bodyError && message.reply_to_emails == null && <p role="alert" className="text-xs text-warning">Impossible de vérifier l’adresse de réponse. Rouvre ce message une fois la connexion rétablie.</p>}
         </div>
       </div>
 
@@ -389,11 +403,11 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           <Sparkles className="w-4 h-4 mr-2" />
           Générer une réponse
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleReply}>
+        <Button variant="ghost" size="sm" onClick={handleReply} disabled={message.reply_to_emails == null}>
           <Reply className="w-4 h-4 mr-2" />
           Répondre
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleReplyAll}>
+        <Button variant="ghost" size="sm" onClick={handleReplyAll} disabled={message.reply_to_emails == null}>
           <ReplyAll className="w-4 h-4 mr-2" />
           Répondre à tous
         </Button>

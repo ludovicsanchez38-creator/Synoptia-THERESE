@@ -93,6 +93,7 @@ def _message_cache_depuis_dto(dto: Any, account_id: str) -> EmailMessage:
         snippet=dto.snippet,
         from_email=dto.from_email,
         from_name=dto.from_name,
+        reply_to_emails=json.dumps(getattr(dto, "reply_to_emails", []) or []),
         to_emails=json.dumps(dto.to_emails or []),
         cc_emails=json.dumps(dto.cc_emails or []),
         bcc_emails=json.dumps(dto.bcc_emails or []),
@@ -155,6 +156,7 @@ def _email_message_response(message: EmailMessage) -> dict[str, Any]:
         "subject": message.subject,
         "from_email": message.from_email,
         "from_name": message.from_name,
+        "reply_to_emails": _json_list(message.reply_to_emails) if message.reply_to_emails is not None else None,
         "to_emails": _json_list(message.to_emails),
         "cc_emails": _json_list(message.cc_emails),
         "bcc_emails": _json_list(message.bcc_emails),
@@ -1198,7 +1200,7 @@ async def get_message(
     """
     # Check local cache first (BUG-081 : seulement si le body est présent)
     cached = await session.get(EmailMessage, message_id)
-    if cached and cached.account_id == account_id and (cached.body_plain or cached.body_html):
+    if cached and cached.account_id == account_id and (cached.body_plain or cached.body_html) and cached.reply_to_emails is not None:
         return _email_message_response(cached)
 
     # BUG-123 : router sur le bon provider. Forcer Gmail pour un compte IMAP
@@ -1235,7 +1237,7 @@ async def get_message(
         cache_imap = await session.get(EmailMessage, dto.id)
         nouveau = _message_cache_depuis_dto(dto, account_id)
         if cache_imap is not None and cache_imap.account_id == account_id:
-            for champ in ('subject', 'snippet', 'from_email', 'from_name', 'to_emails', 'cc_emails',
+            for champ in ('subject', 'snippet', 'from_email', 'from_name', 'reply_to_emails', 'to_emails', 'cc_emails',
                           'bcc_emails', 'date', 'internal_date', 'body_plain', 'body_html',
                           'is_read', 'is_starred', 'labels'):
                 if hasattr(nouveau, champ):
@@ -1250,7 +1252,9 @@ async def get_message(
             'subject': dto.subject,
             'from_email': dto.from_email,
             'from_name': dto.from_name,
+            'reply_to_emails': getattr(dto, 'reply_to_emails', []) or [],
             'to_emails': dto.to_emails,
+            'cc_emails': dto.cc_emails,
             'date': dto.date.isoformat() if dto.date else '',
             'labels': dto.labels,
             'is_read': dto.is_read,

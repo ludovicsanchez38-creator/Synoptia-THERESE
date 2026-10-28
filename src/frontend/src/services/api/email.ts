@@ -21,6 +21,7 @@ export interface EmailMessage {
   thread_id: string;
   subject: string | null;
   from_email: string;
+  reply_to_emails?: string[] | null;
   from_name: string | null;
   to_emails: string[];
   cc_emails?: string[];

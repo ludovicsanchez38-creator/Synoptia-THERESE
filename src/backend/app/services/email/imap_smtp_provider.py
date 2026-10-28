@@ -969,6 +969,13 @@ class ImapSmtpProvider(EmailProvider):
 
     def _imap_to_dto(self, msg: MailMessage, include_attachments: bool = False, folder: str = "INBOX") -> EmailMessageDTO:
         """Convert imap-tools MailMessage to EmailMessageDTO."""
+        from email.utils import getaddresses
+
+        # Parseur RFC : noms contenant une virgule et Reply-To multiples.
+        valeurs = getattr(msg, "headers", {}).get("reply-to", ())
+        if isinstance(valeurs, str):
+            valeurs = [valeurs]
+        reply_to = [adresse for _, adresse in getaddresses(valeurs) if adresse]
         attachments = []
         if include_attachments:
             for idx, att in enumerate(msg.attachments):
@@ -993,6 +1000,7 @@ class ImapSmtpProvider(EmailProvider):
             subject=msg.subject,
             snippet=msg.text[:200] if msg.text else None,
             from_email=msg.from_,
+            reply_to_emails=reply_to,
             from_name=None,  # imap-tools combines name and email
             to_emails=list(msg.to),
             cc_emails=list(msg.cc),

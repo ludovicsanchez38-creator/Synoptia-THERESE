@@ -311,6 +311,7 @@ class GmailProvider(EmailProvider):
             snippet=formatted.get("snippet"),
             from_email=formatted.get("from_email", ""),
             from_name=formatted.get("from_name"),
+            reply_to_emails=json.loads(formatted.get("reply_to_emails") or "[]"),
             to_emails=to_emails,
             cc_emails=cc_emails,
             date=formatted.get("date"),

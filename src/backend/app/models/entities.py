@@ -417,6 +417,7 @@ class EmailMessage(SQLModel, table=True):
     snippet: str | None = None  # Short preview
     from_email: str
     from_name: str | None = None
+    reply_to_emails: str | None = None  # JSON ; None = ancien cache à relire
     to_emails: str  # JSON array
     cc_emails: str | None = None  # JSON array
     bcc_emails: str | None = None  # JSON array

@@ -620,6 +620,9 @@ def apply_adhoc_migrations(db_path) -> None:
         # Email Backlog : contact_id sur email_messages
         cursor = conn.execute("PRAGMA table_info(email_messages)")
         em_columns = [row[1] for row in cursor.fetchall()]
+        if em_columns and "reply_to_emails" not in em_columns:
+            conn.execute("ALTER TABLE email_messages ADD COLUMN reply_to_emails TEXT")
+            conn.commit()
         if em_columns and "contact_id" not in em_columns:
             conn.execute("ALTER TABLE email_messages ADD COLUMN contact_id TEXT REFERENCES contacts(id)")
             conn.execute("CREATE INDEX IF NOT EXISTS ix_email_messages_contact_id ON email_messages(contact_id)")
@@ -735,7 +738,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "f2a3b4c5d6e7"
+ALEMBIC_HEAD_REVISION = "c22b01replyto"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:

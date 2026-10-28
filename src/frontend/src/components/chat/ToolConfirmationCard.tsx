@@ -92,6 +92,7 @@ function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
         <div className="mt-1 rounded-md border border-error/30 bg-error/10 p-2 text-error">{erreurDestination}</div>
       )}
       <Detail label="À">{value(args, 'to')}</Detail>
+      <Detail label="Adresse de réponse (Reply-To)">{value(args, 'reply_to')}</Detail>
       {/* B-1293 : la copie part avec le message, elle se voit avant l'envoi. */}
       <Detail label="Copie (Cc)">{value(args, 'cc')}</Detail>
       <Detail label="Objet">{value(args, 'subject')}</Detail>
@@ -106,7 +107,7 @@ function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
   );
 }
 
-const CHAMPS_EMAIL_AFFICHES = new Set(['to', 'cc', 'subject', 'body', 'is_html']);
+const CHAMPS_EMAIL_AFFICHES = new Set(['to', 'cc', 'subject', 'body', 'is_html', 'reply_to']);
 
 // B-1480 : les actions natives se confirment en français, comme le document
 // (B-1454). Une clé inconnue (outil de connecteur) garde son nom.

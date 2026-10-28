@@ -23,6 +23,7 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
     accounts,
     currentAccountId,
     draftRecipients,
+    draftReplyTo,
     draftCc,
     draftBcc,
     draftSubject,
@@ -98,6 +99,7 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
       details: [
         { label: 'Compte d’envoi', value: accounts.find((a) => a.id === currentAccountId)?.email || currentAccountId },
         { label: 'À', value: recipients.join(', ') },
+        { label: 'Adresse de réponse du message reçu (Reply-To)', value: draftReplyTo?.join(', ') || '' },
         { label: 'Cc', value: ccList.join(', ') },
         { label: 'Cci', value: bccList.join(', ') },
         { label: 'Objet', value: draftSubject },

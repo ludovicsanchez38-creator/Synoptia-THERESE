@@ -507,7 +507,13 @@ def format_message_for_storage(gmail_message: dict) -> dict:
     Returns:
         Formatted dict for EmailMessage model
     """
+    from email.utils import getaddresses
+
     headers = {h['name'].lower(): h['value'] for h in gmail_message.get('payload', {}).get('headers', [])}
+    reply_to = [adresse for _, adresse in getaddresses([
+        h['value'] for h in gmail_message.get('payload', {}).get('headers', [])
+        if h['name'].lower() == 'reply-to'
+    ]) if adresse]
 
     # Parse from address
     from_email, from_name = parse_email_address(headers.get('from', ''))
@@ -540,6 +546,7 @@ def format_message_for_storage(gmail_message: dict) -> dict:
         'snippet': gmail_message.get('snippet'),
         'from_email': from_email,
         'from_name': from_name,
+        'reply_to_emails': json.dumps(reply_to),
         'to_emails': json.dumps(to_emails),
         'cc_emails': json.dumps(cc_emails) if cc_emails else None,
         'bcc_emails': json.dumps(bcc_emails) if bcc_emails else None,
