@@ -3,6 +3,7 @@ import { initApiBase, getApiBase } from '../services/api/core';
 import { prefersReducedMotion } from '../lib/accessibility';
 import { isMacPlatform, isWindowsPlatform } from '../lib/platform';
 import { Button } from './ui/Button';
+import { RepriseDonnees } from './RepriseDonnees';
 
 type UnlistenFn = () => void;
 
@@ -62,7 +63,7 @@ function createTimeoutSignal(ms: number): AbortSignal {
 }
 
 /** Teste si un backend THÉRÈSE répond sur une URL donnée */
-async function probeHealth(baseUrl: string): Promise<boolean> {
+async function probeHealth(baseUrl: string): Promise<boolean | 'recovery'> {
   const url = `${baseUrl}/health`;
   try {
     console.log(`[probeHealth] GET ${url}`);
@@ -75,6 +76,7 @@ async function probeHealth(baseUrl: string): Promise<boolean> {
     // Vérifier status + version pour s'assurer que c'est bien THÉRÈSE
     // Accepter "degraded" : le backend tourne mais un service non-critique
     // n'est pas prêt (ex: embeddings en cours de chargement sur Windows)
+    if (data.status === 'recovery' && typeof data.version === 'string') return 'recovery';
     const valid = (data.status === 'healthy' || data.status === 'degraded')
       && typeof data.version === 'string';
     console.log(`[probeHealth] status=${data.status} version=${data.version} valid=${valid}`);
@@ -92,6 +94,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [appVersion, setAppVersion] = useState<string | null>(null);
   // B-1262 : Rust a abandonné le moteur après ses trois relances.
   const [moteurArrete, setMoteurArrete] = useState(false);
+  const [reprise, setReprise] = useState(false);
   const [relance, setRelance] = useState(0);
   const messageMoteur = useRef<string | null>(null);
   const apiBaseReady = useRef(false);
@@ -106,7 +109,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
       .catch(() => {});
   }, []);
 
-  const checkHealth = useCallback(async (): Promise<boolean> => {
+  const checkHealth = useCallback(async (): Promise<boolean | 'recovery'> => {
     return probeHealth(getApiBase());
   }, []);
 
@@ -165,6 +168,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
   const relancerMoteur = useCallback(async () => {
     setMoteurArrete(false);
+    setReprise(false);
     messageMoteur.current = 'Le moteur local redémarre…';
     setMessage(messageMoteur.current);
     try {
@@ -230,7 +234,12 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
         // Check
         const healthy = await checkHealth();
-        if (healthy && !cancelled && !fatalSidecarError.current) {
+        if (healthy === 'recovery' && !cancelled && !fatalSidecarError.current) {
+          setReprise(true);
+          void setDockProgress(100);
+          return;
+        }
+        if (healthy === true && !cancelled && !fatalSidecarError.current) {
           setProgress(100);
           setMessage('Prêt !');
           // F-09 : effacer la progression du dock macOS
@@ -249,6 +258,8 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     poll();
     return () => { cancelled = true; };
   }, [checkHealth, onReady, relance]);
+
+  if (reprise) return <RepriseDonnees onRestart={relancerMoteur} />;
 
   if (moteurArrete) {
     return (

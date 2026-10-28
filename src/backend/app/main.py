@@ -73,6 +73,7 @@ from app.routers import (
     variables_router,  # Chantier 4 - Variables V1
     voice_router,
 )
+from app.routers.reprise import router as reprise_router
 from app.services.maintenance import RequestAdmission, maintenance_mode
 from app.services.mcp_service import get_mcp_service, initialize_mcp_service
 from app.services.qdrant import close_qdrant, init_qdrant
@@ -181,18 +182,41 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     logger.info(f"Data directory: {settings.data_dir}")
 
-    # B-1341 : copie de la base et de sa clé avant que init_db ne les ouvre
-    # et ne les réécrive (nouvelle version, réparations). Ne lève jamais.
-    from app.services.copie_auto import copier_avant_demarrage
+    app.state.reprise_donnees = None
+    app.state.reprise_terminee = False
+    try:
+        from app.services.reprise_auto import TEMOIN, verifier_base
 
-    await asyncio.to_thread(
-        copier_avant_demarrage,
-        FilePath(str(settings.data_dir)),
-        settings.app_version,
-        base=FilePath(str(settings.db_path)) if settings.db_path else None,
-    )
-
-    await init_db()
+        if (FilePath(settings.data_dir) / TEMOIN).exists():
+            raise RuntimeError("Une restauration de données a été interrompue.")
+        if settings.db_path.is_file() and settings.db_path.stat().st_size:
+            await asyncio.to_thread(verifier_base, settings.db_path)
+        # Ne pas faire tourner la rétention avec une base illisible ou une
+        # restauration interrompue : cela éliminerait les dernières copies saines.
+        from app.services.copie_auto import copier_avant_demarrage
+        await asyncio.to_thread(
+            copier_avant_demarrage, FilePath(str(settings.data_dir)),
+            settings.app_version, base=FilePath(str(settings.db_path)),
+        )
+        await init_db()
+        from app.models.database import apply_adhoc_migrations
+        apply_adhoc_migrations(settings.db_path)
+    except Exception:
+        logger.exception("Démarrage des données impossible, mode de récupération")
+        await close_db()
+        app.state.reprise_donnees = True
+        token = secrets.token_urlsafe(32)
+        token_path = FilePath(settings.data_dir) / ".session_token"
+        token_path.parent.mkdir(parents=True, exist_ok=True)
+        token_path.write_text(token)
+        os.chmod(token_path, 0o600)
+        app.state.session_token = token
+        try:
+            yield
+        finally:
+            token_path.unlink(missing_ok=True)
+            app.state.session_token = None
+        return
     logger.info("Database initialized")
 
     # B-1507 : une restauration interrompue par un arrêt brutal laissait sa
@@ -212,21 +236,6 @@ async def lifespan(app: FastAPI):
         _voix.effacer_les_audios_orphelins()
     except Exception:
         logger.exception("Ménage des audios temporaires en échec")
-
-    # Migrations ad-hoc : factorisées dans database.apply_adhoc_migrations
-    # (revue adversariale US-015 : elles doivent tourner AVANT l'estampille
-    # Alembic, sinon une DB est marquée head sans avoir le schéma de head).
-    # init_db les a déjà appliquées ; cet appel est un filet idempotent.
-    try:
-        from app.models.database import apply_adhoc_migrations
-
-        apply_adhoc_migrations(settings.db_path)
-    except Exception as e:
-        # US-008 (RES5-b) : ne pas avaler une erreur de migration fatale.
-        if _is_fatal_migration_error(e):
-            logger.error(f"Migration critique échouée, démarrage interrompu : {e}")
-            raise
-        logger.warning(f"Migration auto ignorée : {e}")
 
     # J1a : reprendre les traitements laissés « en cours » par une exécution
     # précédente. Sans ce ménage, un arrêt brutal laisse une tâche affichée
@@ -757,6 +766,23 @@ async def maintenance_middleware(
         maintenance_mode.release(admission)
 
 
+@app.middleware("http")
+async def reprise_middleware(request: Request, call_next):
+    if getattr(request.app.state, "reprise_donnees", None) and request.method != "OPTIONS":
+        if request.url.path not in {
+            "/health", "/api/auth/token", "/api/shutdown",
+            "/api/reprise/copies", "/api/reprise/restaurer",
+        }:
+            return JSONResponse(status_code=503, content={
+                "code": "DATA_RECOVERY_REQUIRED",
+                "message": "Les données doivent être récupérées avant de continuer.",
+            })
+    return await call_next(request)
+
+
+app.include_router(reprise_router)
+
+
 # Auth middleware (SEC-010)
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -1132,6 +1158,8 @@ async def _check_qdrant_available() -> bool:
 @app.get("/health")
 async def health():
     """Health check endpoint for monitoring."""
+    if getattr(app.state, "reprise_donnees", None):
+        return {"status": "recovery", "version": settings.app_version}
     from app.services.error_handler import get_service_status
 
     status = get_service_status()

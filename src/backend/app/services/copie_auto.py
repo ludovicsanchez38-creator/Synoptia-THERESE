@@ -134,3 +134,11 @@ def purger_copies_auto(dossier_donnees: Path) -> None:
     """« Effacer toutes mes données » : les copies automatiques partent aussi."""
     for _, _, copie in _copies_existantes(dossier_copies(dossier_donnees)):
         shutil.rmtree(copie, ignore_errors=True)
+
+    # Les abris de reprise contiennent eux aussi des données personnelles.
+    # Ils ne sont jamais élagués automatiquement, seulement sur cet effacement.
+    reprises = Path(dossier_donnees) / "backups" / "reprises"
+    if reprises.is_dir() and not reprises.is_symlink():
+        for abri in reprises.iterdir():
+            if re.fullmatch(r"[0-9a-f]{32}", abri.name) and not abri.is_symlink():
+                shutil.rmtree(abri, ignore_errors=True)
