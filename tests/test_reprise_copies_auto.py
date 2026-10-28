@@ -1,5 +1,6 @@
 """Reprise de démarrage sur copies jetables, sans trousseau ni données réelles."""
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -10,7 +11,7 @@ from fastapi.testclient import TestClient
 def copie(profil):
     dossier = profil / 'backups/auto/20261027T080000Z-v0.81.1'
     dossier.mkdir(parents=True)
-    with sqlite3.connect(dossier / 'therese.db') as db:
+    with closing(sqlite3.connect(dossier / 'therese.db')) as db, db:
         db.execute('CREATE TABLE souvenir (texte TEXT)')
         db.execute("INSERT INTO souvenir VALUES ('retrouvé')")
     return dossier
@@ -35,7 +36,7 @@ def test_restauration_conserve_base_wal_shm_et_cle_avant_remplacement(tmp_path):
     abri = restaurer_copie(tmp_path, tmp_path / 'therese.db', dossier.name)
     for nom, contenu in anciens.items():
         assert (abri / nom).read_bytes() == contenu
-    with sqlite3.connect(tmp_path / 'therese.db') as db:
+    with closing(sqlite3.connect(tmp_path / 'therese.db')) as db:
         assert db.execute('SELECT texte FROM souvenir').fetchone() == ('retrouvé',)
     assert not (tmp_path / 'therese.db-wal').exists()
     assert not (tmp_path / 'therese.db-shm').exists()
@@ -101,7 +102,7 @@ def test_interruption_apres_deplacement_garde_original_et_temoin(tmp_path, monke
     with pytest.raises(OSError):
         reprise.restaurer_copie(tmp_path, tmp_path / 'therese.db', dossier.name)
     assert (tmp_path / reprise.TEMOIN).exists()
-    abri = Path((tmp_path / reprise.TEMOIN).read_text())
+    abri = Path((tmp_path / reprise.TEMOIN).read_text(encoding='utf-8'))
     assert (abri / 'therese.db').read_bytes() == b'originale'
 
 
@@ -121,7 +122,7 @@ def test_restaure_base_chiffree_et_son_wal_sans_modifier_la_copie(tmp_path):
     try:
         restaurer_copie(tmp_path, tmp_path / 'therese.db', dossier.name)
         assert (dossier / 'therese.db-wal').read_bytes() == wal
-        with sqlcipher3.connect(tmp_path / 'therese.db') as resultat:
+        with closing(sqlcipher3.connect(tmp_path / 'therese.db')) as resultat:
             resultat.execute('PRAGMA key = "x\'' + 'ad' * 32 + '\'"')
             assert resultat.execute('SELECT texte FROM souvenir').fetchone() == ('dans le journal',)
     finally:
@@ -141,7 +142,7 @@ def test_effacement_explicite_emporte_aussi_les_bases_mises_de_cote(tmp_path):
 def test_base_vide_valide_peut_etre_initialisee_mais_pas_restauree(tmp_path):
     from app.services.reprise_auto import verifier_base
     base = tmp_path / 'therese.db'
-    with sqlite3.connect(base) as connexion:
+    with closing(sqlite3.connect(base)) as connexion:
         connexion.execute('VACUUM')
     # Arrêt juste après création du fichier : ce n'est pas une corruption.
     verifier_base(base)

@@ -1,5 +1,6 @@
 """B-1296 : les adresses Reply-To traversent fournisseurs, cache et API."""
 import json
+from contextlib import closing
 
 import pytest
 from app.routers.email import _email_message_response, _message_cache_depuis_dto
@@ -38,11 +39,11 @@ def test_migration_cache_existant_idempotente(tmp_path, monkeypatch):
 
     from app.models import database
     chemin = tmp_path / 'cache.db'
-    with sqlite3.connect(chemin) as conn:
+    with closing(sqlite3.connect(chemin)) as conn, conn:
         conn.execute('CREATE TABLE email_messages (id TEXT PRIMARY KEY, contact_id TEXT)')
         conn.execute("INSERT INTO email_messages VALUES ('ancien', NULL)")
     monkeypatch.setattr(database, 'db_connect', sqlite3.connect)
     database.apply_adhoc_migrations(chemin)
     database.apply_adhoc_migrations(chemin)
-    with sqlite3.connect(chemin) as conn:
+    with closing(sqlite3.connect(chemin)) as conn:
         assert conn.execute('SELECT id, reply_to_emails FROM email_messages').fetchall() == [('ancien', None)]
