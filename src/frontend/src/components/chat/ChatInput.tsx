@@ -359,13 +359,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // provisoire, que l'envoi rectifiera.
       const conversation = currentConversation();
       const idSynchronise = conversation?.synced ? currentConversationId : undefined;
-      await indexFile(
+      const indexation = await indexFile(
         path,
         controller.signal,
         idSynchronise ?? undefined,
         !idSynchronise,
       );
       if (controller.signal.aborted) return;
+      if (indexation?.chunk_count === 0) {
+        setAttachedFiles((current) => current.map((file) => file.path === path ? {
+          ...file, indexStatus: 'error', retryable: false,
+          indexError: 'Aucun texte exploitable. Pour un PDF scanné, joins une version avec du texte sélectionnable ou des images JPEG ou PNG avec un modèle capable de les lire.',
+        } : file));
+        return;
+      }
       setAttachedFiles((current) => current.map((file) => (
         file.path === path ? { ...file, indexStatus: 'ready', indexError: undefined } : file
       )));
@@ -380,7 +387,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               indexStatus: 'error',
               indexError: reason instanceof Error ? reason.message : 'Indexation impossible.',
               outsideWorkspace: reason instanceof Error && reason.message.includes('hors des dossiers choisis'),
-              retryable: !(reason instanceof ApiError && [400, 403, 404, 413].includes(reason.status)) && !(reason instanceof Error && reason.message.includes('hors des dossiers choisis')),
+              retryable: !(reason instanceof ApiError && [400, 403, 404, 413, 422].includes(reason.status)) && !(reason instanceof Error && reason.message.includes('hors des dossiers choisis')),
             }
           : file
       )));

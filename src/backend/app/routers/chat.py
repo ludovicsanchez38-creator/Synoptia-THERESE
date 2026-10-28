@@ -40,7 +40,7 @@ from app.services.entity_extractor import (
     get_entity_extractor,
 )
 from app.services.error_handler import message_pour_ecran
-from app.services.file_parser import AvisTailleFichier, ErreurTailleFichier, extract_text
+from app.services.file_parser import AvisLectureFichier, AvisTailleFichier, ErreurTailleFichier, avis_sans_texte, extract_text
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,
@@ -334,8 +334,8 @@ async def _get_file_context(
         # depuis le composeur (BUG-155, troisième chemin trouvé en revue).
         text_content = await run_in_threadpool(extract_text, path)
 
-        if not text_content:
-            return None, f"Impossible d'extraire le contenu de: {path.name}"
+        if not text_content or not text_content.strip():
+            return None, avis_sans_texte(path)
 
         # Check if file is already indexed
         result = await session.execute(
@@ -2190,7 +2190,7 @@ async def send_message(
             memory_context = file_context_str
 
     # Le rejet de taille est annoncé ; les autres erreurs gardent leur traitement.
-    file_errors = [erreur for erreur in file_errors if isinstance(erreur, AvisTailleFichier)]
+    file_errors = [erreur for erreur in file_errors if isinstance(erreur, (AvisTailleFichier, AvisLectureFichier))]
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 
@@ -2919,7 +2919,7 @@ async def _do_stream_response(
             memory_context = file_context_str
 
     # Le statut ci-dessus compte toutes les erreurs, l'avis vise la taille.
-    file_errors = [erreur for erreur in file_errors if isinstance(erreur, AvisTailleFichier)]
+    file_errors = [erreur for erreur in file_errors if isinstance(erreur, (AvisTailleFichier, AvisLectureFichier))]
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 

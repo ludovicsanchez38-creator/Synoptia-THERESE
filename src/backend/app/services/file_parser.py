@@ -88,6 +88,24 @@ class AvisTailleFichier(str):
     """Avis de taille affichable, identifié sans analyser son libellé."""
 
 
+class AvisLectureFichier(str):
+    """Document non lu : avis conservé dans le chat et transmis au modèle."""
+
+
+def avis_sans_texte(path: Path) -> AvisLectureFichier:
+    if path.suffix.lower() == ".pdf":
+        return AvisLectureFichier(
+            f"Le document « {path.name} » ne contient aucun texte exploitable. "
+            "Il peut s'agir d'un PDF scanné. Utilise une version avec du texte "
+            "sélectionnable (reconnaissance de texte), ou joins les pages en images "
+            "JPEG ou PNG avec un modèle capable de lire les images."
+        )
+    return AvisLectureFichier(
+        f"Le document « {path.name} » est vide ou son texte ne peut pas être extrait. "
+        "Vérifie son contenu et joins une version lisible, par exemple en texte brut."
+    )
+
+
 def extract_text(file_path: Path) -> str | None:
     """
     Extract text content from a file.
@@ -205,14 +223,14 @@ def _extract_pdf(file_path: Path) -> str:
     for i in range(pages_to_process):
         try:
             text = reader.pages[i].extract_text()
-            if text:
+            if text and text.strip():
                 text_parts.append(f"--- Page {i + 1} ---\n{text}")
         except Exception as e:
             logger.warning(f"Error extracting page {i + 1}: {e}")
 
     result = "\n\n".join(text_parts)
 
-    if total_pages > MAX_PDF_PAGES:
+    if result and total_pages > MAX_PDF_PAGES:
         logger.info(f"PDF tronqué : {total_pages} pages, seules les {MAX_PDF_PAGES} premières traitées")
         result += f"\n\n[... tronqué à {MAX_PDF_PAGES} pages]"
 

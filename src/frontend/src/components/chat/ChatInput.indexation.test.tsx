@@ -77,6 +77,16 @@ async function joindreFichier() {
 }
 
 describe('ChatInput - indexation des pièces jointes', () => {
+  it('B-1213 : un PDF sans fragment explique la marche à suivre et ne devient jamais prêt', async () => {
+    apiMocks.indexFile.mockResolvedValue({ chunk_count: 0 });
+    render(<ChatInput />);
+    await joindreFichier();
+    expect(await screen.findByText(/texte sélectionnable/)).toBeInTheDocument();
+    expect(screen.queryByText('Prêt')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Réessayer l’indexation/ })).toBeNull();
+    expect(screen.getByTestId('index-status-/tmp/rapport.pdf')).toHaveAttribute('role', 'alert');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     dropMock.onDrop = null;

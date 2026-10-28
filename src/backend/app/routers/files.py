@@ -23,6 +23,7 @@ from app.services.indexation import (
     remplacer_puis_indexer,
 )
 from app.services.path_security import MAX_INDEXABLE_SIZE
+from app.services.file_parser import avis_sans_texte
 from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -303,13 +304,16 @@ async def index_file(
         perimetre_provisoire = not conversation_connue
 
     try:
-        return await indexer_avec_suivi(
+        resultat = await indexer_avec_suivi(
             request.path,
             est_deconnecte=http_request.is_disconnected,
             scope=scope,
             scope_id=scope_id,
             perimetre_provisoire=perimetre_provisoire,
         )
+        if resultat.chunk_count == 0:
+            raise HTTPException(status_code=422, detail=avis_sans_texte(Path(request.path)))
+        return resultat
     except IndexationAbandonnee as e:
         raise HTTPException(status_code=409, detail=str(e))
 
