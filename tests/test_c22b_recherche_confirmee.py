@@ -2,8 +2,8 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 import app.routers.chat as chat
+import pytest
 from app.services.context import ContextWindow
 from app.services.llm import Message, StreamEvent
 from app.services.tool_confirmations import register_pending

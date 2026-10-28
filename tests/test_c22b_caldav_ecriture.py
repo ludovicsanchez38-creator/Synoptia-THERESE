@@ -2,10 +2,10 @@
 from types import SimpleNamespace
 
 import pytest
-from icalendar import Calendar as ICalendar
 from app.models.entities import Calendar
-from app.services.calendar.caldav_provider import CalDAVProvider
 from app.routers import calendar as routes
+from app.services.calendar.caldav_provider import CalDAVProvider
+from icalendar import Calendar as ICalendar
 
 
 class EvenementDAV:

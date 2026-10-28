@@ -273,8 +273,9 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
         )
     )
     souches = result.scalars().all()
-    from app.services.calendar.local_provider import LocalCalendarProvider, _occurrences_locales
     import asyncio
+
+    from app.services.calendar.local_provider import LocalCalendarProvider, _occurrences_locales
     provider = LocalCalendarProvider(session)
     events = []
     for souche in souches:

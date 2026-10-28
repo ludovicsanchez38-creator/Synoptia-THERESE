@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
-from sqlmodel import select
 from app.models.entities import Calendar, CalendarEvent, Notification
 from app.routers import calendar as routes
 from app.services import notification_service as notifications
 from app.services.calendar.caldav_provider import CalDAVProvider
+from sqlmodel import select
 
 
 def serie_dav():

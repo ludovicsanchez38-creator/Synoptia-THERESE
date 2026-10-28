@@ -40,7 +40,13 @@ from app.services.entity_extractor import (
     get_entity_extractor,
 )
 from app.services.error_handler import message_pour_ecran
-from app.services.file_parser import AvisLectureFichier, AvisTailleFichier, ErreurTailleFichier, avis_sans_texte, extract_text
+from app.services.file_parser import (
+    AvisLectureFichier,
+    AvisTailleFichier,
+    ErreurTailleFichier,
+    avis_sans_texte,
+    extract_text,
+)
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,

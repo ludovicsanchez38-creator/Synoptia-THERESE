@@ -2,11 +2,11 @@
 import json
 
 import pytest
-from imap_tools import MailMessage
-from app.services.email.imap_smtp_provider import ImapSmtpProvider
+from app.routers.email import _email_message_response, _message_cache_depuis_dto
 from app.services.email.gmail_provider import GmailProvider
+from app.services.email.imap_smtp_provider import ImapSmtpProvider
 from app.services.gmail_service import format_message_for_storage
-from app.routers.email import _message_cache_depuis_dto, _email_message_response
+from imap_tools import MailMessage
 
 
 @pytest.mark.parametrize('entete,attendu', [
@@ -35,6 +35,7 @@ def test_gmail_reply_to_puis_cache():
 
 def test_migration_cache_existant_idempotente(tmp_path, monkeypatch):
     import sqlite3
+
     from app.models import database
     chemin = tmp_path / 'cache.db'
     with sqlite3.connect(chemin) as conn:

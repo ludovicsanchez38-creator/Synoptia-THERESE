@@ -2,9 +2,9 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from pypdf import PdfWriter
 from app.routers import chat, files
 from app.services.file_parser import extract_text
+from pypdf import PdfWriter
 
 
 @pytest.mark.asyncio

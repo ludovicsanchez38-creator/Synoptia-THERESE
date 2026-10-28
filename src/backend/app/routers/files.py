@@ -16,6 +16,7 @@ from app.models.database import get_session, get_session_context
 from app.models.entities import FileMetadata
 from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.schemas import FileIndexRequest, FileResponse
+from app.services.file_parser import avis_sans_texte
 from app.services.indexation import (
     IndexationAbandonnee,
     extract_text_async,
@@ -23,7 +24,6 @@ from app.services.indexation import (
     remplacer_puis_indexer,
 )
 from app.services.path_security import MAX_INDEXABLE_SIZE
-from app.services.file_parser import avis_sans_texte
 from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
