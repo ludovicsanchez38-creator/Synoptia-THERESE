@@ -1030,6 +1030,7 @@ class CalendarEventResponse(BaseModel):
     all_day: bool
     attendees: list[str] | None = None  # Parsed from JSON
     recurrence: list[str] | None = None  # Parsed from JSON
+    recurring_event_id: str | None = None
     status: str
     synced_at: str  # ISO datetime
     # « Bloque » n'est pas « annule ». Sans ce champ en LECTURE, un blocage

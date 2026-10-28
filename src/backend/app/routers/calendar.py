@@ -37,6 +37,7 @@ from app.services.calendar.base_provider import (
     ConflitDeVersion,
     allday_end_from_wire,
     allday_end_to_wire,
+    id_occurrence,
 )
 from app.services.calendar.provider_factory import (
     get_calendar_provider,
@@ -875,10 +876,13 @@ async def _list_events_provider(
                     time_max=dt_max,
                     max_results=250,
                     page_token=token,
+                    **({"expand_recurring": True} if calendar.provider == "local" else {}),
                 )
                 return list(evenements), jeton
 
             events_dto = await _collecter_pages_evenements(_page)
+            if getattr(provider, 'recurrence_warnings', None):
+                raise HTTPException(409, ' '.join(provider.recurrence_warnings))
         else:
             events_dto, _ = await provider.list_events(
                 calendar_id=provider_calendar_id,
@@ -898,6 +902,18 @@ async def _list_events_provider(
     if calendar.provider == "caldav":
         # Cache local cloisonné par calendrier, sans collision entre UID DAV.
         # synced_at n'est posé qu'après une vraie lecture d'événements.
+        if dt_min is not None and dt_max is not None:
+            debut_cache = _heure_murale_paris(dt_min.isoformat(), calendar.timezone)
+            fin_cache = _heure_murale_paris(dt_max.isoformat(), calendar.timezone)
+            presents = {_id_evenement_importe(calendar.id, evt.id) for evt in events_dto}
+            anciennes = (await session.execute(select(CalendarEvent).where(
+                CalendarEvent.calendar_id == calendar.id,
+                ((CalendarEvent.start_datetime >= debut_cache) & (CalendarEvent.start_datetime < fin_cache))
+                | ((CalendarEvent.start_date >= debut_cache.date().isoformat()) & (CalendarEvent.start_date < fin_cache.date().isoformat())),
+            ))).scalars().all()
+            for ancienne in anciennes:
+                if ancienne.id not in presents:
+                    await session.delete(ancienne)
         for evt in events_dto:
             identifiant = _id_evenement_importe(calendar.id, evt.id)
             copie = await session.get(CalendarEvent, identifiant)
@@ -921,7 +937,7 @@ async def _list_events_provider(
     # Convert DTOs to CalendarEventResponse
     return [
         CalendarEventResponse(
-            id=evt.id,
+            id=id_occurrence(evt.id, evt.start.isoformat()) if calendar.provider == "local" and evt.recurring_event_id else evt.id,
             calendar_id=calendar.id,
             summary=evt.summary,
             description=evt.description,
@@ -933,6 +949,7 @@ async def _list_events_provider(
             all_day=evt.all_day,
             attendees=evt.attendees,
             recurrence=evt.recurrence,
+            recurring_event_id=evt.recurring_event_id,
             status=evt.status,
             blocage=getattr(evt, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
             synced_at=datetime.now(UTC).isoformat(),
@@ -1375,6 +1392,8 @@ async def update_event(
     session: AsyncSession = Depends(get_session),
 ) -> CalendarEventResponse:
     """Met a jour un evenement (local, Google ou CalDAV)."""
+    if event_id.startswith('occurrence:'):
+        raise HTTPException(422, "La modification d'une occurrence récurrente n'est pas encore proposée ici. Utilise l'agenda d'origine pour cette série.")
     # Check if calendar is local/CalDAV
     calendar = await session.get(Calendar, calendar_id)
     # Cycle 6 : même repli qu'à la lecture et à la suppression (B-557).
@@ -1650,6 +1669,8 @@ async def delete_event(
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """Supprime un evenement (local, Google ou CalDAV)."""
+    if event_id.startswith('occurrence:'):
+        raise HTTPException(422, "La suppression d'une occurrence récurrente n'est pas encore proposée ici. Utilise l'agenda d'origine pour cette série.")
     # Check if calendar is local/CalDAV
     calendar = await session.get(Calendar, calendar_id)
     if calendar is None and calendar_id == "primary" and not account_id:
@@ -1664,6 +1685,11 @@ async def delete_event(
             # absent par ValueError ; sans ce filet, un second clic sur
             # « supprimer » rendait 500 là où la lecture rend déjà 404.
             raise HTTPException(status_code=404, detail="Événement introuvable") from absent
+        if calendar.provider == 'caldav':
+            copie = await session.get(CalendarEvent, _id_evenement_importe(calendar.id, event_id))
+            if copie:
+                await session.delete(copie)
+                await session.commit()
         return {"success": True, "message": "Événement supprimé"}
 
     # Google Calendar

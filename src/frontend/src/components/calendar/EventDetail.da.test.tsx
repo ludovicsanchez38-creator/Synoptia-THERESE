@@ -38,6 +38,14 @@ beforeEach(() => {
 });
 
 describe('lot 8 : la tête de la fiche', () => {
+  it('explique la lecture seule des occurrences sans laisser modifier toute la série par erreur', () => {
+    useCalendarStore.setState({ events: useCalendarStore.getState().events.map((e) => ({ ...e, recurring_event_id: 'serie' })) });
+    render(<EventDetail />);
+    expect(screen.getByText(/Occurrence d’une série récurrente/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Modifier l’événement' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Supprimer l’événement' })).toBeDisabled();
+  });
+
   it('le titre reste un h3 et le retour range le rendez-vous', () => {
     render(<EventDetail />);
     expect(screen.getByRole('heading', { level: 3, name: 'Séance 1 · Garage Benali' })).toBeInTheDocument();

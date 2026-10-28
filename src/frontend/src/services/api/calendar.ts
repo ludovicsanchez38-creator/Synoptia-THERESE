@@ -30,6 +30,7 @@ export interface CalendarEvent {
   all_day: boolean;
   attendees: string[] | null;
   recurrence: string[] | null;
+  recurring_event_id?: string | null;
   status: string;
   synced_at: string;
 }

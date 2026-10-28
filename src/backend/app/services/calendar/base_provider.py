@@ -14,6 +14,12 @@ from typing import Literal, Optional
 logger = logging.getLogger(__name__)
 
 
+def id_occurrence(parent: str, date_originale: str) -> str:
+    """Identité stable d'affichage et de cache, distincte de la souche distante."""
+    import uuid
+    return 'occurrence:' + uuid.uuid5(uuid.NAMESPACE_URL, parent + '\n' + date_originale).hex
+
+
 def allday_end_to_wire(end: date) -> date:
     """BUG-144 : fin « toute la journée » vers le fil (Google / RFC 5545).
 

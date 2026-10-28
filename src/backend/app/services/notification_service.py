@@ -266,13 +266,28 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
 
     result = await session.execute(
         select(CalendarEvent).where(
-            CalendarEvent.start_datetime != None,  # noqa: E711
-            CalendarEvent.start_datetime >= tomorrow_start,
-            CalendarEvent.start_datetime < tomorrow_end,
+            ((CalendarEvent.start_datetime >= tomorrow_start) & (CalendarEvent.start_datetime < tomorrow_end))
+            | ((CalendarEvent.all_day == True) & (CalendarEvent.start_date == tomorrow_start.date().isoformat()))  # noqa: E712
+            | ((CalendarEvent.recurrence != None) & (CalendarEvent.recurrence != '[]')),  # noqa: E711
             CalendarEvent.status == "confirmed",
         )
     )
-    events = result.scalars().all()
+    souches = result.scalars().all()
+    from app.services.calendar.local_provider import LocalCalendarProvider, _occurrences_locales
+    import asyncio
+    provider = LocalCalendarProvider(session)
+    events = []
+    for souche in souches:
+        occurrences = await asyncio.to_thread(
+            _occurrences_locales, provider._event_to_dto(souche), tomorrow_start, tomorrow_end, 1001,
+        )
+        if len(occurrences) > 1000:
+            raise ValueError("Trop d'occurrences dans une journée pour préparer les rappels.")
+        for occurrence in occurrences:
+            events.append(souche.model_copy(update={
+                'start_datetime': occurrence.start if not occurrence.all_day else None,
+                'end_datetime': occurrence.end if not occurrence.all_day else None,
+            }))
 
     for event in events:
         # Verifier quon na pas deja une notif pour cet evenement
@@ -290,7 +305,7 @@ async def _check_upcoming_events(session: AsyncSession) -> int:
         await create_notification(
             session,
             title="RDV demain",
-            message=f"RDV demain à {time_str} : {event.summary}",
+            message=f"RDV demain{f' à {time_str}' if time_str else ''} : {event.summary}",
             type="reminder",
             source="calendar",
             action_url=f"/calendar/events/{event.id}",

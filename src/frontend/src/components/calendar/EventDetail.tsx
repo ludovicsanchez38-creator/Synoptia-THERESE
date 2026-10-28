@@ -94,10 +94,10 @@ export function EventDetail() {
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={handleEdit} aria-label="Modifier l’événement">
+            <Button variant="ghost" size="icon" onClick={handleEdit} disabled={!!event.recurring_event_id} aria-label="Modifier l’événement">
               <Edit className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleDelete} disabled={deleting} aria-label="Supprimer l’événement">
+            <Button variant="ghost" size="icon" onClick={handleDelete} disabled={deleting || !!event.recurring_event_id} aria-label="Supprimer l’événement">
               {deleting ? (
                 <Spinner taille="bouton" />
               ) : (
@@ -122,6 +122,7 @@ export function EventDetail() {
         )}
 
         <h3 className="text-xl font-semibold text-text mb-2">{event.summary}</h3>
+        {event.recurring_event_id && <p className="text-sm text-text-muted mb-3">Occurrence d’une série récurrente. La modification et la suppression d’une occurrence ne sont pas encore proposées ici.</p>}
         {/* P-117 (Claire, cycle 13) : la note d'après séance ne se trouvait que
             par l'Accueil. La coque ouvre le parcours sur cette séance ;
             l'événement voyage avec la demande (une séance passée n'est pas

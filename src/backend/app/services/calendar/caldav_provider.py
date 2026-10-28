@@ -230,16 +230,27 @@ class CalDAVProvider(CalendarProvider):
                 expand=True,  # Expand recurring events
             )
 
-            # Convert and limit
+            # date_search(expand=True) peut regrouper plusieurs VEVENT dans
+            # une ressource. Chacun est une occurrence, aucun ne doit être perdu.
             result = []
-            for event in events[:max_results]:
-                try:
-                    dto = self._caldav_event_to_dto(event, calendar_id)
+            for event in events:
+                ical = ICalendar.from_ical(event.data)
+                for component in ical.walk('VEVENT'):
+                    dto = self._vevent_to_dto(component, calendar_id)
                     result.append(dto)
-                except Exception as e:
-                    logger.warning(f"Failed to parse CalDAV event: {e}")
-
-            return result, None  # CalDAV doesn't have pagination tokens
+            def cle(evt):
+                debut = evt.start
+                if isinstance(debut, datetime):
+                    if debut.tzinfo is None:
+                        debut = pytz.timezone(evt.timezone).localize(debut)
+                    debut = debut.astimezone(UTC)
+                else:
+                    debut = datetime.combine(debut or date.min, datetime.min.time(), tzinfo=UTC)
+                return debut, evt.id
+            result.sort(key=cle)
+            offset = int(page_token or 0)
+            suivant = str(offset + max_results) if len(result) > offset + max_results else None
+            return result[offset:offset + max_results], suivant
 
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_list)
@@ -603,8 +614,14 @@ class CalDAVProvider(CalendarProvider):
         if not vevent:
             raise ValueError("No VEVENT found in CalDAV event")
 
-        # Extract fields
+        return self._vevent_to_dto(vevent, calendar_id)
+
+    def _vevent_to_dto(self, vevent: IEvent, calendar_id: str) -> CalendarEventDTO:
+        # Les dates ont déjà été résolues avec les VTIMEZONE de la ressource.
         uid = str(vevent.get("uid", ""))
+        recurrence_id = vevent.get("recurrence-id")
+        from app.services.calendar.base_provider import id_occurrence
+        identifiant = id_occurrence(uid, recurrence_id.dt.isoformat()) if recurrence_id else uid
         summary = str(vevent.get("summary", ""))
         description = str(vevent.get("description", "")) if vevent.get("description") else None
         location = str(vevent.get("location", "")) if vevent.get("location") else None
@@ -635,7 +652,10 @@ class CalDAVProvider(CalendarProvider):
 
         # Extract attendees
         attendees = []
-        for attendee in vevent.get("attendee", []):
+        participants = vevent.get("attendee", [])
+        if not isinstance(participants, list):
+            participants = [participants]
+        for attendee in participants:
             email = str(attendee).replace("mailto:", "")
             if email:
                 attendees.append(email)
@@ -651,7 +671,7 @@ class CalDAVProvider(CalendarProvider):
         created = dtstamp.dt if dtstamp else None
 
         return CalendarEventDTO(
-            id=uid,
+            id=identifiant,
             calendar_id=calendar_id,
             summary=summary,
             description=description,
@@ -659,9 +679,10 @@ class CalDAVProvider(CalendarProvider):
             start=start,
             end=end,
             all_day=all_day,
-            recurrence=recurrence,
+            recurrence=recurrence if not recurrence_id else None,
+            recurring_event_id=uid if recurrence_id else None,
             attendees=attendees,
-            status="confirmed",
+            status={"CANCELLED": "cancelled", "TENTATIVE": "tentative"}.get(str(vevent.get("status", "")).upper(), "confirmed"),
             created_at=created,
             remote_id=uid,
         )
