@@ -1122,11 +1122,27 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         retenue = getattr(context, "config_effective", None)
         effective_config = retenue if isinstance(retenue, LLMConfig) else self.config
         if isinstance(getattr(context, "memory_request", None), dict):
-            from app.services.memory_card_context import actualiser_fiches
-            await actualiser_fiches(context, effective_config, tools, {
+            suite = {
                 'assistant': assistant_content, 'calls': tool_calls, 'results': tool_results,
                 'prior_turns': prior_turns, 'assistant_content_brut': assistant_content_brut,
-            })
+            }
+            if effective_config.provider == LLMProvider.ANTHROPIC:
+                # Les signatures thinking des modèles récents sont liées au
+                # préfixe complet (système et messages compris). Relire les
+                # fiches ici réécrivait ce préfixe après memory_write : 400.
+                # Le tour suivant les relira dans stream_response_with_tools.
+                # Garder la borne, sans retoucher le préfixe déjà envoyé.
+                from app.services.error_handler import ErreurPourEcran
+                from app.services.memory_card_context import compter_payload
+                if compter_payload(context, effective_config, tools, suite) > (
+                    effective_config.context_window - effective_config.max_tokens
+                ):
+                    raise ErreurPourEcran(
+                        "Le contexte dépasse la fenêtre du modèle. Ouvre une nouvelle conversation pour continuer."
+                    )
+            else:
+                from app.services.memory_card_context import actualiser_fiches
+                await actualiser_fiches(context, effective_config, tools, suite)
         if effective_config is not self.config:
             provider = await self._provider_pour(effective_config)
         else:
