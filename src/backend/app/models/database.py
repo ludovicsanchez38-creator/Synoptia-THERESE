@@ -31,6 +31,9 @@ AsyncSessionLocal = None
 
 
 INVOICE_LEGACY_COLUMN_DEFINITIONS: dict[str, str] = {
+    "client_billing_address": "TEXT",
+    "service_date": "TIMESTAMP",
+    "purchase_order": "TEXT",
     "currency": "TEXT DEFAULT 'EUR'",
     "payment_terms": "TEXT",
     "payment_method": "TEXT",
@@ -738,7 +741,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "c22b01replyto"
+ALEMBIC_HEAD_REVISION = "c22b02facture"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:

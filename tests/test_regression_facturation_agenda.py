@@ -22,7 +22,7 @@ import pytest
 async def _contact(client) -> str:
     reponse = await client.post(
         "/api/memory/contacts",
-        json={"first_name": "Marie", "last_name": "Martin", "company": "Atelier", "email": "marie@test.fr"},
+        json={"first_name": "Marie", "last_name": "Martin", "company": "Atelier", "email": "marie@test.fr", "address": "3 rue du Client, Lyon"},
     )
     assert reponse.status_code == 200, reponse.text
     return reponse.json()["id"]
@@ -62,7 +62,7 @@ class TestPdfDeFacture:
         monkeypatch.setattr(module, "InvoicePDFGenerator", GenerateurEnPanne)
         monkeypatch.setattr(
             module, "get_cached_profile",
-            lambda: UserProfile(name="Marie Exemple", company="Atelier Exemple", siret="123 456 789 00010", address="1 rue de l'Exemple"),
+            lambda: UserProfile(name="Marie Exemple", company="Atelier Exemple", siret="123 456 789 00010", address="1 rue de l'Exemple", legal_form="EI"),
         )
         facture = await _facture(client, await _contact(client))
 

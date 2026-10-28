@@ -820,6 +820,9 @@ class UserProfileUpdate(BaseModel):
     siret: str = ""
     code_ape: str = ""
     nda: str = ""
+    legal_form: str = ""
+    share_capital: str = ""
+    billing_address: str = ""
     # P-119 : régime de TVA déclaré, qui choisit la mention légale du PDF.
     regime_tva: Literal["normal", "franchise", "exoneration_formation"] = "normal"
 
@@ -840,6 +843,9 @@ class UserProfileResponse(BaseModel):
     siret: str = ""
     code_ape: str = ""
     nda: str = ""
+    legal_form: str = ""
+    share_capital: str = ""
+    billing_address: str = ""
     regime_tva: str = "normal"
     display_name: str
 
@@ -1281,6 +1287,10 @@ class InvoiceResponse(BaseModel):
     document_type: str = "facture"  # devis, facture, avoir
     tva_applicable: bool = True
     currency: Literal["EUR", "CHF", "USD", "GBP", "CAD"] = "EUR"
+    client_address: str | None = None
+    client_billing_address: str | None = None
+    service_date: str | None = None
+    purchase_order: str | None = None
     issue_date: str  # ISO datetime
     due_date: str  # ISO datetime
     status: str  # draft, sent, paid, overdue, cancelled
@@ -1351,6 +1361,10 @@ class CreateInvoiceRequest(BaseModel):
     document_type: str = "facture"  # devis, facture, avoir
     tva_applicable: bool = True
     currency: Literal["EUR", "CHF", "USD", "GBP", "CAD"] = "EUR"
+    client_address: str | None = None
+    client_billing_address: str | None = None
+    service_date: str | None = None
+    purchase_order: str | None = None
     issue_date: str | None = None  # ISO datetime, default today
     due_date: str | None = None  # ISO datetime, default +30 days
     lines: list[InvoiceLineRequest]
@@ -1365,6 +1379,10 @@ class UpdateInvoiceRequest(BaseModel):
 
     contact_id: str | None = None
     currency: Literal["EUR", "CHF", "USD", "GBP", "CAD"] | None = None
+    client_address: str | None = None
+    client_billing_address: str | None = None
+    service_date: str | None = None
+    purchase_order: str | None = None
     issue_date: str | None = None
     due_date: str | None = None
     status: str | None = None

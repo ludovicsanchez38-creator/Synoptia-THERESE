@@ -14,11 +14,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsModal } from './SettingsModal';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
+import * as api from '../../services/api';
 
 const profil = vi.hoisted(() => ({
   name: 'Claire Exemple', nickname: '', company: 'Claire Exemple Coaching', role: '',
   email: '', location: '', address: '8 place de la Démonstration, 69002 Lyon',
   siren: '', tva_intra: '', siret: '99988877900009', code_ape: '', nda: '', context: '',
+  legal_form: 'EI', share_capital: '', billing_address: '20 rue Comptable',
 }));
 
 vi.mock('../../services/api', async (importOriginal) => ({
@@ -59,5 +61,8 @@ describe('confirmation d\'enregistrement du profil (B-1347)', () => {
     const pied = bouton.parentElement as HTMLElement;
     expect(await within(pied).findByRole('status')).toHaveTextContent('Profil enregistré');
     expect(screen.getAllByText('Profil enregistré')).toHaveLength(1);
+    expect(api.setProfile).toHaveBeenCalledWith(expect.objectContaining({
+      legal_form: 'EI', share_capital: '', billing_address: '20 rue Comptable',
+    }));
   });
 });

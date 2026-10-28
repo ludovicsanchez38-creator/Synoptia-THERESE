@@ -180,6 +180,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     nda: '',
     context: '',
     regime_tva: 'normal',
+    legal_form: '', share_capital: '', billing_address: '',
   });
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -260,6 +261,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
           nda: profileData.nda || '',
           context: profileData.context || '',
           regime_tva: profileData.regime_tva ?? 'normal',
+          legal_form: profileData.legal_form ?? '',
+          share_capital: profileData.share_capital ?? '',
+          billing_address: profileData.billing_address ?? '',
         });
   }
 
@@ -655,6 +659,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         nda: profileForm.nda,
         context: profileForm.context,
         regime_tva: profileForm.regime_tva,
+        legal_form: profileForm.legal_form,
+        share_capital: profileForm.share_capital,
+        billing_address: profileForm.billing_address,
       });
       setProfile(savedProfile);
       setProfileSaved(true);
@@ -700,6 +707,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
           nda: importedProfile.nda || '',
           context: importedProfile.context || '',
           regime_tva: importedProfile.regime_tva ?? 'normal',
+          legal_form: importedProfile.legal_form ?? '',
+          share_capital: importedProfile.share_capital ?? '',
+          billing_address: importedProfile.billing_address ?? '',
         });
         setProfileSaved(true);
         setTimeout(() => setProfileSaved(false), 3000);

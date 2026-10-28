@@ -493,6 +493,10 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         invoice_number=invoice.invoice_number,
         contact_id=invoice.contact_id,
         contact_name=nom_du_client,
+        client_address=invoice.client_address,
+        client_billing_address=invoice.client_billing_address,
+        service_date=invoice.service_date.isoformat() if invoice.service_date else None,
+        purchase_order=invoice.purchase_order,
         document_type=invoice.document_type,
         tva_applicable=invoice.tva_applicable,
         currency=invoice.currency,
@@ -547,6 +551,7 @@ def _snapshot_de_la_piece(invoice: Invoice) -> dict[str, str | None]:
         "email": invoice.client_email or "",
         "phone": invoice.client_phone or "",
         "address": invoice.client_address or "",
+        "billing_address": invoice.client_billing_address or "",
     }
 
 
@@ -714,6 +719,9 @@ async def create_invoice(
     # Le rollback d'une reprise expire les objets chargés : le contact serait
     # relu paresseusement au tour suivant, ce qu'une session async interdit.
     snapshot_client = _snapshot_du_contact(contact)
+    if request.client_address is not None:
+        snapshot_client['client_address'] = request.client_address.strip()
+    date_prestation = _date_du_client(request.service_date, "Date de livraison ou de prestation") if request.service_date else None
 
     invoice = await _inserer_piece(
         session,
@@ -722,6 +730,9 @@ async def create_invoice(
             invoice_number=numero,
             contact_id=request.contact_id,
             **snapshot_client,
+            client_billing_address=request.client_billing_address,
+            service_date=date_prestation,
+            purchase_order=request.purchase_order,
             document_type=document_type,
             tva_applicable=request.tva_applicable,
             currency=request.currency,
@@ -857,7 +868,7 @@ async def update_invoice(
     if deja_emise:
         champs = {
             champ for champ in request.model_fields_set
-            if champ != "status" and (getattr(request, champ) is not None or champ == "converted_from_id")
+            if champ != "status" and (getattr(request, champ) is not None or champ in {"converted_from_id", "client_address", "client_billing_address", "service_date", "purchase_order"})
         }
         if champs:
             raise HTTPException(
@@ -879,6 +890,13 @@ async def update_invoice(
 
     if request.currency is not None:
         invoice.currency = request.currency
+
+    for champ in ('client_address', 'client_billing_address', 'purchase_order'):
+        if champ in request.model_fields_set:
+            valeur = getattr(request, champ)
+            setattr(invoice, champ, valeur.strip() if valeur else None)
+    if 'service_date' in request.model_fields_set:
+        invoice.service_date = _date_du_client(request.service_date, "Date de livraison ou de prestation") if request.service_date else None
 
     if request.issue_date is not None:
         invoice.issue_date = _date_du_client(request.issue_date, "Date d'émission")
@@ -1145,6 +1163,9 @@ async def convert_invoice(
         "client_email": source.client_email,
         "client_phone": source.client_phone,
         "client_address": source.client_address,
+        "client_billing_address": source.client_billing_address,
+        "service_date": source.service_date,
+        "purchase_order": source.purchase_order,
         "currency": source.currency,
         "issue_date": emission,
         # B-545 (05/09/2026) : recopier l'échéance du devis donnait une facture
@@ -1207,8 +1228,8 @@ async def billing_profile_status(session: AsyncSession = Depends(get_session)):
             "tva_intra_renseigne": False,
         }
     return {
-        "is_complete": profile.is_billing_complete(),
-        "missing": profile.missing_billing_fields(),
+        "is_complete": not profile.missing_invoice_identity_fields(),
+        "missing": profile.missing_invoice_identity_fields(),
         # P-136 : le formulaire avertit (sans bloquer) d'une facture avec TVA
         # de plus de 150 € HT sans numéro de TVA de l'émetteur (F31808).
         "tva_intra_renseigne": bool((profile.tva_intra or "").strip()),
@@ -1255,9 +1276,9 @@ async def generate_invoice_pdf(
     # P0-PROD-2 : garde-fou émetteur. Un document de facturation sans identité
     # émetteur (raison sociale + SIRET + adresse) n'est pas conforme ni opposable
     # (constat C7 : factures sans SIRET, NDA inventé faute de profil).
-    if _profile is None or not _profile.is_billing_complete():
+    if _profile is None or _profile.missing_invoice_identity_fields():
         missing = (
-            _profile.missing_billing_fields()
+            _profile.missing_invoice_identity_fields()
             if _profile
             else ["raison sociale ou nom", "SIRET", "adresse"]
         )
@@ -1271,6 +1292,14 @@ async def generate_invoice_pdf(
         )
 
     user_profile = _profile.to_dict() if _profile else {}
+    if not (invoice.client_address or '').strip():
+        if _facture_emise(invoice):
+            raise HTTPException(
+                400,
+                "Adresse du client absente sur cette pièce déjà émise : elle ne peut plus être modifiée. "
+                "Consulte le PDF d’origine si tu l’as conservé. La correction de cette pièce doit être traitée séparément.",
+            )
+        raise HTTPException(400, "Identité du destinataire incomplète : renseigne l'adresse du client dans le brouillon avant de générer le PDF.")
 
     # Préparer les données pour le PDF
     invoice_data = {
@@ -1279,6 +1308,8 @@ async def generate_invoice_pdf(
         "tva_applicable": invoice.tva_applicable,
         "validite_jours": invoice.validite_jours,
         "issue_date": invoice.issue_date.isoformat(),
+        "service_date": invoice.service_date.isoformat() if invoice.service_date else None,
+        "purchase_order": invoice.purchase_order,
         "due_date": invoice.due_date.isoformat(),
         # B-468 : le PDF porte le statut EFFECTIF (une facture envoyée et
         # échue est « En retard »), comme la liste et l'encours.
@@ -1312,6 +1343,9 @@ async def generate_invoice_pdf(
     user_profile_data = {
         "name": user_profile.get("name", ""),
         "company": user_profile.get("company", ""),
+        "legal_form": user_profile.get("legal_form", ""),
+        "share_capital": user_profile.get("share_capital", ""),
+        "billing_address": user_profile.get("billing_address", ""),
         "address": user_profile.get("address", ""),
         "siren": user_profile.get("siren", ""),
         "siret": user_profile.get("siret", ""),
@@ -1472,6 +1506,9 @@ async def convert_devis_to_invoice(
         "client_email": devis.client_email,
         "client_phone": devis.client_phone,
         "client_address": devis.client_address,
+        "client_billing_address": devis.client_billing_address,
+        "service_date": devis.service_date,
+        "purchase_order": devis.purchase_order,
         "document_type": "facture",
         "tva_applicable": devis.tva_applicable,
         "currency": devis.currency,

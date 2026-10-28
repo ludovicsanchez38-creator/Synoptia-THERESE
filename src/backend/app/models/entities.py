@@ -825,6 +825,9 @@ class Invoice(SQLModel, table=True):
     client_email: str | None = None
     client_phone: str | None = None
     client_address: str | None = None
+    client_billing_address: str | None = None
+    service_date: datetime | None = None
+    purchase_order: str | None = None
     document_type: str = Field(default="facture", index=True)  # devis, facture, avoir
     tva_applicable: bool = Field(default=True)  # Si False: "TVA non applicable, art. 293 B du CGI"
     currency: str = Field(default="EUR")  # EUR, CHF, USD, GBP

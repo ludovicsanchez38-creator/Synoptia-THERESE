@@ -14,12 +14,12 @@ async def test_le_pdf_relit_le_profil_quand_le_cache_est_vide(client: AsyncClien
 
     profil = await client.post("/api/config/profile", json={
         "name": "Claire Exemple", "company": "Claire Exemple Coaching", "address": "Lyon",
-        "siret": "99988877900009",
+        "siret": "99988877900009", "legal_form": "EI",
     })
     assert profil.status_code == 200, profil.text
-    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard"})
+    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard", "address": "Paris"})
     facture = await client.post("/api/invoices/", json={
-        "contact_id": contact.json()["id"], "document_type": "facture",
+        "contact_id": contact.json()["id"], "document_type": "facture", "service_date": "2026-10-20",
         "lines": [{"description": "Séance", "quantity": 1, "unit_price_ht": 100.0, "tva_rate": 20.0}],
     })
     set_cached_profile(None)  # démarrage ou restauration : profil chiffré non relu

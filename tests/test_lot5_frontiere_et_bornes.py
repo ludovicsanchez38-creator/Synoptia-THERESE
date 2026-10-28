@@ -175,12 +175,12 @@ class TestB468LePdfPorteLeStatutEffectif:
         profil = await client.post(
             "/api/config/profile",
             json={"name": "Marie Exemple", "company": "Atelier Exemple", "address": "Manosque",
-                  "siret": "12345678900011"},
+                  "siret": "12345678900011", "legal_form": "EI"},
         )
         assert profil.status_code == 200, profil.text
         contact = await client.post(
             "/api/memory/contacts",
-            json={"first_name": "Paul", "last_name": "Durand", "email": "paul@durand.test"},
+            json={"first_name": "Paul", "last_name": "Durand", "email": "paul@durand.test", "address": "3 rue du Client, Lyon"},
         )
         hier = (datetime.now(UTC) - timedelta(days=3)).isoformat()
         piece = await client.post(

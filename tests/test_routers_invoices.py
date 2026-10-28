@@ -23,6 +23,7 @@ async def _create_contact(client: AsyncClient) -> str:
         "company": "Entreprise Test",
         "email": "marie@test.fr",
         "phone": "+33612345678",
+        "address": "2 rue du Client, 69001 Lyon",
     })
     assert response.status_code == 200, f"Echec creation contact: {response.text}"
     return response.json()["id"]
@@ -32,6 +33,7 @@ async def _create_invoice(client: AsyncClient, contact_id: str, **kwargs) -> dic
     """Cree une facture de test et retourne la reponse complete."""
     invoice_data = {
         "contact_id": contact_id,
+        "service_date": "2026-07-01",
         "lines": [
             {
                 "description": "Prestation de conseil",
@@ -265,7 +267,7 @@ class TestInvoicesCRUD:
             name="Camille Exemple",
             company="Exemple SARL",
             address="12 rue de l'Exemple, 04100 Manosque",
-            siret="12345678900010",
+            siret="12345678900010", legal_form="SARL", share_capital="1000",
         )
         with (
             patch("app.routers.invoices.get_cached_profile", return_value=complete),
@@ -282,7 +284,8 @@ class TestInvoicesCRUD:
             "company": "Entreprise Test",
             "email": "marie@test.fr",
             "phone": "+33612345678",
-            "address": "",
+            "address": "2 rue du Client, 69001 Lyon",
+            "billing_address": "",
         }
 
     @pytest.mark.asyncio
@@ -416,7 +419,7 @@ class TestInvoicesCRUD:
             name="Camille Exemple",
             company="Exemple SARL",
             address="12 rue de l'Exemple, 04100 Manosque",
-            siret="12345678900010",
+            siret="12345678900010", legal_form="SARL", share_capital="1000",
         )
         with patch("app.routers.invoices.get_cached_profile", return_value=complete):
             response = await client.get(f"/api/invoices/{invoice['id']}/pdf")

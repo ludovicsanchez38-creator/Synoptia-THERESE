@@ -81,7 +81,7 @@ class TestFallbackSessionDansLesStatuts:
 
         async with db_module.AsyncSessionLocal() as session:
             await set_user_profile(
-                session, UserProfile(name="Marie", company="Atelier", address="Manosque", siret="12345678900011")
+                session, UserProfile(name="Marie", company="Atelier", address="Manosque", siret="12345678900011", legal_form="EI")
             )
         set_cached_profile(None)
         reponse = await client.get("/api/invoices/billing/profile-status")

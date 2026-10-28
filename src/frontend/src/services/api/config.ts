@@ -165,6 +165,9 @@ export interface UserProfile {
   nda: string | null;
   /** P-119 : régime de TVA déclaré (mention légale du PDF). */
   regime_tva?: RegimeTva;
+  legal_form?: string;
+  share_capital?: string;
+  billing_address?: string;
   display_name: string;
 }
 
@@ -183,6 +186,9 @@ export interface UserProfileUpdate {
   code_ape?: string;
   nda?: string;
   regime_tva?: RegimeTva;
+  legal_form?: string;
+  share_capital?: string;
+  billing_address?: string;
 }
 
 export interface WorkingDirectory {

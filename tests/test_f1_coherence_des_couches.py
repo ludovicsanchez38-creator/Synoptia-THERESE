@@ -28,7 +28,7 @@ async def _poser_facture(
     client, devise: str = "EUR", lignes_en_plus: list[dict] | None = None
 ) -> str:
     contact = await client.post(
-        "/api/memory/contacts", json={"first_name": "Client", "last_name": "F1"}
+        "/api/memory/contacts", json={"first_name": "Client", "last_name": "F1", "address": "3 rue du Client, Lyon"}
     )
     piece = await client.post(
         "/api/invoices/",
@@ -176,7 +176,7 @@ class TestUnSeulMontantATraversLesCouches:
             name="Camille Exemple",
             company="Exemple SARL",
             address="12 rue de l'Exemple, 04100 Manosque",
-            siret="12345678900010",
+            siret="12345678900010", legal_form="SARL", share_capital="1000",
         )
         with patch("app.routers.invoices.get_cached_profile", return_value=emetteur):
             rendu = await client.get(f"/api/invoices/{identifiant}/pdf")
@@ -325,7 +325,7 @@ class TestUnSeulSeparateurDecimalDansLeDocument:
             name="Camille Exemple",
             company="Exemple SARL",
             address="12 rue de l'Exemple, 04100 Manosque",
-            siret="12345678900010",
+            siret="12345678900010", legal_form="SARL", share_capital="1000",
         )
         with patch("app.routers.invoices.get_cached_profile", return_value=emetteur):
             rendu = await client.get(f"/api/invoices/{identifiant}/pdf")

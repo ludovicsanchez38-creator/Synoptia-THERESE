@@ -42,6 +42,9 @@ const IDS_IDENTITE = [
 ];
 const IDS_EMETTEUR = [
   'settings-profile-address',
+  'settings-profile-legal-form',
+  'settings-profile-share-capital',
+  'settings-profile-billing-address',
   'settings-profile-siren',
   'settings-profile-tva',
   'settings-profile-siret',
@@ -68,6 +71,13 @@ beforeEach(() => {
 });
 
 describe('lot 9, garde 6 : les champs du profil', () => {
+  it('affiche la forme juridique, le capital et l’adresse de facturation enregistrés', () => {
+    rendre(null, { legal_form: 'SAS', share_capital: '2500', billing_address: '20 rue Comptable' });
+    expect(screen.getByLabelText('Forme juridique')).toHaveValue('SAS');
+    expect(screen.getByLabelText('Capital social en euros')).toHaveValue('2500');
+    expect(screen.getByLabelText('Adresse de facturation de l’émetteur')).toHaveValue('20 rue Comptable');
+  });
+
   it('les treize identifiants existent, une seule fois chacun', () => {
     rendre();
 
@@ -121,7 +131,7 @@ describe('lot 9, garde 6 : les champs du profil', () => {
     rendre();
 
     const attendus: [string, string][] = [
-      ['settings-profile-address', 'Adresse (facturation)'],
+      ['settings-profile-address', 'Adresse de l’entreprise ou du siège social'],
       ['settings-profile-siren', 'SIREN'],
       ['settings-profile-tva', 'TVA intracommunautaire'],
       ['settings-profile-siret', 'SIRET (requis pour facturer)'],

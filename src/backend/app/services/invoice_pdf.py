@@ -365,11 +365,30 @@ class InvoicePDFGenerator:
                 f'<font name="{theme.font_bold}" size="10">{company}</font>'
             )
         name = user_profile.get("name", "")
+        forme = user_profile.get("legal_form", "").strip()
+        if forme.upper() == 'EI':
+            emetteur_parts.append(f"{name} EI")
+            name = ''
+        elif forme:
+            emetteur_parts.append(forme)
+        capital = user_profile.get('share_capital', '')
+        if capital:
+            from decimal import Decimal, InvalidOperation
+            try:
+                montant = Decimal(capital.replace(' ', '').replace('\u00a0', '').replace(',', '.'))
+                if not montant.is_finite() or not 0 <= montant < Decimal('1e15'):
+                    raise InvalidOperation
+                capital = f'{montant:,.2f}'.replace(',', ' ').replace('.', ',')
+            except InvalidOperation:
+                pass
+            emetteur_parts.append(f"Capital social : {capital} €")
         if name and name != company:
             emetteur_parts.append(name)
         address = user_profile.get("address", "")
         if address:
             emetteur_parts.append(address)
+        if user_profile.get('billing_address'):
+            emetteur_parts.append(f"Adresse de facturation : {user_profile['billing_address']}")
         siret = user_profile.get("siret") or user_profile.get("siren", "")
         if siret:
             emetteur_parts.append(f"SIRET : {siret}")
@@ -393,6 +412,8 @@ class InvoicePDFGenerator:
         dest_address = contact_data.get("address", "")
         if dest_address:
             dest_parts.append(dest_address)
+        if contact_data.get('billing_address'):
+            dest_parts.append(f"Adresse de facturation : {contact_data['billing_address']}")
         if contact_data.get("email"):
             dest_parts.append(contact_data["email"])
         if contact_data.get("phone"):
@@ -462,6 +483,11 @@ class InvoicePDFGenerator:
             ["Date d’échéance", due_date],
             ["Statut", status_label],
         ]
+        if invoice_data.get('service_date'):
+            service_date = datetime.fromisoformat(invoice_data['service_date'].replace('Z', '')).strftime('%d/%m/%Y')
+            info_data.append(['Date de livraison ou prestation', service_date])
+        if invoice_data.get('purchase_order'):
+            info_data.append(['Bon de commande', _texte_pdf(invoice_data['purchase_order'])])
 
         # Ajouter la duree de validite pour les devis
         validite = invoice_data.get("validite_jours")

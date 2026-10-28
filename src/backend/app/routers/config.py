@@ -1138,6 +1138,9 @@ async def get_profile(session: AsyncSession = Depends(get_session)):
         siret=profile.siret,
         code_ape=profile.code_ape,
         nda=profile.nda,
+        legal_form=profile.legal_form,
+        share_capital=profile.share_capital,
+        billing_address=profile.billing_address,
         regime_tva=profile.regime_tva,
         display_name=profile.display_name(),
     )
@@ -1174,6 +1177,9 @@ async def set_profile(
         siret=request.siret,
         code_ape=request.code_ape,
         nda=request.nda,
+        legal_form=request.legal_form,
+        share_capital=request.share_capital,
+        billing_address=request.billing_address,
         regime_tva=request.regime_tva,
     )
 
@@ -1201,6 +1207,9 @@ async def set_profile(
         siret=saved_profile.siret,
         code_ape=saved_profile.code_ape,
         nda=saved_profile.nda,
+        legal_form=saved_profile.legal_form,
+        share_capital=saved_profile.share_capital,
+        billing_address=saved_profile.billing_address,
         regime_tva=saved_profile.regime_tva,
         display_name=saved_profile.display_name(),
     )
@@ -1299,6 +1308,9 @@ async def import_claude_md(
         siret=profile.siret,
         code_ape=profile.code_ape,
         nda=profile.nda,
+        legal_form=profile.legal_form,
+        share_capital=profile.share_capital,
+        billing_address=profile.billing_address,
         regime_tva=profile.regime_tva,
         display_name=profile.display_name(),
     )

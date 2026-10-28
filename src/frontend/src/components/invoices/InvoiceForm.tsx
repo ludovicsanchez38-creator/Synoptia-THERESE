@@ -168,6 +168,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // numérotation continue) ; le moteur le refuse, la modale ne le propose plus.
   const pieceEmise = Boolean(invoice && pieceEstEmise(invoice));
   const [notes, setNotes] = useState(invoice?.notes || '');
+  const [clientAddress, setClientAddress] = useState(invoice?.client_address || '');
+  const [clientBillingAddress, setClientBillingAddress] = useState(invoice?.client_billing_address || '');
+  const [serviceDate, setServiceDate] = useState(invoice?.service_date?.split('T')[0] || '');
+  const [purchaseOrder, setPurchaseOrder] = useState(invoice?.purchase_order || '');
   const [validiteJours, setValiditeJours] = useState<number>(
     invoice?.validite_jours ?? 30
   );
@@ -223,6 +227,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // fond, Annuler) ; intacte, Échap ferme la modale seule, comme avant.
   const saisieCourante = JSON.stringify({
     documentType, contactId, currency, issueDate, dueDate, status, notes, validiteJours, lines, lineInputs,
+    clientAddress, clientBillingAddress, serviceDate, purchaseOrder,
   });
   const saisieInitiale = useRef(saisieCourante);
   const { abandonDemande, demanderFermeture, continuerSaisie, abandonner } = useQuestionDAbandonDeModale({
@@ -459,6 +464,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       currency,
       issue_date: issueDate,
       due_date: dueDate,
+      client_address: clientAddress || contacts.find((c) => c.id === contactId)?.address || null,
+      client_billing_address: clientBillingAddress || null,
+      service_date: serviceDate || null,
+      purchase_order: purchaseOrder || null,
       lines: validLines,
       notes: notes || undefined,
       // B-1492 : en modification, le statut part dès qu'il a changé, brouillon
@@ -764,7 +773,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   // B-1614 : sur une pièce émise (figée), c'est le statut.
                   data-dialog-autofocus={invoice && !pieceEmise ? true : undefined}
                   value={contactId}
-                  onChange={(e) => setContactId(e.target.value)}
+                  onChange={(e) => {
+                    setContactId(e.target.value);
+                    setClientAddress(contacts.find((c) => c.id === e.target.value)?.address || '');
+                    setClientBillingAddress('');
+                  }}
                   disabled={pieceEmise}
                   required
                   options={[
@@ -824,6 +837,18 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               />
             </FormField>
 
+            <FormField label="Adresse du destinataire" htmlFor="invoice-client-address" description="Obligatoire pour générer le PDF. L’adresse de la fiche contact est reprise si ce champ reste vide.">
+              <Textarea id="invoice-client-address" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} disabled={pieceEmise} />
+            </FormField>
+            <FormField label="Adresse de facturation distincte" htmlFor="invoice-client-billing-address" description="Seulement si elle est différente de l’adresse du client.">
+              <Textarea id="invoice-client-billing-address" value={clientBillingAddress} onChange={(e) => setClientBillingAddress(e.target.value)} disabled={pieceEmise} />
+            </FormField>
+            <FormField label="Date de livraison ou de prestation" htmlFor="invoice-service-date" description="À renseigner si la date effective diffère de la date d’émission.">
+              <Input type="date" id="invoice-service-date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} disabled={pieceEmise} />
+            </FormField>
+            <FormField label="Numéro du bon de commande" htmlFor="invoice-purchase-order" description="À renseigner si le client en a établi un.">
+              <Input id="invoice-purchase-order" value={purchaseOrder} onChange={(e) => setPurchaseOrder(e.target.value)} disabled={pieceEmise} />
+            </FormField>
             <FormField label="Date d'émission *" htmlFor="issueDate">
               <Input
                 type="date"

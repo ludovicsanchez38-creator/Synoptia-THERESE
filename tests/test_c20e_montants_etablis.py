@@ -17,10 +17,10 @@ def lignes(nombre, prix, taux, description="Repas"):
 async def creer(client, demandes, type_document="facture"):
     profil = await client.post("/api/config/profile", json={
         "name": "Atelier fictif", "company": "Ventilation", "address": "Paris",
-        "siret": "99988877900009",
+        "siret": "99988877900009", "legal_form": "EI",
     })
     assert profil.status_code == 200, profil.text
-    contact = await client.post("/api/memory/contacts", json={"first_name": "Client", "last_name": "Centimes"})
+    contact = await client.post("/api/memory/contacts", json={"first_name": "Client", "last_name": "Centimes", "address": "3 rue du Client, Lyon"})
     response = await client.post("/api/invoices/", json={
         "contact_id": contact.json()["id"], "document_type": type_document, "lines": demandes,
     })

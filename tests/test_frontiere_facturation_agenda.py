@@ -34,7 +34,7 @@ async def _profil_complet(client) -> None:
             "name": "Marie Exemple",
             "company": "Atelier Exemple",
             "address": "1 rue des Lices, 04100 Manosque",
-            "siret": "12345678900011",
+            "siret": "12345678900011", "legal_form": "EI",
         },
     )
     assert reponse.status_code == 200, reponse.text
@@ -47,7 +47,7 @@ async def test_une_panne_du_generateur_pdf_ne_fuit_pas_a_l_ecran(client, monkeyp
     await _profil_complet(client)
     contact = await client.post(
         "/api/memory/contacts",
-        json={"first_name": "Paul", "last_name": "Durand", "email": "paul@durand.test"},
+        json={"first_name": "Paul", "last_name": "Durand", "email": "paul@durand.test", "address": "3 rue du Client, Lyon"},
     )
     assert contact.status_code == 200, contact.text
     piece = await client.post(

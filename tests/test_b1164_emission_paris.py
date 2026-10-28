@@ -22,10 +22,10 @@ def figer(monkeypatch, instant):
 async def creer(client, type_document="facture"):
     profil = await client.post("/api/config/profile", json={
         "name": "Atelier fictif", "company": "Paris", "address": "Paris",
-        "siret": "99988877900009",
+        "siret": "99988877900009", "legal_form": "EI",
     })
     assert profil.status_code == 200, profil.text
-    contact = await client.post("/api/memory/contacts", json={"first_name": "Paris", "last_name": "Émission"})
+    contact = await client.post("/api/memory/contacts", json={"first_name": "Paris", "last_name": "Émission", "address": "3 rue du Client, Lyon"})
     response = await client.post("/api/invoices/", json={
         "contact_id": contact.json()["id"], "document_type": type_document,
         "issue_date": "2026-10-01", "due_date": "2026-10-31",

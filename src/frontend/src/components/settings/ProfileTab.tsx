@@ -32,6 +32,9 @@ export interface ProfileFormData {
   nda: string;
   context: string;
   regime_tva: api.RegimeTva;
+  legal_form?: string;
+  share_capital?: string;
+  billing_address?: string;
 }
 
 export interface ProfileTabProps {
@@ -338,7 +341,7 @@ export function ProfileTab({
         />
 
         <div className="px-4 pb-4">
-          <FormField label="Adresse (facturation)" htmlFor="settings-profile-address">
+          <FormField label="Adresse de l’entreprise ou du siège social" htmlFor="settings-profile-address">
             <Input
               id="settings-profile-address"
               type="text"
@@ -350,6 +353,15 @@ export function ProfileTab({
         </div>
 
         <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 gap-y-4 px-4 pb-4">
+          <FormField label="Forme juridique" htmlFor="settings-profile-legal-form" description="EI pour un entrepreneur individuel, sinon la forme de la société (SAS, SARL…) ou association.">
+            <Input id="settings-profile-legal-form" value={profileForm.legal_form ?? ''} onChange={(e) => setProfileForm((prev) => ({ ...prev, legal_form: e.target.value }))} placeholder="EI, SAS, SARL…" />
+          </FormField>
+          <FormField label="Capital social en euros" htmlFor="settings-profile-share-capital" description="À renseigner pour une société. Sans objet pour une entreprise individuelle.">
+            <Input id="settings-profile-share-capital" inputMode="decimal" value={profileForm.share_capital ?? ''} onChange={(e) => setProfileForm((prev) => ({ ...prev, share_capital: e.target.value }))} placeholder="1 000" />
+          </FormField>
+          <FormField label="Adresse de facturation de l’émetteur" htmlFor="settings-profile-billing-address" description="À renseigner seulement si elle diffère de l’adresse de l’entreprise.">
+            <Textarea id="settings-profile-billing-address" value={profileForm.billing_address ?? ''} onChange={(e) => setProfileForm((prev) => ({ ...prev, billing_address: e.target.value }))} />
+          </FormField>
           <FormField label="SIREN" htmlFor="settings-profile-siren">
             <Input
               id="settings-profile-siren"

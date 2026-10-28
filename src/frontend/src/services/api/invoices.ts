@@ -46,6 +46,10 @@ export interface Invoice {
   created_at: string;
   updated_at: string;
   lines: InvoiceLine[];
+  client_address?: string | null;
+  client_billing_address?: string | null;
+  service_date?: string | null;
+  purchase_order?: string | null;
 }
 
 export interface InvoiceLineRequest {
@@ -72,6 +76,10 @@ export interface CreateInvoiceRequest {
   validite_jours?: number;
   /** P-154 : la facture qu'un avoir corrige. */
   converted_from_id?: string | null;
+  client_address?: string | null;
+  client_billing_address?: string | null;
+  service_date?: string | null;
+  purchase_order?: string | null;
 }
 
 export interface UpdateInvoiceRequest {
@@ -85,6 +93,10 @@ export interface UpdateInvoiceRequest {
   validite_jours?: number;
   /** P-154 : la facture qu'un avoir corrige. */
   converted_from_id?: string | null;
+  client_address?: string | null;
+  client_billing_address?: string | null;
+  service_date?: string | null;
+  purchase_order?: string | null;
 }
 
 export async function listInvoices(params?: {

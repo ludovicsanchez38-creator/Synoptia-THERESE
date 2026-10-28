@@ -117,7 +117,7 @@ async def _brouillon_converti(client: AsyncClient, devise: str = "EUR") -> dict:
     _base_chiffree()
     contact = await client.post(
         "/api/memory/contacts",
-        json={"first_name": "Client", "last_name": "Synthétique B1760"},
+        json={"first_name": "Client", "last_name": "Synthétique B1760", "address": "3 rue du Client, Lyon"},
     )
     assert contact.status_code == 200, contact.text
     devis = await client.post("/api/invoices/", json={
@@ -176,7 +176,7 @@ async def _texte_pdf(
         name="Émetteur synthétique",
         company="Société Exemple",
         address="Adresse synthétique",
-        siret="12345678900011",
+        siret="12345678900011", legal_form="SAS", share_capital="1000",
     )
     assert profil.is_billing_complete()
     with monkeypatch.context() as contexte:

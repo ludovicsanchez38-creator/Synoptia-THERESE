@@ -11,7 +11,7 @@ LIGNES = [{"description": "Table en chêne", "quantity": 1, "unit_price_ht": 900
 
 
 async def _piece(client: AsyncClient, type_: str, **extra) -> dict:
-    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard"})
+    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard", "address": "3 rue du Client, Lyon"})
     reponse = await client.post("/api/invoices/", json={
         "contact_id": contact.json()["id"], "document_type": type_, "lines": LIGNES, **extra,
     })
@@ -25,7 +25,7 @@ def _texte_du_pdf(chemin: str) -> str:
 @pytest.mark.asyncio
 async def test_un_avoir_converti_garde_sa_facture_et_la_cite(client: AsyncClient):
     profil = await client.post("/api/config/profile", json={
-        "name": "Hélène Ménard", "company": "Atelier Ménard", "address": "Manosque", "siret": "99988877900009",
+        "name": "Hélène Ménard", "company": "Atelier Ménard", "address": "Manosque", "siret": "99988877900009", "legal_form": "EI",
     })
     assert profil.status_code == 200, profil.text
     facture = await _piece(client, "facture")

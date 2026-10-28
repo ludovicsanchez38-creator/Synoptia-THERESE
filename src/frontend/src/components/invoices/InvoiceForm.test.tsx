@@ -51,6 +51,19 @@ const invoice: Invoice = {
 };
 
 describe('InvoiceForm décimaux', () => {
+  it('conserve les deux adresses, la date de prestation et le bon de commande du brouillon', async () => {
+    updateInvoiceMock.mockResolvedValue(invoice);
+    render(<InvoiceForm invoice={{ ...invoice, invoice_number: 'PROV-test', status: 'draft', client_address: 'Lyon' }} onClose={vi.fn()} onSave={vi.fn()} />);
+    expect(await screen.findByLabelText('Adresse du destinataire')).toHaveValue('Lyon');
+    fireEvent.change(screen.getByLabelText('Adresse de facturation distincte'), { target: { value: 'Paris' } });
+    fireEvent.change(screen.getByLabelText('Date de livraison ou de prestation'), { target: { value: '2026-06-25' } });
+    fireEvent.change(screen.getByLabelText('Numéro du bon de commande'), { target: { value: 'BC-42' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+    await waitFor(() => expect(updateInvoiceMock).toHaveBeenCalledWith('invoice-1', expect.objectContaining({
+      client_address: 'Lyon', client_billing_address: 'Paris', service_date: '2026-06-25', purchase_order: 'BC-42',
+    })));
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     createInvoiceMock.mockResolvedValue({ id: 'inv-1' });

@@ -15,12 +15,12 @@ FORMATION = "Exonération de TVA, art. 261, 4, 4° a du code général des impô
 async def _pdf_d_une_facture_a_zero(client: AsyncClient, regime: str) -> str:
     profil = await client.post("/api/config/profile", json={
         "name": "Claire Exemple", "company": "Claire Exemple Coaching", "address": "Lyon",
-        "siret": "99988877900009", "regime_tva": regime,
+        "siret": "99988877900009", "legal_form": "EI", "regime_tva": regime,
     })
     assert profil.status_code == 200, profil.text
-    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard"})
+    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard", "address": "Paris"})
     facture = await client.post("/api/invoices/", json={
-        "contact_id": contact.json()["id"], "document_type": "facture",
+        "contact_id": contact.json()["id"], "document_type": "facture", "service_date": "2026-10-20",
         "lines": [{"description": "Séance de coaching", "quantity": 1, "unit_price_ht": 100.0, "tva_rate": 0.0}],
     })
     assert facture.status_code in (200, 201), facture.text

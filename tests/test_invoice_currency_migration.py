@@ -175,7 +175,7 @@ def test_ensure_invoice_legacy_columns_is_idempotent(tmp_path: Path):
     first = ensure_invoice_legacy_columns(db_path)
     second = ensure_invoice_legacy_columns(db_path)
 
-    assert first == []
+    assert set(first) == {"client_billing_address", "service_date", "purchase_order"}
     assert second == []
 
 

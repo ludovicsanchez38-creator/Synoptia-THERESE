@@ -39,6 +39,9 @@ class UserProfile:
     siret: str = ""                # "123 456 789 00010" (identite emetteur facture)
     code_ape: str = ""             # "0000Z" (code NAF)
     nda: str = ""                  # Numero declaration activite (organisme de formation)
+    legal_form: str = ""           # EI, SAS, SARL, association...
+    share_capital: str = ""        # Montant déclaré en euros, sans symbole
+    billing_address: str = ""      # Adresse de facturation si différente
     # P-119 : "normal" (assujetti), "franchise" (art. 293 B du CGI) ou
     # "exoneration_formation" (art. 261, 4, 4° a du CGI). Choisit la mention
     # légale du PDF quand aucune TVA n'est facturée.
@@ -65,6 +68,9 @@ class UserProfile:
             siret=data.get("siret", ""),
             code_ape=data.get("code_ape", ""),
             nda=data.get("nda", ""),
+            legal_form=data.get("legal_form", ""),
+            share_capital=data.get("share_capital", ""),
+            billing_address=data.get("billing_address", ""),
             regime_tva=data.get("regime_tva") or "normal",
         )
 
@@ -90,6 +96,26 @@ class UserProfile:
         mots = (self.name or "").split()
         # B-1333 : un surnom fait d'espaces n'est pas un surnom.
         return (self.nickname or "").strip() or (mots[0] if mots else "Utilisateur")
+
+    def missing_invoice_identity_fields(self) -> list[str]:
+        """Mentions d'identité requises pour produire une pièce de facturation."""
+        from decimal import Decimal, InvalidOperation
+        missing = self.missing_billing_fields()
+        forme = (self.legal_form or '').strip().upper()
+        if not forme:
+            missing.append('forme juridique (EI pour un entrepreneur individuel)')
+        if forme == 'EI' and not (self.name or '').strip():
+            missing.append('nom et prénom de l’entrepreneur individuel')
+        if forme in {'SAS', 'SASU', 'SARL', 'EURL', 'SA', 'SNC', 'SCA', 'SCI', 'SCOP'}:
+            if not (self.company or '').strip():
+                missing.append('dénomination sociale')
+            try:
+                capital = Decimal((self.share_capital or '').replace(' ', '').replace('\u00a0', '').replace(',', '.'))
+                if not capital.is_finite() or not 0 <= capital < Decimal('1e15'):
+                    raise InvalidOperation
+            except InvalidOperation:
+                missing.append('capital social')
+        return missing
 
     def format_for_llm(self) -> str:
         """Format profile for injection into LLM system prompt."""
