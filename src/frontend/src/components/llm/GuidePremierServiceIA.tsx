@@ -9,7 +9,7 @@ export function GuidePremierServiceIA({ provider, onRetest, retesting = false }:
 }) {
   const [erreur, setErreur] = useState<string | null>(null);
   function lien(href: string, texte: ReactNode) {
-    return <a href={href} className="text-accent-cyan underline" onClick={(event) => {
+    return <a href={href} className="text-accent-cyan-ink underline" onClick={(event) => {
       event.preventDefault();
       setErreur(null);
       void open(href).catch(() => setErreur('Le navigateur n’a pas pu s’ouvrir. Réessaie.'));
@@ -34,7 +34,7 @@ export function GuidePremierServiceIA({ provider, onRetest, retesting = false }:
       <p>Le modèle conseillé est Qwen 3.5 4b. Il sait utiliser les outils de THÉRÈSE, sans compte ni clé. Les réponses peuvent être plus lentes qu’en ligne.</p>
       <ol className="list-decimal space-y-2 pl-5">
         <li>{lien('https://ollama.com/download', 'Télécharger Ollama')}, puis suis les instructions pour ton système et lance-le.</li>
-        <li>Ouvre Terminal sur Mac ou Linux, ou PowerShell sur Windows. Copie cette commande, puis appuie sur Entrée : <code className="block select-all rounded bg-bg p-2 my-1">ollama run qwen3.5:4b</code>Le téléchargement du modèle conseillé prend environ 3,3 Go. {lien('https://ollama.com/library/qwen3.5:4b', 'Voir le modèle Qwen conseillé')}.</li>
+        <li>Ouvre Terminal sur Mac ou Linux, ou PowerShell sur Windows. Copie cette commande, puis appuie sur Entrée : <code className="block select-all rounded-sm bg-bg p-2 my-1">ollama run qwen3.5:4b</code>Le téléchargement du modèle conseillé prend environ 3,3 Go. {lien('https://ollama.com/library/qwen3.5:4b', 'Voir le modèle Qwen conseillé')}.</li>
         <li>Quand le modèle répond, reviens dans THÉRÈSE en laissant Ollama lancé. Vérifie sa disponibilité, choisis « Ollama (Local) », puis « qwen3.5:4b ».</li>
       </ol>
       <p>La vérification de la mémoire de ton ordinateur s’affiche après le choix du modèle.</p>

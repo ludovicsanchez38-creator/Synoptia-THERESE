@@ -54,7 +54,7 @@ export function RepriseDonnees({ onRestart }: { onRestart: () => Promise<void> |
         {copies?.length === 0 && <p>Aucune copie automatique disponible. Si tu as une sauvegarde manuelle, conserve-la avec ton dossier de données pour être accompagné dans la récupération.</p>}
         {copies && copies.length > 0 && <>
           <p className="text-sm text-text-muted">La version indiquée est celle du moteur qui a créé la copie, avant la mise à jour des données.</p>
-          <ul className="space-y-3">{copies.map((copie) => <li key={copie.id} className="border border-border rounded p-3 space-y-2">
+          <ul className="space-y-3">{copies.map((copie) => <li key={copie.id} className="border border-border rounded-sm p-3 space-y-2">
             <p>{dateCopie(copie)} · Version {copie.version}</p>
             <Button disabled={occupe} onClick={() => setChoix(copie)}>Restaurer cette copie du {dateCopie(copie)}</Button>
           </li>)}</ul>
@@ -63,7 +63,7 @@ export function RepriseDonnees({ onRestart }: { onRestart: () => Promise<void> |
         <Button disabled={occupe} variant="ghost" onClick={() => void onRestart()}>Réessayer le démarrage</Button>
       </>}
     </div>
-    <DialogShell open={choix !== null} ariaLabel="Confirmer la restauration" onClose={() => { if (!occupe) setChoix(null); }} className="max-w-lg bg-bg p-6 rounded-lg space-y-4">
+    <DialogShell open={choix !== null} ariaLabel="Confirmer la restauration" onClose={() => { if (!occupe) setChoix(null); }} className="max-w-lg bg-bg p-6 rounded-md space-y-4">
       <h2 className="text-xl">Restaurer cette copie ?</h2>
       {choix && <p>{dateCopie(choix)} · Version {choix.version}</p>}
       <p>Les changements faits après cette copie ne seront plus dans la base active. La base actuelle et ses fichiers associés seront conservés dans le dossier backups/reprises.</p>
