@@ -37,12 +37,12 @@ const existingEvent: CalendarEvent = {
   synced_at: '2026-07-15T08:00:00Z',
 };
 
-function seedCalendar(event: CalendarEvent | null = null) {
+function seedCalendar(event: CalendarEvent | null = null, provider = 'google') {
   useCalendarStore.setState({
     calendars: [{
       id: 'calendar-1', account_id: 'account-1', summary: 'Agenda principal',
       description: null, timezone: 'Europe/Paris', primary: true,
-      provider: 'google', synced_at: '2026-07-15T08:00:00Z',
+      provider, synced_at: '2026-07-15T08:00:00Z',
     }],
     currentCalendarId: 'calendar-1',
     currentEventId: event?.id ?? null,
@@ -60,8 +60,8 @@ describe('EventForm - confirmation 0.40', () => {
     updateEventMock.mockResolvedValue(existingEvent);
   });
 
-  it('bloque la création avant confirmation et affiche les horaires', async () => {
-    seedCalendar();
+  it.each(['google', 'caldav'])('bloque la création %s avant confirmation et affiche les horaires', async (provider) => {
+    seedCalendar(null, provider);
     render(
       <PrototypeExternalActionConfirmationProvider>
         <EventForm />
@@ -77,7 +77,7 @@ describe('EventForm - confirmation 0.40', () => {
     expect(preview).toHaveTextContent('Confirmer la création de l’événement');
     expect(preview).toHaveTextContent('Point projet');
     expect(preview).toHaveTextContent('Agenda principal');
-    expect(preview).toHaveTextContent('google');
+    expect(preview).toHaveTextContent(provider);
     expect(createEventMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer la création' }));
@@ -90,8 +90,8 @@ describe('EventForm - confirmation 0.40', () => {
     });
   });
 
-  it('bloque aussi la modification avant confirmation', async () => {
-    seedCalendar(existingEvent);
+  it.each(['google', 'caldav'])('bloque aussi la modification %s avant confirmation', async (provider) => {
+    seedCalendar(existingEvent, provider);
     render(
       <PrototypeExternalActionConfirmationProvider>
         <EventForm />

@@ -824,6 +824,11 @@ async def list_events(
         )
 
 
+def _id_calendrier_fournisseur(calendar: Calendar) -> str:
+    """Le calendrier SQL garde son UUID, DAV reçoit son identifiant distant."""
+    return (calendar.remote_id or calendar.id) if calendar.provider == "caldav" else calendar.id
+
+
 async def _list_events_provider(
     calendar: Calendar,
     session: AsyncSession,
@@ -834,7 +839,7 @@ async def _list_events_provider(
     """List events via abstract CalendarProvider (local or CalDAV)."""
     provider = await _get_provider_for_calendar(calendar, session)
     # L'UUID SQL est une identité locale ; CalDAV cherche son id/URL distant.
-    provider_calendar_id = (calendar.remote_id or calendar.id) if calendar.provider == "caldav" else calendar.id
+    provider_calendar_id = _id_calendrier_fournisseur(calendar)
 
     def _parse_borne_instant(s: str) -> datetime:
         """Borne de fenêtre, rendue comme un INSTANT (datetime aware).
@@ -1221,7 +1226,7 @@ async def _create_event_provider(
         end = _heure_murale_paris(request.end_datetime, request.timezone) if request.end_datetime else datetime.now(UTC)
 
     provider_req = ProviderCreateRequest(
-        calendar_id=request.calendar_id,
+        calendar_id=_id_calendrier_fournisseur(calendar),
         summary=request.summary,
         description=request.description,
         location=request.location,
@@ -1236,7 +1241,7 @@ async def _create_event_provider(
 
     return CalendarEventResponse(
         id=evt.id,
-        calendar_id=evt.calendar_id,
+        calendar_id=calendar.id,
         summary=evt.summary,
         description=evt.description,
         location=evt.location,
@@ -1445,7 +1450,7 @@ async def update_event(
         # geste utile : relire avant de reecrire. Meme reponse que l'ecrivain
         # Google depuis B-029.
         try:
-            evt = await provider.update_event(calendar_id, event_id, provider_req)
+            evt = await provider.update_event(_id_calendrier_fournisseur(calendar), event_id, provider_req)
         except ConflitDeVersion as e:
             raise HTTPException(
                 status_code=409,
@@ -1459,7 +1464,7 @@ async def update_event(
 
         return CalendarEventResponse(
             id=evt.id,
-            calendar_id=evt.calendar_id,
+            calendar_id=calendar.id,
             summary=evt.summary,
             description=evt.description,
             location=evt.location,
@@ -1653,7 +1658,7 @@ async def delete_event(
     if calendar and calendar.provider in ("local", "caldav"):
         provider = await _get_provider_for_calendar(calendar, session)
         try:
-            await provider.delete_event(calendar.id, event_id)
+            await provider.delete_event(_id_calendrier_fournisseur(calendar), event_id)
         except ValueError as absent:
             # B-556 (05/09/2026) : le fournisseur local signale un événement
             # absent par ValueError ; sans ce filet, un second clic sur
