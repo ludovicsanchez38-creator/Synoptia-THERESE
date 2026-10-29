@@ -1340,89 +1340,10 @@ async def dispatch_to_openclaw(
     http_request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    """Lance un agent OpenClaw depuis l Atelier.
+    """Destination aval invérifiable : aucun contenu remis à la passerelle."""
+    from app.services.openclaw_bridge import REFUS_ENVOI_OPENCLAW
 
-    Crée une AgentSession en DB et spawn une session OpenClaw.
-    Limite le nombre d agents en parallèle (US-003).
-    """
-    from app.services.openclaw_bridge import spawn_session
-
-    # US-003 : vérifier la limite d agents en parallèle
-    running_count_result = await session.execute(
-        select(func.count(AgentSession.id)).where(AgentSession.status == "running")
-    )
-    running_count = running_count_result.scalar() or 0
-
-    if running_count >= _MAX_OPENCLAW_AGENTS:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Tu as déjà {running_count} agents en cours. Attends qu un se termine ou annule-en un.",
-        )
-
-    # Vérifier la connexion OpenClaw
-    from app.services.openclaw_bridge import check_connection
-
-    connected = await check_connection()
-    if not connected:
-        raise HTTPException(
-            status_code=503,
-            detail="OpenClaw n'est pas accessible. Vérifie que le gateway tourne sur le port 18789.",
-        )
-
-    # Créer la session en DB
-    agent_session = AgentSession(
-        agent_name=request.agent_name,
-        instruction=request.instruction,
-    )
-    session.add(agent_session)
-    await session.commit()
-    await session.refresh(agent_session)
-
-    # Spawn la session OpenClaw avec le MCP bridge
-    mcp_config = {
-        "therese-bridge": {
-            "command": "python3",
-            "args": ["-m", "app.services.mcp_therese_server"],
-            "env": {
-                "THERESE_API_URL": "http://127.0.0.1:17293",
-                "THERESE_MCP_TOKEN": getattr(
-                    http_request.app.state, "session_token", ""
-                ),
-            },
-        }
-    }
-
-    result = await spawn_session(
-        agent_name=request.agent_name,
-        instruction=request.instruction,
-        mcp_config=mcp_config,
-    )
-
-    if "error" in result:
-        agent_session.status = "error"
-        agent_session.result_summary = result["error"]
-        session.add(agent_session)
-        await session.commit()
-        raise HTTPException(status_code=502, detail=result["error"])
-
-    # Mettre à jour avec l ID de session OpenClaw
-    openclaw_id = result.get("session_id") or result.get("id", "")
-    agent_session.openclaw_session_id = openclaw_id
-    session.add(agent_session)
-    await session.commit()
-    await session.refresh(agent_session)
-
-    return AgentSessionResponse(
-        id=agent_session.id,
-        agent_name=agent_session.agent_name,
-        instruction=agent_session.instruction,
-        status=agent_session.status,
-        openclaw_session_id=agent_session.openclaw_session_id,
-        created_at=agent_session.created_at,
-        finished_at=agent_session.finished_at,
-        result_summary=agent_session.result_summary,
-        actions_count=agent_session.actions_count,
-    )
+    raise HTTPException(status_code=403, detail=REFUS_ENVOI_OPENCLAW)
 
 
 @router.get("/sessions")
@@ -1541,32 +1462,10 @@ async def send_to_openclaw_session(
     request: SendMessageRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Envoie un message à un agent dans une session OpenClaw."""
+    """Même fermeture pour les sessions déjà présentes avant cette version."""
+    from app.services.openclaw_bridge import REFUS_ENVOI_OPENCLAW
 
-    result = await session.execute(select(AgentSession).where(AgentSession.id == session_id))
-    agent_session = result.scalar_one_or_none()
-    if not agent_session:
-        raise HTTPException(status_code=404, detail="Session introuvable")
-    if agent_session.status != "running":
-        raise HTTPException(
-            status_code=400, detail=f"Session en statut {agent_session.status}, pas running"
-        )
-    if not agent_session.openclaw_session_id:
-        raise HTTPException(status_code=400, detail="Pas de session OpenClaw associée")
-
-    from app.services.openclaw_bridge import send_message
-
-    response = await send_message(agent_session.openclaw_session_id, request.content)
-
-    if "error" in response:
-        raise HTTPException(status_code=502, detail=response["error"])
-
-    # Incrémenter le compteur d actions
-    agent_session.actions_count += 1
-    session.add(agent_session)
-    await session.commit()
-
-    return response
+    raise HTTPException(status_code=403, detail=REFUS_ENVOI_OPENCLAW)
 
 
 @router.post("/sessions/{session_id}/cancel")

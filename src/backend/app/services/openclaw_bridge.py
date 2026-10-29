@@ -66,44 +66,19 @@ async def list_agents() -> list[dict[str, Any]]:
         return []
 
 
+REFUS_ENVOI_OPENCLAW = (
+    "Tu ne peux pas envoyer de contenu à OpenClaw : sa destination IA effective "
+    "ne peut pas être vérifiée. Utilise un agent embarqué de l’Atelier."
+)
+
+
 async def spawn_session(
     agent_name: str,
     instruction: str,
     mcp_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Crée une session OpenClaw avec un prompt initial.
-
-    Args:
-        agent_name: Nom de l agent OpenClaw (ex: "katia", "zezette").
-        instruction: Prompt initial / instruction pour l agent.
-        mcp_config: Configuration MCP optionnelle (serveurs à connecter).
-
-    Returns:
-        Dict avec session_id, status, etc. ou {"error": "..."} en cas d échec.
-    """
-    body: dict[str, Any] = {
-        "agent": agent_name,
-        "prompt": instruction,
-    }
-    if mcp_config:
-        body["mcp_servers"] = mcp_config
-
-    try:
-        async with _client() as client:
-            resp = await client.post("/api/sessions", json=body)
-            resp.raise_for_status()
-            return resp.json()
-    except httpx.HTTPStatusError as e:
-        detail = ""
-        try:
-            detail = e.response.json().get("detail", e.response.text)
-        except Exception:
-            detail = e.response.text
-        logger.error("Erreur spawn_session OpenClaw (%s): %s", e.response.status_code, detail)
-        return {"error": f"OpenClaw {e.response.status_code}: {detail}"}
-    except (httpx.HTTPError, OSError) as e:
-        logger.error("Erreur spawn_session OpenClaw: %s", e)
-        return {"error": str(e)}
+    """Fermé aussi pour les appelants internes tant que l'aval est invérifiable."""
+    return {"error": REFUS_ENVOI_OPENCLAW}
 
 
 async def get_session_status(session_id: str) -> dict[str, Any]:
@@ -151,34 +126,8 @@ async def get_session_messages(session_id: str) -> list[dict[str, Any]]:
 
 
 async def send_message(session_id: str, message: str) -> dict[str, Any]:
-    """Envoie un message à un agent dans une session en cours.
-
-    Args:
-        session_id: Identifiant de la session.
-        message: Contenu du message à envoyer.
-
-    Returns:
-        Réponse de l agent ou {"error": "..."}.
-    """
-    try:
-        async with _client() as client:
-            resp = await client.post(
-                f"/api/sessions/{session_id}/messages",
-                json={"content": message},
-            )
-            resp.raise_for_status()
-            return resp.json()
-    except httpx.HTTPStatusError as e:
-        detail = ""
-        try:
-            detail = e.response.json().get("detail", e.response.text)
-        except Exception:
-            detail = e.response.text
-        logger.error("Erreur send_message: %s", detail)
-        return {"error": f"OpenClaw {e.response.status_code}: {detail}"}
-    except (httpx.HTTPError, OSError) as e:
-        logger.error("Erreur send_message: %s", e)
-        return {"error": str(e)}
+    """Fermé aussi pour les appelants internes tant que l'aval est invérifiable."""
+    return {"error": REFUS_ENVOI_OPENCLAW}
 
 
 async def cancel_session(session_id: str) -> bool:
