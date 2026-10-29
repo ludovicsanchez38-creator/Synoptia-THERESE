@@ -49,7 +49,7 @@ async def test_b1703_une_cle_cloud_du_poste_ne_declenche_pas_le_modele(
     monkeypatch.setenv("ANTHROPIC_API_KEY", "cle-factice-b1703")
     monkeypatch.setattr(llm, "_llm_service", None)
     monkeypatch.setattr(CircuitBreakerManager, "_instance", None)
-    assert llm.get_llm_service().config.provider.value == "anthropic"
+    assert llm.get_llm_service().config.provider.value == "ollama"
 
     appels_modele = []
 

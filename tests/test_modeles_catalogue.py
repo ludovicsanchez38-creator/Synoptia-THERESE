@@ -202,18 +202,17 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
         # P-122 : la tête (gpt-6-sol) porte sa propre fenêtre, 1 050 000.
         assert config.context_window == fenetre_de_contexte("openai", frontier("openai"))
 
-    def test_repli_par_cle_recoit_le_frontier(self, client, monkeypatch):
-        """Sans préférence : première clé trouvée (anthropic) -> frontier."""
+    def test_cle_seule_ne_selectionne_pas_de_fournisseur_cloud(self, client, monkeypatch):
+        """Une clé seule ne vaut pas choix du destinataire de la conversation."""
         from app.services.llm import LLMService
-        from app.services.modeles_catalogue import fenetre_de_contexte, frontier
 
+        monkeypatch.setattr('app.services.llm.detect_default_ollama_model', lambda: 'modele-local')
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         for var in ("OPENAI_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY"):
             monkeypatch.delenv(var, raising=False)
         config = LLMService()._default_config()
-        assert config.provider.value == "anthropic"
-        assert config.model == frontier("anthropic")
-        assert config.context_window == fenetre_de_contexte("anthropic", frontier("anthropic"))
+        assert config.provider.value == "ollama"
+        assert config.model == "modele-local"
 
     def test_circuit_breaker_derive_du_catalogue(self, client, monkeypatch):
         from app.services.llm import LLMService
