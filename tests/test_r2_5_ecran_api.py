@@ -3,8 +3,8 @@
 import pytest
 from app.models.entities import Message
 from app.services import llm, memory_cards
-from app.services.providers.base import LLMProvider
 from app.services.consentements import enregistrer_accord
+from app.services.providers.base import LLMProvider
 from sqlmodel import select
 
 from tests.test_p159_contexte_transmis import _evenements

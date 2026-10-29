@@ -11,8 +11,8 @@ C'est le trou fermé en juillet sur le statut de facturation, resté ouvert ici.
 from __future__ import annotations
 
 import pytest
-from app.services.llm import LLMConfig, LLMProvider
 from app.services.email_response_generator import EmailResponseGenerator
+from app.services.llm import LLMConfig, LLMProvider
 from app.services.user_profile import (
     UserProfile,
     get_cached_profile,

@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
-
 from app.services import llm
 from app.services.error_handler import ErreurPourEcran
 
@@ -26,7 +25,7 @@ def preferences(monkeypatch, provider):
 def test_cle_manquante_erreur_francaise_sans_repli(monkeypatch, provider):
     preferences(monkeypatch, provider)
     with pytest.raises(ErreurPourEcran, match=rf'{provider}.*Paramètres'):
-        llm.LLMService().config
+        llm.LLMService()
 
 
 def test_ollama_sans_cle_reste_ollama(monkeypatch):

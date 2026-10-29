@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from app.models.entities import Contact, Conversation, MemoryCard, Message, Project
 from app.services import llm, memory_cards
-from app.services.providers.base import LLMProvider
 from app.services.consentements import enregistrer_accord
+from app.services.providers.base import LLMProvider
 
 from tests.test_r2_3_outil import fournisseur  # noqa: F401
 

@@ -15,8 +15,8 @@ from typing import Any
 import pytest
 from app.models.entities import FileMetadata
 from app.services.file_parser import extract_text
-from app.services.memory_tools import execute_memory_tool as _execute_memory_tool
 from app.services.llm import LLMConfig, LLMProvider
+from app.services.memory_tools import execute_memory_tool as _execute_memory_tool
 from reportlab.pdfgen.canvas import Canvas
 from sqlalchemy.ext.asyncio import AsyncSession
 

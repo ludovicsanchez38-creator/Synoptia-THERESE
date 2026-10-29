@@ -4,8 +4,8 @@ import json
 import pytest
 from app.models.entities import Conversation
 from app.services import llm, memory_cards
-from app.services.providers.base import LLMProvider
 from app.services.consentements import enregistrer_accord
+from app.services.providers.base import LLMProvider
 
 from tests.test_r2_3_outil import action, fournisseur  # noqa: F401
 

@@ -5,7 +5,12 @@ from sqlalchemy import inspect
 
 @pytest.mark.asyncio
 async def test_accord_retrait_et_reprise_idempotente(client, db_session):
-    from app.services.consentements import accord_valide, historique, importer_accords, enregistrer_accord
+    from app.services.consentements import (
+        accord_valide,
+        enregistrer_accord,
+        historique,
+        importer_accords,
+    )
 
     ancien = {'purpose': 'documents', 'provider': 'openai', 'timestamp': '2026-01-02T03:04:05Z', 'dataCategories': ['documents']}
     importer_accords([ancien])
@@ -24,6 +29,7 @@ async def test_accord_retrait_et_reprise_idempotente(client, db_session):
 @pytest.mark.asyncio
 async def test_entete_de_requete_ne_remplace_pas_accord_local(client, db_session):
     from types import SimpleNamespace
+
     from app.services.memory_card_context import documents_autorises
     config = SimpleNamespace(provider=SimpleNamespace(value='openai'))
     assert not documents_autorises(config, ['documents:openai'])
@@ -42,11 +48,12 @@ async def test_api_conserve_date_version_et_refuse_finalite_inconnue(client):
 
 
 def test_migration_cree_la_table_sans_perdre_les_preferences(tmp_path):
-    from sqlalchemy import create_engine, text
-    from alembic.migration import MigrationContext
-    from alembic.operations import Operations
     from importlib.util import module_from_spec, spec_from_file_location
     from pathlib import Path
+
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from sqlalchemy import create_engine, text
     path = Path('src/backend/alembic/versions/t4consent01_accords_cloud.py')
     assert path.exists()
     spec = spec_from_file_location('t4migration', path)
@@ -65,9 +72,10 @@ def test_migration_cree_la_table_sans_perdre_les_preferences(tmp_path):
 @pytest.mark.asyncio
 async def test_retrait_bloque_le_prochain_envoi_au_fournisseur(client, db_session):
     from unittest.mock import AsyncMock
-    from app.services.llm import LLMService, LLMConfig, LLMProvider, ContextWindow, Message
+
     from app.services.consentements import enregistrer_accord
     from app.services.error_handler import ErreurPourEcran
+    from app.services.llm import ContextWindow, LLMConfig, LLMProvider, LLMService, Message
     service = LLMService(LLMConfig(LLMProvider.OPENAI, 'modele', api_key='factice'))
     service._ensure_provider = AsyncMock()
     context = ContextWindow(messages=[Message(role='user', content='bonjour')])
