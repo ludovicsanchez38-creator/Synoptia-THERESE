@@ -114,10 +114,10 @@ def _get_llm_for_model(model_id: str):
         return service
 
     if "::" in model_id:
-        fournisseur, model_id = model_id.split("::", 1)
-        if fournisseur == "ollama":
+        fournisseur_explicite, model_id = model_id.split("::", 1)
+        if fournisseur_explicite == "ollama":
             return _service_local(model_id)
-        return exiger_service(fournisseur)
+        return exiger_service(fournisseur_explicite)
 
     if model_id.lower().startswith(PREFIXE_MODELE_LOCAL):
         return _service_local(model_id[len(PREFIXE_MODELE_LOCAL):])
