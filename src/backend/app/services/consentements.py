@@ -104,11 +104,19 @@ def enregistrer_accord(purpose: str, provider: str, granted: bool, text_version:
                        occurred_at: str | None = None) -> None:
     now = datetime.now(UTC).isoformat()
     with _VERROU, get_sync_session() as session:
+        decision = CloudConsent(event_id=event_id, purpose=purpose, provider=provider.strip().lower(),
+            granted=granted, text_version=text_version, occurred_at=occurred_at or now, recorded_at=now,
+            data_categories=json.dumps(categories, ensure_ascii=False), source="interface")
+        if _restauration_en_attente():
+            if granted:
+                exiger_accord(purpose, provider)  # refus expliqué tant que la reprise n'est pas terminée
+            journal = json.loads(_journal_restauration().read_text(encoding='utf-8'))
+            if not event_id or not any(r['event_id'] == event_id for r in journal['history']):
+                journal['history'].append(decision.model_dump())
+                _ecrire_journal_restauration(journal)
         if event_id and session.exec(select(CloudConsent).where(CloudConsent.event_id == event_id)).first():
             return
-        session.add(CloudConsent(event_id=event_id, purpose=purpose, provider=provider.strip().lower(),
-            granted=granted, text_version=text_version, occurred_at=occurred_at or now, recorded_at=now,
-            data_categories=json.dumps(categories, ensure_ascii=False), source="interface"))
+        session.add(decision)
         session.commit()
 
 
@@ -125,6 +133,16 @@ def importer_accords(grants: list[dict[str, Any]]) -> None:
                 data_categories=json.dumps(grant.get('dataCategories') or [], ensure_ascii=False)))
             session.flush()
         session.commit()
+
+
+def retirer_tous_accords() -> None:
+    """L'effacement couvre aussi les décisions d'une restauration interrompue."""
+    with _VERROU:
+        decisions = historique()
+        if _restauration_en_attente():
+            decisions += json.loads(_journal_restauration().read_text(encoding='utf-8'))['history']
+        for purpose, provider in {(r['purpose'], r['provider']) for r in decisions}:
+            enregistrer_accord(purpose, provider, False, TEXT_VERSION, [])
 
 
 def accords_courants() -> list[dict[str, Any]]:

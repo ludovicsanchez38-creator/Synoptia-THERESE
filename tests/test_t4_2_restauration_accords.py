@@ -64,7 +64,29 @@ async def test_restauration_interrompue_bloque_et_reprend_sans_perdre_le_retrait
     url = f"/api/data/restore/{sauvegarde.json()['backup_name']}?confirm=true"
     assert (await client.post(url, json={'password': 'Passphrase-Test-123'})).status_code == 500
     assert not accord_valide('llm', 'openai')
+
     assert consentements.accords_courants() == []
     monkeypatch.setattr(consentements, 'terminer_restauration', terminer)
     assert (await client.post(url, json={'password': 'Passphrase-Test-123'})).status_code == 200
     assert not accord_valide('llm', 'openai')
+
+
+async def test_retrait_apres_interruption_prime_a_la_reprise(client):
+    from app.services import consentements
+
+    enregistrer_accord('llm', 'openai', True, '3', [])
+    consentements.preparer_restauration()
+    # L'état sauvegardé contient encore l'accord ; le retrait est plus récent.
+    enregistrer_accord('llm', 'openai', False, '3', [], event_id='retrait-pendant-reprise')
+    consentements.terminer_restauration()
+    assert not accord_valide('llm', 'openai')
+
+
+async def test_effacement_apres_interruption_retire_aussi_les_accords_du_journal(client):
+    from app.services import consentements
+
+    enregistrer_accord('documents', 'openai', True, '3', [])
+    consentements.preparer_restauration()
+    consentements.retirer_tous_accords()
+    consentements.terminer_restauration()
+    assert not accord_valide('documents', 'openai')

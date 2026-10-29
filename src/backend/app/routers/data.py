@@ -757,9 +757,8 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     # On garde les logs d'audit et l'historique des accords.
     await session.commit()
 
-    from app.services.consentements import accords_courants, enregistrer_accord
-    for accord in accords_courants():
-        enregistrer_accord(accord['purpose'], accord['provider'], False, '3', [])
+    from app.services.consentements import retirer_tous_accords
+    retirer_tous_accords()
 
     # B-340 (05/09/2026) : la ligne Preference du profil est effacée, mais le
     # cache de processus (`get_cached_profile`) servait encore nom et SIRET au
