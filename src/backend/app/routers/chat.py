@@ -768,7 +768,7 @@ class ContexteMemoire(str):
 
     contient_documents: bool
 
-    def __new__(cls, texte: str, contient_documents: bool = False):
+    def __new__(cls, texte: str, contient_documents: bool = False) -> "ContexteMemoire":
         valeur = super().__new__(cls, texte)
         valeur.contient_documents = contient_documents
         return valeur

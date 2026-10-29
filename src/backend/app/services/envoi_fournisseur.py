@@ -1,13 +1,15 @@
 """Garde synchrone à la remise HTTP, propre à un envoi et à ses finalités."""
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, TypeVar
+
+T = TypeVar("T")
 
 
-def appeler_avec_accord(verifier: Callable[[], None], appel: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+def appeler_avec_accord(verifier: Callable[[], None], appel: Callable[[], T]) -> T:
     """SDK synchrone : vérifier dans le thread, juste avant de lui remettre les données."""
     verifier()
-    return appel(*args, **kwargs)
+    return appel()
 
 
 class TransportAvecAccord:

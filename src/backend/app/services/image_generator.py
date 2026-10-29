@@ -183,8 +183,9 @@ class ImageGeneratorService:
                 with open(reference_image_path, "rb") as ref_file:
                     # B-497 : appel SDK bloquant, hors de la boucle d'événements.
                     result = await asyncio.to_thread(
-                        lambda: appeler_avec_accord(
-                            lambda: exiger_accord('images', ImageProvider.OPENAI.value), client.images.edit,
+                        appeler_avec_accord,
+                        lambda: exiger_accord('images', ImageProvider.OPENAI.value),
+                        lambda: client.images.edit(
                             model="gpt-image-2",
                             image=ref_file,
                             prompt=prompt,
@@ -197,8 +198,9 @@ class ImageGeneratorService:
                 # Generation mode without reference
                 # Note: gpt-image-2 n'accepte plus response_format, retourne URL par défaut
                 result = await asyncio.to_thread(
-                    lambda: appeler_avec_accord(
-                        lambda: exiger_accord('images', ImageProvider.OPENAI.value), client.images.generate,
+                    appeler_avec_accord,
+                    lambda: exiger_accord('images', ImageProvider.OPENAI.value),
+                    lambda: client.images.generate(
                         model="gpt-image-2",
                         prompt=prompt,
                         size=config.size,
@@ -273,8 +275,9 @@ class ImageGeneratorService:
 
             # Generate image
             response = await asyncio.to_thread(
-                lambda: appeler_avec_accord(
-                    lambda: exiger_accord('images', ImageProvider.GEMINI.value), client.models.generate_content,
+                appeler_avec_accord,
+                lambda: exiger_accord('images', ImageProvider.GEMINI.value),
+                lambda: client.models.generate_content(
                     model="gemini-3.1-flash-image-preview",
                     contents=contents,
                     config=types.GenerateContentConfig(
