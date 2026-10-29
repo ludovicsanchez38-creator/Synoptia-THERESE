@@ -408,6 +408,9 @@ class BoardService:
         Yields chunks pour chaque conseiller puis la synthèse.
         """
         is_sovereign = request.mode == BoardMode.SOVEREIGN
+        if not is_sovereign:
+            from app.services.consentements import exiger_accord
+            exiger_accord('llm', 'board')
         # En mode souverain, aucun service cloud ne doit devenir un filet de
         # secours implicite. Le service par défaut n'est donc chargé qu'en mode
         # cloud. Ollama doit être réellement disponible, sinon on échoue.
@@ -513,6 +516,7 @@ class BoardService:
 
                 messages = [LLMMessage(role="user", content=context_msg)]
                 context = llm_service.prepare_context(messages, system_prompt=advisor_system)
+                context.accord_board = True
 
                 full_content = ""
                 usage_sink: dict = {}
@@ -659,6 +663,7 @@ class BoardService:
 
                 messages = [LLMMessage(role="user", content=context_msg)]
                 context = llm_service.prepare_context(messages, system_prompt=advisor_system)
+                context.accord_board = True
 
                 full_content = ""
                 usage_sink: dict = {}
@@ -946,6 +951,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         ]
 
         context = llm_service.prepare_context(messages)
+        context.accord_board = True
 
         # Generate synthesis
         full_response = ""

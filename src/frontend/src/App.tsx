@@ -147,6 +147,9 @@ function ApplicationBootstrap() {
           }
           if (isolation === 'switched') return;
 
+          const { synchroniserConsentements } = await import('./lib/consentSync');
+          await synchroniserConsentements();
+
           // Vérifier le statut onboarding
           const status = await api.getOnboardingStatus();
           setShowOnboarding(!status.completed);

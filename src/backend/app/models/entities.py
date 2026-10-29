@@ -303,6 +303,22 @@ class Variable(SQLModel, table=True):
         return []
 
 
+class CloudConsent(SQLModel, table=True):
+    """Décision datée ; un retrait ajoute une ligne et conserve la preuve."""
+
+    __tablename__ = "cloud_consents"
+    event_id: str | None = Field(default=None, unique=True)
+    id: int | None = Field(default=None, primary_key=True)
+    purpose: str
+    provider: str
+    granted: bool
+    text_version: str
+    occurred_at: str
+    recorded_at: str
+    data_categories: str = "[]"
+    source: str = "interface"
+
+
 class Preference(SQLModel, table=True):
     """User preferences and settings."""
 

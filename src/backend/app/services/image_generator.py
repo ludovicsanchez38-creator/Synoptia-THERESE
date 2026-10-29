@@ -135,6 +135,9 @@ class ImageGeneratorService:
         if config is None:
             config = ImageConfig(provider=provider)
 
+        from app.services.consentements import exiger_accord
+        exiger_accord('images', provider.value)
+
         if provider == ImageProvider.OPENAI:
             return await self._generate_openai(prompt, config, reference_image_path)
         elif provider == ImageProvider.GEMINI:

@@ -1,3 +1,5 @@
+import { queueConsentDecision } from './consentSync';
+
 /**
  * THÉRÈSE v2 - Consentement transfert cloud (US-003 / RGPD-4)
  *
@@ -30,6 +32,7 @@ export interface CloudGrant {
   provider: string;
   timestamp: string;
   dataCategories?: string[];
+  textVersion?: string;
 }
 
 interface CloudConsentStoreV2 {
@@ -73,9 +76,10 @@ export function grantCloudConsent(
   timestamp: string = new Date().toISOString(),
 ): CloudGrant {
   const store = loadStore();
-  const grant: CloudGrant = { purpose, provider, timestamp, dataCategories };
+  const grant: CloudGrant = { purpose, provider, timestamp, dataCategories, textVersion: '3' };
   store.grants[grantKey(purpose, provider)] = grant;
   saveStore(store);
+  queueConsentDecision(purpose, provider, true, dataCategories, timestamp);
   return grant;
 }
 
@@ -99,6 +103,7 @@ export function revokeCloudConsent(purpose: CloudPurpose, provider: string): voi
   const store = loadStore();
   delete store.grants[grantKey(purpose, provider)];
   saveStore(store);
+  queueConsentDecision(purpose, provider, false);
   window.dispatchEvent(
     new CustomEvent(CLOUD_CONSENT_REVOKED_EVENT, { detail: { purpose, provider } }),
   );

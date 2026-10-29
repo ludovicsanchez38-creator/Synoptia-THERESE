@@ -1240,3 +1240,7 @@ if __name__ == "__main__":
         port=settings.port,
         reload=settings.debug,
     )
+
+from app.routers.consents import router as consents_router  # noqa: E402
+
+app.include_router(consents_router, prefix="/api/consents", tags=["Confidentialité"])

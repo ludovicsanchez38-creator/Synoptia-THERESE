@@ -22,6 +22,7 @@ from app.models.entities import (
     BoardDecisionDB,
     Calendar,
     CalendarEvent,
+    CloudConsent,
     Contact,
     Conversation,
     Deliverable,
@@ -301,6 +302,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                 for conv in conversations
             ],
             "files": [_export_row(item) for item in files],
+            "cloud_consents": [_export_row(item) for item in session.execute(select(CloudConsent)).scalars().all()],
             "preferences": [
                 {
                     "id": p.id,
@@ -749,9 +751,12 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     # Les préférences contiennent aussi le profil et les choix personnels :
     # « toutes les données » doit donc réellement remettre cet espace à zéro.
     await session.execute(delete(Preference))
-    # On garde les logs d'audit (trace legale)
-
+    # On garde les logs d'audit et l'historique des accords.
     await session.commit()
+
+    from app.services.consentements import accords_courants, enregistrer_accord
+    for accord in accords_courants():
+        enregistrer_accord(accord['purpose'], accord['provider'], False, '3', [])
 
     # B-340 (05/09/2026) : la ligne Preference du profil est effacée, mais le
     # cache de processus (`get_cached_profile`) servait encore nom et SIRET au

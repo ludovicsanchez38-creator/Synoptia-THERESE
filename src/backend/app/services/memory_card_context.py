@@ -48,7 +48,8 @@ def documents_autorises(config: Any, grants: list[str] | None) -> bool:
         # Destination illisible : aucun document ne part (fermé par défaut),
         # et le message, lui, continue.
         return False
-    return destination is None or f"documents:{destination}" in (grants or [])
+    from app.services.consentements import accord_valide
+    return destination is None or accord_valide("documents", destination)
 
 
 def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, Any]] | None,
@@ -187,7 +188,8 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
         return
     borner_payload(context, fiches, config, tools, suite)
     destination = destination_cloud(config)
-    if context.memory_used and destination and f"{demande['purpose']}:{destination}" not in demande['grants']:
+    from app.services.consentements import accord_valide
+    if context.memory_used and destination and not accord_valide(demande['purpose'], destination, ('memory_cards_r2_v1',)):
         raise AccordFichesRequis(destination, demande['purpose'])
 
 

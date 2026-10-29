@@ -81,6 +81,9 @@ async def transcribe_audio(
             detail="Clé API Groq non configurée. Ajoute-la dans les paramètres.",
         )
 
+    from app.services.consentements import exiger_accord
+    exiger_accord('voice', 'groq')
+
     # Read audio data
     audio_data = await audio.read()
 

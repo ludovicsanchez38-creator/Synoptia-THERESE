@@ -2177,6 +2177,9 @@ async def send_message(
             logger.info("Pièce jointe d'un tour précédent non rejouée : %s", error)
 
     # Combine memory and file contexts
+    if file_contexts and not documents_autorises(llm_service.config, None):
+        from app.services.error_handler import ErreurPourEcran
+        raise ErreurPourEcran("Ton accord « documents » pour ce fournisseur est nécessaire avant l’envoi de fichiers.")
     if file_contexts:
         # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
         # 15 000 caractères chacun évincent l'historique de la conversation
@@ -2215,6 +2218,7 @@ async def send_message(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.contient_documents = bool(file_contexts) or bool(memory_context and documents_autorises(llm_service.config, None))
     context.memory_cards_enabled = request.include_memory
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -2906,6 +2910,9 @@ async def _do_stream_response(
         yield f"data: {json.dumps(status_data.model_dump())}\n\n"
 
     # Combine memory and file contexts
+    if file_contexts and not documents_autorises(llm_service.config, None):
+        from app.services.error_handler import ErreurPourEcran
+        raise ErreurPourEcran("Ton accord « documents » pour ce fournisseur est nécessaire avant l’envoi de fichiers.")
     if file_contexts:
         # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
         # 15 000 caractères chacun évincent l'historique de la conversation
@@ -2945,6 +2952,7 @@ async def _do_stream_response(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.contient_documents = bool(file_contexts) or bool(memory_context and documents_autorises(llm_service.config, None))
     context.memory_cards_enabled = include_memory
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -3862,6 +3870,10 @@ async def _execute_tools_and_continue(
                 perimetre, perimetre_id = await _perimetre_de_conversation(
                     conversation_id, session
                 )
+                if tc.name == "read_file":
+                    from app.services.memory_card_context import documents_autorises
+                    if documents_autorises(context.config_effective or llm_service.config, None):
+                        context.contient_documents = True
                 tool_result_str = await execute_memory_tool(
                     tc.name, tc.arguments, session,
                     scope=perimetre, scope_id=perimetre_id,

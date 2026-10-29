@@ -22,6 +22,8 @@ class ContextWindow:
     # (bascule du disjoncteur comprise). Les continuations après outils la
     # reprennent, pour ne pas changer de fournisseur au milieu du tour.
     config_effective: Any = None
+    accord_board: bool = False
+    contient_documents: bool = False
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0

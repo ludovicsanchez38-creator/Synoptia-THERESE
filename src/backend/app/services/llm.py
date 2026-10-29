@@ -938,6 +938,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         # et son fournisseur sont LOCAUX à l'appel ; `config` permet une
         # variante (max_tokens) sans écrire dans l'état partagé.
         effective_config = config or self._resolve_with_circuit_breaker()
+        from app.services.consentements import verifier_envoi_llm
+        verifier_envoi_llm(effective_config, context)
         if isinstance(getattr(context, "memory_request", None), dict):
             from app.services.memory_card_context import actualiser_fiches
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
@@ -1046,6 +1048,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         # d'outils émis par le fournisseur de repli, dans un autre format.
         retenue = getattr(context, "config_effective", None)
         effective_config = retenue if isinstance(retenue, LLMConfig) else self.config
+        from app.services.consentements import verifier_envoi_llm
+        verifier_envoi_llm(effective_config, context)
         if isinstance(getattr(context, "memory_request", None), dict):
             suite = {
                 'assistant': assistant_content, 'calls': tool_calls, 'results': tool_results,

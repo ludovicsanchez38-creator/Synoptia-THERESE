@@ -1,3 +1,4 @@
+import { CONSENT_SAVE_ERROR } from '../../lib/consentSync';
 /**
  * THÉRÈSE v2 - Privacy Tab (US-017)
  *
@@ -69,6 +70,11 @@ export function PrivacyTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const signaler = () => setError('Ton accord n’a pas pu être enregistré. Vérifie que le moteur local est disponible, puis réessaie.');
+    window.addEventListener(CONSENT_SAVE_ERROR, signaler);
+    return () => window.removeEventListener(CONSENT_SAVE_ERROR, signaler);
+  }, []);
   const [backups, setBackups] = useState<BackupMetadata[]>([]);
   const [backupLoading, setBackupLoading] = useState(true);
   const [dataOperation, setDataOperation] = useState<string | null>(null);

@@ -741,7 +741,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "c22b02facture"
+ALEMBIC_HEAD_REVISION = "t4consent01"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:
@@ -886,7 +886,7 @@ def ensure_alembic_stamp(db_path) -> None:
                         and all(
                             name in _SQLModel.metadata.tables
                             and set(_SQLModel.metadata.tables[name].columns.keys()) <= _colonnes(name)
-                            for name in ("memory_cards", "memory_card_uses", "activities")
+                            for name in ("memory_cards", "memory_card_uses", "activities", "cloud_consents")
                         )
                         and not any(r[1] == 'contact_id' and r[3] for r in conn.execute('PRAGMA table_info(activities)'))
                         # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa
