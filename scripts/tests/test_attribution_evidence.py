@@ -70,6 +70,8 @@ class AbsenceTests(unittest.TestCase):
         output = licenses.render([self.row], 'hash', attribution_sources=[proof], root=self.root)
         self.assertNotIn('PROVISOIRE', output.splitlines()[0])
         self.assertIn("Aucun titulaire n'est nommé par le projet amont au commit " + self.commit, output)
+        self.assertGreater(output.index("Aucun titulaire n'est nommé"),
+                           output.index(self.row['notices'][1]['text']))
 
     def test_attribution_in_archive_or_tree_rejects_even_updated_hashes(self):
         for scope in ('crate', 'tree'):

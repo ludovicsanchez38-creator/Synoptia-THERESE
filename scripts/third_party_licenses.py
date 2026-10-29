@@ -510,6 +510,7 @@ def render(rows, fingerprint, attribution_sources=(), root=ROOT):
     if missing:
         parts += ['Attributions à compléter : ' + ', '.join(missing), '']
     texts = {}
+    absence_mentions = []
     for row in sorted(rows, key=lambda r: r['id']):
         flags = copyleft(row['license'] + '\n' + '\n'.join(n['text'] for n in row['notices']))
         parts += [row['id'], 'Licence déclarée : ' + row['license'], 'Archive : ' + row.get('artifact', ''), 'Intégrité : ' + row.get('integrity', '')]
@@ -517,7 +518,7 @@ def render(rows, fingerprint, attribution_sources=(), root=ROOT):
             parts.append('STATUT : texte amont reproduit tel quel — preuves dans licenses/attribution-sources.json')
         if attribution_evidence.accepted(row, attribution_sources, root):
             parts.append('STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json')
-            parts.append(attribution_evidence.statement(row, attribution_sources))
+            absence_mentions += [row['id'], attribution_evidence.statement(row, attribution_sources), '']
         if row.get('review_required'):
             parts.append('REVUE REQUISE : ' + row['provenance'])
         if flags:
@@ -529,6 +530,8 @@ def render(rows, fingerprint, attribution_sources=(), root=ROOT):
         parts.append('')
     for h, text in sorted(texts.items()):
         parts += ['=' * 72, 'TEXTE SHA256 ' + h, text, '']
+    if absence_mentions:
+        parts += ['Mentions factuelles d’absence de titulaire nommé en amont', ''] + absence_mentions
     return '\n'.join(parts) + '\n'
 
 

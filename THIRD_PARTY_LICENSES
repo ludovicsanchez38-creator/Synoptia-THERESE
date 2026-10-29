@@ -1684,7 +1684,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-app-kit/objc2-app-kit-0.3.2.crate
 Intégrité : sha256:d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1697,7 +1696,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-core-foundation/objc2-core-foundation-0.3.2.crate
 Intégrité : sha256:2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1710,7 +1708,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-core-graphics/objc2-core-graphics-0.3.2.crate
 Intégrité : sha256:e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1741,7 +1738,6 @@ Licence déclarée : MIT
 Archive : https://static.crates.io/crates/objc2-foundation/objc2-foundation-0.3.2.crate
 Intégrité : sha256:e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
 Notice : licenses/supplements/cargo-objc2-foundation-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
@@ -1752,7 +1748,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-io-surface/objc2-io-surface-0.3.2.crate
 Intégrité : sha256:180788110936d59bab6bd83b6060ffdfffb3b922ba1396b312ae795e1de9d81d
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1765,7 +1760,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-osa-kit/objc2-osa-kit-0.3.2.crate
 Intégrité : sha256:f112d1746737b0da274ef79a23aac283376f335f4095a083a267a082f21db0c0
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1778,7 +1772,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-quartz-core/objc2-quartz-core-0.3.2.crate
 Intégrité : sha256:96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1791,7 +1784,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-ui-kit/objc2-ui-kit-0.3.2.crate
 Intégrité : sha256:d87d638e33c06f577498cbcc50491496a3ed4246998a7fbba7ccb98b1e7eab22
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -1804,7 +1796,6 @@ Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-web-kit/objc2-web-kit-0.3.2.crate
 Intégrité : sha256:b2e5aaab980c433cf470df9d7af96a7b46a9d892d521a2cbbb2f8a4c16751e7f
 STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json
-Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 REVUE REQUISE : Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.
 Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
@@ -105086,4 +105077,33 @@ Copyright (C) 2008-2011 INADA Naoki <songofacandy@gmail.com>
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+Mentions factuelles d’absence de titulaire nommé en amont
+
+cargo:objc2-app-kit@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-core-foundation@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-core-graphics@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-foundation@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-io-surface@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-osa-kit@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-quartz-core@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-ui-kit@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
+
+cargo:objc2-web-kit@0.3.2
+Aucun titulaire n'est nommé par le projet amont au commit 7b1abfd750a2cacaea71d6a56ecfb83cb7de560b. Projet objc2, auteur déclaré du workspace : Mads Marquart.
 
