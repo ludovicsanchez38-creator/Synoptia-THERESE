@@ -35,11 +35,11 @@ import { Textarea } from "../ui/Textarea";
 import { Alerte } from "../ui/Alerte";
 import { Etiquette } from "../ui/Etiquette";
 import { CloudConsentDialog } from "../shared/CloudConsentDialog";
-import { grantCloudConsent, RESPONSE_DATA_CATEGORIES } from "../../lib/consent";
+import { grantCloudConsent, responseDataCategories } from "../../lib/consent";
 import { flushConsentDecisions } from "../../lib/consentSync";
 import { libelleDuFournisseur } from "../../lib/libellesFournisseurs";
 
-const DONNEES_AGENT = [...RESPONSE_DATA_CATEGORIES,
+const DONNEES_AGENT = [...responseDataCategories(),
   'consignes de l’agent', 'contenu des fichiers lus par ses outils, renvoyé aux étapes suivantes'];
 
 // ============================================================

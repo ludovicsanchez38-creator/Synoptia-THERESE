@@ -126,4 +126,7 @@ export function memoryCardGrantsForRequest(): string[] {
 export const TOOL_READ_DATA_CATEGORY = 'ce que l’IA lit pour te répondre : mails, fiches contacts, factures, agenda, tâches et fichiers (avec ton accord « documents » pour leur contenu)';
 
 /** Liste commune aux demandes d’accord du chat et de l’Atelier. */
-export const RESPONSE_DATA_CATEGORIES = ['message saisi', 'contexte de conversation', TOOL_READ_DATA_CATEGORY];
+export function responseDataCategories(includeMemory = false): string[] {
+  return ['message saisi', 'contexte de conversation',
+    ...(includeMemory ? ['mémoire locale utile'] : []), TOOL_READ_DATA_CATEGORY];
+}

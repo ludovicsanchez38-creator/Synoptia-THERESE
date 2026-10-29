@@ -1,4 +1,4 @@
-import { RESPONSE_DATA_CATEGORIES } from '../../lib/consent';
+import { responseDataCategories } from '../../lib/consent';
 import { CloudConsentDialog } from '../shared/CloudConsentDialog';
 import { notifyMemoryChange } from '../../services/api/memoryCards';
 import {
@@ -693,8 +693,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         provider: destinationMessage,
         providerLabel: consentLabel || libelleDuFournisseur(destinationMessage),
         dataCategories: [
-          ...RESPONSE_DATA_CATEGORIES,
-          'mémoire locale utile',
+          ...responseDataCategories(true),
           'tes fiches mémoire utiles, renvoyées avec chaque échange où la mémoire est activée',
           MEMORY_CARDS_CATEGORY,
           // B-1515 : ils partent avec chaque message, dans le prompt système.
@@ -902,7 +901,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
             memoryOrigin: `${currentProvider}:${currentModel}`,
-            dataCategories: [...RESPONSE_DATA_CATEGORIES,
+            dataCategories: [...responseDataCategories(),
               'tes fiches mémoire utiles avec chaque échange où la mémoire est activée',
               'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
               ...(chunk.purpose === 'documents' ? ['contenu intégral des documents joints ou relus à chaque message'] : []),
