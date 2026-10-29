@@ -143,6 +143,12 @@ class TestLaSonde:
 
 
 class TestLeChunkCatalogueStatus:
+    @pytest.fixture(autouse=True)
+    def accord_board_explicite(self, monkeypatch):
+        # La sonde est exercée dans une délibération déjà autorisée.
+        monkeypatch.setattr('app.services.consentements.accord_valide',
+                            lambda purpose, provider: (purpose, provider) == ('llm', 'board'))
+
     @pytest.mark.asyncio
     async def test_une_derive_connue_est_annoncee_en_tete(self, monkeypatch):
         """deliberate() émet catalogue_status quand une dérive est connue -
@@ -175,7 +181,7 @@ class TestLeChunkCatalogueStatus:
                 self.config = SimpleNamespace(provider=provider, model="modele-test")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
@@ -262,7 +268,7 @@ class TestLeChunkCatalogueStatus:
                 self.config = SimpleNamespace(provider=provider, model="modele-test")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
