@@ -7,6 +7,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../services/api/agents', () => ({
+  // Destination locale pour ce test du cycle d’affichage ; les accords cloud ont leur suite dédiée.
+  getAgentConsent: async (_profile: string, model: string) => ({ model, provider: null, label: null, purposes: [], granted_purposes: [] }),
   streamAgentSpawn: async function* () {
     yield { type: 'error', content: 'Le fournisseur a refusé la requête.' };
   },

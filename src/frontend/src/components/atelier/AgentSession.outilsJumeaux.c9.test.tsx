@@ -7,6 +7,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 const agentsApi = vi.hoisted(() => ({
+  // Le routage local laisse ce scénario exercer les avatars/résultats.
+  getAgentConsent: async (_profile: string, model: string) => ({ model, provider: null, label: null, purposes: [], granted_purposes: [] }),
   getAgentProfiles: vi.fn(async () => [{ id: 'researcher', name: 'Chercheur Web', description: 'Recherche', icon: '', color: 'cyan', tools: ['read_file'], default_model: 'gpt-6-astra' }]),
   streamAgentSpawn: vi.fn(async function* () {
     yield { type: 'tool_call', tool_name: 'read_file', tool_args: { path: 'a.md' } };

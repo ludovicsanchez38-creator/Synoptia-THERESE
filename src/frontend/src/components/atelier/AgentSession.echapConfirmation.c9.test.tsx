@@ -9,6 +9,8 @@ import { _clearEscapeHandlers, runTopEscapeHandler } from '../../lib/escapeStack
 
 const streamAgentSpawn = vi.fn((..._args: unknown[]) => (async function* () { yield { type: 'chunk', content: 'ok' }; })());
 vi.mock('../../services/api/agents', () => ({
+  // Destination locale pour ce test du cycle d’affichage ; les accords cloud ont leur suite dédiée.
+  getAgentConsent: async (_profile: string, model: string) => ({ model, provider: null, label: null, purposes: [], granted_purposes: [] }),
   streamAgentSpawn: (...args: unknown[]) => streamAgentSpawn(...args),
   getAgentProfiles: async () => [
     { id: 'researcher', name: 'Chercheur Web', description: 'Recherche', icon: '', color: 'cyan', tools: ['read_file'], default_model: 'claude-sonnet-4-6' },

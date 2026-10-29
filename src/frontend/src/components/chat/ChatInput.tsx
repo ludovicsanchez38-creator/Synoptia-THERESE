@@ -1,3 +1,5 @@
+import { RESPONSE_DATA_CATEGORIES } from '../../lib/consent';
+import { CloudConsentDialog } from '../shared/CloudConsentDialog';
 import { notifyMemoryChange } from '../../services/api/memoryCards';
 import {
   useState,
@@ -692,10 +694,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         provider: destinationMessage,
         providerLabel: consentLabel || libelleDuFournisseur(destinationMessage),
         dataCategories: [
-          'message saisi',
-          'contexte de conversation',
+          ...RESPONSE_DATA_CATEGORIES,
           'mémoire locale utile',
-          TOOL_READ_DATA_CATEGORY,
           'tes fiches mémoire utiles, renvoyées avec chaque échange où la mémoire est activée',
           MEMORY_CARDS_CATEGORY,
           // B-1515 : ils partent avec chaque message, dans le prompt système.
@@ -903,7 +903,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
             memoryOrigin: `${currentProvider}:${currentModel}`,
-            dataCategories: ['message saisi', 'contexte de conversation', TOOL_READ_DATA_CATEGORY,
+            dataCategories: [...RESPONSE_DATA_CATEGORIES,
               'tes fiches mémoire utiles avec chaque échange où la mémoire est activée',
               'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
               ...(chunk.purpose === 'documents' ? ['contenu intégral des documents joints ou relus à chaque message'] : []),
@@ -1681,14 +1681,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       </label>
 
       {pendingCloudConsent && (
-        <div role="alertdialog" aria-labelledby="cloud-consent-title" className="mb-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="chat-cloud-consent">
-          <p id="cloud-consent-title" className="font-semibold">{pendingCloudConsent.memoryOrigin ? 'Autoriser l’envoi de tes fiches mémoire' : pendingCloudConsent.purpose === 'documents' ? 'Autoriser le premier envoi de documents' : pendingCloudConsent.action === 'deep-research' ? 'Autoriser cette recherche approfondie' : 'Autoriser ce premier envoi'} à {pendingCloudConsent.providerLabel} ?</p>
-          <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.filter(c => c !== MEMORY_CARDS_CATEGORY).join(', ')}.</p>
-          <div className="mt-3 flex justify-end gap-2">
-            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
-            <button type="button" onClick={confirmCloudConsent} className="rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Autoriser et envoyer</button>
-          </div>
-        </div>
+        <CloudConsentDialog
+          testId="chat-cloud-consent"
+          title={`${pendingCloudConsent.memoryOrigin ? 'Autoriser l’envoi de tes fiches mémoire' : pendingCloudConsent.purpose === 'documents' ? 'Autoriser le premier envoi de documents' : pendingCloudConsent.action === 'deep-research' ? 'Autoriser cette recherche approfondie' : 'Autoriser ce premier envoi'} à ${pendingCloudConsent.providerLabel} ?`}
+          dataCategories={pendingCloudConsent.dataCategories}
+          onCancel={() => setPendingCloudConsent(null)}
+          onConfirm={confirmCloudConsent}
+        />
       )}
 
       <div

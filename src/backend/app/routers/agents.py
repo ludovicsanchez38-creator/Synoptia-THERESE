@@ -513,6 +513,34 @@ async def list_profiles() -> list[AgentProfileResponse]:
     ]
 
 
+@router.get("/profiles/{profile_id}/consent")
+async def accord_agent(profile_id: str, model: str) -> dict[str, Any]:
+    """Résoudre localement la destination et les accords avant toute mission."""
+    from app.services.agents.profiles import get_profile
+    from app.services.agents.runtime import (
+        OUTILS_DOCUMENTS,
+        _get_llm_for_model,
+        modele_avec_fournisseur,
+    )
+    from app.services.consentements import accord_valide
+    from app.services.memory_card_context import destination_cloud, libelle_destination
+
+    profil = get_profile(profile_id)
+    if not profil:
+        raise HTTPException(404, "Ce profil d’agent est introuvable. Reviens au catalogue.")
+    service = _get_llm_for_model(model)
+    destination = destination_cloud(service.config)
+    outils = set(profil['tools']) - _PROFILE_DISABLED_MUTATION_TOOLS
+    purposes = (['llm'] + (['documents'] if outils & OUTILS_DOCUMENTS else [])) if destination else []
+    return {
+        'model': modele_avec_fournisseur(service.config),
+        'provider': destination,
+        'label': libelle_destination(service.config) or destination,
+        'purposes': purposes,
+        'granted_purposes': [p for p in purposes if accord_valide(p, destination)],
+    }
+
+
 @router.post("/spawn")
 async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depends(get_session)):
     """Lance un agent local avec un profil preconfigure. Retourne un stream SSE.

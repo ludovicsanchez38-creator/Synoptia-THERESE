@@ -391,6 +391,18 @@ export async function getAgentProfiles(): Promise<AgentProfile[]> {
   return request<AgentProfile[]>('/api/agents/profiles');
 }
 
+export interface AgentConsent {
+  model: string;
+  provider: string | null;
+  label: string | null;
+  purposes: Array<'llm' | 'documents'>;
+  granted_purposes: Array<'llm' | 'documents'>;
+}
+
+export async function getAgentConsent(profileId: string, model: string): Promise<AgentConsent> {
+  return request<AgentConsent>(`/api/agents/profiles/${encodeURIComponent(profileId)}/consent?model=${encodeURIComponent(model)}`);
+}
+
 /**
  * Spawn un agent avec un profil et une instruction.
  * Retourne un stream SSE (meme pattern que streamAgentRequest).

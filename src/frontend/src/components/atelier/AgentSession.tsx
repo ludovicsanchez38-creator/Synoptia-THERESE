@@ -28,12 +28,19 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAgentProfiles, streamAgentSpawn } from "../../services/api/agents";
-import type { SpawnAgentStreamChunk, AgentProfile } from "../../services/api/agents";
+import { getAgentConsent, getAgentProfiles, streamAgentSpawn } from "../../services/api/agents";
+import type { SpawnAgentStreamChunk, AgentProfile, AgentConsent } from "../../services/api/agents";
 import { Button } from "../ui/Button";
 import { Textarea } from "../ui/Textarea";
 import { Alerte } from "../ui/Alerte";
 import { Etiquette } from "../ui/Etiquette";
+import { CloudConsentDialog } from "../shared/CloudConsentDialog";
+import { grantCloudConsent, RESPONSE_DATA_CATEGORIES } from "../../lib/consent";
+import { flushConsentDecisions } from "../../lib/consentSync";
+import { libelleDuFournisseur } from "../../lib/libellesFournisseurs";
+
+const DONNEES_AGENT = [...RESPONSE_DATA_CATEGORIES,
+  'consignes de l’agent', 'contenu des fichiers lus par ses outils, renvoyé aux étapes suivantes'];
 
 // ============================================================
 // Types
@@ -282,6 +289,12 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   const [pendingInstruction, setPendingInstruction] = useState<string | null>(null);
   // B-874 : la carte de confirmation contient les boutons de décision ; c'est un
   // alertdialog (comme au Board), et le focus y entre à son apparition.
+  const [accordEnAttente, setAccordEnAttente] = useState<{ destination: AgentConsent; instruction: string; profil: string | null } | null>(null);
+  const [accordOccupe, setAccordOccupe] = useState(false);
+  const [erreurAccord, setErreurAccord] = useState<string | null>(null);
+  const generationAccord = useRef(0);
+  const enregistrementAccord = useRef(false);
+  useEffect(() => () => { generationAccord.current++; }, []);
   const confirmationRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (pendingInstruction) confirmationRef.current?.focus();
@@ -289,7 +302,12 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   // B-896 : Échap vaut « Retour », fail-closed.
   useEffect(() => {
     if (!pendingInstruction) return;
-    return pushEscapeHandler(() => setPendingInstruction(null));
+    return pushEscapeHandler(() => {
+      generationAccord.current++;
+      setPendingInstruction(null);
+      setAccordOccupe(false);
+      setErreurAccord("La mission n’a pas démarré. Tu peux reprendre quand tu le souhaites.");
+    });
   }, [pendingInstruction]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -309,7 +327,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   }, []);
 
   const handleStream = useCallback(
-    async (instruction: string) => {
+    async (instruction: string, modele: string) => {
       setIsStreaming(true);
       abortRef.current = new AbortController();
 
@@ -340,7 +358,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           profileId,
           instruction,
           abortRef.current.signal,
-          activeModel || undefined,
+          modele,
         )) {
           handleChunk(chunk, assistantId);
         }
@@ -366,7 +384,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         setIsStreaming(false);
       }
     },
-    [activeModel, profileId],
+    [profileId],
   );
 
   const handleChunk = (chunk: SpawnAgentStreamChunk, assistantId: string) => {
@@ -458,14 +476,80 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     setPendingInstruction(trimmed);
   }, [inputValue, isStreaming]);
 
-  const confirmSend = useCallback(() => {
-    if (!pendingInstruction || !activeModel) return;
-    const instruction = pendingInstruction;
+  const demarrer = useCallback((instruction: string, modele: string) => {
     setPendingInstruction(null);
+    setAccordEnAttente(null);
     setInputValue("");
     setNeedsInitialPrompt(false);
-    void handleStream(instruction);
-  }, [activeModel, handleStream, pendingInstruction]);
+    void handleStream(instruction, modele);
+  }, [handleStream]);
+
+  const annulerAccord = useCallback(() => {
+    generationAccord.current++;
+    setAccordEnAttente(null);
+    setPendingInstruction(null);
+    setAccordOccupe(false);
+    setErreurAccord("La mission n’a pas démarré. Donne ton accord pour lancer cet agent.");
+  }, []);
+  useEffect(() => {
+    if (accordEnAttente) return pushEscapeHandler(annulerAccord);
+  }, [accordEnAttente, annulerAccord]);
+
+  const confirmSend = useCallback(async () => {
+    if (!pendingInstruction || !activeModel || accordOccupe) return;
+    const generation = ++generationAccord.current;
+    const profil = localStorage.getItem('therese:data-profile');
+    setAccordOccupe(true);
+    setErreurAccord(null);
+    try {
+      await flushConsentDecisions();
+      const destination = await getAgentConsent(profileId, activeModel);
+      if (generation !== generationAccord.current) return;
+      if (profil !== localStorage.getItem('therese:data-profile')) throw new Error('Profil changé');
+      if (destination.purposes.some(p => !destination.granted_purposes.includes(p))) {
+        setAccordEnAttente({ destination, instruction: pendingInstruction, profil });
+        setPendingInstruction(null);
+      } else {
+        demarrer(pendingInstruction, destination.model);
+      }
+    } catch {
+      if (generation === generationAccord.current) setErreurAccord("La mission n’a pas démarré : tes accords ou la destination ne peuvent pas être vérifiés. Vérifie la connexion au moteur, puis réessaie.");
+    } finally {
+      if (generation === generationAccord.current) setAccordOccupe(false);
+    }
+  }, [activeModel, accordOccupe, demarrer, pendingInstruction, profileId]);
+
+  const autoriserAgent = useCallback(async () => {
+    if (!accordEnAttente || accordOccupe || enregistrementAccord.current) return;
+    enregistrementAccord.current = true;
+    const { destination, instruction, profil } = accordEnAttente;
+    const generation = ++generationAccord.current;
+    setAccordOccupe(true);
+    setErreurAccord(null);
+    try {
+      if (profil !== localStorage.getItem('therese:data-profile')) throw new Error('Profil changé');
+      for (const purpose of destination.purposes) {
+        if (!destination.granted_purposes.includes(purpose) && destination.provider) {
+          grantCloudConsent(purpose, destination.provider, DONNEES_AGENT);
+        }
+      }
+      await flushConsentDecisions();
+      const actuelle = await getAgentConsent(profileId, destination.model);
+      if (generation !== generationAccord.current) return;
+      if (profil !== localStorage.getItem('therese:data-profile')
+          || actuelle.model !== destination.model || actuelle.provider !== destination.provider
+          || actuelle.label !== destination.label
+          || actuelle.purposes.some(p => !actuelle.granted_purposes.includes(p))) {
+        throw new Error('Accord ou destination changé');
+      }
+      demarrer(instruction, actuelle.model);
+    } catch {
+      if (generation === generationAccord.current) setErreurAccord("La mission n’a pas démarré : ton accord n’a pas pu être enregistré ou la destination a changé. Vérifie la connexion au moteur, puis réessaie.");
+    } finally {
+      enregistrementAccord.current = false;
+      if (generation === generationAccord.current) setAccordOccupe(false);
+    }
+  }, [accordEnAttente, accordOccupe, demarrer, profileId]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -635,6 +719,15 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       </div>
 
       {/* Input */}
+      {erreurAccord && <p role="alert" className="px-3 py-2 text-sm text-text">{erreurAccord}</p>}
+      {accordEnAttente && <CloudConsentDialog
+        testId="agent-cloud-consent"
+        title={`Autoriser l’envoi pour cet agent à ${accordEnAttente.destination.label || libelleDuFournisseur(accordEnAttente.destination.provider || '')} (${accordEnAttente.destination.purposes.join(', ')}) ?`}
+        dataCategories={DONNEES_AGENT}
+        onCancel={annulerAccord}
+        onConfirm={() => { void autoriserAgent(); }}
+        busy={accordOccupe}
+      />}
       {pendingInstruction && (
         <div ref={confirmationRef} tabIndex={-1} role="alertdialog" aria-label="Confirmer l’appel de l’agent" className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
           <div className="rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text">
@@ -645,8 +738,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
               Cet échange n&apos;est pas conservé après fermeture.
             </p>
             <div className="mt-3 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setPendingInstruction(null)}>Retour</Button>
-              <Button type="button" variant="primary" onClick={confirmSend} disabled={!activeModel}>Confirmer l&apos;appel</Button>
+              <Button type="button" variant="secondary" onClick={annulerAccord}>Retour</Button>
+              <Button type="button" variant="primary" onClick={() => { void confirmSend(); }} disabled={!activeModel || accordOccupe}>Confirmer l&apos;appel</Button>
             </div>
           </div>
         </div>
@@ -667,7 +760,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
               ? `Decris ta tache pour ${profile?.name || "l'agent"}...`
               : "Message de suivi..."
           }
-          disabled={isStreaming || profilIntrouvable}
+          disabled={isStreaming || profilIntrouvable || accordOccupe || !!accordEnAttente}
           rows={1}
           className="max-h-[120px] flex-1 resize-none"
           onInput={(e) => {
@@ -694,7 +787,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
             variant="primary"
             size="icon"
             onClick={handleSend}
-            disabled={!inputValue.trim() || profilIntrouvable}
+            disabled={!inputValue.trim() || profilIntrouvable || accordOccupe || !!accordEnAttente}
             title="Envoyer"
             aria-label="Envoyer"
           >
