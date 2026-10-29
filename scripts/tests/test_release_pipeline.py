@@ -1,6 +1,7 @@
 """Garde-fous de l'ordre de publication et du mode sans comptes de signature."""
 import importlib.util
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,23 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PipelineTests(unittest.TestCase):
+    def test_release_and_license_job_actions_are_pinned(self):
+        for filename in ['ci.yml', 'release.yml']:
+            source = (ROOT / '.github/workflows' / filename).read_text()
+            jobs = yaml.safe_load(source)['jobs']
+            for job in jobs.values():
+                steps = job.get('steps', [])
+                if filename == 'ci.yml' and not any('third_party_licenses.py check' in s.get('run', '') for s in steps):
+                    continue
+                for step in steps:
+                    action = step.get('uses', '')
+                    if not action or action.startswith('./'):
+                        continue
+                    with self.subTest(workflow=filename, action=action):
+                        self.assertRegex(action, r'@[a-f0-9]{40}$')
+                        if action.startswith('actions/'):
+                            self.assertRegex(source, re.escape(action) + r'\s+# v\d+\.\d+\.\d+')
+
     def test_no_upload_before_platform_checks(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
         steps = jobs['build']['steps']

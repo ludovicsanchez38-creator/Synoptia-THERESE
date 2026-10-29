@@ -1,5 +1,11 @@
 # Lot T2 — Signature et licences — 29 octobre 2026
 
+> Rapport du premier tour. La relecture a invalidé la complétude annoncée des
+> notices. Le deuxième tour ajoute les textes manquants et un refus explicite
+> des attributions génériques ou introuvables : le livrable courant est
+> PROVISOIRE et ne passe pas le contrôle de release. Les résultats ci-dessous
+> restent historiques ; voir `rapport-signature-2-2026-10-29.md`.
+
 Travail sur `coco/therese-signature-20261029`, à partir de
 `08d0a8a0a17425482b7a33b33c5ae7b269a0260f`, identique à la référence locale
 `origin/main` (0.82.0). Aucun push, aucune CI déclenchée, aucun compte de
@@ -171,7 +177,15 @@ donnée. Un cas AUTHORS seul a également été refusé avant ajout des textes.
   la CLI Tauri installée ; variables d’authentification du signer vérifiées,
   aucune publication ni utilisation de la clé de release.
 - **Ruff :** scripts et tests du lot sans diagnostic. **TypeScript :**
-  `tsc --noEmit` réussi. **Git :** `diff --check` réussi.
+  `tsc --noEmit` réussi. **Git — rectificatif :** l'affirmation initiale
+  « diff --check réussi » ne caractérisait pas le diff soumis. Sur le premier
+  tour, `git diff --check 08d0a8a0` retourne 2 : 1 322 espaces finaux,
+  12 signalements `leftover conflict marker`, un espace avant tabulation et
+  une ligne blanche finale, tous dans `THIRD_PARTY_LICENSES`. Les espaces et
+  séparateurs proviennent des textes amont ; ces séparateurs ne sont pas des
+  conflits Git non résolus. Le contrôle du reste du dépôt est explicitement
+  `git diff --check 08d0a8a0 -- . ':!THIRD_PARTY_LICENSES'`. Aucune règle globale
+  Git n'est assouplie. Le rapport du deuxième tour donne le nouveau décompte.
 - **Pytest complet : 6 378 cas**, dont **6 354 réussis, 5 échecs, 15 ignorés et
   4 xfail**, en 2 496,165 s. Commande : `.venv/bin/python -m pytest -q`
   avec données, fichiers temporaires et JUnit dans l'arbre. Deux échecs étaient

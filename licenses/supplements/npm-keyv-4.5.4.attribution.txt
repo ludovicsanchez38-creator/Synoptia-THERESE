@@ -1,0 +1,2 @@
+Attribution publiée dans package/package.json (author) :
+"Jared Wray <me@jaredwray.com> (http://jaredwray.com)"

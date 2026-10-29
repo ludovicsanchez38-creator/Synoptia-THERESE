@@ -144,7 +144,7 @@ installeurs Windows, du `.deb` et du bundle macOS, octet pour octet.
 python scripts/third_party_licenses.py refresh
 # Régénération déterministe depuis l'instantané versionné, hors réseau.
 python scripts/third_party_licenses.py generate
-# Contrôle de fraîcheur et de couverture, hors réseau.
+# Contrôle de release : couverture, textes, attributions et fraîcheur, hors réseau.
 python scripts/third_party_licenses.py check
 python -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
@@ -164,10 +164,33 @@ seuls fichiers effectivement installés.
 archives. Le téléchargement vérifie les SHA-256/SRI des verrous ; aucune archive
 n'est extraite sur le système et aucun code de dépendance n'est exécuté. Les
 textes identiques sont dédupliqués dans le document final. Les archives sans
-notice demandent une entrée explicite dans `licenses/overrides.json` : soit le
-texte du dépôt amont, soit le texte normatif SPDX correspondant à la licence
-déclarée, avec **REVUE REQUISE** lorsque les attributions restent à confirmer.
-Le document contient les textes complets, pas seulement les étiquettes MIT/GPL.
+conditions complètes demandent une entrée explicite dans `licenses/overrides.json`.
+Un simple lien, une attribution seule ou un texte contenant TODO ne satisfait
+pas le contrôle. Les textes supplémentaires de `licenses/supplements/` sont
+vérifiés par SHA-256 et inclus dans l'empreinte des verrous. Les attributions
+propres aux versions et leurs preuves figurent dans `licenses/attribution-sources.json`.
+Une métadonnée auteur est identifiée comme telle ; aucune année ni titularité
+de copyright n'est inventée. Cinq textes sont sérialisés en chaînes JSON pour
+préserver leurs espaces et séparateurs amont sans introduire d'erreurs de blanc dans les
+nouveaux fichiers du dépôt.
+
+`refresh` applique les suppléments même lorsqu'une archive a déjà une notice.
+`generate` peut produire un document de travail **PROVISOIRE**, qualifié dès sa
+première ligne avec la liste des entrées à compléter. `check`, appelé par la
+CI et la release, le **refuse** tant qu'une attribution manque ou contient un
+champ générique. Les exemples d'application des annexes normatives Apache,
+GNU et FreeType sont distingués des attributions des composants. Ces exemples
+restent intacts dans les textes livrés. Une réserve générale de rapprochement
+des binaires (`review_required`) reste distincte d'une attribution manquante
+(`attribution_missing`) ; elle n'est pas une validation de redistribution.
+
+Au deuxième tour du 29 octobre 2026, le livrable reste provisoire : douze des
+treize attributions initialement signalées sont retrouvées dans le cache,
+mais celle de `rustls-platform-verifier-android 0.1.1` reste introuvable. Le
+contrôle détecte aussi des lacunes préexistantes hors de ces treize entrées.
+Les textes de `siphasher 0.3.11`, `siphasher 1.0.1` et `rsa 4.9.1` sont désormais
+complétés et leurs notices originales conservées. Voir le rapport du deuxième
+tour pour le bilan exact et les résultats des suites complètes.
 
 Des roues natives des trois plateformes complètent les archives source. Les
 roues Torch CPU CPython 3.13 sont verrouillées dans

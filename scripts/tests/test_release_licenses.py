@@ -3,7 +3,9 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'third_party_licenses.py'
 
@@ -57,6 +59,108 @@ class LicensesTests(unittest.TestCase):
         row = {'id': 'cargo:example@1', 'artifact': 'https://example.test/a', 'integrity': 'sha256:a'}
         with self.assertRaises(ValueError):
             self.m.validate_inventory([row], [{**row, 'notices': [{'path': 'AUTHORS', 'text': 'Authors list'}]}])
+
+    def assert_invalid_notice(self, path, text):
+        row = {'id': 'cargo:example@1', 'artifact': 'https://example.test/a', 'integrity': 'sha256:a'}
+        with self.assertRaises(ValueError):
+            self.m.validate_inventory([row], [{**row, 'notices': [{'path': path, 'text': text}]}])
+
+    def test_link_alone_is_not_a_license(self):
+        self.assert_invalid_notice('COPYING', 'Copyright 2026 Example. See https://opensource.org/licenses/MIT')
+
+    def test_todo_is_not_a_license(self):
+        self.assert_invalid_notice('LICENSE', 'TODO')
+
+    def test_todo_is_rejected_even_alongside_full_terms(self):
+        text = (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()
+        self.assert_invalid_notice('LICENSE', 'TODO\n' + text)
+
+    def test_copyright_alone_is_not_a_license(self):
+        self.assert_invalid_notice('copyright', 'Copyright 2026 Example Authors')
+
+    def test_generic_attribution_blocks_release(self):
+        text = next(n['text'] for r in json.loads((self.m.ROOT / self.m.INVENTORY).read_text())['packages']
+                    for n in r['notices'] if 'Permission is hereby granted, free of charge' in n['text'])
+        self.assert_invalid_notice('LICENSE', 'Copyright <year> <copyright holders>\n' + text)
+
+    def test_unresolved_attribution_is_provisional_and_blocks_release(self):
+        row = deepcopy(json.loads((self.m.ROOT / self.m.INVENTORY).read_text())['packages'][0])
+        row['attribution_missing'] = True
+        self.assertIn('PROVISOIRE', self.m.render([row], 'digest').splitlines()[0])
+        with self.assertRaises(ValueError):
+            self.m.validate_inventory([row], [row])
+
+    def test_siphasher_and_rsa_have_full_terms_and_original_attributions(self):
+        rows = {r['id']: r for r in json.loads((self.m.ROOT / self.m.INVENTORY).read_text())['packages']}
+        for key in ['cargo:siphasher@0.3.11', 'cargo:siphasher@1.0.1', 'python:rsa@4.9.1']:
+            with self.subTest(key=key):
+                text = '\n'.join(n['text'] for n in rows[key]['notices'])
+                self.assertIn('TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION', text)
+                self.assertIn('Limitation of Liability', text)
+                if key.startswith('cargo:'):
+                    self.assertIn('Permission is hereby granted, free of charge', text)
+                    self.assertIn('Frank Denis', text)
+                    self.assertIn('The Rust Project Developers', text)
+                else:
+                    self.assertIn('Sybren A. Stüvel', text)
+
+    def test_authors_with_full_mit_terms_are_accepted(self):
+        text = (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()
+        row = {'id': 'cargo:example@1', 'artifact': 'a', 'integrity': 'sha256:a',
+               'notices': [{'path': 'AUTHORS', 'text': 'Copyright 2026 Example\n' + text}]}
+        self.m.validate_inventory([row], [row])
+
+    def test_normative_appendix_is_not_a_component_attribution(self):
+        text = (self.m.ROOT / 'licenses/supplements/Apache-2.0.txt').read_text()
+        self.assertFalse(self.m.generic_attribution(text))
+
+    def test_generic_after_a_full_license_is_not_hidden_by_its_appendix(self):
+        text = (self.m.ROOT / 'licenses/supplements/Apache-2.0.txt').read_text()
+        self.assertTrue(self.m.generic_attribution(text + '\nMIT License\nCopyright <year> <copyright holders>'))
+
+    def test_local_supplement_requires_its_exact_hash(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / 'MIT.txt').write_text('modified')
+            override = {'notices': [{'local_path': 'MIT.txt', 'integrity': 'sha256:incorrect'}]}
+            with self.assertRaises(ValueError):
+                self.m.override_notices(override, root)
+
+    def test_json_supplement_preserves_upstream_spaces(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            raw = json.dumps({'text': 'Upstream  \nlicense\n'}).encode()
+            (root / 'source.json').write_bytes(raw)
+            override = {'notices': [{'local_path': 'source.json', 'json_text': True,
+                                     'integrity': 'sha256:' + self.m.digest(raw)}]}
+            self.assertEqual(self.m.override_notices(override, root),
+                             [{'path': 'source.json', 'text': 'Upstream  \nlicense'}])
+
+    def test_refresh_applies_supplements_even_to_a_valid_cached_notice(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / 'licenses').mkdir()
+            terms = (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()
+            (root / 'MIT.txt').write_text(terms)
+            row = {'id': 'cargo:example@1', 'artifact': 'a', 'integrity': 'sha256:a',
+                   'license': 'MIT', 'notices': [{'path': 'COPYING', 'text': terms}]}
+            override = {'license': 'MIT', 'reason': 'test', 'attribution_missing': True,
+                        'retain_archive_notices': True,
+                        'notices': [{'local_path': 'MIT.txt', 'integrity': 'sha256:' + self.m.digest(terms.encode())}]}
+            (root / 'licenses/overrides.json').write_text(json.dumps({row['id']: override}))
+            with patch.object(self.m, 'locked_packages', return_value=[row]), \
+                    patch.object(self.m, 'lock_digest', return_value='test'), \
+                    patch.object(self.m, 'collect', return_value=row), \
+                    patch.object(self.m, 'fetch', side_effect=AssertionError('network forbidden')):
+                with patch('sys.argv', ['licenses', 'refresh', '--root', str(root), '--cache', str(root / 'cache')]):
+                    self.m.main()
+                output = (root / 'THIRD_PARTY_LICENSES').read_text()
+                self.assertTrue(output.startswith('PROVISOIRE'))
+                saved = json.loads((root / 'licenses/inventory.json').read_text())['packages'][0]
+                self.assertEqual({n['path'] for n in saved['notices']}, {'COPYING', 'MIT.txt'})
+                with patch('sys.argv', ['licenses', 'check', '--root', str(root)]), \
+                        self.assertRaisesRegex(ValueError, 'PROVISOIRE'):
+                    self.m.main()
 
     def test_unknown_python_source_is_not_silently_omitted(self):
         with tempfile.TemporaryDirectory() as td:

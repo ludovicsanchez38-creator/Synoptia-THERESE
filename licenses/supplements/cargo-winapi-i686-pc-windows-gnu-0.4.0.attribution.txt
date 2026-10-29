@@ -1,0 +1,8 @@
+Attribution publiée dans winapi-i686-pc-windows-gnu-0.4.0/Cargo.toml (package.authors) :
+Peter Atashian <retep998@gmail.com>
+
+Attributions dans winapi-i686-pc-windows-gnu-0.4.0/build.rs :
+// Copyright © 2016-2018 winapi-rs developers
+
+Attributions dans winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs :
+// Copyright © 2016 winapi-rs developers

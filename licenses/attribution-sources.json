@@ -1,0 +1,448 @@
+[
+  {
+    "file": "licenses/supplements/MIT.txt",
+    "source_notice": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt",
+    "source_text_sha256": "07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67",
+    "transformation": "Retrait de la ligne modèle Copyright ; attributions séparées par composant."
+  },
+  {
+    "file": "licenses/supplements/Apache-2.0.txt",
+    "source_notice": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt",
+    "source_text_sha256": "c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c",
+    "transformation": "Texte inchangé, LF final."
+  },
+  {
+    "file": "licenses/supplements/LGPL-2.1.txt",
+    "source_notice": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/LGPL-2.1-only.txt",
+    "source_text_sha256": "10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43",
+    "transformation": "Texte inchangé, LF final."
+  },
+  {
+    "file": "licenses/supplements/MPL-2.0.json",
+    "source_notice": "cssparser-macros-0.6.1/LICENSE",
+    "source_text_sha256": "c76f740d1521b9bed9ca7a04ad526c310493c62621b1341d623b431736533b30",
+    "transformation": "Texte inchangé, LF final.",
+    "serialization": "Chaîne JSON : espaces amont conservés exactement."
+  },
+  {
+    "file": "licenses/supplements/GPL-3.0.txt",
+    "source_notice": "https://raw.githubusercontent.com/espeak-ng/espeak-ng/1.52.0/COPYING",
+    "source_text_sha256": "c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df",
+    "transformation": "Texte inchangé, LF final."
+  },
+  {
+    "file": "licenses/supplements/cargo-convert_case-0.4.0.attribution.txt",
+    "package": "cargo:convert_case@0.4.0",
+    "archive": "https://static.crates.io/crates/convert_case/convert_case-0.4.0.crate",
+    "archive_integrity": "sha256:6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e",
+    "members": [
+      {
+        "path": "convert_case-0.4.0/Cargo.toml",
+        "sha256": "bbd8c27bde074b1c78539307cc2f1770efdaf890253cce4b9557cfdc32d4e605",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-dispatch-0.2.0.attribution.txt",
+    "package": "cargo:dispatch@0.2.0",
+    "archive": "https://static.crates.io/crates/dispatch/dispatch-0.2.0.crate",
+    "archive_integrity": "sha256:bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b",
+    "members": [
+      {
+        "path": "dispatch-0.2.0/Cargo.toml",
+        "sha256": "bd6cecbea33be54304d73d48e29182b4baff69695a25e68d7ac67ff3e69263a9",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-fxhash-0.2.1.attribution.txt",
+    "package": "cargo:fxhash@0.2.1",
+    "archive": "https://static.crates.io/crates/fxhash/fxhash-0.2.1.crate",
+    "archive_integrity": "sha256:c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c",
+    "members": [
+      {
+        "path": "fxhash-0.2.1/Cargo.toml",
+        "sha256": "83bb4c3e7fbfb7380c175923ba7dfe150e4e09bd4ebfb45e65e5f8a494d36ab9",
+        "extraction": "package.authors"
+      },
+      {
+        "path": "fxhash-0.2.1/lib.rs",
+        "sha256": "885b72a1c977dc1c3ff4e0652719e62b6d8c3e713403e571afd581283f72df7b",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-mac-0.1.1.attribution.txt",
+    "package": "cargo:mac@0.1.1",
+    "archive": "https://static.crates.io/crates/mac/mac-0.1.1.crate",
+    "archive_integrity": "sha256:c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4",
+    "members": [
+      {
+        "path": "mac-0.1.1/Cargo.toml",
+        "sha256": "6d465c5e5a4b3e197049e9fb7393b2f996c1c654e6ded700afce046fac2f7969",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-r-efi-5.3.0.attribution.txt",
+    "package": "cargo:r-efi@5.3.0",
+    "archive": "https://static.crates.io/crates/r-efi/r-efi-5.3.0.crate",
+    "archive_integrity": "sha256:69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f",
+    "members": [
+      {
+        "path": "r-efi-5.3.0/AUTHORS",
+        "sha256": "ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7",
+        "extraction": "fichier intégral"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-sigchld-0.2.4.attribution.txt",
+    "package": "cargo:sigchld@0.2.4",
+    "archive": "https://static.crates.io/crates/sigchld/sigchld-0.2.4.crate",
+    "archive_integrity": "sha256:47106eded3c154e70176fc83df9737335c94ce22f821c32d17ed1db1f83badb1",
+    "members": [
+      {
+        "path": "sigchld-0.2.4/Cargo.toml",
+        "sha256": "6ec0702d10e2161d7028d0d2c0853d954de6778691dbbccea17152f7b69bced8",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-tao-macros-0.1.3.attribution.txt",
+    "package": "cargo:tao-macros@0.1.3",
+    "archive": "https://static.crates.io/crates/tao-macros/tao-macros-0.1.3.crate",
+    "archive_integrity": "sha256:f4e16beb8b2ac17db28eab8bca40e62dbfbb34c0fcdc6d9826b11b7b5d047dfd",
+    "members": [
+      {
+        "path": "tao-macros-0.1.3/Cargo.toml",
+        "sha256": "8bb75805f8fc4a9792f9abddb857bb32d1803f2c0c550a220fc66fc9d3530deb",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-winapi-i686-pc-windows-gnu-0.4.0.attribution.txt",
+    "package": "cargo:winapi-i686-pc-windows-gnu@0.4.0",
+    "archive": "https://static.crates.io/crates/winapi-i686-pc-windows-gnu/winapi-i686-pc-windows-gnu-0.4.0.crate",
+    "archive_integrity": "sha256:ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+    "members": [
+      {
+        "path": "winapi-i686-pc-windows-gnu-0.4.0/Cargo.toml",
+        "sha256": "9652222664ffc7e2a26fdcdebdce0917a455b39d8fbcbf451bf0b011a3067bf7",
+        "extraction": "package.authors"
+      },
+      {
+        "path": "winapi-i686-pc-windows-gnu-0.4.0/build.rs",
+        "sha256": "4344ce95f51197e1377429cd9ef7a8e3f97d39546776705857991f2f9416f545",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs",
+        "sha256": "79212a91f610f8a77aa6ed4cc77212c2531eeb35630388bf07323cc328fcca42",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-winapi-x86_64-pc-windows-gnu-0.4.0.attribution.txt",
+    "package": "cargo:winapi-x86_64-pc-windows-gnu@0.4.0",
+    "archive": "https://static.crates.io/crates/winapi-x86_64-pc-windows-gnu/winapi-x86_64-pc-windows-gnu-0.4.0.crate",
+    "archive_integrity": "sha256:712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
+    "members": [
+      {
+        "path": "winapi-x86_64-pc-windows-gnu-0.4.0/Cargo.toml",
+        "sha256": "a88605a11db5def9b6cf73398e83b3edb72228cb43ea935729fac5cd33cec22c",
+        "extraction": "package.authors"
+      },
+      {
+        "path": "winapi-x86_64-pc-windows-gnu-0.4.0/build.rs",
+        "sha256": "b4ab421e1dc98159dd4440813cdaf7d9ea98278324bc6118d0f7cf378933f371",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "winapi-x86_64-pc-windows-gnu-0.4.0/src/lib.rs",
+        "sha256": "79212a91f610f8a77aa6ed4cc77212c2531eeb35630388bf07323cc328fcca42",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm-imurmurhash-0.1.4.attribution.txt",
+    "package": "npm:imurmurhash@0.1.4",
+    "archive": "https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz",
+    "archive_integrity": "sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==",
+    "members": [
+      {
+        "path": "package/README.md",
+        "sha256": "4491517f7deb68d0b2a3bb590e785e276a60f12448447a9650d0bd50161a101c",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "package/package.json",
+        "sha256": "aa3b07e7fa3d63aa96e401c3842b8cca1dd3247954baf92377094766e903c185",
+        "extraction": "author"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm-keyv-4.5.4.attribution.txt",
+    "package": "npm:keyv@4.5.4",
+    "archive": "https://registry.npmjs.org/keyv/-/keyv-4.5.4.tgz",
+    "archive_integrity": "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==",
+    "members": [
+      {
+        "path": "package/package.json",
+        "sha256": "e8afd30f2f2a40ef5023928b50fdaed3a3338aa7e1c4e86205413afb05e8a099",
+        "extraction": "author"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm-stackback-0.0.2.attribution.txt",
+    "package": "npm:stackback@0.0.2",
+    "archive": "https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz",
+    "archive_integrity": "sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==",
+    "members": [
+      {
+        "path": "package/formatstack.js",
+        "sha256": "3c1191bd7094a36098418e7d1606e2a49e7ee25b5ddee54b0b2514ea1a43b8a7",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "package/package.json",
+        "sha256": "4d984909b27d37d2f1a379b9cda7292a6e3a133c076df166d740a17514ac6e60",
+        "extraction": "author"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-block2-0.6.2.attribution.txt",
+    "package": "cargo:block2@0.6.2",
+    "archive": "https://static.crates.io/crates/block2/block2-0.6.2.crate",
+    "archive_integrity": "sha256:cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5",
+    "members": [
+      {
+        "path": "block2-0.6.2/Cargo.toml",
+        "sha256": "e325c51f01145af3e11f2ee5ce7c47f10697d936c1d90b9ee81a0cf4f700f6d7",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-dispatch2-0.3.0.attribution.txt",
+    "package": "cargo:dispatch2@0.3.0",
+    "archive": "https://static.crates.io/crates/dispatch2/dispatch2-0.3.0.crate",
+    "archive_integrity": "sha256:89a09f22a6c6069a18470eb92d2298acf25463f14256d24778e1230d789a2aec",
+    "members": [
+      {
+        "path": "dispatch2-0.3.0/Cargo.toml",
+        "sha256": "a4138f58684544af423542c57c62adec1f95af7baf60d8185e5d474e1952b5fa",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-objc2-encode-4.1.0.attribution.txt",
+    "package": "cargo:objc2-encode@4.1.0",
+    "archive": "https://static.crates.io/crates/objc2-encode/objc2-encode-4.1.0.crate",
+    "archive_integrity": "sha256:ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33",
+    "members": [
+      {
+        "path": "objc2-encode-4.1.0/Cargo.toml",
+        "sha256": "cf9a8cc812710344d7fe618a5e615530baeeceae5c2826b9d5bb557dc419f159",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-objc2-exception-helper-0.1.1.attribution.txt",
+    "package": "cargo:objc2-exception-helper@0.1.1",
+    "archive": "https://static.crates.io/crates/objc2-exception-helper/objc2-exception-helper-0.1.1.crate",
+    "archive_integrity": "sha256:c7a1c5fbb72d7735b076bb47b578523aedc40f3c439bea6dfd595c089d79d98a",
+    "members": [
+      {
+        "path": "objc2-exception-helper-0.1.1/Cargo.toml",
+        "sha256": "11418770c4b19efe4ff9dcbc7a2aebfda1fb1f0eb4291e3225b20aed5c38a515",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-objc2-0.6.3.attribution.txt",
+    "package": "cargo:objc2@0.6.3",
+    "archive": "https://static.crates.io/crates/objc2/objc2-0.6.3.crate",
+    "archive_integrity": "sha256:b7c2599ce0ec54857b29ce62166b0ed9b4f6f1a70ccc9a71165b6154caca8c05",
+    "members": [
+      {
+        "path": "objc2-0.6.3/Cargo.toml",
+        "sha256": "97d59aa7ac2bcad4a2752fd7ebd96fb0eabf7fec268a14c987a5f5de12918932",
+        "extraction": "package.authors"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm--tauri-apps-plugin-dialog-2.6.0.attribution.txt",
+    "package": "npm:@tauri-apps/plugin-dialog@2.6.0",
+    "archive": "https://registry.npmjs.org/@tauri-apps/plugin-dialog/-/plugin-dialog-2.6.0.tgz",
+    "archive_integrity": "sha512-q4Uq3eY87TdcYzXACiYSPhmpBA76shgmQswGkSVio4C82Sz2W4iehe9TnKYwbq7weHiL88Yw19XZm7v28+Micg==",
+    "members": [
+      {
+        "path": "package/dist-js/index.js",
+        "sha256": "e09d70f8992b55c2809b7e49418527a5dc2f32837438b75f96bab826fb7ef240",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm--tauri-apps-plugin-fs-2.5.2.attribution.txt",
+    "package": "npm:@tauri-apps/plugin-fs@2.5.2",
+    "archive": "https://registry.npmjs.org/@tauri-apps/plugin-fs/-/plugin-fs-2.5.2.tgz",
+    "archive_integrity": "sha512-XXvMSnFiob+G1H+YHCDf+bzWVumseQuEIhzpbOJzevUfL4k0U+sTApZWJHpoLiamggnVPJm5dJ5sDsniRyWxlg==",
+    "members": [
+      {
+        "path": "package/dist-js/index.js",
+        "sha256": "a36e659932d304fb6b9bf9edc43e375a00c0d317fd9a013902e8bc663e413d24",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm--tauri-apps-plugin-opener-2.5.0.attribution.txt",
+    "package": "npm:@tauri-apps/plugin-opener@2.5.0",
+    "archive": "https://registry.npmjs.org/@tauri-apps/plugin-opener/-/plugin-opener-2.5.0.tgz",
+    "archive_integrity": "sha512-B0LShOYae4CZjN8leiNDbnfjSrTwoZakqKaWpfoH6nXiJwt6Rgj6RnVIffG3DoJiKsffRhMkjmBV9VeilSb4TA==",
+    "members": [
+      {
+        "path": "package/dist-js/index.js",
+        "sha256": "09bfe1c4e26975297b2dccccdd598dedc617145dc173db05fa990ccaa6585ae7",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm--tauri-apps-plugin-process-2.3.1.attribution.txt",
+    "package": "npm:@tauri-apps/plugin-process@2.3.1",
+    "archive": "https://registry.npmjs.org/@tauri-apps/plugin-process/-/plugin-process-2.3.1.tgz",
+    "archive_integrity": "sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA==",
+    "members": [
+      {
+        "path": "package/dist-js/index.js",
+        "sha256": "3b6f6cee241798b9568c198b68b3122108dfdf0367283a9ab3f692177a7e64f4",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm--tauri-apps-plugin-shell-2.3.4.attribution.txt",
+    "package": "npm:@tauri-apps/plugin-shell@2.3.4",
+    "archive": "https://registry.npmjs.org/@tauri-apps/plugin-shell/-/plugin-shell-2.3.4.tgz",
+    "archive_integrity": "sha512-ktsRWf8wHLD17aZEyqE8c5x98eNAuTizR1FSX475zQ4TxaiJnhwksLygQz+AGwckJL5bfEP13nWrlTNQJUpKpA==",
+    "members": [
+      {
+        "path": "package/dist-js/index.js",
+        "sha256": "743fd75d21959631446d7eba431b7301c5091e2a81e8ace0f4a8aa43ace7966d",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm--tauri-apps-plugin-updater-2.10.0.attribution.txt",
+    "package": "npm:@tauri-apps/plugin-updater@2.10.0",
+    "archive": "https://registry.npmjs.org/@tauri-apps/plugin-updater/-/plugin-updater-2.10.0.tgz",
+    "archive_integrity": "sha512-ljN8jPlnT0aSn8ecYhuBib84alxfMx6Hc8vJSKMJyzGbTPFZAC44T2I1QNFZssgWKrAlofvJqCC6Rr472JWfkQ==",
+    "members": [
+      {
+        "path": "package/dist-js/index.js",
+        "sha256": "341e241c925bdccf7ee88c299f4846a4b371f22d215c25f91b833f631f761c66",
+        "extraction": "lignes Copyright"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm-format-0.2.2.attribution.txt",
+    "package": "npm:format@0.2.2",
+    "archive": "https://registry.npmjs.org/format/-/format-0.2.2.tgz",
+    "archive_integrity": "sha512-wzsgA6WOq+09wrU1tsJ09udeR/YZRaeArL9e1wPbFg3GG2yDnC2ldKpxs4xunpFF9DgqCqOIra3bc1HWrJ37Ww==",
+    "members": [
+      {
+        "path": "package/Readme.md",
+        "sha256": "e078ab4217332db9ac446cdf23e932eabd21d6db7c239a6495df4d3802251f20",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "package/format.js",
+        "sha256": "666bd4da85e596b4e3e119f201ea5c69dae64e2e9f75a5758de777b9550a6155",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "package/package.json",
+        "sha256": "0754698e3180d26da07fa0ca1fbfce331c0e1652db512aee35b443204bdec553",
+        "extraction": "author"
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/npm-natural-compare-1.4.0.attribution.json",
+    "package": "npm:natural-compare@1.4.0",
+    "archive": "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz",
+    "archive_integrity": "sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==",
+    "members": [
+      {
+        "path": "package/README.md",
+        "sha256": "ced6cb1fe6ee15a32c63ea8c7e0425454e80456a890c6df3909429530566d40a",
+        "extraction": "lignes Copyright"
+      },
+      {
+        "path": "package/package.json",
+        "sha256": "3d99911ccfa0ca34ae0c68bfd32c038b952542e55db7c649c37b11dd1573f6af",
+        "extraction": "author"
+      }
+    ],
+    "serialization": "Chaîne JSON : espaces amont conservés exactement."
+  },
+  {
+    "file": "licenses/supplements/cargo-siphasher-0.3.11.original.txt",
+    "package": "cargo:siphasher@0.3.11",
+    "archive": "https://static.crates.io/crates/siphasher/siphasher-0.3.11.crate",
+    "archive_integrity": "sha256:38b58827f4464d87d377d175e90bf58eb00fd8716ff0a62f80356b5e61555d0d",
+    "members": [
+      {
+        "path": "siphasher-0.3.11/COPYING",
+        "sha256": "306b56d1a86d1ff32cffdf3bd26d809354f7f06bcc8c4c1697fcb5e28aeedb7a",
+        "extraction": "Notice intégrale, LF final."
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/cargo-siphasher-1.0.1.original.txt",
+    "package": "cargo:siphasher@1.0.1",
+    "archive": "https://static.crates.io/crates/siphasher/siphasher-1.0.1.crate",
+    "archive_integrity": "sha256:56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d",
+    "members": [
+      {
+        "path": "siphasher-1.0.1/COPYING",
+        "sha256": "4d40ffd1478e61d103063fe87b133d13b6784688b8855acd7ebc2aeb64095c6d",
+        "extraction": "Notice intégrale, LF final."
+      }
+    ]
+  },
+  {
+    "file": "licenses/supplements/python-rsa-4.9.1.original.txt",
+    "package": "python:rsa@4.9.1",
+    "archive": "https://files.pythonhosted.org/packages/da/8a/22b7beea3ee0d44b1916c0c1cb0ee3af23b700b6da9f04991899d0c555d4/rsa-4.9.1.tar.gz",
+    "archive_integrity": "sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75",
+    "members": [
+      {
+        "path": "rsa-4.9.1/LICENSE",
+        "sha256": "073f28b7d389c8fe74f607e17c27f81eaa5ace69edc43a884f23f41b41c5c726",
+        "extraction": "Notice intégrale, LF final."
+      }
+    ]
+  }
+]

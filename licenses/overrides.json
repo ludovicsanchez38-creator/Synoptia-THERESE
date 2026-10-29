@@ -10,25 +10,40 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:block2@0.6.2": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-block2-0.6.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:0556dceaf30454eaf0475fef448357a06f20ff5f001ef2dc95ea01fb334baa9c",
+        "local_path": "licenses/supplements/cargo-block2-0.6.2.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "cargo:convert_case@0.4.0": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:9565923a558209d5698a4e50bf5444399ed23bf1caa9f920acc6456ad6b5d3d2",
+        "local_path": "licenses/supplements/cargo-convert_case-0.4.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:dasp_sample@0.11.0": {
     "license": "MIT OR Apache-2.0",
@@ -45,25 +60,44 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:dispatch2@0.3.0": {
+    "attribution_missing": false,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/e68410e22a2d29d5f37a0b4c1b7e8e194808eade/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-dispatch2-0.3.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:1c9d05417a3918837ee02900008a82967fd317d979deab9ce41c070e48f95063",
+        "local_path": "licenses/supplements/cargo-dispatch2-0.3.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "cargo:dispatch@0.2.0": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:59bea2b8c81734b717cdd76f52f9622504a2f67d68a364e88f210a8bc20b53d5",
+        "local_path": "licenses/supplements/cargo-dispatch-0.2.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:dlopen2@0.8.2": {
     "license": "MIT",
@@ -86,19 +120,24 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:fxhash@0.2.1": {
+    "attribution_missing": false,
     "license": "Apache-2.0/MIT",
     "notices": [
       {
-        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "integrity": "sha256:aac61f03e886c52dc89e6c639f3e3e5ce1114928c0fab4dda22f23c8fe22891a",
+        "local_path": "licenses/supplements/cargo-fxhash-0.2.1.attribution.txt"
       },
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:libappindicator-sys@0.9.0": {
     "license": "Apache-2.0 OR MIT",
@@ -115,19 +154,24 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:mac@0.1.1": {
+    "attribution_missing": false,
     "license": "MIT/Apache-2.0",
     "notices": [
       {
-        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "integrity": "sha256:6f21c3c82d8c85714d3dc97c6b404d80089f98f4b4104d0b7e9ec7bcb4f9b863",
+        "local_path": "licenses/supplements/cargo-mac-0.1.1.attribution.txt"
       },
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:match_token@0.1.0": {
     "license": "MIT OR Apache-2.0",
@@ -214,124 +258,244 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:objc2-app-kit@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-app-kit-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-core-foundation@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-core-foundation-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-core-graphics@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-core-graphics-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-encode@4.1.0": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-encode-4.1.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:6ed22db1fa3d444901a4df9de37e1434822d3621fa35797c9017d13b6fea23f1",
+        "local_path": "licenses/supplements/cargo-objc2-encode-4.1.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "cargo:objc2-exception-helper@0.1.1": {
+    "attribution_missing": false,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-exception-helper-0.1.1.original-0.txt"
+      },
+      {
+        "integrity": "sha256:01029107870f7991b5ebf8fb4f0f4777afb8d574a884d7ccc5dc200120fda111",
+        "local_path": "licenses/supplements/cargo-objc2-exception-helper-0.1.1.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "cargo:objc2-foundation@0.3.2": {
+    "attribution_missing": true,
     "license": "MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-foundation-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-io-surface@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-io-surface-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-osa-kit@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-osa-kit-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-quartz-core@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-quartz-core-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-ui-kit@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-ui-kit-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2-web-kit@0.3.2": {
+    "attribution_missing": true,
     "license": "Zlib OR Apache-2.0 OR MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-web-kit-0.3.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": true
   },
   "cargo:objc2@0.6.3": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
         "integrity": "sha256:7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
-        "url": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.md"
+        "local_path": "licenses/supplements/cargo-objc2-0.6.3.original-0.txt"
+      },
+      {
+        "integrity": "sha256:ddb3a8b6fdd3de6fcb33cc9b1ed5a06c81d010fde36a421f6c8d6c06f3bff4db",
+        "local_path": "licenses/supplements/cargo-objc2-0.6.3.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "cargo:oboe-sys@0.6.1": {
     "license": "Apache-2.0",
@@ -436,37 +600,43 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:r-efi@5.3.0": {
+    "attribution_missing": false,
     "license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7",
+        "local_path": "licenses/supplements/cargo-r-efi-5.3.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       },
       {
         "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       },
       {
         "integrity": "sha256:5749785c8bdefafcb5d798270ed0a967036fe2ca63dcedade1627565dfef81d2",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/LGPL-2.1-only.txt"
+        "local_path": "licenses/supplements/LGPL-2.1.txt"
       }
     ],
-    "reason": "Archive contenant AUTHORS seulement, sans texte de licence au commit amont publié. Textes normatifs SPDX ; attributions à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:rustls-platform-verifier-android@0.1.1": {
+    "attribution_missing": true,
     "license": "MIT OR Apache-2.0",
     "notices": [
       {
-        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       },
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
+    "reason": "Attribution introuvable dans l’archive verrouillée (Cargo, sources, POM et AAR examinés). PROVISOIRE : release refusée. Conditions MIT/Apache conservées.",
     "review_required": true
   },
   "cargo:selectors@0.24.0": {
@@ -480,30 +650,80 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:sigchld@0.2.4": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:e9553da85e52b0cfca14b945c124cdfe5d2188959398632799e6ea3107418c14",
+        "local_path": "licenses/supplements/cargo-sigchld-0.2.4.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
+  },
+  "cargo:siphasher@0.3.11": {
+    "attribution_missing": false,
+    "license": "MIT/Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:306b56d1a86d1ff32cffdf3bd26d809354f7f06bcc8c4c1697fcb5e28aeedb7a",
+        "local_path": "licenses/supplements/cargo-siphasher-0.3.11.original.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Notice originale et attributions conservées ; renvoi complété par les conditions intégrales partagées, déjà présentes dans l’inventaire verrouillé.",
+    "review_required": false
+  },
+  "cargo:siphasher@1.0.1": {
+    "attribution_missing": false,
+    "license": "MIT/Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:4d40ffd1478e61d103063fe87b133d13b6784688b8855acd7ebc2aeb64095c6d",
+        "local_path": "licenses/supplements/cargo-siphasher-1.0.1.original.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Notice originale et attributions conservées ; renvoi complété par les conditions intégrales partagées, déjà présentes dans l’inventaire verrouillé.",
+    "review_required": false
   },
   "cargo:tao-macros@0.1.3": {
+    "attribution_missing": false,
     "license": "MIT OR Apache-2.0",
     "notices": [
       {
-        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "integrity": "sha256:1affd1e9a6cb4962f13b91de4aee9c210d09d5e02b53e110dae4f7e9c6345b6b",
+        "local_path": "licenses/supplements/cargo-tao-macros-0.1.3.attribution.txt"
       },
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:tauri-plugin@2.5.2": {
     "license": "Apache-2.0 OR MIT",
@@ -634,33 +854,92 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "cargo:winapi-i686-pc-windows-gnu@0.4.0": {
+    "attribution_missing": false,
     "license": "MIT/Apache-2.0",
     "notices": [
       {
-        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "integrity": "sha256:42f4db61f301b66e54a02d219f8179ac00dc76b70f4c79d329ec54c8a5346f3e",
+        "local_path": "licenses/supplements/cargo-winapi-i686-pc-windows-gnu-0.4.0.attribution.txt"
       },
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "cargo:winapi-x86_64-pc-windows-gnu@0.4.0": {
+    "attribution_missing": false,
     "license": "MIT/Apache-2.0",
     "notices": [
       {
-        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt"
+        "integrity": "sha256:1e0ebe1d143c43aceaef8086ef5a3d67c81303b855a4ec8d9601f1a06e0fe386",
+        "local_path": "licenses/supplements/cargo-winapi-x86_64-pc-windows-gnu-0.4.0.attribution.txt"
       },
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
+  },
+  "native:gcc-runtime@python:av@17.1.0": {
+    "attribution_missing": false,
+    "license": "GPL-3.0-with-GCC-exception",
+    "notices": [
+      {
+        "integrity": "sha256:28e85c5aa4af9b4f1dfe6b4817aa3eefb3eaaee7fd735045016f29ccf50276a1",
+        "local_path": "licenses/supplements/GCC-exception-3.1.txt"
+      },
+      {
+        "integrity": "sha256:7fa7e56c0db71105f4b59a6a0ac40225eb059876f85cd380383f7d7a066e68be",
+        "local_path": "licenses/supplements/GPL-3.0.txt"
+      }
+    ],
+    "reason": "Exception GCC conservée avec les conditions GPL-3.0 auxquelles elle se rapporte. Rapprochement avec le binaire exact toujours à revoir.",
+    "review_required": true
+  },
+  "native:gmp@python:av@17.1.0": {
+    "attribution_missing": false,
+    "license": "LGPL-3.0-or-later OR GPL-2.0-or-later",
+    "notices": [
+      {
+        "integrity": "sha256:cc2b8f88d8e8de7e8e8f8dc2f68f1204192141d64e0dbf21caa8b24ca50e4719",
+        "json_text": true,
+        "local_path": "licenses/supplements/native-gmp-python-av-17.1.0.original-0.json"
+      },
+      {
+        "integrity": "sha256:7fa7e56c0db71105f4b59a6a0ac40225eb059876f85cd380383f7d7a066e68be",
+        "local_path": "licenses/supplements/GPL-3.0.txt"
+      }
+    ],
+    "reason": "Conditions LGPL-3 originales conservées ; ajout du texte GPL-3 référencé. La déclaration de licence reste celle de l’archive.",
+    "review_required": true
+  },
+  "native:nettle-hogweed@python:av@17.1.0": {
+    "attribution_missing": false,
+    "license": "LGPL-3.0-or-later OR GPL-2.0-or-later",
+    "notices": [
+      {
+        "integrity": "sha256:6557adc4bc1d59232e27567a185dd70cf2ecca3154018b0be61ea29cf9e814e2",
+        "local_path": "licenses/supplements/native-nettle-hogweed-python-av-17.1.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:7fa7e56c0db71105f4b59a6a0ac40225eb059876f85cd380383f7d7a066e68be",
+        "local_path": "licenses/supplements/GPL-3.0.txt"
+      }
+    ],
+    "reason": "Conditions LGPL-3 originales conservées ; ajout du texte GPL-3 référencé. La déclaration de licence reste celle de l’archive.",
     "review_required": true
   },
   "npm:@esbuild/aix-ppc64@0.28.2": {
@@ -1327,6 +1606,150 @@
     ],
     "reason": "Notice du dépôt au commit de l’archive publiée."
   },
+  "npm:@tauri-apps/plugin-dialog@2.6.0": {
+    "attribution_missing": false,
+    "license": "MIT OR Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:9c1db6b7e7eb83e1cb2af973b5df2bdc63651ede0f38506ab98dfa0940487759",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-dialog-2.6.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:651b6f8748212d094bac3f0a7b594352108f863e0623d12febc7397790e8cb8c",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-dialog-2.6.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
+  },
+  "npm:@tauri-apps/plugin-fs@2.5.2": {
+    "attribution_missing": false,
+    "license": "MIT OR Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:9c1db6b7e7eb83e1cb2af973b5df2bdc63651ede0f38506ab98dfa0940487759",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-fs-2.5.2.original-0.txt"
+      },
+      {
+        "integrity": "sha256:651b6f8748212d094bac3f0a7b594352108f863e0623d12febc7397790e8cb8c",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-fs-2.5.2.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
+  },
+  "npm:@tauri-apps/plugin-opener@2.5.0": {
+    "attribution_missing": false,
+    "license": "MIT OR Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:9c1db6b7e7eb83e1cb2af973b5df2bdc63651ede0f38506ab98dfa0940487759",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-opener-2.5.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:651b6f8748212d094bac3f0a7b594352108f863e0623d12febc7397790e8cb8c",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-opener-2.5.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
+  },
+  "npm:@tauri-apps/plugin-process@2.3.1": {
+    "attribution_missing": false,
+    "license": "MIT OR Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:9c1db6b7e7eb83e1cb2af973b5df2bdc63651ede0f38506ab98dfa0940487759",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-process-2.3.1.original-0.txt"
+      },
+      {
+        "integrity": "sha256:651b6f8748212d094bac3f0a7b594352108f863e0623d12febc7397790e8cb8c",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-process-2.3.1.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
+  },
+  "npm:@tauri-apps/plugin-shell@2.3.4": {
+    "attribution_missing": false,
+    "license": "MIT OR Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:9c1db6b7e7eb83e1cb2af973b5df2bdc63651ede0f38506ab98dfa0940487759",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-shell-2.3.4.original-0.txt"
+      },
+      {
+        "integrity": "sha256:651b6f8748212d094bac3f0a7b594352108f863e0623d12febc7397790e8cb8c",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-shell-2.3.4.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
+  },
+  "npm:@tauri-apps/plugin-updater@2.10.0": {
+    "attribution_missing": false,
+    "license": "MIT OR Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:9c1db6b7e7eb83e1cb2af973b5df2bdc63651ede0f38506ab98dfa0940487759",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-updater-2.10.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:651b6f8748212d094bac3f0a7b594352108f863e0623d12febc7397790e8cb8c",
+        "local_path": "licenses/supplements/npm--tauri-apps-plugin-updater-2.10.0.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
+  },
   "npm:esrecurse@4.3.0": {
     "license": "BSD-2-Clause",
     "notices": [
@@ -1338,14 +1761,25 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "npm:format@0.2.2": {
+    "attribution_missing": false,
     "license": "Voir notice amont",
     "notices": [
       {
-        "integrity": "sha256:e078ab4217332db9ac446cdf23e932eabd21d6db7c239a6495df4d3802251f20",
-        "url": "https://raw.githubusercontent.com/samsonjs/format/4f898096759776b7c84fa7a25b13c923dadfe46e/Readme.md"
+        "integrity": "sha256:ca260c6cb22639d867bbf1a5931889f277ea9e60defe69ff03ec96d98c0eb176",
+        "json_text": true,
+        "local_path": "licenses/supplements/npm-format-0.2.2.original-0.json"
+      },
+      {
+        "integrity": "sha256:e7014876e3053e291e1c4f629627cf93431d468a9164fd040cc2b65e5a4b7892",
+        "local_path": "licenses/supplements/npm-format-0.2.2.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "npm:highlightjs-vue@1.0.0": {
     "license": "CC0-1.0",
@@ -1359,36 +1793,62 @@
     "review_required": true
   },
   "npm:imurmurhash@0.1.4": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:4f326b669114f1bdab4caa7f6507276b6056794244334a414056d7e8a3ab8bd3",
+        "local_path": "licenses/supplements/npm-imurmurhash-0.1.4.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:2f3de7ca97e07e9814e9a8dd61a561079ae6eb303579837e12d3d51f867ef7a6",
+        "local_path": "licenses/supplements/imurmurhash-0.1.4-MIT.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "npm:keyv@4.5.4": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:28d470883b23366a42788f92ce1a6be525432aca4a46dcd1d43adba0bf4e5520",
+        "local_path": "licenses/supplements/npm-keyv-4.5.4.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
   },
   "npm:natural-compare@1.4.0": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:9a97891a8e69da238853b1a512ae6ea8797072e9aad5bb25449b798deaab986e",
-        "url": "https://raw.githubusercontent.com/litejs/natural-compare-lite/eec83eee67cfac84d6db30cdd65363f155673770/README.md"
+        "integrity": "sha256:a6f82deb41c9cdddb6878f780e0e64b913a5bd4e94d433d0e157c7328380d1a8",
+        "json_text": true,
+        "local_path": "licenses/supplements/npm-natural-compare-1.4.0.original-0.json"
+      },
+      {
+        "integrity": "sha256:f73cead29c60011bfd72e9e5836a664e1739b0bdfaa939a4ae8f0dd76bda0c5c",
+        "json_text": true,
+        "local_path": "licenses/supplements/npm-natural-compare-1.4.0.attribution.json"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+    "reason": "Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.",
+    "review_required": false
   },
   "npm:saxes@6.0.0": {
     "license": "ISC",
@@ -1401,15 +1861,41 @@
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
   },
   "npm:stackback@0.0.2": {
+    "attribution_missing": false,
     "license": "MIT",
     "notices": [
       {
-        "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-        "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt"
+        "integrity": "sha256:54b5a4311c776e002663bb4cc2632242d2f1588cb57666f1b37c2b062c4aea69",
+        "local_path": "licenses/supplements/npm-stackback-0.0.2.attribution.txt"
+      },
+      {
+        "integrity": "sha256:9645fb6e878aebd5e959be648a71973a108d4aa0d18eee478d0579066ad99958",
+        "local_path": "licenses/supplements/MIT.txt"
+      },
+      {
+        "integrity": "sha256:b154c4cabeeb587f5cc63a41d0551ae69504460762d189a72ae141558ec5d184",
+        "local_path": "licenses/supplements/stackback-0.0.2-V8-BSD.txt"
       }
     ],
-    "reason": "Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.",
-    "review_required": true
+    "reason": "Attributions extraites de l’archive verrouillée, SHA256 vérifié en cache ; voir licenses/attribution-sources.json. Conditions partagées explicites ; aucune année de copyright déduite des métadonnées auteurs.",
+    "review_required": false
+  },
+  "python:certifi@2026.10.19": {
+    "attribution_missing": false,
+    "license": "MPL-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7",
+        "local_path": "licenses/supplements/certifi-2026.10.19.original.txt"
+      },
+      {
+        "integrity": "sha256:fe95138690cfb5696f84b6fc781c3628cd807dcbbfb3e8a4d0dcd46d7fd983cd",
+        "json_text": true,
+        "local_path": "licenses/supplements/MPL-2.0.json"
+      }
+    ],
+    "reason": "Notice originale conservée ; conditions MPL-2.0 intégrales partagées ajoutées.",
+    "review_required": false
   },
   "python:ctranslate2@4.8.0": {
     "license": "MIT",
@@ -1470,5 +1956,57 @@
       }
     ],
     "reason": "Texte absent de l’archive verrouillée ; notice du dépôt amont, contenu vérifié par SHA256."
+  },
+  "python:recurring-ical-events@3.8.0": {
+    "attribution_missing": false,
+    "license": "GPL-3.0-or-later",
+    "notices": [
+      {
+        "integrity": "sha256:6557adc4bc1d59232e27567a185dd70cf2ecca3154018b0be61ea29cf9e814e2",
+        "local_path": "licenses/supplements/python-recurring-ical-events-3.8.0.original-0.txt"
+      },
+      {
+        "integrity": "sha256:d3837f917cb98c65831283d2d2ea2fdc1070fb37a7d19a395b9d85d00878b423",
+        "local_path": "licenses/supplements/python-recurring-ical-events-3.8.0.original-1.txt"
+      },
+      {
+        "integrity": "sha256:7fa7e56c0db71105f4b59a6a0ac40225eb059876f85cd380383f7d7a066e68be",
+        "local_path": "licenses/supplements/GPL-3.0.txt"
+      }
+    ],
+    "reason": "Conditions LGPL-3 originales conservées ; ajout du texte GPL-3 référencé. La déclaration de licence reste celle de l’archive.",
+    "review_required": false
+  },
+  "python:rsa@4.9.1": {
+    "attribution_missing": false,
+    "license": "Apache-2.0",
+    "notices": [
+      {
+        "integrity": "sha256:073f28b7d389c8fe74f607e17c27f81eaa5ace69edc43a884f23f41b41c5c726",
+        "local_path": "licenses/supplements/python-rsa-4.9.1.original.txt"
+      },
+      {
+        "integrity": "sha256:074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+        "local_path": "licenses/supplements/Apache-2.0.txt"
+      }
+    ],
+    "reason": "Notice originale et attributions conservées ; renvoi complété par les conditions intégrales partagées, déjà présentes dans l’inventaire verrouillé.",
+    "review_required": false
+  },
+  "python:x-wr-timezone@2.0.1": {
+    "attribution_missing": false,
+    "license": "LGPL-3.0-or-later",
+    "notices": [
+      {
+        "integrity": "sha256:6557adc4bc1d59232e27567a185dd70cf2ecca3154018b0be61ea29cf9e814e2",
+        "local_path": "licenses/supplements/python-x-wr-timezone-2.0.1.original-0.txt"
+      },
+      {
+        "integrity": "sha256:7fa7e56c0db71105f4b59a6a0ac40225eb059876f85cd380383f7d7a066e68be",
+        "local_path": "licenses/supplements/GPL-3.0.txt"
+      }
+    ],
+    "reason": "Conditions LGPL-3 originales conservées ; ajout du texte GPL-3 référencé. La déclaration de licence reste celle de l’archive.",
+    "review_required": false
   }
 }

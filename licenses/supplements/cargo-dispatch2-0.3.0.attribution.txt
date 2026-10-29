@@ -1,0 +1,3 @@
+Attribution publiée dans dispatch2-0.3.0/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>
+Mary <mary@mary.zone>

@@ -23,7 +23,7 @@ from email.parser import Parser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json']
+LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json', 'licenses/attribution-sources.json']
 INVENTORY = 'licenses/inventory.json'
 OUTPUT = 'THIRD_PARTY_LICENSES'
 
@@ -33,6 +33,10 @@ def digest(data):
 
 
 def lock_digest(root, paths=LOCKS):
+    if paths is LOCKS:
+        overrides = json.loads((root / 'licenses/overrides.json').read_text(encoding='utf-8'))
+        paths = paths + sorted({n['local_path'] for o in overrides.values()
+                                for n in o['notices'] if 'local_path' in n})
     return digest(b''.join(p.encode() + b'\0' + (root / p).read_bytes() for p in paths))
 
 
@@ -152,7 +156,58 @@ def archive_members(data):
 
 
 def has_license(notices):
-    return any(not re.match(r'^(authors|notice)([._-]|$)', Path(n['path']).name, re.I) for n in notices)
+    # Le nom du fichier ne prouve rien : AUTHORS peut contenir une vraie MIT,
+    # LICENSE un simple renvoi. Reconnaître des clauses, jamais seulement un titre.
+    for notice in notices:
+        text = ' '.join(notice.get('text', '').lower().split())
+        if re.search(r'\btodo\b', text):
+            continue
+        if ('permission is hereby granted' in text or 'permission to use, copy' in text) and ('warranty' in text or 'warranties' in text):
+            return True
+        if 'redistribution and use' in text and 'disclaimer' in text:
+            return True
+        if 'terms and conditions for use, reproduction, and distribution' in text and '9. accepting warranty or additional liability' in text:
+            return True
+        if 'gnu ' in text and 'end of terms and conditions' in text:
+            return True
+        if 'mozilla public license' in text and '10. versions of the license' in text:
+            return True
+        if 'this is free and unencumbered software released into the public domain' in text and 'warranty' in text:
+            return True
+        if 'this software is provided' in text and 'the origin of this software must not be misrepresented' in text:
+            return True
+        if 'do what the fuck you want to public license' in text and '0. you just do what the fuck you want to' in text:
+            return True
+        if 'creative commons' in text and (('2. waiver' in text and '4. limitations and disclaimers' in text) or
+                                           ('section 2' in text and 'section 8' in text and 'disclaimer of warranties' in text)):
+            return True
+        if 'gnu lesser general public license' in text and '6. revised versions of the gnu lesser general public license' in text:
+            return True
+        if 'community data license agreement' in text and 'a data recipient may use, modify, and share' in text and '5. definitions' in text:
+            return True
+        if 'blue oak model license' in text and 'each contributor licenses you' in text and 'no liability' in text:
+            return True
+        if 'nvidia hereby grants you a non-exclusive' in text and 'no warranties' in text and len(text) > 10000:
+            return True
+    return False
+
+
+def generic_attribution(text):
+    # Les annexes normatives Apache/GNU expliquent comment appliquer la licence :
+    # leurs exemples ne sont pas l'attribution du composant. Ne pas les réécrire.
+    if re.search(r'APPENDIX:\s+How to apply the Apache License', text, re.I):
+        text = re.sub(r'Copyright (?:\[yyyy\]|\d{4}) \[name of copyright owner\]', '', text, flags=re.I)
+    if re.search(r'How to Apply These Terms to Your New (?:Programs|Libraries)', text, re.I):
+        text = re.sub(r'<year>\s+<name of author>', '', text, flags=re.I)
+    if 'Please replace <year> with the value from the FreeType version' in text:
+        text = text.replace('copyright © <year> The FreeType', 'copyright © The FreeType')
+        text = text.replace('Please replace <year>', 'Please replace the example year')
+    return bool(re.search(r'<(?:year|copyright holders?|name of (?:the )?author)>|\[(?:yyyy|year|copyright holders?|name of copyright owner)\]', text, re.I))
+
+
+def incomplete_attributions(rows):
+    return [r['id'] for r in rows if r.get('attribution_missing') or
+            any(generic_attribution(n['text']) for n in r['notices'])]
 
 
 def collect(row, cache):
@@ -189,33 +244,65 @@ def collect(row, cache):
             if license_name and len(license_name) > 300:
                 notices.append({'path': name + ':License', 'text': license_name})
                 license_name = 'Voir le texte de la métadonnée License'
-    if not notices or not has_license(notices):
-        raise ValueError(f"Aucun texte de licence dans {row['id']} (ajouter une preuve amont dans licenses/overrides.json)")
     result = {**row, 'license': license_name or 'Voir les notices originales', 'notices': notices}
     snapshot.write_text(json.dumps(result, ensure_ascii=False), encoding='utf-8', newline='\n')
     return result
 
 
-def validate_inventory(packages, rows):
+def validate_inventory(packages, rows, *, release=True):
     expected = {p['id']: p for p in packages}
     actual = {p['id']: p for p in rows}
     if len(actual) != len(rows) or set(expected) != set(actual):
         raise ValueError('Inventaire incomplet ou périmé : régénérer depuis les verrous')
     for key, row in actual.items():
-        if not row.get('notices') or not has_license(row['notices']) or any(not n.get('text', '').strip() for n in row['notices']):
+        if not row.get('notices') or not has_license(row['notices']) or any(
+                not n.get('text', '').strip() or re.search(r'\bTODO\b', n['text'], re.I) for n in row['notices']):
             raise ValueError(f'Licence sans texte : {key}')
         if any(row.get(field) != expected[key].get(field) for field in ('artifact', 'integrity')):
             raise ValueError(f'Archive périmée : {key}')
+    if release and (missing := incomplete_attributions(rows)):
+        raise ValueError('Livrable PROVISOIRE : attributions génériques ou manquantes : ' + ', '.join(missing))
+
+
+def source_text(data, source):
+    text = data.decode('utf-8')
+    return (json.loads(text)['text'] if source.get('json_text') else text).strip()
+
+
+def override_notices(override, root):
+    notices = []
+    for source in override['notices']:
+        path = source.get('local_path') or source['url']
+        data = (root / path).read_bytes() if 'local_path' in source else fetch(path)
+        verify(data, source['integrity'])
+        notices.append({'path': path, 'text': source_text(data, source)})
+    return notices
+
+
+def apply_override(row, override, root):
+    notices = override_notices(override, root)
+    if override.get('retain_archive_notices'):
+        local_paths = {n['path'] for n in notices}
+        notices = [n for n in row['notices'] if n['path'] not in local_paths] + notices
+    return {**row, 'license': override['license'], 'notices': notices,
+            'provenance': override['reason'], 'review_required': override.get('review_required', False),
+            'attribution_missing': override.get('attribution_missing', False)}
 
 
 def render(rows, fingerprint):
-    parts = ['THÉRÈSE — Licences des composants tiers', 'Empreinte des verrous : ' + fingerprint,
+    missing = incomplete_attributions(rows)
+    title = 'THÉRÈSE — Licences des composants tiers'
+    if missing:
+        title = 'PROVISOIRE — ' + title + ' — DIFFUSION REFUSÉE : attributions incomplètes'
+    parts = [title, 'Empreinte des verrous : ' + fingerprint,
              'Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.',
              'La présence dans ce document ne signifie pas que le composant est embarqué.',
              'Les notices des roues natives sélectionnées complètent celles des sources.',
              'Code THÉRÈSE : https://github.com/ludovicsanchez38-creator/Synoptia-THERESE (tag de la version installée).',
              'Les liens d’archives ci-dessous identifient les sources amont ; ils ne remplacent pas la fourniture du code source correspondant des binaires GPL/LGPL.',
              'Les modèles de voix téléchargés séparément ne sont pas couverts par les verrous.', '']
+    if missing:
+        parts += ['Attributions à compléter : ' + ', '.join(missing), '']
     texts = {}
     for row in sorted(rows, key=lambda r: r['id']):
         flags = copyleft(row['license'] + '\n' + '\n'.join(n['text'] for n in row['notices']))
@@ -260,22 +347,17 @@ def main():
                 row = futures[future]
                 try:
                     result = future.result()
+                    if row['id'] in overrides:
+                        result = apply_override(result, overrides[row['id']], root)
                 except Exception as exc:
-                    override = overrides.get(row['id'])
-                    if not override:
-                        errors.append(str(exc))
-                        continue
-                    notices = []
-                    for source in override['notices']:
-                        data = fetch(source['url'])
-                        verify(data, source['integrity'])
-                        notices.append({'path': source['url'], 'text': data.decode().strip()})
-                    result = {**row, 'license': override['license'], 'notices': notices, 'provenance': override['reason'], 'review_required': override.get('review_required', False)}
+                    errors.append(f"{row['id']} : {exc}")
+                    continue
                 rows.append(result)
                 if len(rows) % 100 == 0:
                     print(f'{len(rows)}/{len(packages)} archives collectées', flush=True)
         if errors:
             raise ValueError('\n'.join(sorted(errors)))
+        validate_inventory(packages, rows, release=False)
         inventory.parent.mkdir(exist_ok=True)
         inventory.write_text(json.dumps({'locks': fingerprint, 'packages': sorted(rows, key=lambda p: p['id'])}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
     data = json.loads(inventory.read_text(encoding='utf-8'))
@@ -284,9 +366,16 @@ def main():
         if row['id'] in overrides:
             row['provenance'] = overrides[row['id']]['reason']
             row['review_required'] = overrides[row['id']].get('review_required', False)
+            row['attribution_missing'] = overrides[row['id']].get('attribution_missing', False)
+            for source in overrides[row['id']]['notices']:
+                if 'local_path' in source:
+                    raw = (root / source['local_path']).read_bytes()
+                    verify(raw, source['integrity'])
+                    if {'path': source['local_path'], 'text': source_text(raw, source)} not in row['notices']:
+                        raise ValueError('Supplément absent ou périmé : ' + row['id'])
     if data['locks'] != fingerprint:
         raise ValueError('Verrous modifiés : lancer refresh et réviser les licences')
-    validate_inventory(packages, data['packages'])
+    validate_inventory(packages, data['packages'], release=args.command == 'check')
     expected = render(data['packages'], fingerprint)
     if args.command == 'check':
         check_output(root / OUTPUT, expected)

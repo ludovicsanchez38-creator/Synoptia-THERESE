@@ -1,0 +1,2 @@
+Attribution publiée dans objc2-encode-4.1.0/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>

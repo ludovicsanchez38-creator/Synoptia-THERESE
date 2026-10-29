@@ -1,0 +1,5 @@
+Attributions dans package/README.md :
+Copyright (c) 2013 Gary Court, Jens Taylor
+
+Attribution publiée dans package/package.json (author) :
+{"name": "Jens Taylor", "email": "jensyt@gmail.com", "url": "https://github.com/homebrewing"}

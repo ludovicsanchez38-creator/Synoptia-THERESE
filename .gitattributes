@@ -6,3 +6,8 @@
 /uv.lock text eol=lf
 /licenses/*.json text eol=lf
 /THIRD_PARTY_LICENSES text eol=lf
+
+# Textes complémentaires vérifiés : empreintes identiques sous Windows.
+/licenses/supplements/*.txt text eol=lf
+/licenses/attribution-sources.json text eol=lf
+/licenses/supplements/*.json text eol=lf

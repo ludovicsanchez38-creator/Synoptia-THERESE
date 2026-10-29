@@ -1,0 +1,2 @@
+Attribution publiée dans objc2-0.6.3/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>

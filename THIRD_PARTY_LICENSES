@@ -1,11 +1,13 @@
-THÉRÈSE — Licences des composants tiers
-Empreinte des verrous : d46b3398c486dbf1d9c5c1d87c3d83dcbfe9842e4cf98d60940a2aa9cceffacf
+PROVISOIRE — THÉRÈSE — Licences des composants tiers — DIFFUSION REFUSÉE : attributions incomplètes
+Empreinte des verrous : 040426d3a64b4d9c2b7c4b97a4ad67004baa47e64bfa7a6e2b3040dee710ba72
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
 Code THÉRÈSE : https://github.com/ludovicsanchez38-creator/Synoptia-THERESE (tag de la version installée).
 Les liens d’archives ci-dessous identifient les sources amont ; ils ne remplacent pas la fourniture du code source correspondant des binaires GPL/LGPL.
 Les modèles de voix téléchargés séparément ne sont pas couverts par les verrous.
+
+Attributions à compléter : cargo:objc2-app-kit@0.3.2, cargo:objc2-core-foundation@0.3.2, cargo:objc2-core-graphics@0.3.2, cargo:objc2-foundation@0.3.2, cargo:objc2-io-surface@0.3.2, cargo:objc2-osa-kit@0.3.2, cargo:objc2-quartz-core@0.3.2, cargo:objc2-ui-kit@0.3.2, cargo:objc2-web-kit@0.3.2, cargo:rustls-platform-verifier-android@0.1.1, native:libXau-libxcb-libdrm@python:av@17.1.0, native:svt-av1@python:av@17.1.0, npm:eslint-scope@8.4.0, npm:esrecurse@4.3.0, npm:estraverse@5.3.0, npm:esutils@2.0.3, python:caldav@2.2.3, python:jaraco-context@6.1.0, python:jaraco-functools@4.4.0, python:keyring@25.7.0, python:setuptools@84.2.1, python:torch@2.9.1, python:torch@2.9.1/wheel-cpu-linux, python:torch@2.9.1/wheel-cpu-windows, python:zipp@3.23.0
 
 cargo:adler2@2.0.1
 Licence déclarée : 0BSD OR MIT OR Apache-2.0
@@ -252,7 +254,9 @@ cargo:block2@0.6.2
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/block2/block2-0.6.2.crate
 Intégrité : sha256:cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-block2-0.6.2.attribution.txt — texte SHA256 6dabc49e55a884ebd8168037e2b8bd4753a9c133518bfc176e0f8ca3c3ea2d9a
+Notice : licenses/supplements/cargo-block2-0.6.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:blocking@1.7.0
 Licence déclarée : Apache-2.0 OR MIT
@@ -444,8 +448,8 @@ cargo:convert_case@0.4.0
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/convert_case/convert_case-0.4.0.crate
 Intégrité : sha256:6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-convert_case-0.4.0.attribution.txt — texte SHA256 193c59003e0b0aab6361af1c91dd7fe4627097243ac0dd56a4be6dc49c64b87b
 
 cargo:cookie@0.18.1
 Licence déclarée : MIT OR Apache-2.0
@@ -641,14 +645,17 @@ cargo:dispatch2@0.3.0
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/dispatch2/dispatch2-0.3.0.crate
 Intégrité : sha256:89a09f22a6c6069a18470eb92d2298acf25463f14256d24778e1230d789a2aec
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/e68410e22a2d29d5f37a0b4c1b7e8e194808eade/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-dispatch2-0.3.0.attribution.txt — texte SHA256 54b82b2b2bfc684ec02d65d0e92ca140f1e793595b131580682221aa5b985aec
+Notice : licenses/supplements/cargo-dispatch2-0.3.0.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:dispatch@0.2.0
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/dispatch/dispatch-0.2.0.crate
 Intégrité : sha256:bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-dispatch-0.2.0.attribution.txt — texte SHA256 36386947b3d28a34deef970b5f1f4abdae86c4ee1adc805392463359bf796c48
 
 cargo:displaydoc@0.2.5
 Licence déclarée : MIT OR Apache-2.0
@@ -938,9 +945,9 @@ cargo:fxhash@0.2.1
 Licence déclarée : Apache-2.0/MIT
 Archive : https://static.crates.io/crates/fxhash/fxhash-0.2.1.crate
 Intégrité : sha256:c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-fxhash-0.2.1.attribution.txt — texte SHA256 a05fe00de5487e311b90aff9d46f5ae6b68c6c1e150181bb11b720944eea83e0
 
 cargo:gdk-pixbuf-sys@0.18.0
 Licence déclarée : MIT
@@ -1477,9 +1484,9 @@ cargo:mac@0.1.1
 Licence déclarée : MIT/Apache-2.0
 Archive : https://static.crates.io/crates/mac/mac-0.1.1.crate
 Intégrité : sha256:c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-mac-0.1.1.attribution.txt — texte SHA256 412f1f9758eca67b382667411460a009ed2bf04e841373425d48763e71f38417
 
 cargo:mach2@0.4.3
 Licence déclarée : BSD-2-Clause OR MIT OR Apache-2.0
@@ -1661,73 +1668,106 @@ cargo:objc2-app-kit@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-app-kit/objc2-app-kit-0.3.2.crate
 Intégrité : sha256:d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-app-kit-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-core-foundation@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-core-foundation/objc2-core-foundation-0.3.2.crate
 Intégrité : sha256:2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-core-foundation-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-core-graphics@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-core-graphics/objc2-core-graphics-0.3.2.crate
 Intégrité : sha256:e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-core-graphics-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-encode@4.1.0
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/objc2-encode/objc2-encode-4.1.0.crate
 Intégrité : sha256:ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-encode-4.1.0.attribution.txt — texte SHA256 a8d701d59ff770369a27f4572b0ed91e8b51540a3abbdf0b9b25541e72bc9378
+Notice : licenses/supplements/cargo-objc2-encode-4.1.0.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-exception-helper@0.1.1
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-exception-helper/objc2-exception-helper-0.1.1.crate
 Intégrité : sha256:c7a1c5fbb72d7735b076bb47b578523aedc40f3c439bea6dfd595c089d79d98a
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-exception-helper-0.1.1.attribution.txt — texte SHA256 914be242a1adface273190d3b972cc017aa08d6a780c1f7f0bf7e848b4f29621
+Notice : licenses/supplements/cargo-objc2-exception-helper-0.1.1.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-foundation@0.3.2
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/objc2-foundation/objc2-foundation-0.3.2.crate
 Intégrité : sha256:e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-foundation-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-io-surface@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-io-surface/objc2-io-surface-0.3.2.crate
 Intégrité : sha256:180788110936d59bab6bd83b6060ffdfffb3b922ba1396b312ae795e1de9d81d
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-io-surface-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-osa-kit@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-osa-kit/objc2-osa-kit-0.3.2.crate
 Intégrité : sha256:f112d1746737b0da274ef79a23aac283376f335f4095a083a267a082f21db0c0
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-osa-kit-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-quartz-core@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-quartz-core/objc2-quartz-core-0.3.2.crate
 Intégrité : sha256:96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-quartz-core-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-ui-kit@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-ui-kit/objc2-ui-kit-0.3.2.crate
 Intégrité : sha256:d87d638e33c06f577498cbcc50491496a3ed4246998a7fbba7ccb98b1e7eab22
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-ui-kit-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2-web-kit@0.3.2
 Licence déclarée : Zlib OR Apache-2.0 OR MIT
 Archive : https://static.crates.io/crates/objc2-web-kit/objc2-web-kit-0.3.2.crate
 Intégrité : sha256:b2e5aaab980c433cf470df9d7af96a7b46a9d892d521a2cbbb2f8a4c16751e7f
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+REVUE REQUISE : Renvoi amont conservé ; attributions de l’archive verrouillée et conditions intégrales partagées ajoutées. Voir licenses/attribution-sources.json.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-web-kit-0.3.2.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:objc2@0.6.3
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/objc2/objc2-0.6.3.crate
 Intégrité : sha256:b7c2599ce0ec54857b29ce62166b0ed9b4f6f1a70ccc9a71165b6154caca8c05
-Notice : https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.md — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-objc2-0.6.3.attribution.txt — texte SHA256 b17b545e65ef7c5da49f2931f2780a88e60a07086cb3e15883d5d3eeed7e8b83
+Notice : licenses/supplements/cargo-objc2-0.6.3.original-0.txt — texte SHA256 1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab
 
 cargo:oboe-sys@0.6.1
 Licence déclarée : Apache-2.0
@@ -2063,11 +2103,11 @@ cargo:r-efi@5.3.0
 Licence déclarée : MIT OR Apache-2.0 OR LGPL-2.1-or-later
 Archive : https://static.crates.io/crates/r-efi/r-efi-5.3.0.crate
 Intégrité : sha256:69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f
-REVUE REQUISE : Archive contenant AUTHORS seulement, sans texte de licence au commit amont publié. Textes normatifs SPDX ; attributions à confirmer avant diffusion publique.
 ATTENTION COPYLEFT : LGPL
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/LGPL-2.1-only.txt — texte SHA256 10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/LGPL-2.1.txt — texte SHA256 10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-r-efi-5.3.0.attribution.txt — texte SHA256 f30e9ee33dbf771d1066168d0d8c68401a81340f2241dd726f7891364696c7f9
 
 cargo:rand@0.7.3
 Licence déclarée : MIT OR Apache-2.0
@@ -2268,9 +2308,9 @@ cargo:rustls-platform-verifier-android@0.1.1
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://static.crates.io/crates/rustls-platform-verifier-android/rustls-platform-verifier-android-0.1.1.crate
 Intégrité : sha256:f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+REVUE REQUISE : Attribution introuvable dans l’archive verrouillée (Cargo, sources, POM et AAR examinés). PROVISOIRE : release refusée. Conditions MIT/Apache conservées.
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
 
 cargo:rustls-platform-verifier@0.6.2
 Licence déclarée : MIT OR Apache-2.0
@@ -2493,8 +2533,8 @@ cargo:sigchld@0.2.4
 Licence déclarée : MIT
 Archive : https://static.crates.io/crates/sigchld/sigchld-0.2.4.crate
 Intégrité : sha256:47106eded3c154e70176fc83df9737335c94ce22f821c32d17ed1db1f83badb1
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-sigchld-0.2.4.attribution.txt — texte SHA256 2d90bc5bfd7a2c8caf8b4bbf36bb6d1f80389b00f4b08916fc6ce5973ca67522
 
 cargo:signal-hook-registry@1.4.8
 Licence déclarée : MIT OR Apache-2.0
@@ -2520,13 +2560,17 @@ cargo:siphasher@0.3.11
 Licence déclarée : MIT/Apache-2.0
 Archive : https://static.crates.io/crates/siphasher/siphasher-0.3.11.crate
 Intégrité : sha256:38b58827f4464d87d377d175e90bf58eb00fd8716ff0a62f80356b5e61555d0d
-Notice : siphasher-0.3.11/COPYING — texte SHA256 7b3da1c1283f45b2713b0472a67b22f9be9b924ebb2618da661ab21d0089faa1
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-siphasher-0.3.11.original.txt — texte SHA256 7b3da1c1283f45b2713b0472a67b22f9be9b924ebb2618da661ab21d0089faa1
 
 cargo:siphasher@1.0.1
 Licence déclarée : MIT/Apache-2.0
 Archive : https://static.crates.io/crates/siphasher/siphasher-1.0.1.crate
 Intégrité : sha256:56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d
-Notice : siphasher-1.0.1/COPYING — texte SHA256 2fdb774d3569e2455b0aefd609ac8bbf0cbfd86ccda8c14385cebcf5db05d0d9
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-siphasher-1.0.1.original.txt — texte SHA256 2fdb774d3569e2455b0aefd609ac8bbf0cbfd86ccda8c14385cebcf5db05d0d9
 
 cargo:slab@0.4.11
 Licence déclarée : MIT
@@ -2651,9 +2695,9 @@ cargo:tao-macros@0.1.3
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://static.crates.io/crates/tao-macros/tao-macros-0.1.3.crate
 Intégrité : sha256:f4e16beb8b2ac17db28eab8bca40e62dbfbb34c0fcdc6d9826b11b7b5d047dfd
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-tao-macros-0.1.3.attribution.txt — texte SHA256 6f99c0748f5e7ef44a76fe37b35fafd94a8309b6c0e219b7087e6d21e404272d
 
 cargo:tao@0.34.5
 Licence déclarée : Apache-2.0
@@ -3313,9 +3357,9 @@ cargo:winapi-i686-pc-windows-gnu@0.4.0
 Licence déclarée : MIT/Apache-2.0
 Archive : https://static.crates.io/crates/winapi-i686-pc-windows-gnu/winapi-i686-pc-windows-gnu-0.4.0.crate
 Intégrité : sha256:ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-winapi-i686-pc-windows-gnu-0.4.0.attribution.txt — texte SHA256 055f38f5c9b541c7fa555138161dbf2649798193eae4e3ba303da88da011db7b
 
 cargo:winapi-util@0.1.11
 Licence déclarée : Unlicense OR MIT
@@ -3328,9 +3372,9 @@ cargo:winapi-x86_64-pc-windows-gnu@0.4.0
 Licence déclarée : MIT/Apache-2.0
 Archive : https://static.crates.io/crates/winapi-x86_64-pc-windows-gnu/winapi-x86_64-pc-windows-gnu-0.4.0.crate
 Intégrité : sha256:712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/cargo-winapi-x86_64-pc-windows-gnu-0.4.0.attribution.txt — texte SHA256 3e3e6940f00fb5d6c87fd0ded6d457aa172ff3cffb21f160690fd1e2ba02b4d0
 
 cargo:winapi@0.3.9
 Licence déclarée : MIT/Apache-2.0
@@ -3979,17 +4023,19 @@ native:gcc-runtime@python:av@17.1.0
 Licence déclarée : GPL-3.0-with-GCC-exception
 Archive : https://raw.githubusercontent.com/gcc-mirror/gcc/c52ff9699b42104b04865effe4347dfd0911bd41/COPYING.RUNTIME
 Intégrité : sha256:9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74
-REVUE REQUISE : Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique.
+REVUE REQUISE : Exception GCC conservée avec les conditions GPL-3.0 auxquelles elle se rapporte. Rapprochement avec le binaire exact toujours à revoir.
 ATTENTION COPYLEFT : GPL
-Notice : https://raw.githubusercontent.com/gcc-mirror/gcc/c52ff9699b42104b04865effe4347dfd0911bd41/COPYING.RUNTIME — texte SHA256 f130d9ea1a943d4c29b71d85c0dffc5d2eaa7737bb82af13a4856c508588deae
+Notice : licenses/supplements/GCC-exception-3.1.txt — texte SHA256 f130d9ea1a943d4c29b71d85c0dffc5d2eaa7737bb82af13a4856c508588deae
+Notice : licenses/supplements/GPL-3.0.txt — texte SHA256 c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df
 
 native:gmp@python:av@17.1.0
 Licence déclarée : LGPL-3.0-or-later OR GPL-2.0-or-later
 Archive : https://raw.githubusercontent.com/gmp-mirror/gmp/4b3b66d3328e390af894b97e0438aed90c3305be/COPYING.LESSERv3
 Intégrité : sha256:a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c
-REVUE REQUISE : Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique.
+REVUE REQUISE : Conditions LGPL-3 originales conservées ; ajout du texte GPL-3 référencé. La déclaration de licence reste celle de l’archive.
 ATTENTION COPYLEFT : GPL, LGPL
-Notice : https://raw.githubusercontent.com/gmp-mirror/gmp/4b3b66d3328e390af894b97e0438aed90c3305be/COPYING.LESSERv3 — texte SHA256 28f79bfaf4198ea5ac42a32b41a0e45fe89b8446c81a707793e5ca93ed019112
+Notice : licenses/supplements/GPL-3.0.txt — texte SHA256 c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df
+Notice : licenses/supplements/native-gmp-python-av-17.1.0.original-0.json — texte SHA256 28f79bfaf4198ea5ac42a32b41a0e45fe89b8446c81a707793e5ca93ed019112
 
 native:gnutls@python:av@17.1.0
 Licence déclarée : LGPL-2.1-or-later
@@ -4062,9 +4108,10 @@ native:nettle-hogweed@python:av@17.1.0
 Licence déclarée : LGPL-3.0-or-later OR GPL-2.0-or-later
 Archive : https://raw.githubusercontent.com/gnutls/nettle/6368454576db9af0b5f6fdf79dd69ad2a9ceea5b/COPYING.LESSERv3
 Intégrité : sha256:e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118
-REVUE REQUISE : Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique.
+REVUE REQUISE : Conditions LGPL-3 originales conservées ; ajout du texte GPL-3 référencé. La déclaration de licence reste celle de l’archive.
 ATTENTION COPYLEFT : GPL, LGPL
-Notice : https://raw.githubusercontent.com/gnutls/nettle/6368454576db9af0b5f6fdf79dd69ad2a9ceea5b/COPYING.LESSERv3 — texte SHA256 cfbd94ea9bfe6d0809fd2bebe2e0979cc8de9aca77f1a49eae11c474400e309e
+Notice : licenses/supplements/GPL-3.0.txt — texte SHA256 c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df
+Notice : licenses/supplements/native-nettle-hogweed-python-av-17.1.0.original-0.txt — texte SHA256 cfbd94ea9bfe6d0809fd2bebe2e0979cc8de9aca77f1a49eae11c474400e309e
 
 native:opencore-amr@python:av@17.1.0
 Licence déclarée : Apache-2.0
@@ -5008,37 +5055,55 @@ npm:@tauri-apps/plugin-dialog@2.6.0
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://registry.npmjs.org/@tauri-apps/plugin-dialog/-/plugin-dialog-2.6.0.tgz
 Intégrité : sha512-q4Uq3eY87TdcYzXACiYSPhmpBA76shgmQswGkSVio4C82Sz2W4iehe9TnKYwbq7weHiL88Yw19XZm7v28+Micg==
-Notice : package/LICENSE.spdx — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm--tauri-apps-plugin-dialog-2.6.0.attribution.txt — texte SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Notice : licenses/supplements/npm--tauri-apps-plugin-dialog-2.6.0.original-0.txt — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 
 npm:@tauri-apps/plugin-fs@2.5.2
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://registry.npmjs.org/@tauri-apps/plugin-fs/-/plugin-fs-2.5.2.tgz
 Intégrité : sha512-XXvMSnFiob+G1H+YHCDf+bzWVumseQuEIhzpbOJzevUfL4k0U+sTApZWJHpoLiamggnVPJm5dJ5sDsniRyWxlg==
-Notice : package/LICENSE.spdx — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm--tauri-apps-plugin-fs-2.5.2.attribution.txt — texte SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Notice : licenses/supplements/npm--tauri-apps-plugin-fs-2.5.2.original-0.txt — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 
 npm:@tauri-apps/plugin-opener@2.5.0
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://registry.npmjs.org/@tauri-apps/plugin-opener/-/plugin-opener-2.5.0.tgz
 Intégrité : sha512-B0LShOYae4CZjN8leiNDbnfjSrTwoZakqKaWpfoH6nXiJwt6Rgj6RnVIffG3DoJiKsffRhMkjmBV9VeilSb4TA==
-Notice : package/LICENSE.spdx — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm--tauri-apps-plugin-opener-2.5.0.attribution.txt — texte SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Notice : licenses/supplements/npm--tauri-apps-plugin-opener-2.5.0.original-0.txt — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 
 npm:@tauri-apps/plugin-process@2.3.1
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://registry.npmjs.org/@tauri-apps/plugin-process/-/plugin-process-2.3.1.tgz
 Intégrité : sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA==
-Notice : package/LICENSE.spdx — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm--tauri-apps-plugin-process-2.3.1.attribution.txt — texte SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Notice : licenses/supplements/npm--tauri-apps-plugin-process-2.3.1.original-0.txt — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 
 npm:@tauri-apps/plugin-shell@2.3.4
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://registry.npmjs.org/@tauri-apps/plugin-shell/-/plugin-shell-2.3.4.tgz
 Intégrité : sha512-ktsRWf8wHLD17aZEyqE8c5x98eNAuTizR1FSX475zQ4TxaiJnhwksLygQz+AGwckJL5bfEP13nWrlTNQJUpKpA==
-Notice : package/LICENSE.spdx — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm--tauri-apps-plugin-shell-2.3.4.attribution.txt — texte SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Notice : licenses/supplements/npm--tauri-apps-plugin-shell-2.3.4.original-0.txt — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 
 npm:@tauri-apps/plugin-updater@2.10.0
 Licence déclarée : MIT OR Apache-2.0
 Archive : https://registry.npmjs.org/@tauri-apps/plugin-updater/-/plugin-updater-2.10.0.tgz
 Intégrité : sha512-ljN8jPlnT0aSn8ecYhuBib84alxfMx6Hc8vJSKMJyzGbTPFZAC44T2I1QNFZssgWKrAlofvJqCC6Rr472JWfkQ==
-Notice : package/LICENSE.spdx — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm--tauri-apps-plugin-updater-2.10.0.attribution.txt — texte SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Notice : licenses/supplements/npm--tauri-apps-plugin-updater-2.10.0.original-0.txt — texte SHA256 eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 
 npm:@testing-library/dom@10.4.1
 Licence déclarée : MIT
@@ -5842,7 +5907,9 @@ npm:format@0.2.2
 Licence déclarée : Voir notice amont
 Archive : https://registry.npmjs.org/format/-/format-0.2.2.tgz
 Intégrité : sha512-wzsgA6WOq+09wrU1tsJ09udeR/YZRaeArL9e1wPbFg3GG2yDnC2ldKpxs4xunpFF9DgqCqOIra3bc1HWrJ37Ww==
-Notice : https://raw.githubusercontent.com/samsonjs/format/4f898096759776b7c84fa7a25b13c923dadfe46e/Readme.md — texte SHA256 5055644075ce7d618314f7f7ce9adc826d1721482b85b8cb1365c876571f0bf5
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm-format-0.2.2.attribution.txt — texte SHA256 da85f16a15fe55af3c0d9bb457fb6d90edb0fc67670d7f56b0b55bbfca87ddc9
+Notice : licenses/supplements/npm-format-0.2.2.original-0.json — texte SHA256 5055644075ce7d618314f7f7ce9adc826d1721482b85b8cb1365c876571f0bf5
 
 npm:framer-motion@11.18.2
 Licence déclarée : MIT
@@ -5975,8 +6042,9 @@ npm:imurmurhash@0.1.4
 Licence déclarée : MIT
 Archive : https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz
 Intégrité : sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/imurmurhash-0.1.4-MIT.txt — texte SHA256 dea74aab002960499c2a34ea3fd3037cd1778fb840b7a7834e5b5ce09bc4d7a0
+Notice : licenses/supplements/npm-imurmurhash-0.1.4.attribution.txt — texte SHA256 252467505fc6a8d7cb99a683932b546802b29dc8b62de37e37358af8edaa9e42
 
 npm:indent-string@4.0.0
 Licence déclarée : MIT
@@ -6126,8 +6194,8 @@ npm:keyv@4.5.4
 Licence déclarée : MIT
 Archive : https://registry.npmjs.org/keyv/-/keyv-4.5.4.tgz
 Intégrité : sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm-keyv-4.5.4.attribution.txt — texte SHA256 926e009b805c085286be1e434547d7b99de0ddaf16c5a37ebdfb30c33ae6dbfe
 
 npm:levn@0.4.1
 Licence déclarée : MIT
@@ -6584,7 +6652,9 @@ npm:natural-compare@1.4.0
 Licence déclarée : MIT
 Archive : https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz
 Intégrité : sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==
-Notice : https://raw.githubusercontent.com/litejs/natural-compare-lite/eec83eee67cfac84d6db30cdd65363f155673770/README.md — texte SHA256 4d987cae520194bdd32f57fc797368a93f12e0e87b780216ffa11498c6e8cce9
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm-natural-compare-1.4.0.attribution.json — texte SHA256 cf6895debec8fa2b0e13724aee65cb69ebbc377ab6fdccfed12fc722aa8836ea
+Notice : licenses/supplements/npm-natural-compare-1.4.0.original-0.json — texte SHA256 4d987cae520194bdd32f57fc797368a93f12e0e87b780216ffa11498c6e8cce9
 
 npm:node-releases@2.0.54
 Licence déclarée : MIT
@@ -6892,8 +6962,9 @@ npm:stackback@0.0.2
 Licence déclarée : MIT
 Archive : https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz
 Intégrité : sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==
-REVUE REQUISE : Aucun texte trouvé dans l’archive ni au commit amont publié. Texte normatif SPDX de la licence déclarée ; attribution et notices amont à confirmer avant diffusion publique.
-Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt — texte SHA256 07c7993a082dd28479b2f48dd4ab9fac71bd97aeeecaa4cd89ef863fb3867c67
+Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+Notice : licenses/supplements/npm-stackback-0.0.2.attribution.txt — texte SHA256 c2feb0fc19251eef6a9be470f3553609fe1d0595b9ba070080e72b6bbb136b84
+Notice : licenses/supplements/stackback-0.0.2-V8-BSD.txt — texte SHA256 16defa1513de57ed441ba2789cb7db1619d6dff0ac9e6646aa596b78163ba8b6
 
 npm:std-env@3.10.0
 Licence déclarée : MIT
@@ -7441,7 +7512,8 @@ python:certifi@2026.10.19
 Licence déclarée : MPL-2.0
 Archive : https://files.pythonhosted.org/packages/a6/bd/1436c50cc46699de0230fbaacc1d1de7bfec413176099949e9d5112e88f2/certifi-2026.10.19.tar.gz
 Intégrité : sha256:035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae
-Notice : certifi-2026.10.19/LICENSE — texte SHA256 b5ca961ec84fc51985a066eca8200d6717145311fecfcd9fe4a4e73fb7c4eb02
+Notice : licenses/supplements/MPL-2.0.json — texte SHA256 c76f740d1521b9bed9ca7a04ad526c310493c62621b1341d623b431736533b30
+Notice : licenses/supplements/certifi-2026.10.19.original.txt — texte SHA256 b5ca961ec84fc51985a066eca8200d6717145311fecfcd9fe4a4e73fb7c4eb02
 
 python:cffi@2.0.0
 Licence déclarée : MIT
@@ -8452,8 +8524,9 @@ Licence déclarée : GPL-3.0-or-later
 Archive : https://files.pythonhosted.org/packages/83/90/05dfcc02ecf58bd170305c88db9e3e3933aa73a1f8abac2b326c7fdc1a98/recurring_ical_events-3.8.0.tar.gz
 Intégrité : sha256:3e8c7c35d9bd8956a7ab91afad51477c60d972e1236d3fd1b55087a66bce7d04
 ATTENTION COPYLEFT : GPL, LGPL
-Notice : recurring_ical_events-3.8.0/LICENSE — texte SHA256 cfbd94ea9bfe6d0809fd2bebe2e0979cc8de9aca77f1a49eae11c474400e309e
-Notice : recurring_ical_events-3.8.0/docs/reference/license.md — texte SHA256 3a34e8f1f96ff0a1083a3412e9bd5fba45954b2a78b85915406cc5a3fd7f90cf
+Notice : licenses/supplements/GPL-3.0.txt — texte SHA256 c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df
+Notice : licenses/supplements/python-recurring-ical-events-3.8.0.original-0.txt — texte SHA256 cfbd94ea9bfe6d0809fd2bebe2e0979cc8de9aca77f1a49eae11c474400e309e
+Notice : licenses/supplements/python-recurring-ical-events-3.8.0.original-1.txt — texte SHA256 3a34e8f1f96ff0a1083a3412e9bd5fba45954b2a78b85915406cc5a3fd7f90cf
 
 python:regex@2026.1.15
 Licence déclarée : Apache-2.0 AND CNRI-Python
@@ -8486,7 +8559,8 @@ python:rsa@4.9.1
 Licence déclarée : Apache-2.0
 Archive : https://files.pythonhosted.org/packages/da/8a/22b7beea3ee0d44b1916c0c1cb0ee3af23b700b6da9f04991899d0c555d4/rsa-4.9.1.tar.gz
 Intégrité : sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75
-Notice : rsa-4.9.1/LICENSE — texte SHA256 f6970d91c323c1925a3e0059706e8b858810dc3d1481d48300c222b49fc74c1d
+Notice : licenses/supplements/Apache-2.0.txt — texte SHA256 c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c
+Notice : licenses/supplements/python-rsa-4.9.1.original.txt — texte SHA256 f6970d91c323c1925a3e0059706e8b858810dc3d1481d48300c222b49fc74c1d
 
 python:ruff@0.14.13
 Licence déclarée : License :: OSI Approved :: MIT License
@@ -8871,8 +8945,9 @@ python:x-wr-timezone@2.0.1
 Licence déclarée : LGPL-3.0-or-later
 Archive : https://files.pythonhosted.org/packages/79/2b/8ae5f59ab852c8fe32dd37c1aa058eb98aca118fec2d3af5c3cd56fffb7b/x_wr_timezone-2.0.1.tar.gz
 Intégrité : sha256:9166c40e6ffd4c0edebabc354e1a1e2cffc1bb473f88007694793757685cc8c3
-ATTENTION COPYLEFT : LGPL
-Notice : x_wr_timezone-2.0.1/LICENSE — texte SHA256 cfbd94ea9bfe6d0809fd2bebe2e0979cc8de9aca77f1a49eae11c474400e309e
+ATTENTION COPYLEFT : GPL, LGPL
+Notice : licenses/supplements/GPL-3.0.txt — texte SHA256 c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df
+Notice : licenses/supplements/python-x-wr-timezone-2.0.1.original-0.txt — texte SHA256 cfbd94ea9bfe6d0809fd2bebe2e0979cc8de9aca77f1a49eae11c474400e309e
 
 python:xlsxwriter@3.2.9
 Licence déclarée : BSD-2-Clause
@@ -9163,6 +9238,17 @@ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+========================================================================
+TEXTE SHA256 055f38f5c9b541c7fa555138161dbf2649798193eae4e3ba303da88da011db7b
+Attribution publiée dans winapi-i686-pc-windows-gnu-0.4.0/Cargo.toml (package.authors) :
+Peter Atashian <retep998@gmail.com>
+
+Attributions dans winapi-i686-pc-windows-gnu-0.4.0/build.rs :
+// Copyright © 2016-2018 winapi-rs developers
+
+Attributions dans winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs :
+// Copyright © 2016 winapi-rs developers
 
 ========================================================================
 TEXTE SHA256 058972da33a1c7ea273e80a20f589a309ba7922edc29b793a0844c1d3dfb54ef
@@ -21855,6 +21941,35 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
+TEXTE SHA256 16defa1513de57ed441ba2789cb7db1619d6dff0ac9e6646aa596b78163ba8b6
+// Copyright 2012 the V8 project authors. All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//     * Neither the name of Google Inc. nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+========================================================================
 TEXTE SHA256 179c83ef07a51414e7fb13941958470bbd43c072efbe9635951ebcd7583ae5d5
 Apache License
                         Version 2.0, January 2004
@@ -22197,6 +22312,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+========================================================================
+TEXTE SHA256 193c59003e0b0aab6361af1c91dd7fe4627097243ac0dd56a4be6dc49c64b87b
+Attribution publiée dans convert_case-0.4.0/Cargo.toml (package.authors) :
+David Purdum <purdum41@gmail.com>
 
 ========================================================================
 TEXTE SHA256 1961703c278284db0ba353f5cfb2f3e2b1c1f584a2791db44aacfe7d78656f70
@@ -24829,6 +24949,14 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================
+TEXTE SHA256 252467505fc6a8d7cb99a683932b546802b29dc8b62de37e37358af8edaa9e42
+Attributions dans package/README.md :
+Copyright (c) 2013 Gary Court, Jens Taylor
+
+Attribution publiée dans package/package.json (author) :
+{"name": "Jens Taylor", "email": "jensyt@gmail.com", "url": "https://github.com/homebrewing"}
+
+========================================================================
 TEXTE SHA256 2545576743297ef54977df62ea237f43fa42f65a9ae89295a25ed57dcc153d77
 MIT License
 
@@ -26433,6 +26561,11 @@ Apache License
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+========================================================================
+TEXTE SHA256 2d90bc5bfd7a2c8caf8b4bbf36bb6d1f80389b00f4b08916fc6ce5973ca67522
+Attribution publiée dans sigchld-0.2.4/Cargo.toml (package.authors) :
+Jack O'Connor
 
 ========================================================================
 TEXTE SHA256 2d964b2478763057cc1db5c971f1aa914279d6069613a8a62b5131f837d89b8a
@@ -28780,6 +28913,11 @@ Except as contained in this notice, the name of a copyright holder shall
 not be used in advertising or otherwise to promote the sale, use or other
 dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
+
+========================================================================
+TEXTE SHA256 36386947b3d28a34deef970b5f1f4abdae86c4ee1adc805392463359bf796c48
+Attribution publiée dans dispatch-0.2.0/Cargo.toml (package.authors) :
+Steven Sheldon
 
 ========================================================================
 TEXTE SHA256 36c68b249eb6de0491d8162d9c886af98800bbfb5bc767b1e373390402c9888d
@@ -31412,6 +31550,17 @@ License
 .. include:: ../../LICENSE.rst
 
 ========================================================================
+TEXTE SHA256 3e3e6940f00fb5d6c87fd0ded6d457aa172ff3cffb21f160690fd1e2ba02b4d0
+Attribution publiée dans winapi-x86_64-pc-windows-gnu-0.4.0/Cargo.toml (package.authors) :
+Peter Atashian <retep998@gmail.com>
+
+Attributions dans winapi-x86_64-pc-windows-gnu-0.4.0/build.rs :
+// Copyright © 2016-2018 winapi-rs developers
+
+Attributions dans winapi-x86_64-pc-windows-gnu-0.4.0/src/lib.rs :
+// Copyright © 2016 winapi-rs developers
+
+========================================================================
 TEXTE SHA256 3f871889993872c260ec3455fa1caf062783ca3fbe8bc0770053df883e8b6a1a
 The ElementTree / XML Toys Library is
 
@@ -32122,6 +32271,11 @@ doesn't distribute any parts of them. Distributing compiled libraries and
 executables that link to those libraries may be subject to terms of the GNU
 LGPL or other licenses. For more information check the license of each GNOME
 library.
+
+========================================================================
+TEXTE SHA256 412f1f9758eca67b382667411460a009ed2bf04e841373425d48763e71f38417
+Attribution publiée dans mac-0.1.1/Cargo.toml (package.authors) :
+Jonathan Reem <jonathan.reem@gmail.com>
 
 ========================================================================
 TEXTE SHA256 414c0cddaab7a2df0924368f31cd1fdce949682703e7c564a13065405ef06ef6
@@ -45667,6 +45821,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
+TEXTE SHA256 54b82b2b2bfc684ec02d65d0e92ca140f1e793595b131580682221aa5b985aec
+Attribution publiée dans dispatch2-0.3.0/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>
+Mary <mary@mary.zone>
+
+========================================================================
 TEXTE SHA256 551dde9639240832bb1918281c523cf772bd2391a4a46464adb1498b07f48591
 MIT License
 
@@ -51541,6 +51701,11 @@ express Statement of Purpose.
     this CC0 or use of the Work.
 
 ========================================================================
+TEXTE SHA256 6dabc49e55a884ebd8168037e2b8bd4753a9c133518bfc176e0f8ca3c3ea2d9a
+Attribution publiée dans block2-0.6.2/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>
+
+========================================================================
 TEXTE SHA256 6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a
 Apache License
                            Version 2.0, January 2004
@@ -51932,6 +52097,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+========================================================================
+TEXTE SHA256 6f99c0748f5e7ef44a76fe37b35fafd94a8309b6c0e219b7087e6d21e404272d
+Attribution publiée dans tao-macros-0.1.3/Cargo.toml (package.authors) :
+Tauri Programme within The Commons Conservancy
 
 ========================================================================
 TEXTE SHA256 6fd025d4be46a4bf8e39f5f40de615e31fee7b3eaf6fe2098ab3e5418697fef7
@@ -62672,6 +62842,11 @@ Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
 ========================================================================
+TEXTE SHA256 914be242a1adface273190d3b972cc017aa08d6a780c1f7f0bf7e848b4f29621
+Attribution publiée dans objc2-exception-helper-0.1.1/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>
+
+========================================================================
 TEXTE SHA256 917d5dc3470e527b8be458c7ce07949ce2eab9e414c54532f9680c4bd5f61230
 Copyright (c) 2019 Nick Fitzgerald, 2021 Yuki Okushi
 
@@ -62722,6 +62897,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+========================================================================
+TEXTE SHA256 926e009b805c085286be1e434547d7b99de0ddaf16c5a37ebdfb30c33ae6dbfe
+Attribution publiée dans package/package.json (author) :
+"Jared Wray <me@jaredwray.com> (http://jaredwray.com)"
 
 ========================================================================
 TEXTE SHA256 928e59141142e3b9b68a2403e490c6a73ac90833066c5d6f876e2de108e06865
@@ -66804,6 +66984,14 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+========================================================================
+TEXTE SHA256 a05fe00de5487e311b90aff9d46f5ae6b68c6c1e150181bb11b720944eea83e0
+Attribution publiée dans fxhash-0.2.1/Cargo.toml (package.authors) :
+cbreeden <github@u.breeden.cc>
+
+Attributions dans fxhash-0.2.1/lib.rs :
+// Copyright 2015 The Rust Project Developers. See the COPYRIGHT
 
 ========================================================================
 TEXTE SHA256 a0e7d0739e030804991c24558d6630ab5c4d8782f91073e5b5f8d317b03568cd
@@ -70918,6 +71106,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
+TEXTE SHA256 a8d701d59ff770369a27f4572b0ed91e8b51540a3abbdf0b9b25541e72bc9378
+Attribution publiée dans objc2-encode-4.1.0/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>
+
+========================================================================
 TEXTE SHA256 a8d7d8157c7166afaa5da53eab0badc7e2c4dc62177d424299d1c96a445585d2
 The MIT License (MIT)
 
@@ -72766,6 +72959,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ========================================================================
+TEXTE SHA256 acf4ef65d2dffba58236893b01f26e350450051bdd775ef15b48a2605aceabdd
+Attributions dans package/dist-js/index.js :
+// Copyright 2019-2023 Tauri Programme within The Commons Conservancy
+
+========================================================================
 TEXTE SHA256 acfca8fba1c7ffde2c6fbc5d6fa33f893d3a8807e6287e65263696e6fbc66c32
 =======
 License
@@ -73969,6 +74167,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+========================================================================
+TEXTE SHA256 b17b545e65ef7c5da49f2931f2780a88e60a07086cb3e15883d5d3eeed7e8b83
+Attribution publiée dans objc2-0.6.3/Cargo.toml (package.authors) :
+Mads Marquart <mads@marquart.dk>
 
 ========================================================================
 TEXTE SHA256 b1d6d97b0476a82862312e776bd4f2b902fb6c53e46f28166ccd2f63b17d4f8a
@@ -77314,6 +77517,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ========================================================================
+TEXTE SHA256 c2feb0fc19251eef6a9be470f3553609fe1d0595b9ba070080e72b6bbb136b84
+Attributions dans package/formatstack.js :
+// Copyright 2012 the V8 project authors. All rights reserved.
+
+Attribution publiée dans package/package.json (author) :
+"Roman Shtylman <shtylman@gmail.com>"
+
+========================================================================
 TEXTE SHA256 c37a32dd1cd44e7b68afdf88cb45eb2c4028574f7d894c720371d5688f73ef45
 (The MIT License)
 
@@ -78071,6 +78282,25 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+========================================================================
+TEXTE SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
 TEXTE SHA256 c43e20176655c7a74c12af7470b65065fac4c81cfd511c69520fcc7f738a3f91
@@ -81731,6 +81961,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
+TEXTE SHA256 cf6895debec8fa2b0e13724aee65cb69ebbc377ab6fdccfed12fc722aa8836ea
+Attributions dans package/README.md :
+Copyright (c) 2012-2015 Lauri Rooden &lt;lauri@rooden.ee&gt;  
+
+Attribution publiée dans package/package.json (author) :
+"Lauri Rooden (https://github.com/litejs/natural-compare-lite)"
+
+========================================================================
 TEXTE SHA256 cf9b17822d1fcd4ff32ccbe14183386fb3adf6f2ff92dc184130823f7fc28173
 MIT License
 
@@ -83553,6 +83791,17 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ========================================================================
+TEXTE SHA256 da85f16a15fe55af3c0d9bb457fb6d90edb0fc67670d7f56b0b55bbfca87ddc9
+Attributions dans package/Readme.md :
+Copyright 2010 - 2014 Sami Samhuri sami@samhuri.net
+
+Attributions dans package/format.js :
+// Copyright 2010 - 2013 Sami Samhuri <sami@samhuri.net>
+
+Attribution publiée dans package/package.json (author) :
+"Sami Samhuri <sami@samhuri.net>"
+
+========================================================================
 TEXTE SHA256 db11fec9946737df39ca3898d9cd8c10ec6f6c3a884a6802b0ad0b81b4e8f23a
 MIT OR Apache-2.0
 
@@ -84461,6 +84710,27 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+========================================================================
+TEXTE SHA256 dea74aab002960499c2a34ea3fd3037cd1778fb840b7a7834e5b5ce09bc4d7a0
+Copyright (c) 2013 Gary Court, Jens Taylor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
 TEXTE SHA256 deafbb702c0a6a03cf6d1d2a08d0a2204ccd61c377b1bf779c13515998781836
@@ -100025,6 +100295,83 @@ Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers.
          (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
          OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          
+
+========================================================================
+TEXTE SHA256 f30e9ee33dbf771d1066168d0d8c68401a81340f2241dd726f7891364696c7f9
+LICENSE:
+        This project is triple-licensed under the MIT License, the Apache
+        License, Version 2.0, and the GNU Lesser General Public License,
+        Version 2.1+.
+
+AUTHORS-MIT:
+        Permission is hereby granted, free of charge, to any person obtaining a
+        copy of this software and associated documentation files (the
+        "Software"), to deal in the Software without restriction, including
+        without limitation the rights to use, copy, modify, merge, publish,
+        distribute, sublicense, and/or sell copies of the Software, and to
+        permit persons to whom the Software is furnished to do so, subject to
+        the following conditions:
+
+        The above copyright notice and this permission notice shall be included
+        in all copies or substantial portions of the Software.
+
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+        OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AUTHORS-ASL:
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+
+                http://www.apache.org/licenses/LICENSE-2.0
+
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
+
+AUTHORS-LGPL:
+        This program is free software; you can redistribute it and/or modify it
+        under the terms of the GNU Lesser General Public License as published
+        by the Free Software Foundation; either version 2.1 of the License, or
+        (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful, but
+        WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+        Lesser General Public License for more details.
+
+        You should have received a copy of the GNU Lesser General Public License
+        along with this program; If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT: (ordered alphabetically)
+        Copyright (C) 2017-2023 Red Hat, Inc.
+        Copyright (C) 2019-2023 Microsoft Corporation
+        Copyright (C) 2022-2023 David Rheinsberg
+
+AUTHORS: (ordered alphabetically)
+        Alex James <theracermaster@gmail.com>
+        Ayush Singh <ayushsingh1325@gmail.com>
+        Boris-Chengbiao Zhou <bobo1239@web.de>
+        Bret Barkelew <bret@corthon.com>
+        Christopher Zurcher <christopher.zurcher@microsoft.com>
+        David Rheinsberg <david@readahead.eu>
+        Dmitry Mostovenko <trueberserker@gmail.com>
+        Hiroki Tokunaga <tokusan441@gmail.com>
+        Joe Richey <joerichey@google.com>
+        John Schock <joschock@microsoft.com>
+        Michael Kubacki <michael.kubacki@microsoft.com>
+        Oliver Smith-Denny <osde@microsoft.com>
+        Richard Wiedenhöft <richard@wiedenhoeft.xyz>
+        Rob Bradford <robert.bradford@intel.com>, <rbradford@rivosinc.com>
+        Tom Gundersen <teg@jklm.no>
+        Trevor Gross <tmgross@umich.edu>
 
 ========================================================================
 TEXTE SHA256 f3cd12ca51230d56c242bcbf65d727fbce43c3505f50c1df345e25571d500f15

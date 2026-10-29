@@ -1,0 +1,5 @@
+Attributions dans package/formatstack.js :
+// Copyright 2012 the V8 project authors. All rights reserved.
+
+Attribution publiée dans package/package.json (author) :
+"Roman Shtylman <shtylman@gmail.com>"
