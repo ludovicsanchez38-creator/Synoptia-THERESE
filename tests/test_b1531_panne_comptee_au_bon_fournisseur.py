@@ -27,6 +27,10 @@ def _remettre(nom: str) -> None:
 
 @pytest.mark.asyncio
 async def test_la_panne_du_secours_est_comptee_au_secours(monkeypatch):
+    # La destination effective simulée possède un accord ; la panne doit
+    # atteindre le transport avant de vérifier sa comptabilisation.
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, provider: (purpose, provider) == ('llm', 'openai'))
     from app.services.context import ContextWindow
     from app.services.error_handler import ErreurPourEcran
     from app.services.llm import LLMConfig, LLMProvider, LLMService
