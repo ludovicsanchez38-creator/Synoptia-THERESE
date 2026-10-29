@@ -867,14 +867,19 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
 
     logger.warning("Toutes les donnees utilisateur ont ete supprimees (RGPD)")
 
+    note = (
+        "Sont conservés : le journal d’audit, l’historique des accords retirés, "
+        "les journaux techniques (qui peuvent contenir des noms et des adresses mail), "
+        "les fichiers de configuration des connecteurs et les fichiers hors du dossier "
+        "de données, notamment les factures exportées. "
+        "L’effacement des images, documents produits, projets, factures et copies automatiques "
+        "rangés dans le dossier de données a aussi été demandé."
+    )
     if backups_kept:
-        note = (
-            "Les logs d'audit sont conservés pour des raisons légales. "
-            f"{backups_kept} sauvegarde(s) conservée(s) : supprime-les depuis "
-            "la liste des sauvegardes si tu veux vraiment tout effacer."
+        note += (
+            f" {backups_kept} sauvegarde(s) conservée(s) : supprime-les depuis "
+            "la liste des sauvegardes si tu veux aussi les effacer."
         )
-    else:
-        note = "Les logs d'audit sont conservés pour des raisons légales"
     if not index_vide:
         note = (
             f"{note.rstrip('.')}. Attention : l'index de recherche n'a pas pu être vidé. "
@@ -883,7 +888,7 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
 
     return {
         "deleted": True,
-        "message": "Toutes tes données ont été supprimées conformément au RGPD Art. 17",
+        "message": "Tes données métier et tes réglages ont été effacés de la base locale.",
         "note": note,
         "backups_kept": backups_kept,
         "index_vide": index_vide,

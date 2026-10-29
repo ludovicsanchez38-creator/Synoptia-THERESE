@@ -253,7 +253,7 @@ export function PrivacyTab() {
           Confidentialité et données personnelles
         </h3>
         <p className="mt-1 text-sm text-text-muted">
-          THÉRÈSE respecte le RGPD. Voici comment tes données sont gérées.
+          Tu peux consulter, exporter et effacer tes données depuis THÉRÈSE. Elles sont stockées sur ton ordinateur ; les services que tu actives peuvent en recevoir.
         </p>
       </div>
 

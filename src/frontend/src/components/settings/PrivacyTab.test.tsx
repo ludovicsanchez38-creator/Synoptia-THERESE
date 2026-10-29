@@ -157,3 +157,10 @@ it('B-1076 : le curseur est associé au libellé visible', async () => {
   const curseur = await screen.findByLabelText(/Durée de rétention/);
   expect(curseur).toHaveAttribute('type', 'range');
 });
+
+it('T4 : décrit les actions disponibles sans affirmer une conformité générale', async () => {
+  vi.mocked(listBackups).mockResolvedValue([]);
+  render(<PrivacyTab />);
+  expect(screen.queryByText(/THÉRÈSE respecte le RGPD/)).not.toBeInTheDocument();
+  expect(await screen.findByText(/Tu peux consulter, exporter et effacer/)).toBeInTheDocument();
+});
