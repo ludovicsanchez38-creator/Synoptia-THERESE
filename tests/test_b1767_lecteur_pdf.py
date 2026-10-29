@@ -15,9 +15,16 @@ from typing import Any
 import pytest
 from app.models.entities import FileMetadata
 from app.services.file_parser import extract_text
-from app.services.memory_tools import execute_memory_tool
+from app.services.memory_tools import execute_memory_tool as _execute_memory_tool
+from app.services.llm import LLMConfig, LLMProvider
 from reportlab.pdfgen.canvas import Canvas
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+async def execute_memory_tool(name, args, session, **kwargs):
+    return await _execute_memory_tool(
+        name, args, session, llm_config=LLMConfig(LLMProvider.OLLAMA, 'local'), **kwargs,
+    )
 
 
 def _pdf(chemin: Path, pages: list[list[str]], *, compresse: bool = True) -> Path:
