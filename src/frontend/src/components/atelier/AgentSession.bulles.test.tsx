@@ -28,7 +28,7 @@ import { AgentSession } from './AgentSession';
 
 /** Mène la session jusqu'à une bulle utilisateur et une bulle d'agent. */
 async function sessionAvecUnEchange() {
-  render(<AgentSession profileId="researcher" onBack={vi.fn()} />);
+  render(<AgentSession model="ollama:modele-test" profileId="researcher" onBack={vi.fn()} />);
 
   fireEvent.change(screen.getByLabelText(/Message à l/), {
     target: { value: 'Analyse ce site' },

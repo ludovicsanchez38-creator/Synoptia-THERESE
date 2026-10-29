@@ -43,5 +43,10 @@ describe('AgentSession - B-778, sans profil serveur les outils ne sont pas inven
     const carte = await demanderUnAppel();
     await screen.findByText(/Outils déclarés : non confirmés par le serveur/);
     expect(carte.textContent).not.toMatch(/web_search/);
+    expect(carte).toHaveTextContent('Modèle : non identifié');
+    const confirmer = screen.getByRole('button', { name: /Confirmer l.appel/ });
+    expect(confirmer).toBeDisabled();
+    fireEvent.click(confirmer);
+    expect(agentsApi.streamAgentSpawn).not.toHaveBeenCalled();
   });
 });

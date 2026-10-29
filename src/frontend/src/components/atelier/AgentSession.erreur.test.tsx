@@ -17,7 +17,7 @@ import { AgentSession } from './AgentSession';
 
 describe("B-361 - l'erreur d'un agent est annoncée", () => {
   it('porte role="alert"', async () => {
-    render(<AgentSession profileId="researcher" onBack={vi.fn()} />);
+    render(<AgentSession model="ollama:modele-test" profileId="researcher" onBack={vi.fn()} />);
     fireEvent.change(screen.getByLabelText(/Message à l/), { target: { value: 'Analyse' } });
     fireEvent.click(screen.getByTitle('Envoyer'));
     fireEvent.click(screen.getByRole('button', { name: /Confirmer l.appel/ }));

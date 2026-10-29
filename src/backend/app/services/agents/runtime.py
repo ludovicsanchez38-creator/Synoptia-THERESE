@@ -68,6 +68,7 @@ def _sans_bascule_si_local(fournisseur: str) -> dict[str, bool]:
 PREFIXE_MODELE_LOCAL = "ollama:"
 
 
+
 def _service_local(nom: str) -> "LLMService":
     """P-103 : un modèle local ne quitte jamais la machine. Ollama absent, c'est
     un échec explicite, pas un repli vers le service principal (parfois en
@@ -83,14 +84,35 @@ def _service_local(nom: str) -> "LLMService":
     return svc
 
 
+def modele_avec_fournisseur(config: Any) -> str:
+    """Un modèle hérité garde sa destination, même si son nom est ambigu."""
+    if config.provider.value == "ollama":
+        return f"{PREFIXE_MODELE_LOCAL}{config.model}"
+    return f"{config.provider.value}::{config.model}"
+
+
 def _get_llm_for_model(model_id: str):
     """Obtient un LLMService pour un model ID spécifique.
 
     P-103 : « ollama:<nom> » désigne un modèle local sans rien deviner. Un modèle
-    reconnu local (catalogue, hf.co/, « : » d'Ollama) indisponible est un échec
-    explicite. Seul un modèle en ligne peut retomber sur le service principal.
+    reconnu indisponible est un échec explicite, quel que soit son fournisseur.
     """
-    from app.services.llm import get_llm_service, get_llm_service_for_provider
+    from app.services.llm import get_llm_service_for_provider
+
+    def exiger_service(provider: str) -> "LLMService":
+        service = get_llm_service_for_provider(provider, model_override=model_id)
+        if service is None:
+            raise ErreurPourEcran(
+                f"Le fournisseur {provider} du modèle « {model_id} » est indisponible. "
+                "Vérifie sa clé dans Paramètres, Modèles IA, puis réessaie."
+            )
+        return service
+
+    if "::" in model_id:
+        fournisseur, model_id = model_id.split("::", 1)
+        if fournisseur == "ollama":
+            return _service_local(model_id)
+        return exiger_service(fournisseur)
 
     if model_id.lower().startswith(PREFIXE_MODELE_LOCAL):
         return _service_local(model_id[len(PREFIXE_MODELE_LOCAL):])
@@ -113,26 +135,18 @@ def _get_llm_for_model(model_id: str):
         "minimax-": "minimax",
     }
 
-    # B-967 : le catalogue des agents connaît le fournisseur de ses modèles.
-    # B-966 (atténuation) : un modèle local du catalogue ou au format hf.co ne
-    # part pas chez un fournisseur homonyme (OpenRouter, « qwen » cloud) ; si
-    # Ollama manque, repli principal documenté. Limites connues, en attente de
-    # décision : noms locaux hors catalogue sans « hf.co/ », bascule du
-    # disjoncteur vers un cloud, repli principal lui-même cloud.
+    # Le catalogue prime sur les heuristiques ; aucune destination de secours.
     fournisseur = _fournisseur_du_catalogue(model_id)
     if fournisseur is None and _est_un_modele_hugging_face_local(model_id):
         fournisseur = "ollama"
     if fournisseur == "ollama":
         return _service_local(model_id)
     if fournisseur is not None:
-        svc = get_llm_service_for_provider(fournisseur, model_override=model_id)
-        return svc or get_llm_service()
+        return exiger_service(fournisseur)
 
     # Modèles OpenRouter (contiennent "/" comme nvidia/nemotron-3-super-120b-a12b)
     if "/" in model_id:
-        svc = get_llm_service_for_provider("openrouter", model_override=model_id)
-        if svc:
-            return svc
+        return exiger_service("openrouter")
 
     # Modèles locaux Ollama (contiennent ":" comme qwen3:32b). P-103 : Ollama
     # absent, plus de chute vers les préfixes en ligne (« qwen » cloud).
@@ -141,13 +155,12 @@ def _get_llm_for_model(model_id: str):
 
     for prefix, provider in provider_map.items():
         if model_id.lower().startswith(prefix):
-            svc = get_llm_service_for_provider(provider, model_override=model_id)
-            if svc:
-                return svc
-            break
+            return exiger_service(provider)
 
-    # Fallback : service principal de l'utilisateur
-    return get_llm_service()
+    raise ErreurPourEcran(
+        f"Le fournisseur du modèle « {model_id} » est inconnu. "
+        "Choisis un modèle avec son fournisseur dans les paramètres de l’Atelier."
+    )
 
 
 def _message_de_resultat_d_outil(tool_name: str, result: str) -> "Message":

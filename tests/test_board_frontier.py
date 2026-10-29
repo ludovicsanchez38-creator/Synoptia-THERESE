@@ -272,9 +272,8 @@ class TestLeTrimDuMessageUnique:
 class TestLeBoardNeBasculePasEnSilence:
     """Revue 0.48 F3 : le circuit breaker basculait silencieusement le
     fournisseur d'un conseiller - identité SSE, usage, effort et sémaphore
-    anti-429 devenaient faux. Contrat du design : repli EXPLICITE sur le
-    service principal (visible dans actual_provider), jamais de bascule
-    cachée au sein du flux d'un conseiller."""
+    anti-429 devenaient faux. T4 : aucun remplacement par le service principal,
+    même si un accord Board existe déjà."""
 
     def test_le_service_sans_bascule_garde_son_fournisseur(self, monkeypatch):
         from app.services.circuit_breaker import get_circuit_breaker
@@ -311,9 +310,8 @@ class TestLeBoardNeBasculePasEnSilence:
         assert service.bascule_circuit is False
 
     @pytest.mark.asyncio
-    async def test_circuit_ouvert_au_prechargement_repli_explicite(self, monkeypatch):
-        """Circuit du fournisseur préféré ouvert -> le conseiller part sur le
-        service principal, et actual_provider dit la vérité."""
+    async def test_circuit_ouvert_au_prechargement_refuse_sans_repli(self, monkeypatch):
+        """Circuit ouvert : aucun conseiller ni service principal ne reçoit la question."""
         import contextlib
 
         from app.models.board import AdvisorRole, BoardMode, BoardRequest
@@ -388,17 +386,15 @@ class TestLeBoardNeBasculePasEnSilence:
             mode=BoardMode.CLOUD,
             advisors=[AdvisorRole.ANALYST],  # préféré : anthropic (circuit ouvert)
         )
-        chunks = [c async for c in service.deliberate(request)]
+        from app.services.error_handler import ErreurPourEcran
+        try:
+            with pytest.raises(ErreurPourEcran, match="anthropic"):
+                _ = [c async for c in service.deliberate(request)]
+            assert conseiller_anthropic.calls == 0
+            assert principal.calls == 0
+        finally:
+            cb.reset()
 
-        # Le conseiller dédié n'a JAMAIS été appelé (circuit ouvert au
-        # préchargement) ; les chunks annoncent le fournisseur RÉEL (openai,
-        # celui du service principal), pas anthropic.
-        assert conseiller_anthropic.calls == 0
-        providers_annonces = {
-            c.provider for c in chunks if c.type == "advisor_start"
-        }
-        assert providers_annonces == {"openai"}
-        cb.reset()
 
 
 class TestLeTrimNeVidePasLaDemande:

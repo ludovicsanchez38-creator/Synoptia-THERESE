@@ -61,64 +61,6 @@ const DEFAULT_COLOR = {
   text: "text-text-muted",
 };
 
-/** Profils par defaut si le backend ne repond pas */
-const FALLBACK_PROFILES: AgentProfile[] = [
-  {
-    id: "researcher",
-    name: "Chercheur Web",
-    description: "Recherche, synthese et veille sur le web",
-    icon: "\uD83D\uDD0D",
-    color: "cyan",
-    tools: ["web_search", "read_file", "write_file"],
-    default_model: "claude-sonnet-4-6",
-  },
-  {
-    id: "writer",
-    name: "Redacteur",
-    description: "Redaction, reformulation et correction de textes",
-    icon: "\u270D\uFE0F",
-    color: "magenta",
-    tools: ["read_file", "write_file"],
-    default_model: "claude-sonnet-4-6",
-  },
-  {
-    id: "analyst",
-    name: "Analyste",
-    description: "Analyse de données, code et documents",
-    icon: "\uD83D\uDCCA",
-    color: "blue",
-    tools: ["read_file", "search_codebase", "run_command"],
-    default_model: "claude-sonnet-4-6",
-  },
-  {
-    id: "planner",
-    name: "Planificateur",
-    description: "Organisation, planning et suivi de projets",
-    icon: "\uD83D\uDCC5",
-    color: "green",
-    tools: ["read_file", "write_file"],
-    default_model: "claude-sonnet-4-6",
-  },
-  {
-    id: "coder",
-    name: "Codeur",
-    description: "Developpement, debug et refactoring",
-    icon: "\uD83D\uDCBB",
-    color: "purple",
-    tools: ["read_file", "write_file", "search_codebase", "run_command", "git_status"],
-    default_model: "claude-sonnet-4-6",
-  },
-  {
-    id: "creative",
-    name: "Creatif",
-    description: "Brainstorming, ideation et contenus visuels",
-    icon: "\uD83C\uDFA8",
-    color: "amber",
-    tools: ["web_search", "write_file"],
-    default_model: "claude-sonnet-4-6",
-  },
-];
-
 const PROFILE_ICONS: Record<string, LucideIcon> = {
   researcher: Search,
   writer: PenTool,
@@ -161,16 +103,8 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           if (configResp?.available_models) {
             setAvailableModels(configResp.available_models);
           }
-          // Si pas de modèle sélectionné, utiliser le défaut du profil.
-          // B-649 (Nadia, c4) : ce défaut (qwen3.5:9b) était présélectionné
-          // alors qu'aucun modèle de la liste n'était installé. Un défaut hors
-          // de la liste proposée est remplacé par le premier modèle proposé.
-          const proposes = configResp?.available_models ?? [];
-          const courant = selectedModel || profilesData[0]?.default_model || "";
-          const retenu =
-            !customModel && proposes.length > 0 && !proposes.some((m) => m.id === courant)
-              ? proposes[0].id
-              : courant;
+          // Un choix indisponible reste visible ; seul un geste explicite le remplace.
+          const retenu = selectedModel || profilesData[0]?.default_model || "";
           if (retenu && retenu !== selectedModel) {
             setSelectedModel(retenu);
             localStorage.setItem(STORAGE_KEY, retenu);
@@ -179,9 +113,8 @@ export function AgentCatalog({ onSelectAgent }: Props) {
         }
       } catch {
         if (!cancelled) {
-          // #112 : le repli reste utilisable, mais il ne se fait pas passer pour le catalogue.
-          setProfiles(FALLBACK_PROFILES);
-          setError("Catalogue des agents non lu : profils par défaut affichés.");
+          setProfiles([]);
+          setError("Le catalogue ou le fournisseur de l’agent est indisponible. Vérifie ton modèle dans Paramètres, Modèles IA, puis rouvre l’Atelier.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -245,6 +178,9 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               }}
               className="min-h-9 flex-1 bg-transparent text-sm text-text outline-none [&>optgroup]:bg-surface [&>option]:bg-surface"
             >
+              {selectedModel && !availableModels.some(m => m.id === selectedModel) && (
+                <option value={selectedModel}>{selectedModel} (choix conservé)</option>
+              )}
               {Object.entries(
                 availableModels.reduce<Record<string, AgentModelInfo[]>>((acc, m) => {
                   (acc[m.provider] ??= []).push(m);

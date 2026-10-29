@@ -490,18 +490,10 @@ async def list_profiles() -> list[AgentProfileResponse]:
 
     profiles = get_profiles()
 
-    # Lire le modele LLM configure par l'utilisateur (pour proposer comme defaut)
-    user_model = None
-    try:
-        from app.services.llm import get_llm_service
-        svc = get_llm_service()
-        if svc and svc.config:
-            user_model = svc.config.model
-    except Exception:
-        # B-436 : rattrapage journalisé, plus muet.
-        logger.warning("Modèle de l'utilisateur illisible, modèle par défaut servi", exc_info=True)
+    from app.services.agents.runtime import modele_avec_fournisseur
+    from app.services.llm import get_llm_service
 
-    default_model = user_model or "claude-sonnet-4-6"
+    default_model = modele_avec_fournisseur(get_llm_service().config)
 
     return [
         AgentProfileResponse(
@@ -649,18 +641,13 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
 
     tools_schema = [all_tools[name] for name in allowed_tools if name in all_tools]
 
-    # Determiner le modele LLM (requete > config utilisateur > defaut profil)
+    # Un défaut hérité garde son fournisseur ; une panne ne choisit pas celui du profil.
     agent_model = request.model
     if not agent_model:
-        try:
-            from app.services.llm import get_llm_service
-            svc = get_llm_service()
-            if svc and svc.config:
-                agent_model = svc.config.model
-        except Exception:
-            # B-436 : un rattrapage muet cachait la préférence illisible ; le
-            # modèle par défaut est servi, et on le dit au journal.
-            logger.warning("Modèle de l'utilisateur illisible, modèle par défaut servi", exc_info=True)
+        from app.services.agents.runtime import modele_avec_fournisseur
+        from app.services.llm import get_llm_service
+
+        agent_model = modele_avec_fournisseur(get_llm_service().config)
 
     # Creer le runtime
     runtime = AgentRuntime(

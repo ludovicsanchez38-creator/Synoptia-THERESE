@@ -270,7 +270,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   const [messages, setMessages] = useState<AgentSessionMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [activeModel, setActiveModel] = useState<string>(model || profile?.default_model || "");
+  const [activeModel, setActiveModel] = useState<string>(model || "");
   // B-777 : le modèle initial venait de la table locale, avant l'arrivée du profil
   // serveur ; il suit le serveur tant que ni l'appelant ni le flux ne l'ont fixé.
   const modeleFixeParLeFlux = useRef(false);
@@ -459,13 +459,13 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   }, [inputValue, isStreaming]);
 
   const confirmSend = useCallback(() => {
-    if (!pendingInstruction) return;
+    if (!pendingInstruction || !activeModel) return;
     const instruction = pendingInstruction;
     setPendingInstruction(null);
     setInputValue("");
     setNeedsInitialPrompt(false);
     void handleStream(instruction);
-  }, [handleStream, pendingInstruction]);
+  }, [activeModel, handleStream, pendingInstruction]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -646,10 +646,15 @@ export function AgentSession({ profileId, model, onBack }: Props) {
             </p>
             <div className="mt-3 flex flex-wrap justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setPendingInstruction(null)}>Retour</Button>
-              <Button type="button" variant="primary" onClick={confirmSend}>Confirmer l&apos;appel</Button>
+              <Button type="button" variant="primary" onClick={confirmSend} disabled={!activeModel}>Confirmer l&apos;appel</Button>
             </div>
           </div>
         </div>
+      )}
+      {profilCharge && !profilIntrouvable && !activeModel && (
+        <p role="alert" className="px-3 py-2 text-sm text-text">
+          Le modèle de cet agent n’a pas pu être identifié. Vérifie ton choix dans l’Atelier avant de réessayer.
+        </p>
       )}
       <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
         <Textarea aria-label="Message à l’agent"

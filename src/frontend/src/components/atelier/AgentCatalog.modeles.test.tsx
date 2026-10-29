@@ -21,14 +21,14 @@ vi.mock('../../services/api/agents', () => ({
 import { AgentCatalog } from './AgentCatalog';
 
 describe('B-649 / B-650 : catalogue des agents', () => {
-  it('présélectionne un modèle réellement proposé quand le défaut du profil n’y est pas', async () => {
+  it('conserve le fournisseur et le modèle choisis quand ils ne sont plus proposés', async () => {
     vi.mocked(window.localStorage.setItem).mockClear();
     render(<AgentCatalog onSelectAgent={vi.fn()} />);
     const selecteur = (await screen.findByLabelText('Modèle de l’agent')) as HTMLSelectElement;
-    expect(selecteur.value).toBe('qwen3:8b');
+    expect(selecteur.value).toBe('qwen3.5:9b');
     // Le setup vitest remplace localStorage par des vi.fn : on vérifie l'écriture, pas la lecture.
-    await waitFor(() => expect(window.localStorage.setItem).toHaveBeenCalledWith('therese-agent-model', 'qwen3:8b'));
-    expect(window.localStorage.setItem).not.toHaveBeenCalledWith('therese-agent-model', 'qwen3.5:9b');
+    await waitFor(() => expect(window.localStorage.setItem).toHaveBeenCalledWith('therese-agent-model', 'qwen3.5:9b'));
+    expect(window.localStorage.setItem).not.toHaveBeenCalledWith('therese-agent-model', 'qwen3:8b');
   });
 
   it('écrit ses consignes avec les accents', async () => {

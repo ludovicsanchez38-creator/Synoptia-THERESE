@@ -14,9 +14,9 @@ vi.mock('../../services/api/agents', () => ({
 import { AgentCatalog } from './AgentCatalog';
 
 describe('#112 : un catalogue de repli est annoncé comme tel', () => {
-  it('affiche les profils de repli et une alerte qui dit que le catalogue n’a pas été lu', async () => {
+  it('bloque le lancement quand le catalogue et son fournisseur ne peuvent pas être lus', async () => {
     render(<AgentCatalog onSelectAgent={vi.fn()} />);
-    expect(await screen.findByText('Chercheur Web')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(/Catalogue des agents non lu/);
+    expect(await screen.findByText('Catalogue indisponible')).toBeInTheDocument();
+    expect(screen.queryByText('Chercheur Web')).not.toBeInTheDocument();
   });
 });

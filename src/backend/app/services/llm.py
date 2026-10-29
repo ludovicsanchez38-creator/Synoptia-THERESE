@@ -494,9 +494,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         self.fournisseur_effectif = self.config.provider.value
         self.modele_effectif = self.config.model
 
-        # Revue 0.48 (F3) : le Board refuse la bascule silencieuse du
-        # circuit breaker - son repli est EXPLICITE (service principal,
-        # actual_provider vrai). Le chat garde la bascule automatique.
+        # Paramètre historique conservé pour les appelants ; aucun circuit
+        # ne peut désormais changer le fournisseur choisi.
         self.bascule_circuit = bascule_circuit
 
     def attribution(self) -> tuple[str, str]:
@@ -598,7 +597,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                         elif row[0] in ("low", "medium", "high", "xhigh", "max"):
                             selected_effort = row[0]
         except Exception as e:
-            logger.warning(f"Could not read LLM preferences from DB: {e}")
+            from app.services.error_handler import ErreurPourEcran
+
+            raise ErreurPourEcran(
+                "Ton fournisseur d’IA n’a pas pu être relu. Redémarre THÉRÈSE, "
+                "puis vérifie ton choix dans Paramètres, Modèles IA avant de réessayer."
+            ) from e
 
         logger.info(f"LLM preferences from DB: provider={selected_provider}, model={selected_model}")
 
@@ -742,7 +746,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
     # -----------------------------------------------------------------
 
     def _get_fallback_configs(self) -> list["LLMConfig"]:
-        """Retourne la liste ordonnée des configs fallback disponibles.
+        """Inventaire historique des configurations (non utilisé pour router un envoi).
 
         Ordre de priorité :
         1. Provider configuré par l'utilisateur (self.config) - déjà utilisé
@@ -811,7 +815,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         Un circuit ouvert ne vaut pas autorisation de changer de fournisseur.
         """
         # L'accord désigne un destinataire : une panne ne l'élargit jamais.
-        # Le Board conserve ses replis explicites, annoncés par l'appelant.
+        # Les appelants, Board compris, ne changent pas non plus la destination.
         return self.config
 
     @staticmethod
