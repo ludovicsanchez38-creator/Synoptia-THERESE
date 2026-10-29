@@ -116,3 +116,6 @@ export function memoryCardGrantsForRequest(): string[] {
     && g.dataCategories?.includes(MEMORY_CARDS_CATEGORY))
     .map(g => `${g.purpose}:${g.provider.trim().toLowerCase()}`);
 }
+
+/** Catégories consultées par les outils pour préparer une réponse. */
+export const TOOL_READ_DATA_CATEGORY = 'ce que l’IA lit pour te répondre : mails, fiches contacts, factures, agenda, tâches et fichiers (avec ton accord « documents » pour leur contenu)';

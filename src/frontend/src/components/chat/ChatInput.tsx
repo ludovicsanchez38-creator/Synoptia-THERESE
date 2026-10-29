@@ -53,6 +53,7 @@ import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables'
 import {
   CLOUD_CONSENT_REVOKED_EVENT,
   grantCloudConsent,
+  TOOL_READ_DATA_CATEGORY,
   MEMORY_CARDS_CATEGORY,
   memoryCardGrantsForRequest,
   hasCloudConsent,
@@ -687,6 +688,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
+          TOOL_READ_DATA_CATEGORY,
           'tes fiches mémoire utiles, renvoyées avec chaque échange où la mémoire est activée',
           MEMORY_CARDS_CATEGORY,
           // B-1515 : ils partent avec chaque message, dans le prompt système.
