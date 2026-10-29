@@ -17,7 +17,11 @@ from pathlib import Path
 from typing import Literal
 
 from app.services.consentements import exiger_accord
-from app.services.envoi_fournisseur import TransportAvecAccord, appeler_avec_accord, client_http_avec_accord
+from app.services.envoi_fournisseur import (
+    TransportAvecAccord,
+    appeler_avec_accord,
+    client_http_avec_accord,
+)
 from app.services.error_handler import ErrorCode, TheresError
 
 logger = logging.getLogger(__name__)
