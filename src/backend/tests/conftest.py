@@ -61,6 +61,9 @@ async def _test_lifespan(_app):
     from app.models.database import close_db, init_db
 
     _app.state.auth_disabled = True
+    # Comme le harnais racine : une fixture db_session peut laisser un pool
+    # ouvert. Le remplacer sans fermeture fragilise les restaurations WAL.
+    await close_db()
     await init_db()
     yield
     await close_db()
