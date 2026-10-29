@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 85b7634a42b7a69d324a49167f90155e51245eb24ec36e9b8433a53fee35be5f
+Empreinte des verrous : fde741672132a0f2a94f8dfb774d4951e7cf84b8ff36064db93c78cffbdcc8ac
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.

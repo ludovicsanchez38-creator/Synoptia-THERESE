@@ -17,14 +17,32 @@ from functools import lru_cache
 from pathlib import Path
 
 STATUS = 'no-holder-named-upstream'
+# Relecture indépendante du 29/10/2026 : ces neuf triplets uniquement.
+OBJC2_COMMIT = '7b1abfd750a2cacaea71d6a56ecfb83cb7de560b'
+OBJC2_TREE_SHA256 = 'a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d'
+ALLOWED_ABSENCES = {
+    ('objc2-app-kit', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-core-foundation', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-core-graphics', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-foundation', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-io-surface', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-osa-kit', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-quartz-core', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-ui-kit', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+    ('objc2-web-kit', '0.3.2', OBJC2_COMMIT): OBJC2_TREE_SHA256,
+}
 PATTERNS = {
     'Copyright': r'Copyright',
     '©': r'©\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)',
     '(c)/(C) année ou nom': r'\([cC]\)\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)',
     'SPDX-FileCopyrightText': r'SPDX-FileCopyrightText',
     'Authors': r'\bAuthors\b',
+    'Contributors/Maintainers': r'\b(?:Contributors|Maintainers)\b',
     'authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)': r'\bauthors(?:\.workspace)?\s*=',
 }
+AUTHOR_FILE = re.compile(r'^(?:AUTHORS|CONTRIBUTORS|MAINTAINERS)(?:[._-].*)?$', re.I)
+AUTHOR_HEADING = re.compile(
+    r'^\s*(?:(?://[/!]?|/\*+|\*|#+)\s*)?(?:Authors|Contributors|Maintainers)\s*(?::|$)', re.I)
 
 
 def sha(data):
@@ -74,6 +92,8 @@ def scan(files):
     for path, raw in sorted(files.items()):
         for number, line in enumerate(raw.decode('utf-8', errors='replace').splitlines(), 1):
             matched = [label for label, pattern in PATTERNS.items() if re.search(pattern, line, re.I)]
+            if AUTHOR_FILE.fullmatch(posixpath.basename(path)) and line.strip():
+                matched.append('Fichier d’auteurs')
             if matched:
                 hits.append({'path': path, 'line': number, 'text': line, 'patterns': matched})
     # L'empreinte lie le relevé à tous les fichiers lus, y compris binaires/cachés.
@@ -113,8 +133,8 @@ def applies(hit, scope, crate_name):
     if set(hit['patterns']) == {'Copyright'} and not re.search(r'\bcopyright\b', text, re.I):
         return False
     # « the authors » dans une phrase n'est pas une liste nominative.
-    author_only = set(hit['patterns']) == {'Authors'}
-    if author_only and not re.search(r'^\s*(?://|#|\*)?\s*Authors\s*:', text, re.I):
+    author_only = set(hit['patterns']) <= {'Authors', 'Contributors/Maintainers'}
+    if author_only and not AUTHOR_HEADING.search(text):
         return False
     if scope is None:
         return True
@@ -128,6 +148,13 @@ def applies(hit, scope, crate_name):
 
 def verify(row, proof, root):
     try:
+        identity = re.fullmatch(r'cargo:([^@/]+)@([^@/]+)', row['id'])
+        if not identity:
+            return False
+        crate_name, version = identity.groups()
+        reference = ALLOWED_ABSENCES.get((crate_name, version, proof['commit']))
+        if reference is None or proof['tree_sha256'] != reference:
+            return False
         if (proof['status'] != STATUS or proof['package'] != row['id'] or
                 proof['archive'] != row['artifact'] or proof['archive_integrity'] != row['integrity'] or
                 not re.fullmatch('[a-f0-9]{40}', proof['commit'])):
@@ -144,11 +171,16 @@ def verify(row, proof, root):
         vcs = json.loads(crate['.cargo_vcs_info.json'])
         if vcs['git']['sha1'] != proof['commit'] or not proof['tree_url'].endswith(proof['commit']):
             return False
+        workspace = tomllib.loads(tree['Cargo.toml'].decode())['workspace']['package']
         for path in ('Cargo.toml', 'Cargo.toml.orig'):
             package = tomllib.loads(crate[path].decode())['package']
-            if package.get('authors'):
+            package_version = package.get('version')
+            if package_version == {'workspace': True}:
+                package_version = workspace.get('version')
+            if (package.get('name') != crate_name or package_version != version or
+                    package.get('authors')):
                 return False
-        authors = tomllib.loads(tree['Cargo.toml'].decode())['workspace']['package']['authors']
+        authors = workspace['authors']
         if authors != ['Mads Marquart <mads@marquart.dk>']:
             return False
         if not any(n['text'] == tree['LICENSE.md'].decode().strip() for n in row['notices']):

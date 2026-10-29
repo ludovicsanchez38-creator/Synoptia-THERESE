@@ -39,7 +39,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "ffmpeg",
@@ -77,7 +98,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json. Le correctif ffmpeg.patch déplace x264/x265 hors de la liste GPL de configure ; malgré l’étiquette LGPL-3.0 observée dans les binaires, la combinaison est traitée ici sous GPL-3.0-or-later."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json. Le correctif ffmpeg.patch déplace x264/x265 hors de la liste GPL de configure ; malgré l’étiquette LGPL-3.0 observée dans les binaires, la combinaison est traitée ici sous GPL-3.0-or-later.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "gmp",
@@ -115,7 +157,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "libunistring",
@@ -153,7 +216,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "nettle-hogweed",
@@ -191,7 +275,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "gnutls",
@@ -229,7 +334,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "lame",
@@ -267,7 +393,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "x264",
@@ -305,7 +452,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "x265",
@@ -343,7 +511,28 @@
           "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
         }
       ],
-      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Le fichier x265Version.txt contient e444744, distance 1 du tag 4.2, comme les trois binaires."
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Le fichier x265Version.txt contient e444744, distance 1 du tag 4.2, comme les trois binaires.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ]
     },
     {
       "component": "libiconv",
@@ -388,7 +577,33 @@
           "local_path": "licenses/recipes/libiconv-1.19-1-PKGBUILD.txt"
         }
       ],
-      "evidence": "Export _libiconv_version=0x0113. Les onze sections PE de la DLL de la roue sont identiques au paquet MSYS2 1.19-1, même empreinte chacune ; seuls en-tête/surplus diffèrent. Recette et archive MSYS2 source avec les trois correctifs jointes."
+      "evidence": "Export _libiconv_version=0x0113. Les onze sections PE de la DLL de la roue sont identiques au paquet MSYS2 1.19-1, même empreinte chacune ; seuls en-tête/surplus diffèrent. Recette et archive MSYS2 source avec les trois correctifs jointes.",
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "mingw-w64-libiconv-1.19-1.src.tar.zst",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        },
+        {
+          "resource": "libiconv-1.19-1-PKGBUILD.txt",
+          "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475"
+        }
+      ]
     },
     {
       "component": "espeak-ng",
@@ -419,7 +634,23 @@
           "local_path": "licenses/recipes/piper-1.4.2-pyproject.toml.txt"
         }
       ],
-      "evidence": "CMakeLists.txt de Piper 1.4.2 fixe exactement ce GIT_TAG ; les trois espeakbridge contiennent 1.52.0.1."
+      "evidence": "CMakeLists.txt de Piper 1.4.2 fixe exactement ce GIT_TAG ; les trois espeakbridge contiennent 1.52.0.1.",
+      "required_supporting_sources": [
+        "piper-1.4.2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "piper-1.4.2-CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2"
+        },
+        {
+          "resource": "piper-1.4.2-pyproject.toml.txt",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43"
+        }
+      ]
     },
     {
       "component": "piper-tts",
@@ -453,7 +684,23 @@
           "local_path": "licenses/recipes/piper-1.4.2-pyproject.toml.txt"
         }
       ],
-      "evidence": "Archive source exacte de uv.lock. Les recettes du même tag sont également jointes pour les roues."
+      "evidence": "Archive source exacte de uv.lock. Les recettes du même tag sont également jointes pour les roues.",
+      "required_supporting_sources": [
+        "piper-1.4.2-build-tree.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "piper-1.4.2-CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2"
+        },
+        {
+          "resource": "piper-1.4.2-pyproject.toml.txt",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43"
+        }
+      ]
     },
     {
       "component": "recurring-ical-events",
@@ -469,7 +716,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "x-wr-timezone",
@@ -485,7 +737,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "certifi",
@@ -501,7 +758,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "pathspec",
@@ -517,7 +779,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "tqdm",
@@ -533,7 +800,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "grpcio",
@@ -549,7 +821,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "cssparser-macros@0.6.1",
@@ -565,7 +842,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "cssparser@0.29.6",
@@ -581,7 +863,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "dtoa-short@0.3.5",
@@ -597,7 +884,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "option-ext@0.2.0",
@@ -613,7 +905,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "selectors@0.24.0",
@@ -629,7 +926,12 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": []
     },
     {
       "component": "axe-core",
@@ -645,7 +947,18 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "gitHead du registre npm de la version exacte, intégrité de chacune des distributions comparée au verrou. Archive du dépôt incluant les sources et recettes de compilation."
+      "evidence": "gitHead du registre npm de la version exacte, intégrité de chacune des distributions comparée au verrou. Archive du dépôt incluant les sources et recettes de compilation.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "axe-core-4.12.1-source.tar.gz",
+          "member": "Gruntfile.js",
+          "sha256": "e320428b2f6f9a183bc3ccc38250284075a0188c6a1f9b92646b4f7c70a07aa2"
+        }
+      ]
     },
     {
       "component": "lightningcss",
@@ -672,7 +985,23 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "gitHead du registre npm de la version exacte, intégrité de chacune des distributions comparée au verrou. Archive du dépôt incluant les sources et recettes de compilation."
+      "evidence": "gitHead du registre npm de la version exacte, intégrité de chacune des distributions comparée au verrou. Archive du dépôt incluant les sources et recettes de compilation.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "lightningcss-1.30.2-source.tar.gz",
+          "member": "scripts/build-npm.js",
+          "sha256": "4090702aea75548855ef3d46a2877476533bbac85814106696684d63712c8461"
+        },
+        {
+          "resource": "lightningcss-1.30.2-source.tar.gz",
+          "member": "Cargo.toml",
+          "sha256": "645575fe60f603068985cc01af6d5aa4b98e94667697511d0d88871966cea543"
+        }
+      ]
     },
     {
       "component": "adodbapi (pywin32)",
@@ -696,7 +1025,17 @@
           "local_path": "licenses/recipes/pywin32-311-setup.py.txt"
         }
       ],
-      "evidence": "Tag b311 résolu à ce commit. Le répertoire adodbapi sous LGPL est contenu dans cette source intégrale et la roue verrouillée."
+      "evidence": "Tag b311 résolu à ce commit. Le répertoire adodbapi sous LGPL est contenu dans cette source intégrale et la roue verrouillée.",
+      "required_supporting_sources": [],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pywin32-311-setup.py.txt",
+          "sha256": "e2f5d2ee17b2f80a8576a0ad8110fd990de69f750b52bf75add8611f1e7ce559"
+        }
+      ]
     },
     {
       "component": "autocommand (setuptools)",
@@ -712,7 +1051,25 @@
       },
       "status": "available",
       "recipes": [],
-      "evidence": "Version fixée dans le répertoire setuptools/_vendor/autocommand-2.2.2.dist-info de l’archive verrouillée. La source vendue de setuptools est jointe aussi pour conserver ses éventuelles adaptations."
+      "evidence": "Version fixée dans le répertoire setuptools/_vendor/autocommand-2.2.2.dist-info de l’archive verrouillée. La source vendue de setuptools est jointe aussi pour conserver ses éventuelles adaptations.",
+      "required_supporting_sources": [
+        "setuptools-84.2.1.tar.gz"
+      ],
+      "evidence_refs": [
+        "licenses/copyleft-version-evidence.json"
+      ],
+      "recipe_refs": [
+        {
+          "resource": "setuptools-84.2.1.tar.gz",
+          "member": "pyproject.toml",
+          "sha256": "79c616e6ca3429cb0d63a7172456ead2d3bb3b56b7cb1695015e0f38f91bb930"
+        },
+        {
+          "resource": "setuptools-84.2.1.tar.gz",
+          "member": "setup.py",
+          "sha256": "f70886dffd959c53411444b91e6223617c83f8fb84af5033db3218f1e69a22d7"
+        }
+      ]
     }
   ],
   "exclusions": [
@@ -1978,7 +2335,7 @@
   "evidence_files": [
     {
       "path": "licenses/copyleft-version-evidence.json",
-      "sha256": "c62f46f5262d7d5603c8a876e031e5d96ba86ca9aee270ddceec781c01f37fd8"
+      "sha256": "334936a3c74645913cb66eab980fdf188a7d13b4983560284663ca563c44ee69"
     }
   ]
 }

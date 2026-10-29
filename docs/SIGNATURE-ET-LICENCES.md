@@ -211,6 +211,14 @@ Les occurrences d'API, de prose et les auteurs d'autres crates restent consigné
 avec zéro occurrence attribuant la crate. Une nouvelle ligne nominative dans la
 crate ou ses sources générées invalide la preuve, même avec des hashes recalculés.
 
+Depuis le cinquième tour, `attribution_evidence.py` autorise seulement les neuf
+triplets nom/version/commit listés dans son code, avec le SHA-256 de référence
+de l'arbre objc2 vérifié (`a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d`).
+Le nom et la version des deux manifestes Cargo doivent correspondre à l'identité
+de l'entrée ; une version héritée est résolue dans le workspace de cet arbre.
+`AUTHORS`, `CONTRIBUTORS`, `MAINTAINERS`, les titres d'auteurs seuls et les
+commentaires `///`, `//!`, `#`, `*` sont également pris en compte.
+
 Les textes intégraux de toutes les licences déclarées et de `LICENSE.md` sont
 conservés, puis une phrase distincte du copyright indique l'absence de titulaire
 et l'auteur déclaré du workspace, Mads Marquart. Cette métadonnée n'est jamais
@@ -266,6 +274,25 @@ La source MSYS2 libiconv 1.19-1 inclut ses trois correctifs ; ses onze sections 
 concordent avec celles de la DLL de la roue Windows. Les preuves complémentaires
 figurent dans `licenses/copyleft-version-evidence.json`.
 
+Chaque composant déclare `required_supporting_sources`, avec une liste vide
+explicite si son archive source suffit. Les rattachements indispensables des
+versions livrées sont aussi imposés par le code : arbres PyAV/FFmpeg pour les
+dix bibliothèques d'AV, correctifs MSYS2 pour libiconv, arbre Piper pour Piper
+et espeak-ng, source vendue de setuptools pour autocommand. Retirer une archive
+ou sa référence bloque le contrôle. Les archives FFmpeg incluent notamment
+`patches/ffmpeg.patch`, `patches/gmp.patch` et `patches/lame.patch`.
+
+Les douze sources directement présentes dans Cargo.lock ou uv.lock sont
+comparées au verrou lui-même (URL, SHA-256 et version), indépendamment de
+l'inventaire. La source de soutien setuptools est aussi comparée à uv.lock.
+Les autres sources exigent `evidence_refs` et `recipe_refs` non vides et
+résolubles. Les références peuvent désigner une recette copiée localement ou
+un membre de l'archive complète (axe-core, lightningcss, setuptools).
+Les `source_bindings` de la preuve empreintée fixent version, source,
+rattachements, recettes et archives de soutien requises pour les 27 composants.
+Ce rapprochement conserve les résultats de la revue des versions ; il ne
+constitue pas une reconstruction comparative des binaires.
+
 Le correctif amont `ffmpeg.patch` déplace x264/x265 du groupe GPL au groupe
 VERSION3 de configure, et les bibliothèques annoncent LGPL-3.0. Cette étiquette
 ne supprime pas les obligations GPL de ces codecs : le manifeste retient
@@ -291,8 +318,10 @@ assemble les archives, leurs recettes, le manifeste, les preuves et un
 `LISEZMOI-SOURCES.txt`, puis joint `THERESE-sources-copyleft.tar.gz` au brouillon de
 la même version. Les builds des installeurs dépendent de la réussite de ce job.
 Un téléchargement absent ou d'empreinte différente empêche donc leur publication.
-Un corpus local partiel reste inspectable, mais `assembler` termine en erreur
-si le manifeste signale une source manquante.
+`assembler`, y compris appelé directement, valide l'ensemble avant toute
+écriture ou tout téléchargement. Il refuse un manifeste incomplet. Un échec
+de téléchargement ou de SHA-256 interrompt la commande avant l'écriture des
+documents finaux ; les archives déjà téléchargées restent réutilisables.
 
 La tête de `THIRD_PARTY_LICENSES` indique cette pièce jointe et l'engagement de
 conservation : pendant toute la distribution des binaires, au moins trois ans

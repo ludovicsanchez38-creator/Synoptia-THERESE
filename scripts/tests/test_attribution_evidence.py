@@ -6,6 +6,7 @@ import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
@@ -57,21 +58,63 @@ class AbsenceTests(unittest.TestCase):
                                'https://example.test/tree/' + self.commit, self.commit)
 
     def validate(self, proof):
-        licenses.validate_inventory([self.row], [self.row], attribution_sources=proof, root=self.root)
+        # Les tests du scan autorisent explicitement leur archive synthétique.
+        # Les tests de la politique, plus bas, n'installent pas cette exception.
+        import attribution_evidence as evidence
+        allowed = {('example', '1', self.commit): licenses.digest((self.root / 'tree.tar.gz').read_bytes())}
+        with patch.object(evidence, 'ALLOWED_ABSENCES', allowed, create=True):
+            licenses.validate_inventory([self.row], [self.row], attribution_sources=proof, root=self.root)
 
     def test_status_without_proof_is_rejected(self):
         self.row['integrity'] = 'sha256:' + 'b' * 64
         with self.assertRaises(ValueError):
-            self.validate([])
+            licenses.validate_inventory([self.row], [self.row], root=self.root)
 
     def test_exact_proof_is_accepted(self):
         proof = self.proof()
         self.validate([proof])
-        output = licenses.render([self.row], 'hash', attribution_sources=[proof], root=self.root)
+        import attribution_evidence as evidence
+        with patch.object(evidence, 'ALLOWED_ABSENCES', {('example', '1', self.commit): proof['tree_sha256']}, create=True):
+            output = licenses.render([self.row], 'hash', attribution_sources=[proof], root=self.root)
         self.assertNotIn('PROVISOIRE', output.splitlines()[0])
         self.assertIn("Aucun titulaire n'est nommé par le projet amont au commit " + self.commit, output)
         self.assertGreater(output.index("Aucun titulaire n'est nommé"),
                            output.index(self.row['notices'][1]['text']))
+
+    def test_relecture_example_is_rejected_even_with_well_formed_proof(self):
+        proof = self.proof()
+        with self.assertRaises(ValueError):
+            licenses.validate_inventory([self.row], [self.row], attribution_sources=[proof], root=self.root)
+
+    def test_cargo_identity_must_match_both_manifests(self):
+        for manifest in ('Cargo.toml', 'Cargo.toml.orig'):
+            for field, value in (('name', 'other'), ('version', '2')):
+                with self.subTest(manifest=manifest, field=field):
+                    path = 'crate/' + manifest
+                    original = self.crate[path]
+                    self.crate[path] = original.replace(
+                        (f'{field}="' + ('example' if field == 'name' else '1') + '"').encode(),
+                        f'{field}="{value}"'.encode())
+                    with self.assertRaises(ValueError):
+                        self.validate([self.proof()])
+                    self.crate[path] = original
+
+    def test_reference_tree_hash_cannot_be_replaced_by_recomputed_proof(self):
+        import attribution_evidence as evidence
+        original = self.proof()
+        self.tree['repo/extra'] = b'no attribution here'
+        proof = self.proof()
+        allowed = {('example', '1', self.commit): original['tree_sha256']}
+        with patch.object(evidence, 'ALLOWED_ABSENCES', allowed, create=True), self.assertRaises(ValueError):
+            licenses.validate_inventory([self.row], [self.row], attribution_sources=[proof], root=self.root)
+
+    def test_cargo_inherited_version_is_resolved_from_verified_tree(self):
+        self.crate['crate/Cargo.toml.orig'] = b'[package]\nname="example"\nversion.workspace=true\n'
+        self.tree['repo/Cargo.toml'] += b'version="1"\n'
+        self.validate([self.proof()])
+        self.tree['repo/Cargo.toml'] = self.tree['repo/Cargo.toml'].replace(b'version="1"', b'version="2"')
+        with self.assertRaises(ValueError):
+            self.validate([self.proof()])
 
     def test_attribution_in_archive_or_tree_rejects_even_updated_hashes(self):
         for scope in ('crate', 'tree'):
@@ -103,6 +146,23 @@ class AbsenceTests(unittest.TestCase):
                     self.validate([self.proof()])
                 self.crate[path] = original
 
+    def test_relecture_author_lists_in_archive_and_tree_are_not_prose(self):
+        self.validate([self.proof()])
+        fixtures = [('AUTHORS', 'Authors\nAlice\n'), ('AUTHORS', '/// Authors: Alice\n')]
+        fixtures += [(filename, 'Alice\n') for filename in ('AUTHORS', 'CONTRIBUTORS', 'MAINTAINERS')]
+        fixtures += [('src/credits.rs', prefix + 'Authors: Alice\n')
+                     for prefix in ('/// ', '//! ', '# ', '* ')]
+        fixtures += [('README.md', 'Authors\nAlice\n')]
+        for scope in ('crate', 'tree'):
+            for filename, text in fixtures:
+                with self.subTest(scope=scope, filename=filename, text=text):
+                    files = self.crate if scope == 'crate' else self.tree
+                    path = ('crate/' if scope == 'crate' else 'repo/framework-crates/example/') + filename
+                    files[path] = text.encode()
+                    with self.assertRaises(ValueError):
+                        self.validate([self.proof()])
+                    del files[path]
+
     def test_tampered_proof_archive_tree_commit_count_and_notice_reject(self):
         for kind in ('archive', 'tree', 'commit', 'count', 'notice'):
             with self.subTest(kind=kind):
@@ -118,6 +178,20 @@ class AbsenceTests(unittest.TestCase):
                     proof['notices'][0]['sha256'] = '0' * 64
                 with self.assertRaises(ValueError):
                     self.validate([proof])
+
+
+class RealAbsenceTests(unittest.TestCase):
+    def test_nine_real_triplets_still_pass_without_test_exception(self):
+        import attribution_evidence as evidence
+        root = SCRIPTS.parent
+        rows = {r['id']: r for r in json.loads((root / licenses.INVENTORY).read_text())['packages']}
+        proofs = [p for p in json.loads((root / 'licenses/attribution-sources.json').read_text())
+                  if p.get('status') == evidence.STATUS]
+        self.assertEqual(len(proofs), 9)
+        self.assertEqual(len(evidence.ALLOWED_ABSENCES), 9)
+        for proof in proofs:
+            with self.subTest(package=proof['package']):
+                self.assertTrue(evidence.accepted(rows[proof['package']], [proof], root))
 
 
 if __name__ == '__main__':

@@ -7,6 +7,8 @@ import hashlib
 import json
 import re
 import sys
+import tarfile
+import tomllib
 import urllib.request
 from pathlib import Path
 
@@ -16,6 +18,39 @@ import third_party_licenses as licenses
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = 'licenses/copyleft-sources.json'
 RETENTION = licenses.SOURCE_AVAILABILITY
+
+# Dépendances revues pour les versions livrées. Une liste vide/modifiée dans le
+# manifeste ne doit pas pouvoir faire disparaître les correctifs nécessaires.
+AV_SUPPORT = ('PyAV-17.1.0-build-tree.tar.gz', 'pyav-ffmpeg-8.1.1-2-build-tree.tar.gz')
+REQUIRED_SUPPORT = {
+    **{f'native:{name}@python:av@17.1.0': AV_SUPPORT for name in (
+        'alsa-lib', 'ffmpeg', 'gmp', 'libunistring', 'nettle-hogweed', 'gnutls', 'lame', 'x264', 'x265')},
+    'native:libiconv@python:av@17.1.0': (*AV_SUPPORT, 'mingw-w64-libiconv-1.19-1.src.tar.zst'),
+    'native:espeak-ng@python:piper-tts@1.4.2': ('piper-1.4.2-build-tree.tar.gz',),
+    'python:piper-tts@1.4.2': ('piper-1.4.2-build-tree.tar.gz',),
+    'python:setuptools@84.2.1': ('setuptools-84.2.1.tar.gz',),
+}
+# Le composant LGPL est embarqué dans setuptools ; sa source propre n'est pas
+# le sdist du propriétaire. L'archive du propriétaire reste obligatoire ci-dessus.
+EMBEDDED_PACKAGES = {'python:setuptools@84.2.1'}
+SUPPORT_LOCKS = {'setuptools-84.2.1.tar.gz': 'python:setuptools@84.2.1'}
+BINDING_FIELDS = ('version', 'packages', 'source', 'recipes', 'recipe_refs', 'required_supporting_sources')
+
+
+def locked_sources(root):
+    """Lire directement les sources et empreintes des verrous, sans inventaire."""
+    result = {}
+    for p in tomllib.loads((root / 'uv.lock').read_text(encoding='utf-8'))['package']:
+        if p.get('sdist'):
+            result[f"python:{p['name']}@{p['version']}"] = {
+                'url': p['sdist']['url'], 'sha256': p['sdist']['hash'].removeprefix('sha256:'),
+                'version': p['version']}
+    for p in tomllib.loads((root / 'src/frontend/src-tauri/Cargo.lock').read_text(encoding='utf-8'))['package']:
+        if p.get('source', '').startswith('registry+') and p.get('checksum'):
+            result[f"cargo:{p['name']}@{p['version']}"] = {
+                'url': f"https://static.crates.io/crates/{p['name']}/{p['name']}-{p['version']}.crate",
+                'sha256': p['checksum'], 'version': p['version']}
+    return result
 
 
 def inventory_digest(rows):
@@ -44,12 +79,31 @@ def valid_resource(item, *, recipe=False):
 
 def verify_manifest(manifest, rows, root=None):
     errors = []
+    source_locks = locked_sources(root or ROOT)
+    proof_files = manifest.get('evidence_files', [])
+    if not proof_files:
+        errors.append('Références aux preuves de version absentes')
+    proofs = {}
+    for proof in proof_files:
+        path = proof.get('path', '')
+        if (not path.startswith('licenses/') or '..' in Path(path).parts or
+                not re.fullmatch(r'[a-f0-9]{64}', proof.get('sha256', '')) or path in proofs):
+            errors.append('Référence de preuve invalide : ' + path)
+            continue
+        proofs[path] = None
+        if root is not None:
+            if (not (root / path).is_file() or
+                    licenses.digest((root / path).read_bytes()) != proof['sha256']):
+                errors.append('Preuve de version absente ou modifiée : ' + path)
+            else:
+                proofs[path] = json.loads((root / path).read_text(encoding='utf-8'))
     by_id = {r['id']: r for r in rows}
     needed = {r['id'] for r in rows if required(r)}
     covered = set()
     if manifest.get('schema') != 1 or manifest.get('inventory_sha256') != inventory_digest(rows):
         errors.append('Manifeste périmé : empreinte de l’inventaire différente')
     names = set()
+    support = {r.get('filename'): r for r in manifest.get('supporting_sources', [])}
     for item in manifest.get('components', []):
         name = item.get('component', '?')
         if name in names:
@@ -59,10 +113,42 @@ def verify_manifest(manifest, rows, root=None):
         if not packages or any(p not in by_id for p in packages):
             errors.append('Composant sans rattachement à l’inventaire : ' + name)
         covered.update(packages)
+        refs = item.get('required_supporting_sources')
+        mandatory = {ref for p in packages for ref in REQUIRED_SUPPORT.get(p, ())}
+        if not isinstance(refs, list) or any(not isinstance(ref, str) for ref in refs):
+            errors.append('Références de construction absentes : ' + name)
+            refs = []
+        for ref in sorted(mandatory - set(refs)):
+            errors.append('Référence de construction obligatoire absente : ' + name + ' — ' + ref)
+        for ref in refs:
+            if ref not in support:
+                errors.append('Archive de construction requise absente : ' + name + ' — ' + ref)
         if item.get('status') != 'available':
             errors.append('Source manquante : ' + name + ' — ' + item.get('missing_reason', 'preuve absente'))
-        if not item.get('version') or not item.get('license') or not item.get('evidence') or not valid_resource(item.get('source')):
+        if (not all(isinstance(item.get(k), str) and item[k].strip() for k in ('version', 'license', 'evidence'))
+                or not valid_resource(item.get('source'))):
             errors.append('Version/source/preuve incomplète : ' + name)
+        direct = [p for p in packages if p in source_locks and p not in EMBEDDED_PACKAGES]
+        for package in direct:
+            expected = source_locks[package]
+            source = item.get('source') or {}
+            if (any(source.get(k) != expected[k] for k in ('url', 'sha256')) or
+                    item.get('version') != expected['version']):
+                errors.append('Version/source différente du verrou : ' + name + ' — ' + package)
+        evidence_refs = item.get('evidence_refs', [])
+        recipe_refs = item.get('recipe_refs', [])
+        if not isinstance(evidence_refs, list) or not isinstance(recipe_refs, list):
+            errors.append('Références de preuve/recette invalides : ' + name)
+            evidence_refs, recipe_refs = [], []
+        if not direct and (not evidence_refs or not recipe_refs):
+            errors.append('Source hors verrou sans références de preuve et de recette : ' + name)
+        for ref in evidence_refs:
+            if not isinstance(ref, str) or ref not in proofs:
+                errors.append('Référence de preuve absente : ' + name)
+            elif proofs[ref] is not None:
+                binding = proofs[ref].get('source_bindings', {}).get(name)
+                if binding != {key: item.get(key) for key in BINDING_FIELDS}:
+                    errors.append('Source/recettes différentes de la preuve : ' + name)
         recipes = item.get('recipes', [])
         if any('/wheel-' in p or p.startswith('native:') for p in packages) and not recipes:
             errors.append('Recette de roue absente : ' + name)
@@ -75,6 +161,23 @@ def verify_manifest(manifest, rows, root=None):
                         not (root / local).is_file() or
                         licenses.digest((root / local).read_bytes()) != recipe['sha256']):
                     errors.append('Recette locale absente ou modifiée : ' + name)
+        recipe_resources = {r.get('filename'): r for r in recipes}
+        recipe_resources.update({r: support[r] for r in refs if r in support})
+        if item.get('source'):
+            recipe_resources[item['source'].get('filename')] = item['source']
+        for ref in recipe_refs:
+            if not isinstance(ref, dict) or ref.get('resource') not in recipe_resources:
+                errors.append('Référence de recette absente : ' + name)
+                continue
+            if not re.fullmatch(r'[a-f0-9]{64}', ref.get('sha256', '')):
+                errors.append('Empreinte de recette absente : ' + name)
+            member = ref.get('member', '')
+            if member and (Path(member).is_absolute() or '..' in Path(member).parts):
+                errors.append('Chemin de recette invalide : ' + name)
+            if not member and ref['resource'] not in {r['filename'] for r in recipes}:
+                errors.append('Membre de recette absent : ' + name)
+            if not member and ref.get('sha256') != recipe_resources[ref['resource']].get('sha256'):
+                errors.append('Empreinte de recette contradictoire : ' + name)
     for item in manifest.get('exclusions', []):
         packages = item.get('packages', [])
         evidence = item.get('notices', [])
@@ -101,13 +204,10 @@ def verify_manifest(manifest, rows, root=None):
     for item in manifest.get('supporting_sources', []):
         if not valid_resource(item, recipe=bool(item.get('commit'))):
             errors.append('Archive de construction invalide : ' + item.get('filename', '?'))
-    if root is not None:
-        for proof in manifest.get('evidence_files', []):
-            path = proof.get('path', '')
-            if (not path.startswith('licenses/') or '..' in Path(path).parts or
-                    not (root / path).is_file() or
-                    licenses.digest((root / path).read_bytes()) != proof.get('sha256')):
-                errors.append('Preuve de version absente ou modifiée : ' + path)
+        package = SUPPORT_LOCKS.get(item.get('filename'))
+        if package and (package not in source_locks or any(
+                item.get(k) != source_locks[package][k] for k in ('url', 'sha256'))):
+            errors.append('Archive de construction différente du verrou : ' + package)
     for key in sorted(needed - covered):
         errors.append('Composant copyleft sans sources ni exclusion justifiée : ' + key)
     return errors
@@ -155,14 +255,52 @@ def readme(manifest):
         if item.get('status') != 'available':
             lines.append('  MANQUANT : ' + item.get('missing_reason', 'source non établie'))
         lines += ['  Recette : ' + r['filename'] for r in item.get('recipes', [])]
+        lines += ['  Archive de construction obligatoire : ' + r
+                  for r in item['required_supporting_sources']]
+        lines += ['  Référence de recette : ' + r['resource'] + ('#' + r['member'] if r.get('member') else '')
+                  for r in item.get('recipe_refs', [])]
+        lines += ['  Fichier de preuve : ' + r for r in item.get('evidence_refs', [])]
     lines += ['', 'Entrées écartées :']
     for item in manifest.get('exclusions', []):
         lines.append(', '.join(item['packages']) + ' : ' + item['reason'])
     return '\n'.join(lines) + '\n'
 
 
+def checked_inventory(root):
+    data = json.loads((root / licenses.INVENTORY).read_text(encoding='utf-8'))
+    if data['locks'] != licenses.lock_digest(root):
+        raise ValueError('Inventaire périmé par rapport aux verrous')
+    licenses.validate_inventory(licenses.locked_packages(root), data['packages'], release=False)
+    return data['packages']
+
+
+def verify_recipe_members(manifest, archives):
+    """Résoudre les recettes embarquées sans extraction ni exécution."""
+    references = {}
+    for item in manifest['components']:
+        for ref in item.get('recipe_refs', []):
+            if ref.get('member'):
+                references.setdefault(ref['resource'], []).append(ref)
+    for resource, refs in references.items():
+        found = {}
+        wanted = {ref['member'] for ref in refs}
+        with tarfile.open(archives / resource, 'r:*') as archive:
+            for member in archive:
+                path = member.name.split('/', 1)[-1]
+                if path in wanted:
+                    if not member.isfile() or path in found:
+                        raise ValueError('Membre de recette non régulier ou dupliqué : ' + path)
+                    found[path] = licenses.digest(archive.extractfile(member).read())
+        for ref in refs:
+            if found.get(ref['member']) != ref['sha256']:
+                raise ValueError('Membre de recette absent ou modifié : ' + resource + '#' + ref['member'])
+
+
 def assemble(manifest, folder, root=ROOT):
-    # Valider tous les noms avant la première écriture ; ne jamais extraire.
+    # Même garde pour les appels directs et la CLI, avant la première écriture.
+    errors = verify_manifest(manifest, checked_inventory(root), root)
+    if errors:
+        raise ValueError('\n'.join(errors))
     items = resources(manifest)
     evidence = []
     for proof in manifest.get('evidence_files', []):
@@ -191,14 +329,15 @@ def assemble(manifest, folder, root=ROOT):
             print('Vérifié : ' + item['filename'], flush=True)
         except (OSError, ValueError) as exc:
             failures.append(str(exc))
+    if failures:
+        raise ValueError('\n'.join(failures))
+    verify_recipe_members(manifest, archives)
     for path, raw in evidence:
         target = folder / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(raw)
     (folder / 'copyleft-sources.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
     (folder / 'LISEZMOI-SOURCES.txt').write_text(readme(manifest), encoding='utf-8', newline='\n')
-    if failures:
-        raise ValueError('\n'.join(failures))
     return len(items), sum((archives / i['filename']).stat().st_size for i in items)
 
 
@@ -209,19 +348,14 @@ def main():
     parser.add_argument('--root', type=Path, default=ROOT)
     args = parser.parse_args()
     manifest = json.loads((args.root / MANIFEST).read_text(encoding='utf-8'))
-    data = json.loads((args.root / licenses.INVENTORY).read_text(encoding='utf-8'))
-    if data['locks'] != licenses.lock_digest(args.root):
-        raise ValueError('Inventaire périmé par rapport aux verrous')
-    licenses.validate_inventory(licenses.locked_packages(args.root), data['packages'], release=False)
-    errors = verify_manifest(manifest, data['packages'], args.root)
+    errors = verify_manifest(manifest, checked_inventory(args.root), args.root)
+    if errors:
+        raise ValueError('\n'.join(errors))
     if args.command == 'assembler':
         if args.folder is None:
             parser.error('assembler exige un dossier')
-        # Un corpus partiel peut être examiné, mais ne rend jamais la garde verte.
         count, size = assemble(manifest, args.folder, root=args.root)
         print(f'{count} fichiers téléchargés/vérifiés ; {size} octets')
-    if errors:
-        raise ValueError('\n'.join(errors))
     print(f"Sources vérifiées : {len(manifest['components'])} composants ; aucune source manquante")
 
 

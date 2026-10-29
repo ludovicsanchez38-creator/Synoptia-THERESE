@@ -1372,6 +1372,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -3517,6 +3518,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -3567,7 +3584,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -3861,6 +3879,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -5748,6 +5767,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -5798,7 +5833,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -6093,6 +6129,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -7965,6 +8002,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -8015,7 +8068,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -8309,6 +8363,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -10384,6 +10439,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -10434,7 +10505,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -10720,6 +10792,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -12547,6 +12620,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -12597,7 +12686,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -12891,6 +12981,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -14715,6 +14806,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -14765,7 +14872,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -15059,6 +15167,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -16917,6 +17026,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -16967,7 +17092,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -17261,6 +17387,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -19531,6 +19658,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -19581,7 +19724,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
@@ -19875,6 +20019,7 @@
       "(c)/(C) année ou nom": "\\([cC]\\)\\s*(?:[12][0-9]{3}|[A-Za-z][A-Za-z .-]+)",
       "SPDX-FileCopyrightText": "SPDX-FileCopyrightText",
       "Authors": "\\bAuthors\\b",
+      "Contributors/Maintainers": "\\b(?:Contributors|Maintainers)\\b",
       "authors = (tous fichiers, dont Cargo.toml et Cargo.toml.orig)": "\\bauthors(?:\\.workspace)?\\s*="
     },
     "archive_scan": {
@@ -21908,6 +22053,22 @@
       },
       "hits": [
         {
+          "path": ".gitmodules",
+          "line": 5,
+          "text": "\t# files in history, and I suspect most contributors won't need to look at",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "line": 115,
+          "text": "\"Allow edits by maintainers\", we can fix it for you.",
+          "patterns": [
+            "Contributors/Maintainers"
+          ]
+        },
+        {
           "path": "Cargo.toml",
           "line": 11,
           "text": "authors = [\"Mads Marquart <mads@marquart.dk>\"]",
@@ -21958,7 +22119,8 @@
           "line": 12,
           "text": "// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors",
           "patterns": [
-            "Authors"
+            "Authors",
+            "Contributors/Maintainers"
           ]
         },
         {
