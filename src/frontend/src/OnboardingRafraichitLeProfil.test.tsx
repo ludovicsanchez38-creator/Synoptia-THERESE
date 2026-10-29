@@ -14,7 +14,7 @@
  * seul l'assistant ne s'en servait pas.
  */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useChatStore } from './stores/chatStore';
 import { useAccessibilityStore } from './stores/accessibilityStore';
@@ -37,6 +37,11 @@ vi.mock('./lib/capacites/generation', () => ({
 }));
 vi.mock('./lib/profileStorageIsolation', () => ({
   isolateDataProfilePersistence: vi.fn().mockReturnValue('unchanged'),
+}));
+vi.mock('./lib/consentSync', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./lib/consentSync')>()),
+  // Le démarrage de ce test est déjà synchronisé avec son moteur simulé.
+  synchroniserConsentements: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('./services/api', async (importOriginal) => {
@@ -124,6 +129,12 @@ vi.mock('./components/prototype/usePrototypeAtelierData', () => ({
 import App from './App';
 
 describe('B-214 — la fin de l’assistant rafraîchit le profil', () => {
+  beforeAll(async () => {
+    // Charger le module paresseux avant de chronométrer le scénario métier.
+    // Sa transformation à froid peut dépasser cinq secondes dans ce harnais.
+    await import('./components/prototype/ConversationCanvasPrototype');
+  }, 60_000);
+
   beforeEach(() => {
     vi.clearAllMocks();
     profil.courant = null;
