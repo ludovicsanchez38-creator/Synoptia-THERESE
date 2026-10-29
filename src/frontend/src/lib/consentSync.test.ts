@@ -9,6 +9,7 @@ beforeEach(async () => {
   request.mockResolvedValue({ grants: [] });
   await flushConsentDecisions();
   installLocalStorageStub();
+  localStorage.setItem('therese:data-profile', '/profils/test');
   request.mockClear();
 });
 

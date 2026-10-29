@@ -10,6 +10,7 @@
  */
 
 import { discardAllPendingWrites } from './debouncedStorage';
+import { CONSENT_OUTBOX_PREFIX, migrateConsentOutbox, revokePendingConsentGrants } from './consentSync';
 
 // Stores persistés sous des clés SANS préfixe therese- (pièges : le CRM
 // contient le pipeline clients). Garder cette liste alignée sur les
@@ -32,7 +33,8 @@ function purgeStorage(storage: Storage): void {
   const keys: string[] = [];
   for (let i = 0; i < storage.length; i += 1) {
     const key = storage.key(i);
-    if (key && isThereseKey(key)) {
+    if (key && isThereseKey(key)
+      && key !== CONSENT_OUTBOX_PREFIX && !key.startsWith(`${CONSENT_OUTBOX_PREFIX}:`)) {
       keys.push(key);
     }
   }
@@ -41,11 +43,13 @@ function purgeStorage(storage: Storage): void {
   }
 }
 
-export function purgeLocalPersistence(options?: { reload?: () => void }): void {
+export function purgeLocalPersistence(options?: { reload?: () => void; profileSwitch?: boolean }): void {
   // F1 revue : désarmer d'abord le stockage débouncé zustand, sinon le flush
   // de fermeture (pagehide, déclenché par le reload) réécrit les écritures en
   // attente APRÈS la purge - et toute écriture ultérieure (stream encore
   // vivant) est ignorée jusqu'au redémarrage.
+  migrateConsentOutbox(localStorage.getItem('therese:data-profile') || '');
+  if (!options?.profileSwitch) revokePendingConsentGrants();
   discardAllPendingWrites();
   purgeStorage(localStorage);
   // F2 revue : le handoff classic (sessionStorage) survit au reload

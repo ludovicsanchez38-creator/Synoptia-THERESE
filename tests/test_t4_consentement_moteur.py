@@ -96,3 +96,12 @@ async def test_rejeu_de_decision_ne_duplique_pas_la_preuve(client):
     assert (await client.post('/api/consents', json=decision)).status_code == 200
     assert (await client.post('/api/consents', json=decision)).status_code == 200
     assert len((await client.get('/api/consents')).json()['history']) == 1
+
+
+async def test_une_decision_du_profil_precedent_est_refusee(client):
+    decision = {'purpose': 'llm', 'provider': 'openai', 'granted': False, 'text_version': '3',
+                'data_profile': '/profil-fictif-inactif'}
+    response = await client.post('/api/consents', json=decision)
+    assert response.status_code == 409
+    assert 'profil' in response.text
+    assert (await client.get('/api/consents')).json()['history'] == []
