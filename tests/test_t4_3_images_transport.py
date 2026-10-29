@@ -19,7 +19,8 @@ async def test_retrait_images_avant_transport(client, monkeypatch, tmp_path, pro
     monkeypatch.setitem(sys.modules, 'openai', SimpleNamespace(
         OpenAI=lambda **kw: SimpleNamespace(images=SimpleNamespace(generate=envoi))))
     genai = SimpleNamespace(Client=lambda **kw: SimpleNamespace(models=SimpleNamespace(generate_content=envoi)),
-                            types=SimpleNamespace(GenerateContentConfig=lambda **kw: kw, ImageConfig=lambda **kw: kw))
+                            types=SimpleNamespace(GenerateContentConfig=lambda **kw: kw, ImageConfig=lambda **kw: kw,
+                                                  HttpOptions=lambda **kw: kw))
     import google
     monkeypatch.setattr(google, 'genai', genai, raising=False)
     monkeypatch.setitem(sys.modules, 'google.genai', genai)

@@ -3,7 +3,29 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
+import httpx
+
 T = TypeVar("T")
+
+
+class TransportHTTPAvecAccord(httpx.BaseTransport):
+    """Garde chaque tentative des SDK, y compris leurs reprises internes."""
+
+    def __init__(self, verifier: Callable[[], None]):
+        self._verifier = verifier
+        # Aucune reprise sous la garde (ni redirection automatique).
+        self._transport = httpx.HTTPTransport(retries=0)
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self._verifier()
+        return self._transport.handle_request(request)
+
+    def close(self) -> None:
+        self._transport.close()
+
+
+def client_http_avec_accord(verifier: Callable[[], None]) -> httpx.Client:
+    return httpx.Client(transport=TransportHTTPAvecAccord(verifier), timeout=120.0)
 
 
 def appeler_avec_accord(verifier: Callable[[], None], appel: Callable[[], T]) -> T:
