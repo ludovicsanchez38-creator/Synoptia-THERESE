@@ -763,6 +763,17 @@ async def perimetre_de_piece_jointe(
     return "global", None, False
 
 
+class ContexteMemoire(str):
+    """Texte récupéré avec sa provenance, indépendante des accords ultérieurs."""
+
+    contient_documents: bool
+
+    def __new__(cls, texte: str, contient_documents: bool = False):
+        valeur = super().__new__(cls, texte)
+        valeur.contient_documents = contient_documents
+        return valeur
+
+
 async def _get_memory_context(
     user_message: str,
     limit: int = 8,
@@ -786,6 +797,7 @@ async def _get_memory_context(
     Returns formatted context string or None if no relevant memories found.
     """
     context_parts: list[str] = []
+    contient_documents = False
     # Affecté avant le try : il est relu plus bas, hors de sa portée. Un
     # périmètre illisible ne doit pas faire tomber tout le message pour une
     # mention accessoire (relevé par la relecture adversariale).
@@ -864,6 +876,7 @@ async def _get_memory_context(
                     enveloppe = ""
                 if enveloppe:
                     context_parts.append(enveloppe)
+                    contient_documents |= memory_type == "file"
 
             logger.debug(f"Memory context hit: {memory_type} (score={score:.2f})")
 
@@ -907,7 +920,7 @@ async def _get_memory_context(
                 )
 
     if context_parts:
-        return "\n\n".join(context_parts)
+        return ContexteMemoire("\n\n".join(context_parts), contient_documents)
     return None
 
 
@@ -2109,6 +2122,7 @@ async def send_message(
         llm_user_message, conversation_id=conversation.id, session=session,
         inclure_fichiers=documents_autorises(llm_service.config, request.memory_card_grants),
     ) if request.include_memory else None
+    documents_recuperes = getattr(memory_context, "contient_documents", bool(memory_context))
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
     # indexe : un document déposé dans un dossier client lui appartient.
@@ -2218,7 +2232,7 @@ async def send_message(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or bool(memory_context and documents_autorises(llm_service.config, None))
+    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or documents_recuperes
     context.memory_cards_enabled = request.include_memory
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -2831,6 +2845,7 @@ async def _do_stream_response(
         user_message, conversation_id=conversation_id, session=session,
         inclure_fichiers=documents_autorises(llm_service.config, memory_card_grants),
     ) if include_memory else None
+    documents_recuperes = getattr(memory_context, "contient_documents", bool(memory_context))
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
     # indexe : un document déposé dans un dossier client lui appartient.
@@ -2958,7 +2973,7 @@ async def _do_stream_response(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or bool(memory_context and documents_autorises(llm_service.config, None))
+    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or documents_recuperes
     context.memory_cards_enabled = include_memory
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
