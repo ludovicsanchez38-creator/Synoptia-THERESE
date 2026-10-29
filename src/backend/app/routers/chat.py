@@ -64,6 +64,7 @@ from app.services.mcp_service import get_mcp_service
 from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_memory_tool
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
+from app.services.provenance_documents import filtrer_historique, memoriser_provenance
 from app.services.providers.base import LLMProvider, message_fournisseur_pour_ecran
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
@@ -1649,7 +1650,8 @@ async def send_message(
     # contexte LLM - bruit aujourd'hui, valeurs de variables demain. Les
     # user legacy (avant le tag) restent : bruit sans risque, documenté.
     history = [
-        LLMMessage(role=msg.role, content=msg.content)
+        LLMMessage(role=msg.role, content=msg.content,
+                   contient_documents=memoriser_provenance(msg) != "sans_document")
         for msg in history_messages
         if msg.model not in ("action-deterministe", "commande-deterministe")
         and not (msg.extra_data and '"deterministic": true' in msg.extra_data)
@@ -1679,6 +1681,7 @@ async def send_message(
     # part en base sans aucune mention du fichier et la conversation perd le
     # document dès le message suivant.
     _memoriser_pieces_jointes(user_message, request.file_paths)
+    memoriser_provenance(user_message, bool(request.file_paths))
     session.add(user_message)
     await session.commit()
 
@@ -2111,6 +2114,9 @@ async def send_message(
         )
 
     llm_service = get_llm_service()
+    history, avis_historique = filtrer_historique(history, llm_service.config)
+    if avis_historique:
+        inline_preamble = avis_historique + "\n\n" + inline_preamble
     messages = history + [LLMMessage(role="user", content=llm_user_message)]
 
     # Get relevant memory context (0d : même texte que le payload LLM,
@@ -2232,7 +2238,7 @@ async def send_message(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or documents_recuperes
+    context.contient_documents = bool(file_contexts) or any(m.images or m.contient_documents for m in messages) or documents_recuperes
     context.memory_cards_enabled = request.include_memory
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -2316,6 +2322,7 @@ async def send_message(
     )
     bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
+    memoriser_provenance(assistant_message, bool(context.contient_documents))
     if isinstance(getattr(context, 'memory_transmitted', None), list) and context.memory_transmitted:
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
@@ -2601,7 +2608,9 @@ def _texte_du_resultat_mcp(resultat: Any) -> str:
     return json.dumps(resultat, ensure_ascii=False, default=str)
 
 
-async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
+async def _ecrire_reponse(
+    session: AsyncSession, message: Message, contient_documents: bool | None = None
+) -> bool:
     """B-1494 : écrit un message de réponse, sauf si sa conversation a été
     supprimée pendant la génération.
 
@@ -2610,6 +2619,7 @@ async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
     suit et le commit. Conversation disparue : retour arrière, rien n'est
     écrit, et l'appelant s'arrête là.
     """
+    memoriser_provenance(message, contient_documents)
     session.add(message)
     await session.flush()
     existe = (await session.execute(
@@ -2624,7 +2634,7 @@ async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
 
 
 async def _persister_message_partiel(
-    conversation_id: str, contenu: str, llm_service: Any
+    conversation_id: str, contenu: str, llm_service: Any, contient_documents: bool | None = None
 ) -> None:
     """Sauve le texte partiel d'une génération arrêtée - une seule fois.
 
@@ -2652,7 +2662,7 @@ async def _persister_message_partiel(
                 content=contenu,
                 model=modele,
                 provider=fournisseur,
-            ))
+            ), contient_documents)
     except Exception:
         logger.warning("Message partiel non persisté", exc_info=True)
 
@@ -2834,7 +2844,9 @@ async def _do_stream_response(
     first_token_recorded = False
 
     # Build context with conversation history
-    messages = history or []
+    messages, avis_historique = filtrer_historique(history or [], llm_service.config)
+    if avis_historique:
+        preamble = avis_historique + "\n\n" + preamble
     messages.append(LLMMessage(role="user", content=user_message))
 
     # Get relevant memory context for the user's message
@@ -2973,7 +2985,7 @@ async def _do_stream_response(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or documents_recuperes
+    context.contient_documents = bool(file_contexts) or any(m.images or m.contient_documents for m in messages) or documents_recuperes
     context.memory_cards_enabled = include_memory
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -3207,7 +3219,7 @@ async def _do_stream_response(
                                             message_refus.extra_data = json.dumps(
                                                 {"skill_files": fichiers_outils}
                                             )
-                                        await _ecrire_reponse(session, message_refus)
+                                        await _ecrire_reponse(session, message_refus, bool(context.contient_documents))
                                     entree, sortie, appels_refus = _usage_du_tour(
                                         usage_totals, user_message, full_content
                                     )
@@ -3259,7 +3271,7 @@ async def _do_stream_response(
                         # Sinon la carte vit le temps du flux et disparaît au
                         # rechargement (motif BUG-130), fichier toujours là.
                         err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-                    await _ecrire_reponse(session, err_msg)
+                    await _ecrire_reponse(session, err_msg, bool(context.contient_documents))
                 except Exception as db_err:
                     logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
                 return
@@ -3270,7 +3282,7 @@ async def _do_stream_response(
         # (fournisseur bloqué, revue jalon F4) - la garde d'écriture plus bas
         # n'est jamais atteinte. Le texte déjà produit survit ici ; aucun
         # effet (skill, outil) n'est lancé.
-        await _persister_message_partiel(conversation_id, full_content, llm_service)
+        await _persister_message_partiel(conversation_id, full_content, llm_service, bool(context.contient_documents))
         raise
     except Exception as e:
         from app.services.memory_card_context import AccordFichesRequis
@@ -3308,7 +3320,7 @@ async def _do_stream_response(
                 # Sinon la carte vit le temps du flux et disparaît au
                 # rechargement (motif BUG-130), fichier toujours là.
                 err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-            await _ecrire_reponse(session, err_msg)
+            await _ecrire_reponse(session, err_msg, bool(context.contient_documents))
         except Exception as db_err:
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
@@ -3385,9 +3397,11 @@ async def _do_stream_response(
             "Annulation demandée : réponse partielle conservée, aucun effet produit"
         )
         await _persister_message_partiel(
-            conversation_id, full_content, llm_service
+            conversation_id, full_content, llm_service, bool(context.contient_documents)
         )
         return
+
+    memoriser_provenance(assistant_message, bool(context.contient_documents))
 
     # B-1494 : conversation supprimée pendant la réponse, aucun effet de plus.
     if not await _ecrire_reponse(session, assistant_message):
@@ -3476,6 +3490,7 @@ async def _do_stream_response(
         )
     bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
+    memoriser_provenance(assistant_message, bool(context.contient_documents))
     if isinstance(getattr(context, 'memory_transmitted', None), list) and context.memory_transmitted:
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted

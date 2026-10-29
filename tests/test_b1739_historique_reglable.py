@@ -52,6 +52,8 @@ async def _fil(db_session: AsyncSession, nb: int) -> str:
         db_session.add(
             Message(
                 conversation_id=conv.id,
+                # Témoins écrits sans fichier ; les anciens messages inconnus sont testés séparément.
+                extra_data='{"provenance_documents": "sans_document"}',
                 role="user" if i % 2 == 0 else "assistant",
                 content=f"passe-{i:03d}",
                 created_at=base + timedelta(seconds=i),
