@@ -14,9 +14,9 @@ class EmbeddedTests(unittest.TestCase):
 
     def test_each_embedded_macho_is_verified_and_paths_are_contained(self):
         class Archive:
-            toc = {'../../library.so': (0, 'b'), 'image.png': (0, 'x'), 'lib.bin': (0, 'b')}
+            toc = {'../../library.so': (0, 'b'), 'image.png': (0, 'x'), 'lib.bin': (0, 'b'), 'data-library.so': (0, 'x')}
             def extract(self, name):
-                return bytes.fromhex('cffaedfe') + b'library'
+                return b'PNG image' if name == 'image.png' else bytes.fromhex('cffaedfe') + b'library'
         calls = []
         def command(args):
             calls.append(args)
@@ -24,9 +24,9 @@ class EmbeddedTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             directory = Path(td) / 'extracted'
             count = self.m.verify_embedded(Path('backend'), directory, reader=lambda _: Archive(), command=command)
-            self.assertEqual(count, 2)
-            self.assertEqual({p.name for p in directory.iterdir()}, {'binary-0', 'binary-1'})
-            self.assertEqual(sum('--verify' in c for c in calls), 3)
+            self.assertEqual(count, 3)
+            self.assertEqual({p.name for p in directory.iterdir()}, {'binary-0', 'binary-1', 'binary-2'})
+            self.assertEqual(sum('--verify' in c for c in calls), 4)
 
     def test_empty_archive_fails_instead_of_claiming_success(self):
         class Archive:

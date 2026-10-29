@@ -31,7 +31,7 @@ def main():
     args = parser.parse_args()
     bundle = args.bundle.resolve()
     paths = artifacts(bundle, args.platform)
-    signing_env = {**os.environ, 'TAURI_PRIVATE_KEY': os.environ['TAURI_SIGNING_PRIVATE_KEY'], 'TAURI_PRIVATE_KEY_PASSWORD': os.environ.get('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')}
+    signing_env = {**os.environ, 'TAURI_SIGNING_PRIVATE_KEY': os.environ['TAURI_SIGNING_PRIVATE_KEY'], 'TAURI_SIGNING_PRIVATE_KEY_PASSWORD': os.environ.get('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')}
     command = [shutil.which('node'), str(ROOT / 'src/frontend/node_modules/@tauri-apps/cli/tauri.js'), 'signer', 'sign']
     uploads = []
     for path in paths:

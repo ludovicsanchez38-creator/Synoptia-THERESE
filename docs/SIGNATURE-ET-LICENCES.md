@@ -149,6 +149,11 @@ python scripts/third_party_licenses.py check
 python -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
+Les entrées d’empreinte et le fichier livré sont forcés en LF par `.gitattributes`,
+pour garder les mêmes empreintes lors d’un checkout Windows.
+Le générateur lit explicitement en UTF-8 et écrit en UTF-8/LF sur chaque OS.
+Le contrôle compare les octets : une notice réécrite en CRLF est refusée.
+
 Python 3.11 ou ultérieur suffit au générateur. Ses tests de pipeline demandent
 PyYAML. Les verrous npm racine et frontend, Cargo et uv sont couverts de façon
 conservatrice : développement, variantes d'OS et dépendances GPU non embarquées

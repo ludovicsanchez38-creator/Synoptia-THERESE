@@ -61,7 +61,7 @@ def is_notice(name):
 def locked_packages(root):
     rows = {}
     for lock in LOCKS[:2]:
-        entries = json.loads((root / lock).read_text())['packages']
+        entries = json.loads((root / lock).read_text(encoding='utf-8'))['packages']
         for path, p in entries.items():
             if not path or p.get('link'):
                 continue
@@ -76,16 +76,19 @@ def locked_packages(root):
             if key in rows and rows[key]['integrity'] != row['integrity']:
                 raise ValueError(f'Archives contradictoires : {key}')
             rows[key] = row
-    for p in tomllib.loads((root / LOCKS[2]).read_text())['package']:
+    for p in tomllib.loads((root / LOCKS[2]).read_text(encoding='utf-8'))['package']:
         if 'source' not in p:
             continue
         if not p['source'].startswith('registry+') or not p.get('checksum'):
             raise ValueError(f"Source Cargo non gérée : {p['name']}")
         key = f"cargo:{p['name']}@{p['version']}"
         rows[key] = {'id': key, 'artifact': f"https://static.crates.io/crates/{p['name']}/{p['name']}-{p['version']}.crate", 'integrity': 'sha256:' + p['checksum'], 'license': ''}
-    for p in tomllib.loads((root / LOCKS[3]).read_text())['package']:
-        if 'registry' not in p.get('source', {}):
-            continue
+    for p in tomllib.loads((root / LOCKS[3]).read_text(encoding='utf-8'))['package']:
+        source = p.get('source', {})
+        if source.get('editable') == '.' or source.get('virtual') == '.':
+            continue  # Le projet lui-même, pas une dépendance tierce.
+        if 'registry' not in source:
+            raise ValueError(f"Source Python non gérée : {p['name']}")
         archive = p.get('sdist') or min(p.get('wheels', []), key=lambda w: w.get('size', sys.maxsize))
         key = f"python:{p['name']}@{p['version']}"
         rows[key] = {'id': key, 'artifact': archive['url'], 'integrity': archive['hash'], 'license': ''}
@@ -101,8 +104,8 @@ def locked_packages(root):
             for platform, wheel in platforms.items():
                 k = key + '/wheel-' + platform
                 rows[k] = {'id': k, 'artifact': wheel['url'], 'integrity': wheel['hash'], 'license': ''}
-    for row in (json.loads((root / 'licenses/native-components.lock.json').read_text()) +
-                json.loads((root / 'licenses/runtime-wheels.lock.json').read_text())):
+    for row in (json.loads((root / 'licenses/native-components.lock.json').read_text(encoding='utf-8')) +
+                json.loads((root / 'licenses/runtime-wheels.lock.json').read_text(encoding='utf-8'))):
         if row['owner'] not in rows:
             raise ValueError('Supplément natif périmé : ' + row['id'])
         rows[row['id']] = row
@@ -189,7 +192,7 @@ def collect(row, cache):
     if not notices or not has_license(notices):
         raise ValueError(f"Aucun texte de licence dans {row['id']} (ajouter une preuve amont dans licenses/overrides.json)")
     result = {**row, 'license': license_name or 'Voir les notices originales', 'notices': notices}
-    snapshot.write_text(json.dumps(result, ensure_ascii=False), encoding='utf-8')
+    snapshot.write_text(json.dumps(result, ensure_ascii=False), encoding='utf-8', newline='\n')
     return result
 
 
@@ -232,7 +235,7 @@ def render(rows, fingerprint):
 
 
 def check_output(path, expected):
-    if not path.is_file() or path.read_text(encoding='utf-8') != expected:
+    if not path.is_file() or path.read_bytes() != expected.encode('utf-8'):
         raise ValueError(f'{path.name} absent ou périmé ; lancer python scripts/third_party_licenses.py generate')
 
 
@@ -249,7 +252,7 @@ def main():
     if args.command == 'refresh':
         args.cache.mkdir(parents=True, exist_ok=True)
         overrides_path = root / 'licenses/overrides.json'
-        overrides = json.loads(overrides_path.read_text()) if overrides_path.exists() else {}
+        overrides = json.loads(overrides_path.read_text(encoding='utf-8')) if overrides_path.exists() else {}
         rows, errors = [], []
         with ThreadPoolExecutor(max_workers=8) as pool:
             futures = {pool.submit(collect, row, args.cache): row for row in packages}
@@ -274,7 +277,7 @@ def main():
         if errors:
             raise ValueError('\n'.join(sorted(errors)))
         inventory.parent.mkdir(exist_ok=True)
-        inventory.write_text(json.dumps({'locks': fingerprint, 'packages': sorted(rows, key=lambda p: p['id'])}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        inventory.write_text(json.dumps({'locks': fingerprint, 'packages': sorted(rows, key=lambda p: p['id'])}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
     data = json.loads(inventory.read_text(encoding='utf-8'))
     overrides = json.loads((root / 'licenses/overrides.json').read_text(encoding='utf-8'))
     for row in data['packages']:
@@ -288,7 +291,7 @@ def main():
     if args.command == 'check':
         check_output(root / OUTPUT, expected)
     else:
-        (root / OUTPUT).write_text(expected, encoding='utf-8')
+        (root / OUTPUT).write_text(expected, encoding='utf-8', newline='\n')
     flags = [(r['id'], copyleft(r['license'] + '\n' + '\n'.join(n['text'] for n in r['notices']))) for r in data['packages']]
     print(f'{len(packages)} archives ; {len(expected.encode())} octets de notices')
     for name, kinds in flags:

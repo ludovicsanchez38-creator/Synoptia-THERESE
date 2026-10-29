@@ -1,0 +1,8 @@
+
+# Empreintes de licences identiques sur les runners Windows, macOS et Linux.
+/package-lock.json text eol=lf
+/src/frontend/package-lock.json text eol=lf
+/src/frontend/src-tauri/Cargo.lock text eol=lf
+/uv.lock text eol=lf
+/licenses/*.json text eol=lf
+/THIRD_PARTY_LICENSES text eol=lf

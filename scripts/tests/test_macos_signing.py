@@ -1,8 +1,10 @@
 """Ordre et refus de signature testés sur Linux avec un exécuteur simulé."""
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 class SigningTests(unittest.TestCase):
@@ -15,6 +17,16 @@ class SigningTests(unittest.TestCase):
         self.assertFalse(self.m.apple_ready({}))
         self.assertFalse(self.m.apple_ready({'APPLE_CERTIFICATE': 'test'}))
         self.assertTrue(self.m.apple_ready(dict.fromkeys(self.m.APPLE_SECRETS, 'test')))
+
+    def test_wrapped_base64_certificate_is_accepted(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            values = dict.fromkeys(self.m.APPLE_SECRETS, 'fixture')
+            values.update(APPLE_CERTIFICATE='Y2VydGlm\naWNhdGU=\n', RUNNER_TEMP=td,
+                          GITHUB_ENV=str(root / 'github-env-fixture'))
+            with patch.dict(os.environ, values, clear=True), patch.object(self.m, 'run', return_value=''):
+                self.m.prepare()
+            self.assertEqual((root / 'therese-signing/certificate.p12').read_bytes(), b'certificate')
 
     def test_sign_inside_out_then_verify_each_binary(self):
         with tempfile.TemporaryDirectory() as td:

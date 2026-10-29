@@ -51,6 +51,17 @@ class PipelineTests(unittest.TestCase):
             (root / 'macos/test.app.tar.gz').write_bytes(b'archive')
             self.assertEqual(len(module.artifacts(root, 'macOS')), 2)
 
+    def test_license_fingerprints_are_stable_on_windows_checkout(self):
+        import subprocess
+        paths = ['package-lock.json', 'src/frontend/package-lock.json',
+                 'src/frontend/src-tauri/Cargo.lock', 'uv.lock',
+                 'licenses/overrides.json', 'licenses/native-components.lock.json',
+                 'licenses/runtime-wheels.lock.json', 'THIRD_PARTY_LICENSES']
+        result = subprocess.run(['git', 'check-attr', '-z', 'eol', '--', *paths],
+                                cwd=ROOT, text=True, capture_output=True, check=True)
+        values = result.stdout.split('\0')[2::3]
+        self.assertEqual(values, ['lf'] * len(paths))
+
     def test_windows_no_secrets_never_enables_sign_command(self):
         spec = importlib.util.spec_from_file_location('prepare', ROOT / 'scripts/prepare_windows_signing.py')
         module = importlib.util.module_from_spec(spec)

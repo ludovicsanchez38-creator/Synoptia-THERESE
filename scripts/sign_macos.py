@@ -37,7 +37,7 @@ def prepare():
         directory = Path(os.environ['RUNNER_TEMP']) / 'therese-signing'
         directory.mkdir(mode=0o700, exist_ok=True)
         certificate = directory / 'certificate.p12'
-        certificate.write_bytes(base64.b64decode(os.environ['APPLE_CERTIFICATE'], validate=True))
+        certificate.write_bytes(base64.b64decode(''.join(os.environ['APPLE_CERTIFICATE'].split()), validate=True))
         certificate.chmod(0o600)
         keychain = directory / 'build.keychain-db'
         password = secrets.token_urlsafe(32)

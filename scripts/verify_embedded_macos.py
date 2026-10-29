@@ -15,16 +15,18 @@ def verify_embedded(executable, directory, reader=None, command=run):
     archive = reader(str(executable))
     count = 0
     directory.mkdir(parents=True, exist_ok=True)
-    for name, entry in archive.toc.items():
-        if entry[-1] != 'b':
-            continue
+    # Contrôler aussi un Mach-O rangé par erreur parmi les données (type x).
+    for name in archive.toc:
         data = archive.extract(name)
         if not data or data[:4] not in MAGICS:
             continue
         # Un nom d'archive ne devient jamais un chemin d'extraction.
         target = directory / f'binary-{count}'
         target.write_bytes(data)
-        command(['codesign', '--verify', '--deep', '--strict', str(target)])
+        try:
+            command(['codesign', '--verify', '--deep', '--strict', str(target)])
+        except RuntimeError:
+            raise RuntimeError(f'Signature invalide dans le moteur : {name}') from None
         details = command(['codesign', '--display', '--verbose=4', '--entitlements', ':-', str(target)])
         if 'runtime' not in details or 'com.apple.security.cs.disable-library-validation' not in details:
             raise RuntimeError('Entitlements du moteur absents d’une bibliothèque embarquée')
