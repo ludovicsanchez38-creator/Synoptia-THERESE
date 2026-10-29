@@ -458,9 +458,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-core-foundation@0.3.2": {
     "attribution_missing": true,
@@ -489,9 +490,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-core-graphics@0.3.2": {
     "attribution_missing": true,
@@ -520,9 +522,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-encode@4.1.0": {
     "attribution_missing": false,
@@ -592,8 +595,9 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
-    "review_required": true
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-io-surface@0.3.2": {
     "attribution_missing": true,
@@ -622,9 +626,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-osa-kit@0.3.2": {
     "attribution_missing": true,
@@ -653,9 +658,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-quartz-core@0.3.2": {
     "attribution_missing": true,
@@ -684,9 +690,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-ui-kit@0.3.2": {
     "attribution_missing": true,
@@ -715,9 +722,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2-web-kit@0.3.2": {
     "attribution_missing": true,
@@ -746,9 +754,10 @@
         "local_path": "licenses/supplements/objc2-7b1abfd-LICENSE.json"
       }
     ],
-    "reason": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+    "reason": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
     "retain_archive_notices": true,
-    "review_required": true
+    "review_required": true,
+    "attribution_status": "no-holder-named-upstream"
   },
   "cargo:objc2@0.6.3": {
     "attribution_missing": false,

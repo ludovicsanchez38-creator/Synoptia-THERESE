@@ -198,13 +198,24 @@ de l'empreinte invalide l'exception. Aucun supplément local ou texte partagé
 n'obtient ce statut. Les archives ont été vérifiées lors de l'établissement
 des preuves ; `generate` et `check` restent hors réseau.
 
-Au troisième tour du 29 octobre 2026, **16 des 25 blocages sont levés** :
-13 entrées ont une reproduction amont prouvée (16 fichiers), Rustls Android
-0.1.1 retrouve son attribution 1Password dans le dépôt exact, et les deux
-suppléments natifs génériques sont remplacés. **Neuf crates objc2 0.3.2 restent
-provisoires** : leur `LICENSE.md` au commit des archives ne nomme aucun auteur
-ou titulaire, et leurs manifestes n'héritent pas des auteurs du workspace.
-Aucune attribution spécifique n'est déduite de cette métadonnée commune.
+Au quatrième tour du 29 octobre 2026, les neuf crates objc2 0.3.2 reçoivent
+le statut explicite **« aucun titulaire nommé en amont »**
+(`no-holder-named-upstream`), accordé séparément à chaque entrée. Ce statut
+requiert la preuve de `licenses/attribution-sources.json` : archive verrouillée
+vérifiée, commit lu dans `.cargo_vcs_info.json`, recherche dans tous les fichiers
+de la crate et de l'arbre amont, empreintes des textes livrés. Les archives
+intégrales conservées dans `licenses/evidence/` permettent de répéter le contrôle
+hors réseau. Les 1 606 fichiers ordinaires et les 191 liens symboliques de l'arbre
+sont lus ; la portée d'une crate inclut les sources générées visées par ses liens.
+Les occurrences d'API, de prose et les auteurs d'autres crates restent consignés,
+avec zéro occurrence attribuant la crate. Une nouvelle ligne nominative dans la
+crate ou ses sources générées invalide la preuve, même avec des hashes recalculés.
+
+Les textes intégraux de toutes les licences déclarées et de `LICENSE.md` sont
+conservés, puis une phrase distincte du copyright indique l'absence de titulaire
+et l'auteur déclaré du workspace, Mads Marquart. Cette métadonnée n'est jamais
+transformée en titulaire. Sans ce statut et sa preuve exacte, toute attribution
+manquante reste bloquante. Les neuf réserves sont levées pour ce motif précis.
 
 Le contrôle de couverture a aussi fait compléter **45 entrées**, dont
 `android_system_properties 0.1.5`, `shlex 1.3.0` et `tqdm 4.67.1`, sans supprimer
@@ -225,8 +236,8 @@ roues Torch CPU CPython 3.13 sont verrouillées dans
 Le script refuse un décalage de version avec uv. Les dépendances natives
 repérées dans PyAV et Piper, que les métadonnées Python ne décrivent pas toutes,
 sont consignées dans `licenses/native-components.lock.json`. Leurs textes sont
-épinglés ; les versions exactes des sources de certains sous-composants et leurs
-attributions restent à rapprocher des recettes de construction amont.
+épinglés ; le manifeste des sources correspondant au quatrième tour complète
+le rapprochement des composants copyleft avec leurs recettes de construction.
 
 ## Copyleft et travail avant diffusion publique
 
@@ -246,14 +257,57 @@ reste AGPL-3.0-only dans `LICENSE`. Les détections de textes sont des alertes �
 qualifier, pas une décision juridique automatique. Les modèles de voix et leurs
 jeux de données, téléchargés en dehors des verrous, ne sont pas couverts ici.
 
-**Les notices ne remplacent pas le code source correspondant.** Avant une
-bêta publique, préparer et rendre disponibles les sources exactes, patches et
-recettes nécessaires des composants copyleft distribués, conserver leurs
-attributions et vérifier les modalités LGPL permettant le remplacement des
-bibliothèques. Le seul dépôt THÉRÈSE et les liens amont ne prouvent pas cette
-obligation remplie, en particulier pour les roues natives et le onefile.
-Voir la [FAQ officielle GNU sur la redistribution binaire](https://www.gnu.org/licenses/gpl-faq.html#UnchangedJustBinary).
-Les entrées marquées pour revue identifient explicitement la dette documentaire.
+**Les sources correspondantes sont décrites dans `licenses/copyleft-sources.json`.**
+Le manifeste rattache 27 composants aux entrées de l'inventaire, avec version,
+licence, URL et SHA-256 de l'archive téléchargée. Les recettes de roues sont
+épinglées au commit et leur copie locale est contrôlée. Les archives de dépôt
+PyAV, pyav-ffmpeg et Piper conservent les scripts et les correctifs de construction.
+La source MSYS2 libiconv 1.19-1 inclut ses trois correctifs ; ses onze sections PE
+concordent avec celles de la DLL de la roue Windows. Les preuves complémentaires
+figurent dans `licenses/copyleft-version-evidence.json`.
+
+Le correctif amont `ffmpeg.patch` déplace x264/x265 du groupe GPL au groupe
+VERSION3 de configure, et les bibliothèques annoncent LGPL-3.0. Cette étiquette
+ne supprime pas les obligations GPL de ces codecs : le manifeste retient
+prudemment GPL-3.0-or-later pour la combinaison et conserve le correctif exact.
+
+```bash
+# Hors réseau : couverture complète, inventaire, preuves et recettes.
+python scripts/copyleft_sources.py verifier
+# Téléchargements vérifiés ; réutilise uniquement les fichiers dont le hash est exact.
+python scripts/copyleft_sources.py assembler .work-t2/sources-copyleft
+```
+
+Le garde refuse toute entrée copyleft sans source ou exclusion justifiée, un
+inventaire périmé, une preuve modifiée, une recette absente ou une source signalée
+manquante. Le manifeste couvre aussi les portions MPL détectées, `adodbapi` de
+pywin32 et `autocommand` de setuptools, par prudence. Les choix Apache-2.0 pour
+caldav/DOMPurify et MIT pour r-efi sont explicites. Les exceptions PyInstaller et
+GCC, les hooks de construction et les notices concernant seulement des tests
+sont motivés séparément ; aucune exemption ne s'applique à tout paquet permissif.
+
+La CI et chaque build de release exécutent `verifier`. Le job `sources-copyleft`
+assemble les archives, leurs recettes, le manifeste, les preuves et un
+`LISEZMOI-SOURCES.txt`, puis joint `THERESE-sources-copyleft.tar.gz` au brouillon de
+la même version. Les builds des installeurs dépendent de la réussite de ce job.
+Un téléchargement absent ou d'empreinte différente empêche donc leur publication.
+Un corpus local partiel reste inspectable, mais `assembler` termine en erreur
+si le manifeste signale une source manquante.
+
+La tête de `THIRD_PARTY_LICENSES` indique cette pièce jointe et l'engagement de
+conservation : pendant toute la distribution des binaires, au moins trois ans
+après leur dernière distribution, et aussi longtemps qu'un support ou des pièces
+de rechange sont proposés pour cette version. Ce choix conservateur reprend la
+borne la plus stricte de GPL-3.0 §6b ; la fourniture simultanée sur le même site
+suit §6d, qui ne prescrit pas à lui seul un délai fixe de trois ans. L'exploitation
+des releases doit effectivement respecter cette durée ; la CI ne peut garantir
+la conservation future d'une pièce jointe.
+
+La disponibilité des sources ne valide pas les modalités de remplacement ou de
+reliaison LGPL dans le moteur onefile, ni toute la redistribution du produit.
+Ces modalités et les signatures réelles restent à vérifier sur les plateformes.
+Voir la [GPL-3.0, section 6](https://www.gnu.org/licenses/gpl-3.0.html#section6) et
+la [FAQ GNU sur les binaires](https://www.gnu.org/licenses/gpl-faq.html#UnchangedJustBinary).
 
 ## Première CI à examiner
 

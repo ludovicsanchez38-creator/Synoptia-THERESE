@@ -1,5 +1,5 @@
 {
-  "locks": "07de94028d8d0b39e8b5eb2c8b8e87eb7549990ff723eccde98c492ebfeb338d",
+  "locks": "85b7634a42b7a69d324a49167f90155e51245eb24ec36e9b8433a53fee35be5f",
   "packages": [
     {
       "id": "cargo:adler2@2.0.1",
@@ -3893,9 +3893,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-core-foundation@0.3.2",
@@ -3924,9 +3925,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-core-graphics@0.3.2",
@@ -3955,9 +3957,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-encode@4.1.0",
@@ -4032,9 +4035,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-io-surface@0.3.2",
@@ -4063,9 +4067,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-osa-kit@0.3.2",
@@ -4094,9 +4099,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-quartz-core@0.3.2",
@@ -4125,9 +4131,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-ui-kit@0.3.2",
@@ -4156,9 +4163,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2-web-kit@0.3.2",
@@ -4187,9 +4195,10 @@
           "text": "# License\n\nThe licensing of these crates is a bit complicated:\n- The crates `objc2`, `block2`, `objc2-foundation` and `objc2-encode` are\n  [currently][#23] licensed under [the MIT license][MIT].\n- All other crates are trio-licensed under the [Zlib], [Apache-2.0] or [MIT]\n  license, at your option.\n\nFurthermore, the crates are (usually automatically) derived from Apple SDKs,\nand that may have implications for licensing, see below for details.\n\n[#23]: https://github.com/madsmtm/objc2/issues/23\n[MIT]: https://opensource.org/license/MIT\n[Zlib]: https://zlib.net/zlib_license.html\n[Apache-2.0]: https://www.apache.org/licenses/LICENSE-2.0\n\n\n## Apple SDKs\n\nThese crates are derived from Apple SDKs shipped with Xcode. You can obtain a\ncopy of the Xcode license at:\n\nhttps://www.apple.com/legal/sla/docs/xcode.pdf\n\nOr by typing `xcodebuild -license` in your terminal.\n\nFrom reading the license, it is unclear whether distributing derived works\nsuch as these crates are allowed?\n\nBut in any case, to practically use these crates, you will have to link, and\nthat only works when you have the correct Xcode SDK available to provide the\nrequired `.tbd` files, which is why we choose to still use the normal SPDX\nidentifiers in the crates (Xcode is required to use the crates, and when using\nXcode you have already agreed to the Xcode license)."
         }
       ],
-      "provenance": "Attribution nommée absente de l’archive et du LICENSE.md amont au commit .cargo_vcs_info.json ; liens de licences et réserve Apple conservés. PROVISOIRE : release refusée.",
+      "provenance": "Aucun titulaire nommé en amont ; archive verrouillée et arbre complet au commit vérifiés dans licenses/attribution-sources.json. L'auteur du workspace est une métadonnée, pas une ligne de copyright.",
       "review_required": true,
-      "attribution_missing": true
+      "attribution_missing": true,
+      "attribution_status": "no-holder-named-upstream"
     },
     {
       "id": "cargo:objc2@0.6.3",

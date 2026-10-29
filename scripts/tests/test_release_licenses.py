@@ -90,6 +90,13 @@ class LicensesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.m.validate_inventory([row], [row])
 
+    def test_header_points_to_sources_of_same_release_and_retention(self):
+        header = self.m.render([], 'hash')
+        self.assertIn('THERESE-sources-copyleft.tar.gz', header)
+        self.assertIn('de la même version', header)
+        self.assertIn('trois ans', header)
+        self.assertIn('GPL-3.0', header)
+
     def test_siphasher_and_rsa_have_full_terms_and_original_attributions(self):
         rows = {r['id']: r for r in json.loads((self.m.ROOT / self.m.INVENTORY).read_text())['packages']}
         for key in ['cargo:siphasher@0.3.11', 'cargo:siphasher@1.0.1', 'python:rsa@4.9.1']:

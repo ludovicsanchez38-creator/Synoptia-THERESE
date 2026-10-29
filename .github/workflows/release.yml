@@ -43,9 +43,50 @@ jobs:
     uses: ./.github/workflows/tests-e2e.yml
     secrets: inherit
 
+  sources-copyleft:
+    name: Assembler et joindre les sources correspondantes
+    needs:
+    - preflight
+    - ci
+    - e2e
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: '3.12'
+    - name: Vérifier le manifeste des sources
+      run: python scripts/copyleft_sources.py verifier
+    - name: Assembler les sources et vérifier leurs empreintes
+      run: |-
+        python scripts/copyleft_sources.py assembler .work-t2/sources-copyleft
+        tar -czf .work-t2/THERESE-sources-copyleft.tar.gz -C .work-t2/sources-copyleft .
+    - name: Joindre les sources au brouillon de la même version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        RELEASE_BODY: |
+          ## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
+
+          Installeurs disponibles ci-dessous.
+
+          ### Notes
+          - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu'il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
+          - **Mises à jour automatiques (depuis 0.23)** : l'app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l'installation en un clic.
+          - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l'app.
+          - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
+          - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
+      run: |-
+        if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          printf '%s' "$RELEASE_BODY" > .work-t2/sources-release-notes.md
+          gh release create "$RELEASE_TAG" --draft --prerelease --title "THÉRÈSE $RELEASE_TAG" --notes-file .work-t2/sources-release-notes.md
+        fi
+        gh release upload "$RELEASE_TAG" .work-t2/THERESE-sources-copyleft.tar.gz --clobber
+
   build:
     name: Build ${{ matrix.platform.name }}
-    needs: [preflight, ci, e2e]
+    needs: [preflight, ci, e2e, sources-copyleft]
     strategy:
       fail-fast: false
       matrix:
@@ -118,7 +159,9 @@ jobs:
           python scripts/install_cpu_torch.py
 
       - name: Contrôler les licences tierces
-        run: python scripts/third_party_licenses.py check
+        run: |
+          python scripts/third_party_licenses.py check
+          python scripts/copyleft_sources.py verifier
       - name: Préparer la signature Apple ou ad hoc
         if: runner.os == 'macOS'
         env:

@@ -1,0 +1,1984 @@
+{
+  "schema": 1,
+  "inventory_sha256": "2b0ecffa38112732d138825f8b07e574c2f3e8ed9549f8d64a159668dc3c8340",
+  "retention": "Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).",
+  "components": [
+    {
+      "component": "alsa-lib",
+      "version": "1.2.14",
+      "license": "LGPL-2.1-or-later",
+      "packages": [
+        "native:alsa-lib@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.14.tar.bz2",
+        "sha256": "be9c88a0b3604367dd74167a2b754a35e142f670292ae47a2fdef27a2ee97a32",
+        "filename": "alsa-lib-1.2.14.tar.bz2"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "ffmpeg",
+      "version": "8.1.1",
+      "license": "GPL-3.0-or-later",
+      "packages": [
+        "native:ffmpeg@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ffmpeg.org/releases/ffmpeg-8.1.1.tar.xz",
+        "sha256": "b6863adde98898f42602017462871b5f6333e65aec803fdd7a6308639c52edf3",
+        "filename": "ffmpeg-8.1.1.tar.xz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json. Le correctif ffmpeg.patch déplace x264/x265 hors de la liste GPL de configure ; malgré l’étiquette LGPL-3.0 observée dans les binaires, la combinaison est traitée ici sous GPL-3.0-or-later."
+    },
+    {
+      "component": "gmp",
+      "version": "6.3.0",
+      "license": "LGPL-3.0-or-later OR GPL-2.0-or-later",
+      "packages": [
+        "native:gmp@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz",
+        "sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+        "filename": "gmp-6.3.0.tar.xz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "libunistring",
+      "version": "1.4.2",
+      "license": "LGPL-3.0-or-later OR GPL-2.0-or-later",
+      "packages": [
+        "native:libunistring@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/libunistring/libunistring-1.4.2.tar.gz",
+        "sha256": "e82664b170064e62331962126b259d452d53b227bb4a93ab20040d846fec01d8",
+        "filename": "libunistring-1.4.2.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "nettle-hogweed",
+      "version": "3.10.2",
+      "license": "LGPL-3.0-or-later OR GPL-2.0-or-later",
+      "packages": [
+        "native:nettle-hogweed@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz",
+        "sha256": "fe9ff51cb1f2abb5e65a6b8c10a92da0ab5ab6eaf26e7fc2b675c45f1fb519b5",
+        "filename": "nettle-3.10.2.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "gnutls",
+      "version": "3.8.13",
+      "license": "LGPL-2.1-or-later",
+      "packages": [
+        "native:gnutls@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.13.tar.xz",
+        "sha256": "ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e",
+        "filename": "gnutls-3.8.13.tar.xz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "lame",
+      "version": "3.100",
+      "license": "LGPL-2.0-or-later",
+      "packages": [
+        "native:lame@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://deb.debian.org/debian/pool/main/l/lame/lame_3.100.orig.tar.gz",
+        "sha256": "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e",
+        "filename": "lame_3.100.orig.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "x264",
+      "version": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55 (core 165)",
+      "license": "GPL-2.0-or-later",
+      "packages": [
+        "native:x264@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://code.videolan.org/videolan/x264/-/archive/b35605ace3ddf7c1a5d67a2eb553f034aef41d55/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.bz2",
+        "sha256": "6eeb82934e69fd51e043bd8c5b0d152839638d1ce7aa4eea65a3fedcf83ff224",
+        "filename": "x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.bz2"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Voir aussi licenses/copyleft-version-evidence.json."
+    },
+    {
+      "component": "x265",
+      "version": "4.2+1-e444744 (archive 4.2)",
+      "license": "GPL-2.0-or-later",
+      "packages": [
+        "native:x265@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://bitbucket.org/multicoreware/x265_git/downloads/x265_4.2.tar.gz",
+        "sha256": "40b1ea0453e0309f0eba934e0ddf533f8f6295966679e8894e8f1c1c8d5e1210",
+        "filename": "x265_4.2.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "evidence": "Recette PyAV v17.1.0 → FFmpeg 8.1.1-2 : scripts/pkg.py fixe URL et SHA-256 de cette archive. Les recettes complètes avec correctifs sont jointes. Le fichier x265Version.txt contient e444744, distance 1 du tag 4.2, comme les trois binaires."
+    },
+    {
+      "component": "libiconv",
+      "version": "1.19 (MSYS2 1.19-1)",
+      "license": "LGPL-2.1-or-later",
+      "packages": [
+        "native:libiconv@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/libiconv/libiconv-1.19.tar.gz",
+        "sha256": "88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6",
+        "filename": "libiconv-1.19.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/PKGBUILD",
+          "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475",
+          "filename": "libiconv-1.19-1-PKGBUILD.txt",
+          "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+          "local_path": "licenses/recipes/libiconv-1.19-1-PKGBUILD.txt"
+        }
+      ],
+      "evidence": "Export _libiconv_version=0x0113. Les onze sections PE de la DLL de la roue sont identiques au paquet MSYS2 1.19-1, même empreinte chacune ; seuls en-tête/surplus diffèrent. Recette et archive MSYS2 source avec les trois correctifs jointes."
+    },
+    {
+      "component": "espeak-ng",
+      "version": "1.52.0.1 / 212928b394a96e8fd2096616bfd54e17845c48f6",
+      "license": "GPL-3.0-or-later",
+      "packages": [
+        "native:espeak-ng@python:piper-tts@1.4.2"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/espeak-ng/espeak-ng/tar.gz/212928b394a96e8fd2096616bfd54e17845c48f6",
+        "sha256": "1f201cabc73e569a7cb434d40d3b30980f923010f8ecd4d1c4ae94691ac2888a",
+        "filename": "espeak-ng-212928b394a96e8fd2096616bfd54e17845c48f6.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2",
+          "filename": "piper-1.4.2-CMakeLists.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-CMakeLists.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/pyproject.toml",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43",
+          "filename": "piper-1.4.2-pyproject.toml.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-pyproject.toml.txt"
+        }
+      ],
+      "evidence": "CMakeLists.txt de Piper 1.4.2 fixe exactement ce GIT_TAG ; les trois espeakbridge contiennent 1.52.0.1."
+    },
+    {
+      "component": "piper-tts",
+      "version": "1.4.2",
+      "license": "GPL-3.0-or-later",
+      "packages": [
+        "python:piper-tts@1.4.2",
+        "python:piper-tts@1.4.2/wheel-linux",
+        "python:piper-tts@1.4.2/wheel-macos",
+        "python:piper-tts@1.4.2/wheel-windows"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/86/53/3c636c4250e8cb489c50c6dda9d64400518e8c6600576850104b3232b562/piper_tts-1.4.2.tar.gz",
+        "sha256": "dbe7e5391d7657f8a5f2b7ce7cdbafc5bbc559de2af15e5299ce298323eade51",
+        "filename": "piper_tts-1.4.2.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2",
+          "filename": "piper-1.4.2-CMakeLists.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-CMakeLists.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/pyproject.toml",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43",
+          "filename": "piper-1.4.2-pyproject.toml.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-pyproject.toml.txt"
+        }
+      ],
+      "evidence": "Archive source exacte de uv.lock. Les recettes du même tag sont également jointes pour les roues."
+    },
+    {
+      "component": "recurring-ical-events",
+      "version": "3.8.0",
+      "license": "GPL-3.0-or-later",
+      "packages": [
+        "python:recurring-ical-events@3.8.0"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/83/90/05dfcc02ecf58bd170305c88db9e3e3933aa73a1f8abac2b326c7fdc1a98/recurring_ical_events-3.8.0.tar.gz",
+        "sha256": "3e8c7c35d9bd8956a7ab91afad51477c60d972e1236d3fd1b55087a66bce7d04",
+        "filename": "recurring_ical_events-3.8.0.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+    },
+    {
+      "component": "x-wr-timezone",
+      "version": "2.0.1",
+      "license": "LGPL-3.0-or-later",
+      "packages": [
+        "python:x-wr-timezone@2.0.1"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/79/2b/8ae5f59ab852c8fe32dd37c1aa058eb98aca118fec2d3af5c3cd56fffb7b/x_wr_timezone-2.0.1.tar.gz",
+        "sha256": "9166c40e6ffd4c0edebabc354e1a1e2cffc1bb473f88007694793757685cc8c3",
+        "filename": "x_wr_timezone-2.0.1.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+    },
+    {
+      "component": "certifi",
+      "version": "2026.10.19",
+      "license": "MPL-2.0",
+      "packages": [
+        "python:certifi@2026.10.19"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/a6/bd/1436c50cc46699de0230fbaacc1d1de7bfec413176099949e9d5112e88f2/certifi-2026.10.19.tar.gz",
+        "sha256": "035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae",
+        "filename": "certifi-2026.10.19.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+    },
+    {
+      "component": "pathspec",
+      "version": "1.0.3",
+      "license": "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+      "packages": [
+        "python:pathspec@1.0.3"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/4c/b2/bb8e495d5262bfec41ab5cb18f522f1012933347fb5d9e62452d446baca2/pathspec-1.0.3.tar.gz",
+        "sha256": "bac5cf97ae2c2876e2d25ebb15078eb04d76e4b98921ee31c6f85ade8b59444d",
+        "filename": "pathspec-1.0.3.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+    },
+    {
+      "component": "tqdm",
+      "version": "4.67.1",
+      "license": "MPL-2.0 AND MIT",
+      "packages": [
+        "python:tqdm@4.67.1"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz",
+        "sha256": "f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2",
+        "filename": "tqdm-4.67.1.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+    },
+    {
+      "component": "grpcio",
+      "version": "1.76.0",
+      "license": "Apache License 2.0",
+      "packages": [
+        "python:grpcio@1.76.0"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/b6/e0/318c1ce3ae5a17894d5791e87aea147587c9e702f24122cc7a5c8bbaeeb1/grpcio-1.76.0.tar.gz",
+        "sha256": "7be78388d6da1a25c0d5ec506523db58b18be22d9c37d8d3a32c08be4987bd73",
+        "filename": "grpcio-1.76.0.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive source exacte de uv.lock. Conservation prudente des sources incluant les portions MPL signalées dans les notices."
+    },
+    {
+      "component": "cssparser-macros@0.6.1",
+      "version": "0.6.1",
+      "license": "MPL-2.0",
+      "packages": [
+        "cargo:cssparser-macros@0.6.1"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/cssparser-macros/cssparser-macros-0.6.1.crate",
+        "sha256": "13b588ba4ac1a99f7f2964d24b3d896ddc6bf847ee3855dbd4366f058cfcd331",
+        "filename": "cssparser-macros-0.6.1.crate"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+    },
+    {
+      "component": "cssparser@0.29.6",
+      "version": "0.29.6",
+      "license": "MPL-2.0",
+      "packages": [
+        "cargo:cssparser@0.29.6"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/cssparser/cssparser-0.29.6.crate",
+        "sha256": "f93d03419cb5950ccfd3daf3ff1c7a36ace64609a1a8746d493df1ca0afde0fa",
+        "filename": "cssparser-0.29.6.crate"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+    },
+    {
+      "component": "dtoa-short@0.3.5",
+      "version": "0.3.5",
+      "license": "MPL-2.0",
+      "packages": [
+        "cargo:dtoa-short@0.3.5"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/dtoa-short/dtoa-short-0.3.5.crate",
+        "sha256": "cd1511a7b6a56299bd043a9c167a6d2bfb37bf84a6dfceaba651168adfb43c87",
+        "filename": "dtoa-short-0.3.5.crate"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+    },
+    {
+      "component": "option-ext@0.2.0",
+      "version": "0.2.0",
+      "license": "MPL-2.0",
+      "packages": [
+        "cargo:option-ext@0.2.0"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/option-ext/option-ext-0.2.0.crate",
+        "sha256": "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d",
+        "filename": "option-ext-0.2.0.crate"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+    },
+    {
+      "component": "selectors@0.24.0",
+      "version": "0.24.0",
+      "license": "MPL-2.0",
+      "packages": [
+        "cargo:selectors@0.24.0"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/selectors/selectors-0.24.0.crate",
+        "sha256": "0c37578180969d00692904465fb7f6b3d50b9a2b952b87c23d0e2e5cb5013416",
+        "filename": "selectors-0.24.0.crate"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Archive Cargo verrouillée contenant les sources ; portions MPL conservées par prudence."
+    },
+    {
+      "component": "axe-core",
+      "version": "4.12.1 / 5d002cca1f862a0699d9f1bb7b5a1ec334fa1b22",
+      "license": "MPL-2.0",
+      "packages": [
+        "npm:axe-core@4.12.1"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/dequelabs/axe-core/tar.gz/5d002cca1f862a0699d9f1bb7b5a1ec334fa1b22",
+        "sha256": "7c29b93fca17942c5f10a6798a472b292326e21af31aa415fb2dc167e98ffc4d",
+        "filename": "axe-core-4.12.1-source.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "gitHead du registre npm de la version exacte, intégrité de chacune des distributions comparée au verrou. Archive du dépôt incluant les sources et recettes de compilation."
+    },
+    {
+      "component": "lightningcss",
+      "version": "1.30.2 / 400f705e63e139c326f480aed11e1416f5a3a61f",
+      "license": "MPL-2.0",
+      "packages": [
+        "npm:lightningcss-android-arm64@1.30.2",
+        "npm:lightningcss-darwin-arm64@1.30.2",
+        "npm:lightningcss-darwin-x64@1.30.2",
+        "npm:lightningcss-freebsd-x64@1.30.2",
+        "npm:lightningcss-linux-arm-gnueabihf@1.30.2",
+        "npm:lightningcss-linux-arm64-gnu@1.30.2",
+        "npm:lightningcss-linux-arm64-musl@1.30.2",
+        "npm:lightningcss-linux-x64-gnu@1.30.2",
+        "npm:lightningcss-linux-x64-musl@1.30.2",
+        "npm:lightningcss-win32-arm64-msvc@1.30.2",
+        "npm:lightningcss-win32-x64-msvc@1.30.2",
+        "npm:lightningcss@1.30.2"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/parcel-bundler/lightningcss/tar.gz/400f705e63e139c326f480aed11e1416f5a3a61f",
+        "sha256": "07b0993eea3e7e2b7879a312751c899c45f3760dd5aa07f385b739fc1e5c2b64",
+        "filename": "lightningcss-1.30.2-source.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "gitHead du registre npm de la version exacte, intégrité de chacune des distributions comparée au verrou. Archive du dépôt incluant les sources et recettes de compilation."
+    },
+    {
+      "component": "adodbapi (pywin32)",
+      "version": "pywin32 311 / adodbapi 2.6.2.0",
+      "license": "LGPL-2.1-or-later",
+      "packages": [
+        "python:pywin32@311"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/mhammond/pywin32/tar.gz/8b328dffac71b7afaf2d72f47c4048f27a32f6c8",
+        "sha256": "0e6dfb82f37d80e67c26ef0e8effe4a6a032db98e9430587f9b78f604e7326e2",
+        "filename": "pywin32-311-source.tar.gz"
+      },
+      "status": "available",
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/mhammond/pywin32/8b328dffac71b7afaf2d72f47c4048f27a32f6c8/setup.py",
+          "sha256": "e2f5d2ee17b2f80a8576a0ad8110fd990de69f750b52bf75add8611f1e7ce559",
+          "filename": "pywin32-311-setup.py.txt",
+          "commit": "8b328dffac71b7afaf2d72f47c4048f27a32f6c8",
+          "local_path": "licenses/recipes/pywin32-311-setup.py.txt"
+        }
+      ],
+      "evidence": "Tag b311 résolu à ce commit. Le répertoire adodbapi sous LGPL est contenu dans cette source intégrale et la roue verrouillée."
+    },
+    {
+      "component": "autocommand (setuptools)",
+      "version": "2.2.2",
+      "license": "LGPL-3.0-only",
+      "packages": [
+        "python:setuptools@84.2.1"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/5b/18/774bddb96bc0dc0a2b8ac2d2a0e686639744378883da0fc3b96a54192d7a/autocommand-2.2.2.tar.gz",
+        "sha256": "878de9423c5596491167225c2a455043c3130fb5b7286ac83443d45e74955f34",
+        "filename": "autocommand-2.2.2.tar.gz"
+      },
+      "status": "available",
+      "recipes": [],
+      "evidence": "Version fixée dans le répertoire setuptools/_vendor/autocommand-2.2.2.dist-info de l’archive verrouillée. La source vendue de setuptools est jointe aussi pour conserver ses éventuelles adaptations."
+    }
+  ],
+  "exclusions": [
+    {
+      "packages": [
+        "python:caldav@2.2.3"
+      ],
+      "basis": "alternative",
+      "reason": "Choix explicite Apache-2.0, alternative autorisée par GPL-3.0-or-later OR Apache-2.0. Notices Apache et attributions conservées.",
+      "notices": [
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/COPYING.APACHE",
+          "sha256": "283ea6cc2997a1a70da0049e09adf9317bb60ca1b51279b65196b83a69e1996b"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/COPYING.GPL",
+          "sha256": "c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/build-1.3.0.dist-info/licenses/LICENSE",
+          "sha256": "414c0cddaab7a2df0924368f31cd1fdce949682703e7c564a13065405ef06ef6"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/certifi-2025.11.12.dist-info/licenses/LICENSE",
+          "sha256": "b5ca961ec84fc51985a066eca8200d6717145311fecfcd9fe4a4e73fb7c4eb02"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/cffi-2.0.0.dist-info/licenses/AUTHORS",
+          "sha256": "e2ac00c00fd2a82f79c055cd0baa52622eb9710998282d2c734f6ece581069a6"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/cffi-2.0.0.dist-info/licenses/LICENSE",
+          "sha256": "5e2a79a5ccf5bdb3e5077d8faba9a28787ed04f7a2a5551914e4d40bfd298750"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/charset_normalizer-3.4.4.dist-info/licenses/LICENSE",
+          "sha256": "4867fa6c6a50fd9fce52312c9c69e5735a739427551e17ac629c2a0235972917"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/cryptography-46.0.3.dist-info/licenses/LICENSE",
+          "sha256": "d25f2af9b444c7da2fc1da15feb0d3d2579f8c6500155d9bcb58f9469ce50c88"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/cryptography-46.0.3.dist-info/licenses/LICENSE.APACHE",
+          "sha256": "771e6c9f11721b0937412fe85df813fd2c1ff089a033d3a168f3c1609421ca08"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/cryptography-46.0.3.dist-info/licenses/LICENSE.BSD",
+          "sha256": "0131a9b49fad291f74a9a9aa195e4aca3e4fc717bd5e6fdc186264b130db98d9"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/docutils-0.22.3.dist-info/licenses/COPYING.rst",
+          "sha256": "40f2ce1609c3fec8b6cb5e88c49ee308b0e4d7f6d01fdf4399a533eb8df76cbe"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/docutils-0.22.3.dist-info/licenses/licenses/BSD-0-Clause.rst",
+          "sha256": "4a61805f146a59a9a859ba152f3aec10529cd1bc7bab5da238a0acc1c335408f"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/docutils-0.22.3.dist-info/licenses/licenses/BSD-2-Clause.rst",
+          "sha256": "6fd025d4be46a4bf8e39f5f40de615e31fee7b3eaf6fe2098ab3e5418697fef7"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/docutils-0.22.3.dist-info/licenses/licenses/gpl-3-0.txt",
+          "sha256": "c5e786ebcbdf1a789817c5b9294f7a5935c1dc282eca28cf139396c7335f3560"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/id-1.5.0.dist-info/LICENSE",
+          "sha256": "283ea6cc2997a1a70da0049e09adf9317bb60ca1b51279b65196b83a69e1996b"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/idna-3.11.dist-info/licenses/LICENSE.md",
+          "sha256": "18d82189249be8b54d713d92a5838cd01203db0a25882065bcead8a0bf852c2a"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/jaraco.classes-3.4.0.dist-info/LICENSE",
+          "sha256": "dc0589ce4ab317782b1bfe5b24d1a3528eed3c028be8f197c516997c777cdd0c"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/jaraco.context-6.0.1.dist-info/LICENSE",
+          "sha256": "dc0589ce4ab317782b1bfe5b24d1a3528eed3c028be8f197c516997c777cdd0c"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/jaraco_functools-4.3.0.dist-info/licenses/LICENSE",
+          "sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/jeepney-0.9.0.dist-info/licenses/LICENSE",
+          "sha256": "98699a27b067e3bd7a4722287da3ceaef36417d14bd0652fd55aea30681b2972"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/keyring-25.7.0.dist-info/licenses/LICENSE",
+          "sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/markdown_it_py-4.0.0.dist-info/licenses/LICENSE",
+          "sha256": "0ba435672405d5d8e06436c22300fa3446f635ef05695b27be149ca19192e006"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/markdown_it_py-4.0.0.dist-info/licenses/LICENSE.markdown-it",
+          "sha256": "9fc15c73fe40f618d0485364854183747b26d00163810e8ba4a8f8f1cd68f851"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/mdurl-0.1.2.dist-info/LICENSE",
+          "sha256": "a2cb3b36aa4358018d3d5c08ebad8ac14a10797083e24eeb3cb455421e8b1928"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/more_itertools-10.8.0.dist-info/licenses/LICENSE",
+          "sha256": "80911c1a87dc5dcef01e7e2b65025389420d3e894d4545285e9f4449a434b42e"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/nh3-0.3.2.dist-info/licenses/LICENSE",
+          "sha256": "1cbbdf5cf2a97cd2a7bc71ea72eec04e8f57d202c993fbbb45a362c518373754"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/packaging-25.0.dist-info/licenses/LICENSE",
+          "sha256": "e4dce5f35b25e78e3cfce568d20f4125821bfd61bce2d008f28656c4b576bd35"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/packaging-25.0.dist-info/licenses/LICENSE.APACHE",
+          "sha256": "4bf96504d6e83ce5c6fc7167f1795d9ceaa68e70ab86bc5d08ab93184262bbbe"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/packaging-25.0.dist-info/licenses/LICENSE.BSD",
+          "sha256": "afceb0fbc62baddb3de56e9d74074536f84847d493ff0ce736adafcd497c0f46"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/AUTHORS.txt",
+          "sha256": "2e5be5524863bdf40c5110f3b26d9f6809634eeb7130408afd0ad02b0690eceb"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/LICENSE.txt",
+          "sha256": "7704d0a79a86182991afdba364e9c3ff5a14116d35fe7ed187c370ea9a7dcc3f"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/cachecontrol/LICENSE.txt",
+          "sha256": "99c7a9754699dfb1c32390e72b389c3faec7971f5893cc07cc81b81f58e6dc94"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/certifi/LICENSE",
+          "sha256": "b5ca961ec84fc51985a066eca8200d6717145311fecfcd9fe4a4e73fb7c4eb02"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/dependency_groups/LICENSE.txt",
+          "sha256": "c160a1708368539c23c46567699067553dc0adcc080cd633e278a1dd49920c4b"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/distlib/LICENSE.txt",
+          "sha256": "392e5a5da394ad24d084c9e8a63f8e0ae3f08f26ff57ca53fd0df02e355e1fcd"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/distro/LICENSE",
+          "sha256": "6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/idna/LICENSE.md",
+          "sha256": "7f2b88a9067c2f0c3841aa1da47354d34e6b9a26531071b75e3e60962abec906"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/msgpack/COPYING",
+          "sha256": "ffb4180fb7e90bde94d4f4fc2e599866d71a11524fafcb5c5e5ca29adeee98ab"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/packaging/LICENSE",
+          "sha256": "e4dce5f35b25e78e3cfce568d20f4125821bfd61bce2d008f28656c4b576bd35"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/packaging/LICENSE.APACHE",
+          "sha256": "4bf96504d6e83ce5c6fc7167f1795d9ceaa68e70ab86bc5d08ab93184262bbbe"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/packaging/LICENSE.BSD",
+          "sha256": "afceb0fbc62baddb3de56e9d74074536f84847d493ff0ce736adafcd497c0f46"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/pkg_resources/LICENSE",
+          "sha256": "dc0589ce4ab317782b1bfe5b24d1a3528eed3c028be8f197c516997c777cdd0c"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/platformdirs/LICENSE",
+          "sha256": "35bd7407ee2537364dcfd3075fecac94bc8d57308b241b477303a9dc25e33f39"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/pygments/LICENSE",
+          "sha256": "e0a04358a9a926507ae497776b472aa19cb233a897aa0eccb5a2e11b8f955f91"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/pyproject_hooks/LICENSE",
+          "sha256": "98699a27b067e3bd7a4722287da3ceaef36417d14bd0652fd55aea30681b2972"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/requests/LICENSE",
+          "sha256": "7fb46adff9025f553b882b84ce593c37008d1e83019e4fdd6b21f8c800d0c485"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/resolvelib/LICENSE",
+          "sha256": "a9302b18164278fe317d20565256783eb75fba65fe3090549ee5dee9bc488dba"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/rich/LICENSE",
+          "sha256": "9037f8a0420eea1543f676b4f4561b33c0bca32dff64c440de080d2555653c82"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/tomli/LICENSE",
+          "sha256": "bea8ef66252796e862df522e75b3251f7502ff6d8cf01d66125ac72621493d73"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/tomli_w/LICENSE",
+          "sha256": "bea8ef66252796e862df522e75b3251f7502ff6d8cf01d66125ac72621493d73"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/truststore/LICENSE",
+          "sha256": "f1573342835243751e718283c20c4941d967e04275ac07011ce0f10347b92ae7"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip-25.3.dist-info/licenses/src/pip/_vendor/urllib3/LICENSE.txt",
+          "sha256": "7d216d981eabaa66e6d327c2a9061599a8ef3e6f9d14e4ce48260425a4f7be07"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/cachecontrol/LICENSE.txt",
+          "sha256": "99c7a9754699dfb1c32390e72b389c3faec7971f5893cc07cc81b81f58e6dc94"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/certifi/LICENSE",
+          "sha256": "b5ca961ec84fc51985a066eca8200d6717145311fecfcd9fe4a4e73fb7c4eb02"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/dependency_groups/LICENSE.txt",
+          "sha256": "c160a1708368539c23c46567699067553dc0adcc080cd633e278a1dd49920c4b"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/distlib/LICENSE.txt",
+          "sha256": "392e5a5da394ad24d084c9e8a63f8e0ae3f08f26ff57ca53fd0df02e355e1fcd"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/distro/LICENSE",
+          "sha256": "6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/idna/LICENSE.md",
+          "sha256": "7f2b88a9067c2f0c3841aa1da47354d34e6b9a26531071b75e3e60962abec906"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/msgpack/COPYING",
+          "sha256": "ffb4180fb7e90bde94d4f4fc2e599866d71a11524fafcb5c5e5ca29adeee98ab"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/packaging/LICENSE",
+          "sha256": "e4dce5f35b25e78e3cfce568d20f4125821bfd61bce2d008f28656c4b576bd35"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/packaging/LICENSE.APACHE",
+          "sha256": "4bf96504d6e83ce5c6fc7167f1795d9ceaa68e70ab86bc5d08ab93184262bbbe"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/packaging/LICENSE.BSD",
+          "sha256": "afceb0fbc62baddb3de56e9d74074536f84847d493ff0ce736adafcd497c0f46"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/pkg_resources/LICENSE",
+          "sha256": "dc0589ce4ab317782b1bfe5b24d1a3528eed3c028be8f197c516997c777cdd0c"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/platformdirs/LICENSE",
+          "sha256": "35bd7407ee2537364dcfd3075fecac94bc8d57308b241b477303a9dc25e33f39"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/pygments/LICENSE",
+          "sha256": "e0a04358a9a926507ae497776b472aa19cb233a897aa0eccb5a2e11b8f955f91"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/LICENSE",
+          "sha256": "98699a27b067e3bd7a4722287da3ceaef36417d14bd0652fd55aea30681b2972"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/requests/LICENSE",
+          "sha256": "7fb46adff9025f553b882b84ce593c37008d1e83019e4fdd6b21f8c800d0c485"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/LICENSE",
+          "sha256": "a9302b18164278fe317d20565256783eb75fba65fe3090549ee5dee9bc488dba"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/rich/LICENSE",
+          "sha256": "9037f8a0420eea1543f676b4f4561b33c0bca32dff64c440de080d2555653c82"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/tomli/LICENSE",
+          "sha256": "bea8ef66252796e862df522e75b3251f7502ff6d8cf01d66125ac72621493d73"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/tomli_w/LICENSE",
+          "sha256": "bea8ef66252796e862df522e75b3251f7502ff6d8cf01d66125ac72621493d73"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/truststore/LICENSE",
+          "sha256": "f1573342835243751e718283c20c4941d967e04275ac07011ce0f10347b92ae7"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pip/_vendor/urllib3/LICENSE.txt",
+          "sha256": "7d216d981eabaa66e6d327c2a9061599a8ef3e6f9d14e4ce48260425a4f7be07"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pycparser-2.23.dist-info/LICENSE",
+          "sha256": "e988696e18e81116bf1684edb9bc8fb267aa1625f6a3abb388b91657a2284ef8"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pygments-2.19.2.dist-info/licenses/AUTHORS",
+          "sha256": "6af335f13b63fa8ea5edd1a144b8c50eaec9f55066a002f670c4d03de93560a7"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pygments-2.19.2.dist-info/licenses/LICENSE",
+          "sha256": "e0a04358a9a926507ae497776b472aa19cb233a897aa0eccb5a2e11b8f955f91"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/pyproject_hooks-1.2.0.dist-info/LICENSE",
+          "sha256": "98699a27b067e3bd7a4722287da3ceaef36417d14bd0652fd55aea30681b2972"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/readme_renderer-44.0.dist-info/LICENSE",
+          "sha256": "74f1c9127a52df2c3a97824a7e7ac7eace026839599009a64c0a24ad7cd460e3"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/requests-2.32.5.dist-info/licenses/LICENSE",
+          "sha256": "7fb46adff9025f553b882b84ce593c37008d1e83019e4fdd6b21f8c800d0c485"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/requests_toolbelt-1.0.0.dist-info/AUTHORS.rst",
+          "sha256": "a6eb4feacdd47eea6f535606b8c217561f888253d5e13267d1464427dc816a65"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/requests_toolbelt-1.0.0.dist-info/LICENSE",
+          "sha256": "11d74ce085a88c018321980b02a78ccde90315e7ae27caf98863722fb0355512"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/rfc3986-2.0.0.dist-info/LICENSE",
+          "sha256": "2fe531fa9f23ee635d3b0143f530e704d473503c4f1260a534125e10dd14b538"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/rich-14.2.0.dist-info/LICENSE",
+          "sha256": "9037f8a0420eea1543f676b4f4561b33c0bca32dff64c440de080d2555653c82"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/secretstorage-3.5.0.dist-info/licenses/LICENSE",
+          "sha256": "a33137806ada37c118036c367698d2058a10b7d8d73e1a5746eb8234833ae0de"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/twine-6.2.0.dist-info/licenses/LICENSE",
+          "sha256": "5c6b85ef1d51ba6f3deeb387a146f3c678d45ba875722b42c85b29ee3efda9f7"
+        },
+        {
+          "package": "python:caldav@2.2.3",
+          "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/urllib3-2.6.0.dist-info/licenses/LICENSE.txt",
+          "sha256": "10ab1c6afed65594c6cb06559d138185732c220bd5b7294da7e60e7eee381c3d"
+        }
+      ],
+      "selected_license": "Apache-2.0"
+    },
+    {
+      "packages": [
+        "cargo:r-efi@5.3.0"
+      ],
+      "basis": "alternative",
+      "reason": "Choix explicite MIT parmi MIT OR Apache-2.0 OR LGPL-2.1-or-later ; notice MIT conservée.",
+      "notices": [
+        {
+          "package": "cargo:r-efi@5.3.0",
+          "path": "licenses/supplements/cargo-r-efi-5.3.0.attribution.txt",
+          "sha256": "f30e9ee33dbf771d1066168d0d8c68401a81340f2241dd726f7891364696c7f9"
+        },
+        {
+          "package": "cargo:r-efi@5.3.0",
+          "path": "licenses/supplements/MIT.txt",
+          "sha256": "c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace"
+        },
+        {
+          "package": "cargo:r-efi@5.3.0",
+          "path": "licenses/supplements/Apache-2.0.txt",
+          "sha256": "c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c"
+        },
+        {
+          "package": "cargo:r-efi@5.3.0",
+          "path": "licenses/supplements/LGPL-2.1.txt",
+          "sha256": "10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43"
+        }
+      ],
+      "selected_license": "MIT"
+    },
+    {
+      "packages": [
+        "npm:dompurify@3.4.17"
+      ],
+      "basis": "alternative",
+      "reason": "Choix explicite Apache-2.0 dans MPL-2.0 OR Apache-2.0 ; notices conservées.",
+      "notices": [
+        {
+          "package": "npm:dompurify@3.4.17",
+          "path": "package/LICENSE",
+          "sha256": "283ea6cc2997a1a70da0049e09adf9317bb60ca1b51279b65196b83a69e1996b"
+        },
+        {
+          "package": "npm:dompurify@3.4.17",
+          "path": "package/LICENSE-MPL",
+          "sha256": "c76f740d1521b9bed9ca7a04ad526c310493c62621b1341d623b431736533b30"
+        },
+        {
+          "package": "npm:dompurify@3.4.17",
+          "path": "package/src/license_header",
+          "sha256": "8cd07c535061d09cec0ac643b8d5131d1755c74181970a3224a32089a0923383"
+        }
+      ],
+      "selected_license": "Apache-2.0"
+    },
+    {
+      "packages": [
+        "python:pyinstaller@6.18.0"
+      ],
+      "basis": "exception",
+      "reason": "Exception PyInstaller : le bootloader et son incorporation dans le programme distribué bénéficient de l’exception explicite. Aucun changement apporté à PyInstaller lui-même.",
+      "notices": [
+        {
+          "package": "python:pyinstaller@6.18.0",
+          "path": "pyinstaller-6.18.0/COPYING.txt",
+          "sha256": "b0e0a2989c3890520143a606ecdb3043290a56f31fcb258157fb2a4bfe036800"
+        },
+        {
+          "package": "python:pyinstaller@6.18.0",
+          "path": "pyinstaller-6.18.0/bootloader/waflib/LICENSE",
+          "sha256": "965f9dbb2fa58737413b7e98a2916784493ed650e3e6913614b2cfd48bedba0e"
+        },
+        {
+          "package": "python:pyinstaller@6.18.0",
+          "path": "pyinstaller-6.18.0/bootloader/zlib/LICENSE",
+          "sha256": "b97211bdc621e146c2e0288867d711930a2a536c92e849bff52aeacdf06c530c"
+        },
+        {
+          "package": "python:pyinstaller@6.18.0",
+          "path": "pyinstaller-6.18.0/doc/license.rst",
+          "sha256": "f7fdf5558509e2e7c4b8d946f392da92db79d26d42ebf2efd6e8d86202c82493"
+        }
+      ]
+    },
+    {
+      "packages": [
+        "python:pyinstaller-hooks-contrib@2026.0"
+      ],
+      "basis": "notice-scope",
+      "reason": "Les hooks de construction GPL sont exécutés lors du build ; les runtime hooks intégrés à l’exécutable sont expressément Apache-2.0 selon LICENSE. Le paquet de hooks de construction n’est pas une bibliothèque du moteur.",
+      "notices": [
+        {
+          "package": "python:pyinstaller-hooks-contrib@2026.0",
+          "path": "pyinstaller_hooks_contrib-2026.0/LICENSE",
+          "sha256": "e0f26791e2ae4726a8b7e8cde0e1fb4ccb0eabfe1be921781f6cf2db918612b3"
+        }
+      ]
+    },
+    {
+      "packages": [
+        "native:gcc-runtime@python:av@17.1.0",
+        "python:numpy@2.4.1/wheel-linux",
+        "python:numpy@2.4.1/wheel-macos",
+        "python:numpy@2.4.1/wheel-windows",
+        "python:scipy@1.17.0",
+        "python:scipy@1.17.0/wheel-linux",
+        "python:scipy@1.17.0/wheel-macos",
+        "python:scipy@1.17.0/wheel-windows"
+      ],
+      "basis": "exception",
+      "reason": "GCC Runtime Library Exception 3.1 : libgcc/libgfortran/libquadmath issus d’une compilation éligible, liés à des modules indépendants. Les bibliothèques runtime ne sont pas modifiées ; notices et exception conservées. Pas d’exemption générale des programmes GCC.",
+      "notices": [
+        {
+          "package": "native:gcc-runtime@python:av@17.1.0",
+          "path": "licenses/supplements/GCC-exception-3.1.txt",
+          "sha256": "f130d9ea1a943d4c29b71d85c0dffc5d2eaa7737bb82af13a4856c508588deae"
+        },
+        {
+          "package": "native:gcc-runtime@python:av@17.1.0",
+          "path": "licenses/supplements/GPL-3.0.txt",
+          "sha256": "c3bc1fd94148c28485e8bab1d5a28edbc8e3870f2bd9be7127c68c8b7a0ea5df"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/LICENSE.txt",
+          "sha256": "e0306d0127d4ee3456f4348989424fbe0b7ebaacec8a184c9c743bda1ff24cf8"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
+          "sha256": "6cb5d166693b521ddefc8b405ff1f81f66ba80f4458d28370085cc7db1232835"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+          "sha256": "77da5699114f301c212a178a1be505d5a38809f6a8f04b6c6458bdfd3a1e867c"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/highway/LICENSE",
+          "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
+          "sha256": "10b923ec82d196f0ef0bdfd3d66037374c8bcc59695de8497fa3215d20b346d3"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+          "sha256": "eb69249e31598fb6fc6a9401670676d423076afb57730c7e1d5476b5288bf3f3"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
+          "sha256": "a646829968cf88f9597ba02682571a060f3a8dd2e2dcc45290e67b088663c392"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
+          "sha256": "1ddacf662e1c462a709c9e6623d37e46c2d5111e16a1a0ac8b7b6138c8485a7d"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
+          "sha256": "d44b3a69c83be87d012fd33208676688b7150f728689162fc937089ab49df0db"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/ma/LICENSE",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/LICENSE.md",
+          "sha256": "e9fe34ee16e7ea9e4f5c9f12f17c61ead931dda48c8fb69ec2f983bc4e682d2b"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+          "sha256": "469778be8f33d54e1bcaab28c281cc472916d2d273f835e55bc487d30503face"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+          "sha256": "0e111337b25494a773106695f0e799f642b8567aaacca4f116a74a8177179156"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
+          "sha256": "ca0b1a204ec948cee248ad7bcd59588ca7b89b6b1230cbf6caac850a39633761"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
+          "sha256": "edc1d4988fb0481dac5e8280701a081cb71279fc3306c5f4ff94b128a30cc354"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
+          "sha256": "da48c5d4b1ae92c5b44f096b499f28eab7145aed0d30d3bf808166191388d950"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
+          "sha256": "268b0ca06759d31ea3ca68dd35f20e877916e927b1c2a835e4592a3c4354b1f9"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy/_core/include/numpy/random/LICENSE.txt",
+          "sha256": "6cb5d166693b521ddefc8b405ff1f81f66ba80f4458d28370085cc7db1232835"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy/ma/LICENSE",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-linux",
+          "path": "numpy/random/LICENSE.md",
+          "sha256": "e9fe34ee16e7ea9e4f5c9f12f17c61ead931dda48c8fb69ec2f983bc4e682d2b"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/LICENSE.txt",
+          "sha256": "a3dbf971bb9659a3bd2cb1fa953013233bd579bf8f3c5b4c72c9ffcd35e7a0a5"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
+          "sha256": "6cb5d166693b521ddefc8b405ff1f81f66ba80f4458d28370085cc7db1232835"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+          "sha256": "77da5699114f301c212a178a1be505d5a38809f6a8f04b6c6458bdfd3a1e867c"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/highway/LICENSE",
+          "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
+          "sha256": "10b923ec82d196f0ef0bdfd3d66037374c8bcc59695de8497fa3215d20b346d3"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+          "sha256": "eb69249e31598fb6fc6a9401670676d423076afb57730c7e1d5476b5288bf3f3"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
+          "sha256": "a646829968cf88f9597ba02682571a060f3a8dd2e2dcc45290e67b088663c392"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
+          "sha256": "1ddacf662e1c462a709c9e6623d37e46c2d5111e16a1a0ac8b7b6138c8485a7d"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
+          "sha256": "d44b3a69c83be87d012fd33208676688b7150f728689162fc937089ab49df0db"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/ma/LICENSE",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/LICENSE.md",
+          "sha256": "e9fe34ee16e7ea9e4f5c9f12f17c61ead931dda48c8fb69ec2f983bc4e682d2b"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+          "sha256": "469778be8f33d54e1bcaab28c281cc472916d2d273f835e55bc487d30503face"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+          "sha256": "0e111337b25494a773106695f0e799f642b8567aaacca4f116a74a8177179156"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
+          "sha256": "ca0b1a204ec948cee248ad7bcd59588ca7b89b6b1230cbf6caac850a39633761"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
+          "sha256": "edc1d4988fb0481dac5e8280701a081cb71279fc3306c5f4ff94b128a30cc354"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
+          "sha256": "da48c5d4b1ae92c5b44f096b499f28eab7145aed0d30d3bf808166191388d950"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
+          "sha256": "268b0ca06759d31ea3ca68dd35f20e877916e927b1c2a835e4592a3c4354b1f9"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy/_core/include/numpy/random/LICENSE.txt",
+          "sha256": "6cb5d166693b521ddefc8b405ff1f81f66ba80f4458d28370085cc7db1232835"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy/ma/LICENSE",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-macos",
+          "path": "numpy/random/LICENSE.md",
+          "sha256": "e9fe34ee16e7ea9e4f5c9f12f17c61ead931dda48c8fb69ec2f983bc4e682d2b"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/LICENSE.txt",
+          "sha256": "9120d7091cd3cce3ad9cea1f1b90a8fdbfdedecf3d46f3e43ddb7109b1102393"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
+          "sha256": "6cb5d166693b521ddefc8b405ff1f81f66ba80f4458d28370085cc7db1232835"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+          "sha256": "77da5699114f301c212a178a1be505d5a38809f6a8f04b6c6458bdfd3a1e867c"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/highway/LICENSE",
+          "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
+          "sha256": "10b923ec82d196f0ef0bdfd3d66037374c8bcc59695de8497fa3215d20b346d3"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+          "sha256": "eb69249e31598fb6fc6a9401670676d423076afb57730c7e1d5476b5288bf3f3"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
+          "sha256": "a646829968cf88f9597ba02682571a060f3a8dd2e2dcc45290e67b088663c392"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
+          "sha256": "1ddacf662e1c462a709c9e6623d37e46c2d5111e16a1a0ac8b7b6138c8485a7d"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
+          "sha256": "d44b3a69c83be87d012fd33208676688b7150f728689162fc937089ab49df0db"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/ma/LICENSE",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/LICENSE.md",
+          "sha256": "e9fe34ee16e7ea9e4f5c9f12f17c61ead931dda48c8fb69ec2f983bc4e682d2b"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+          "sha256": "469778be8f33d54e1bcaab28c281cc472916d2d273f835e55bc487d30503face"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+          "sha256": "0e111337b25494a773106695f0e799f642b8567aaacca4f116a74a8177179156"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
+          "sha256": "ca0b1a204ec948cee248ad7bcd59588ca7b89b6b1230cbf6caac850a39633761"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
+          "sha256": "edc1d4988fb0481dac5e8280701a081cb71279fc3306c5f4ff94b128a30cc354"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
+          "sha256": "da48c5d4b1ae92c5b44f096b499f28eab7145aed0d30d3bf808166191388d950"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy-2.4.1.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
+          "sha256": "268b0ca06759d31ea3ca68dd35f20e877916e927b1c2a835e4592a3c4354b1f9"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy/_core/include/numpy/random/LICENSE.txt",
+          "sha256": "6cb5d166693b521ddefc8b405ff1f81f66ba80f4458d28370085cc7db1232835"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy/ma/LICENSE",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "package": "python:numpy@2.4.1/wheel-windows",
+          "path": "numpy/random/LICENSE.md",
+          "sha256": "e9fe34ee16e7ea9e4f5c9f12f17c61ead931dda48c8fb69ec2f983bc4e682d2b"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/LICENSE.txt",
+          "sha256": "82c16efd3c8cdc70b0ee7f6f2376346d1ceeff3f44b8a8440e17ec0dbddf4a5d"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/PKG-INFO:License",
+          "sha256": "f2ed8e3d72ea8d55fa2a9bc83cb532d5d65541bbb9d770df553b4ab4b793e33c"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/doc/source/_static/scipy-mathjax/LICENSE",
+          "sha256": "283ea6cc2997a1a70da0049e09adf9317bb60ca1b51279b65196b83a69e1996b"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_build_utils/tempita/LICENSE.txt",
+          "sha256": "f670e5eb27313bdf9ce78ce29925fffb09831ccb46b8f03e087bd940a8f83599"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/_uarray/LICENSE",
+          "sha256": "e9af8b41012ff00d45489815cdf3d880269ef4ca82503a2da368c4c8bd72eb51"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/array_api_compat/LICENSE",
+          "sha256": "be69a5b9e937da459b8b495d9773f2e50bfe4d7617b67d1f700bc3e58bc6213c"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/array_api_extra/LICENSE",
+          "sha256": "3bf0b3c0511a75fa2e0a069c0f880ba05c77710c0bdd3a111d66ac2d8e392017"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/cobyqa/.github/workflows/license.yml",
+          "sha256": "19c39a74a7182a1e22ba416fc2d61fa49fdca5d44278def09aa8ace60b835316"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/cobyqa/LICENSE",
+          "sha256": "d4f42f5976da9e4f4b516f256e8ed9f465abe1b7407bc62120b3509e8ccc7fc0"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/cobyqa/doc/source/license.rst",
+          "sha256": "79df7b0692bc945ad893597f5f1fb841739493b61760d07dcd2190673695189d"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/pocketfft/LICENSE.md",
+          "sha256": "1ddacf662e1c462a709c9e6623d37e46c2d5111e16a1a0ac8b7b6138c8485a7d"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/pyprima/LICENCE.txt",
+          "sha256": "13dd70fcd5be7980d8603709d2a522b39a71678e940f1816dc167501ee6f381d"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/_lib/unuran/license.txt",
+          "sha256": "cbcf8a308c2418a86d93b5272f9658dc6e28279685b41d1276725b34a69104f4"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/fft/_pocketfft/LICENSE.md",
+          "sha256": "d34b20c2f84a5cf4df81c1f31e9ee449342247d088c074f4abe8a72a0e8d32e4"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/integrate/src/LICENSE_DOP",
+          "sha256": "15c20f2cd5678fb1bd2975429b8e3db8e13ea80cc4769869d66f925b0f450cff"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/io/_fast_matrix_market/LICENSE.txt",
+          "sha256": "eb1c1538020418c6f9abab3c7956f43e1f41a4bb64f7de59c392ded759532b62"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/LICENSE-MIT",
+          "sha256": "f969086056bf8d196df89d0c08a1f10027794b9e98571b556764311c2fd36224"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-Boost",
+          "sha256": "8d8291caf1cee26d23acf3eb67c9f9a2d58f1c681b16a4fbe8cbfb9e3c0b5a9b"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/ndimage/LICENSE.txt",
+          "sha256": "eb0a26b37372946a5a526922ccafac5e718a2e24df052a34103f01e886f7fe78"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/optimize/_direct/AUTHORS",
+          "sha256": "a81091b02af7897874ed9bc6cd8a092c6c6509441668db1889d3e4c9cda0cb46"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/optimize/_direct/COPYING",
+          "sha256": "4e58cec98b0d13bf8f6c03e023af866e49dad7efd617a7a8af2b28cb1f3ef491"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/optimize/tnc/LICENSE",
+          "sha256": "41df710166586f7a3064979107753891934f5e94ba1b9147d7e5158a32099c95"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/sparse/linalg/_dsolve/SuperLU/License.txt",
+          "sha256": "92fabf766a21a5de997e4ec45b6597425f983a705bac104b9669f6cb8fda7956"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/sparse/linalg/_eigen/arpack/arnaud/LICENSE",
+          "sha256": "693a7899a3efc5feaeca524d990d50bbd8d1d6eaa15f896552a2597ed4469b85"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/sparse/linalg/_propack/PROPACK/LICENSE",
+          "sha256": "693a7899a3efc5feaeca524d990d50bbd8d1d6eaa15f896552a2597ed4469b85"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/spatial/COPYING_QHULL.txt",
+          "sha256": "a6324222aae6067f8956fa94839c139f3d84066f945bffabc6b865989411ec03"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/scipy/stats/biasedurn/license.txt",
+          "sha256": "4643d783fe50c552beeb37c1086db37a5973800c27f836b84f2c3f4f9a9b16a0"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/boost_math/math/LICENSE",
+          "sha256": "8d8291caf1cee26d23acf3eb67c9f9a2d58f1c681b16a4fbe8cbfb9e3c0b5a9b"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/highs/AUTHORS",
+          "sha256": "cd1c40bfabbb30bcf07ddab3f2b6391bfff7fdabcdfcdcbb3035330221b4bdaf"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/highs/LICENSE.txt",
+          "sha256": "02c8d10932d8a0af7bd04ea3eee1ddd7d07bc5238d702b23c00f44bf7768e877"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/highs/extern/LICENCE_1_0.txt",
+          "sha256": "8d8291caf1cee26d23acf3eb67c9f9a2d58f1c681b16a4fbe8cbfb9e3c0b5a9b"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/highs/extern/filereaderlp/LICENSE",
+          "sha256": "4d0dad72a40e05521a333175813a2e75a8e7a308399e0a19006d2b62fd14baa0"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/highs/extern/pdqsort/license.txt",
+          "sha256": "dfa6758e4a87209498a4994875a3fb86775df983ecb8f3496ef09117a2fe5959"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/qhull_r/libqhull_r/COPYING.txt",
+          "sha256": "a6324222aae6067f8956fa94839c139f3d84066f945bffabc6b865989411ec03"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/subprojects/xsf/LICENSE",
+          "sha256": "9ee7ec3e92fc3ff72f4c94e605cce645162dc59a4003ba73a26cd2f8fcd174a2"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/tools/wheels/LICENSE_linux.txt",
+          "sha256": "88b0709fdd278a0f5f7517a2fc8d728229813ea725dd2eccaacfbd954b535e88"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/tools/wheels/LICENSE_osx.txt",
+          "sha256": "78116bc1ad9835bea730b427ca2ddbbffa2601143a08e4bfd56854e68e4bcf58"
+        },
+        {
+          "package": "python:scipy@1.17.0",
+          "path": "scipy-1.17.0/tools/wheels/LICENSE_win32.txt",
+          "sha256": "c7f2d4a0ccdd10c0485c88721923c9de2f758c049da1e6e37e034c5ab7d1fafb"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-linux",
+          "path": "scipy-1.17.0.dist-info/LICENSE.txt",
+          "sha256": "3d534e861446492b86221ef78d406d0cd16f8ab92dd361a16da273813e374259"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-linux",
+          "path": "scipy-1.17.0.dist-info/METADATA:License",
+          "sha256": "52d1d97f5bb029bbb7e526be58cfce27dddd012c1541a5bd9e7c0318d44c5b16"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-linux",
+          "path": "scipy/_lib/_uarray/LICENSE",
+          "sha256": "e9af8b41012ff00d45489815cdf3d880269ef4ca82503a2da368c4c8bd72eb51"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-linux",
+          "path": "scipy/fft/_pocketfft/LICENSE.md",
+          "sha256": "d34b20c2f84a5cf4df81c1f31e9ee449342247d088c074f4abe8a72a0e8d32e4"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-linux",
+          "path": "scipy/integrate/LICENSE_DOP",
+          "sha256": "15c20f2cd5678fb1bd2975429b8e3db8e13ea80cc4769869d66f925b0f450cff"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-linux",
+          "path": "scipy/spatial/qhull_src/COPYING_QHULL.txt",
+          "sha256": "a6324222aae6067f8956fa94839c139f3d84066f945bffabc6b865989411ec03"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-macos",
+          "path": "scipy-1.17.0.dist-info/LICENSE.txt",
+          "sha256": "71fae1234c5696ed08b5726be60fcc88a3c33cef93209b4b88b0a4a2193d6ecb"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-macos",
+          "path": "scipy-1.17.0.dist-info/METADATA:License",
+          "sha256": "9721740853ba56a7e5a77185608c83b808a92f6730d7c108006fca0a9f71d1a3"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-macos",
+          "path": "scipy/_lib/_uarray/LICENSE",
+          "sha256": "e9af8b41012ff00d45489815cdf3d880269ef4ca82503a2da368c4c8bd72eb51"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-macos",
+          "path": "scipy/fft/_pocketfft/LICENSE.md",
+          "sha256": "d34b20c2f84a5cf4df81c1f31e9ee449342247d088c074f4abe8a72a0e8d32e4"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-macos",
+          "path": "scipy/integrate/LICENSE_DOP",
+          "sha256": "15c20f2cd5678fb1bd2975429b8e3db8e13ea80cc4769869d66f925b0f450cff"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-macos",
+          "path": "scipy/spatial/qhull_src/COPYING_QHULL.txt",
+          "sha256": "a6324222aae6067f8956fa94839c139f3d84066f945bffabc6b865989411ec03"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-windows",
+          "path": "scipy-1.17.0.dist-info/LICENSE.txt",
+          "sha256": "13e9f93803066ebace3a790961c122281a4ce50d3bf67669bd91d4ca99b75098"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-windows",
+          "path": "scipy-1.17.0.dist-info/METADATA:License",
+          "sha256": "1c8af4d84c75e2c589baf00755be0ad69994985256524820d490d41f8748c437"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-windows",
+          "path": "scipy/_lib/_uarray/LICENSE",
+          "sha256": "e9af8b41012ff00d45489815cdf3d880269ef4ca82503a2da368c4c8bd72eb51"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-windows",
+          "path": "scipy/fft/_pocketfft/LICENSE.md",
+          "sha256": "d34b20c2f84a5cf4df81c1f31e9ee449342247d088c074f4abe8a72a0e8d32e4"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-windows",
+          "path": "scipy/integrate/LICENSE_DOP",
+          "sha256": "15c20f2cd5678fb1bd2975429b8e3db8e13ea80cc4769869d66f925b0f450cff"
+        },
+        {
+          "package": "python:scipy@1.17.0/wheel-windows",
+          "path": "scipy/spatial/qhull_src/COPYING_QHULL.txt",
+          "sha256": "a6324222aae6067f8956fa94839c139f3d84066f945bffabc6b865989411ec03"
+        }
+      ]
+    },
+    {
+      "packages": [
+        "python:pillow@13.0.0/wheel-windows"
+      ],
+      "basis": "notice-scope",
+      "reason": "Le texte GPL de cette roue concerne l’alternative FreeType ; la FreeType License (FTL), présente intégralement dans la même notice, est retenue avec son attribution. Pas de libimagequant GPL livré dans la roue inventoriée.",
+      "notices": [
+        {
+          "package": "python:pillow@13.0.0/wheel-windows",
+          "path": "pillow-13.0.0.dist-info/licenses/LICENSE",
+          "sha256": "f83a1dd7d88d884f3c9a2c9199ddfa310789de0d5058d075a23a2135ef788deb"
+        }
+      ]
+    },
+    {
+      "packages": [
+        "python:lxml@6.1.1"
+      ],
+      "basis": "not-distributed",
+      "reason": "GPL.txt concerne le lanceur de tests test.py, copyright Shuttleworth Foundation, exclu du code lxml installé. LICENSES.txt de la source 6.1.1 explicite cette portée ; le cœur lxml est BSD, libxml2/libxslt MIT.",
+      "notices": [
+        {
+          "package": "python:lxml@6.1.1",
+          "path": "lxml-6.1.1/LICENSE.txt",
+          "sha256": "4fca82098ab206401848c7cff1c75755cc90af3fd42cee9099ac2186c73d0f85"
+        },
+        {
+          "package": "python:lxml@6.1.1",
+          "path": "lxml-6.1.1/doc/licenses/BSD.txt",
+          "sha256": "9640a0d1461e60803399e29d52f105c933c6a62c7d0d856e78610d09c7c83897"
+        },
+        {
+          "package": "python:lxml@6.1.1",
+          "path": "lxml-6.1.1/doc/licenses/GPL.txt",
+          "sha256": "9c613d3aedc4f0c47693d2b0a679cb421fd65cfc7f36ff14c452523954c4e123"
+        },
+        {
+          "package": "python:lxml@6.1.1",
+          "path": "lxml-6.1.1/doc/licenses/elementtree.txt",
+          "sha256": "3f871889993872c260ec3455fa1caf062783ca3fbe8bc0770053df883e8b6a1a"
+        }
+      ]
+    },
+    {
+      "packages": [
+        "python:torch@2.9.1",
+        "python:torch@2.9.1/wheel-cpu-linux",
+        "python:torch@2.9.1/wheel-cpu-windows"
+      ],
+      "basis": "notice-scope",
+      "reason": "Les sections GPL du relevé agrégé visent les tests cpr/test et les outils vcpkg/ports/ffnvcodec, sans code lié dans les roues ; la section finale du runtime GCC/libgomp bénéficie de GCC Runtime Library Exception 3.1. Cette exclusion n’étend pas l’exception aux autres composants.",
+      "notices": [
+        {
+          "package": "python:torch@2.9.1",
+          "path": "torch-2.9.1.dist-info/licenses/LICENSE",
+          "sha256": "ea03c7c388611a11cc39cd6651417d004359791e42db90d3d9aa6dfad9868b75"
+        },
+        {
+          "package": "python:torch@2.9.1",
+          "path": "torch-2.9.1.dist-info/licenses/NOTICE",
+          "sha256": "3f926a18f5a24f5ca1ae94edf196c23b0567b45cf3919d6cdc6cfd4b36c0dd2d"
+        },
+        {
+          "package": "python:torch@2.9.1/wheel-cpu-linux",
+          "path": "torch-2.9.1+cpu.dist-info/licenses/LICENSE",
+          "sha256": "11c265f2a12feb3b2bd1aa305d8813f07765e7e7f9f99fe09314bafe78ed718a"
+        },
+        {
+          "package": "python:torch@2.9.1/wheel-cpu-linux",
+          "path": "torch-2.9.1+cpu.dist-info/licenses/NOTICE",
+          "sha256": "3f926a18f5a24f5ca1ae94edf196c23b0567b45cf3919d6cdc6cfd4b36c0dd2d"
+        },
+        {
+          "package": "python:torch@2.9.1/wheel-cpu-windows",
+          "path": "torch-2.9.1+cpu.dist-info/LICENSE",
+          "sha256": "4e1666324f9c26aadc6166e364cda3af0fd4a1c1ae080df92890e92151c811aa"
+        },
+        {
+          "package": "python:torch@2.9.1/wheel-cpu-windows",
+          "path": "torch-2.9.1+cpu.dist-info/NOTICE",
+          "sha256": "3f926a18f5a24f5ca1ae94edf196c23b0567b45cf3919d6cdc6cfd4b36c0dd2d"
+        }
+      ]
+    }
+  ],
+  "supporting_sources": [
+    {
+      "url": "https://codeload.github.com/PyAV-Org/PyAV/tar.gz/97241598792f4c980c32458187154c7c999d68b3",
+      "sha256": "f4ff776ee23cf0b514e3682382cd88f9cf31da9f43599b680bad6a275be24c41",
+      "filename": "PyAV-17.1.0-build-tree.tar.gz",
+      "commit": "97241598792f4c980c32458187154c7c999d68b3"
+    },
+    {
+      "url": "https://codeload.github.com/PyAV-Org/pyav-ffmpeg/tar.gz/b84838a003b1626152ef530750d5c3e0022c3db9",
+      "sha256": "9bf73ed500b28b379b8e3ffce90f7f33b71dbe56c3cda6050de79caa15807ade",
+      "filename": "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz",
+      "commit": "b84838a003b1626152ef530750d5c3e0022c3db9"
+    },
+    {
+      "url": "https://codeload.github.com/OHF-Voice/piper1-gpl/tar.gz/d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+      "sha256": "ebf535912b5760e33ff5c01a483bfc9c58b13c18c7c6ccfb4cec0184dc14f747",
+      "filename": "piper-1.4.2-build-tree.tar.gz",
+      "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d"
+    },
+    {
+      "url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libiconv-1.19-1.src.tar.zst",
+      "sha256": "74428280c17094da5b702c29b2e1a0abae59556ea5dfdd65705cc8ccc1e000fb",
+      "filename": "mingw-w64-libiconv-1.19-1.src.tar.zst"
+    },
+    {
+      "url": "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz",
+      "sha256": "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+      "filename": "setuptools-84.2.1.tar.gz"
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "licenses/copyleft-version-evidence.json",
+      "sha256": "c62f46f5262d7d5603c8a876e031e5d96ba86ca9aee270ddceec781c01f37fd8"
+    }
+  ]
+}

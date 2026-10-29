@@ -30,7 +30,9 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install PyYAML==6.0.3
       - run: python -m unittest discover -s scripts/tests -p 'test_*.py'
-      - run: python scripts/third_party_licenses.py check
+      - run: |
+          python scripts/third_party_licenses.py check
+          python scripts/copyleft_sources.py verifier
 
   lint:
     name: Lint (Python)

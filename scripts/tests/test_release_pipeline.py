@@ -36,6 +36,23 @@ class PipelineTests(unittest.TestCase):
         self.assertLess(names.index('Vérifier Authenticode'), names.index('Publier les artefacts vérifiés'))
         self.assertLess(names.index('Contrôler les licences tierces'), names.index('Build THÉRÈSE (Tauri)'))
 
+    def test_copyleft_guards_and_release_asset_precede_binary_publication(self):
+        ci = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())['jobs']
+        steps = ci['licences-signature']['steps']
+        self.assertTrue(any('copyleft_sources.py verifier' in s.get('run', '') and
+                            not s.get('continue-on-error') for s in steps))
+        release = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
+        self.assertIn('sources-copyleft', release['build']['needs'])
+        steps = release['sources-copyleft']['steps']
+        runs = [s.get('run', '') for s in steps]
+        verify = next(i for i, r in enumerate(runs) if 'copyleft_sources.py verifier' in r)
+        assemble = next(i for i, r in enumerate(runs) if 'copyleft_sources.py assembler' in r)
+        upload = next(i for i, r in enumerate(runs) if 'gh release upload' in r)
+        self.assertLess(verify, assemble)
+        self.assertLess(assemble, upload)
+        self.assertTrue(any('THERESE-sources-copyleft.tar.gz' in r for r in runs))
+        self.assertFalse(any(s.get('continue-on-error') for s in steps))
+
     def test_microsoft_action_is_official_and_pinned(self):
         steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
         actions = [s for s in steps if s.get('uses', '').startswith('Azure/artifact-signing-action@')]

@@ -22,10 +22,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from email.parser import Parser
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import attribution_evidence
+
 ROOT = Path(__file__).resolve().parents[1]
 LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json', 'licenses/attribution-sources.json']
 INVENTORY = 'licenses/inventory.json'
 OUTPUT = 'THIRD_PARTY_LICENSES'
+SOURCE_AVAILABILITY = "Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d)."
 
 
 def digest(data):
@@ -403,8 +407,9 @@ def upstream_verbatim(row, notice, sources):
     return False
 
 
-def incomplete_attributions(rows, attribution_sources=()):
-    return [r['id'] for r in rows if r.get('attribution_missing') or
+def incomplete_attributions(rows, attribution_sources=(), root=ROOT):
+    return [r['id'] for r in rows if ((r.get('attribution_missing') or r.get('attribution_status') == attribution_evidence.STATUS)
+            and not attribution_evidence.accepted(r, attribution_sources, root)) or
             any(generic_attribution(n['text']) and not upstream_verbatim(r, n, attribution_sources)
                 for n in r['notices'])]
 
@@ -448,7 +453,7 @@ def collect(row, cache):
     return result
 
 
-def validate_inventory(packages, rows, *, release=True, attribution_sources=()):
+def validate_inventory(packages, rows, *, release=True, attribution_sources=(), root=ROOT):
     expected = {p['id']: p for p in packages}
     actual = {p['id']: p for p in rows}
     if len(actual) != len(rows) or set(expected) != set(actual):
@@ -461,7 +466,7 @@ def validate_inventory(packages, rows, *, release=True, attribution_sources=()):
             raise ValueError(f'Licences déclarées sans texte intégral : {key} : {", ".join(missing)}')
         if any(row.get(field) != expected[key].get(field) for field in ('artifact', 'integrity')):
             raise ValueError(f'Archive périmée : {key}')
-    if release and (missing := incomplete_attributions(rows, attribution_sources)):
+    if release and (missing := incomplete_attributions(rows, attribution_sources, root)):
         raise ValueError('Livrable PROVISOIRE : attributions génériques ou manquantes : ' + ', '.join(missing))
 
 
@@ -487,20 +492,20 @@ def apply_override(row, override, root):
         notices = [n for n in row['notices'] if n['path'] not in local_paths] + notices
     return {**row, 'license': override['license'], 'notices': notices,
             'provenance': override['reason'], 'review_required': override.get('review_required', row.get('review_required', False)),
-            'attribution_missing': override.get('attribution_missing', row.get('attribution_missing', False))}
+            'attribution_missing': override.get('attribution_missing', row.get('attribution_missing', False)),
+            'attribution_status': override.get('attribution_status', row.get('attribution_status', ''))}
 
 
-def render(rows, fingerprint, attribution_sources=()):
-    missing = incomplete_attributions(rows, attribution_sources)
+def render(rows, fingerprint, attribution_sources=(), root=ROOT):
+    missing = incomplete_attributions(rows, attribution_sources, root)
     title = 'THÉRÈSE — Licences des composants tiers'
     if missing:
         title = 'PROVISOIRE — ' + title + ' — DIFFUSION REFUSÉE : attributions incomplètes'
-    parts = [title, 'Empreinte des verrous : ' + fingerprint,
+    parts = [title, SOURCE_AVAILABILITY, 'Empreinte des verrous : ' + fingerprint,
              'Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.',
              'La présence dans ce document ne signifie pas que le composant est embarqué.',
              'Les notices des roues natives sélectionnées complètent celles des sources.',
              'Code THÉRÈSE : https://github.com/ludovicsanchez38-creator/Synoptia-THERESE (tag de la version installée).',
-             'Les liens d’archives ci-dessous identifient les sources amont ; ils ne remplacent pas la fourniture du code source correspondant des binaires GPL/LGPL.',
              'Les modèles de voix téléchargés séparément ne sont pas couverts par les verrous.', '']
     if missing:
         parts += ['Attributions à compléter : ' + ', '.join(missing), '']
@@ -510,6 +515,9 @@ def render(rows, fingerprint, attribution_sources=()):
         parts += [row['id'], 'Licence déclarée : ' + row['license'], 'Archive : ' + row.get('artifact', ''), 'Intégrité : ' + row.get('integrity', '')]
         if any(upstream_verbatim(row, n, attribution_sources) for n in row['notices']):
             parts.append('STATUT : texte amont reproduit tel quel — preuves dans licenses/attribution-sources.json')
+        if attribution_evidence.accepted(row, attribution_sources, root):
+            parts.append('STATUT : aucun titulaire nommé en amont — preuves dans licenses/attribution-sources.json')
+            parts.append(attribution_evidence.statement(row, attribution_sources))
         if row.get('review_required'):
             parts.append('REVUE REQUISE : ' + row['provenance'])
         if flags:
@@ -569,6 +577,7 @@ def main():
         if row['id'] in overrides:
             row['provenance'] = overrides[row['id']]['reason']
             row['review_required'] = overrides[row['id']].get('review_required', row.get('review_required', False))
+            row['attribution_status'] = overrides[row['id']].get('attribution_status', row.get('attribution_status', ''))
             row['attribution_missing'] = overrides[row['id']].get('attribution_missing', row.get('attribution_missing', False))
             for source in overrides[row['id']]['notices']:
                 if 'local_path' in source:
@@ -580,8 +589,8 @@ def main():
         raise ValueError('Verrous modifiés : lancer refresh et réviser les licences')
     proof_path = root / 'licenses/attribution-sources.json'
     sources = json.loads(proof_path.read_text(encoding='utf-8')) if proof_path.exists() else []
-    validate_inventory(packages, data['packages'], release=args.command == 'check', attribution_sources=sources)
-    expected = render(data['packages'], fingerprint, attribution_sources=sources)
+    validate_inventory(packages, data['packages'], release=args.command == 'check', attribution_sources=sources, root=root)
+    expected = render(data['packages'], fingerprint, attribution_sources=sources, root=root)
     if args.command == 'check':
         check_output(root / OUTPUT, expected)
     else:

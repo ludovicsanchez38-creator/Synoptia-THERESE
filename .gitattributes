@@ -11,3 +11,12 @@
 /licenses/supplements/*.txt text eol=lf
 /licenses/attribution-sources.json text eol=lf
 /licenses/supplements/*.json text eol=lf
+
+# Sources et preuves du quatrième tour
+licenses/evidence/*.tar.gz -text
+licenses/evidence/*.crate -text
+licenses/recipes/* text eol=lf
+licenses/copyleft-sources.json text eol=lf
+licenses/copyleft-version-evidence.json text eol=lf
+scripts/attribution_evidence.py text eol=lf
+scripts/copyleft_sources.py text eol=lf
