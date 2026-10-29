@@ -1404,10 +1404,10 @@ async def create_draft(
             raise HTTPException(422, 'Choisis une seule référence de brouillon.')
         if account.provider == 'imap':
             draft_id = source_message_id
+        if not request.ai_generation_id:
+            request.ai_generation_id = source.ai_generation_id
 
     from app.services.provenance_store import provenance_mail
-    if source_message_id and not request.ai_generation_id:
-        request.ai_generation_id = source.ai_generation_id
     marque_ia = await provenance_mail(session, request.ai_generation_id, account_id)
 
     if account.provider == "imap":

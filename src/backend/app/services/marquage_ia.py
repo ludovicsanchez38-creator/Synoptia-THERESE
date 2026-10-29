@@ -7,7 +7,7 @@ import struct
 import zlib
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from xml.etree import ElementTree as ET
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -51,7 +51,7 @@ def xmp_ia(champs: dict[str, str], existant: bytes | None = None) -> bytes:
     for key, value in champs.items():
         ET.SubElement(description, f"{{{NS}}}{key}").text = value
     ET.SubElement(description, f"{{{IPTC}}}DigitalSourceType").text = SOURCE
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return bytes(ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
 def marquer_document(path: Path, champs: dict[str, str] | None) -> None:
@@ -59,12 +59,12 @@ def marquer_document(path: Path, champs: dict[str, str] | None) -> None:
         return  # Texte humain, simple conversion ou facture au formulaire.
     if path.suffix.lower() == ".pdf":
         from pypdf import PdfReader, PdfWriter
-        from pypdf.generic import DecodedStreamObject, NameObject
+        from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
         reader = PdfReader(io.BytesIO(path.read_bytes()))
         writer = PdfWriter(clone_from=reader)
         writer.add_metadata({"/ThereseIA": json.dumps(champs, ensure_ascii=False)})
-        ancien = reader.trailer["/Root"].get("/Metadata")
+        ancien = cast(DictionaryObject, reader.trailer["/Root"]).get("/Metadata")
         xmp = xmp_ia(champs, ancien.get_object().get_data() if ancien else None)
         stream = DecodedStreamObject()
         stream.set_data(xmp)

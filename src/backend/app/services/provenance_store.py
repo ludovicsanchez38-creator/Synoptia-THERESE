@@ -1,7 +1,7 @@
 """Lien local entre une génération et ses métadonnées techniques."""
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from app.models.entities import AIGeneration
 from fastapi import HTTPException
@@ -23,7 +23,7 @@ def ajouter_generation(
     if generation_id:
         record.id = generation_id
     session.add(record)
-    return record.id
+    return str(record.id)
 
 
 async def provenance_mail(
@@ -34,7 +34,7 @@ async def provenance_mail(
     record = await session.get(AIGeneration, generation_id)
     if not record or record.kind != "email" or record.owner_id != account_id:
         raise HTTPException(422, "La provenance de ce brouillon IA est introuvable pour ce compte.")
-    return json.loads(record.provenance)
+    return cast(dict[str, str], json.loads(record.provenance))
 
 
 async def provenance_sections(session: Any, section_ids: list[str]) -> dict[str, str] | None:
@@ -51,6 +51,6 @@ async def provenance_sections(session: Any, section_ids: list[str]) -> dict[str,
     )
     if not records:
         return None
-    champs = json.loads(records[-1].provenance)
+    champs: dict[str, str] = json.loads(records[-1].provenance)
     champs["fournisseur_modele"] = ",".join(sorted({f"{r.provider}/{r.model}" for r in records}))
     return champs
