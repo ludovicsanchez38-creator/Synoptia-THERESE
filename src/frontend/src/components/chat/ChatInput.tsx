@@ -55,7 +55,6 @@ import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables'
 import {
   CLOUD_CONSENT_REVOKED_EVENT,
   grantCloudConsent,
-  TOOL_READ_DATA_CATEGORY,
   MEMORY_CARDS_CATEGORY,
   memoryCardGrantsForRequest,
   hasCloudConsent,
