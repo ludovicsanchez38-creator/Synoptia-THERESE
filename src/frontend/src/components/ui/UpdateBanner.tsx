@@ -1,3 +1,4 @@
+import { automaticUpdateChecks, checkAutomaticUpdate, useAutomaticUpdateChecks } from '../../lib/updatePreference';
 import { useEffect, useState, useCallback } from 'react';
 import { Download, RefreshCw, X } from 'lucide-react';
 import { API_BASE } from '../../services/api/core';
@@ -47,18 +48,18 @@ async function installationAutomatiqueAutorisee(): Promise<boolean> {
 export function UpdateBanner() {
   const [state, setState] = useState<UpdateState>({ phase: 'idle' });
   const [dismissed, setDismissed] = useState(false);
+  const automatic = useAutomaticUpdateChecks();
 
   const checkForUpdate = useCallback(async () => {
     // Ne pas checker si on n'est pas dans Tauri
-    if (!('__TAURI__' in window)) return;
+    if (!('__TAURI__' in window) || !automaticUpdateChecks()) return;
 
     try {
       if (!(await installationAutomatiqueAutorisee())) {
         setState({ phase: 'manual' });
         return;
       }
-      const { check } = await import('@tauri-apps/plugin-updater');
-      const update = await check();
+      const update = await checkAutomaticUpdate();
 
       if (update?.available) {
         setState({
@@ -76,6 +77,7 @@ export function UpdateBanner() {
 
   // Check au montage (apres delai) + intervalle periodique
   useEffect(() => {
+    if (!automatic) return;
     const startupTimer = setTimeout(checkForUpdate, STARTUP_DELAY_MS);
 
     const intervalId = setInterval(checkForUpdate, CHECK_INTERVAL_MS);
@@ -84,7 +86,7 @@ export function UpdateBanner() {
       clearTimeout(startupTimer);
       clearInterval(intervalId);
     };
-  }, [checkForUpdate]);
+  }, [checkForUpdate, automatic]);
 
   const handleDownloadAndInstall = useCallback(async () => {
     if (!('__TAURI__' in window)) return;
