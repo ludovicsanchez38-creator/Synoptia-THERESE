@@ -7,7 +7,7 @@ import struct
 import zlib
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 from xml.etree import ElementTree as ET
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -260,6 +260,15 @@ def marquer_image(data: bytes, champs: dict[str, str]) -> bytes:
         )
         return b"RIFF" + len(body).to_bytes(4, "little") + body
     raise ValueError("Format d’image non pris en charge pour le marquage IA")
+
+
+class ParametresMIME(TypedDict, total=False):
+    ai_provenance: dict[str, str]
+
+
+def parametres_mime(champs: dict[str, str] | None) -> ParametresMIME:
+    """N'ajouter le paramètre de provenance qu'aux messages produits avec l'IA."""
+    return {"ai_provenance": champs} if champs else {}
 
 
 def entete_ia(champs: dict[str, str] | None) -> str | None:

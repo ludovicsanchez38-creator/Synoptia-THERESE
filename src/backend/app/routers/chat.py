@@ -4839,11 +4839,10 @@ async def export_conversation(
             logger.warning("Export DOCX : %s", profile_warning)
         render_markdown_docx(markdown, output_path, profile=profile)
         from app.services.marquage_ia import marquer_document, provenance_ia
-        generations = [m for m in messages if m.role == 'assistant' and m.provider and m.model]
+        generations = [(m.provider, m.model) for m in messages if m.role == 'assistant' and m.provider and m.model]
         if generations:
-            derniere = generations[-1]
-            champs = provenance_ia(derniere.provider, derniere.model)
-            champs['fournisseur_modele'] = ','.join(sorted({f'{m.provider}/{m.model}' for m in generations}))
+            champs = provenance_ia(*generations[-1])
+            champs['fournisseur_modele'] = ','.join(sorted({f'{provider}/{model}' for provider, model in generations}))
             marquer_document(output_path, champs)
     else:
         output_path.write_text(markdown, encoding="utf-8")

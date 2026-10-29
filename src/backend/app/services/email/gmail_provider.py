@@ -20,6 +20,7 @@ from app.services.gmail_service import (
     GmailService,
     format_message_for_storage,
 )
+from app.services.marquage_ia import parametres_mime
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +141,7 @@ class GmailProvider(EmailProvider):
             bcc=request.bcc if request.bcc else None,
             html=request.is_html,
             **await self._complement_du_contrat(request),
-            **({'ai_provenance': request.ai_provenance} if request.ai_provenance else {}),
+            **parametres_mime(request.ai_provenance),
         )
         return result.get("id", "")
 
@@ -154,7 +155,7 @@ class GmailProvider(EmailProvider):
             bcc=request.bcc if request.bcc else None,
             html=request.is_html,
             **await self._complement_du_contrat(request),
-            **({'ai_provenance': request.ai_provenance} if request.ai_provenance else {}),
+            **parametres_mime(request.ai_provenance),
         )
         return result.get("id", "")
 
@@ -169,7 +170,7 @@ class GmailProvider(EmailProvider):
             bcc=request.bcc if request.bcc else None,
             html=request.is_html,
             **await self._complement_du_contrat(request),
-            **({'ai_provenance': request.ai_provenance} if request.ai_provenance else {}),
+            **parametres_mime(request.ai_provenance),
         )
         return str(result.get("id", draft_id))
 

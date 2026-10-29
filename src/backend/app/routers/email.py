@@ -42,6 +42,7 @@ from app.services.encryption import decrypt_value, encrypt_value, is_value_encry
 from app.services.error_handler import message_pour_ecran
 from app.services.gmail_service import GmailService, format_message_for_storage
 from app.services.http_client import get_http_client
+from app.services.marquage_ia import parametres_mime
 from app.services.oauth import (
     GOOGLE_ALL_SCOPES,
     GOOGLE_AUTH_URL,
@@ -1363,7 +1364,7 @@ async def send_email(
             cc=request.cc,
             bcc=request.bcc,
             html=is_html,
-            **({'ai_provenance': marque_ia} if marque_ia else {}),
+            **parametres_mime(marque_ia),
         )
         return result
 
@@ -1453,7 +1454,7 @@ async def create_draft(
             cc=request.cc,
             bcc=request.bcc,
             html=request.html,
-            **({'ai_provenance': marque_ia} if marque_ia else {}),
+            **parametres_mime(marque_ia),
         )
         message = remplace.get('message') or {}
         await actualiser_cache(session, account, request, message.get('id'), source_message_id, message.get('threadId'), generation_attendue=generation)
@@ -1465,7 +1466,7 @@ async def create_draft(
         cc=request.cc,
         bcc=request.bcc,
         html=request.html,
-        **({'ai_provenance': marque_ia} if marque_ia else {}),
+        **parametres_mime(marque_ia),
     )
     message = cree.get('message') or {}
     await actualiser_cache(session, account, request, message.get('id'), thread_id=message.get('threadId'), generation_attendue=generation)
