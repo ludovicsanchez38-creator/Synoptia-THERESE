@@ -17,8 +17,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SecurityStep } from './SecurityStep';
 
-/** Ce qu'un accord « llm » n'a pas le droit d'annoncer. */
-const HORS_FINALITE = /pièces? jointes?|document|fichier/i;
+/** L'information sur les lectures ne remplace pas l'accord documents distinct. */
+const ACCORD_DOCUMENTS_DISTINCT = /fichiers \(avec ton accord « documents » pour leur contenu\)/;
 
 function consentementEnregistre(): string {
   const appels = vi.mocked(localStorage.setItem).mock.calls.filter(
@@ -31,12 +31,12 @@ function consentementEnregistre(): string {
 describe('SecurityStep — le consentement de mise en route reste dans sa finalité', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('n’annonce à l’écran aucune donnée que la finalité « llm » ne couvre pas', () => {
+  it('annonce les lectures utiles et précise l’accord distinct pour les fichiers', () => {
     render(<SecurityStep provider="mistral" onNext={vi.fn()} onBack={vi.fn()} />);
 
     const consentement = screen.getByRole('checkbox').closest('label');
     expect(consentement).not.toBeNull();
-    expect(consentement?.textContent ?? '').not.toMatch(HORS_FINALITE);
+    expect(consentement?.textContent ?? '').toMatch(ACCORD_DOCUMENTS_DISTINCT);
   });
 
   it('n’enregistre sous « llm » aucune catégorie qui relève de « documents »', () => {
@@ -47,10 +47,11 @@ describe('SecurityStep — le consentement de mise en route reste dans sa finali
 
     const enregistre = consentementEnregistre();
     expect(enregistre).toContain('"llm:mistral"');
-    const grant = JSON.parse(enregistre).grants['llm:mistral'];
+    const grants = JSON.parse(enregistre).grants;
+    expect(Object.keys(grants)).toEqual(['llm:mistral']);
+    const grant = grants['llm:mistral'];
     expect(grant.purpose).toBe('llm');
-    for (const categorie of grant.dataCategories as string[]) {
-      expect(categorie).not.toMatch(HORS_FINALITE);
-    }
+    const mentionsDocumentaires = (grant.dataCategories as string[]).filter(c => /document|fichier/i.test(c));
+    expect(mentionsDocumentaires).toEqual([expect.stringMatching(ACCORD_DOCUMENTS_DISTINCT)]);
   });
 });
