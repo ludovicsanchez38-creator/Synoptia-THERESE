@@ -26,8 +26,8 @@ transport réseau est remplacé par un transport en mémoire.
 `messages.extra_data.provenance_documents` conserve `documents`,
 `sans_document` ou `inconnue`. Les pièces jointes et tout contexte documentaire
 marquent aussi les réponses qui en découlent, sans tenter de reconnaître une
-citation par sa syntaxe. Les continuations, réponses partielles et erreurs
-conservent cette précaution. La métadonnée locale n'est pas envoyée au modèle.
+citation par sa syntaxe. Les continuations, reprises de messages enregistrés, réponses partielles et
+erreurs conservent cette précaution. La métadonnée locale n'est pas envoyée au modèle.
 
 Les messages antérieurs sont repris lors de leur relecture : sources,
 citations, pièces jointes ou traces mémoire conservées valent provenance

@@ -117,3 +117,36 @@ async def test_historique_ancien_sans_accord_documents(client, monkeypatch, stre
         assert 'historique' in response.text and 'accord' in response.text
     with get_sync_session() as session:
         assert json.loads(session.get(Message, identifiant).extra_data)['provenance_documents'] == attendu
+
+
+@pytest.mark.parametrize('stream', [False, True])
+@pytest.mark.parametrize('trace', [None, 'documents'])
+async def test_reprise_message_enregistre_garde_sa_provenance(client, monkeypatch, stream, trace):
+    from app.routers import chat
+
+    enregistrer_accord('llm', 'openai', True, '3', [])
+    with get_sync_session() as session:
+        conv = Conversation(title='Reprise fictive')
+        session.add(conv)
+        session.flush()
+        message = Message(conversation_id=conv.id, role='user', content='EXTRAIT_REPRIS_FICTIF',
+                          extra_data=json.dumps({'provenance_documents': trace}) if trace else None)
+        session.add(message)
+        session.commit()
+        identifiant, conversation = message.id, conv.id
+    envois = []
+
+    async def transport(*args, **kwargs):
+        envois.append(str(args))
+        yield StreamEvent(type='text', content='Réponse fictive')
+
+    service = LLMService(LLMConfig(LLMProvider.OPENAI, 'modele-fictif', api_key='factice'))
+    service._provider = SimpleNamespace(stream=transport)
+    service._ensure_provider = AsyncMock()
+    monkeypatch.setattr(chat, 'get_llm_service', lambda: service)
+    response = await client.post('/api/chat/send', json={
+        'message': 'EXTRAIT_REPRIS_FICTIF', 'conversation_id': conversation, 'stream': stream,
+        'resume_message_id': identifiant, 'include_memory': False, 'disable_tools': True,
+    })
+    assert not envois, 'La reprise d’un message enregistré a effacé sa provenance'
+    assert 'accord' in response.text and 'documents' in response.text

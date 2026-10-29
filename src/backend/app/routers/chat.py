@@ -1681,7 +1681,8 @@ async def send_message(
     # part en base sans aucune mention du fichier et la conversation perd le
     # document dès le message suivant.
     _memoriser_pieces_jointes(user_message, request.file_paths)
-    memoriser_provenance(user_message, bool(request.file_paths))
+    memoriser_provenance(user_message, True if request.file_paths else (None if reprise else False))
+    source_contient_documents = reprise is not None and memoriser_provenance(user_message) != "sans_document"
     session.add(user_message)
     await session.commit()
 
@@ -2081,6 +2082,7 @@ async def send_message(
                 memory_card_grants=request.memory_card_grants,
                 memory_card_purpose=request.memory_card_purpose,
                 source_message_id=user_message.id,
+                source_contient_documents=source_contient_documents,
             ),
             media_type="text/event-stream",
             headers={
@@ -2117,7 +2119,8 @@ async def send_message(
     history, avis_historique = filtrer_historique(history, llm_service.config)
     if avis_historique:
         inline_preamble = avis_historique + "\n\n" + inline_preamble
-    messages = history + [LLMMessage(role="user", content=llm_user_message)]
+    messages = history + [LLMMessage(role="user", content=llm_user_message,
+                                     contient_documents=source_contient_documents)]
 
     # Get relevant memory context (0d : même texte que le payload LLM,
     # parité avec le chemin stream)
@@ -2366,6 +2369,7 @@ async def _stream_response(
     memory_card_grants: list[str] | None = None,
     memory_card_purpose: str = "llm",
     source_message_id: str | None = None,
+    source_contient_documents: bool = False,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2459,6 +2463,7 @@ async def _stream_response(
         include_memory=include_memory,
         memory_card_grants=memory_card_grants, memory_card_purpose=memory_card_purpose,
         source_message_id=source_message_id,
+        source_contient_documents=source_contient_documents,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2740,6 +2745,7 @@ async def _do_stream_response(
     memory_card_grants: list[str] | None = None,
     memory_card_purpose: str = "llm",
     source_message_id: str | None = None,
+    source_contient_documents: bool = False,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -2847,7 +2853,7 @@ async def _do_stream_response(
     messages, avis_historique = filtrer_historique(history or [], llm_service.config)
     if avis_historique:
         preamble = avis_historique + "\n\n" + preamble
-    messages.append(LLMMessage(role="user", content=user_message))
+    messages.append(LLMMessage(role="user", content=user_message, contient_documents=source_contient_documents))
 
     # Get relevant memory context for the user's message
     # B-1495 : include_memory=false n'injecte pas la mémoire.
