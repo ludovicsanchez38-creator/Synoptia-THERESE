@@ -659,9 +659,14 @@ class TestLaPasse3:
         ))
         await asyncio.wait_for(extraction_commencee.wait(), timeout=5)
         porteur.cancel()  # annulation DURE après le point de non-retour
+        gestes_detaches = tuple(indexation._gestes_en_cours)
         with _ctx.suppress(asyncio.CancelledError):
             await porteur
         porte.set()
+        # La visibilité de la ligne/vecteur ne prouve pas encore que la
+        # session SQL du geste détaché est fermée. Finir le geste avant de
+        # laisser le client de test disposer ses moteurs.
+        await asyncio.wait_for(asyncio.gather(*gestes_detaches), timeout=5)
 
         # l'index doit suivre le disque (v2), pas rester amputé sur v1
         ligne = None
