@@ -35,6 +35,25 @@ def destination_cloud(config: Any) -> str | None:
     return 'ollama-cloud' if est_modele_ollama_cloud(getattr(config, 'model', '')) or host not in ('localhost', '127.0.0.1', '::1') else None
 
 
+def libelle_destination(config: Any) -> str | None:
+    """Nommer la destination sans exposer d'identifiants ou de paramètres d'URL."""
+    if config.provider.value != 'ollama' or destination_cloud(config) is None:
+        return None
+    from app.services.ollama_capabilites import est_modele_ollama_cloud
+
+    adresse = urlsplit(getattr(config, 'base_url', None) or 'http://127.0.0.1:11434')
+    if adresse.hostname not in ('localhost', '127.0.0.1', '::1'):
+        hote = adresse.hostname or 'adresse inconnue'
+        if ':' in hote:
+            hote = f'[{hote}]'
+        port = f':{adresse.port}' if adresse.port else ''
+        label = f'Serveur Ollama distant ({adresse.scheme}://{hote}{port})'
+        if est_modele_ollama_cloud(getattr(config, 'model', '')):
+            label += ' puis Ollama Cloud (ollama.com)'
+        return label
+    return 'Ollama Cloud (ollama.com)'
+
+
 def documents_autorises(config: Any, grants: list[str] | None) -> bool:
     """B-1201 : un extrait de document indexé peut-il partir avec ce message ?
 

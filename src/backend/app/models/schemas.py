@@ -930,6 +930,9 @@ class LLMConfigUpdate(BaseModel):
 class LLMConfigResponse(BaseModel):
     """LLM configuration response."""
 
+    consent_provider: str | None = None
+    consent_label: str | None = None
+
     provider: str
     model: str
     available_models: list[str] = []

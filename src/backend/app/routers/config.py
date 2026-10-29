@@ -1557,7 +1557,11 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     if config.model and config.model not in available_models:
         available_models.append(config.model)
 
+    from app.services.memory_card_context import destination_cloud, libelle_destination
+
     return LLMConfigResponse(
+        consent_provider=destination_cloud(config),
+        consent_label=libelle_destination(config),
         provider=config.provider.value,
         model=config.model,
         available_models=available_models,
@@ -1762,7 +1766,11 @@ async def set_llm_config(
     if request.model and request.model not in post_available_models:
         post_available_models.append(request.model)
 
+    from app.services.memory_card_context import destination_cloud, libelle_destination
+
     return LLMConfigResponse(
+        consent_provider=destination_cloud(config),
+        consent_label=libelle_destination(config),
         provider=request.provider,
         model=request.model,
         available_models=post_available_models,
