@@ -10,6 +10,7 @@ import logging
 from typing import Any, AsyncGenerator
 
 import httpx
+from app.services.error_handler import ErreurPourEcran
 
 from .base import (
     BaseProvider,
@@ -336,6 +337,8 @@ class OpenRouterProvider(BaseProvider):
                 yield StreamEvent(
                     type="error", content=_message_erreur_sse(status, None)
                 )
+        except ErreurPourEcran:
+            raise
         except Exception as e:
             logger.error(f"OpenRouter streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement

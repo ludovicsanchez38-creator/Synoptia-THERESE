@@ -925,6 +925,36 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 if motif_sink is not None and event.stop_reason:
                     motif_sink["stop_reason"] = event.stop_reason
 
+    async def _transmettre(
+        self, provider: Any, config: LLMConfig, context: ContextWindow,
+        methode: str, *args: Any, **kwargs: Any,
+    ) -> AsyncGenerator[StreamEvent, None]:
+        """Dernière garde commune, après toute préparation asynchrone.
+
+        Chaque requête HTTP de l'adaptateur (reprises comprises) conserve la
+        même garde, sans modifier le client ou le fournisseur partagés.
+        """
+        from copy import copy
+
+        from app.services.consentements import verifier_envoi_llm
+        from app.services.envoi_fournisseur import TransportAvecAccord
+        from app.services.error_handler import ErreurPourEcran
+        from app.services.providers.base import BaseProvider
+
+        if isinstance(provider, BaseProvider):
+            if (provider.config.provider, provider.config.model, provider.config.base_url) != (
+                config.provider, config.model, config.base_url
+            ):
+                raise ErreurPourEcran(
+                    "La destination de cet envoi a changé. Vérifie ton modèle et réessaie."
+                )
+            provider = copy(provider)
+            provider.client = TransportAvecAccord(provider.client, lambda: verifier_envoi_llm(config, context))
+        verifier_envoi_llm(config, context)
+        context.memory_transmitted = getattr(context, "memory_used", None)
+        async for event in getattr(provider, methode)(*args, **kwargs):
+            yield event
+
     async def stream_response_with_tools(
         self,
         context: ContextWindow,
@@ -997,11 +1027,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 messages = context.to_openai_format()
                 system_prompt = context.system_prompt
 
-            context.memory_transmitted = getattr(context, "memory_used", None)
-
             # Pass enable_grounding to Gemini provider
             if effective_config.provider == LLMProvider.GEMINI:
-                async for event in provider.stream(system_prompt, messages, tools, enable_grounding=enable_grounding):
+                async for event in self._transmettre(provider, effective_config, context, 'stream', system_prompt, messages, tools, enable_grounding=enable_grounding):
                     if event.type == "text" and event.content:
                         had_content = True
                     elif event.type == "error" and _is_provider_outage(event.content):
@@ -1009,7 +1037,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                         error_detail = event.content or "stream error"
                     yield event
             else:
-                async for event in provider.stream(system_prompt, messages, tools):
+                async for event in self._transmettre(provider, effective_config, context, 'stream', system_prompt, messages, tools):
                     if event.type == "text" and event.content:
                         had_content = True
                     elif event.type == "error" and _is_provider_outage(event.content):
@@ -1102,8 +1130,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         had_error = False
         error_detail = ""
 
-        context.memory_transmitted = getattr(context, "memory_used", None)
-        async for event in provider.continue_with_tool_results(
+        async for event in self._transmettre(
+            provider, effective_config, context, 'continue_with_tool_results',
             system_prompt,
             messages,
             assistant_content,

@@ -15,6 +15,7 @@ import logging
 from typing import Any, AsyncGenerator
 
 import httpx
+from app.services.error_handler import ErreurPourEcran
 
 from .base import (
     BaseProvider,
@@ -227,6 +228,8 @@ class MistralProvider(BaseProvider):
                     self.config.provider, e.response.status_code
                 ),
             )
+        except ErreurPourEcran:
+            raise
         except Exception as e:
             logger.error(f"Mistral streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement

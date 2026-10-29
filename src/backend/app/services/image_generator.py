@@ -16,6 +16,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
+from app.services.consentements import exiger_accord
+from app.services.envoi_fournisseur import TransportAvecAccord, appeler_avec_accord
 from app.services.error_handler import ErrorCode, TheresError
 
 logger = logging.getLogger(__name__)
@@ -181,7 +183,8 @@ class ImageGeneratorService:
                 with open(reference_image_path, "rb") as ref_file:
                     # B-497 : appel SDK bloquant, hors de la boucle d'événements.
                     result = await asyncio.to_thread(
-                        lambda: client.images.edit(
+                        lambda: appeler_avec_accord(
+                            lambda: exiger_accord('images', ImageProvider.OPENAI.value), client.images.edit,
                             model="gpt-image-2",
                             image=ref_file,
                             prompt=prompt,
@@ -194,7 +197,8 @@ class ImageGeneratorService:
                 # Generation mode without reference
                 # Note: gpt-image-2 n'accepte plus response_format, retourne URL par défaut
                 result = await asyncio.to_thread(
-                    lambda: client.images.generate(
+                    lambda: appeler_avec_accord(
+                        lambda: exiger_accord('images', ImageProvider.OPENAI.value), client.images.generate,
                         model="gpt-image-2",
                         prompt=prompt,
                         size=config.size,
@@ -209,7 +213,7 @@ class ImageGeneratorService:
                 # Download from URL if b64 not available
                 from app.services.http_client import get_http_client
 
-                http_client = await get_http_client()
+                http_client = TransportAvecAccord(await get_http_client(), lambda: exiger_accord('images', ImageProvider.OPENAI.value))
                 resp = await http_client.get(result.data[0].url)
                 image_bytes = resp.content
             else:
@@ -269,7 +273,8 @@ class ImageGeneratorService:
 
             # Generate image
             response = await asyncio.to_thread(
-                lambda: client.models.generate_content(
+                lambda: appeler_avec_accord(
+                    lambda: exiger_accord('images', ImageProvider.GEMINI.value), client.models.generate_content,
                     model="gemini-3.1-flash-image-preview",
                     contents=contents,
                     config=types.GenerateContentConfig(
@@ -328,7 +333,7 @@ class ImageGeneratorService:
                 user_message="Clé API Fal non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
-        client = await get_http_client()
+        client = TransportAvecAccord(await get_http_client(), lambda: exiger_accord('images', ImageProvider.FAL.value))
 
         try:
             # Déterminer la taille d'image

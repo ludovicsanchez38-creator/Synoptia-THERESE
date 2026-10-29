@@ -12,6 +12,7 @@ import re
 from typing import Any, AsyncGenerator
 
 import httpx
+from app.services.error_handler import ErreurPourEcran
 
 from .base import (
     BaseProvider,
@@ -391,6 +392,8 @@ class GeminiProvider(BaseProvider):
                 error_body = e.response.text[:500]
             logger.error(f"Gemini API error: {e.response.status_code} - {error_body}")
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
+        except ErreurPourEcran:
+            raise
         except Exception as e:
             logger.error(f"Gemini streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement

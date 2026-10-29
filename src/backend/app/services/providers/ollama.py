@@ -11,6 +11,7 @@ import logging
 from typing import Any, AsyncGenerator
 
 import httpx
+from app.services.error_handler import ErreurPourEcran
 from app.services.ollama_budget import estimer_jetons, fenetre_ollama
 
 from .base import (
@@ -335,6 +336,8 @@ class OllamaProvider(BaseProvider):
             )
         # Note : httpx.ReadTimeout ne peut pas être levé avec read=None (timeout désactivé)
         # Le catch ReadTimeout a été retiré — l'arrêt de génération se fait via AbortController
+        except ErreurPourEcran:
+            raise
         except Exception as e:
             logger.error(f"Ollama streaming error: {e}")
             # Panel 0.48 : jamais str(e) brut vers l'écran - même frontière

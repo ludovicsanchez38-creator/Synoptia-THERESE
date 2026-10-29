@@ -101,7 +101,8 @@ async def transcribe_audio(
 
     try:
         # Call Groq Whisper API
-        client = await get_http_client()
+        from app.services.envoi_fournisseur import TransportAvecAccord
+        client = TransportAvecAccord(await get_http_client(), lambda: exiger_accord('voice', 'groq'))
         with open(tmp_path, "rb") as f:
             response = await client.post(
                 "https://api.groq.com/openai/v1/audio/transcriptions",

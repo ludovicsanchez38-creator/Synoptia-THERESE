@@ -186,3 +186,8 @@ def verifier_envoi_llm(config: Any, context: Any) -> None:
     if (getattr(context, 'contient_documents', False) is True
             or any(getattr(m, 'images', None) for m in (getattr(context, 'messages', None) or []))):
         exiger_accord('documents', destination)
+    demande = getattr(context, 'memory_request', None)
+    if isinstance(demande, dict) and getattr(context, 'memory_used', None):
+        if not accord_valide(demande['purpose'], destination, ('memory_cards_r2_v1',)):
+            from app.services.memory_card_context import AccordFichesRequis
+            raise AccordFichesRequis(destination, demande['purpose'])
