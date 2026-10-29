@@ -89,5 +89,6 @@ def verifier_envoi_llm(config: Any, context: Any) -> None:
     # L'écran documents décrit aussi le message et le contexte accompagnant.
     if not (accord_valide('llm', destination) or accord_valide('documents', destination)):
         exiger_accord('llm', destination)
-    if getattr(context, 'contient_documents', False) is True:
+    if (getattr(context, 'contient_documents', False) is True
+            or any(getattr(m, 'images', None) for m in (getattr(context, 'messages', None) or []))):
         exiger_accord('documents', destination)

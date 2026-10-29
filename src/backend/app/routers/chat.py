@@ -2177,7 +2177,7 @@ async def send_message(
             logger.info("Pièce jointe d'un tour précédent non rejouée : %s", error)
 
     # Combine memory and file contexts
-    if file_contexts and not documents_autorises(llm_service.config, None):
+    if (file_contexts or any(m.images for m in messages)) and not documents_autorises(llm_service.config, None):
         from app.services.error_handler import ErreurPourEcran
         raise ErreurPourEcran("Ton accord « documents » pour ce fournisseur est nécessaire avant l’envoi de fichiers.")
     if file_contexts:
@@ -2218,7 +2218,7 @@ async def send_message(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    context.contient_documents = bool(file_contexts) or bool(memory_context and documents_autorises(llm_service.config, None))
+    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or bool(memory_context and documents_autorises(llm_service.config, None))
     context.memory_cards_enabled = request.include_memory
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -2422,6 +2422,8 @@ async def _stream_response(
     #
     # On met donc la production et la surveillance en concurrence, et on ferme
     # explicitement le générateur pour propager l'interruption au producteur.
+    from app.services.error_handler import ErreurPourEcran
+
     producteur = _do_stream_response(
         conversation_id, user_message, session, history,
         skill_id=skill_id, file_paths=file_paths,
@@ -2499,6 +2501,10 @@ async def _stream_response(
                         chunk.removeprefix("data: ").strip()
                     ).get("content", "")[:500]
             yield chunk
+    except ErreurPourEcran as sortie:
+        etat_generation["etat"] = EtatTacheTraitement.FAILED
+        etat_generation["erreur"] = str(sortie)
+        yield f"data: {json.dumps({'type': 'error', 'content': str(sortie)}, ensure_ascii=False)}\n\n"
     except BaseException as sortie:
         # Déconnexion (GeneratorExit) = travail réellement arrêté ; toute
         # autre sortie non prévue est un échec. L'état terminal reste posé
@@ -2910,7 +2916,7 @@ async def _do_stream_response(
         yield f"data: {json.dumps(status_data.model_dump())}\n\n"
 
     # Combine memory and file contexts
-    if file_contexts and not documents_autorises(llm_service.config, None):
+    if (file_contexts or any(m.images for m in messages)) and not documents_autorises(llm_service.config, None):
         from app.services.error_handler import ErreurPourEcran
         raise ErreurPourEcran("Ton accord « documents » pour ce fournisseur est nécessaire avant l’envoi de fichiers.")
     if file_contexts:
@@ -2952,7 +2958,7 @@ async def _do_stream_response(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    context.contient_documents = bool(file_contexts) or bool(memory_context and documents_autorises(llm_service.config, None))
+    context.contient_documents = bool(file_contexts) or any(m.images for m in messages) or bool(memory_context and documents_autorises(llm_service.config, None))
     context.memory_cards_enabled = include_memory
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
