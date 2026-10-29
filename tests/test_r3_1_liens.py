@@ -6,6 +6,7 @@ import pytest
 from app.models.entities import Contact, Conversation, MemoryCard, Message, Project
 from app.services import llm, memory_cards
 from app.services.providers.base import LLMProvider
+from app.services.consentements import enregistrer_accord
 
 from tests.test_r2_3_outil import fournisseur  # noqa: F401
 
@@ -48,6 +49,7 @@ async def test_liens_mots_avant_dernier_message_date_et_uuid(client, db_session,
         ligne.updated_at = date + timedelta(seconds=decalage)
         db_session.add(ligne)
     await db_session.commit()
+    enregistrer_accord('llm', 'openai', True, '3', ['memory_cards_r2_v1'])
     reponse = await client.post('/api/chat/send', json={'conversation_id': conv.id,
         'message': 'Bonjour', 'stream': True, 'memory_card_grants': ['llm:openai']})
     assert reponse.status_code == 200

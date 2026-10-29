@@ -7,7 +7,7 @@ from typing import Any
 from app.models.database import get_sync_session
 from app.models.entities import CloudConsent
 from app.services.error_handler import ErreurPourEcran
-from sqlmodel import select
+from sqlmodel import Session, col, select
 
 _VERROU = RLock()
 TEXT_VERSION = "3"
@@ -15,13 +15,13 @@ TEXT_VERSION = "3"
 
 def historique() -> list[dict[str, Any]]:
     with get_sync_session() as session:
-        return [row.model_dump() for row in session.exec(select(CloudConsent).order_by(CloudConsent.id)).all()]
+        return [row.model_dump() for row in session.exec(select(CloudConsent).order_by(col(CloudConsent.id))).all()]
 
 
-def _dernier(session, purpose: str, provider: str):
+def _dernier(session: Session, purpose: str, provider: str) -> CloudConsent | None:
     return session.exec(select(CloudConsent).where(
         CloudConsent.purpose == purpose, CloudConsent.provider == provider.strip().lower()
-    ).order_by(CloudConsent.id.desc())).first()
+    ).order_by(col(CloudConsent.id).desc())).first()
 
 
 def accord_valide(purpose: str, provider: str, categories: tuple[str, ...] = ()) -> bool:

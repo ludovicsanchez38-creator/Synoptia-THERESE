@@ -14,6 +14,13 @@ import pytest
 from app.services.modeles_catalogue import frontier, max_tokens_recommande
 
 
+@pytest.fixture(autouse=True)
+def accord_board_explicite(client, db_session):
+    """Ces scénarios de génération partent d'un accord Board enregistré."""
+    from app.services.consentements import enregistrer_accord
+    enregistrer_accord('llm', 'board', True, '3', [])
+
+
 class TestLeHelperOverrides:
     """get_llm_service_for_provider : effort_override + max_tokens_override."""
 
@@ -148,7 +155,7 @@ class TestLeBoardPrechargeEnFrontier:
                 self.config = SimpleNamespace(provider=provider, model="modele-test")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
@@ -333,7 +340,7 @@ class TestLeBoardNeBasculePasEnSilence:
                 self.config = SimpleNamespace(provider=provider, model="modele-test")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
@@ -447,7 +454,7 @@ class TestRevueSosoS2:
             config = SimpleNamespace(provider=LLMProvider.OPENAI, model="modele-test")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 # Aucun chunk : le fournisseur termine sans rien dire.

@@ -5,6 +5,7 @@ import pytest
 from app.models.entities import Conversation
 from app.services import llm, memory_cards
 from app.services.providers.base import LLMProvider
+from app.services.consentements import enregistrer_accord
 
 from tests.test_r2_3_outil import action, fournisseur  # noqa: F401
 
@@ -21,6 +22,8 @@ async def test_ecriture_a_puis_charge_reelle_b_et_effacement(client, db_session,
     db_session.add(b)
     await db_session.commit()
     fournisseur[0].config = llm.LLMConfig(LLMProvider(provider), 'modele-factice', context_window=128000)
+    if provider != 'ollama':
+        enregistrer_accord('llm', provider, True, '3', ['memory_cards_r2_v1'])
     demande = {'conversation_id': b.id, 'message': 'Aide-moi à rédiger.', 'stream': stream,
                'memory_card_grants': [f'llm:{provider}']}
     tour2 = await client.post('/api/chat/send', json=demande)
@@ -79,6 +82,9 @@ async def test_aucun_rappel_sensible_dans_un_autre_chat(client, db_session, four
 async def test_accord_destination_reelle_et_finalite(client, db_session, fournisseur, provider, model, purpose, grants, autorise):  # noqa: F811
     await memory_cards.ecrire(action())
     fournisseur[0].config = llm.LLMConfig(LLMProvider(provider), model, context_window=128000)
+    for grant in grants:
+        finalite, destination = grant.split(':', 1)
+        enregistrer_accord(finalite, destination, True, '3', ['memory_cards_r2_v1'])
     avant = len(fournisseur[2])
     rep = await client.post('/api/chat/send', json={'message': 'Aide-moi à rédiger.', 'stream': True,
         'memory_card_grants': grants, 'memory_card_purpose': purpose})
@@ -86,6 +92,9 @@ async def test_accord_destination_reelle_et_finalite(client, db_session, fournis
     assert (len(fournisseur[2]) > avant) == autorise
     # Révocation : le tour suivant doit réévaluer, sans garder un accord dans le contexte.
     if provider != 'ollama' or ':cloud' in model:
+        for grant in grants:
+            finalite, destination = grant.split(':', 1)
+            enregistrer_accord(finalite, destination, False, '3', [])
         avant = len(fournisseur[2])
         await client.post('/api/chat/send', json={'message': 'Autre demande.', 'stream': True, 'memory_card_grants': []})
         assert len(fournisseur[2]) == avant
@@ -94,6 +103,7 @@ async def test_accord_destination_reelle_et_finalite(client, db_session, fournis
 @pytest.mark.asyncio
 async def test_sans_fiche_ancien_accord_suffit_et_autres_consommateurs_restent_vides(client, db_session, fournisseur):  # noqa: F811
     fournisseur[0].config = llm.LLMConfig(LLMProvider.OPENAI, 'factice', context_window=128000)
+    enregistrer_accord('llm', 'openai', True, '3', [])
     rep = await client.post('/api/chat/send', json={'message': 'Bonjour', 'stream': True})
     assert rep.status_code == 200 and len(fournisseur[2]) == 1
     fiche = await memory_cards.ecrire(action())
@@ -109,6 +119,7 @@ async def test_repli_plus_petit_refuse_avant_fournisseur(client, db_session, fou
     from unittest.mock import AsyncMock
     await memory_cards.ecrire(action(content='Préférence longue ' * 50))
     repli = llm.LLMConfig(LLMProvider.OPENAI, 'petit-factice', context_window=500)
+    enregistrer_accord('llm', 'openai', True, '3', ['memory_cards_r2_v1'])
     monkeypatch.setattr(fournisseur[0], '_resolve_with_circuit_breaker', lambda: repli)
     obtenir = AsyncMock()
     monkeypatch.setattr(fournisseur[0], '_provider_pour', obtenir)
@@ -133,6 +144,8 @@ async def test_document_long_ne_rabote_pas_la_demande_avant_la_reserve(client, d
     fenetre_entree = len(service._get_system_prompt_with_identity() + '\n\n## Contexte mémoire:\n' + document) // 4 + 500
     service.config = llm.LLMConfig(LLMProvider.OPENAI, 'factice', context_window=fenetre_entree + 4096)
     monkeypatch.setattr(chat, '_get_file_context', AsyncMock(return_value=(document, None)))
+    enregistrer_accord('documents', 'openai', True, '3', ['memory_cards_r2_v1'])
+    enregistrer_accord('llm', 'openai', True, '3', ['memory_cards_r2_v1'])
     demande = 'Q' * taille
     rep = await client.post('/api/chat/send', json={'message': demande, 'stream': stream,
         'disable_tools': True, 'file_paths': ['document-factice.txt'], 'memory_card_grants': ['llm:openai']})

@@ -4,6 +4,7 @@ import pytest
 from app.models.entities import Message
 from app.services import llm, memory_cards
 from app.services.providers.base import LLMProvider
+from app.services.consentements import enregistrer_accord
 from sqlmodel import select
 
 from tests.test_p159_contexte_transmis import _evenements
@@ -35,10 +36,12 @@ async def test_lecture_correction_archive_effacement(client, db_session):
 async def test_accord_apres_payload_et_reprise_sans_dupliquer_la_source(client, db_session, fournisseur):  # noqa: F811
     await memory_cards.ecrire(action())
     fournisseur[0].config = llm.LLMConfig(LLMProvider.OPENAI, 'factice', context_window=128000)
+    enregistrer_accord('llm', 'openai', True, '3', [])
     rep = await client.post('/api/chat/send', json={'message': 'Aide-moi à rédiger.', 'stream': True})
     accord = next(e for e in _evenements(rep.text) if e['type'] == 'memory_consent_required')
     assert accord['provider'] == 'openai' and accord['purpose'] == 'llm'
     assert not fournisseur[2]
+    enregistrer_accord('llm', 'openai', True, '3', ['memory_cards_r2_v1'])
     rep = await client.post('/api/chat/send', json={'message': 'Aide-moi à rédiger.', 'stream': True,
         'conversation_id': accord['conversation_id'], 'resume_message_id': accord['message_id'],
         'memory_card_grants': ['llm:openai']})

@@ -1,6 +1,6 @@
 """Accords de transfert cloud ; le moteur date chaque décision."""
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from app.services.consentements import (
     accords_courants,
@@ -45,12 +45,12 @@ class LegacyImport(BaseModel):
 
 
 @router.get('')
-def lire():
+def lire() -> dict[str, Any]:
     return {'grants': accords_courants(), 'history': historique()}
 
 
 @router.post('')
-def decider(decision: Decision):
+def decider(decision: Decision) -> dict[str, Any]:
     enregistrer_accord(decision.purpose, decision.provider, decision.granted,
                       decision.text_version, decision.data_categories, decision.event_id,
                       decision.occurred_at.isoformat() if decision.occurred_at else None)
@@ -58,6 +58,6 @@ def decider(decision: Decision):
 
 
 @router.post('/import')
-def reprendre(data: LegacyImport):
+def reprendre(data: LegacyImport) -> dict[str, Any]:
     importer_accords([g.model_dump() for g in data.grants])
     return lire()
