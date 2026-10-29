@@ -689,6 +689,15 @@ if HAS_SLOWAPI:
 
 
 # Handler TheresError custom (US-ERR-01)
+# Les erreurs métier écrites pour l'écran peuvent survenir avant le flux SSE.
+from app.services.error_handler import ErreurPourEcran  # noqa: E402
+
+
+@app.exception_handler(ErreurPourEcran)
+async def erreur_pour_ecran_handler(request: Request, exc: ErreurPourEcran):
+    return JSONResponse(status_code=400, content={"detail": str(exc), "message": str(exc)})
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Handle TheresError et fallback pour les erreurs non gérées."""

@@ -641,45 +641,21 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 base_url = _base_url_configuree(selected_provider)
                 return LLMConfig(provider_enum, model, api_key=api_key, base_url=base_url, context_window=ctx_window, effort=selected_effort)
 
-            logger.warning(f"Selected provider {selected_provider} has no API key, falling back")
+            from app.services.error_handler import ErreurPourEcran
 
-        # Fallback: first provider with a valid key
-        # B-200 : le repli sur l'environnement passe par la même garde que le
-        # fournisseur choisi (jamais à l'insu de l'utilisateur sur une installation).
-        anthropic_key = _get_api_key_from_db("anthropic") or _cle_depuis_environnement("anthropic")
-        openai_key = _get_api_key_from_db("openai") or _cle_depuis_environnement("openai")
-        gemini_key = _get_api_key_from_db("gemini") or _cle_depuis_environnement("gemini")
-        mistral_key = _get_api_key_from_db("mistral") or _cle_depuis_environnement("mistral")
-
-        # 0.48 : le repli par clé sert le frontier du catalogue.
-        for nom, cle in (
-            ("anthropic", anthropic_key),
-            ("openai", openai_key),
-            ("gemini", gemini_key),
-            ("mistral", mistral_key),
-        ):
-            if cle:
-                provider_enum, modele, ctx_window = provider_configs[nom]
-                return LLMConfig(
-                    provider_enum, modele, api_key=cle
-                )
-        # BUG #69 v0.11.5 : ne PAS retomber silencieusement sur Ollama quand
-        # l utilisateur a explicitement choisi un provider cloud. Sinon il
-        # voit "Ollama non disponible" alors qu il a configure OpenRouter,
-        # ce qui est un faux diagnostic trompeur.
-        if selected_provider and selected_provider != "ollama" and selected_provider in provider_configs:
-            provider_enum, default_model, ctx_window = provider_configs[selected_provider]
-            model = selected_model or default_model
-            # Revue Grok 0.70.0 : la fenêtre suit le modèle choisi, pas seulement le fournisseur.
-            from app.services.modeles_catalogue import fenetre_de_contexte
-
-            ctx_window = fenetre_de_contexte(selected_provider, model)
-            logger.warning(
-                f"Aucune cle API trouvee pour {selected_provider}. "
-                "Retour de la config sans cle - l'appel API echouera avec un message "
-                f"explicite sur le provider selectionne ({selected_provider})."
+            raise ErreurPourEcran(
+                f"Aucune clé API n’est renseignée pour {selected_provider}. "
+                "Ouvre Paramètres, Modèles IA, puis renseigne la clé de ce fournisseur."
             )
-            return LLMConfig(provider_enum, model, api_key=None, context_window=ctx_window)
+
+        if selected_provider and selected_provider not in provider_configs:
+            from app.services.error_handler import ErreurPourEcran
+
+            raise ErreurPourEcran(
+                "Le fournisseur choisi est inconnu. Ouvre Paramètres, Modèles IA, "
+                "puis choisis un fournisseur."
+            )
+        # Sans choix explicite, seul le modèle local est admissible.
         fallback_model = selected_model or detect_default_ollama_model()
         logger.warning(f"No API key configured, falling back to Ollama: model={fallback_model}")
         from app.config import settings
@@ -832,61 +808,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
     def _resolve_with_circuit_breaker(self) -> "LLMConfig":
         """Résout le provider effectif en tenant compte du circuit breaker.
 
-        Si le provider principal est en circuit ouvert, bascule
-        automatiquement sur le premier fallback disponible.
-
-        Returns:
-            La config LLM à utiliser (principale ou fallback).
+        Un circuit ouvert ne vaut pas autorisation de changer de fournisseur.
         """
-        cb = get_circuit_breaker()
-        current_name = self.config.provider.value
-
-        if cb.is_available(current_name):
-            return self.config
-
-        # Revue 0.48 (F3) : sans bascule autorisée, on tente le fournisseur
-        # d'origine même circuit ouvert - l'échec remonte proprement et le
-        # repli reste une décision VISIBLE de l'appelant (Board).
-        if not self.bascule_circuit:
-            logger.info(
-                "Circuit breaker: %s indisponible, bascule refusée par "
-                "l'appelant - tentative sur le fournisseur d'origine",
-                current_name,
-            )
-            return self.config
-
-        # B-1071 : « En local, rien ne quitte ton ordinateur » (onglet Modèles).
-        # Tous les replis sont en ligne : un fournisseur local n'en cherche
-        # aucun, l'échec remonte au lieu de partir en silence chez un tiers.
-        if current_name == "ollama":
-            logger.warning(
-                "Circuit breaker: %s indisponible, aucune bascule vers un "
-                "service en ligne pour un fournisseur local",
-                current_name,
-            )
-            return self.config
-
-        # Provider principal indisponible - chercher un fallback
-        logger.warning(
-            "Circuit breaker: provider %s indisponible, recherche de fallback...",
-            current_name,
-        )
-
-        for fallback_config in self._get_fallback_configs():
-            fallback_name = fallback_config.provider.value
-            if cb.is_available(fallback_name):
-                logger.info(
-                    "Circuit breaker: bascule %s -> %s (%s)",
-                    current_name, fallback_name, fallback_config.model,
-                )
-                return fallback_config
-
-        # Aucun fallback disponible - tenter quand même le provider principal
-        logger.error(
-            "Circuit breaker: aucun fallback disponible, "
-            "tentative forcée sur %s",
-            current_name,
-        )
+        # L'accord désigne un destinataire : une panne ne l'élargit jamais.
+        # Le Board conserve ses replis explicites, annoncés par l'appelant.
         return self.config
 
     @staticmethod
