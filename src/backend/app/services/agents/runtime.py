@@ -67,6 +67,11 @@ def _sans_bascule_si_local(fournisseur: str) -> dict[str, bool]:
 # P-103 : le fournisseur voyage avec un modèle local choisi dans l'Atelier.
 PREFIXE_MODELE_LOCAL = "ollama:"
 
+# Ces outils peuvent restituer du contenu ou des noms de fichiers du dépôt.
+OUTILS_DOCUMENTS = frozenset({
+    "read_file", "search_codebase", "git_diff", "run_command",
+    "list_directory", "git_status",
+})
 
 
 def _service_local(nom: str) -> "LLMService":
@@ -280,12 +285,17 @@ class AgentRuntime:
                 messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
         messages.append(LLMMessage(role="user", content=user_message))
 
+        # L'historique et le contexte importés n'ont pas de provenance par
+        # extrait : ils peuvent déjà contenir une lecture d'un tour antérieur.
+        contient_documents = bool(conversation_history or extra_context)
+
         # Boucle agentique (max_iterations pour éviter les boucles infinies)
         for iteration in range(self.config.max_iterations):
             logger.debug(f"Agent {self.config.id} - itération {iteration + 1}")
 
             # Préparer le contexte
             context = llm_service.prepare_context(messages, system_prompt=system_prompt)
+            context.contient_documents = contient_documents
 
             # Streaming de la réponse LLM
             full_content = ""
@@ -367,6 +377,20 @@ class AgentRuntime:
                     tool_args=tool_args,
                 )
 
+                if tool_name in OUTILS_DOCUMENTS:
+                    from app.services.memory_card_context import documents_autorises
+
+                    destination = context.config_effective or llm_service.config
+                    if not documents_autorises(destination, None):
+                        yield AgentEvent(
+                            type="error",
+                            content="Lecture de documents non autorisée pour ce service d’IA. "
+                            "Donne ton accord « documents » pour ce fournisseur avant de réessayer.",
+                        )
+                        return
+                    # Reste vrai après le résultat, même si l'accord est retiré
+                    # pendant que l'interface affiche ce résultat.
+                    contient_documents = True
                 result = await self._execute_tool(tool_name, tool_args)
 
                 yield AgentEvent(
