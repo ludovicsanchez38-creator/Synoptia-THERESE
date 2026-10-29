@@ -237,6 +237,16 @@ class LicensesTests(unittest.TestCase):
             self.assertEqual(self.m.override_notices(override, root),
                              [{'path': 'source.json', 'text': 'Upstream  \nlicense'}])
 
+    def test_supplement_does_not_silently_clear_existing_reservations(self):
+        row = {'id': 'cargo:example@1', 'license': 'MIT', 'notices': [],
+               'review_required': True, 'attribution_missing': True}
+        override = {'license': 'MIT', 'notices': [], 'reason': 'Conditions ajoutées'}
+        with patch.object(self.m, 'override_notices', return_value=[]):
+            updated = self.m.apply_override(row, override, self.m.ROOT)
+        for flag in ['review_required', 'attribution_missing']:
+            with self.subTest(flag=flag):
+                self.assertTrue(updated[flag])
+
     def test_refresh_applies_supplements_even_to_a_valid_cached_notice(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -244,7 +254,7 @@ class LicensesTests(unittest.TestCase):
             terms = (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()
             (root / 'MIT.txt').write_text(terms)
             row = {'id': 'cargo:example@1', 'artifact': 'a', 'integrity': 'sha256:a',
-                   'license': 'MIT', 'notices': [{'path': 'COPYING', 'text': terms}]}
+                   'license': 'MIT', 'review_required': True, 'notices': [{'path': 'COPYING', 'text': terms}]}
             override = {'license': 'MIT', 'reason': 'test', 'attribution_missing': True,
                         'retain_archive_notices': True,
                         'notices': [{'local_path': 'MIT.txt', 'integrity': 'sha256:' + self.m.digest(terms.encode())}]}
@@ -257,6 +267,7 @@ class LicensesTests(unittest.TestCase):
                     self.m.main()
                 output = (root / 'THIRD_PARTY_LICENSES').read_text()
                 self.assertTrue(output.startswith('PROVISOIRE'))
+                self.assertIn('REVUE REQUISE', output)
                 saved = json.loads((root / 'licenses/inventory.json').read_text())['packages'][0]
                 self.assertEqual({n['path'] for n in saved['notices']}, {'COPYING', 'MIT.txt'})
                 with patch('sys.argv', ['licenses', 'check', '--root', str(root)]), \

@@ -213,7 +213,8 @@ tour pour la liste exhaustive et les résultats des suites.
 
 Une réserve de rapprochement des binaires (`review_required`) reste distincte
 d'une attribution manquante (`attribution_missing`) ; elle n'est pas une
-validation de redistribution. Pour PyAV 17.1.0, les versions SVT-AV1 4.1.0,
+validation de redistribution. L'ajout d'un supplément conserve ces deux
+réserves ; leur levée doit être explicite. Pour PyAV 17.1.0, les versions SVT-AV1 4.1.0,
 libXau 1.0.9, libxcb 1.13.1 et libdrm 2.4.115 sont reliées aux binaires des roues,
 aux recettes et aux licences amont par des preuves versionnées. SVT-AV1 est
 déclaré `BSD-3-Clause-Clear`, conformément à cette version.

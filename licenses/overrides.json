@@ -1359,8 +1359,9 @@
         "local_path": "licenses/supplements/GPL-2.0.json"
       }
     ],
-    "reason": "Conditions intégrales ajoutées pour chaque licence déclarée : GPL-2.0-or-later. Notices et attributions originales conservées.",
-    "retain_archive_notices": true
+    "reason": "Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique. Conditions intégrales ajoutées pour chaque licence déclarée : GPL-2.0-or-later. Notices et attributions originales conservées.",
+    "retain_archive_notices": true,
+    "review_required": true
   },
   "native:mingw-winpthread@python:av@17.1.0": {
     "license": "MIT",
@@ -1370,8 +1371,9 @@
         "local_path": "licenses/supplements/MIT.txt"
       }
     ],
-    "reason": "Conditions intégrales ajoutées pour chaque licence déclarée : MIT. Notices et attributions originales conservées.",
-    "retain_archive_notices": true
+    "reason": "Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique. Conditions intégrales ajoutées pour chaque licence déclarée : MIT. Notices et attributions originales conservées.",
+    "retain_archive_notices": true,
+    "review_required": true
   },
   "native:nettle-hogweed@python:av@17.1.0": {
     "attribution_missing": false,

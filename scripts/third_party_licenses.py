@@ -486,8 +486,8 @@ def apply_override(row, override, root):
         local_paths = {n['path'] for n in notices}
         notices = [n for n in row['notices'] if n['path'] not in local_paths] + notices
     return {**row, 'license': override['license'], 'notices': notices,
-            'provenance': override['reason'], 'review_required': override.get('review_required', False),
-            'attribution_missing': override.get('attribution_missing', False)}
+            'provenance': override['reason'], 'review_required': override.get('review_required', row.get('review_required', False)),
+            'attribution_missing': override.get('attribution_missing', row.get('attribution_missing', False))}
 
 
 def render(rows, fingerprint, attribution_sources=()):
@@ -568,8 +568,8 @@ def main():
     for row in data['packages']:
         if row['id'] in overrides:
             row['provenance'] = overrides[row['id']]['reason']
-            row['review_required'] = overrides[row['id']].get('review_required', False)
-            row['attribution_missing'] = overrides[row['id']].get('attribution_missing', False)
+            row['review_required'] = overrides[row['id']].get('review_required', row.get('review_required', False))
+            row['attribution_missing'] = overrides[row['id']].get('attribution_missing', row.get('attribution_missing', False))
             for source in overrides[row['id']]['notices']:
                 if 'local_path' in source:
                     raw = (root / source['local_path']).read_bytes()

@@ -1,5 +1,5 @@
 PROVISOIRE — THÉRÈSE — Licences des composants tiers — DIFFUSION REFUSÉE : attributions incomplètes
-Empreinte des verrous : 293aac3c5adbfb7603860ecc61a3bd88accda77265d88952878565bb131cc9b5
+Empreinte des verrous : 07de94028d8d0b39e8b5eb2c8b8e87eb7549990ff723eccde98c492ebfeb338d
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -4128,6 +4128,7 @@ native:libunistring@python:av@17.1.0
 Licence déclarée : LGPL-3.0-or-later OR GPL-2.0-or-later
 Archive : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/LGPL-3.0-only.txt
 Intégrité : sha256:996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1
+REVUE REQUISE : Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique. Conditions intégrales ajoutées pour chaque licence déclarée : GPL-2.0-or-later. Notices et attributions originales conservées.
 ATTENTION COPYLEFT : GPL, LGPL
 Notice : https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/LGPL-3.0-only.txt — texte SHA256 6a6609aa2ab575dfd896d395b3bebc4c06937b10fcfdc818c9de25bb7def157b
 Notice : licenses/supplements/GPL-2.0.json — texte SHA256 1be990a929b50ca91d815cea1cd3cebb5c49e86076ade82b1103f2b9cd71a3af
@@ -4157,6 +4158,7 @@ native:mingw-winpthread@python:av@17.1.0
 Licence déclarée : MIT
 Archive : https://raw.githubusercontent.com/mingw-w64/mingw-w64/9ac881f1bb8bd26d024f969d2ac4385bf0a83245/COPYING
 Intégrité : sha256:99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f
+REVUE REQUISE : Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique. Conditions intégrales ajoutées pour chaque licence déclarée : MIT. Notices et attributions originales conservées.
 Notice : https://raw.githubusercontent.com/mingw-w64/mingw-w64/9ac881f1bb8bd26d024f969d2ac4385bf0a83245/COPYING — texte SHA256 c5379d14edc29372f20b6461c8a2d6f85eaaabe61d7d0fbcf8fda9fdcf1af9b9
 Notice : licenses/supplements/MIT.txt — texte SHA256 c435050845f96340bfb02c18e46653138e73475492f519b7e6e381853bdfbace
 

@@ -1,5 +1,5 @@
 {
-  "locks": "293aac3c5adbfb7603860ecc61a3bd88accda77265d88952878565bb131cc9b5",
+  "locks": "07de94028d8d0b39e8b5eb2c8b8e87eb7549990ff723eccde98c492ebfeb338d",
   "packages": [
     {
       "id": "cargo:adler2@2.0.1",
@@ -9578,8 +9578,8 @@
       "license": "LGPL-3.0-or-later OR GPL-2.0-or-later",
       "text_only": true,
       "source": "https://www.gnu.org/software/libunistring/",
-      "review_required": false,
-      "provenance": "Conditions intégrales ajoutées pour chaque licence déclarée : GPL-2.0-or-later. Notices et attributions originales conservées.",
+      "review_required": true,
+      "provenance": "Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique. Conditions intégrales ajoutées pour chaque licence déclarée : GPL-2.0-or-later. Notices et attributions originales conservées.",
       "notices": [
         {
           "path": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/LGPL-3.0-only.txt",
@@ -9651,8 +9651,8 @@
       "license": "MIT",
       "text_only": true,
       "source": "https://www.mingw-w64.org",
-      "review_required": false,
-      "provenance": "Conditions intégrales ajoutées pour chaque licence déclarée : MIT. Notices et attributions originales conservées.",
+      "review_required": true,
+      "provenance": "Bibliothèque repérée dans les roues verrouillées. Texte amont ou normatif ; versions exactes, attributions et sources de la construction à compléter avant diffusion publique. Conditions intégrales ajoutées pour chaque licence déclarée : MIT. Notices et attributions originales conservées.",
       "notices": [
         {
           "path": "https://raw.githubusercontent.com/mingw-w64/mingw-w64/9ac881f1bb8bd26d024f969d2ac4385bf0a83245/COPYING",
