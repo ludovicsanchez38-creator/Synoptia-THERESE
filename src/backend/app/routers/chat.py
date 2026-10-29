@@ -3409,9 +3409,11 @@ async def _do_stream_response(
                 )
             elif skill.output_type.value == "file":
                 logger.info(f"Auto-exécution du skill {skill_id} après streaming")
+                from app.services.marquage_ia import provenance_service
                 result = await registry.execute(
                     skill_id,
-                    SkillExecuteRequest(prompt=user_message, title=None),
+                    SkillExecuteRequest(prompt=user_message, title=None,
+                        context={"_ai_provenance": provenance_service(llm_service)}),
                     full_content,
                 )
                 if result.success:
@@ -3636,6 +3638,10 @@ async def _execute_tools_and_continue(
 
     result: _ResultatOutil
     for tc in allowed_calls:
+        if tc.name in ("send_email", "generate_document"):
+            from app.services.marquage_ia import provenance_ia
+            effective = context.config_effective or llm_service.config
+            tc.arguments['_ai_provenance'] = provenance_ia(effective.provider.value, effective.model)
         # Finding 3, troisième passe de revue : la boucle d'outils ignorait
         # complètement l'annulation. Elle émet d'abord un statut, puis exécute
         # — et ces outils ne sont pas anodins : ils créent des contacts et des
@@ -4832,6 +4838,13 @@ async def export_conversation(
         if profile_warning:
             logger.warning("Export DOCX : %s", profile_warning)
         render_markdown_docx(markdown, output_path, profile=profile)
+        from app.services.marquage_ia import marquer_document, provenance_ia
+        generations = [m for m in messages if m.role == 'assistant' and m.provider and m.model]
+        if generations:
+            derniere = generations[-1]
+            champs = provenance_ia(derniere.provider, derniere.model)
+            champs['fournisseur_modele'] = ','.join(sorted({f'{m.provider}/{m.model}' for m in generations}))
+            marquer_document(output_path, champs)
     else:
         output_path.write_text(markdown, encoding="utf-8")
 

@@ -357,6 +357,9 @@ def apply_adhoc_migrations(db_path) -> None:
     if not db_path or not _Path(str(db_path)).exists():
         return
     with closing(db_connect(db_path)) as conn:
+        colonnes_mail_ia = {r[1] for r in conn.execute("PRAGMA table_info(email_messages)")}
+        if colonnes_mail_ia and 'ai_generation_id' not in colonnes_mail_ia:
+            conn.execute('ALTER TABLE email_messages ADD COLUMN ai_generation_id VARCHAR')
         # R1-2 : les anciens ajouts du chat rejoignent le carnet partagé.
         # Les contacts rattachés explicitement à un projet sont conservés.
         colonnes_contacts_r1 = {r[1] for r in conn.execute("PRAGMA table_info(contacts)")}
@@ -741,7 +744,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "t4consent01"
+ALEMBIC_HEAD_REVISION = "t4marque02"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:
@@ -886,7 +889,7 @@ def ensure_alembic_stamp(db_path) -> None:
                         and all(
                             name in _SQLModel.metadata.tables
                             and set(_SQLModel.metadata.tables[name].columns.keys()) <= _colonnes(name)
-                            for name in ("memory_cards", "memory_card_uses", "activities", "cloud_consents")
+                            for name in ("memory_cards", "memory_card_uses", "activities", "cloud_consents", "ai_generations")
                         )
                         and not any(r[1] == 'contact_id' and r[3] for r in conn.execute('PRAGMA table_info(activities)'))
                         # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa

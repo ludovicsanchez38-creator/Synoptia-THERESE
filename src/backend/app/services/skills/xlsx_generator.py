@@ -85,7 +85,7 @@ openpyxl (Workbook, Font, PatternFill, Alignment, Border, Side, BarChart, LineCh
 6. **Style header** : fond `PatternFill(start_color="0F1E6D", fill_type="solid")`, texte `Font(bold=True, color="E6EDF7")`
 7. **Alternance lignes** : une ligne sur deux avec fond `PatternFill(start_color="F5F7FA", fill_type="solid")`
 8. **Auto-fit colonnes** : ajuster la largeur des colonnes au contenu
-9. **Footer** : dernière ligne = "Généré par THERESE - Synoptia" en italique gris
+9. **Footer** : dernière ligne = "Rédigé avec l’IA de THÉRÈSE" en italique gris
 10. **Finir par** : `wb.save(output_path)`
 
 **RÈGLE ABSOLUE** : Si les données demandées ne sont pas présentes dans le contexte fourni (contacts, projets, fichiers joints), NE PAS inventer de données. Générer à la place un modèle de tableau avec des en-têtes appropriés et des exemples de lignes clairement marquées comme "[Exemple - à remplacer]". Mentionner dans une cellule colorée : "Données non disponibles - modèle vierge fourni".
@@ -387,7 +387,7 @@ NE génère PAS de code Python. Écris directement les tableaux de données.
 
         # Footer Synoptia
         footer_row = len(rows) + 6
-        ws.cell(row=footer_row, column=1).value = "Généré par THERESE - Synoptia"
+        ws.cell(row=footer_row, column=1).value = "Rédigé avec l’IA de THÉRÈSE"
         ws.cell(row=footer_row, column=1).font = Font(name="Inter", size=8, italic=True,
                                                       color="999999")
 

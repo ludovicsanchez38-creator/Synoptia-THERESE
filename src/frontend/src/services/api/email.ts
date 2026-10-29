@@ -17,6 +17,7 @@ export interface EmailAccount {
 }
 
 export interface EmailMessage {
+  ai_generation_id?: string | null;
   id: string;
   thread_id: string;
   subject: string | null;
@@ -78,6 +79,7 @@ export interface OAuthFlowData {
 }
 
 export interface SendEmailRequest {
+  ai_generation_id?: string;
   to: string[];
   subject: string;
   body: string;
@@ -446,6 +448,7 @@ export async function generateEmailResponse(
 ): Promise<{
   message_id: string;
   draft: string;
+  ai_generation_id?: string | null;
   tone: string;
   length: string;
 }> {

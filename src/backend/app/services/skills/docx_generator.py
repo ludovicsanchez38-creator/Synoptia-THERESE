@@ -81,7 +81,7 @@ docx (Document), docx.shared (Cm, Pt, Inches, RGBColor), docx.enum.text (WD_ALIG
 5. **Mise en page** :
    - Marges : 2.5 cm (ou Inches(1))
    - Espacement : line_spacing = 1.15, space_after = Pt(10)
-6. **Footer** : "Généré par THÉRÈSE - Synoptïa" centré, 9pt, italique, couleur #A9B8D8
+6. **Footer** : "Rédigé avec l’IA de THÉRÈSE" centré, 9pt, italique, couleur #A9B8D8
 7. **Structure** :
    - Introduction (contexte, objectif)
    - Corps (sections logiques avec titres)
@@ -115,7 +115,7 @@ footer = section.footer
 footer.is_linked_to_previous = False
 para = footer.paragraphs[0]
 para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = para.add_run("Généré par THÉRÈSE - Synoptïa")
+run = para.add_run("Rédigé avec l’IA de THÉRÈSE")
 run.font.size = Pt(9)
 run.font.italic = True
 run.font.color.rgb = RGBColor(0xA9, 0xB8, 0xD8)
@@ -339,7 +339,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
         para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        run = para.add_run("Généré par THÉRÈSE - Synoptïa")
+        run = para.add_run("Rédigé avec l’IA de THÉRÈSE")
         run.font.size = Pt(9)
         run.font.color.rgb = SYNOPTIA_COLORS["muted"]
         run.font.italic = True

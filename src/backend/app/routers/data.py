@@ -19,6 +19,7 @@ from app.config import settings
 from app.models.database import close_db, get_session
 from app.models.entities import (
     Activity,
+    AIGeneration,
     BoardDecisionDB,
     Calendar,
     CalendarEvent,
@@ -302,6 +303,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                 for conv in conversations
             ],
             "files": [_export_row(item) for item in files],
+            "ai_generations": [_export_row(item) for item in session.execute(select(AIGeneration)).scalars().all()],
             "cloud_consents": [_export_row(item) for item in session.execute(select(CloudConsent)).scalars().all()],
             "preferences": [
                 {
@@ -750,6 +752,7 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     await session.execute(delete(ProcessingTask))
     # Les préférences contiennent aussi le profil et les choix personnels :
     # « toutes les données » doit donc réellement remettre cet espace à zéro.
+    await session.execute(delete(AIGeneration))
     await session.execute(delete(Preference))
     # On garde les logs d'audit et l'historique des accords.
     await session.commit()

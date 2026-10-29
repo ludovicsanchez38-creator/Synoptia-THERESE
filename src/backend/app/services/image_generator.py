@@ -398,6 +398,21 @@ class ImageGeneratorService:
         file_name = f"therese_{timestamp}_{image_id}.{extension}"
         file_path = self.output_dir / file_name
 
+        from app.models.database import get_sync_session
+        from app.services.marquage_ia import marquer_image, provenance_ia
+        from app.services.provenance_store import ajouter_generation
+        identifiants = {
+            ImageProvider.OPENAI.value: ('openai', 'gpt-image-2'),
+            ImageProvider.GEMINI.value: ('gemini', 'gemini-3.1-flash-image-preview'),
+            ImageProvider.FAL.value: ('fal', 'fal-ai/flux-pro/v1.1'),
+        }
+        fournisseur, modele = identifiants[provider]
+        champs = provenance_ia(fournisseur, modele)
+        image_bytes = marquer_image(image_bytes, champs)
+        with get_sync_session() as session:
+            ajouter_generation(session, 'image', image_id, champs, image_id)
+            session.commit()
+
         # Write image
         file_path.write_bytes(image_bytes)
         file_size = file_path.stat().st_size
@@ -415,6 +430,14 @@ class ImageGeneratorService:
             prompt=prompt,
         )
 
+    @staticmethod
+    def _provider_image(image_id: str) -> str:
+        from app.models.database import get_sync_session
+        from app.models.entities import AIGeneration
+        with get_sync_session() as session:
+            record = session.get(AIGeneration, image_id)
+            return record.provider if record else 'unknown'
+
     def get_image(self, image_id: str) -> GeneratedImage | None:
         """Get a previously generated image by ID."""
         # B-036 : l'identifiant vient d'un paramètre de chemin et partait tel
@@ -430,7 +453,7 @@ class ImageGeneratorService:
             if file_path.is_file():
                 return GeneratedImage(
                     id=image_id,
-                    provider="unknown",
+                    provider=self._provider_image(image_id),
                     file_path=file_path,
                     file_name=file_path.name,
                     file_size=file_path.stat().st_size,
@@ -452,7 +475,7 @@ class ImageGeneratorService:
                 images.append(
                     GeneratedImage(
                         id=image_id,
-                        provider="unknown",
+                        provider=self._provider_image(image_id),
                         file_path=file_path,
                         file_name=file_path.name,
                         file_size=file_path.stat().st_size,

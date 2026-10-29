@@ -28,6 +28,7 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
     draftBcc,
     draftSubject,
     draftBody,
+    draftGenerationId,
     draftIsHtml,
     editingDraftId,
     setDraftSubject,
@@ -89,6 +90,7 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
       bcc: bccList.length > 0 ? bccList : undefined,
       subject: draftSubject,
       body: draftBody,
+      ...(draftGenerationId ? { ai_generation_id: draftGenerationId } : {}),
       html: draftIsHtml,
     };
 
@@ -160,6 +162,7 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
         bcc: bccList.length > 0 ? bccList : undefined,
         subject: draftSubject,
         body: draftBody,
+      ...(draftGenerationId ? { ai_generation_id: draftGenerationId } : {}),
         html: draftIsHtml,
       };
       const source = sourceMessageId || editingDraftId;

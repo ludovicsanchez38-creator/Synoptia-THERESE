@@ -103,6 +103,7 @@ def _creer_tables_planning_reelles(db_path: Path) -> None:
                         "memory_card_uses",
                         "activities",
                         "cloud_consents",
+                        "ai_generations",
                     )
                 ],
             )

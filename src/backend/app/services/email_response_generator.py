@@ -227,7 +227,8 @@ Rédige une réponse appropriée en français."""
             if f'{user_name}' not in response_text:
                 response_text += f"\n\nCordialement,\n{user_name}"
 
-            return response_text
+            from app.services.marquage_ia import TexteIA, provenance_service
+            return TexteIA(response_text, provenance_service(llm_service))
 
         except GenerationImpossible:
             raise

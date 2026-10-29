@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, act } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResponseGeneratorModal } from './ResponseGeneratorModal';
 import * as api from '../../services/api';
@@ -48,4 +48,16 @@ describe('Lecture indépendante c16 : génération de réponse, session et résu
         expect(screen.getByRole('button', { name: 'Utiliser' })).toBeDisabled();
         b.resolve({ draft: 'Texte réservé au message B' });
     });
+});
+
+
+it('conserve la provenance après une retouche et la transmet à la composition', async () => {
+    generation.mockResolvedValue({ draft: 'Texte IA initial', ai_generation_id: 'generation-test' } as never);
+    const courant = props();
+    render(<ResponseGeneratorModal {...courant}/>);
+    const champ = await screen.findByRole('textbox', { name: 'Brouillon de réponse' });
+    await waitFor(() => expect(champ).toHaveValue('Texte IA initial'));
+    fireEvent.change(champ, { target: { value: 'Texte IA retouché' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Utiliser' }));
+    expect(courant.onUseResponse).toHaveBeenCalledWith('Texte IA retouché', 'generation-test');
 });

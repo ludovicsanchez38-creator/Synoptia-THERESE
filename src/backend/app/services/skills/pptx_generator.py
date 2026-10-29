@@ -118,7 +118,7 @@ pptx (Presentation), pptx.util (Inches, Pt, Cm, Emu), pptx.dml.color (RGBColor),
    - Slide citation : texte centré en italique avec guillemets
    - Slide tableau : grille de données
 8. **Texte** : Inter 24pt pour le corps, ne pas dépasser 6 lignes par slide
-9. **Slide de fin** : "Merci" en 48pt cyan centré + "Généré par THÉRÈSE - Synoptïa" en muted
+9. **Slide de fin** : "Merci" en 48pt cyan centré + "Rédigé avec l’IA de THÉRÈSE" en muted
 10. **Finir par** : `prs.save(output_path)`
 
 **INTERDIT** : Ne jamais mettre de balises Markdown (`**`, `*`, `~~`, `_`) dans le texte des slides. Texte brut uniquement.
@@ -156,7 +156,7 @@ set_bg(slide)
 # Slide finale
 slide = prs.slides.add_slide(blank)
 set_bg(slide)
-# ... "Merci" + footer "Généré par THÉRÈSE - Synoptïa" ...
+# ... "Merci" + footer "Rédigé avec l’IA de THÉRÈSE" ...
 
 prs.save(output_path)
 ```
@@ -442,7 +442,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
 
         # Sous-texte
         p = text_frame.add_paragraph()
-        p.text = "Généré par THÉRÈSE - Synoptïa"
+        p.text = "Rédigé avec l’IA de THÉRÈSE"
         p.font.name = "Inter"
         p.font.size = Pt(14)
         p.font.color.rgb = SYNOPTIA_COLORS["muted"]

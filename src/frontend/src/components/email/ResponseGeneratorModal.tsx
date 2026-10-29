@@ -25,7 +25,7 @@ interface ResponseGeneratorModalProps {
   onClose: () => void;
   messageId: string;
   accountId: string;
-  onUseResponse: (response: string) => void;
+  onUseResponse: (response: string, generationId?: string) => void;
 }
 
 type Tone = 'formal' | 'friendly' | 'neutral';
@@ -62,7 +62,7 @@ export function ResponseGeneratorModal({
   const generationRef = useRef(0);
   const contexteRef = useRef({ isOpen, messageId, accountId });
   contexteRef.current = { isOpen, messageId, accountId };
-  const resultatRef = useRef<{ messageId: string; accountId: string } | null>(null);
+  const resultatRef = useRef<{ messageId: string; accountId: string; generationId?: string } | null>(null);
 
   // US-013 : piège de focus + Échap. onClose vient du parent sous forme de fléchée
   // recréée à chaque rendu : on le stabilise (ref) pour ne pas réarmer le piège
@@ -86,7 +86,7 @@ export function ResponseGeneratorModal({
     try {
       const response = await api.generateEmailResponse(messageId, accountId, requestedTone, requestedLength);
       if (!estCourante()) return;
-      resultatRef.current = { messageId, accountId };
+      resultatRef.current = { messageId, accountId, generationId: response.ai_generation_id || undefined };
       setDraft(response.draft);
       setHasGenerated(true);
     } catch (error) {
@@ -116,7 +116,8 @@ export function ResponseGeneratorModal({
       || resultatRef.current?.messageId !== messageId
       || resultatRef.current?.accountId !== accountId) return;
     try {
-      onUseResponse(draft);
+      if (resultatRef.current?.generationId) onUseResponse(draft, resultatRef.current.generationId);
+      else onUseResponse(draft);
     } catch (err) {
       console.error('ResponseGeneratorModal: erreur dans onUseResponse', err);
       // Fallback : fermer le modal même si onUseResponse a échoué

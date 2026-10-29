@@ -353,6 +353,10 @@ async def _draft_stream(
             # section déjà rédigée.
             last_flushed_raw = raw_content
             return
+        if contenu.strip():
+            from app.services.marquage_ia import provenance_service
+            from app.services.provenance_store import ajouter_generation
+            ajouter_generation(session, 'section', target.id, provenance_service(llm_service))
         target.content = contenu
         target.status = "brouillon"
         target.updated_at = datetime.now(UTC)
@@ -403,6 +407,9 @@ async def _draft_stream(
             yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
             return
 
+        from app.services.marquage_ia import provenance_service
+        from app.services.provenance_store import ajouter_generation
+        ajouter_generation(session, 'section', target.id, provenance_service(llm_service))
         target.content = content
         target.status = "brouillon"
         target.updated_at = datetime.now(UTC)
@@ -1071,6 +1078,9 @@ async def export_document(
         if profile_warning:
             logger.warning("Export DOCX : %s", profile_warning)
         render_markdown_docx(markdown, output_path, profile=profile)
+        from app.services.marquage_ia import marquer_document
+        from app.services.provenance_store import provenance_sections
+        marquer_document(output_path, await provenance_sections(session, [s.id for s in non_orphan_with_content]))
     else:
         output_path.write_text(markdown, encoding="utf-8")
 

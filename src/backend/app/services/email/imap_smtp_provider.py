@@ -457,6 +457,10 @@ class ImapSmtpProvider(EmailProvider):
         msg["From"] = self._email
         msg["To"] = ", ".join(request.to)
         msg["Subject"] = request.subject
+        from app.services.marquage_ia import entete_ia
+        marquage = entete_ia(request.ai_provenance)
+        if marquage:
+            msg['X-Therese-IA'] = marquage
 
         if request.cc:
             msg["Cc"] = ", ".join(request.cc)
@@ -542,6 +546,10 @@ class ImapSmtpProvider(EmailProvider):
         msg["From"] = self._email
         msg["To"] = ", ".join(request.to)
         msg["Subject"] = request.subject
+        from app.services.marquage_ia import entete_ia
+        marquage = entete_ia(request.ai_provenance)
+        if marquage:
+            msg['X-Therese-IA'] = marquage
 
         if request.cc:
             msg["Cc"] = ", ".join(request.cc)

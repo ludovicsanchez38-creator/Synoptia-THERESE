@@ -150,6 +150,9 @@ class SkillsRegistry:
 
             # Exécuter le skill
             result: SkillResult = await skill.execute(params)
+            from app.services.marquage_ia import marquer_document
+            marquer_document(result.file_path, request.context.get('_ai_provenance'))
+            result.file_size = result.file_path.stat().st_size
 
             # Construire l'URL de téléchargement
             download_url = f"/api/skills/download/{result.file_id}"

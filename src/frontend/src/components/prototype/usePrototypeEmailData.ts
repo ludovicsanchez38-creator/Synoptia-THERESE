@@ -123,7 +123,7 @@ export function usePrototypeEmailData(enabled = true) {
     const accountId = useEmailStore.getState().currentAccountId;
     if (!accountId) throw new Error('Aucun compte email actif.');
     const result = await generateEmailResponse(messageId, accountId, tone, length);
-    return result.draft;
+    return result.ai_generation_id ? { draft: result.draft, ai_generation_id: result.ai_generation_id } : result.draft;
   }, []);
 
   // B-060 : `draftId` porte le brouillon deja pose chez le fournisseur. Sans

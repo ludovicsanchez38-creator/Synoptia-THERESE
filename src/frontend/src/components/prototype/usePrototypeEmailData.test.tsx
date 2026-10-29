@@ -89,7 +89,8 @@ describe('usePrototypeEmailData', () => {
 
     let generated = '';
     await act(async () => {
-      generated = await result.current.generateDraft('message-1', 'formal', 'medium');
+      const value = await result.current.generateDraft('message-1', 'formal', 'medium');
+      generated = typeof value === 'string' ? value : value.draft;
     });
     expect(generated).toBe('Réponse proposée');
 

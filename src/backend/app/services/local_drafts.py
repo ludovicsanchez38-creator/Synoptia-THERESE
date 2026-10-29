@@ -62,6 +62,7 @@ async def _actualiser(session: Any, account: Any, request: Any, message_id: str,
         message = EmailMessage(id=message_id, thread_id=thread_id or message_id,
             account_id=account.id, from_email=account.email, to_emails='[]', labels='["DRAFT"]',
             date=now, internal_date=now, is_draft=True, contact_id=contact_id)
+    message.ai_generation_id = getattr(request, 'ai_generation_id', None)
     message.subject = request.subject
     message.to_emails = json.dumps(request.to)
     message.cc_emails = json.dumps(request.cc or [])

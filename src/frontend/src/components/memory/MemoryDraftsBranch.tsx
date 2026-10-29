@@ -47,7 +47,7 @@ export function MemoryDraftsBranch() {
         // Une saisie apparue pendant la lecture n'est jamais écrasée.
         if (store.isComposing || store.draftBody || store.draftSubject || store.draftRecipients.length) return;
         store.setCurrentAccount(d.account_id);
-        store.startComposing(d.to_emails, d.subject, d.body_plain || d.body_html || '');
+        store.startComposing(d.to_emails, d.subject, d.body_plain || d.body_html || '', [], d.ai_generation_id || undefined);
         store.setDraftCc(d.cc_emails); store.setDraftBcc(d.bcc_emails); store.setDraftIsHtml(!d.body_plain && Boolean(d.body_html));
         useEmailStore.setState({ editingDraftId: d.id });
         setMail(d.id);

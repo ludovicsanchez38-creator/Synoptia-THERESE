@@ -303,6 +303,18 @@ class Variable(SQLModel, table=True):
         return []
 
 
+class AIGeneration(SQLModel, table=True):
+    """Provenance technique locale, sans prompt ni contenu généré."""
+    __tablename__ = 'ai_generations'
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    kind: str
+    owner_id: str
+    provider: str
+    model: str
+    created_at: str
+    provenance: str
+
+
 class CloudConsent(SQLModel, table=True):
     """Décision datée ; un retrait ajoute une ligne et conserve la preuve."""
 
@@ -452,6 +464,8 @@ class EmailMessage(SQLModel, table=True):
     # Attachments
     has_attachments: bool = False
     attachment_count: int = 0
+
+    ai_generation_id: str | None = None
 
     # Body content
     body_plain: str | None = None
