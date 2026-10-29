@@ -47,7 +47,7 @@ def test_le_backend_autonome_linux_garde_ses_bornes_et_son_rapport():
     publication = next(
         etape
         for etape in autonome["steps"]
-        if etape.get("uses") == "actions/upload-artifact@v4"
+        if etape.get("uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"  # v4.6.2
     )
 
     assert etape["timeout-minutes"] == 12

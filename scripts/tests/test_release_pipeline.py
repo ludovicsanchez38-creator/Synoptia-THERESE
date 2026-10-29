@@ -17,15 +17,13 @@ class PipelineTests(unittest.TestCase):
             jobs = yaml.safe_load(source)['jobs']
             for job in jobs.values():
                 steps = job.get('steps', [])
-                if filename == 'ci.yml' and not any('third_party_licenses.py check' in s.get('run', '') for s in steps):
-                    continue
                 for step in steps:
                     action = step.get('uses', '')
                     if not action or action.startswith('./'):
                         continue
                     with self.subTest(workflow=filename, action=action):
                         self.assertRegex(action, r'@[a-f0-9]{40}$')
-                        if action.startswith('actions/'):
+                        if action.startswith(('actions/', 'Swatinem/')):
                             self.assertRegex(source, re.escape(action) + r'\s+# v\d+\.\d+\.\d+')
 
     def test_no_upload_before_platform_checks(self):

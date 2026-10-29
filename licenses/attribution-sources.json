@@ -444,5 +444,1237 @@
         "extraction": "Notice intégrale, LF final."
       }
     ]
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "npm:eslint-scope@8.4.0",
+    "archive": "https://registry.npmjs.org/eslint-scope/-/eslint-scope-8.4.0.tgz",
+    "archive_integrity": "sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==",
+    "archive_sha256": "c3a28a402da98e9d83b9beb82c18a0194d78f1450cd84c0b1abc5621a1dddb4b",
+    "path": "package/LICENSE",
+    "member_sha256": "d3a724e2ed749f172ff70b62a1d0631b7d4b0ea273782365a3464d4e2d6b6dbd",
+    "notice_sha256": "08dcdcc2b4b40cbfdc8bcd3792790f78f3e2af555e9524af2b12fb7be9bd6f99",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 16,
+        "notice_line": 16,
+        "text": "ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "npm:esrecurse@4.3.0",
+    "archive": "https://registry.npmjs.org/esrecurse/-/esrecurse-4.3.0.tgz",
+    "archive_integrity": "sha512-KmfKL3b6G+RXvP8N1vr3Tq1kL/oCFgn2NYXEtqP8/L3pKapUA4G8cFVaoF3SU323CD4XypR/ffioHmkti6/Tag==",
+    "archive_sha256": "3ecf9370d7296b47b570c88a11f70b35bb965af8d536536b259eb55f9b793b61",
+    "path": "package/esrecurse.js",
+    "member_sha256": "aa99847033c240a621fe987f0e06b754f388f22abd11a05bdf9cdd00794b7350",
+    "notice_sha256": "5d25456fc8208776ba2fb2a2c618afb84ad9b4ffb0c3693ff9e9d3a3f49c7f2a",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 16,
+        "notice_line": 16,
+        "text": "  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "npm:estraverse@5.3.0",
+    "archive": "https://registry.npmjs.org/estraverse/-/estraverse-5.3.0.tgz",
+    "archive_integrity": "sha512-MMdARuVEQziNTeJD8DgMqmhwR11BRQ/cBP+pLtYdSTnf3MIO8fFeiINEbX36ZdNlfU/7A9f3gUw49B3oQsvwBA==",
+    "archive_sha256": "3e8d45da5b8085a4a8d51368ffead5b551a502c286978962a05d5c8e0d72fda6",
+    "path": "package/LICENSE.BSD",
+    "member_sha256": "0e74697a68cebdcd61502c30fe80ab7f9e341d995dcd452023654d57133534b1",
+    "notice_sha256": "d0b1e75b0f84d904b06d7232dba36fc051d8015e241dbffb32e9a3cad163804b",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 13,
+        "notice_line": 13,
+        "text": "ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "npm:esutils@2.0.3",
+    "archive": "https://registry.npmjs.org/esutils/-/esutils-2.0.3.tgz",
+    "archive_integrity": "sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==",
+    "archive_sha256": "c5adbd730a495a3c635bbae9ee5f693b95c7e13b395f7036efab8232c5f0640f",
+    "path": "package/LICENSE.BSD",
+    "member_sha256": "0e74697a68cebdcd61502c30fe80ab7f9e341d995dcd452023654d57133534b1",
+    "notice_sha256": "d0b1e75b0f84d904b06d7232dba36fc051d8015e241dbffb32e9a3cad163804b",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 13,
+        "notice_line": 13,
+        "text": "ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:caldav@2.2.3",
+    "archive": "https://files.pythonhosted.org/packages/4c/b9/32c2dedc33d69e01608c42572e86e47511a18a2e2fdb6431e5e5682aba8e/caldav-2.2.3.tar.gz",
+    "archive_integrity": "sha256:d53e2de4e4aee9e317b23073de6de153077729a40add1a2b2107af5a0db0949c",
+    "archive_sha256": "d53e2de4e4aee9e317b23073de6de153077729a40add1a2b2107af5a0db0949c",
+    "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/jaraco_functools-4.3.0.dist-info/licenses/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:caldav@2.2.3",
+    "archive": "https://files.pythonhosted.org/packages/4c/b9/32c2dedc33d69e01608c42572e86e47511a18a2e2fdb6431e5e5682aba8e/caldav-2.2.3.tar.gz",
+    "archive_integrity": "sha256:d53e2de4e4aee9e317b23073de6de153077729a40add1a2b2107af5a0db0949c",
+    "archive_sha256": "d53e2de4e4aee9e317b23073de6de153077729a40add1a2b2107af5a0db0949c",
+    "path": "caldav-2.2.3/venv/lib/python3.13/site-packages/keyring-25.7.0.dist-info/licenses/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:jaraco-context@6.1.0",
+    "archive": "https://files.pythonhosted.org/packages/cb/9c/a788f5bb29c61e456b8ee52ce76dbdd32fd72cd73dd67bc95f42c7a8d13c/jaraco_context-6.1.0.tar.gz",
+    "archive_integrity": "sha256:129a341b0a85a7db7879e22acd66902fda67882db771754574338898b2d5d86f",
+    "archive_sha256": "129a341b0a85a7db7879e22acd66902fda67882db771754574338898b2d5d86f",
+    "path": "jaraco_context-6.1.0/LICENSE",
+    "member_sha256": "9755a18519666e5f0f4cae3daad3d7012bcae48a600b31237d75e9fe134e6683",
+    "notice_sha256": "65a93b2a7c8bb79f09454834295034917075c80a5b4e4a688e97ea35798bde58",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2026 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:jaraco-functools@4.4.0",
+    "archive": "https://files.pythonhosted.org/packages/0f/27/056e0638a86749374d6f57d0b0db39f29509cce9313cf91bdc0ac4d91084/jaraco_functools-4.4.0.tar.gz",
+    "archive_integrity": "sha256:da21933b0417b89515562656547a77b4931f98176eb173644c0d35032a33d6bb",
+    "archive_sha256": "da21933b0417b89515562656547a77b4931f98176eb173644c0d35032a33d6bb",
+    "path": "jaraco_functools-4.4.0/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:keyring@25.7.0",
+    "archive": "https://files.pythonhosted.org/packages/43/4b/674af6ef2f97d56f0ab5153bf0bfa28ccb6c3ed4d1babf4305449668807b/keyring-25.7.0.tar.gz",
+    "archive_integrity": "sha256:fe01bd85eb3f8fb3dd0405defdeac9a5b4f6f0439edbb3149577f244a2e8245b",
+    "archive_sha256": "fe01bd85eb3f8fb3dd0405defdeac9a5b4f6f0439edbb3149577f244a2e8245b",
+    "path": "keyring-25.7.0/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:setuptools@84.2.1",
+    "archive": "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz",
+    "archive_integrity": "sha256:3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+    "archive_sha256": "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+    "path": "setuptools-84.2.1/setuptools/_vendor/jaraco_context-6.1.0.dist-info/licenses/LICENSE",
+    "member_sha256": "9755a18519666e5f0f4cae3daad3d7012bcae48a600b31237d75e9fe134e6683",
+    "notice_sha256": "65a93b2a7c8bb79f09454834295034917075c80a5b4e4a688e97ea35798bde58",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2026 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:setuptools@84.2.1",
+    "archive": "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz",
+    "archive_integrity": "sha256:3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+    "archive_sha256": "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+    "path": "setuptools-84.2.1/setuptools/_vendor/jaraco_functools-4.4.0.dist-info/licenses/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:setuptools@84.2.1",
+    "archive": "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz",
+    "archive_integrity": "sha256:3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+    "archive_sha256": "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+    "path": "setuptools-84.2.1/setuptools/_vendor/zipp-3.23.0.dist-info/licenses/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:torch@2.9.1",
+    "archive": "https://files.pythonhosted.org/packages/48/50/c4b5112546d0d13cc9eaa1c732b823d676a9f49ae8b6f97772f795874a03/torch-2.9.1-cp314-cp314-macosx_11_0_arm64.whl",
+    "archive_integrity": "sha256:1edee27a7c9897f4e0b7c14cfc2f3008c571921134522d5b9b5ec4ebbc69041a",
+    "archive_sha256": "1edee27a7c9897f4e0b7c14cfc2f3008c571921134522d5b9b5ec4ebbc69041a",
+    "path": "torch-2.9.1.dist-info/licenses/LICENSE",
+    "member_sha256": "5a645c45a620599fd11296b4d4d480cd6edf76b0bb39c0ad26b6d662f07c8e73",
+    "notice_sha256": "ea03c7c388611a11cc39cd6651417d004359791e42db90d3d9aa6dfad9868b75",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 8369,
+        "notice_line": 8369,
+        "text": "Copyright <YEAR> <COPYRIGHT HOLDER>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:torch@2.9.1/wheel-cpu-linux",
+    "archive": "https://download-r2.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-manylinux_2_28_x86_64.whl",
+    "archive_integrity": "sha256:39b3dff6d8fba240ae0d1bede4ca11c2531ae3b47329206512d99e17907ff74b",
+    "archive_sha256": "39b3dff6d8fba240ae0d1bede4ca11c2531ae3b47329206512d99e17907ff74b",
+    "path": "torch-2.9.1+cpu.dist-info/licenses/LICENSE",
+    "member_sha256": "776e43288ab54330aa1d942737754b0edef0e7a07b62b736b595136ca5ccae88",
+    "notice_sha256": "11c265f2a12feb3b2bd1aa305d8813f07765e7e7f9f99fe09314bafe78ed718a",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 8327,
+        "notice_line": 8327,
+        "text": "Copyright <YEAR> <COPYRIGHT HOLDER>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:torch@2.9.1/wheel-cpu-windows",
+    "archive": "https://download-r2.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-win_amd64.whl",
+    "archive_integrity": "sha256:404a7ab2fffaf2ca069e662f331eb46313692b2f1630df2720094284f390ccef",
+    "archive_sha256": "404a7ab2fffaf2ca069e662f331eb46313692b2f1630df2720094284f390ccef",
+    "path": "torch-2.9.1+cpu.dist-info/LICENSE",
+    "member_sha256": "a60db7b1ec2872f18d2c1b86d147ea39d5ead7d671fe8a9c07c28b17d167e51d",
+    "notice_sha256": "4e1666324f9c26aadc6166e364cda3af0fd4a1c1ae080df92890e92151c811aa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 7335,
+        "notice_line": 7335,
+        "text": "Copyright <YEAR> <COPYRIGHT HOLDER>"
+      }
+    ],
+    "line_ending": "CRLF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "status": "upstream-verbatim",
+    "package": "python:zipp@3.23.0",
+    "archive": "https://files.pythonhosted.org/packages/e3/02/0f2892c661036d50ede074e376733dca2ae7c6eb617489437771209d4180/zipp-3.23.0.tar.gz",
+    "archive_integrity": "sha256:a07157588a12518c9d4034df3fbbee09c814741a33ff63c05fa29d26a2404166",
+    "archive_sha256": "a07157588a12518c9d4034df3fbbee09c814741a33ff63c05fa29d26a2404166",
+    "path": "zipp-3.23.0/LICENSE",
+    "member_sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+    "notice_sha256": "1c95948d001ad58aa3ba25a2c99bc350b2952b3e98515f666de1ee110c62a8fa",
+    "normalization": "UTF-8, CRLF vers LF et strip aux extrémités, collecteur inchangé ; lignes génériques identiques aux octets UTF-8 amont.",
+    "lines": [
+      {
+        "archive_line": 3,
+        "notice_line": 3,
+        "text": "Copyright (c) 2025 <copyright holders>"
+      }
+    ],
+    "line_ending": "LF",
+    "member_prefix": "",
+    "member_suffix": "\n"
+  },
+  {
+    "file": "licenses/supplements/GPL-2.0.json",
+    "source_package": "native:ffmpeg@python:av@17.1.0",
+    "source_notice": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n8.1.1/COPYING.GPLv2",
+    "source_text_sha256": "1be990a929b50ca91d815cea1cd3cebb5c49e86076ade82b1103f2b9cd71a3af",
+    "transformation": "Texte intégral inchangé ; sérialisation JSON."
+  },
+  {
+    "file": "licenses/supplements/Python-2.0.json",
+    "source_package": "npm:argparse@2.0.1",
+    "source_notice": "package/LICENSE",
+    "source_text_sha256": "8cb1adb54549bbffc30325e4a0a245978750efb5f150d684b700e1f92e0ebfcc",
+    "transformation": "Texte intégral inchangé ; sérialisation JSON."
+  },
+  {
+    "file": "licenses/supplements/Unlicense.json",
+    "source_package": "python:filelock@3.20.3",
+    "source_notice": "filelock-3.20.3/LICENSE",
+    "source_text_sha256": "79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8",
+    "transformation": "Texte intégral inchangé ; sérialisation JSON."
+  },
+  {
+    "file": "licenses/supplements/MIT-0.json",
+    "source_package": "npm:@csstools/color-helpers@5.1.0",
+    "source_notice": "package/LICENSE.md",
+    "source_text_sha256": "bfcd4c64ffbf7cef4727b14db6d4f940eadea217897a305cec620151fd67877f",
+    "transformation": "Conditions seules à partir de Permission is hereby granted ; copyright du paquet donneur non transféré. Les attributions propres restent dans chaque entrée."
+  },
+  {
+    "file": "licenses/supplements/BSD-3-Clause.json",
+    "source_package": "cargo:brotli-decompressor@5.0.0",
+    "source_notice": "brotli-decompressor-5.0.0/LICENSE",
+    "source_text_sha256": "6c91ec82929f91ffa341a9928e5c98b44767c6a1bb8d7789edad88d3fa5681af",
+    "transformation": "Conditions seules ; attributions propres conservées dans chaque entrée."
+  },
+  {
+    "file": "licenses/supplements/Zlib.json",
+    "source_package": "python:sqlcipher3@0.6.2",
+    "source_notice": "sqlcipher3-0.6.2/LICENSE",
+    "source_text_sha256": "a66fa4a9ba6b7b0cac6759c024ae10ae148698d100e962788f1b74c01e5f2d7c",
+    "transformation": "Conditions Zlib seules ; attribution conservée dans l’entrée d’origine, aucune attribution ajoutée aux crates objc2."
+  },
+  {
+    "file": "licenses/supplements/Apache-2.0-LLVM.json",
+    "source_package": "cargo:linux-raw-sys@0.11.0",
+    "source_notice": "linux-raw-sys-0.11.0/LICENSE-Apache-2.0_WITH_LLVM-exception",
+    "source_text_sha256": "2f213ec6b1355dc841dc489c9e7ce1dddd07611df474efcf61b8a960797398e9",
+    "transformation": "Texte intégral inchangé ; sérialisation JSON."
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-app-kit@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-app-kit/objc2-app-kit-0.3.2.crate",
+    "archive_integrity": "sha256:d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c",
+    "vcs_info_path": "objc2-app-kit-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "07762c2a438c287ac124300928c9da0f96cefc1932ff8cadac13716fd1e195eb",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-app-kit-0.3.2/Cargo.toml.orig",
+        "sha256": "a15eb82815ce282d59a2f5be179556695ce678790129c30e1d86567c1e2c684e",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-core-foundation@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-core-foundation/objc2-core-foundation-0.3.2.crate",
+    "archive_integrity": "sha256:2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536",
+    "vcs_info_path": "objc2-core-foundation-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "1c1a87985a2bd25015f5e2413f4041379bea0172b2fce88dae3e6482b50aab26",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-core-foundation-0.3.2/Cargo.toml.orig",
+        "sha256": "44cd6a4440c3ea1ba85df240ab9b9e7a95da3a5873ce623ac426ac5acfbe507f",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-core-graphics@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-core-graphics/objc2-core-graphics-0.3.2.crate",
+    "archive_integrity": "sha256:e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807",
+    "vcs_info_path": "objc2-core-graphics-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "264ea4e6453d508410c33c7e5c05ef71f067cac56efc06603862b36d1fe5dfc3",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-core-graphics-0.3.2/Cargo.toml.orig",
+        "sha256": "8156455095991b7501f4fa30bdf29c5a541a41e3c479558e757932b07d0b16d1",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-foundation@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-foundation/objc2-foundation-0.3.2.crate",
+    "archive_integrity": "sha256:e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272",
+    "vcs_info_path": "objc2-foundation-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "de34f3c84d7cb1cafcedb4e83b7efdd64047872566827477b954f8a853536bb1",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-foundation-0.3.2/Cargo.toml.orig",
+        "sha256": "71158540d55a9b5ce073c856347f0ed1e0e71f4210cfb48a82b1f0e505ba6a50",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-io-surface@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-io-surface/objc2-io-surface-0.3.2.crate",
+    "archive_integrity": "sha256:180788110936d59bab6bd83b6060ffdfffb3b922ba1396b312ae795e1de9d81d",
+    "vcs_info_path": "objc2-io-surface-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "a68dbb39ef7cfef6062e3d2e49c59539c7a34d70d13c5bdf4a443d2475280011",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-io-surface-0.3.2/Cargo.toml.orig",
+        "sha256": "80c0f7bac2add855807e6abadbc220473b982041b99339bacf17e2885b3752c9",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-osa-kit@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-osa-kit/objc2-osa-kit-0.3.2.crate",
+    "archive_integrity": "sha256:f112d1746737b0da274ef79a23aac283376f335f4095a083a267a082f21db0c0",
+    "vcs_info_path": "objc2-osa-kit-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "cd692f1027389e9d30cd16fd942fb614011ce09119c15051aa0e664ba3e326b2",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-osa-kit-0.3.2/Cargo.toml.orig",
+        "sha256": "d07f7d8066a6f89e49a0caac8a1629903f934c9f3f287430bda382da92ba9ea5",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-quartz-core@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-quartz-core/objc2-quartz-core-0.3.2.crate",
+    "archive_integrity": "sha256:96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f",
+    "vcs_info_path": "objc2-quartz-core-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "d18b21bb115491577880f7f8c491ac10dd8d9947bd27fdc3f6dafcf4cf92b2e9",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-quartz-core-0.3.2/Cargo.toml.orig",
+        "sha256": "ca303efdd2bcb7958d3e0a08f9b7adb327a2942d0730cda5991365c48016f4d4",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-ui-kit@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-ui-kit/objc2-ui-kit-0.3.2.crate",
+    "archive_integrity": "sha256:d87d638e33c06f577498cbcc50491496a3ed4246998a7fbba7ccb98b1e7eab22",
+    "vcs_info_path": "objc2-ui-kit-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "4c63b7685ce9aa0273820c80801fbd582bb3431815a318d0180f2ee7de85ba00",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-ui-kit-0.3.2/Cargo.toml.orig",
+        "sha256": "e775983c6d4a0e049038a52f5f94850336ae3060a03e3a1245e4583e298ea6f1",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "unresolved-attribution",
+    "package": "cargo:objc2-web-kit@0.3.2",
+    "archive": "https://static.crates.io/crates/objc2-web-kit/objc2-web-kit-0.3.2.crate",
+    "archive_integrity": "sha256:b2e5aaab980c433cf470df9d7af96a7b46a9d892d521a2cbbb2f8a4c16751e7f",
+    "vcs_info_path": "objc2-web-kit-0.3.2/.cargo_vcs_info.json",
+    "vcs_info_sha256": "af77e35da92d2c30dde7cd40ff3723ce9f312cddb639a388ae447979af630a30",
+    "repository": "https://github.com/madsmtm/objc2",
+    "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "path": "LICENSE.md",
+    "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+    "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+    "file": "licenses/supplements/objc2-7b1abfd-LICENSE.json",
+    "finding": "Aucun titulaire/auteur nommé dans LICENSE.md ; MIT/Apache/Zlib ne suffisent pas à reconstituer une attribution.",
+    "additional_search": {
+      "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/Cargo.toml",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "path": "Cargo.toml",
+      "sha256": "2a5d4807cb132ce1d3f5b591a760643db49ca835dedefddcbd3087ad962360cd",
+      "workspace_package_authors": [
+        "Mads Marquart <mads@marquart.dk>"
+      ],
+      "archive_manifest": {
+        "path": "objc2-web-kit-0.3.2/Cargo.toml.orig",
+        "sha256": "c18d575811ed67608266557f3c5b673b2430accb55c86c6547a833000dd78a40",
+        "authors_inherited": false
+      },
+      "finding": "Le workspace nomme Mads Marquart, mais ces neuf manifestes ne reprennent pas workspace.package.authors. Cette métadonnée ne constitue pas une attribution propre à chaque crate ; aucun nom de titulaire ajouté."
+    },
+    "repository_search": {
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "archive_sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "files_scanned": 517,
+      "copyright_or_author_hits": []
+    }
+  },
+  {
+    "status": "upstream-license",
+    "package": "cargo:rustls-platform-verifier-android@0.1.1",
+    "archive": "https://static.crates.io/crates/rustls-platform-verifier-android/rustls-platform-verifier-android-0.1.1.crate",
+    "archive_integrity": "sha256:f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f",
+    "repository": "https://github.com/rustls/rustls-platform-verifier",
+    "tag": "v/0.3.3",
+    "commit": "669ace0a801ef4be8e0e23d9c534849497ee5782",
+    "path": "LICENSE-MIT",
+    "url": "https://raw.githubusercontent.com/rustls/rustls-platform-verifier/669ace0a801ef4be8e0e23d9c534849497ee5782/LICENSE-MIT",
+    "sha256": "1c7cf76689c837a68ed8d704994e52a0f2940c087958f860d17f3186afbdcc0c",
+    "file": "licenses/supplements/rustls-platform-verifier-android-0.1.1-LICENSE-MIT.json",
+    "version_binding": {
+      "android_version": "0.1.1",
+      "release_commit": "da3d9c36f48fb9f8f97e94f132fdab67ab0fc75b",
+      "vcs_info_present": false,
+      "tag_explanation": "Tag du projet contenant le sous-paquet Android 0.1.1 ; v/0.1.1 contient Android 0.1.0 et a été écarté.",
+      "exact_archive_matches": [
+        {
+          "archive_path": "Cargo.toml.orig",
+          "path": "android-release-support/Cargo.toml",
+          "sha256": "06142c21559d66a76c8740d8c505a2f7ed9078c45e7baee49dac58a131362640"
+        },
+        {
+          "archive_path": "src/lib.rs",
+          "path": "android-release-support/src/lib.rs",
+          "sha256": "d24acbec7495ccbbe7a3760bad1e7a80cb8fa7e2e8a05831798261c749e86c73"
+        }
+      ]
+    }
+  },
+  {
+    "status": "upstream-license",
+    "package": "cargo:rustls-platform-verifier-android@0.1.1",
+    "archive": "https://static.crates.io/crates/rustls-platform-verifier-android/rustls-platform-verifier-android-0.1.1.crate",
+    "archive_integrity": "sha256:f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f",
+    "repository": "https://github.com/rustls/rustls-platform-verifier",
+    "tag": "v/0.3.3",
+    "commit": "669ace0a801ef4be8e0e23d9c534849497ee5782",
+    "path": "LICENSE-APACHE",
+    "url": "https://raw.githubusercontent.com/rustls/rustls-platform-verifier/669ace0a801ef4be8e0e23d9c534849497ee5782/LICENSE-APACHE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "file": "licenses/supplements/rustls-platform-verifier-android-0.1.1-LICENSE-APACHE.json",
+    "version_binding": {
+      "android_version": "0.1.1",
+      "release_commit": "da3d9c36f48fb9f8f97e94f132fdab67ab0fc75b",
+      "vcs_info_present": false,
+      "tag_explanation": "Tag du projet contenant le sous-paquet Android 0.1.1 ; v/0.1.1 contient Android 0.1.0 et a été écarté.",
+      "exact_archive_matches": [
+        {
+          "archive_path": "Cargo.toml.orig",
+          "path": "android-release-support/Cargo.toml",
+          "sha256": "06142c21559d66a76c8740d8c505a2f7ed9078c45e7baee49dac58a131362640"
+        },
+        {
+          "archive_path": "src/lib.rs",
+          "path": "android-release-support/src/lib.rs",
+          "sha256": "d24acbec7495ccbbe7a3760bad1e7a80cb8fa7e2e8a05831798261c749e86c73"
+        }
+      ]
+    }
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:svt-av1@python:av@17.1.0",
+    "component": "SVT-AV1",
+    "version": "4.1.0",
+    "repository": "https://gitlab.com/AOMediaCodec/SVT-AV1",
+    "tag": "v4.1.0",
+    "commit": "c04f951541ad600e0d9c10836f2ab7b9bc69816d",
+    "path": "LICENSE.md",
+    "url": "https://gitlab.com/AOMediaCodec/SVT-AV1/-/raw/c04f951541ad600e0d9c10836f2ab7b9bc69816d/LICENSE.md",
+    "sha256": "0acc2fcb27472bdc9aaf8b71f37055bbdac4f54671b7d922f241bd7fcd0dd3e6",
+    "file": "licenses/supplements/SVT-AV1-4.1.0-LICENSE.md.json",
+    "extraction": "fichier intégral",
+    "notice_sha256": "2475b465445f22f5b69bb368326ef8de86f3e90b8b97d33b5b70321fdb3a8b13"
+  },
+  {
+    "status": "native-version-evidence",
+    "package": "native:svt-av1@python:av@17.1.0",
+    "component": "SVT-AV1",
+    "version": "4.1.0",
+    "binaries": [
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libSvtAv1Enc-9393c086.so.4.1.0",
+        "sha256": "9cb5f57196143427c5f165f98b88a174e06c592e5a884507f5adcd8b20472414",
+        "version_markers": [
+          "v4.1.0"
+        ]
+      },
+      {
+        "package": "python:av@17.1.0/wheel-macos",
+        "archive": "https://files.pythonhosted.org/packages/6d/af/dfdf6fc7b17814b50d0aa9e7a7e37b87be91be3890f44b0d525433cd1fd1/av-17.1.0-cp311-abi3-macosx_14_0_arm64.whl",
+        "archive_integrity": "sha256:43ebbe977f19a7f2d2bd1a4e119675a0b15e05852cf7309846b6ab922ba7ffe9",
+        "archive_sha256": "43ebbe977f19a7f2d2bd1a4e119675a0b15e05852cf7309846b6ab922ba7ffe9",
+        "path": "av/.dylibs/libSvtAv1Enc.4.1.0.dylib",
+        "sha256": "d37ff29cf32a19a4a630f789d1ce017c1dcb4613ac352359644597cad02b2653",
+        "version_markers": [
+          "v4.1.0"
+        ]
+      },
+      {
+        "package": "python:av@17.1.0/wheel-windows",
+        "archive": "https://files.pythonhosted.org/packages/6b/f2/53a7cd34adb6a971d7e6d99663e74db286966c9db8afdca17472fdf0f98e/av-17.1.0-cp311-abi3-win_amd64.whl",
+        "archive_integrity": "sha256:5df5c1172ef1cf65a1529d612f7da7798ce2cf82c1ff7212466b538a6cc7214c",
+        "archive_sha256": "5df5c1172ef1cf65a1529d612f7da7798ce2cf82c1ff7212466b538a6cc7214c",
+        "path": "av.libs/libSvtAv1Enc-5eeef79489c86980df49968253b5be77.dll",
+        "sha256": "5eeef79489c86980df49968253b5be77e73f2cff505ddd7b1fc5cb698e24bd14",
+        "version_markers": [
+          "v4.1.0",
+          "v4.1.0"
+        ]
+      }
+    ],
+    "recipes": [
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+        "commit": "97241598792f4c980c32458187154c7c999d68b3",
+        "path": "scripts/ffmpeg-8.1.json",
+        "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/pkg.py",
+        "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/build-ffmpeg.py",
+        "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+      }
+    ],
+    "finding": "SVT v4.1.0 dans chaque binaire et dans la recette FFmpeg 8.1.1-2 employée par PyAV 17.1.0.",
+    "recipe_source_archive": {
+      "url": "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v4.1.0/SVT-AV1-v4.1.0.tar.bz2",
+      "sha256": "184162d3db3a4448882b17230413b4938ca252eef6b3c5e2f1236b2fcf497881",
+      "source": "scripts/pkg.py au commit b84838a003b1626152ef530750d5c3e0022c3db9"
+    }
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libXau",
+    "version": "1.0.9",
+    "repository": "https://gitlab.freedesktop.org/xorg/lib/libxau",
+    "tag": "libXau-1.0.9",
+    "commit": "d9443b2c57b512cfb250b35707378654d86c7dea",
+    "path": "COPYING",
+    "url": "https://gitlab.freedesktop.org/xorg/lib/libxau/-/raw/d9443b2c57b512cfb250b35707378654d86c7dea/COPYING",
+    "sha256": "56abe29bb1d9806a9e04fa9f80fed2c0f18027594df3f098148d814aef6bddfa",
+    "file": "licenses/supplements/libXau-1.0.9-COPYING.json",
+    "extraction": "fichier intégral",
+    "notice_sha256": "fb4c7095401ee6db63f7d298f0c37e64450fe806af87def047d4796aa1400f4e"
+  },
+  {
+    "status": "native-version-evidence",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libXau",
+    "version": "1.0.9",
+    "binaries": [
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libXau-154567c4.so.6.0.0",
+        "sha256": "05484d24bf78cb8ed03169f1cb067204d829cb7af21de8820400d29d115e4320",
+        "version_markers": [
+          "libXau.so.6.0.0-1.0.9-3.el8.x86_64.debug"
+        ]
+      }
+    ],
+    "recipes": [
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+        "commit": "97241598792f4c980c32458187154c7c999d68b3",
+        "path": "scripts/ffmpeg-8.1.json",
+        "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/pkg.py",
+        "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/build-ffmpeg.py",
+        "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+      }
+    ],
+    "finding": "Version source et révision RPM dans .gnu_debuglink de la bibliothèque de la roue manylinux_2_28 ; pas une déduction depuis le SONAME."
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libxcb",
+    "version": "1.13.1",
+    "repository": "https://gitlab.freedesktop.org/xorg/lib/libxcb",
+    "tag": "1.13.1",
+    "commit": "8287ebd7b752c33b0cabc4982606fe4831106f7e",
+    "path": "COPYING",
+    "url": "https://gitlab.freedesktop.org/xorg/lib/libxcb/-/raw/8287ebd7b752c33b0cabc4982606fe4831106f7e/COPYING",
+    "sha256": "c5ffbfeaa501071ceeb97b7de2c0d703fdaa35de01c0fb6cbac1c28453a3e9fd",
+    "file": "licenses/supplements/libxcb-1.13.1-COPYING.json",
+    "extraction": "fichier intégral",
+    "notice_sha256": "97aec3d18f8f442ce5390bff7725f87ae1245704cda989b34e1f3d43b2283a23"
+  },
+  {
+    "status": "native-version-evidence",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libxcb",
+    "version": "1.13.1",
+    "binaries": [
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libxcb-5ddf6756.so.1.1.0",
+        "sha256": "2f34b406b3bcf9ef40df06984600c124733144ce4b7bdaa15622e58f9ef27dd8",
+        "version_markers": [
+          "libxcb.so.1.1.0-1.13.1-1.el8.x86_64.debug"
+        ]
+      },
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libxcb-shape-7716c890.so.0.0.0",
+        "sha256": "33de91e51d8341d1f543d5920247ac1b5dd784d268d357f71b29b54ec0727a07",
+        "version_markers": [
+          "libxcb-shape.so.0.0.0-1.13.1-1.el8.x86_64.debug"
+        ]
+      },
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libxcb-shm-0be6dfbf.so.0.0.0",
+        "sha256": "8bdb07c7b3f331baa7885fca37151747de9c2ac01ae44d5876271eae5561f254",
+        "version_markers": [
+          "libxcb-shm.so.0.0.0-1.13.1-1.el8.x86_64.debug"
+        ]
+      },
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libxcb-xfixes-6de855b8.so.0.0.0",
+        "sha256": "1a499e93356b11d24c449177548b7b1ae993a49a537f7f269fd477014ea93e99",
+        "version_markers": [
+          "libxcb-xfixes.so.0.0.0-1.13.1-1.el8.x86_64.debug"
+        ]
+      }
+    ],
+    "recipes": [
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+        "commit": "97241598792f4c980c32458187154c7c999d68b3",
+        "path": "scripts/ffmpeg-8.1.json",
+        "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/pkg.py",
+        "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/build-ffmpeg.py",
+        "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+      }
+    ],
+    "finding": "Version source et révision RPM dans .gnu_debuglink de la bibliothèque de la roue manylinux_2_28 ; pas une déduction depuis le SONAME."
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drm.c",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drm.c",
+    "sha256": "406f82058a4c6aedc815826dc8e896e03cde9be26e6ab5c37263037d5417fc77",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drm.c.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "e15b30add3de44841e08324f38b27b082d47543f348cb04bba77a8725268bdaa"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drmHash.c",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drmHash.c",
+    "sha256": "76c46073e7745ca474e077558b612390eac6850171f8a9889e7279d113209d6d",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drmHash.c.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "9805e439d6e07c9cce47e0f2ebbe068a3d68f552610f7032f39d5634a9ed82d7"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drmRandom.c",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drmRandom.c",
+    "sha256": "f9c811c486704b2435d756c87a82dd1b747aba7657c71fc7a9590db7b1e697fe",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drmRandom.c.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "0c909d456192a08f22dc5566ffe07fa1136b4119875aabf8eedddea3b62b4f5a"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drmSL.c",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drmSL.c",
+    "sha256": "75e07aba21a635e78ec1108f6c4f88a3e8a6aa57e37f96a239a4e6742a995e82",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drmSL.c.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "81782a59a50f941ccbddae7cb997705a9c20a9974aa82edf58c07833f0a44c62"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drmMode.c",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drmMode.c",
+    "sha256": "cde9296ca0a19ebd985e00911b8f263eaf026655c3f00f818755b8bb99446ae7",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drmMode.c.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "dfc033d6a55b8f54e7e01fe5ba5a54a5836ed1824b5ba3b9542d520af54fb834"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drm.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drm.h",
+    "sha256": "4f18b18ae6fe41c73ad6b674c35cc64f51552a1925da9603cf680184c9706dda",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drm.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "552c83df5a618cd527433e8d84130b4caceb6f2869371db54eb5123884f69210"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "xf86drmMode.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/xf86drmMode.h",
+    "sha256": "5bdca4b0e569a11a05545c39eb88127446c541e34a6a76aa091c934c1a0b719b",
+    "file": "licenses/supplements/libdrm-2.4.115-xf86drmMode.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "c863a957e4decea82caba94740f48e770933f68cd1ab96a400daf671c543e99d"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "libsync.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/libsync.h",
+    "sha256": "9dba22c1b43ba2fdcc1c53367f826a6cc45015122e75ad81985711186e9b8b48",
+    "file": "licenses/supplements/libdrm-2.4.115-libsync.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "7c5e368d3249ea1334f14f2a1e9e7c385ebdc816375906e39b550e6fdba2236f"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "libdrm_macros.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/libdrm_macros.h",
+    "sha256": "98915f32c88ff7a455e6c81211cbd13aa6e190300d61bdee14f83b37cc3a4438",
+    "file": "licenses/supplements/libdrm-2.4.115-libdrm_macros.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "29eb1e5b6dc8b3719eee65409248b7fddf4c3e24f366c4ddf243fe5085168ccb"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "util_math.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/util_math.h",
+    "sha256": "5b36dddf7bdbbb219d62f77278c7dd05b18a77b8918ee7c2ef76dd711d1843ea",
+    "file": "licenses/supplements/libdrm-2.4.115-util_math.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "2d71db007e8de8a8088b9838af3edba7515de6157b9746c156fddb556fb02ab7"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "include/drm/drm.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/include/drm/drm.h",
+    "sha256": "62a2c077af176d166821e6f185d448e532b30268969bd92cfec6a2f30b94cc92",
+    "file": "licenses/supplements/libdrm-2.4.115-include-drm-drm.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "20d34ebb98563935303d04fa3568d6361dfa6391dcc5c9d5f0cebf25f246e728"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "include/drm/drm_mode.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/include/drm/drm_mode.h",
+    "sha256": "ba4406e21cd3071abc61a17caa8d35705ebffdaa32743d57ee4ece658e8f2f1d",
+    "file": "licenses/supplements/libdrm-2.4.115-include-drm-drm_mode.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "d8ae67502c6507d1135b380b558a9b211180ff47185f837eb69caadc1ba6f5a5"
+  },
+  {
+    "status": "upstream-native-license",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "repository": "https://gitlab.freedesktop.org/mesa/drm",
+    "tag": "libdrm-2.4.115",
+    "commit": "ee558cea20d1f9d822fe1a28e97beaf365bf9d38",
+    "path": "include/drm/drm_fourcc.h",
+    "url": "https://gitlab.freedesktop.org/mesa/drm/-/raw/ee558cea20d1f9d822fe1a28e97beaf365bf9d38/include/drm/drm_fourcc.h",
+    "sha256": "de69fb8e0667dbcaf53365ac8711bd53f25d234e2a79d12707de1d463c5d4ecf",
+    "file": "licenses/supplements/libdrm-2.4.115-include-drm-drm_fourcc.h.json",
+    "extraction": "blocs de commentaire initiaux, avant le premier code ; intacts",
+    "notice_sha256": "1088a5724845c71931c61fed324416b8764bf5e5e758e51d133697709954c29c"
+  },
+  {
+    "status": "native-version-evidence",
+    "package": "native:libXau-libxcb-libdrm@python:av@17.1.0",
+    "component": "libdrm",
+    "version": "2.4.115",
+    "binaries": [
+      {
+        "package": "python:av@17.1.0/wheel-linux",
+        "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+        "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "archive_sha256": "f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f",
+        "path": "av.libs/libdrm-b0291a67.so.2.4.0",
+        "sha256": "2b8f19025340baf49d5fb8b6b68113c429baf3ceb0e04d7b2663f673c44cdbed",
+        "version_markers": [
+          "libdrm.so.2.4.0-2.4.115-2.el8.x86_64.debug"
+        ]
+      }
+    ],
+    "recipes": [
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+        "commit": "97241598792f4c980c32458187154c7c999d68b3",
+        "path": "scripts/ffmpeg-8.1.json",
+        "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/pkg.py",
+        "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+        "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+        "path": "scripts/build-ffmpeg.py",
+        "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+      }
+    ],
+    "finding": "Version source et révision RPM dans .gnu_debuglink de la bibliothèque de la roue manylinux_2_28 ; pas une déduction depuis le SONAME."
   }
 ]

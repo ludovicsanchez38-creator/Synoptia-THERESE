@@ -118,6 +118,107 @@ class LicensesTests(unittest.TestCase):
         text = (self.m.ROOT / 'licenses/supplements/Apache-2.0.txt').read_text()
         self.assertTrue(self.m.generic_attribution(text + '\nMIT License\nCopyright <year> <copyright holders>'))
 
+    def test_apache_appendix_does_not_exempt_another_component(self):
+        apache = (self.m.ROOT / 'licenses/supplements/Apache-2.0.txt').read_text()
+        for year in ['[yyyy]', '2026']:
+            with self.subTest(year=year):
+                self.assert_invalid_notice('LICENSE', apache +
+                                           '\nAUTRE COMPOSANT\nCopyright ' + year + ' [name of copyright owner]')
+
+    def test_rtf_apache_example_is_scoped_to_its_normative_paragraph(self):
+        apache = (self.m.ROOT / 'licenses/supplements/Apache-2.0.txt').read_text()
+        rtf = apache.replace('\n', '\\par\n').replace('Copyright [yyyy]', '\\pard\\li180 Copyright [yyyy]')
+        self.assertFalse(self.m.generic_attribution(rtf))
+        for year in ['[yyyy]', '2026']:
+            with self.subTest(year=year):
+                self.assertTrue(self.m.generic_attribution(rtf +
+                                '\nAUTRE COMPOSANT\nCopyright ' + year + ' [name of copyright owner]'))
+
+    def test_each_declared_license_requires_full_terms(self):
+        mit = (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()
+        for expression in ['MIT OR Apache-2.0', 'MIT/Apache-2.0', 'MIT AND Apache-2.0']:
+            row = {'id': 'cargo:example@1', 'artifact': 'a', 'integrity': 'sha256:a',
+                   'license': expression, 'notices': [
+                       {'path': 'LICENSE-MIT', 'text': mit},
+                       {'path': 'LICENSE-APACHE', 'text': 'Copyright 2026 Example. Licensed under the Apache License, Version 2.0; https://www.apache.org/licenses/LICENSE-2.0'}]}
+            with self.subTest(expression=expression), self.assertRaisesRegex(ValueError, 'Apache-2.0'):
+                self.m.validate_inventory([row], [row])
+
+    def test_named_unknown_or_clear_bsd_cannot_be_hidden_by_mit(self):
+        mit = (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()
+        for name in ['LicenseRef-Unknown', 'BSD-3-Clause-Clear']:
+            row = {'id': 'cargo:example@1', 'artifact': 'a', 'integrity': 'sha256:a',
+                   'license': 'MIT OR ' + name, 'notices': [{'path': 'LICENSE', 'text': mit}]}
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, name):
+                self.m.validate_inventory([row], [row])
+
+    def test_unknown_license_classifier_is_not_hidden_by_a_known_one(self):
+        row = {'id': 'python:example@1', 'artifact': 'a', 'integrity': 'sha256:a',
+               'license': 'License :: OSI Approved :: MIT License; License :: Other :: Unknown',
+               'notices': [{'path': 'LICENSE', 'text': (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text()}]}
+        with self.assertRaisesRegex(ValueError, 'Unknown'):
+            self.m.validate_inventory([row], [row])
+
+    def verbatim_fixture(self):
+        text = ('Copyright 2026 Named Author\n' +
+                (self.m.ROOT / 'licenses/supplements/MIT.txt').read_text().strip() +
+                '\nCopyright <year> <copyright holders>')
+        row = {'id': 'npm:example@1', 'artifact': 'https://example.test/a.tgz',
+               'integrity': 'sha256:' + 'a' * 64, 'license': 'MIT',
+               'notices': [{'path': 'package/LICENSE', 'text': text}]}
+        proof = {'status': 'upstream-verbatim', 'package': row['id'],
+                 'archive': row['artifact'], 'archive_integrity': row['integrity'],
+                 'archive_sha256': 'a' * 64, 'path': 'package/LICENSE',
+                 'member_sha256': self.m.digest(text.encode()),
+                 'notice_sha256': self.m.digest(text.encode()),
+                 'lines': [{'archive_line': len(text.splitlines()),
+                            'notice_line': len(text.splitlines()),
+                            'text': text.splitlines()[-1]}]}
+        return row, proof
+
+    def test_upstream_placeholder_without_proof_is_rejected(self):
+        row, _ = self.verbatim_fixture()
+        with self.assertRaises(ValueError):
+            self.m.validate_inventory([row], [row])
+
+    def test_upstream_placeholder_exact_proof_is_accepted(self):
+        row, proof = self.verbatim_fixture()
+        self.m.validate_inventory([row], [row], attribution_sources=[proof])
+        self.assertNotIn('PROVISOIRE', self.m.render([row], 'hash', attribution_sources=[proof]))
+        self.assertIn('texte amont reproduit tel quel', self.m.render([row], 'hash', attribution_sources=[proof]))
+
+    def test_upstream_placeholder_mismatched_proof_is_rejected(self):
+        row, proof = self.verbatim_fixture()
+        for field, value in [('notice_sha256', '0' * 64), ('archive_integrity', 'sha256:' + 'b' * 64),
+                             ('path', 'other/LICENSE'), ('package', 'npm:another@1'),
+                             ('lines', [{'archive_line': 1, 'notice_line': 1, 'text': 'wrong'}])]:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.m.validate_inventory([row], [row], attribution_sources=[{**proof, field: value}])
+
+    def test_proof_member_bytes_and_archive_hash_must_match(self):
+        row, proof = self.verbatim_fixture()
+        for field in ['member_sha256', 'archive_sha256']:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.m.validate_inventory([row], [row], attribution_sources=[{**proof, field: 'b' * 64}])
+
+    def test_upstream_proof_cannot_exempt_a_shared_supplement_or_new_placeholder(self):
+        row, proof = self.verbatim_fixture()
+        row['notices'].append({'path': 'licenses/supplements/local.txt',
+                               'text': 'Copyright <year> <copyright holders>'})
+        with self.assertRaises(ValueError):
+            self.m.validate_inventory([row], [row], attribution_sources=[proof])
+
+    def test_other_normative_examples_do_not_hide_component_placeholders(self):
+        gnu = (self.m.ROOT / 'licenses/supplements/GPL-3.0.txt').read_text()
+        rows = json.loads((self.m.ROOT / self.m.INVENTORY).read_text())['packages']
+        freetype = next(n['text'] for r in rows for n in r['notices']
+                        if 'Please replace <year> with the value from the FreeType version' in n['text'])
+        for text, extra in [(gnu, 'Copyright (C) <year> <name of author>'),
+                            (freetype, 'copyright © <year> The FreeType')]:
+            with self.subTest(extra=extra):
+                self.assertFalse(self.m.generic_attribution(text))
+                self.assertTrue(self.m.generic_attribution(text + '\nAUTRE COMPOSANT\n' + extra))
+
     def test_local_supplement_requires_its_exact_hash(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

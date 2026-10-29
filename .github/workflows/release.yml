@@ -266,12 +266,12 @@ jobs:
       - name: Setup Rust
         # B-1115 : épinglé par empreinte (branche stable du 24/09/2026) ; la
         # chaîne n'est plus déduite du nom de branche, d'où `toolchain`.
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable (révision du 2026-09-03)
         with:
           toolchain: stable
 
       - name: Cache Rust
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: src/frontend/src-tauri
           save-if: "true"

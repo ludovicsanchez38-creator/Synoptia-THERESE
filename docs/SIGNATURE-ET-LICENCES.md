@@ -170,27 +170,53 @@ pas le contrôle. Les textes supplémentaires de `licenses/supplements/` sont
 vérifiés par SHA-256 et inclus dans l'empreinte des verrous. Les attributions
 propres aux versions et leurs preuves figurent dans `licenses/attribution-sources.json`.
 Une métadonnée auteur est identifiée comme telle ; aucune année ni titularité
-de copyright n'est inventée. Cinq textes sont sérialisés en chaînes JSON pour
-préserver leurs espaces et séparateurs amont sans introduire d'erreurs de blanc dans les
-nouveaux fichiers du dépôt.
+de copyright n'est inventée. Les nouveaux textes sont au besoin sérialisés en chaînes JSON pour conserver
+leurs espaces et séparateurs amont à l’identique.
 
 `refresh` applique les suppléments même lorsqu'une archive a déjà une notice.
+Le contrôle exige le texte intégral de **chaque licence nommée** dans une
+expression, y compris avec `OR` ou `/` : une MIT complète ne couvre pas un
+simple renvoi Apache. Un identifiant inconnu reste refusé.
 `generate` peut produire un document de travail **PROVISOIRE**, qualifié dès sa
 première ligne avec la liste des entrées à compléter. `check`, appelé par la
 CI et la release, le **refuse** tant qu'une attribution manque ou contient un
-champ générique. Les exemples d'application des annexes normatives Apache,
-GNU et FreeType sont distingués des attributions des composants. Ces exemples
-restent intacts dans les textes livrés. Une réserve générale de rapprochement
-des binaires (`review_required`) reste distincte d'une attribution manquante
-(`attribution_missing`) ; elle n'est pas une validation de redistribution.
+champ générique sans preuve admise. L'exemple Apache est exempté uniquement
+après son paragraphe normatif complet, y compris dans sa présentation RTF ;
+une occurrence identique dans un autre composant reste refusée. Les exemples
+GNU et FreeType sont également circonscrits à leurs passages pédagogiques et
+restent intacts dans les textes livrés.
 
-Au deuxième tour du 29 octobre 2026, le livrable reste provisoire : douze des
-treize attributions initialement signalées sont retrouvées dans le cache,
-mais celle de `rustls-platform-verifier-android 0.1.1` reste introuvable. Le
-contrôle détecte aussi des lacunes préexistantes hors de ces treize entrées.
-Les textes de `siphasher 0.3.11`, `siphasher 1.0.1` et `rsa 4.9.1` sont désormais
-complétés et leurs notices originales conservées. Voir le rapport du deuxième
-tour pour le bilan exact et les résultats des suites complètes.
+Le statut **« texte amont reproduit tel quel »** est accordé fichier par fichier
+et entrée par entrée dans `licenses/attribution-sources.json` (`upstream-verbatim`).
+Il conserve les champs génériques écrits par l'amont ainsi que les copyrights
+nommés. Chaque preuve porte l'URL et l'empreinte de l'archive verrouillée,
+le chemin interne, le SHA-256 du fichier, les numéros et textes exacts des lignes
+concernées et le SHA-256 du texte livré. `check` lie la preuve à l'entrée et
+reconstitue les octets du fichier interne (LF/CRLF, blancs aux extrémités)
+pour vérifier aussi son empreinte. Une modification du texte, d'une ligne ou
+de l'empreinte invalide l'exception. Aucun supplément local ou texte partagé
+n'obtient ce statut. Les archives ont été vérifiées lors de l'établissement
+des preuves ; `generate` et `check` restent hors réseau.
+
+Au troisième tour du 29 octobre 2026, **16 des 25 blocages sont levés** :
+13 entrées ont une reproduction amont prouvée (16 fichiers), Rustls Android
+0.1.1 retrouve son attribution 1Password dans le dépôt exact, et les deux
+suppléments natifs génériques sont remplacés. **Neuf crates objc2 0.3.2 restent
+provisoires** : leur `LICENSE.md` au commit des archives ne nomme aucun auteur
+ou titulaire, et leurs manifestes n'héritent pas des auteurs du workspace.
+Aucune attribution spécifique n'est déduite de cette métadonnée commune.
+
+Le contrôle de couverture a aussi fait compléter **45 entrées**, dont
+`android_system_properties 0.1.5`, `shlex 1.3.0` et `tqdm 4.67.1`, sans supprimer
+leurs notices ni leurs attributions originales. Voir le rapport du troisième
+tour pour la liste exhaustive et les résultats des suites.
+
+Une réserve de rapprochement des binaires (`review_required`) reste distincte
+d'une attribution manquante (`attribution_missing`) ; elle n'est pas une
+validation de redistribution. Pour PyAV 17.1.0, les versions SVT-AV1 4.1.0,
+libXau 1.0.9, libxcb 1.13.1 et libdrm 2.4.115 sont reliées aux binaires des roues,
+aux recettes et aux licences amont par des preuves versionnées. SVT-AV1 est
+déclaré `BSD-3-Clause-Clear`, conformément à cette version.
 
 Des roues natives des trois plateformes complètent les archives source. Les
 roues Torch CPU CPython 3.13 sont verrouillées dans

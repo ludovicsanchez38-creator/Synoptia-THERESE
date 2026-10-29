@@ -178,9 +178,9 @@
   {
     "id": "native:svt-av1@python:av@17.1.0",
     "owner": "python:av@17.1.0",
-    "artifact": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/BSD-3-Clause.txt",
-    "integrity": "sha256:5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
-    "license": "BSD-3-Clause",
+    "artifact": "https://gitlab.com/AOMediaCodec/SVT-AV1/-/raw/c04f951541ad600e0d9c10836f2ab7b9bc69816d/LICENSE.md",
+    "integrity": "sha256:0acc2fcb27472bdc9aaf8b71f37055bbdac4f54671b7d922f241bd7fcd0dd3e6",
+    "license": "BSD-3-Clause-Clear",
     "text_only": true,
     "source": "https://gitlab.com/AOMediaCodec/SVT-AV1",
     "review_required": true,
@@ -222,8 +222,8 @@
   {
     "id": "native:libXau-libxcb-libdrm@python:av@17.1.0",
     "owner": "python:av@17.1.0",
-    "artifact": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt",
-    "integrity": "sha256:b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
+    "artifact": "https://gitlab.freedesktop.org/xorg/lib/libxau/-/raw/d9443b2c57b512cfb250b35707378654d86c7dea/COPYING",
+    "integrity": "sha256:56abe29bb1d9806a9e04fa9f80fed2c0f18027594df3f098148d814aef6bddfa",
     "license": "MIT",
     "text_only": true,
     "source": "https://gitlab.freedesktop.org/xorg",

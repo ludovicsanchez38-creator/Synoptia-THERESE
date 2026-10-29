@@ -192,22 +192,221 @@ def has_license(notices):
     return False
 
 
+def declared_licenses(expression):
+    """Toutes les licences nommées, même dans une alternative OR ou slash."""
+    aliases = {
+        'MIT License': 'MIT', 'NVIDIA Proprietary Software': 'LicenseRef-NVIDIA-Proprietary',
+        'Apache': 'Apache-2.0', 'Apache 2.0': 'Apache-2.0',
+        'Apache License 2.0': 'Apache-2.0', 'Apache 2.0 License': 'Apache-2.0',
+        'Apache License, Version 2.0': 'Apache-2.0', 'PSF': 'PSF-2.0',
+        'BSD-3': 'BSD-3-Clause', 'BSD 3-Clause OR Apache-2.0': 'BSD-3-Clause OR Apache-2.0',
+    }
+    expression = aliases.get(expression, expression)
+    if expression.startswith('License ::'):
+        names = {'MIT License': 'MIT', 'Apache Software License': 'Apache-2.0',
+                 'BSD License': 'BSD', 'Mozilla Public License 2.0 (MPL 2.0)': 'MPL-2.0',
+                 'GNU General Public License v2 (GPLv2)': 'GPL-2.0-or-later'}
+        labels = [part.split('::')[-1].strip() for part in expression.split(';')]
+        return {names.get(label, label) for label in labels}
+    if expression.startswith('GPLv2-or-later with a special exception'):
+        return {'GPL-2.0-or-later'}
+    if expression.startswith('BSD license (see'):
+        return {'BSD'}
+    if expression in ('', 'Voir les notices originales', 'Voir notice amont',
+                      'Voir le texte de la métadonnée License', 'Dual License'):
+        return set()
+    identifiers = re.findall(
+        r'(?<![\w-])(?:Apache-2\.0|MIT(?:-CMU|-0)?|(?:0?BSD)(?:-[23]-Clause(?:-Clear)?)?|'
+        r'(?:A?GPL|LGPL)-[23]\.\d(?:-only|-or-later|-with-GCC-exception)?|'
+        r'Zlib|ISC|MPL-2\.0|Unlicense|Unicode-3\.0|OFL-1\.1|CC0-1\.0|CC-BY-4\.0|'
+        r'Python-2\.0|PSF-2\.0|CNRI-Python|CDLA-Permissive-2\.0|BlueOak-1\.0\.0|'
+        r'LLVM-exception|LicenseRef-NVIDIA-Proprietary)(?![\w-])', expression)
+    remainder = expression
+    for name in sorted(identifiers, key=len, reverse=True):
+        remainder = remainder.replace(name, '')
+    remainder = re.sub(r'\b(?:AND|OR|WITH)\b|[()/;\s]', '', remainder)
+    if remainder:
+        identifiers.append(remainder)
+    return set(identifiers)
+
+
+def license_covered(name, notices):
+    # Chaque clause doit appartenir au même texte rattaché à cette entrée.
+    # Les variantes typographiques des archives sont normalisées pour la recherche,
+    # jamais dans les textes livrés.
+    for notice in notices:
+        text = re.sub(r'(?m)^\s*(?://|\*|#)\s?', '', notice['text'].lower())
+        text = re.sub(r'\s+', ' ', text)
+        if name in ('MIT', 'MIT-0'):
+            clauses = ['permission is hereby granted', 'free of charge',
+                       'without restriction', 'warranty', 'liable']
+            if name == 'MIT':
+                clauses += ['the above copyright notice', 'included in all copies']
+        elif name == 'MIT-CMU':
+            clauses = ['permission to use, copy, modify and distribute', 'without fee',
+                       'permission notice appear in supporting', 'liable']
+        elif name == 'Apache-2.0':
+            clauses = ['terms and conditions for use, reproduction, and distribution',
+                       '2. grant of copyright license', '3. grant of patent license',
+                       '4. redistribution', '5. submission of contributions',
+                       '6. trademarks', '7. disclaimer of warranty',
+                       '8. limitation of liability', '9. accepting warranty or additional liability',
+                       'end of terms and conditions']
+        elif name in ('BSD', 'BSD-2-Clause', 'BSD-3-Clause', 'BSD-3-Clause-Clear'):
+            clauses = ['redistribution and use', 'source', 'binary', 'conditions',
+                       'provided', 'implied warranties', 'liable']
+            if name.startswith('BSD-3-Clause'):
+                clauses += ['endorse or promote']
+            if name == 'BSD-3-Clause-Clear':
+                clauses += ['no express or implied licenses to any party', 'patent rights']
+        elif name in ('ISC', '0BSD'):
+            clauses = ['permission to use, copy', 'for any purpose', 'software is provided', 'liable']
+            if name == 'ISC':
+                clauses += ['copyright notice', 'permission notice']
+        elif name == 'Zlib':
+            clauses = ['this software is provided', 'the origin of this software must not be misrepresented',
+                       'altered source versions', 'this notice may not be removed']
+        elif name.startswith(('GPL-', 'LGPL-', 'AGPL-')):
+            family, version = name.split('-', 2)[:2]
+            heading = {'GPL': 'gnu general public license', 'LGPL': 'gnu (?:lesser|library) general public license',
+                       'AGPL': 'gnu affero general public license'}[family]
+            number = version.removesuffix('.0')
+            if not re.search(heading + r'.{0,120}?version ' + re.escape(number) + r'\b', text):
+                continue
+            clauses = (['6. revised versions of the gnu lesser general public license']
+                       if family == 'LGPL' and version == '3.0' else ['end of terms and conditions'])
+        elif name == 'MPL-2.0':
+            clauses = ['mozilla public license', '2. license grants', '3. responsibilities',
+                       '10. versions of the license']
+        elif name == 'Unlicense':
+            clauses = ['this is free and unencumbered software released into the public domain',
+                       'warranty', 'liable']
+        elif name == 'Unicode-3.0':
+            clauses = ['unicode', 'permission is hereby granted', 'without restriction',
+                       'copyright', 'warranty', 'liable']
+        elif name == 'OFL-1.1':
+            clauses = ['sil open font license', 'permission & conditions', 'termination', 'disclaimer']
+        elif name == 'CC0-1.0':
+            clauses = ['creative commons', '1. copyright and related rights', '2. waiver',
+                       '3. public license fallback', '4. limitations and disclaimers']
+        elif name == 'CC-BY-4.0':
+            clauses = ['creative commons', 'section 2', 'section 8', 'disclaimer of warranties']
+        elif name in ('Python-2.0', 'PSF-2.0'):
+            clauses = ['python software foundation license', 'psf hereby grants',
+                       'psf is making python available', 'this license agreement will automatically terminate']
+        elif name == 'CNRI-Python':
+            clauses = ['cnri hereby grants', 'cnri is making python', 'cnri shall not be liable',
+                       'this license agreement shall be governed']
+        elif name == 'LLVM-exception':
+            clauses = ['llvm exception', 'as a result of your compiling your source code',
+                       'you may redistribute such embedded portions']
+        elif name == 'CDLA-Permissive-2.0':
+            clauses = ['community data license agreement', 'a data recipient may use, modify, and share', '5. definitions']
+        elif name == 'BlueOak-1.0.0':
+            clauses = ['blue oak model license', 'each contributor licenses you', 'no liability']
+        elif name == 'LicenseRef-NVIDIA-Proprietary':
+            clauses = ['nvidia hereby grants you a non-exclusive', 'no warranties']
+            if len(text) < 10000:
+                continue
+        else:
+            return False
+        if all(clause in text for clause in clauses):
+            return True
+    return False
+
+
+def missing_licenses(row):
+    return sorted(name for name in declared_licenses(row.get('license', ''))
+                  if not license_covered(name, row['notices']))
+
+
+GENERIC = re.compile(r'<(?:year|copyright holders?|name of (?:the )?author)>|'
+                     r'\[(?:yyyy|year|copyright holders?|name of copyright owner)\]', re.I)
+
+
+def attribution_text(text):
+    # Uniquement le champ exemple immédiatement après le paragraphe normatif.
+    # Aucun remplacement global : la même ligne dans AUTRE COMPOSANT reste visible.
+    # Les espaces de mise en page RTF ne changent ni les lignes ni les champs.
+    text = re.sub(r'\\(?:pard?|li\d+)\b', ' ', text)
+    paragraph = 'APPENDIX: How to apply the Apache License to your work. To apply the Apache License to your work, attach the following boilerplate notice, with the fields enclosed by brackets "[]" replaced with your own identifying information. (Don\'t include the brackets!) The text should be enclosed in the appropriate comment syntax for the file format. We also recommend that a file or class name and description of purpose be included on the same "printed page" as the copyright notice for easier identification within third-party archives.'
+    prefix = r'\s+'.join(re.escape(word) for word in paragraph.split())
+    apache = re.compile(
+        '(' + prefix + r'\s+)'
+        r'(Copyright (?:\[yyyy\]|\d{4}) \[name of copyright owner\])'
+        r'(?=\s+Licensed under the Apache License, Version 2\.0)', re.I)
+    text = apache.sub(lambda m: m[1] + ' ' * len(m[2]), text)
+    # Même limite pour les deux exemples GNU et le crédit pédagogique FreeType.
+    gnu_examples = [
+        (r'(the ["“]copyright["”] line and a pointer to where the full notice is found\.\s+'
+         r"<one line to give the (?:program|library)'s name and a brief idea of what it does\.>\s+"
+         r'Copyright \(C\) )(<year>\s+<name of author>)(?=\s+This (?:program|library) is free software)'),
+        (r'(make it output a short notice like this when it starts in an interactive mode:\s+'
+         r'<program> Copyright \(C\) )(<year>\s+<name of author>)'
+         r'(?=\s+This program comes with ABSOLUTELY NO WARRANTY)'),
+    ]
+    for example in gnu_examples:
+        # Les retours à la ligne restent en place pour les preuves par ligne.
+        text = re.sub(example.replace(' ', r'\s+'), lambda m: m[1] + re.sub(r'[^\n]', ' ', m[2]), text, flags=re.I)
+    freetype = (
+        r'(encourage you to use the following text:\s+"""\s+'
+        r'Portions of this software are copyright © )(<year>)'
+        r'( The FreeType\s+Project \((?:www\.|https://)freetype.org\)\.\s+'
+        r'All rights reserved\.\s+"""\s+Please replace )(<year>)'
+        r'(?= with the value from the FreeType version you\s+actually use\.)')
+    text = re.sub(freetype, lambda m: m[1] + ' ' * len(m[2]) + m[3] + ' ' * len(m[4]), text)
+    return text
+
+
 def generic_attribution(text):
-    # Les annexes normatives Apache/GNU expliquent comment appliquer la licence :
-    # leurs exemples ne sont pas l'attribution du composant. Ne pas les réécrire.
-    if re.search(r'APPENDIX:\s+How to apply the Apache License', text, re.I):
-        text = re.sub(r'Copyright (?:\[yyyy\]|\d{4}) \[name of copyright owner\]', '', text, flags=re.I)
-    if re.search(r'How to Apply These Terms to Your New (?:Programs|Libraries)', text, re.I):
-        text = re.sub(r'<year>\s+<name of author>', '', text, flags=re.I)
-    if 'Please replace <year> with the value from the FreeType version' in text:
-        text = text.replace('copyright © <year> The FreeType', 'copyright © The FreeType')
-        text = text.replace('Please replace <year>', 'Please replace the example year')
-    return bool(re.search(r'<(?:year|copyright holders?|name of (?:the )?author)>|\[(?:yyyy|year|copyright holders?|name of copyright owner)\]', text, re.I))
+    return bool(GENERIC.search(attribution_text(text)))
 
 
-def incomplete_attributions(rows):
+def upstream_verbatim(row, notice, sources):
+    # Une preuve versionnée est attachée à l'archive ET à un fichier interne,
+    # jamais à un supplément local ni à un texte partagé. Le hash porte sur
+    # l'intégralité du texte livré ; les lignes ciblées doivent aussi correspondre.
+    if notice['path'].startswith(('licenses/', 'http:', 'https:')):
+        return False
+    lines = notice['text'].splitlines()
+    generic_numbers = {i for i, line in enumerate(attribution_text(notice['text']).splitlines(), 1)
+                       if GENERIC.search(line)}
+    for proof in sources:
+        if (proof.get('status') != 'upstream-verbatim' or proof.get('package') != row['id'] or
+                proof.get('archive') != row.get('artifact') or
+                proof.get('archive_integrity') != row.get('integrity') or
+                proof.get('path') != notice['path'] or
+                proof.get('notice_sha256') != digest(notice['text'].encode())):
+            continue
+        if not all(re.fullmatch(r'[a-f0-9]{64}', proof.get(field, ''))
+                   for field in ('archive_sha256', 'member_sha256')):
+            continue
+        if row.get('integrity', '').startswith('sha256:') and proof['archive_sha256'] != row['integrity'][7:]:
+            continue
+        ending = proof.get('line_ending', 'LF')
+        prefix, suffix = proof.get('member_prefix', ''), proof.get('member_suffix', '')
+        if ending not in ('LF', 'CRLF') or not isinstance(prefix, str) or not isinstance(suffix, str):
+            continue
+        member = prefix + notice['text'] + suffix
+        if member.strip() != notice['text']:
+            continue
+        if ending == 'CRLF':
+            member = member.replace('\n', '\r\n')
+        if digest(member.encode('utf-8')) != proof['member_sha256']:
+            continue
+        evidence = proof.get('lines', [])
+        if (len(evidence) == len(generic_numbers) and
+                {line.get('notice_line') for line in evidence} == generic_numbers and
+                all(isinstance(line.get('archive_line'), int) and line['archive_line'] == line['notice_line'] + prefix.count('\n') and
+                    line.get('text') == lines[line['notice_line'] - 1] for line in evidence)):
+            return True
+    return False
+
+
+def incomplete_attributions(rows, attribution_sources=()):
     return [r['id'] for r in rows if r.get('attribution_missing') or
-            any(generic_attribution(n['text']) for n in r['notices'])]
+            any(generic_attribution(n['text']) and not upstream_verbatim(r, n, attribution_sources)
+                for n in r['notices'])]
 
 
 def collect(row, cache):
@@ -249,7 +448,7 @@ def collect(row, cache):
     return result
 
 
-def validate_inventory(packages, rows, *, release=True):
+def validate_inventory(packages, rows, *, release=True, attribution_sources=()):
     expected = {p['id']: p for p in packages}
     actual = {p['id']: p for p in rows}
     if len(actual) != len(rows) or set(expected) != set(actual):
@@ -258,9 +457,11 @@ def validate_inventory(packages, rows, *, release=True):
         if not row.get('notices') or not has_license(row['notices']) or any(
                 not n.get('text', '').strip() or re.search(r'\bTODO\b', n['text'], re.I) for n in row['notices']):
             raise ValueError(f'Licence sans texte : {key}')
+        if missing := missing_licenses(row):
+            raise ValueError(f'Licences déclarées sans texte intégral : {key} : {", ".join(missing)}')
         if any(row.get(field) != expected[key].get(field) for field in ('artifact', 'integrity')):
             raise ValueError(f'Archive périmée : {key}')
-    if release and (missing := incomplete_attributions(rows)):
+    if release and (missing := incomplete_attributions(rows, attribution_sources)):
         raise ValueError('Livrable PROVISOIRE : attributions génériques ou manquantes : ' + ', '.join(missing))
 
 
@@ -275,7 +476,7 @@ def override_notices(override, root):
         path = source.get('local_path') or source['url']
         data = (root / path).read_bytes() if 'local_path' in source else fetch(path)
         verify(data, source['integrity'])
-        notices.append({'path': path, 'text': source_text(data, source)})
+        notices.append({'path': source.get('archive_path', path), 'text': source_text(data, source)})
     return notices
 
 
@@ -289,8 +490,8 @@ def apply_override(row, override, root):
             'attribution_missing': override.get('attribution_missing', False)}
 
 
-def render(rows, fingerprint):
-    missing = incomplete_attributions(rows)
+def render(rows, fingerprint, attribution_sources=()):
+    missing = incomplete_attributions(rows, attribution_sources)
     title = 'THÉRÈSE — Licences des composants tiers'
     if missing:
         title = 'PROVISOIRE — ' + title + ' — DIFFUSION REFUSÉE : attributions incomplètes'
@@ -307,6 +508,8 @@ def render(rows, fingerprint):
     for row in sorted(rows, key=lambda r: r['id']):
         flags = copyleft(row['license'] + '\n' + '\n'.join(n['text'] for n in row['notices']))
         parts += [row['id'], 'Licence déclarée : ' + row['license'], 'Archive : ' + row.get('artifact', ''), 'Intégrité : ' + row.get('integrity', '')]
+        if any(upstream_verbatim(row, n, attribution_sources) for n in row['notices']):
+            parts.append('STATUT : texte amont reproduit tel quel — preuves dans licenses/attribution-sources.json')
         if row.get('review_required'):
             parts.append('REVUE REQUISE : ' + row['provenance'])
         if flags:
@@ -371,12 +574,14 @@ def main():
                 if 'local_path' in source:
                     raw = (root / source['local_path']).read_bytes()
                     verify(raw, source['integrity'])
-                    if {'path': source['local_path'], 'text': source_text(raw, source)} not in row['notices']:
+                    if {'path': source.get('archive_path', source['local_path']), 'text': source_text(raw, source)} not in row['notices']:
                         raise ValueError('Supplément absent ou périmé : ' + row['id'])
     if data['locks'] != fingerprint:
         raise ValueError('Verrous modifiés : lancer refresh et réviser les licences')
-    validate_inventory(packages, data['packages'], release=args.command == 'check')
-    expected = render(data['packages'], fingerprint)
+    proof_path = root / 'licenses/attribution-sources.json'
+    sources = json.loads(proof_path.read_text(encoding='utf-8')) if proof_path.exists() else []
+    validate_inventory(packages, data['packages'], release=args.command == 'check', attribution_sources=sources)
+    expected = render(data['packages'], fingerprint, attribution_sources=sources)
     if args.command == 'check':
         check_output(root / OUTPUT, expected)
     else:
