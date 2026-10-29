@@ -537,7 +537,7 @@ async def accord_agent(profile_id: str, model: str) -> dict[str, Any]:
         'provider': destination,
         'label': libelle_destination(service.config) or destination,
         'purposes': purposes,
-        'granted_purposes': [p for p in purposes if accord_valide(p, destination)],
+        'granted_purposes': [p for p in purposes if destination is not None and accord_valide(p, destination)],
     }
 
 
