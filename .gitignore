@@ -136,3 +136,9 @@ docs/campagnes/*/captures/
 
 # Preuves et profils locaux de la recette R4
 .recette-r4/
+
+# Preuves et caches locaux du lot signature
+.work-t2/
+
+# Inspection locale des installeurs avant publication
+.work-release/

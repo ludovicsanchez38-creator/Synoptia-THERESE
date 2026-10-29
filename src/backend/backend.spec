@@ -217,6 +217,8 @@ else:
         disable_windowed_traceback=False,
         argv_emulation=False,
         target_arch=None,
-        codesign_identity=None,
-        entitlements_file=None,
+        # PyInstaller signe chaque bibliothèque après réécriture de ses chemins,
+        # AVANT son insertion dans le onefile (impossible à faire après coup).
+        codesign_identity=os.environ.get("MACOS_SIGNING_IDENTITY", "-") if sys.platform == "darwin" else None,
+        entitlements_file=os.path.join(backend_dir, "../frontend/src-tauri/Entitlements.plist") if sys.platform == "darwin" else None,
     )

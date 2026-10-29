@@ -1,0 +1,16 @@
+[
+  {
+    "id": "python:torch@2.9.1/wheel-cpu-linux",
+    "owner": "python:torch@2.9.1",
+    "artifact": "https://download-r2.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-manylinux_2_28_x86_64.whl",
+    "integrity": "sha256:39b3dff6d8fba240ae0d1bede4ca11c2531ae3b47329206512d99e17907ff74b",
+    "license": "BSD-3-Clause"
+  },
+  {
+    "id": "python:torch@2.9.1/wheel-cpu-windows",
+    "owner": "python:torch@2.9.1",
+    "artifact": "https://download-r2.pytorch.org/whl/cpu/torch-2.9.1%2Bcpu-cp313-cp313-win_amd64.whl",
+    "integrity": "sha256:404a7ab2fffaf2ca069e662f331eb46313692b2f1630df2720094284f390ccef",
+    "license": "BSD-3-Clause"
+  }
+]
