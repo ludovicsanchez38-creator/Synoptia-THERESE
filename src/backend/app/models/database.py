@@ -891,6 +891,12 @@ def ensure_alembic_stamp(db_path) -> None:
                             and set(_SQLModel.metadata.tables[name].columns.keys()) <= _colonnes(name)
                             for name in ("memory_cards", "memory_card_uses", "activities", "cloud_consents", "ai_generations")
                         )
+                        # Une table de mails existante doit aussi porter le lien
+                        # ajouté par t4marque02 avant de sauter cette migration.
+                        and (
+                            not _colonnes("email_messages")
+                            or "ai_generation_id" in _colonnes("email_messages")
+                        )
                         and not any(r[1] == 'contact_id' and r[3] for r in conn.execute('PRAGMA table_info(activities)'))
                         # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa
                         # preuve est l'état des données (aucune phase de
