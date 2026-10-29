@@ -3867,6 +3867,8 @@ async def _execute_tools_and_continue(
                     scope=perimetre, scope_id=perimetre_id,
                     conversation_id=conversation_id,
                     contexte=contexte,
+                    llm_config=context.config_effective or llm_service.config,
+                    document_grants=(context.memory_request or {}).get("grants", []),
                 )
                 execution_time = (time.time() - start_time) * 1000
 

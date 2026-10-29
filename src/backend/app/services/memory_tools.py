@@ -1161,6 +1161,8 @@ async def execute_memory_tool(
     scope_id: str | None = None,
     conversation_id: str | None = None,
     contexte: ContexteExecution | None = None,
+    llm_config: Any = None,
+    document_grants: list[str] | None = None,
 ) -> str:
     """
     Route memory tool execution to the correct handler.
@@ -1180,7 +1182,8 @@ async def execute_memory_tool(
         )
     elif tool_name == "read_file":
         return await execute_read_file(
-            arguments, session, scope, scope_id, conversation_id
+            arguments, session, scope, scope_id, conversation_id,
+            llm_config=llm_config, document_grants=document_grants,
         )
     elif tool_name == "search_files":
         return await execute_search_files(
@@ -1499,8 +1502,18 @@ async def execute_read_file(
     scope: str | None = None,
     scope_id: str | None = None,
     conversation_id: str | None = None,
+    *,
+    llm_config: Any = None,
+    document_grants: list[str] | None = None,
 ) -> str:
     """Lit un fichier indexé, sous la même cloison que le catalogue."""
+    from app.services.memory_card_context import documents_autorises
+
+    if not documents_autorises(llm_config, document_grants):
+        return json.dumps(
+            {"found": False, "message": "Lecture de document non autorisée pour ce service d’IA."},
+            ensure_ascii=False,
+        )
     file_id = (arguments.get("file_id") or "").strip()
     # `file_id` est un identifiant, jamais une porte vers le disque.
     if not file_id or "/" in file_id or "\\" in file_id:

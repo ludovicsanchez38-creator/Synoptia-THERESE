@@ -20,7 +20,14 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from app.models.entities import FileMetadata
-from app.services.memory_tools import execute_memory_tool
+from app.services.memory_tools import execute_memory_tool as _execute_memory_tool
+from app.services.providers.base import LLMConfig, LLMProvider
+
+
+async def execute_memory_tool(*args, **kwargs):
+    # Ces tests vérifient la cloison locale ; le consentement cloud est testé séparément.
+    kwargs.setdefault("llm_config", LLMConfig(LLMProvider.OLLAMA, "local"))
+    return await _execute_memory_tool(*args, **kwargs)
 
 
 async def _fichier(
