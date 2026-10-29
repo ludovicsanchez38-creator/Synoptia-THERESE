@@ -27,6 +27,8 @@ class TestImageGeneration:
     @pytest.mark.asyncio
     async def test_generate_image_without_api_key(self, client: AsyncClient):
         """Test image generation without API key configured."""
+        from app.services.consentements import enregistrer_accord
+        enregistrer_accord('images', 'gpt-image-2', True, '3', [])
         response = await client.post("/api/images/generate", json={
             "prompt": "Un chat mignon dans un jardin",
             "provider": "gpt-image-2",
@@ -154,6 +156,8 @@ class TestImageOptions:
     @pytest.mark.asyncio
     async def test_custom_size(self, client: AsyncClient):
         """Test generating with custom size."""
+        from app.services.consentements import enregistrer_accord
+        enregistrer_accord('images', 'gpt-image-2', True, '3', [])
         response = await client.post("/api/images/generate", json={
             "prompt": "Test image",
             "provider": "gpt-image-2",

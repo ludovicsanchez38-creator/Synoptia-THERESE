@@ -17,6 +17,10 @@ from app.services.providers.base import LLMProvider
 async def test_charge_sans_historique(client, monkeypatch, provider):
     from app.routers import chat
     from app.services import user_profile
+    from app.services.consentements import enregistrer_accord
+
+    if provider != 'ollama':
+        enregistrer_accord('llm', provider, True, '3', [])
 
     captures = []
 

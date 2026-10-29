@@ -24,8 +24,11 @@ async def test_selection_puis_chat_transmet_les_deux_messages(
     client, db_session, monkeypatch, provider, model,
 ):
     from app.routers import chat
+    from app.services.consentements import enregistrer_accord
     from app.services.modeles_catalogue import fenetre_de_contexte
 
+    if provider != 'ollama':
+        enregistrer_accord('llm', provider, True, '3', [])
     conv = await _fil(db_session, 2)
     charges = []
 

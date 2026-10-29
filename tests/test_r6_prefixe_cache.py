@@ -139,6 +139,10 @@ async def test_le_prefixe_reste_identique_quand_la_minute_change(prompt_reel, av
 @pytest.mark.asyncio
 @pytest.mark.parametrize('provider', list(LLMProvider))
 async def test_les_adaptateurs_transmettent_tout_le_prompt_reel(prompt_reel, monkeypatch, provider):
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, destination, categories=():
+                        (purpose, destination) == ('llm', provider.value)
+                        and set(categories) <= {'memory_cards_r2_v1'})
     service, context = prompt_reel('2026-10-21T10:00:00+02:00', 0, provider=provider)
     attendu = context.system_prompt
     charges = []

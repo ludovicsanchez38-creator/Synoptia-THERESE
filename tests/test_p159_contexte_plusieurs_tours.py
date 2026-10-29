@@ -107,6 +107,9 @@ async def test_le_bilan_de_la_fenetre_survit_aux_tours_et_au_rechargement(
     import json
 
     from app.routers import chat
+    from app.services.consentements import enregistrer_accord
+
+    enregistrer_accord('llm', 'openai', True, '3', [])
 
     conv_id = await _fil(db_session, 3, taille=64)
     fournisseur = _FournisseurPlusieursTours()
