@@ -320,14 +320,15 @@ class TestMigration:
 
     def test_pas_de_restamp_sans_colonne_de_provenance_des_mails(self, tmp_path):
         import sqlite3
+        from contextlib import closing
 
         from app.models.database import ensure_alembic_stamp
 
         db = self._base_legacy(tmp_path, with_variables=True)
-        with sqlite3.connect(db) as conn:
+        with closing(sqlite3.connect(db)) as conn, conn:
             conn.execute("CREATE TABLE email_messages (id TEXT PRIMARY KEY)")
         ensure_alembic_stamp(db)
-        with sqlite3.connect(db) as conn:
+        with closing(sqlite3.connect(db)) as conn, conn:
             version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
         assert version == "ancienne_tete", "La migration de provenance doit encore s’exécuter"
 
