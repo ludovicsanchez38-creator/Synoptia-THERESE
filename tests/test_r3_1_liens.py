@@ -24,8 +24,11 @@ async def test_liens_mots_avant_dernier_message_date_et_uuid(client, db_session,
     conv = Conversation(title='Conversation neuve', project_id=a.id)
     db_session.add_all([personne, autre, conv])
     await db_session.commit()
-    db_session.add(Message(conversation_id=conv.id, role='user', content='Parlons zéphyr.'))
-    db_session.add(Message(conversation_id=conv.id, role='assistant', content='Entendu.'))
+    # Ces témoins rédigés sans document éprouvent le classement, pas la reprise
+    # prudente de l'ancien historique (couverte par test_t4_4_historique_documents).
+    provenance = json.dumps({'provenance_documents': 'sans_document'})
+    db_session.add(Message(conversation_id=conv.id, role='user', content='Parlons zéphyr.', extra_data=provenance))
+    db_session.add(Message(conversation_id=conv.id, role='assistant', content='Entendu.', extra_data=provenance))
     await db_session.commit()
     async def fiche(sujet, **liens):
         return await memory_cards.ecrire({'kind': kind, 'subject': sujet, 'title': sujet,
