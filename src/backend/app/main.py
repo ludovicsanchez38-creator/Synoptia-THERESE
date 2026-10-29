@@ -694,7 +694,7 @@ from app.services.error_handler import ErreurPourEcran  # noqa: E402
 
 
 @app.exception_handler(ErreurPourEcran)
-async def erreur_pour_ecran_handler(request: Request, exc: ErreurPourEcran):
+async def erreur_pour_ecran_handler(request: Request, exc: ErreurPourEcran) -> JSONResponse:
     return JSONResponse(status_code=400, content={"detail": str(exc), "message": str(exc)})
 
 

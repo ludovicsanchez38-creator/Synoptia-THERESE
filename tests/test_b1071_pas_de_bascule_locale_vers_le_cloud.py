@@ -41,8 +41,8 @@ def test_ollama_indisponible_ne_bascule_pas_vers_un_service_en_ligne(cles_en_lig
     assert config.provider == LLMProvider.OLLAMA, f"bascule vers {config.provider}"
 
 
-def test_un_service_en_ligne_garde_son_repli(cles_en_ligne):
+def test_un_service_en_ligne_garde_son_fournisseur(cles_en_ligne):
     service = LLMService(LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-opus-5", api_key="cle-anthropic", base_url=None))
     _ouvrir_le_disjoncteur("anthropic")
     config = service._resolve_with_circuit_breaker()
-    assert config.provider == LLMProvider.OPENAI
+    assert config.provider == LLMProvider.ANTHROPIC
