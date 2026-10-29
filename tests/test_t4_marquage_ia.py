@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 import pytest
 from PIL import Image, PngImagePlugin
+from PIL.Image import open as ouvrir_image
 
 
 def provenance():
@@ -70,8 +71,8 @@ def test_image_sans_marque_recoit_xmp_sans_changer_les_pixels():
     Image.new("RGB", (4, 4), "red").save(out, format="PNG")
     avant = out.getvalue()
     apres = marquer_image(avant, provenance())
-    assert "trainedAlgorithmicMedia" in Image.open(io.BytesIO(apres)).info["XML:com.adobe.xmp"]
-    assert Image.open(io.BytesIO(avant)).tobytes() == Image.open(io.BytesIO(apres)).tobytes()
+    assert "trainedAlgorithmicMedia" in ouvrir_image(io.BytesIO(apres)).info["XML:com.adobe.xmp"]
+    assert ouvrir_image(io.BytesIO(avant)).tobytes() == ouvrir_image(io.BytesIO(apres)).tobytes()
 
 
 def test_image_deja_marquee_reste_identique_octet_pour_octet():
@@ -190,7 +191,7 @@ def test_image_autres_formats_sans_recompression(format):
     original = io.BytesIO()
     Image.new("RGB", (7, 5), "blue").save(original, format=format)
     marque = marquer_image(original.getvalue(), provenance())
-    avant, apres = Image.open(io.BytesIO(original.getvalue())), Image.open(io.BytesIO(marque))
+    avant, apres = ouvrir_image(io.BytesIO(original.getvalue())), ouvrir_image(io.BytesIO(marque))
     assert avant.tobytes() == apres.tobytes()
     assert b"trainedAlgorithmicMedia" in marque
 
