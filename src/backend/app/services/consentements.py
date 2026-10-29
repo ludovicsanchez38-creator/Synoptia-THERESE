@@ -1,6 +1,8 @@
 """Accords cloud locaux : journal append-only, vérifié juste avant l'envoi."""
 import json
+import os
 from datetime import UTC, datetime
+from pathlib import Path
 from threading import RLock
 from typing import Any
 
@@ -11,6 +13,67 @@ from sqlmodel import Session, col, select
 
 _VERROU = RLock()
 TEXT_VERSION = "3"
+
+
+def _journal_restauration() -> Path:
+    from app.config import settings
+    # Hors des entrées autorisées des archives : une sauvegarde ne le remplace pas.
+    if settings.data_dir is None:
+        raise ErreurPourEcran('Le dossier de tes données est indisponible. Redémarre THÉRÈSE avant de réessayer.')
+    return Path(settings.data_dir) / 'accords-restauration.json'
+
+
+def _ecrire_journal_restauration(contenu: dict[str, Any]) -> None:
+    journal = _journal_restauration()
+    temporaire = journal.with_suffix('.tmp')
+    with temporaire.open('w', encoding='utf-8') as fichier:
+        json.dump(contenu, fichier, ensure_ascii=False)
+        fichier.flush()
+        os.fsync(fichier.fileno())
+    temporaire.replace(journal)
+
+
+def _restauration_en_attente() -> bool:
+    journal = _journal_restauration()
+    return journal.exists() and bool(json.loads(journal.read_text(encoding='utf-8'))['pending'])
+
+
+def preparer_restauration() -> None:
+    """Figer les décisions avant de remplacer la base ; conserver un essai interrompu."""
+    with _VERROU:
+        if not _restauration_en_attente():
+            _ecrire_journal_restauration({'pending': True, 'history': historique()})
+
+
+def terminer_restauration() -> None:
+    """Les décisions présentes avant restauration priment sur celles de l'archive."""
+    with _VERROU:
+        if not _restauration_en_attente():
+            return
+        precedentes = json.loads(_journal_restauration().read_text(encoding='utf-8'))['history']
+        actuelles = {(r['purpose'], r['provider']): r for r in precedentes}
+        now = datetime.now(UTC).isoformat()
+        with get_sync_session() as session:
+            restaurees = session.exec(select(CloudConsent).order_by(col(CloudConsent.id))).all()
+            connues = {(r.purpose, r.provider) for r in restaurees}
+            ids = {r.event_id for r in restaurees if r.event_id}
+            for row in precedentes:
+                if row['event_id'] and row['event_id'] in ids:
+                    continue
+                session.add(CloudConsent(**{k: v for k, v in row.items() if k != 'id'}))
+            # Append-only : une décision de restauration clôt chaque couple.
+            # Un accord venu uniquement de l'archive exige un nouveau geste.
+            for purpose, provider in connues | actuelles.keys():
+                row = actuelles.get((purpose, provider))
+                session.add(CloudConsent(
+                    purpose=purpose, provider=provider, granted=bool(row and row['granted']),
+                    text_version=row['text_version'] if row else TEXT_VERSION,
+                    occurred_at=row['occurred_at'] if row else now, recorded_at=now,
+                    data_categories=row['data_categories'] if row else '[]', source='restauration',
+                ))
+            session.commit()
+        # Une interruption avant cet acquittement bloque les envois et permet la reprise.
+        _ecrire_journal_restauration({'pending': False})
 
 
 def historique() -> list[dict[str, Any]]:
@@ -26,6 +89,8 @@ def _dernier(session: Session, purpose: str, provider: str) -> CloudConsent | No
 
 def accord_valide(purpose: str, provider: str, categories: tuple[str, ...] = ()) -> bool:
     try:
+        if _restauration_en_attente():
+            return False
         with get_sync_session() as session:
             row = _dernier(session, purpose, provider)
             return bool(row and row.granted and set(categories) <= set(json.loads(row.data_categories)))
@@ -63,6 +128,8 @@ def importer_accords(grants: list[dict[str, Any]]) -> None:
 
 
 def accords_courants() -> list[dict[str, Any]]:
+    if _restauration_en_attente():
+        return []
     latest = {(r['purpose'], r['provider']): r for r in historique()}
     return [dict(purpose=r['purpose'], provider=r['provider'], timestamp=r['occurred_at'],
                  dataCategories=json.loads(r['data_categories']), textVersion=r['text_version'])
@@ -70,6 +137,15 @@ def accords_courants() -> list[dict[str, Any]]:
 
 
 def exiger_accord(purpose: str, provider: str) -> None:
+    try:
+        en_attente = _restauration_en_attente()
+    except Exception:
+        en_attente = True
+    if en_attente:
+        raise ErreurPourEcran(
+            "Les accords n’ont pas pu être rétablis après la restauration. Aucun envoi cloud n’est autorisé. "
+            "Relance la restauration de ta sauvegarde pour reprendre cette étape."
+        )
     if not accord_valide(purpose, provider):
         raise ErreurPourEcran(
             f"Ton accord « {purpose} » pour {provider} est nécessaire. "

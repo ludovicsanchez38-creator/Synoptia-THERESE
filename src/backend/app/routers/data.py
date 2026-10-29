@@ -1783,6 +1783,9 @@ async def restore_backup(
         # Aucune session n'est injectée à cette route : tous les appels API
         # admis avant le verrou sont terminés. Les pools sont disposés AVANT
         # l'archive de sécurité et, surtout, avant toute extraction.
+        from app.services.consentements import preparer_restauration, terminer_restauration
+
+        preparer_restauration()
         await close_db()
         # B-1469 : le client Qdrant aussi. Sinon il garde une connexion vers
         # le fichier que la restauration remplace, et toute écriture
@@ -1818,8 +1821,11 @@ async def restore_backup(
                 _verify_restored_db()
             else:
                 shutil.copy2(legacy_db, settings.db_path)
+            await _rouvrir_la_base_apres_restauration()
+            terminer_restauration()
         except HTTPException as exc:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
+            await close_db()
             retabli = _rollback()
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
@@ -1840,6 +1846,7 @@ async def restore_backup(
                 )
             raise
         except Exception as e:
+            await close_db()
             retabli = _rollback()
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
@@ -1871,6 +1878,10 @@ async def restore_backup(
                     backup_dir, current_backup_name, safety_archive, password, safety_included
                 )
             await _rouvrir_la_base_apres_restauration()
+            # Réappliquer aussi après un retour arrière. En cas d'échec, le
+            # journal durable continue de bloquer tous les accords cloud.
+            from app.services.consentements import terminer_restauration
+            terminer_restauration()
             # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
             try:
                 from app.services.mcp_service import get_mcp_service

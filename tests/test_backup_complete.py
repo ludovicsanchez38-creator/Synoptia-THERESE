@@ -309,7 +309,7 @@ async def test_restore_ferme_les_engines_avant_extraction(tmp_path, monkeypatch)
         events.append("close_db")
 
     def checked_extract(archive, destination):
-        assert events == ["close_db"]
+        assert events == ["accords", "close_db"]
         events.append("extract")
         original_extract(archive, destination)
 
@@ -321,11 +321,16 @@ async def test_restore_ferme_les_engines_avant_extraction(tmp_path, monkeypatch)
     monkeypatch.setattr(data_router, "_checkpoint_db", lambda: True)
     monkeypatch.setattr(data_router, "_safe_extractall", checked_extract)
     monkeypatch.setattr(data_router, "_verify_restored_db", lambda: None)
+    # Cette base factice teste l’ordre des opérations, pas SQL. Le parcours
+    # réel des accords est exercé par test_t4_2_restauration_accords.py.
+    monkeypatch.setattr("app.services.consentements.preparer_restauration", lambda: events.append("accords"))
+    monkeypatch.setattr("app.services.consentements.terminer_restauration", lambda: events.append("accords_reappliques"))
 
     result = await data_router.restore_backup("test_restore", confirm=True)
 
     assert result["success"] is True
-    assert events[:2] == ["close_db", "extract"]
+    assert events[:3] == ["accords", "close_db", "extract"]
+    assert "accords_reappliques" in events[3:]
     assert db_path.read_bytes() == b"etat-restaure"
 
 
