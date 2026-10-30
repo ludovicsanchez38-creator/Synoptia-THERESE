@@ -443,6 +443,12 @@ export const MessageBubble = memo(function MessageBubble({
           </button>
         </div>
 
+        {/* Tour 11 : avis système du tour, hors du contenu (jamais copiés ni exportés). */}
+        {!isUser && message.avis && message.avis.length > 0 && (
+          <div role="note" aria-label="Avis de THÉRÈSE" className="mb-2 space-y-1 rounded-sm border border-border/50 px-2 py-1 text-xs text-text-muted">
+            {message.avis.map((texte) => <p key={texte}>{texte}</p>)}
+          </div>
+        )}
         {/* Markdown content - texte brut pendant le streaming pour éviter les sauts */}
         <div className="prose prose-invert prose-sm max-w-none">
           {message.isStreaming ? (

@@ -64,6 +64,8 @@ export interface Message {
   provider?: string; // P0-IA-3 : provider LLM (messages d'historique)
   /** Sources d'une recherche approfondie, persistées dans extra_data. */
   webSources?: Array<{ title: string; url: string; snippet: string }>;
+  /** Tour 11 : avis système du tour, affichés à part, jamais dans `content`. */
+  avis?: string[];
 }
 
 export interface Conversation {

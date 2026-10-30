@@ -41,6 +41,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
   // rejouer ces documents, et le consentement demandé ne mentionne rien.
   let hasAttachments = false;
   let webSources: NonNullable<Message['webSources']> = [];
+  let avis: string[] = [];
   if (msg.extra_data) {
     try {
       const parsed = JSON.parse(msg.extra_data);
@@ -54,6 +55,8 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
         if (Array.isArray(parsed.memory_receipts)) memoryReceipts = parsed.memory_receipts;
         if (typeof parsed.image_id === 'string') imageId = parsed.image_id;
         hasAttachments = Array.isArray(parsed.attachments) && parsed.attachments.length > 0;
+        // Tour 11 : avis système conservés à part, jamais dans le contenu.
+        if (Array.isArray(parsed.avis)) avis = parsed.avis.filter((a: unknown): a is string => typeof a === 'string');
         if (Array.isArray(parsed.sources)) {
           webSources = parsed.sources as NonNullable<Message['webSources']>;
         }
@@ -92,6 +95,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
       : {}),
     ...(webSources.length > 0 ? { webSources } : {}),
     ...(contexte ? { contexte } : {}),
+    ...(avis.length > 0 ? { avis } : {}),
   };
 }
 

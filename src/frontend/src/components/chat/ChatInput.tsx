@@ -900,6 +900,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               MEMORY_CARDS_CATEGORY] });
           useChatStore.setState(s => ({ conversations: s.conversations.map(c => ({ ...c,
             messages: c.messages.filter(m => m.id !== assistantMessageId) })) }));
+        } else if (chunk.type === 'notice' && chunk.content) {
+          // Tour 11 (relecture 10) : un avis système est rangé à part. Il
+          // n'entre jamais dans le contenu copié, exporté ou mis en fichier.
+          const message = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
+          updateMessage(assistantMessageId, accumulatedContent, {
+            isStreaming: true, avis: [...(message?.avis ?? []), chunk.content],
+          });
         } else if (chunk.type === 'memory_receipt' && chunk.receipt) {
           notifyMemoryChange();
           const message = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
