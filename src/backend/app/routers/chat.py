@@ -68,6 +68,7 @@ from app.services.provenance_documents import (
     AVIS_HISTORIQUE,
     copier_messages_differes,
     filtrer_historique,
+    marque_reponse,
     memoriser_provenance,
     reprendre_messages_differes,
 )
@@ -2396,7 +2397,7 @@ async def send_message(
     )
     bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
-    memoriser_provenance(assistant_message, bool(context.contient_documents))
+    memoriser_provenance(assistant_message, marque_reponse(context))
     if isinstance(getattr(context, 'memory_transmitted', None), list) and context.memory_transmitted:
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
@@ -3314,7 +3315,7 @@ async def _do_stream_response(
                                             message_refus.extra_data = json.dumps(
                                                 {"skill_files": fichiers_outils}
                                             )
-                                        await _ecrire_reponse(session, message_refus, bool(context.contient_documents))
+                                        await _ecrire_reponse(session, message_refus, marque_reponse(context))
                                     entree, sortie, appels_refus = _usage_du_tour(
                                         usage_totals, user_message, full_content
                                     )
@@ -3366,7 +3367,7 @@ async def _do_stream_response(
                         # Sinon la carte vit le temps du flux et disparaît au
                         # rechargement (motif BUG-130), fichier toujours là.
                         err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-                    await _ecrire_reponse(session, err_msg, bool(context.contient_documents))
+                    await _ecrire_reponse(session, err_msg, marque_reponse(context))
                 except Exception as db_err:
                     logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
                 return
@@ -3377,7 +3378,7 @@ async def _do_stream_response(
         # (fournisseur bloqué, revue jalon F4) - la garde d'écriture plus bas
         # n'est jamais atteinte. Le texte déjà produit survit ici ; aucun
         # effet (skill, outil) n'est lancé.
-        await _persister_message_partiel(conversation_id, full_content, llm_service, bool(context.contient_documents))
+        await _persister_message_partiel(conversation_id, full_content, llm_service, marque_reponse(context))
         raise
     except Exception as e:
         from app.services.memory_card_context import AccordFichesRequis
@@ -3415,7 +3416,7 @@ async def _do_stream_response(
                 # Sinon la carte vit le temps du flux et disparaît au
                 # rechargement (motif BUG-130), fichier toujours là.
                 err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-            await _ecrire_reponse(session, err_msg, bool(context.contient_documents))
+            await _ecrire_reponse(session, err_msg, marque_reponse(context))
         except Exception as db_err:
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
@@ -3492,11 +3493,11 @@ async def _do_stream_response(
             "Annulation demandée : réponse partielle conservée, aucun effet produit"
         )
         await _persister_message_partiel(
-            conversation_id, full_content, llm_service, bool(context.contient_documents)
+            conversation_id, full_content, llm_service, marque_reponse(context)
         )
         return
 
-    memoriser_provenance(assistant_message, bool(context.contient_documents))
+    memoriser_provenance(assistant_message, marque_reponse(context))
 
     # B-1494 : conversation supprimée pendant la réponse, aucun effet de plus.
     if not await _ecrire_reponse(session, assistant_message):
@@ -3585,7 +3586,7 @@ async def _do_stream_response(
         )
     bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
-    memoriser_provenance(assistant_message, bool(context.contient_documents))
+    memoriser_provenance(assistant_message, marque_reponse(context))
     if isinstance(getattr(context, 'memory_transmitted', None), list) and context.memory_transmitted:
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
@@ -3984,13 +3985,17 @@ async def _execute_tools_and_continue(
             from types import SimpleNamespace
 
             from app.services.memory_card_tools import executer_outil, texte_resultat
-            from app.services.provenance_documents import contexte_documentaire
+            from app.services.provenance_documents import origine_contexte
             perimetre, perimetre_id = await _perimetre_de_conversation(conversation_id, session)
+            # Tour 10 : trois niveaux ; une fiche écrite pendant un tour
+            # seulement incertain reste « inconnue », donc attestable.
+            origine_fiche = origine_contexte(context)
             resultat_fiche = await executer_outil(
                 tc.arguments, scope=perimetre or "global", scope_id=perimetre_id,
                 conversation_id=conversation_id,
                 include_memory=context.memory_cards_enabled, contexte=contexte,
-                contient_documents=contexte_documentaire(context),
+                contient_documents=(True if origine_fiche == "documents"
+                                    else None if origine_fiche == "inconnue" else False),
             )
             result = SimpleNamespace(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
@@ -4409,7 +4414,7 @@ async def _repondre_apres_recherche(
         await _ecrire_reponse(session, Message(
             conversation_id=conversation_id, role="assistant", content=contenu,
             model=modele, provider=fournisseur,
-        ), bool(context.contient_documents))
+        ), marque_reponse(context))
     return contenu
 
 
@@ -4490,11 +4495,14 @@ async def _executer_action_confirmee(
     if (tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}
             and arguments.get('_provenance_documents') != 'sans_document'):
         if arguments.get('_provenance_documents') == 'inconnue':
-            result = ("Cette écriture peut reprendre un ancien échange ou une ancienne fiche mémoire dont l’origine "
-                      "n’est pas vérifiable : enregistrée, elle pourrait repartir plus tard vers ton fournisseur sans "
-                      "ton accord « documents ». Rien n’a été enregistré. Saisis-la directement dans son formulaire, "
-                      "redemande-la dans une nouvelle conversation sans les fiches mémoire, ou confirme dans Mémoire "
-                      "les anciennes fiches qui viennent de toi.")
+            # Tour 10 (relecture 9) : la vraie cause, sans parler d'un document
+            # qui n'existe pas, et ce que l'attestation change ou non.
+            result = ("Cette conversation a repris un ancien échange ou une ancienne fiche mémoire dont l’origine "
+                      "n’est pas vérifiable : enregistrée, cette écriture pourrait repartir plus tard vers ton "
+                      "fournisseur, même après le retrait de ton accord. Rien n’a été enregistré. Saisis-la directement "
+                      "dans son formulaire, ou redemande-la dans une nouvelle conversation, après avoir confirmé dans "
+                      "Mémoire les anciennes fiches qui viennent de toi ou en décochant « Utiliser les fiches mémoire ». "
+                      "Confirmer une fiche ne rouvre pas cette conversation-ci.")
         else:
             result = ("Cette écriture reprend un document de cette conversation, et sa destination ne conserve pas "
                       "encore cette origine. Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")

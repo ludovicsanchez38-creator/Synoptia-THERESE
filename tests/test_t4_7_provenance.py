@@ -159,7 +159,8 @@ async def test_conversation_anterieure_retrait_avant_confirmation(client, monkey
     resultat = await _creer_tache(client, monkeypatch, _transport_tache, _conversation(None),
                                   retirer_avant_confirmation=True)
     assert resultat.get("status") == "refused"
-    assert "origine" in resultat["result"] and "documents" in resultat["result"]
+    # Tour 10 : le refus dit la vraie cause (origine non vérifiable) sans parler de document.
+    assert "origine n’est pas vérifiable" in resultat["result"] and "accord" in resultat["result"]
 
 
 async def test_conversation_documentaire_averee_reste_fermee(client, monkeypatch):

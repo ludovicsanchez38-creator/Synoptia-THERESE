@@ -158,3 +158,16 @@ def origine_contexte(context: Any) -> str:
     if not contexte_documentaire(context):
         return 'sans_document'
     return 'inconnue' if getattr(context, 'documents_averes', None) is False else 'documents'
+
+
+def marque_reponse(context: Any) -> bool | None:
+    """Marque d'une réponse enregistrée, pour `memoriser_provenance`.
+
+    Tour 10 (relecture 9, réserve 1) : True si un document avéré a servi,
+    None si seule une origine incertaine (ancienne fiche, ancien échange) l'a
+    marquée, False sinon. Une réponse ne devient plus « documents » parce
+    qu'une ancienne fiche a servi.
+    """
+    if not getattr(context, 'contient_documents', False):
+        return False
+    return None if getattr(context, 'documents_averes', None) is False else True
