@@ -218,7 +218,15 @@ class TestEmpaquetage:
         conf = json.loads((RACINE / "src" / "frontend" / "src-tauri" / "tauri.linux.conf.json").read_text(encoding="utf-8"))
         ressources = conf.get("bundle", {}).get("resources") or conf.get("resources") or []
         assert any("backend-libs" in r for r in ressources), ressources
-        assert any("**" in r for r in ressources), "le glob doit être récursif (_internal/**)"
+        if isinstance(ressources, dict):
+            # Tauri parcourt récursivement les répertoires mappés, en conservant
+            # leur arborescence ; un glob mappé aplatirait au contraire les noms.
+            assert any(
+                "backend-libs" in source and source.endswith("/") and source == destination
+                for source, destination in ressources.items()
+            ), "le répertoire du moteur doit garder son arborescence dans les ressources"
+        else:
+            assert any("**" in r for r in ressources), "le glob doit être récursif (_internal/**)"
         release = (RACINE / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         assert "backend-libs" in release, "release.yml doit copier backend-libs dans les binaires Tauri (BUG-044b)"
 

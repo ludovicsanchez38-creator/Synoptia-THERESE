@@ -43,9 +43,53 @@ jobs:
     uses: ./.github/workflows/tests-e2e.yml
     secrets: inherit
 
+  sources-copyleft:
+    name: Assembler et joindre les sources correspondantes
+    needs:
+    - preflight
+    - ci
+    - e2e
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: '3.12'
+    - name: Vérifier le manifeste des sources
+      run: python scripts/copyleft_sources.py verifier
+          python scripts/system_libraries.py check
+    - name: Assembler les sources et vérifier leurs empreintes
+      run: |-
+        python scripts/copyleft_sources.py assembler .work-t2/sources-copyleft
+        tar -czf .work-t2/THERESE-sources-copyleft.tar.gz -C .work-t2/sources-copyleft .
+        python scripts/system_libraries.py assemble-sources .work-t2/sources-systeme-linux
+        tar -czf .work-t2/THERESE-sources-systeme-linux.tar.gz -C .work-t2/sources-systeme-linux .
+    - name: Joindre les sources au brouillon de la même version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        RELEASE_BODY: |
+          ## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
+
+          Installeurs disponibles ci-dessous.
+
+          ### Notes
+          - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu'il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
+          - **Mises à jour automatiques (depuis 0.23)** : l'app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l'installation en un clic.
+          - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l'app.
+          - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
+          - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
+      run: |-
+        if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          printf '%s' "$RELEASE_BODY" > .work-t2/sources-release-notes.md
+          gh release create "$RELEASE_TAG" --draft --prerelease --title "THÉRÈSE $RELEASE_TAG" --notes-file .work-t2/sources-release-notes.md
+        fi
+        gh release upload "$RELEASE_TAG" .work-t2/THERESE-sources-copyleft.tar.gz .work-t2/THERESE-sources-systeme-linux.tar.gz --clobber
+
   build:
     name: Build ${{ matrix.platform.name }}
-    needs: [preflight, ci, e2e]
+    needs: [preflight, ci, e2e, sources-copyleft]
     strategy:
       fail-fast: false
       matrix:
@@ -64,10 +108,10 @@ jobs:
             binary-ext: ""
 
     runs-on: ${{ matrix.platform.runner }}
-    timeout-minutes: 60
+    timeout-minutes: 150
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Libérer espace disque et ajouter swap (Linux)
         if: runner.os == 'Linux'
@@ -94,17 +138,17 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+          sudo apt-get install -y squashfs-tools libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
 
       # ---- Python + PyInstaller ----
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
 
       - name: Installer UV et dépendances Python
         # --extra voice-local : embarque faster-whisper + Piper dans le sidecar
         # (voix locale « un clic », les modèles restent téléchargés au 1er usage)
-        run: pip install uv && uv sync --dev --extra voice-local
+        run: pip install uv && uv sync --frozen --dev --extra voice-local
 
       - name: Installer torch CPU-only (réduction ~1 Go)
         if: runner.os != 'macOS'
@@ -114,7 +158,35 @@ jobs:
         # reproductible, et divergent de la version testée en CI).
         run: |
           echo "=== Remplacement de torch par la version CPU-only (épinglée) ==="
-          uv pip install 'torch==2.9.1' --index-url https://download.pytorch.org/whl/cpu --reinstall --no-deps
+
+          python scripts/install_cpu_torch.py
+
+      - name: Contrôler les licences tierces
+        run: |
+          python scripts/third_party_licenses.py check
+          python scripts/copyleft_sources.py verifier
+          python scripts/system_libraries.py check
+      - name: Préparer la signature Apple ou ad hoc
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: python scripts/sign_macos.py prepare
+      - name: Préparer la signature Microsoft
+        id: windows-signing
+        if: runner.os == 'Windows'
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          AZURE_CERTIFICATE_PROFILE: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+        run: python scripts/prepare_windows_signing.py
 
       - name: Build sidecar (PyInstaller)
         shell: bash
@@ -180,16 +252,49 @@ jobs:
             # Le dossier backend-libs est uniquement utilisé sur Linux (onedir PyInstaller)
           fi
 
-      - name: Signer le sidecar (macOS ad-hoc)
+      - name: Signer et vérifier le moteur macOS
         if: runner.os == 'macOS'
-        # tauri.conf.json garde hardenedRuntime=true avec l'identité « - » :
-        # les bibliothèques du onefile PyInstaller sont ad hoc, sans Team ID.
-        # Entitlements.plist exempte uniquement leur validation. Tauri resigne
-        # sidecar ET GUI avec ce plist commun, sans autre permission ajoutée.
-        # Une future Developer ID devra requalifier les identités des bibliothèques.
+        shell: bash
+        run: 'python scripts/sign_macos.py tree src/frontend/src-tauri/binaries/backend-aarch64-apple-darwin
+
+          .venv/bin/python scripts/verify_embedded_macos.py src/frontend/src-tauri/binaries/backend-aarch64-apple-darwin'
+      - name: Signer les fichiers Windows avant empaquetage
+        if: runner.os == 'Windows' && steps.windows-signing.outputs.enabled == 'true'
+        uses: Azure/artifact-signing-action@b443cf8ea4124818d2ea9f043cba29fc3ec47b16
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          files-folder-recurse: true
+          files-folder-filter: exe,dll,pyd,msi
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          cache-dependencies: false
+          trace: false
+          exclude-environment-credential: false
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: true
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
+          files-folder: ${{ github.workspace }}/src/frontend/src-tauri/binaries
+
+      - name: Inventorier les bibliothèques réellement embarquées
+        shell: bash
         run: |
-          codesign --force --deep -s - src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}
-          echo "Sidecar signé (ad-hoc) pour macOS"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/python.exe scripts/system_libraries.py inventory --platform "${{ runner.os }}"
+          else
+            .venv/bin/python scripts/system_libraries.py inventory --platform "${{ runner.os }}"
+          fi
 
       - name: Libérer espace après PyInstaller (Linux)
         if: runner.os == 'Linux'
@@ -198,12 +303,12 @@ jobs:
           rm -rf src/backend/dist src/backend/build
           rm -rf .venv
           pip cache purge 2>/dev/null || true
-          sudo rm -rf /opt/hostedtoolcache/Python
+          # Conserver Python setup-python pour les gardes après Tauri.
           echo "=== Espace disponible ==="
           free -h && df -h /
 
       # ---- Node.js ----
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
           cache: npm
@@ -211,18 +316,18 @@ jobs:
 
       - name: Installer dépendances frontend
         working-directory: src/frontend
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # ---- Rust ----
       - name: Setup Rust
         # B-1115 : épinglé par empreinte (branche stable du 24/09/2026) ; la
         # chaîne n'est plus déduite du nom de branche, d'où `toolchain`.
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable (révision du 2026-09-03)
         with:
           toolchain: stable
 
       - name: Cache Rust
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: src/frontend/src-tauri
           save-if: "true"
@@ -272,46 +377,65 @@ jobs:
           echo "=== Taille totale ==="
           du -sh src/frontend/src-tauri/binaries/backend-libs/
           echo "=== Config Linux ==="
-          cat src/frontend/src-tauri/tauri.linux.conf.json
 
       # ---- Build Tauri ----
       - name: Build THÉRÈSE (Tauri)
-        # B-1115 : ce travail reçoit la clé privée de l'updater ; les actions
-        # tierces sont épinglées par empreinte (étiquette en commentaire),
-        # pour qu'un déplacement d'étiquette n'exécute pas un autre code.
-        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # US-007 : signature des artefacts updater (.sig) + generation de latest.json.
-          # Sans ces secrets, createUpdaterArtifacts=true fait echouer le bundling.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ env.MACOS_SIGNING_IDENTITY }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          AZURE_CERTIFICATE_PROFILE: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
         with:
           projectPath: src/frontend
-          tagName: ${{ github.event.inputs.tag || github.ref_name }}
-          releaseName: "THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}"
-          releaseBody: |
-            ## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
-
-            Installeurs disponibles ci-dessous.
-
-            ### Notes
-            - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu'il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
-            - **Mises à jour automatiques (depuis 0.23)** : l'app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l'installation en un clic.
-            - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l'app.
-            - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
-            - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
-          # B-1111 : seul le job final publie un manifeste validé.
           includeUpdaterJson: false
-          releaseDraft: true
-          prerelease: true
-          # US-007 : --config updater-ci.conf.json active createUpdaterArtifacts
-          # (signe les .sig + genere latest.json) UNIQUEMENT en CI, pour ne pas
-          # casser les builds locaux qui n'ont pas la cle de signature.
-          args: ${{ runner.os == 'Linux' && '--bundles deb --config src-tauri/tauri.linux.conf.json --config src-tauri/updater-ci.conf.json' || '--config src-tauri/updater-ci.conf.json' }}
+          args: ${{ runner.os == 'Linux' && '--bundles deb --config src-tauri/tauri.linux.conf.json --config src-tauri/updater-ci.conf.json' || runner.os == 'Windows' && '--config src-tauri/updater-ci.conf.json
+            --config src-tauri/signing-ci.conf.json' || '--config src-tauri/updater-ci.conf.json' }}
+      - name: Finaliser la signature macOS
+        if: runner.os == 'macOS'
+        run: python scripts/sign_macos.py finish src/frontend/src-tauri/target/release/bundle
+      - name: Signer les installeurs Windows finaux
+        if: runner.os == 'Windows' && steps.windows-signing.outputs.enabled == 'true'
+        uses: Azure/artifact-signing-action@b443cf8ea4124818d2ea9f043cba29fc3ec47b16
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          files-folder-recurse: true
+          files-folder-filter: exe,dll,pyd,msi
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          cache-dependencies: false
+          trace: false
+          exclude-environment-credential: false
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: true
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
+          files-folder: ${{ github.workspace }}/src/frontend/src-tauri/target/release/bundle
+      - name: Vérifier les licences dans les installeurs
+        run: python scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"
 
-      # La signature du seul sidecar ne scelle pas le bundle .app complet.
-      # Les assets restent en draft si cette vérification native échoue.
+      - name: Vérifier Authenticode
+        if: runner.os == 'Windows' && steps.windows-signing.outputs.enabled == 'true'
+        shell: pwsh
+        run: ./scripts/verify_windows_signing.ps1 -Roots @('src/frontend/src-tauri/binaries', 'src/frontend/src-tauri/target/release/bundle')
+
       - name: Vérifier la signature du bundle macOS complet
         if: runner.os == 'macOS'
         run: |
@@ -332,7 +456,7 @@ jobs:
 
       - name: Conserver les preuves de la recette macOS
         if: always() && runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: recette-macos-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/recette-macos/
@@ -355,13 +479,41 @@ jobs:
           bash scripts/recette-deb.sh "$DEB" "$VERSION"
 
 
+      - name: Publier les artefacts vérifiés
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          RELEASE_BODY: '## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
+
+
+            Installeurs disponibles ci-dessous.
+
+
+            ### Notes
+
+            - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière
+            après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu''il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
+
+            - **Mises à jour automatiques (depuis 0.23)** : l''app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l''installation en un clic.
+
+            - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l''app.
+
+            - **Windows** : Exclure l''app de l''antivirus si faux positif PyInstaller
+
+            - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
+
+            '
+        run: python scripts/publish_release_artifacts.py src/frontend/src-tauri/target/release/bundle --platform "${{ runner.os }}"
+
   manifeste-updater:
     name: Assembler le manifeste updater sans alias Linux dangereux
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
       - name: Préparer puis publier le manifeste validé

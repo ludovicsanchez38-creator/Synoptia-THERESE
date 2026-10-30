@@ -1,0 +1,92 @@
+THÉRÈSE — reconstruire et remplacer une bibliothèque LGPL
+
+Les deux archives de la même release sont complémentaires :
+- THERESE-sources-copyleft.tar.gz : composants des verrous Python/Cargo/npm,
+  recettes des roues, correctifs et archives de construction épinglés ;
+- THERESE-sources-systeme-linux.tar.gz : paquets source Ubuntu complets
+  readline 8.1.2-1, gdbm 1.23-1, glibc 2.35-0ubuntu3.15, notices et preuve
+  de rapprochement SHA-256 des bibliothèques Linux.
+
+Les versions viennent des paquets et des recettes ; un SONAME ne donne pas
+une version source. system-libraries.lock.json fixe fichiers, versions,
+licences et SHA-256. system-libraries.json dans l'application relève les
+fichiers natifs réels ; les preuves jointes à la release les rapprochent
+séparément de chaque installeur.
+
+Conservation : pendant toute la distribution des binaires, au minimum trois
+ans après la dernière distribution et tant qu'un support ou des pièces de
+rechange sont proposés pour cette version.
+
+Reconstruction des bibliothèques de distribution
+
+Dans une VM Ubuntu 22.04 amd64 de développement, conserver tous les fichiers
+.dsc, .orig.tar.*, .debian.tar.* du même composant dans sources/. Installer
+les outils de construction Debian (build-essential, dpkg-dev, devscripts).
+Exemple glibc, dont libmvec.so.1 est la bibliothèque distribuée :
+
+  cd sources
+  dpkg-source -x glibc_2.35-0ubuntu3.15.dsc glibc-modifiee
+  cd glibc-modifiee
+  sudo apt-get build-dep glibc=2.35-0ubuntu3.15
+
+La dernière commande suppose les entrées deb-src de la même version Ubuntu
+et un index qui conserve cette version ; sinon installer les Build-Depends
+indiqués dans le .dsc à partir de l'archive de distribution correspondante.
+Conserver ces versions d'outils pour reproduire le build ; les archives
+jointes contiennent les correctifs Ubuntu, pas une image complète du runner.
+Modifier les sources, documenter les changements et construire les paquets :
+
+  dpkg-buildpackage -b -uc -us
+
+Extraire le paquet libc6 produit avec dpkg-deb -x dans un dossier privé.
+Ne pas remplacer la libc du système hôte. glibc forme un ensemble cohérent :
+libmvec, libm, libc et le chargeur doivent avoir des ABI compatibles. Si la
+modification dépasse cette compatibilité, construire/tester dans la VM et
+reconstruire le moteur avec ce jeu de bibliothèques et son chargeur.
+
+Remplacement dans le moteur Linux onedir
+
+Copier le dossier installé /usr/lib/THERESE/binaries/backend-libs dans un
+dossier de l'utilisateur. Remplacer _internal/libmvec.so.1 par le fichier
+reconstruit compatible, en conservant SONAME, liens et permissions. Pour
+les autres LGPL (FFmpeg, GMP, etc.), suivre la recette épinglée de la roue
+et remplacer ses bibliothèques correspondantes dans cette copie.
+
+  export THERESE_BACKEND_LIBS="$PWD/backend-libs-modifie"
+  "$THERESE_BACKEND_LIBS/backend" --help
+
+Le wrapper Linux lit THERESE_BACKEND_LIBS ; le lanceur Tauri peut lui fournir
+son propre resource_dir. Pour tester toute l'application sans ambiguïté,
+reconstruire son paquet avec le dossier modifié comme ressource Tauri, ou
+installer cette copie dans un préfixe de test. Vérifier d'abord le chargement
+avec LD_DEBUG=libs et un lancement du moteur dans la VM, puis les fonctions
+qui appellent la bibliothèque modifiée. --help seul ne prouve pas la reliaison.
+Ne pas effectuer ce test sur le moteur en cours d'utilisation.
+
+Reconstruction du moteur et de l'application
+
+Prendre le code THÉRÈSE au tag de la release, installer les dépendances
+verrouillées (uv sync --frozen --extra voice-local --dev), puis les roues
+CPU verrouillées via scripts/install_cpu_torch.py sur Linux/Windows.
+Reconstruire la roue native concernée selon les recettes jointes si nécessaire,
+l'installer dans cet environnement, puis exécuter depuis src/backend :
+
+  ../../.venv/bin/pyinstaller backend.spec --noconfirm --clean
+
+Sur Windows, utiliser ../../.venv/Scripts/pyinstaller.exe. Reprendre ensuite
+les étapes de copie du sidecar et de construction Tauri de release.yml au
+même tag (npm ci, compilation avec Cargo.lock). Une modification volontaire
+change les SHA-256 : pour une nouvelle distribution, mettre à jour le
+catalogue, les preuves, les notices et les sources avant de satisfaire la
+garde de release. Le catalogue officiel ne doit pas accepter les octets
+modifiés comme s'ils étaient les bibliothèques originales.
+
+macOS et Windows utilisent actuellement un moteur onefile : remplacer une
+bibliothèque dans un répertoire temporaire d'extraction n'est pas durable.
+Il faut reconstruire ce moteur avec la bibliothèque modifiée avant compression,
+puis le bundle/installeur. Sous macOS, une reconstruction locale peut être signée
+en ad hoc ; la signature/notarisation officielle ne couvre plus ces octets.
+Aucun compte de signature de l'éditeur n'est requis pour construire sa copie.
+Les éventuelles conditions LGPL de reliaison doivent être vérifiées sur les
+binaires réellement produits. La recette ci-dessus n'est pas un procès-verbal
+de reliaison : ce test complet reste à effectuer sur les runners concernés.

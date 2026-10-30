@@ -1,0 +1,32 @@
+/*
+ *   This is a curses module for Python.
+ *
+ *   Based on prior work by Lance Ellinghaus and Oliver Andrich
+ *   Version 1.2 of this module: Copyright 1994 by Lance Ellinghouse,
+ *    Cathedral City, California Republic, United States of America.
+ *
+ *   Version 1.5b1, heavily extended for ncurses by Oliver Andrich:
+ *   Copyright 1996,1997 by Oliver Andrich, Koblenz, Germany.
+ *
+ *   Tidied for Python 1.6, and currently maintained by <amk@amk.ca>.
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining
+ *   a copy of this source file to use, copy, modify, merge, or publish it
+ *   subject to the following conditions:
+ *
+ *   The above copyright notice and this permission notice shall be included
+ *   in all copies or in any new file that contains a substantial portion of
+ *   this file.
+ *
+ *   THE  AUTHOR  MAKES  NO  REPRESENTATIONS ABOUT  THE  SUITABILITY  OF
+ *   THE  SOFTWARE FOR  ANY  PURPOSE.  IT IS  PROVIDED  "AS IS"  WITHOUT
+ *   EXPRESS OR  IMPLIED WARRANTY.  THE AUTHOR DISCLAIMS  ALL WARRANTIES
+ *   WITH  REGARD TO  THIS  SOFTWARE, INCLUDING  ALL IMPLIED  WARRANTIES
+ *   OF   MERCHANTABILITY,  FITNESS   FOR  A   PARTICULAR  PURPOSE   AND
+ *   NON-INFRINGEMENT  OF THIRD  PARTY  RIGHTS. IN  NO  EVENT SHALL  THE
+ *   AUTHOR  BE LIABLE  TO  YOU  OR ANY  OTHER  PARTY  FOR ANY  SPECIAL,
+ *   INDIRECT,  OR  CONSEQUENTIAL  DAMAGES  OR  ANY  DAMAGES  WHATSOEVER
+ *   WHETHER IN AN  ACTION OF CONTRACT, NEGLIGENCE,  STRICT LIABILITY OR
+ *   ANY OTHER  ACTION ARISING OUT OF  OR IN CONNECTION WITH  THE USE OR
+ *   PERFORMANCE OF THIS SOFTWARE.
+ */

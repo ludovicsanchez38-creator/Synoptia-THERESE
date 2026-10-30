@@ -1,0 +1,2 @@
+Attribution publiée dans sigchld-0.2.4/Cargo.toml (package.authors) :
+Jack O'Connor

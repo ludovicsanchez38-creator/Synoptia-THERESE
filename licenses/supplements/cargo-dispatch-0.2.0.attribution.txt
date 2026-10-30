@@ -1,0 +1,2 @@
+Attribution publiée dans dispatch-0.2.0/Cargo.toml (package.authors) :
+Steven Sheldon

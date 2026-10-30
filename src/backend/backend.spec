@@ -167,6 +167,15 @@ a = Analysis(
     cipher=block_cipher,
 )
 
+# Enregistrer la provenance avant strip/signature/compression, y compris les
+# bibliothèques rangées parmi les données. La garde inspecte ensuite les octets.
+_system_spec = importlib.util.spec_from_file_location(
+    "system_libraries", os.path.join(backend_dir, "../../scripts/system_libraries.py")
+)
+_system_module = importlib.util.module_from_spec(_system_spec)
+_system_spec.loader.exec_module(_system_module)
+_system_module.record_analysis([*a.binaries, *a.datas])
+
 pyz = PYZ(a.pure, cipher=block_cipher)
 
 if sys.platform == "linux":
@@ -217,6 +226,8 @@ else:
         disable_windowed_traceback=False,
         argv_emulation=False,
         target_arch=None,
-        codesign_identity=None,
-        entitlements_file=None,
+        # PyInstaller signe chaque bibliothèque après réécriture de ses chemins,
+        # AVANT son insertion dans le onefile (impossible à faire après coup).
+        codesign_identity=os.environ.get("MACOS_SIGNING_IDENTITY", "-") if sys.platform == "darwin" else None,
+        entitlements_file=os.path.join(backend_dir, "../frontend/src-tauri/Entitlements.plist") if sys.platform == "darwin" else None,
     )

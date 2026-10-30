@@ -1,0 +1,8 @@
+Attributions dans package/Readme.md :
+Copyright 2010 - 2014 Sami Samhuri sami@samhuri.net
+
+Attributions dans package/format.js :
+// Copyright 2010 - 2013 Sami Samhuri <sami@samhuri.net>
+
+Attribution publiée dans package/package.json (author) :
+"Sami Samhuri <sami@samhuri.net>"

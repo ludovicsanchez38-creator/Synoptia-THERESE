@@ -1,0 +1,2 @@
+Attribution publiée dans convert_case-0.4.0/Cargo.toml (package.authors) :
+David Purdum <purdum41@gmail.com>

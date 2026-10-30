@@ -1,0 +1,1194 @@
+{
+  "binary_markers": [
+    {
+      "package": "python:av@17.1.0/wheel-linux",
+      "path": "av.libs/libasound-c7818c60.so.2.0.0",
+      "sha256": "b5efc17cc5faf758ed1554ed3ac4322e03a43b6b4900decb77002e4694aafa70",
+      "markers": [
+        "1.2.14"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+      "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-linux",
+      "path": "av.libs/libavcodec-c3f15378.so.62.28.101",
+      "sha256": "ba446073096d9811e3339d6b6b2723b27aacf20596ecc72e78f366cfaa1c19cc",
+      "markers": [
+        "FFmpeg version 8.1.1"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+      "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-linux",
+      "path": "av.libs/libx264-d6533a8d.so.165",
+      "sha256": "5587d2d060914e2e52694e35703a7c8f20f3143eafa956706e089049df3b580b",
+      "markers": [],
+      "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+      "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-linux",
+      "path": "av.libs/libx265-f5385bb8.so.216",
+      "sha256": "e304e1b3b6367e902837b9a00d0bc5b90d83a70e1fbb69b27f34d8c970c4b765",
+      "markers": [
+        "4.2+1-e444744"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/77/43/96b35170bf2e64e00a41748c6400ff73232dc0fc62ded283679fb07c7fe0/av-17.1.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+      "archive_integrity": "sha256:f9a65d1f48b818323fb411e80358f89d77dec340b01d27c6b2dfbb9cbf4b779f"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-macos",
+      "path": "av/.dylibs/libx264.165.dylib",
+      "sha256": "59553302c829a9bb3331d59cdc9c7b73379c461fc3926e1af9aed533e807a91b",
+      "markers": [],
+      "archive": "https://files.pythonhosted.org/packages/6d/af/dfdf6fc7b17814b50d0aa9e7a7e37b87be91be3890f44b0d525433cd1fd1/av-17.1.0-cp311-abi3-macosx_14_0_arm64.whl",
+      "archive_integrity": "sha256:43ebbe977f19a7f2d2bd1a4e119675a0b15e05852cf7309846b6ab922ba7ffe9"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-macos",
+      "path": "av/.dylibs/libavcodec.62.28.101.dylib",
+      "sha256": "ba2bb21ad32f296f1f5ab62646d1f9b529906d0b7da24fdf0690b87791902cdf",
+      "markers": [
+        "FFmpeg version 8.1.1"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/6d/af/dfdf6fc7b17814b50d0aa9e7a7e37b87be91be3890f44b0d525433cd1fd1/av-17.1.0-cp311-abi3-macosx_14_0_arm64.whl",
+      "archive_integrity": "sha256:43ebbe977f19a7f2d2bd1a4e119675a0b15e05852cf7309846b6ab922ba7ffe9"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-macos",
+      "path": "av/.dylibs/libx265.216.dylib",
+      "sha256": "30e358958991b579b25d814f6e28bd30c92bd797425b2e23297aadd547543527",
+      "markers": [
+        "4.2+1-e444744"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/6d/af/dfdf6fc7b17814b50d0aa9e7a7e37b87be91be3890f44b0d525433cd1fd1/av-17.1.0-cp311-abi3-macosx_14_0_arm64.whl",
+      "archive_integrity": "sha256:43ebbe977f19a7f2d2bd1a4e119675a0b15e05852cf7309846b6ab922ba7ffe9"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-windows",
+      "path": "av.libs/libiconv-2-52797ea4538a440d60943a017fb87a4f.dll",
+      "sha256": "52797ea4538a440d60943a017fb87a4fbdf59591c86be276fd97e696cf901ea9",
+      "markers": [],
+      "archive": "https://files.pythonhosted.org/packages/6b/f2/53a7cd34adb6a971d7e6d99663e74db286966c9db8afdca17472fdf0f98e/av-17.1.0-cp311-abi3-win_amd64.whl",
+      "archive_integrity": "sha256:5df5c1172ef1cf65a1529d612f7da7798ce2cf82c1ff7212466b538a6cc7214c"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-windows",
+      "path": "av.libs/libx264-165-71900781b680e0e06a1b966b46fee000.dll",
+      "sha256": "71900781b680e0e06a1b966b46fee000ee1d0e98b62be0ef204ad0275cd3580d",
+      "markers": [],
+      "archive": "https://files.pythonhosted.org/packages/6b/f2/53a7cd34adb6a971d7e6d99663e74db286966c9db8afdca17472fdf0f98e/av-17.1.0-cp311-abi3-win_amd64.whl",
+      "archive_integrity": "sha256:5df5c1172ef1cf65a1529d612f7da7798ce2cf82c1ff7212466b538a6cc7214c"
+    },
+    {
+      "package": "python:av@17.1.0/wheel-windows",
+      "path": "av.libs/libx265-7e74dd5103fd9dad5114dffeefd474ce.dll",
+      "sha256": "d69544b269575ee2afbe34f5974da151d4d229bcce299213ccca5bb61b3b9915",
+      "markers": [
+        "4.2+1-e444744",
+        "4.2+1-e444744",
+        "4.2+1-e444744"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/6b/f2/53a7cd34adb6a971d7e6d99663e74db286966c9db8afdca17472fdf0f98e/av-17.1.0-cp311-abi3-win_amd64.whl",
+      "archive_integrity": "sha256:5df5c1172ef1cf65a1529d612f7da7798ce2cf82c1ff7212466b538a6cc7214c"
+    },
+    {
+      "package": "python:piper-tts@1.4.2/wheel-linux",
+      "path": "piper/espeakbridge.so",
+      "sha256": "6bc875066bffa9176473da8ef155c7145d82bfff5f209cacc709b76d286b8ff8",
+      "markers": [
+        "1.52.0.1"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/a7/58/7b7cbd7e570ac6eb8dbfc22de94d1457863b97876c1cb6a926e959423fb2/piper_tts-1.4.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl",
+      "archive_integrity": "sha256:b17184a664bd9431ce95c138f4bfb3025e1280cf26075a703dbfdcab989b8ee3"
+    },
+    {
+      "package": "python:piper-tts@1.4.2/wheel-macos",
+      "path": "piper/espeakbridge.so",
+      "sha256": "83f4bed0de281123428349b2fd9d280c9a23c6f0a16a4b1c6f8328b7d0a32963",
+      "markers": [
+        "1.52.0.1"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/47/e1/84fcb36c7ac413bb22eb3bdda5f21861f02d0f436df0a9090949c9fec032/piper_tts-1.4.2-cp39-abi3-macosx_11_0_arm64.whl",
+      "archive_integrity": "sha256:138e6adf26a8e796f53866770ea30b666b65432a5e94857c2d9a8c473a8a1f90"
+    },
+    {
+      "package": "python:piper-tts@1.4.2/wheel-windows",
+      "path": "piper/espeakbridge.pyd",
+      "sha256": "52c59d1351a70b509df5a04c1da2dc33f6369d7029f7e538bfda8e15c1a47d3a",
+      "markers": [
+        "1.52.0.1"
+      ],
+      "archive": "https://files.pythonhosted.org/packages/c5/5a/fda959ca07554a8ec3e380b168e79fff16f3020f4956c356a613616c1994/piper_tts-1.4.2-cp39-abi3-win_amd64.whl",
+      "archive_integrity": "sha256:9c4a3a11f5889ea9d0df4414dce2bd9bee5ce7d9cf604c8fd5e307441d4c031f"
+    }
+  ],
+  "libiconv": {
+    "package": "python:av@17.1.0/wheel-windows",
+    "path": "av.libs/libiconv-2-52797ea4538a440d60943a017fb87a4f.dll",
+    "sha256": "52797ea4538a440d60943a017fb87a4fbdf59591c86be276fd97e696cf901ea9",
+    "version_exports": [
+      {
+        "symbol": "_libiconv_version",
+        "value": 275,
+        "file_offset": 149008
+      }
+    ],
+    "msys2_package_url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libiconv-1.19-1-any.pkg.tar.zst",
+    "msys2_package_sha256": "21e334d0911f25de75d3e18e0697648bcecfa9658256d600cad0827d719c2f35",
+    "msys2_member_sha256": "7a282a854e01be726c6cccfe46f548c716aa45b3014818468253aaa4efbcd067",
+    "exact_binary_match": false,
+    "sections": [
+      {
+        "section": ".text",
+        "original_sha256": "a7a4935f8c7d4168f87017817156728e391d8563a506357c594b4a34822b47cb",
+        "wheel_sha256": "a7a4935f8c7d4168f87017817156728e391d8563a506357c594b4a34822b47cb",
+        "original_size": 147968,
+        "wheel_size": 147968
+      },
+      {
+        "section": ".data",
+        "original_sha256": "2d6935d7fab98d1eb497a4d102a5f9bf161cfae6be2956dd67574e909ccdec00",
+        "wheel_sha256": "2d6935d7fab98d1eb497a4d102a5f9bf161cfae6be2956dd67574e909ccdec00",
+        "original_size": 512,
+        "wheel_size": 512
+      },
+      {
+        "section": ".rdata",
+        "original_sha256": "0892e05af75a99d9d51f6d81b3acdb82e1dfa3c9ee78af24d8e84c823c7d3678",
+        "wheel_sha256": "0892e05af75a99d9d51f6d81b3acdb82e1dfa3c9ee78af24d8e84c823c7d3678",
+        "original_size": 974336,
+        "wheel_size": 974336
+      },
+      {
+        "section": ".pdata",
+        "original_sha256": "5d6dbfb39feaf4b1d7f3fb8d6e16699b2e8f6754f5462928747bf2f8615ad4b3",
+        "wheel_sha256": "5d6dbfb39feaf4b1d7f3fb8d6e16699b2e8f6754f5462928747bf2f8615ad4b3",
+        "original_size": 7168,
+        "wheel_size": 7168
+      },
+      {
+        "section": ".xdata",
+        "original_sha256": "df30baa0e3b996d792695b2b2a593e5f3a0a221010c83935b9307ab6bdb9e49e",
+        "wheel_sha256": "df30baa0e3b996d792695b2b2a593e5f3a0a221010c83935b9307ab6bdb9e49e",
+        "original_size": 4608,
+        "wheel_size": 4608
+      },
+      {
+        "section": ".bss",
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "wheel_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "original_size": 0,
+        "wheel_size": 0
+      },
+      {
+        "section": ".edata",
+        "original_sha256": "8d61c56035861ad8deff38cb5334e6a903a2bd7c12d1f7b82d4cda096d623e9f",
+        "wheel_sha256": "8d61c56035861ad8deff38cb5334e6a903a2bd7c12d1f7b82d4cda096d623e9f",
+        "original_size": 512,
+        "wheel_size": 512
+      },
+      {
+        "section": ".idata",
+        "original_sha256": "2f952bed624b69cef1ebf16578681d16e8a6fb1d10c9ac086f3e2726828f1845",
+        "wheel_sha256": "2f952bed624b69cef1ebf16578681d16e8a6fb1d10c9ac086f3e2726828f1845",
+        "original_size": 2048,
+        "wheel_size": 2048
+      },
+      {
+        "section": ".tls",
+        "original_sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560",
+        "wheel_sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560",
+        "original_size": 512,
+        "wheel_size": 512
+      },
+      {
+        "section": ".rsrc",
+        "original_sha256": "0d2588d37fe9c1fde9bc3cbebeb01fc45f87ac5ae96e9de9fb12cf36649e6910",
+        "wheel_sha256": "0d2588d37fe9c1fde9bc3cbebeb01fc45f87ac5ae96e9de9fb12cf36649e6910",
+        "original_size": 1536,
+        "wheel_size": 1536
+      },
+      {
+        "section": ".reloc",
+        "original_sha256": "518625f43497132d89adfbb559e07e3294b9dfe762829b6dc9f0b4af12be4619",
+        "wheel_sha256": "518625f43497132d89adfbb559e07e3294b9dfe762829b6dc9f0b4af12be4619",
+        "original_size": 1024,
+        "wheel_size": 1024
+      }
+    ],
+    "original_size": 1143148,
+    "wheel_size": 1141248,
+    "archive": "https://files.pythonhosted.org/packages/6b/f2/53a7cd34adb6a971d7e6d99663e74db286966c9db8afdca17472fdf0f98e/av-17.1.0-cp311-abi3-win_amd64.whl",
+    "archive_integrity": "sha256:5df5c1172ef1cf65a1529d612f7da7798ce2cf82c1ff7212466b538a6cc7214c",
+    "source_package_members": [
+      {
+        "path": "mingw-w64-libiconv/.SRCINFO",
+        "sha256": "0a6eaca4b054fbc935d8f66e0432a5e29abed083d25707d47938ca009947015f"
+      },
+      {
+        "path": "mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch",
+        "sha256": "89d5c0f666e50a0186cfb142ba7b77e8fe1ac4d65bdfd9ae14ae8d2f0045a87c"
+      },
+      {
+        "path": "mingw-w64-libiconv/0003-add-cp65001-as-utf8-alias.patch",
+        "sha256": "cb2b1cca44c9b9bd11c3bd33997c10d22dff263542275324c88f34b59910ef87"
+      },
+      {
+        "path": "mingw-w64-libiconv/fix-pointer-buf.patch",
+        "sha256": "6b6e2393840f4dc6067587165777b1a07978f4c05247d7c1010a45ad251bbeeb"
+      },
+      {
+        "path": "mingw-w64-libiconv/iconv.pc",
+        "sha256": "56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae"
+      },
+      {
+        "path": "mingw-w64-libiconv/libiconv-1.19.tar.gz",
+        "sha256": "88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"
+      },
+      {
+        "path": "mingw-w64-libiconv/libiconv-1.19.tar.gz.sig",
+        "sha256": "30374a9cf2846418fc34977eb2b92094c3edb76021d57de541699e2b5e32dc9b"
+      },
+      {
+        "path": "mingw-w64-libiconv/PKGBUILD",
+        "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475"
+      }
+    ]
+  },
+  "x265_archive_version": {
+    "path": "x265_4.2/x265Version.txt",
+    "repositorychangeset": "e444744",
+    "releasetagdistance": 1,
+    "releasetag": "4.2"
+  },
+  "research_date": "2026-10-29",
+  "exclusion_scope": [
+    {
+      "package": "python:lxml@6.1.1",
+      "archive": "https://files.pythonhosted.org/packages/05/3b/aab6728cae887456f409b4d75e8a01856e4f04bd510de38052a47768b680/lxml-6.1.1.tar.gz",
+      "integrity": "sha256:ba96ae44888e0185281e937633a743ea90d5a196c6000f82565ebb0580012d40",
+      "path": "lxml-6.1.1/LICENSES.txt",
+      "sha256": "41d49dd406aa0e1548a6d5f21a30d6bf638b3cd96eb7289dd348d83ed2e40392",
+      "text": "lxml is copyright Infrae and distributed under the BSD license (see\ndoc/licenses/BSD.txt), with the following exceptions:\n\nSome code, such a selftest.py, selftest2.py and\nsrc/lxml/_elementpath.py are derived from ElementTree and\ncElementTree. See doc/licenses/elementtree.txt for the license text.\n\nlxml.cssselect and lxml.html are copyright Ian Bicking and distributed\nunder the BSD license (see doc/licenses/BSD.txt).\n\ntest.py, the test-runner script, is GPL and copyright Shuttleworth\nFoundation. See doc/licenses/GPL.txt. It is believed the unchanged\ninclusion of test.py to run the unit test suite falls under the\n\"aggregation\" clause of the GPL and thus does not affect the license\nof the rest of the package.\n\nThe isoschematron implementation uses several XSL and RelaxNG resources:\n * The (XML syntax) RelaxNG schema for schematron, copyright International\n   Organization for Standardization (see \n   src/lxml/isoschematron/resources/rng/iso-schematron.rng for the license\n   text)\n * The skeleton iso-schematron-xlt1 pure-xslt schematron implementation\n   xsl stylesheets, copyright Rick Jelliffe and Academia Sinica Computing\n   Center, Taiwan (see the xsl files here for the license text: \n   src/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/)\n * The xsd/rng schema schematron extraction xsl transformations are unlicensed\n   and copyright the respective authors as noted (see \n   src/lxml/isoschematron/resources/xsl/RNG2Schtrn.xsl and\n   src/lxml/isoschematron/resources/xsl/XSD2Schtrn.xsl)\n"
+    }
+  ],
+  "ffmpeg_license_scope": {
+    "observed_in_linux_binaries": "LGPL version 3 or later",
+    "upstream_patch": "patches/ffmpeg.patch au commit b84838a003b1626152ef530750d5c3e0022c3db9",
+    "finding": "Ce correctif déplace x264/x265 de la liste GPL à la liste VERSION3 de configure. Il est livré dans l’archive de recettes ; il ne supprime pas les obligations GPL des codecs. Sélection conservatrice GPL-3.0-or-later pour la combinaison."
+  },
+  "source_bindings": {
+    "alsa-lib": {
+      "version": "1.2.14",
+      "packages": [
+        "native:alsa-lib@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.14.tar.bz2",
+        "sha256": "be9c88a0b3604367dd74167a2b754a35e142f670292ae47a2fdef27a2ee97a32",
+        "filename": "alsa-lib-1.2.14.tar.bz2"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "ffmpeg": {
+      "version": "8.1.1",
+      "packages": [
+        "native:ffmpeg@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ffmpeg.org/releases/ffmpeg-8.1.1.tar.xz",
+        "sha256": "b6863adde98898f42602017462871b5f6333e65aec803fdd7a6308639c52edf3",
+        "filename": "ffmpeg-8.1.1.tar.xz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "gmp": {
+      "version": "6.3.0",
+      "packages": [
+        "native:gmp@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz",
+        "sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+        "filename": "gmp-6.3.0.tar.xz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "libunistring": {
+      "version": "1.4.2",
+      "packages": [
+        "native:libunistring@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/libunistring/libunistring-1.4.2.tar.gz",
+        "sha256": "e82664b170064e62331962126b259d452d53b227bb4a93ab20040d846fec01d8",
+        "filename": "libunistring-1.4.2.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "nettle-hogweed": {
+      "version": "3.10.2",
+      "packages": [
+        "native:nettle-hogweed@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz",
+        "sha256": "fe9ff51cb1f2abb5e65a6b8c10a92da0ab5ab6eaf26e7fc2b675c45f1fb519b5",
+        "filename": "nettle-3.10.2.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "gnutls": {
+      "version": "3.8.13",
+      "packages": [
+        "native:gnutls@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.13.tar.xz",
+        "sha256": "ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e",
+        "filename": "gnutls-3.8.13.tar.xz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "lame": {
+      "version": "3.100",
+      "packages": [
+        "native:lame@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://deb.debian.org/debian/pool/main/l/lame/lame_3.100.orig.tar.gz",
+        "sha256": "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e",
+        "filename": "lame_3.100.orig.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "x264": {
+      "version": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55 (core 165)",
+      "packages": [
+        "native:x264@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://code.videolan.org/videolan/x264/-/archive/b35605ace3ddf7c1a5d67a2eb553f034aef41d55/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.bz2",
+        "sha256": "6eeb82934e69fd51e043bd8c5b0d152839638d1ce7aa4eea65a3fedcf83ff224",
+        "filename": "x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.bz2"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "x265": {
+      "version": "4.2+1-e444744 (archive 4.2)",
+      "packages": [
+        "native:x265@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://bitbucket.org/multicoreware/x265_git/downloads/x265_4.2.tar.gz",
+        "sha256": "40b1ea0453e0309f0eba934e0ddf533f8f6295966679e8894e8f1c1c8d5e1210",
+        "filename": "x265_4.2.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "libiconv": {
+      "version": "1.19 (MSYS2 1.19-1)",
+      "packages": [
+        "native:libiconv@python:av@17.1.0"
+      ],
+      "source": {
+        "url": "https://ftp.gnu.org/gnu/libiconv/libiconv-1.19.tar.gz",
+        "sha256": "88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6",
+        "filename": "libiconv-1.19.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/97241598792f4c980c32458187154c7c999d68b3/scripts/ffmpeg-8.1.json",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c",
+          "filename": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "commit": "97241598792f4c980c32458187154c7c999d68b3",
+          "local_path": "licenses/recipes/pyav-17.1.0-ffmpeg-8.1.json.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/pkg.py",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3",
+          "filename": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-pkg.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/b84838a003b1626152ef530750d5c3e0022c3db9/scripts/build-ffmpeg.py",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048",
+          "filename": "ffmpeg-8.1.1-2-build.py.txt",
+          "commit": "b84838a003b1626152ef530750d5c3e0022c3db9",
+          "local_path": "licenses/recipes/ffmpeg-8.1.1-2-build.py.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/PKGBUILD",
+          "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475",
+          "filename": "libiconv-1.19-1-PKGBUILD.txt",
+          "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+          "local_path": "licenses/recipes/libiconv-1.19-1-PKGBUILD.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pyav-17.1.0-ffmpeg-8.1.json.txt",
+          "sha256": "9393ac64a45e237c4cfaa76a7b798451ace1cfd7eb006c186812211e1210148c"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-pkg.py.txt",
+          "sha256": "40bdee1f7cc76667f0b7a3da5198d08c4fe79e6ab571cf1e1b5ee856f58128b3"
+        },
+        {
+          "resource": "ffmpeg-8.1.1-2-build.py.txt",
+          "sha256": "35aed6c5b9a99af6eccd948d350f40bc9cc4087efca5535dc56d480bd55de048"
+        },
+        {
+          "resource": "libiconv-1.19-1-PKGBUILD.txt",
+          "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475"
+        }
+      ],
+      "required_supporting_sources": [
+        "PyAV-17.1.0-build-tree.tar.gz",
+        "mingw-w64-libiconv-1.19-1.src.tar.zst",
+        "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz"
+      ]
+    },
+    "espeak-ng": {
+      "version": "1.52.0.1 / 212928b394a96e8fd2096616bfd54e17845c48f6",
+      "packages": [
+        "native:espeak-ng@python:piper-tts@1.4.2"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/espeak-ng/espeak-ng/tar.gz/212928b394a96e8fd2096616bfd54e17845c48f6",
+        "sha256": "1f201cabc73e569a7cb434d40d3b30980f923010f8ecd4d1c4ae94691ac2888a",
+        "filename": "espeak-ng-212928b394a96e8fd2096616bfd54e17845c48f6.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2",
+          "filename": "piper-1.4.2-CMakeLists.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-CMakeLists.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/pyproject.toml",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43",
+          "filename": "piper-1.4.2-pyproject.toml.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-pyproject.toml.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "piper-1.4.2-CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2"
+        },
+        {
+          "resource": "piper-1.4.2-pyproject.toml.txt",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43"
+        }
+      ],
+      "required_supporting_sources": [
+        "piper-1.4.2-build-tree.tar.gz"
+      ]
+    },
+    "piper-tts": {
+      "version": "1.4.2",
+      "packages": [
+        "python:piper-tts@1.4.2",
+        "python:piper-tts@1.4.2/wheel-linux",
+        "python:piper-tts@1.4.2/wheel-macos",
+        "python:piper-tts@1.4.2/wheel-windows"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/86/53/3c636c4250e8cb489c50c6dda9d64400518e8c6600576850104b3232b562/piper_tts-1.4.2.tar.gz",
+        "sha256": "dbe7e5391d7657f8a5f2b7ce7cdbafc5bbc559de2af15e5299ce298323eade51",
+        "filename": "piper_tts-1.4.2.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2",
+          "filename": "piper-1.4.2-CMakeLists.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-CMakeLists.txt"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/OHF-Voice/piper1-gpl/d6975e21a440c0d8b6e5fb7c41027409af13d44d/pyproject.toml",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43",
+          "filename": "piper-1.4.2-pyproject.toml.txt",
+          "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+          "local_path": "licenses/recipes/piper-1.4.2-pyproject.toml.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "piper-1.4.2-CMakeLists.txt",
+          "sha256": "f49ba616d2f6d6253d3a1d95b2bdece6f6471b395a91fa71937dc282b5787ee2"
+        },
+        {
+          "resource": "piper-1.4.2-pyproject.toml.txt",
+          "sha256": "3d8c160ff055260d06c2606caa6e5c90cc46fb5f72c9d49e42c3b050dc24ab43"
+        }
+      ],
+      "required_supporting_sources": [
+        "piper-1.4.2-build-tree.tar.gz"
+      ]
+    },
+    "recurring-ical-events": {
+      "version": "3.8.0",
+      "packages": [
+        "python:recurring-ical-events@3.8.0"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/83/90/05dfcc02ecf58bd170305c88db9e3e3933aa73a1f8abac2b326c7fdc1a98/recurring_ical_events-3.8.0.tar.gz",
+        "sha256": "3e8c7c35d9bd8956a7ab91afad51477c60d972e1236d3fd1b55087a66bce7d04",
+        "filename": "recurring_ical_events-3.8.0.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "x-wr-timezone": {
+      "version": "2.0.1",
+      "packages": [
+        "python:x-wr-timezone@2.0.1"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/79/2b/8ae5f59ab852c8fe32dd37c1aa058eb98aca118fec2d3af5c3cd56fffb7b/x_wr_timezone-2.0.1.tar.gz",
+        "sha256": "9166c40e6ffd4c0edebabc354e1a1e2cffc1bb473f88007694793757685cc8c3",
+        "filename": "x_wr_timezone-2.0.1.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "certifi": {
+      "version": "2026.10.19",
+      "packages": [
+        "python:certifi@2026.10.19"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/a6/bd/1436c50cc46699de0230fbaacc1d1de7bfec413176099949e9d5112e88f2/certifi-2026.10.19.tar.gz",
+        "sha256": "035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae",
+        "filename": "certifi-2026.10.19.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "pathspec": {
+      "version": "1.0.3",
+      "packages": [
+        "python:pathspec@1.0.3"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/4c/b2/bb8e495d5262bfec41ab5cb18f522f1012933347fb5d9e62452d446baca2/pathspec-1.0.3.tar.gz",
+        "sha256": "bac5cf97ae2c2876e2d25ebb15078eb04d76e4b98921ee31c6f85ade8b59444d",
+        "filename": "pathspec-1.0.3.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "tqdm": {
+      "version": "4.67.1",
+      "packages": [
+        "python:tqdm@4.67.1"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz",
+        "sha256": "f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2",
+        "filename": "tqdm-4.67.1.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "grpcio": {
+      "version": "1.76.0",
+      "packages": [
+        "python:grpcio@1.76.0"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/b6/e0/318c1ce3ae5a17894d5791e87aea147587c9e702f24122cc7a5c8bbaeeb1/grpcio-1.76.0.tar.gz",
+        "sha256": "7be78388d6da1a25c0d5ec506523db58b18be22d9c37d8d3a32c08be4987bd73",
+        "filename": "grpcio-1.76.0.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "cssparser-macros@0.6.1": {
+      "version": "0.6.1",
+      "packages": [
+        "cargo:cssparser-macros@0.6.1"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/cssparser-macros/cssparser-macros-0.6.1.crate",
+        "sha256": "13b588ba4ac1a99f7f2964d24b3d896ddc6bf847ee3855dbd4366f058cfcd331",
+        "filename": "cssparser-macros-0.6.1.crate"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "cssparser@0.29.6": {
+      "version": "0.29.6",
+      "packages": [
+        "cargo:cssparser@0.29.6"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/cssparser/cssparser-0.29.6.crate",
+        "sha256": "f93d03419cb5950ccfd3daf3ff1c7a36ace64609a1a8746d493df1ca0afde0fa",
+        "filename": "cssparser-0.29.6.crate"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "dtoa-short@0.3.5": {
+      "version": "0.3.5",
+      "packages": [
+        "cargo:dtoa-short@0.3.5"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/dtoa-short/dtoa-short-0.3.5.crate",
+        "sha256": "cd1511a7b6a56299bd043a9c167a6d2bfb37bf84a6dfceaba651168adfb43c87",
+        "filename": "dtoa-short-0.3.5.crate"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "option-ext@0.2.0": {
+      "version": "0.2.0",
+      "packages": [
+        "cargo:option-ext@0.2.0"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/option-ext/option-ext-0.2.0.crate",
+        "sha256": "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d",
+        "filename": "option-ext-0.2.0.crate"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "selectors@0.24.0": {
+      "version": "0.24.0",
+      "packages": [
+        "cargo:selectors@0.24.0"
+      ],
+      "source": {
+        "url": "https://static.crates.io/crates/selectors/selectors-0.24.0.crate",
+        "sha256": "0c37578180969d00692904465fb7f6b3d50b9a2b952b87c23d0e2e5cb5013416",
+        "filename": "selectors-0.24.0.crate"
+      },
+      "recipes": [],
+      "recipe_refs": [],
+      "required_supporting_sources": []
+    },
+    "axe-core": {
+      "version": "4.12.1 / 5d002cca1f862a0699d9f1bb7b5a1ec334fa1b22",
+      "packages": [
+        "npm:axe-core@4.12.1"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/dequelabs/axe-core/tar.gz/5d002cca1f862a0699d9f1bb7b5a1ec334fa1b22",
+        "sha256": "7c29b93fca17942c5f10a6798a472b292326e21af31aa415fb2dc167e98ffc4d",
+        "filename": "axe-core-4.12.1-source.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [
+        {
+          "resource": "axe-core-4.12.1-source.tar.gz",
+          "member": "Gruntfile.js",
+          "sha256": "e320428b2f6f9a183bc3ccc38250284075a0188c6a1f9b92646b4f7c70a07aa2"
+        }
+      ],
+      "required_supporting_sources": []
+    },
+    "lightningcss": {
+      "version": "1.30.2 / 400f705e63e139c326f480aed11e1416f5a3a61f",
+      "packages": [
+        "npm:lightningcss-android-arm64@1.30.2",
+        "npm:lightningcss-darwin-arm64@1.30.2",
+        "npm:lightningcss-darwin-x64@1.30.2",
+        "npm:lightningcss-freebsd-x64@1.30.2",
+        "npm:lightningcss-linux-arm-gnueabihf@1.30.2",
+        "npm:lightningcss-linux-arm64-gnu@1.30.2",
+        "npm:lightningcss-linux-arm64-musl@1.30.2",
+        "npm:lightningcss-linux-x64-gnu@1.30.2",
+        "npm:lightningcss-linux-x64-musl@1.30.2",
+        "npm:lightningcss-win32-arm64-msvc@1.30.2",
+        "npm:lightningcss-win32-x64-msvc@1.30.2",
+        "npm:lightningcss@1.30.2"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/parcel-bundler/lightningcss/tar.gz/400f705e63e139c326f480aed11e1416f5a3a61f",
+        "sha256": "07b0993eea3e7e2b7879a312751c899c45f3760dd5aa07f385b739fc1e5c2b64",
+        "filename": "lightningcss-1.30.2-source.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [
+        {
+          "resource": "lightningcss-1.30.2-source.tar.gz",
+          "member": "scripts/build-npm.js",
+          "sha256": "4090702aea75548855ef3d46a2877476533bbac85814106696684d63712c8461"
+        },
+        {
+          "resource": "lightningcss-1.30.2-source.tar.gz",
+          "member": "Cargo.toml",
+          "sha256": "645575fe60f603068985cc01af6d5aa4b98e94667697511d0d88871966cea543"
+        }
+      ],
+      "required_supporting_sources": []
+    },
+    "adodbapi (pywin32)": {
+      "version": "pywin32 311 / adodbapi 2.6.2.0",
+      "packages": [
+        "python:pywin32@311"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/mhammond/pywin32/tar.gz/8b328dffac71b7afaf2d72f47c4048f27a32f6c8",
+        "sha256": "0e6dfb82f37d80e67c26ef0e8effe4a6a032db98e9430587f9b78f604e7326e2",
+        "filename": "pywin32-311-source.tar.gz"
+      },
+      "recipes": [
+        {
+          "url": "https://raw.githubusercontent.com/mhammond/pywin32/8b328dffac71b7afaf2d72f47c4048f27a32f6c8/setup.py",
+          "sha256": "e2f5d2ee17b2f80a8576a0ad8110fd990de69f750b52bf75add8611f1e7ce559",
+          "filename": "pywin32-311-setup.py.txt",
+          "commit": "8b328dffac71b7afaf2d72f47c4048f27a32f6c8",
+          "local_path": "licenses/recipes/pywin32-311-setup.py.txt"
+        }
+      ],
+      "recipe_refs": [
+        {
+          "resource": "pywin32-311-setup.py.txt",
+          "sha256": "e2f5d2ee17b2f80a8576a0ad8110fd990de69f750b52bf75add8611f1e7ce559"
+        }
+      ],
+      "required_supporting_sources": []
+    },
+    "autocommand (setuptools)": {
+      "version": "2.2.2",
+      "packages": [
+        "python:setuptools@84.2.1"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/5b/18/774bddb96bc0dc0a2b8ac2d2a0e686639744378883da0fc3b96a54192d7a/autocommand-2.2.2.tar.gz",
+        "sha256": "878de9423c5596491167225c2a455043c3130fb5b7286ac83443d45e74955f34",
+        "filename": "autocommand-2.2.2.tar.gz"
+      },
+      "recipes": [],
+      "recipe_refs": [
+        {
+          "resource": "setuptools-84.2.1.tar.gz",
+          "member": "pyproject.toml",
+          "sha256": "79c616e6ca3429cb0d63a7172456ead2d3bb3b56b7cb1695015e0f38f91bb930"
+        },
+        {
+          "resource": "setuptools-84.2.1.tar.gz",
+          "member": "setup.py",
+          "sha256": "f70886dffd959c53411444b91e6223617c83f8fb84af5033db3218f1e69a22d7"
+        }
+      ],
+      "required_supporting_sources": [
+        "setuptools-84.2.1.tar.gz"
+      ]
+    }
+  },
+  "supporting_source_bindings": {
+    "PyAV-17.1.0-build-tree.tar.gz": {
+      "url": "https://codeload.github.com/PyAV-Org/PyAV/tar.gz/97241598792f4c980c32458187154c7c999d68b3",
+      "sha256": "f4ff776ee23cf0b514e3682382cd88f9cf31da9f43599b680bad6a275be24c41",
+      "filename": "PyAV-17.1.0-build-tree.tar.gz",
+      "commit": "97241598792f4c980c32458187154c7c999d68b3"
+    },
+    "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz": {
+      "url": "https://codeload.github.com/PyAV-Org/pyav-ffmpeg/tar.gz/b84838a003b1626152ef530750d5c3e0022c3db9",
+      "sha256": "9bf73ed500b28b379b8e3ffce90f7f33b71dbe56c3cda6050de79caa15807ade",
+      "filename": "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz",
+      "commit": "b84838a003b1626152ef530750d5c3e0022c3db9"
+    },
+    "piper-1.4.2-build-tree.tar.gz": {
+      "url": "https://codeload.github.com/OHF-Voice/piper1-gpl/tar.gz/d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+      "sha256": "ebf535912b5760e33ff5c01a483bfc9c58b13c18c7c6ccfb4cec0184dc14f747",
+      "filename": "piper-1.4.2-build-tree.tar.gz",
+      "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d"
+    },
+    "mingw-w64-libiconv-1.19-1.src.tar.zst": {
+      "url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libiconv-1.19-1.src.tar.zst",
+      "sha256": "74428280c17094da5b702c29b2e1a0abae59556ea5dfdd65705cc8ccc1e000fb",
+      "filename": "mingw-w64-libiconv-1.19-1.src.tar.zst"
+    },
+    "setuptools-84.2.1.tar.gz": {
+      "url": "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz",
+      "sha256": "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+      "filename": "setuptools-84.2.1.tar.gz"
+    }
+  }
+}

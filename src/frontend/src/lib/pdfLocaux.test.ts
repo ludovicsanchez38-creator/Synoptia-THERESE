@@ -11,9 +11,9 @@ it('résout la ressource du bundle et l’ouvre avec le greffon de fichiers', as
   expect(h.resolveResource).toHaveBeenCalledWith(GUIDE_RESSOURCE);
   expect(h.openPath).toHaveBeenCalledWith('/bundle/resources/guide-therese-0.82.pdf');
   const conf = JSON.parse(readFileSync('src-tauri/tauri.conf.json', 'utf8'));
-  expect(conf.bundle.resources).toContain(GUIDE_RESSOURCE);
+  expect(Object.values(conf.bundle.resources)).toContain(GUIDE_RESSOURCE);
   const linux = JSON.parse(readFileSync('src-tauri/tauri.linux.conf.json', 'utf8'));
-  expect(linux.bundle.resources).toContain(GUIDE_RESSOURCE);
+  expect(Object.values(linux.bundle.resources)).toContain(GUIDE_RESSOURCE);
   const acl = JSON.parse(readFileSync('src-tauri/capabilities/default.json', 'utf8'));
   expect(acl.permissions.find((p: { identifier?: string }) => p.identifier === 'opener:allow-open-path').allow)
     .toEqual([{ path: '$RESOURCE/' + GUIDE_RESSOURCE }]);

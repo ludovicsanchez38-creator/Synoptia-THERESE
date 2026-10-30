@@ -1,0 +1,2 @@
+Attribution publiée dans mac-0.1.1/Cargo.toml (package.authors) :
+Jonathan Reem <jonathan.reem@gmail.com>
