@@ -16,7 +16,7 @@ from app.services.tool_confirmations import register_pending
 async def test_resultat_de_confirmation_lisible(client, monkeypatch, brut, attendu):
     from app.routers import chat
     monkeypatch.setattr(chat, 'execute_memory_tool', AsyncMock(return_value=brut))
-    identifiant = register_pending('create_contact', {'first_name': 'Marie'})
+    identifiant = register_pending('create_contact', {"_provenance_documents": "sans_document", 'first_name': 'Marie'})
     reponse = await client.post('/api/chat/confirm-tool', json={'confirmation_id': identifiant, 'approved': True})
     assert reponse.status_code == 200, reponse.text
     assert reponse.json()['result'] == attendu

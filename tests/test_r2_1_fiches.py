@@ -147,6 +147,14 @@ def test_revision_chiffree_idempotente_et_contraintes(tmp_path):
             with Operations.context(MigrationContext.configure(connexion)):
                 revision.upgrade()
                 revision.upgrade()
+            # Le schéma courant comprend désormais la migration de provenance T4.
+            spec_t4 = importlib.util.spec_from_file_location('revision_t4',
+                chemin_revision.with_name('t4memoire03_provenance_fiches.py'))
+            revision_t4 = importlib.util.module_from_spec(spec_t4)
+            spec_t4.loader.exec_module(revision_t4)
+            with Operations.context(MigrationContext.configure(connexion)):
+                revision_t4.upgrade()
+                revision_t4.upgrade()
             noms = {c['name'] for c in __import__('sqlalchemy').inspect(connexion).get_columns('memory_cards')}
             assert noms == set(SQLModel.metadata.tables['memory_cards'].columns.keys())
             with pytest.raises(IntegrityError):

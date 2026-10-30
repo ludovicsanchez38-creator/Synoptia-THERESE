@@ -206,6 +206,13 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
         context.memory_used = []
         return
     borner_payload(context, fiches, config, tools, suite)
+    # Le titre, le sujet et le contenu partagent une seule provenance prudente.
+    # Elle reste attachée au contexte jusqu'aux reprises du transport.
+    if any(f.get('provenance_documents') != 'sans_document'
+           for f in fiches if f['id'] in (context.memory_used or [])):
+        context.contient_documents = True
+        from app.services.consentements import verifier_envoi_llm
+        verifier_envoi_llm(config, context)
     destination = destination_cloud(config)
     from app.services.consentements import accord_valide
     if context.memory_used and destination and not accord_valide(demande['purpose'], destination, ('memory_cards_r2_v1',)):

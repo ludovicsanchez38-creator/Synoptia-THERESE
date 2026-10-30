@@ -3928,11 +3928,13 @@ async def _execute_tools_and_continue(
             from types import SimpleNamespace
 
             from app.services.memory_card_tools import executer_outil, texte_resultat
+            from app.services.provenance_documents import contexte_documentaire
             perimetre, perimetre_id = await _perimetre_de_conversation(conversation_id, session)
             resultat_fiche = await executer_outil(
                 tc.arguments, scope=perimetre or "global", scope_id=perimetre_id,
                 conversation_id=conversation_id,
                 include_memory=context.memory_cards_enabled, contexte=contexte,
+                contient_documents=contexte_documentaire(context),
             )
             result = SimpleNamespace(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
@@ -4418,6 +4420,15 @@ async def _executer_action_confirmee(
             "Ton accord « documents » manque pour le fournisseur actuel. "
             "Rien n’a été envoyé. Reformule ta demande sans ces documents ou autorise leur envoi."
         )
+        await terminer(trace_id, tool_name, '{"success":false}')
+        return {"status": "refused", "tool_name": tool_name, "result": result}
+
+    # Ces objets persistants n'ont pas encore de provenance par champ.
+    # La confirmation métier ne permet pas d'effacer l'origine des arguments.
+    if (tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}
+            and arguments.get('_provenance_documents') != 'sans_document'):
+        result = ("Cette écriture peut reprendre un document, mais sa destination ne conserve pas encore cette origine. "
+                  "Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")
         await terminer(trace_id, tool_name, '{"success":false}')
         return {"status": "refused", "tool_name": tool_name, "result": result}
 

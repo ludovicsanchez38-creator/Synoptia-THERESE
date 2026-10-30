@@ -240,7 +240,8 @@ def _cle(f: MemoryCard) -> str:
 async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
                  scope: str = 'global', scope_id: str | None = None,
                  conversation_id: str | None = None, message_id: str | None = None,
-                 contexte: Any = None, generation_attendue: int | None = None) -> dict[str, Any]:
+                 contexte: Any = None, generation_attendue: int | None = None,
+                 contient_documents: bool | None = None) -> dict[str, Any]:
     # Même loquet et même collection de gestes que purge/restauration, CRUD inclus.
     from app.services.memory_tools import _proteger_le_geste, generation_des_donnees
     generation = generation_des_donnees() if generation_attendue is None else generation_attendue
@@ -254,7 +255,8 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
                 if contexte is not None and contexte.annulation_observee():
                     raise RefusMemoire('Écriture mémoire arrêtée.', 409)
                 resultat = await _ecrire(session, donnees, automatique=automatique,
-                    scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+                    scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id,
+                    contient_documents=contient_documents)
                 if contexte is not None and contexte.annulation_observee():
                     raise RefusMemoire('Écriture mémoire arrêtée.', 409)
                 await session.commit()
@@ -272,7 +274,8 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
 
 
 async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, scope: str,
-                  scope_id: str | None, conversation_id: str | None, message_id: str | None) -> dict[str, Any]:
+                  scope_id: str | None, conversation_id: str | None, message_id: str | None,
+                  contient_documents: bool | None = None) -> dict[str, Any]:
     from app.services.memory_card_security import message_refus
     for champ in ("title", "content", "reason", "subject", "kind", "state"):
         if champ in donnees and not isinstance(donnees[champ], str):
@@ -374,6 +377,18 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
     f = existante or MemoryCard(kind=donnees.get('kind', ''), subject='', title='', content='',
                                 author='therese' if automatique else 'utilisateur')
+    # Toute la fiche hérite du tour, titre et sujet compris. Une correction
+    # manuelle ne prouve pas que les autres champs sont devenus indépendants.
+    from app.services.provenance_documents import provenance as origine_message
+    origines = [existante.provenance_documents] if existante else []
+    if automatique:
+        origines += [origine_message(source) if source else 'inconnue',
+                     'documents' if contient_documents is True else
+                     'sans_document' if contient_documents is False else 'inconnue']
+    else:
+        origines.append('sans_document')
+    f.provenance_documents = ('documents' if 'documents' in origines else
+                              'inconnue' if any(o != 'sans_document' for o in origines) else 'sans_document')
     champs: tuple[str, ...] = ('kind', 'subject', 'title', 'content', 'reason', 'contact_id', 'project_id')
     if not automatique:
         champs += ('scope', 'scope_id', 'state', 'conversation_id', 'message_id')

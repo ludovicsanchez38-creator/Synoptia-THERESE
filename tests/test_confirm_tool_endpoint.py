@@ -165,7 +165,7 @@ async def test_confirm_tool_route_create_contact_vers_la_memoire(client, monkeyp
     monkeypatch.setattr(chat_mod, "execute_memory_tool", _spy)
     monkeypatch.setattr(chat_mod, "execute_workspace_tool", _fail_workspace)
 
-    cid = register_pending("create_contact", {"first_name": "Martin"})
+    cid = register_pending("create_contact", {"_provenance_documents": "sans_document", "first_name": "Martin"})
     resp = await client.post(
         "/api/chat/confirm-tool", json={"confirmation_id": cid, "approved": True}
     )

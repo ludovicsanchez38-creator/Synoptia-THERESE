@@ -1076,6 +1076,7 @@ class MemoryCard(SQLModel, table=True):
     content: str
     reason: str = ''
     search_text: str = ''
+    provenance_documents: str = 'inconnue'
     scope: str = Field(default='global', index=True)
     scope_id: str | None = Field(default=None, foreign_key='projects.id', index=True)
     contact_id: str | None = Field(default=None, foreign_key='contacts.id', index=True)

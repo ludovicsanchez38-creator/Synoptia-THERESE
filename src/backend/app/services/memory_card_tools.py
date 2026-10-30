@@ -49,7 +49,7 @@ async def message_du_tour(conversation_id: str) -> str | None:
 
 async def executer_outil(arguments: dict[str, Any], *, scope: str, scope_id: str | None,
                          conversation_id: str, include_memory: bool = True,
-                         contexte: Any = None) -> dict[str, Any]:
+                         contexte: Any = None, contient_documents: bool | None = None) -> dict[str, Any]:
     if not include_memory:
         return {'success': False, 'message': 'La mémoire est désactivée pour cet échange. Aucune fiche écrite.'}
     from app.services.memory_tools import generation_des_donnees
@@ -60,7 +60,7 @@ async def executer_outil(arguments: dict[str, Any], *, scope: str, scope_id: str
             raise RefusMemoire('Les métadonnées de la fiche sont réservées au serveur.')
         message_id = await message_du_tour(conversation_id)
         fiche = await ecrire(arguments, automatique=True, scope=scope, scope_id=scope_id,
-                              conversation_id=conversation_id, message_id=message_id, contexte=contexte, generation_attendue=generation)
+                              conversation_id=conversation_id, message_id=message_id, contexte=contexte, generation_attendue=generation, contient_documents=contient_documents)
         return {'success': True, 'receipt': fiche['receipt']}
     except RefusMemoire as refus:
         resultat = {'success': False, 'message': str(refus), 'card_id': refus.card_id}

@@ -80,7 +80,7 @@ async def test_note_sans_contact_et_journal_sans_effet_crm(client, db_session, m
     async def executer(*args, **kwargs):
         return json.dumps({'success': True})
     monkeypatch.setattr(chat, 'execute_workspace_tool', executer)
-    cid = register_pending('create_task', {'contact_id': personne.id})
+    cid = register_pending('create_task', {"_provenance_documents": "sans_document", 'contact_id': personne.id})
     await client.post('/api/chat/confirm-tool', json={'confirmation_id': cid, 'approved': True})
     await db_session.refresh(personne)
     assert personne.score == 40 and personne.next_follow_up is not None

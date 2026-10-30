@@ -731,6 +731,10 @@ def apply_adhoc_migrations(db_path) -> None:
                     "Migration auto : %d fin(s) all-day Google/CalDAV converties en sémantique inclusive",
                     converted,
                 )
+        colonnes_fiches = {row[1] for row in conn.execute('PRAGMA table_info(memory_cards)')}
+        if colonnes_fiches and 'provenance_documents' not in colonnes_fiches:
+            conn.execute("ALTER TABLE memory_cards ADD COLUMN provenance_documents TEXT NOT NULL DEFAULT 'inconnue'")
+            conn.commit()
         from app.models.activity_migration import migrer_activites
         migrer_activites(conn)
         from app.models.meeting_note_migration import lier_notes_heritees
@@ -744,7 +748,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "t4marque02"
+ALEMBIC_HEAD_REVISION = "t4memoire03"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:

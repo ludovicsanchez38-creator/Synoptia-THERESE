@@ -47,7 +47,7 @@ async def test_create_contact_confirme_apres_suppression_ne_revele_pas_l_homonym
     assert requires_confirmation("create_contact")
     _, id_homonyme = await _dossier_avec_homonymes(client)
     conv = await _conversation_supprimee(client)
-    carte = register_pending("create_contact", {"first_name": "Jean", "last_name": "Dupont"}, conversation_id=conv)
+    carte = register_pending("create_contact", {"_provenance_documents": "sans_document", "first_name": "Jean", "last_name": "Dupont"}, conversation_id=conv)
     reponse = await client.post("/api/chat/confirm-tool", json={"confirmation_id": carte, "approved": True})
     assert reponse.status_code == 200, reponse.text
     resultat = reponse.json()["result"]
@@ -65,7 +65,7 @@ async def test_create_project_confirme_apres_suppression_ne_revele_pas_les_homon
 
     await _dossier_avec_homonymes(client)
     conv = await _conversation_supprimee(client)
-    carte = register_pending("create_project", {"name": "Chantier confidentiel"}, conversation_id=conv)
+    carte = register_pending("create_project", {"_provenance_documents": "sans_document", "name": "Chantier confidentiel"}, conversation_id=conv)
     reponse = await client.post("/api/chat/confirm-tool", json={"confirmation_id": carte, "approved": True})
     resultat = reponse.json()["result"]
     assert "Plusieurs projets" not in resultat, f"create_project rend {resultat}"
@@ -80,7 +80,7 @@ async def test_temoin_conversation_libre_ferme(client):
 
     _, id_homonyme = await _dossier_avec_homonymes(client)
     conv = (await client.post("/api/chat/conversations", json={"title": "x"})).json()["id"]
-    carte = register_pending("create_contact", {"first_name": "Jean", "last_name": "Dupont"}, conversation_id=conv)
+    carte = register_pending("create_contact", {"_provenance_documents": "sans_document", "first_name": "Jean", "last_name": "Dupont"}, conversation_id=conv)
     reponse = await client.post("/api/chat/confirm-tool", json={"confirmation_id": carte, "approved": True})
     resultat = reponse.json()["result"]
     assert id_homonyme not in resultat, resultat
