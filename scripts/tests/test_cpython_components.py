@@ -174,6 +174,49 @@ class CPythonComponentsTests(unittest.TestCase):
         self.assertIn('William Ahern', notice)
         self.assertIn('CC0 Public Domain Dedication', notice)
 
+    def test_libpython_declares_secret_labs_sre_under_cnri_permission(self):
+        # Relecture signature 7 : le moteur SRE de Secret Labs est défini dans libpython
+        # (PyInit__sre, sre_match...) et son attribution est dans les octets publiés.
+        catalog = components.load(ROOT)
+        row = next(f for f in catalog['files'] if f['name'] == 'libpython3.13.so.1.0')
+        record = components.identify(row['sha256'], 'Linux', catalog)
+        by_id = {c['id']: c for c in record['components']}
+        self.assertIn('sre', by_id)
+        sre = by_id['sre']
+        self.assertTrue(sre['version'].startswith('2.2.2;'))
+        self.assertIn('v3.13.17', sre['version'])
+        header = (ROOT / sre['notices'][0]['path']).read_text()
+        for token in ("Secret Labs' Regular Expression Engine", 'Copyright (c) 1997-2001 by Secret Labs AB',
+                      "redistributed under CNRI's", 'Python 1.6 license'):
+            with self.subTest(token=token):
+                self.assertIn(token, header)
+        self.assertEqual(sre['notices'][0]['upstream']['url'],
+                         'https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c')
+        cnri = next(n for n in sre['notices'] if n['path'] == 'licenses/cpython/LICENSE.txt')
+        self.assertIn('CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1', (ROOT / cnri['path']).read_text())
+        evidence = json.loads((ROOT / catalog['evidence']['path']).read_text())
+        self.assertIn('Modules/_sre/sre.c', evidence['source_files'])
+        proof = next(f for f in evidence['files'] if f['sha256'] == row['sha256'])['incorporation_evidence']['sre']
+        defined = {line.split()[-1] for line in proof['defined_symbols'] if ' UND ' not in line}
+        self.assertLessEqual({'PyInit__sre', 'sre_match', 'sre_search', 'sre_ucs1_match',
+                              'sre_ucs2_match', 'sre_ucs4_match'}, defined)
+        self.assertIn('SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB', proof['strings'])
+        # Les notices livrées portent la composition avec SRE ; celles qui l'omettent sont refusées.
+        components.require_notices(ROOT, catalog)
+        self.assertIn((sre['name'] + ' — ' + sre['version']).encode(),
+                      (ROOT / 'THIRD_PARTY_LICENSES').read_bytes())
+        stale = copy.deepcopy(catalog)
+        stale['components'] = [c for c in stale['components'] if c['id'] != 'sre']
+        for f in stale['files']:
+            f['components'] = [c for c in f['components'] if c != 'sre']
+        current = (self.root / 'THIRD_PARTY_LICENSES').read_text(encoding='utf-8')
+        without_sre = current.replace(components.render(self.root, catalog),
+                                      components.render(self.root, stale))
+        self.assertNotEqual(without_sre, current)
+        (self.root / 'THIRD_PARTY_LICENSES').write_text(without_sre, encoding='utf-8', newline='\n')
+        with self.assertRaisesRegex(ValueError, 'Notices des composants CPython'):
+            components.require_notices(self.root, components.load(self.root))
+
     def test_catalog_bindings_and_original_notices_cannot_be_changed(self):
         original = components.load(self.root)
         for kind in ('component', 'binding', 'version', 'duplicate'):
@@ -196,7 +239,7 @@ class CPythonComponentsTests(unittest.TestCase):
     def test_library_and_other_extensions_have_reviewed_compositions(self):
         catalog = components.load(ROOT)
         expected = {'libpython3.13.so.1.0': {'mimalloc', 'siphash', 'dtoa', 'cfuhash', 'gus',
-                                         'unicode', 'locale-wrapper', 'getopt', 'unicode-string'},
+                                         'unicode', 'locale-wrapper', 'getopt', 'unicode-string', 'sre'},
                     '_blake2': {'blake2'}, '_random': {'mt19937'},
                     '_md5': {'hacl', 'karamel'}, '_sha1': {'hacl', 'karamel'},
                     '_sha2': {'hacl', 'karamel'}, '_sha3': {'hacl', 'karamel'},
@@ -207,7 +250,7 @@ class CPythonComponentsTests(unittest.TestCase):
             self.assertEqual({c['id'] for c in record['components']}, ids)
             components.verify_record({'sha256': row['sha256'], **record}, 'Linux', catalog)
         self.assertEqual(len(catalog['files']), 58)
-        self.assertEqual(len(catalog['components']), 20)
+        self.assertEqual(len(catalog['components']), 21)
 
     def test_complement_rejects_other_deb_before_creating_output(self):
         wrong = self.root / 'wrong.deb'

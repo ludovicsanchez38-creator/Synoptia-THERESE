@@ -8,7 +8,7 @@
   },
   "evidence": {
     "path": "licenses/cpython/evidence-v0820.json",
-    "sha256": "b8c71d7407f04c53fdc88c24bd2822f08333690da38027a6fa9b2ba875c12893"
+    "sha256": "11116ab401bbff6d8e2c09c3292d9385bc7f1682a448bbfb98a0b0b778dcb151"
   },
   "base_notices": [
     {
@@ -746,6 +746,45 @@
           "size": 13078
         }
       ]
+    },
+    {
+      "id": "sre",
+      "name": "SRE, Secret Labs' Regular Expression Engine",
+      "version": "2.2.2; adaptation CPython v3.13.17",
+      "license": "LicenseRef-CPython-SRE",
+      "notices": [
+        {
+          "path": "licenses/cpython/SRE-LICENSE.txt",
+          "sha256": "3fbce1d9656c088114a1197eb1fb5a84879fa4bcef975be64f117cfe7fe98052",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c",
+            "sha256": "14a0f69cf3906098a0222438bc06ed4b808c944dd79bae45be7323552299f5e9",
+            "size": 94687
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/LICENSE.txt",
+          "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/LICENSE",
+            "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+            "size": 13809
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/_sre/sre.c",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c",
+          "sha256": "14a0f69cf3906098a0222438bc06ed4b808c944dd79bae45be7323552299f5e9",
+          "size": 94687
+        }
+      ]
     }
   ],
   "files": [
@@ -763,6 +802,7 @@
         "locale-wrapper",
         "mimalloc",
         "siphash",
+        "sre",
         "unicode",
         "unicode-string"
       ],

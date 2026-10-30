@@ -207,6 +207,11 @@
       "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/expat/siphash.h",
       "sha256": "12ecc9915bccb793ea8bb543cc7d002e226f4e4d6b97ec9839dca41cbe4e2e27",
       "size": 13078
+    },
+    "Modules/_sre/sre.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c",
+      "sha256": "14a0f69cf3906098a0222438bc06ed4b808c944dd79bae45be7323552299f5e9",
+      "size": 94687
     }
   },
   "source_version_observations": {
@@ -226,6 +231,9 @@
     ],
     "Tools/unicode/makeunicodedata.py": [
       "UNIDATA_VERSION = \"15.1.0\""
+    ],
+    "Modules/_sre/sre.c": [
+      "\" SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB \";"
     ]
   },
   "components": [
@@ -942,6 +950,45 @@
           "size": 13078
         }
       ]
+    },
+    {
+      "id": "sre",
+      "name": "SRE, Secret Labs' Regular Expression Engine",
+      "version": "2.2.2; adaptation CPython v3.13.17",
+      "license": "LicenseRef-CPython-SRE",
+      "notices": [
+        {
+          "path": "licenses/cpython/SRE-LICENSE.txt",
+          "sha256": "3fbce1d9656c088114a1197eb1fb5a84879fa4bcef975be64f117cfe7fe98052",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c",
+            "sha256": "14a0f69cf3906098a0222438bc06ed4b808c944dd79bae45be7323552299f5e9",
+            "size": 94687
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/LICENSE.txt",
+          "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/LICENSE",
+            "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+            "size": 13809
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/_sre/sre.c",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c",
+          "sha256": "14a0f69cf3906098a0222438bc06ed4b808c944dd79bae45be7323552299f5e9",
+          "size": 94687
+        }
+      ]
     }
   ],
   "files": [
@@ -959,6 +1006,7 @@
         "locale-wrapper",
         "mimalloc",
         "siphash",
+        "sre",
         "unicode",
         "unicode-string"
       ],
@@ -1025,6 +1073,19 @@
             "14494: 0000000000207b40   520 FUNC    GLOBAL DEFAULT   14 PyUnicode_New"
           ],
           "strings": []
+        },
+        "sre": {
+          "defined_symbols": [
+            "977: 000000000030c3c0    16 FUNC    GLOBAL DEFAULT   14 PyInit__sre",
+            "10351: 000000000025e080    33 FUNC    LOCAL  DEFAULT   14 sre_match",
+            "10398: 0000000000262b50  3479 FUNC    LOCAL  DEFAULT   14 sre_search",
+            "10342: 000000000025e0b0 11179 FUNC    LOCAL  DEFAULT   14 sre_ucs1_match",
+            "10343: 000000000030da70  4273 FUNC    LOCAL  DEFAULT   14 sre_ucs2_match",
+            "10344: 000000000030eb30  2979 FUNC    LOCAL  DEFAULT   14 sre_ucs4_match"
+          ],
+          "strings": [
+            "SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB"
+          ]
         }
       },
       "imported_symbols": []

@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : f2fcb1af564ae09b3b142c37989963f7e068d3fb412063916eb12de025011eef
+Empreinte des verrous : 3c3736635ad1539a1c9f04aaa3a4c128a7221d06c9eced49e9d89f240dc00a96
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -110967,6 +110967,12 @@ Incorporé dans : usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib
 SHA-256 : 83b0fc81ac9b06f2871ef4c2c884954d8f0cf258d3408d7ddb5dc58e161709e0
 Notices : licenses/cpython/expat-SipHash-LICENSE.txt, licenses/cpython/CC0-1.0.txt
 
+SRE, Secret Labs' Regular Expression Engine — 2.2.2; adaptation CPython v3.13.17
+Licence : LicenseRef-CPython-SRE
+Incorporé dans : usr/lib/THERESE/binaries/backend-libs/_internal/libpython3.13.so.1.0
+SHA-256 : a2402bd49cbfaa23e9cdeb7dde5feed0c21f3d915a84ee8d909b9d9d6b75560c
+Notices : licenses/cpython/SRE-LICENSE.txt, licenses/cpython/LICENSE.txt
+
 ========================================================================
 licenses/cpython/BLAKE2-LICENSE.txt
 Source : https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_blake2/impl/blake2b.c
@@ -112756,6 +112762,47 @@ SHA-256 notice : d454ad6ba0513da75bcf70b613a66c9a305c22f46300dcd94e2de8df9a643ef
    http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
+
+========================================================================
+licenses/cpython/SRE-LICENSE.txt
+Source : https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sre/sre.c
+SHA-256 notice : 3fbce1d9656c088114a1197eb1fb5a84879fa4bcef975be64f117cfe7fe98052
+/*
+ * Secret Labs' Regular Expression Engine
+ *
+ * regular expression matching engine
+ *
+ * partial history:
+ * 1999-10-24 fl   created (based on existing template matcher code)
+ * 2000-03-06 fl   first alpha, sort of
+ * 2000-08-01 fl   fixes for 1.6b1
+ * 2000-08-07 fl   use PyOS_CheckStack() if available
+ * 2000-09-20 fl   added expand method
+ * 2001-03-20 fl   lots of fixes for 2.1b2
+ * 2001-04-15 fl   export copyright as Python attribute, not global
+ * 2001-04-28 fl   added __copy__ methods (work in progress)
+ * 2001-05-14 fl   fixes for 1.5.2 compatibility
+ * 2001-07-01 fl   added BIGCHARSET support (from Martin von Loewis)
+ * 2001-10-18 fl   fixed group reset issue (from Matthew Mueller)
+ * 2001-10-20 fl   added split primitive; re-enable unicode for 1.6/2.0/2.1
+ * 2001-10-21 fl   added sub/subn primitive
+ * 2001-10-24 fl   added finditer primitive (for 2.2 only)
+ * 2001-12-07 fl   fixed memory leak in sub/subn (Guido van Rossum)
+ * 2002-11-09 fl   fixed empty sub/subn return type
+ * 2003-04-18 mvl  fully support 4-byte codes
+ * 2003-10-17 gn   implemented non recursive scheme
+ * 2013-02-04 mrab added fullmatch primitive
+ *
+ * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
+ *
+ * This version of the SRE library can be redistributed under CNRI's
+ * Python 1.6 license.  For any other use, please contact Secret Labs
+ * AB (info@pythonware.com).
+ *
+ * Portions of this engine have been developed in cooperation with
+ * CNRI.  Hewlett-Packard provided funding for 1.6 integration and
+ * other compatibility work.
+ */
 
 ========================================================================
 licenses/cpython/SipHash-LICENSE.txt
