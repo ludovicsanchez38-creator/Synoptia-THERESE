@@ -273,6 +273,16 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
     return dict(resultat['card'])
 
 
+def _reecrite_entierement(existante: MemoryCard, donnees: dict[str, Any]) -> bool:
+    """Titre et contenu remplacés à la main, raison remplacée ou absente."""
+    def remplace(champ: str) -> bool:
+        valeur = donnees.get(champ)
+        return isinstance(valeur, str) and bool(valeur.strip()) and valeur.strip() != (getattr(existante, champ) or '').strip()
+    raison_neutre = not (existante.reason or '').strip() or (
+        isinstance(donnees.get('reason'), str) and donnees['reason'].strip() != existante.reason.strip())
+    return remplace('title') and remplace('content') and raison_neutre
+
+
 async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, scope: str,
                   scope_id: str | None, conversation_id: str | None, message_id: str | None,
                   contient_documents: bool | None = None) -> dict[str, Any]:
@@ -390,6 +400,11 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         origines += [origine_message(source) if source else 'inconnue',
                      'documents' if contient_documents is True else
                      'sans_document' if contient_documents is False else 'inconnue']
+    elif existante is not None and _reecrite_entierement(existante, donnees):
+        # Relecture 6, réserve 6 : une réécriture manuelle de tout ce qui part
+        # vers le fournisseur (titre, contenu, raison) rend la fiche à
+        # l'utilisateur. Le sujet, clé locale, n'est jamais transmis.
+        origines = ['sans_document']
     else:
         origines.append('sans_document')
     f.provenance_documents = ('documents' if 'documents' in origines else

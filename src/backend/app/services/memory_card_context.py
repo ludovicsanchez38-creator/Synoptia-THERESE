@@ -17,9 +17,21 @@ ENVELOPPE = 32
 
 
 class AccordFichesRequis(ErreurPourEcran):
-    def __init__(self, provider: str, purpose: str):
-        super().__init__('Tes fiches mémoire utiles vont être envoyées avec cet échange. Donne ton accord actualisé pour ce fournisseur avant de réessayer, ou désactive explicitement la mémoire.')
+    def __init__(self, provider: str, purpose: str, message: str | None = None):
+        super().__init__(message or 'Tes fiches mémoire utiles vont être envoyées avec cet échange. Donne ton accord actualisé pour ce fournisseur avant de réessayer, ou désactive explicitement la mémoire.')
         self.provider, self.purpose = provider, purpose
+
+
+def message_fiches_documentaires(destination: str) -> str:
+    """Réserve 6 de la relecture 6 : nommer la cause et la sortie.
+
+    Le texte ne cite jamais la fiche : il peut repartir dans l'historique.
+    """
+    return (
+        'Une fiche mémoire ancienne, ou issue d’un document, sert à cet échange, et ton accord « documents » '
+        f'pour {destination} manque. Rien n’a été envoyé. Autorise l’envoi des documents, décoche « Utiliser '
+        'les fiches mémoire » pour ce message, ou réécris entièrement la fiche dans Mémoire.'
+    )
 
 
 def _json(valeur: Any) -> str:
@@ -213,6 +225,11 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
         context.contient_documents = True
         if 'documents' in origines or origines - {'sans_document', 'inconnue'}:
             context.documents_averes = True
+        cible = destination_cloud(config)
+        if cible and not documents_autorises(config, None):
+            # Le composeur propose alors l'accord « documents » ou l'envoi
+            # sans mémoire ; le transport revérifie de toute façon.
+            raise AccordFichesRequis(cible, 'documents', message_fiches_documentaires(cible))
         from app.services.consentements import verifier_envoi_llm
         verifier_envoi_llm(config, context)
     destination = destination_cloud(config)
