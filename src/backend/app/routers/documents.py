@@ -331,7 +331,10 @@ async def _draft_stream(
     """
     llm_service = get_llm_service()
     prompt = build_section_context(document, sections, target, instruction)
-    context = llm_service.prepare_context(messages=[Message(role="user", content=prompt, contient_documents=True)])
+    # Tour 7 : l'atelier ne lit aucun fichier. Titre, brief, sections et
+    # résumés viennent de la saisie de l'utilisateur ou de réponses produites
+    # à partir d'elle : l'accord « llm » les couvre, comme un message du chat.
+    context = llm_service.prepare_context(messages=[Message(role="user", content=prompt, contient_documents=False)])
 
     accumulated = ""
     last_flush = time.monotonic()
@@ -504,14 +507,18 @@ async def validate_section(
         )
 
     llm_service = get_llm_service()
+    avis: str | None = None
     try:
         usage_resume: dict[str, int] = {}
-        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section), usage_sink=usage_resume, contient_documents=True)).strip()
+        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section), usage_sink=usage_resume)).strip()
         enregistrer_usage_llm(llm_service, usage_resume, f"document:{section.document_id}", section.content, summary)
         if not summary:
             summary = section.content[:300]
     except AccordEnvoiRequis as exc:
-        raise HTTPException(403, detail=str(exc)) from exc
+        # Relecture 6, constat 5 : la validation reste locale, mais le refus
+        # se dit. Rien n'est envoyé pour contourner l'accord manquant.
+        avis = f"Section validée avec un résumé local. Rien n’a été envoyé. {exc}"
+        summary = section.content[:300]
     except Exception as exc:  # indisponibilité du fournisseur : résumé local
         logger.warning(
             "Validation section %s : résumé LLM indisponible (%s), fallback 300 caractères",
@@ -542,7 +549,9 @@ async def validate_section(
     await session.commit()
     await session.refresh(section)
 
-    return _section_to_response(section)
+    reponse = _section_to_response(section)
+    reponse.avis = avis
+    return reponse
 
 
 @router.post("/{document_id}/sections")
@@ -706,7 +715,6 @@ async def _generer_la_trame(
         raw_response = await llm_service.generate_content(
             usage_sink=usage_trame,
             prompt=build_outline_prompt(titre, brief),
-            contient_documents=True,
         )
         enregistrer_usage_llm(llm_service, usage_trame, f"document:{document_id}", brief or titre, raw_response)
         try:
@@ -853,6 +861,9 @@ async def generate_outline(
             # annulation de la trame, pas de la requête.
             return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
         raise
+    except AccordEnvoiRequis as exc:
+        # Un accord manquant n'est pas une panne : rien n'est parti.
+        raise HTTPException(status_code=403, detail=str(exc)) from None
     except Exception as exc:
         logger.error("Génération de la trame impossible : %s", exc, exc_info=True)
         raise HTTPException(status_code=500, detail=message_pour_ecran(exc, ou="pendant la génération de la trame")) from exc

@@ -356,6 +356,22 @@ describe('documentStore', () => {
       expect(state.currentDocument?.sections[0].status).toBe('validee');
       expect(state.currentDocument?.sections_validees).toBe(1);
     });
+
+    it('affiche l’avis d’une validation restée locale, sans le garder dans la section', async () => {
+      // Tour 7 (relecture 6, constat 5) : accord manquant, résumé local, avis visible.
+      useDocumentStore.setState({
+        outlineNotice: null,
+        currentDocument: makeDetail({ sections: [makeSection({ id: 's1', status: 'brouillon' })], sections_validees: 0 }),
+      });
+      const avis = 'Section validée avec un résumé local. Rien n’a été envoyé. Ton accord « llm » pour openai est nécessaire.';
+      vi.mocked(validateSection).mockResolvedValueOnce({ ...makeSection({ id: 's1', status: 'validee' }), avis });
+      await useDocumentStore.getState().validateSection('s1');
+      const state = useDocumentStore.getState();
+      expect(state.currentDocument?.sections[0].status).toBe('validee');
+      expect(state.outlineNotice).toBe(avis);
+      expect(state.error).toBeNull();
+      expect('avis' in (state.currentDocument?.sections[0] ?? {})).toBe(false);
+    });
   });
 
   describe('exportDocument', () => {

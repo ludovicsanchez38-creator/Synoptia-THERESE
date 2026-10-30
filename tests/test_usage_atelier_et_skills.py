@@ -60,7 +60,9 @@ async def test_la_trame_de_l_atelier_est_comptee_avec_l_usage_reel(client, monke
 
     apres = _compte(tracker)
     assert faux.appels >= 1
-    assert faux.origines_documents == [True]
+    # Tour 7 (relecture 6, constat 5) : la trame naît du titre et du brief
+    # saisis ; elle part sous l'accord « llm », jamais marquée documentaire.
+    assert faux.origines_documents == [False]
     assert apres[0] - avant[0] >= 321 and apres[1] - avant[1] >= 123, (avant, apres)
 
 

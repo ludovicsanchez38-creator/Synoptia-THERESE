@@ -1,4 +1,9 @@
-"""Les résumés et titres persistants de l'atelier gardent la finalité documents."""
+"""Atelier documentaire : titres, trames et résumés relèvent de l'accord « llm ».
+
+Tour 6 les traitait comme documentaires ; la relecture 6 (constat 5) a montré
+que l'atelier ne lit aucun fichier : tout vient de la saisie de l'utilisateur.
+Retirer l'accord « documents » ne bloque donc plus l'atelier ; sans accord
+« llm », rien ne part (voir tests/test_t4_7_regressions.py)."""
 
 import httpx
 import pytest
@@ -16,6 +21,8 @@ async def test_reprise_atelier_apres_retrait(client, monkeypatch, etape):
     from app.routers import documents
 
     enregistrer_accord("llm", "openai", True, "3", [])
+    enregistrer_accord("documents", "openai", True, "3", [])
+    enregistrer_accord("documents", "openai", False, "3", [])
     envois = []
 
     async def transport(req):
@@ -51,5 +58,7 @@ async def test_reprise_atelier_apres_retrait(client, monkeypatch, etape):
             reponse = await client.post(f"/api/documents/sections/{section['id']}/draft", json={})
         else:
             reponse = await client.post(f"/api/documents/{doc['id']}/outline")
-        assert not envois
-        assert "accord" in reponse.text and "documents" in reponse.text, reponse.text
+        # Un seul envoi, sous l'accord « llm » : la saisie de l'utilisateur.
+        assert len(envois) == 1, reponse.text
+        assert b"REFERENCE_AMBRE" in envois[0]
+        assert "accord" not in reponse.text, reponse.text

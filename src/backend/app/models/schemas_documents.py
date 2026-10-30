@@ -48,6 +48,8 @@ class SectionResponse(BaseModel):
     orphan: bool
     created_at: datetime
     updated_at: datetime
+    # Avis lisible quand la validation a dû rester locale (accord manquant).
+    avis: str | None = None
 
 
 class SectionUpdate(BaseModel):

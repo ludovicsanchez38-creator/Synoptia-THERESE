@@ -43,6 +43,8 @@ export interface DocumentSection {
   orphan: boolean;
   created_at: string;
   updated_at: string;
+  /** Validation restée locale (accord manquant) : avis à afficher, jamais stocké. */
+  avis?: string | null;
 }
 
 export interface DocumentPiste {
