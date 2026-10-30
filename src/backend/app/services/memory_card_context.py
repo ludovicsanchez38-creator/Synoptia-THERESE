@@ -208,9 +208,11 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
     borner_payload(context, fiches, config, tools, suite)
     # Le titre, le sujet et le contenu partagent une seule provenance prudente.
     # Elle reste attachée au contexte jusqu'aux reprises du transport.
-    if any(f.get('provenance_documents') != 'sans_document'
-           for f in fiches if f['id'] in (context.memory_used or [])):
+    origines = {f.get('provenance_documents') for f in fiches if f['id'] in (context.memory_used or [])}
+    if origines - {'sans_document'}:
         context.contient_documents = True
+        if 'documents' in origines or origines - {'sans_document', 'inconnue'}:
+            context.documents_averes = True
         from app.services.consentements import verifier_envoi_llm
         verifier_envoi_llm(config, context)
     destination = destination_cloud(config)

@@ -24,6 +24,10 @@ class ContextWindow:
     config_effective: Any = None
     accord_board: bool = False
     contient_documents: bool = False
+    # Tour 7 : distingue un document avéré (pièce jointe, extrait indexé,
+    # fichier relu, message ou fiche « documents ») d'une provenance seulement
+    # incertaine. None = non calculé : toute marque compte comme avérée.
+    documents_averes: bool | None = None
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0

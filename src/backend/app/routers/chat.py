@@ -1690,16 +1690,21 @@ async def send_message(
     # (message-action + confirmation locale, commandes /) sont EXCLUS du
     # contexte LLM - bruit aujourd'hui, valeurs de variables demain. Les
     # user legacy (avant le tag) restent : bruit sans risque, documenté.
-    history = rfc_historique + [
-        LLMMessage(role=msg.role, content=msg.content,
-                   contient_documents=memoriser_provenance(msg) != "sans_document")
-        for msg in history_messages
+    history_rejouee = [
+        msg for msg in history_messages
         if msg.model not in ("action-deterministe", "commande-deterministe")
         and not (msg.extra_data and '"deterministic": true' in msg.extra_data)
         # B-1221 : le moteur ne stocke que des tours user et assistant ; un
         # « system » importé avant B-1182 serait rejoué comme consigne.
         and msg.role in ("user", "assistant")
     ]
+    origines_historique = [memoriser_provenance(msg) for msg in history_rejouee]
+    history = rfc_historique + [
+        LLMMessage(role=msg.role, content=msg.content, contient_documents=origine != "sans_document")
+        for msg, origine in zip(history_rejouee, origines_historique, strict=True)
+    ]
+    # Un document avéré dans l'historique (pas seulement une origine inconnue).
+    historique_documents_averes = rfc_origine == "documents" or "documents" in origines_historique
 
     # B-1368 : une conversation créée vide (sélecteur de projet, ⌘N) gardait
     # son titre provisoire en base, et aucun envoi n'avançait sa date : le
@@ -1727,7 +1732,9 @@ async def send_message(
         True if request.file_paths or rfc_origine == "documents"
         else (None if reprise or rfc_origine == "inconnue" else False),
     )
-    source_contient_documents = memoriser_provenance(user_message) != "sans_document"
+    origine_source = memoriser_provenance(user_message)
+    source_contient_documents = origine_source != "sans_document"
+    source_documents_averes = origine_source == "documents"
     session.add(user_message)
     await session.commit()
 
@@ -2133,6 +2140,8 @@ async def send_message(
                 memory_card_purpose=request.memory_card_purpose,
                 source_message_id=user_message.id,
                 source_contient_documents=source_contient_documents,
+                source_documents_averes=source_documents_averes,
+                historique_documents_averes=historique_documents_averes,
             ),
             media_type="text/event-stream",
             headers={
@@ -2169,6 +2178,7 @@ async def send_message(
     history, avis_historique = filtrer_historique(history, llm_service.config)
     if avis_historique:
         inline_preamble = avis_historique + "\n\n" + inline_preamble
+    documents_averes = source_documents_averes or (historique_documents_averes and not avis_historique)
     messages = history + [LLMMessage(role="user", content=llm_user_message,
                                      contient_documents=source_contient_documents)]
 
@@ -2295,6 +2305,9 @@ async def send_message(
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
     context.contient_documents = bool(file_contexts) or any(m.images or m.contient_documents for m in messages) or documents_recuperes
+    context.documents_averes = bool(
+        file_contexts or any(m.images for m in messages) or documents_recuperes or documents_averes
+    )
     context.memory_cards_enabled = request.include_memory
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -2423,6 +2436,8 @@ async def _stream_response(
     memory_card_purpose: str = "llm",
     source_message_id: str | None = None,
     source_contient_documents: bool = False,
+    source_documents_averes: bool = True,
+    historique_documents_averes: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2517,6 +2532,8 @@ async def _stream_response(
         memory_card_grants=memory_card_grants, memory_card_purpose=memory_card_purpose,
         source_message_id=source_message_id,
         source_contient_documents=source_contient_documents,
+        source_documents_averes=source_documents_averes,
+        historique_documents_averes=historique_documents_averes,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2799,6 +2816,8 @@ async def _do_stream_response(
     memory_card_purpose: str = "llm",
     source_message_id: str | None = None,
     source_contient_documents: bool = False,
+    source_documents_averes: bool = True,
+    historique_documents_averes: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -2906,6 +2925,9 @@ async def _do_stream_response(
     messages, avis_historique = filtrer_historique(history or [], llm_service.config)
     if avis_historique:
         preamble = avis_historique + "\n\n" + preamble
+    # Le filtre retire toute provenance non attestée : un historique filtré ne
+    # porte plus aucun document (la demande courante garde le sien).
+    documents_averes = source_documents_averes or (historique_documents_averes and not avis_historique)
     messages.append(LLMMessage(role="user", content=user_message, contient_documents=source_contient_documents))
 
     # Get relevant memory context for the user's message
@@ -3048,6 +3070,9 @@ async def _do_stream_response(
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
     context.contient_documents = bool(file_contexts) or any(m.images or m.contient_documents for m in messages) or documents_recuperes
+    context.documents_averes = bool(
+        file_contexts or any(m.images for m in messages) or documents_recuperes or documents_averes
+    )
     context.memory_cards_enabled = include_memory
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
@@ -3779,17 +3804,12 @@ async def _execute_tools_and_continue(
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
             # Les arguments générés peuvent eux-mêmes citer le contexte.
             # La confirmation d'un outil n'accorde aucune finalité IA.
+            # Tour 7 : trois niveaux. « inconnue » (ancien message, ancienne
+            # fiche) se distingue d'un document avéré ; un contexte illisible
+            # compte comme documentaire.
+            from app.services.provenance_documents import origine_contexte
             messages_differes = getattr(context, 'messages', None)
-            documentaire = getattr(context, 'contient_documents', None)
-            if documentaire is None or not isinstance(messages_differes, list):
-                pending_arguments['_provenance_documents'] = 'inconnue'
-            else:
-                pending_arguments['_provenance_documents'] = (
-                    'documents' if documentaire is not False
-                    or any(getattr(m, 'contient_documents', None) is not False
-                           or getattr(m, 'images', None) for m in messages_differes)
-                    else 'sans_document'
-                )
+            pending_arguments['_provenance_documents'] = origine_contexte(context)
             outil_base = tc.name.split("__", 1)[-1]
             if tc.name == "create_calendar_event":
                 from app.services.workspace_tools import normaliser_arguments_agenda
@@ -3992,6 +4012,7 @@ async def _execute_tools_and_continue(
                     from app.services.memory_card_context import documents_autorises
                     if documents_autorises(context.config_effective or llm_service.config, None):
                         context.contient_documents = True
+                        context.documents_averes = True
                 tool_result_str = await execute_memory_tool(
                     tc.name, tc.arguments, session,
                     scope=perimetre, scope_id=perimetre_id,
@@ -4442,12 +4463,24 @@ async def _executer_action_confirmee(
 
     # Ces objets persistants n'ont pas encore de provenance par champ.
     # La confirmation métier ne permet pas d'effacer l'origine des arguments.
-    if (tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}
-            and arguments.get('_provenance_documents') != 'sans_document'):
-        result = ("Cette écriture peut reprendre un document, mais sa destination ne conserve pas encore cette origine. "
-                  "Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")
-        await terminer(trace_id, tool_name, '{"success":false}')
-        return {"status": "refused", "tool_name": tool_name, "result": result}
+    # Tour 7 : un document avéré ferme toujours l'écriture. Une origine
+    # seulement inconnue (conversation antérieure à la mise à jour, ancienne
+    # fiche) ne la ferme que si l'accord « documents » manque au moment de
+    # confirmer : avec lui, le contexte a pu partir, et l'objet n'expose rien
+    # de plus que ces anciennes données locales elles-mêmes.
+    if tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}:
+        origine = arguments.get('_provenance_documents')
+        if origine == 'inconnue' and not documents_autorises(get_llm_service().config, None):
+            result = ("Cette écriture peut reprendre un ancien échange dont l’origine n’est pas vérifiable, "
+                      "et ton accord « documents » manque pour le fournisseur actuel. Rien n’a été enregistré. "
+                      "Autorise l’envoi des documents, ou saisis ces informations directement dans leur formulaire.")
+            await terminer(trace_id, tool_name, '{"success":false}')
+            return {"status": "refused", "tool_name": tool_name, "result": result}
+        if origine not in ('sans_document', 'inconnue'):
+            result = ("Cette écriture reprend un document de cette conversation, et sa destination ne conserve pas "
+                      "encore cette origine. Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")
+            await terminer(trace_id, tool_name, '{"success":false}')
+            return {"status": "refused", "tool_name": tool_name, "result": result}
 
     # Finding 1 (30/08) : la confirmation est une autre requête. Sans
     # reposer le compte collé à la carte, send_email retomberait sur

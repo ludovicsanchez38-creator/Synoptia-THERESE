@@ -24,8 +24,14 @@ def provenance(message: Message) -> str:
     data = _donnees(message)
     # Les traces conservées priment même sur un ancien tag trop permissif.
     # Sources/citations sans typage : impossible d'exclure un document.
-    if any(data.get(key) for key in ('attachments', 'sources', 'citations', 'files', 'file_paths', 'memory_used')):
+    if any(data.get(key) for key in ('attachments', 'sources', 'citations', 'files', 'file_paths')):
         return 'documents'
+    # Tour 7 : `memory_used` ne prouve plus rien à lui seul. Depuis que les
+    # fiches portent leur origine, le contexte d'un tour est marqué par les
+    # fiches réellement retenues (actualiser_fiches) avant que la réponse ne
+    # soit enregistrée. Une fiche née des mots de l'utilisateur ne rend donc
+    # plus documentaire toute la conversation. Un ancien message sans
+    # provenance reste « inconnue », fiches ou non.
     valeur = data.get('provenance_documents')
     return valeur if isinstance(valeur, str) and valeur in ('documents', 'sans_document') else 'inconnue'
 
@@ -129,3 +135,17 @@ def contexte_documentaire(context: Any) -> bool:
                for m in [*(getattr(context, 'messages', None) or []),
                          *(getattr(context, 'memory_original_messages', None) or [])])
 
+
+def origine_contexte(context: Any) -> str:
+    """Origine prudente d'un contexte, sur trois niveaux, pour une écriture.
+
+    « documents » dès qu'un document avéré y figure, ou quand le contexte ne
+    dit pas ce qu'il contient ; « inconnue » quand seule une provenance
+    incertaine (ancien message, ancienne fiche) le marque.
+    """
+    messages = getattr(context, 'messages', None)
+    if getattr(context, 'contient_documents', None) is None or not isinstance(messages, list):
+        return 'documents'
+    if not contexte_documentaire(context):
+        return 'sans_document'
+    return 'inconnue' if getattr(context, 'documents_averes', None) is False else 'documents'
