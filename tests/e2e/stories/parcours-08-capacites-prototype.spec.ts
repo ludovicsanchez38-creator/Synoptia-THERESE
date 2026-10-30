@@ -413,10 +413,36 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Images ouvre le studio réel et exige une confirmation avant génération', async ({ page }) => {
     const generations: string[] = [];
+    const ecritures: string[] = [];
     page.on('request', (request) => {
-      if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/images/generate') {
+      const { pathname } = new URL(request.url());
+      if (!['GET', 'OPTIONS'].includes(request.method()) && request.url().startsWith(BACKEND_URL)) {
+        ecritures.push(`${request.method()} ${pathname}`);
+      }
+      if (request.method() === 'POST' && pathname === '/api/images/generate') {
         generations.push(request.postData() || '');
       }
+    });
+    // 30/10/2026 (correctifs 0.83). Depuis le lot confidentialité, un premier
+    // usage cloud ENREGISTRE l'accord dans le moteur avant l'envoi : le moteur
+    // refuse la génération sans lui (`exiger_accord('images', …)`), et le
+    // client vide la file des accords avant toute écriture métier
+    // (`apiFetch`). Le repli de ce fichier refusait ce POST en 405 : la file
+    // ne se vidait pas, la génération ne partait jamais et le studio affichait
+    // « Impossible de contacter le serveur ». Seul ce test admet cette écriture,
+    // et il vérifie ce que l'application envoie et dans quel ordre.
+    const accords: Record<string, unknown>[] = [];
+    await page.route(`${BACKEND_URL}/api/consents`, async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      const decision = route.request().postDataJSON() as Record<string, unknown>;
+      accords.push(decision);
+      return json(route, {
+        grants: [{
+          purpose: decision.purpose, provider: decision.provider, timestamp: decision.occurred_at,
+          dataCategories: decision.data_categories, textVersion: decision.text_version,
+        }],
+        history: [],
+      });
     });
 
     await chooseCapability(page, 'Images');
@@ -424,11 +450,26 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     await expect(canvas).toBeVisible();
     await canvas.getByLabel('Description du visuel').fill('Portrait éditorial de Thérèse');
     await canvas.getByRole('button', { name: 'Préparer la génération' }).click();
+    await expect(canvas.getByText(/tu consens à transmettre ces données à GPT Image 2/)).toBeVisible();
     expect(generations).toEqual([]);
+    expect(accords).toEqual([]);
 
     await canvas.getByRole('button', { name: 'Confirmer et générer' }).click();
     await expect(canvas.getByTestId('selected-generated-image')).toContainText('Portrait éditorial de Thérèse');
     expect(generations).toHaveLength(1);
+    // L'accord part une fois, AVANT la génération, avec ce que le moteur
+    // valide (`Decision`, routers/consents.py) et le profil du moteur.
+    expect(accords).toEqual([{
+      event_id: expect.stringMatching(/^[a-zA-Z0-9-]+$/),
+      purpose: 'images',
+      provider: 'gpt-image-2',
+      granted: true,
+      text_version: '3',
+      data_categories: ['description du visuel', 'format', 'qualité'],
+      occurred_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
+      data_profile: '/tmp/therese-test',
+    }]);
+    expect(ecritures).toEqual(['POST /api/consents', 'POST /api/images/generate']);
     expect(new URL(page.url()).searchParams.has('interface')).toBe(false);
   });
 
