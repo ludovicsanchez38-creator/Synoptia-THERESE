@@ -57,7 +57,7 @@ l'envoi ; les messages retenus conservent leur finalité documentaire.
 Les cartes gardent une copie indépendante de leurs arguments et de leur
 provenance. Les instantanés textuels de recherche web conservent la provenance
 de chaque message, même lorsqu'une image est retirée de la copie. Une ancienne
-copie sans booléen fiable reste documentaire par prudence.
+copie de recherche web sans booléen fiable reste documentaire par prudence.
 Un contexte absent ou incomplet ne devient jamais une preuve d'absence de document.
 
 À la confirmation, l'historique copié est filtré pour le fournisseur effectif
@@ -74,10 +74,59 @@ pour la relecture mémoire ; elle ne dépend pas du seul drapeau du contexte.
 L'extraction automatique différée relit la provenance en base et la transmet
 à sa garde IA. Une trace absente y reste documentaire par prudence.
 
-Les autres cartes d'outils conservent aussi la provenance de leurs arguments.
-Leurs effets locaux ou leurs envois vers les connecteurs métier restent soumis
-à leur confirmation propre ; ils ne relancent pas une rédaction IA. Les
-directives explicites d'agenda n'ont pas de contexte documentaire de modèle.
+Les cartes d'outils gardent aussi la provenance de leurs arguments. Les
+créations natives de contacts, projets, tâches, factures et événements issues
+d'un contexte documentaire ou inconnu sont refusées à la confirmation : ces
+objets ne savent pas encore conserver cette origine. Le refus explique que
+rien n'a été enregistré et propose la saisie directe dans le formulaire.
+Les directives explicites d'agenda portent une provenance sans document.
+
+Pour les connecteurs MCP, les arguments publics sont copiés séparément de
+l'enveloppe interne de confirmation. Seuls ces arguments publics deviennent
+`tools/call.arguments`, y compris les noms publics commençant par `_`.
+La confirmation métier reste distincte de l'accord IA.
+
+## Mini-chat Réfléchir–Faire–Capturer
+
+Les transitions et les messages suivants conservent les identifiants serveur
+des réponses. Le moteur relit les tours correspondants et leur provenance en
+base. Un identifiant perdu ou une réponse interrompue empêche la transition,
+avec une explication au tutoiement. Les références remplacent les copies de
+texte dans `brief` et `context` ; les anciennes requêtes sans références sont
+traitées comme documentaires pour ces deux champs.
+
+La génération transmet la provenance jusqu'à la garde du transport, qui
+revérifie l'accord documents pour le fournisseur effectif, notamment après
+un changement de fournisseur. L'aperçu peut être généré avec cet accord ;
+l'enregistrement d'une commande RFC documentaire ou d'origine inconnue est
+refusé, car le format des commandes enregistrées ne conserve pas cette origine.
+Une commande créée à partir de messages attestés sans document reste enregistrable.
+
+## Fiches et autres textes persistants
+
+`memory_cards.provenance_documents` porte l'origine de toute la fiche :
+titre, sujet, contenu et raison. Elle vient du contexte serveur du tour et du
+message source, jamais d'un argument du modèle. Une correction conserve une
+origine documentaire ou inconnue. Les anciennes fiches restent intactes et
+reçoivent `inconnue` lors de la migration ; supprimer leur message source
+n'efface pas cette marque.
+
+Si une fiche retenue pour le contexte est documentaire ou inconnue, l'envoi
+exige aussi l'accord documents du fournisseur effectif. L'accord fiches sous
+la finalité LLM ne le remplace pas. Sans cet accord, l'échange est refusé avec
+une explication ; désactiver la mémoire permet une nouvelle demande avec les
+seuls éléments autorisés. Le retrait tardif reste contrôlé au transport.
+
+Dans l'atelier documentaire, les titres, trames, contenus et résumés de
+sections sont tous traités comme documentaires lors de leur réutilisation.
+Un refus d'accord lors de la validation n'est pas masqué par le résumé local
+de secours. Les titres automatiques de conversation viennent de la demande
+utilisateur, sans génération LLM ; une reprise RFC documentaire reçoit un
+titre neutre. Aucun générateur de résumé de conversation n'est actif ici.
+
+Ces garanties décrivent ces chemins précis du code. Elles ne prétendent pas
+retrouver l'origine d'un texte recopié manuellement dans une nouvelle saisie,
+ni couvrir toute écriture possible d'un connecteur tiers.
 
 ## OpenClaw
 
