@@ -931,8 +931,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
     ) -> AsyncGenerator[StreamEvent, None]:
         """Dernière garde commune, après toute préparation asynchrone.
 
-        Chaque requête HTTP de l'adaptateur (reprises comprises) conserve la
-        même garde, sans modifier le client ou le fournisseur partagés.
+        Chaque appel HTTP de l'adaptateur (reprises comprises) relit les accords.
+        Les redirections sont refusées sans second envoi ; le client et le
+        fournisseur partagés ne sont pas modifiés.
         """
         from copy import copy
 

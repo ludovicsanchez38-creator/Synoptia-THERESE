@@ -35,7 +35,7 @@ def appeler_avec_accord(verifier: Callable[[], None], appel: Callable[[], T]) ->
 
 
 class TransportAvecAccord:
-    """Ne partage jamais la garde d'une conversation avec une autre."""
+    """Garde propre à l'appel ; aucune redirection ne contourne sa destination."""
 
     def __init__(self, client: Any, verifier: Callable[[], None]):
         self._client = client
@@ -44,13 +44,31 @@ class TransportAvecAccord:
     @asynccontextmanager
     async def stream(self, *args: Any, **kwargs: Any) -> AsyncIterator[Any]:
         self._verifier()
+        kwargs['follow_redirects'] = False
         async with self._client.stream(*args, **kwargs) as response:
+            self._refuser_redirection(response)
             yield response
 
     async def post(self, *args: Any, **kwargs: Any) -> Any:
         self._verifier()
-        return await self._client.post(*args, **kwargs)
+        kwargs['follow_redirects'] = False
+        response = await self._client.post(*args, **kwargs)
+        self._refuser_redirection(response)
+        return response
 
     async def get(self, *args: Any, **kwargs: Any) -> Any:
         self._verifier()
-        return await self._client.get(*args, **kwargs)
+        kwargs['follow_redirects'] = False
+        response = await self._client.get(*args, **kwargs)
+        self._refuser_redirection(response)
+        return response
+
+    @staticmethod
+    def _refuser_redirection(response: Any) -> None:
+        code = response.status_code
+        if isinstance(code, int) and 300 <= code < 400:
+            from app.services.error_handler import ErreurPourEcran
+            raise ErreurPourEcran(
+                "Le fournisseur demande une redirection. Aucun nouvel envoi n’a été effectué. "
+                "Vérifie la destination de ton modèle avant de réessayer."
+            )
