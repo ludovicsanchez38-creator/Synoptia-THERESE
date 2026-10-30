@@ -17,6 +17,7 @@ import pytest
 RACINE = Path(__file__).resolve().parents[1]
 MINIMA = {
     'pyasn1': ((0, 6, 5), ('CVE-2026-119194', 'CVE-2026-119195', 'CVE-2026-119196', 'CVE-2026-119197')),
+    'pypdf': ((6, 21, 3), ('CVE-2026-119206', 'CVE-2026-119207', 'CVE-2026-119208', 'CVE-2026-119209')),
 }
 
 

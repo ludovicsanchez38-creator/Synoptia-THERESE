@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 68bff62a41a41aa1a9a8e8b5d2274265bda0b2a3ec49d7f8fb582fb7022a858d
+Empreinte des verrous : 603c7725fcec6158fdb7468dd6920a5855ac3d2d2c3b29eabbc9b40192de9f8d
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -8483,11 +8483,11 @@ Archive : https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf81c5f53
 Intégrité : sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc
 Notice : pyparsing-3.3.2/LICENSE — texte SHA256 5f7d6cb9b616fcfb5a5cc958aaf3ca752158e350bcc9138df97acf5d71719888
 
-python:pypdf@6.21.2
+python:pypdf@6.21.4
 Licence déclarée : BSD-3-Clause
-Archive : https://files.pythonhosted.org/packages/06/28/081f1cbcca7042441dafc8de00f48ba60853f89e5bff92c5f26477346d81/pypdf-6.21.2.tar.gz
-Intégrité : sha256:0a3e1c5c886a1be03646c16a04827cc166c2a0575c971b26a4bf89686551c2d4
-Notice : pypdf-6.21.2/LICENSE — texte SHA256 a373535803680a06355b3f9db25a8a9c1f1998fe60c97f6c52ce2e9db69f4005
+Archive : https://files.pythonhosted.org/packages/1e/e1/ec8f4d155c997c45917153a5521e60d6ee6389d68abdcbc8e44e564caffc/pypdf-6.21.4.tar.gz
+Intégrité : sha256:c8817e3f888d47a087872ded69812c1ef30cacb871d6e053e0c00bbaf0bc2163
+Notice : pypdf-6.21.4/LICENSE — texte SHA256 a373535803680a06355b3f9db25a8a9c1f1998fe60c97f6c52ce2e9db69f4005
 
 python:pytest-asyncio@1.3.0
 Licence déclarée : Apache-2.0
