@@ -109,6 +109,7 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: str | None = None
     resume_message_id: str | None = None
+    rfc_source_ids: list[str] | None = None
     include_memory: bool = True
     memory_card_grants: list[str] = []
     memory_card_purpose: Literal["llm", "documents"] = "llm"
@@ -160,13 +161,15 @@ class ChatResponse(BaseModel):
     warnings: list[str] | None = None
     # P-159 : absent (null) quand la réponse n'a pas appelé de modèle.
     contexte: ContexteTransmis | None = None
+    # Tour 11 : avis système, jamais concaténés à `content`.
+    avis: list[str] | None = None
     created_at: HorodatageUTC
 
 
 class StreamChunk(BaseModel):
     """Streaming response chunk."""
 
-    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required", "client_action"] = "text"
+    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required", "client_action", "notice"] = "text"
     content: str = ""
     conversation_id: str | None = None
     message_id: str | None = None
@@ -929,6 +932,9 @@ class LLMConfigUpdate(BaseModel):
 
 class LLMConfigResponse(BaseModel):
     """LLM configuration response."""
+
+    consent_provider: str | None = None
+    consent_label: str | None = None
 
     provider: str
     model: str

@@ -195,11 +195,13 @@ async def execute_skill(
         nb_slides_from_prompt = max(3, min(30, nb_slides_from_prompt))
 
         # Exécuter le skill avec le contenu généré
+        from app.services.marquage_ia import provenance_service
         skill_request = SkillExecuteRequest(
             prompt=request.prompt,
             title=request.title,
             template=request.template,
-            context={**(request.context or {}), "nb_slides": nb_slides_from_prompt},
+            context={**(request.context or {}), "nb_slides": nb_slides_from_prompt,
+                     "_ai_provenance": provenance_service(llm_service)},
         )
 
         result = await registry.execute(skill_id, skill_request, llm_content)

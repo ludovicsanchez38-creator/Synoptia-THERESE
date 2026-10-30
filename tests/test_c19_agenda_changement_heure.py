@@ -91,6 +91,7 @@ async def test_carte_confirmation_et_heure_enregistree_identiques(
 
     from app.models.entities import CalendarEvent, Conversation
     from app.routers import chat
+    from app.services.context import ContextWindow
     from app.services.providers.base import ToolCall
     from sqlmodel import select
 
@@ -104,12 +105,13 @@ async def test_carte_confirmation_et_heure_enregistree_identiques(
         "summary": "Point chantier", "start": debut, "end": fin,
     })
     chunks = [json.loads(c.removeprefix("data: ")) async for c in chat._execute_tools_and_continue(
-        _FakeLLM(), None, None, "", [appel], [workspace_tools.CREATE_CALENDAR_EVENT_TOOL],
+        _FakeLLM(), None, ContextWindow(messages=[]), "", [appel], [workspace_tools.CREATE_CALENDAR_EVENT_TOOL],
         conv.id, 3, session=db_session,
     )]
     carte, = [c["confirmation"] for c in chunks if c["type"] == "confirmation_required"]
     assert not (await db_session.execute(select(CalendarEvent))).scalars().all()
     affiches = carte["arguments"]
+    assert affiches['_provenance_documents'] == 'sans_document'
     # L'interface affiche un ISO daté dans ce fuseau, une heure sans fuseau telle quelle.
     def heure_affichee(valeur):
         heure = datetime.fromisoformat(valeur)

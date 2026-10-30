@@ -17,9 +17,28 @@ ENVELOPPE = 32
 
 
 class AccordFichesRequis(ErreurPourEcran):
-    def __init__(self, provider: str, purpose: str):
-        super().__init__('Tes fiches mémoire utiles vont être envoyées avec cet échange. Donne ton accord actualisé pour ce fournisseur avant de réessayer, ou désactive explicitement la mémoire.')
+    def __init__(self, provider: str, purpose: str, message: str | None = None):
+        super().__init__(message or 'Tes fiches mémoire utiles vont être envoyées avec cet échange. Donne ton accord actualisé pour ce fournisseur avant de réessayer, ou désactive explicitement la mémoire.')
         self.provider, self.purpose = provider, purpose
+
+
+
+def avis_fiches_retirees(nombre: int) -> str:
+    """Tour 9 : la fiche retirée se dit, sans être citée (l'avis reste dans l'historique)."""
+    sujet = ('Une fiche mémoire ancienne, ou issue d’un document, n’a pas été transmise'
+             if nombre == 1 else f'{nombre} fiches mémoire anciennes, ou issues d’un document, n’ont pas été transmises')
+    return (f'{sujet} : ton accord « documents » manque. Pour qu’une ancienne fiche serve de nouveau, ouvre '
+            'Mémoire et confirme qu’elle vient de toi.')
+
+def avis_preferences_a_confirmer(nombre: int) -> str:
+    """Tour 10 : une fois par conversation, sans rien citer ni envoyer des fiches."""
+    sujet = ('1 ancienne préférence ou correction attend' if nombre == 1
+             else f'{nombre} anciennes préférences ou corrections attendent')
+    return (f'{sujet} ta confirmation dans Mémoire : antérieure à la mise à jour, son origine n’est pas '
+            'vérifiée. En attendant, elle ne s’applique que lorsqu’elle concerne ta demande.'
+            if nombre == 1 else
+            f'{sujet} ta confirmation dans Mémoire : antérieures à la mise à jour, leur origine n’est pas '
+            'vérifiée. En attendant, elles ne s’appliquent que lorsqu’elles concernent ta demande.')
 
 
 def _json(valeur: Any) -> str:
@@ -35,6 +54,25 @@ def destination_cloud(config: Any) -> str | None:
     return 'ollama-cloud' if est_modele_ollama_cloud(getattr(config, 'model', '')) or host not in ('localhost', '127.0.0.1', '::1') else None
 
 
+def libelle_destination(config: Any) -> str | None:
+    """Nommer la destination sans exposer d'identifiants ou de paramètres d'URL."""
+    if config.provider.value != 'ollama' or destination_cloud(config) is None:
+        return None
+    from app.services.ollama_capabilites import est_modele_ollama_cloud
+
+    adresse = urlsplit(getattr(config, 'base_url', None) or 'http://127.0.0.1:11434')
+    if adresse.hostname not in ('localhost', '127.0.0.1', '::1'):
+        hote = adresse.hostname or 'adresse inconnue'
+        if ':' in hote:
+            hote = f'[{hote}]'
+        port = f':{adresse.port}' if adresse.port else ''
+        label = f'Serveur Ollama distant ({adresse.scheme}://{hote}{port})'
+        if est_modele_ollama_cloud(getattr(config, 'model', '')):
+            label += ' puis Ollama Cloud (ollama.com)'
+        return label
+    return 'Ollama Cloud (ollama.com)'
+
+
 def documents_autorises(config: Any, grants: list[str] | None) -> bool:
     """B-1201 : un extrait de document indexé peut-il partir avec ce message ?
 
@@ -48,7 +86,8 @@ def documents_autorises(config: Any, grants: list[str] | None) -> bool:
         # Destination illisible : aucun document ne part (fermé par défaut),
         # et le message, lui, continue.
         return False
-    return destination is None or f"documents:{destination}" in (grants or [])
+    from app.services.consentements import accord_valide
+    return destination is None or accord_valide("documents", destination)
 
 
 def compter_payload(context: ContextWindow, config: Any, tools: list[dict[str, Any]] | None,
@@ -178,6 +217,19 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
     if not demande:
         return  # Board, atelier, agents : aucun chemin de relecture R2.
     fiches = await lire_pour_chat(demande['requete'], demande['scope'], demande['scope_id'], demande['conversation_id'])
+    if suite is None and getattr(context, 'premier_tour_conversation', False):
+        from app.services.memory_cards import compter_a_confirmer
+        context.preferences_a_confirmer = await compter_a_confirmer(
+            demande['scope'], demande['scope_id'], demande['conversation_id'])
+    # Tour 9 (relecture 8) : sans accord « documents », une fiche d'origine
+    # documentaire ou inconnue est retirée de l'envoi avec un avis, au lieu
+    # de bloquer tout le message. Rien d'elle ne part ; la demande garde sa
+    # propre provenance.
+    if destination_cloud(config) and not documents_autorises(config, None):
+        retirees = [f for f in fiches if f.get('provenance_documents') != 'sans_document']
+        if retirees:
+            fiches = [f for f in fiches if f.get('provenance_documents') == 'sans_document']
+            context.fiches_retirees = max(getattr(context, 'fiches_retirees', 0) or 0, len(retirees))
     if suite is not None and fiches:
         from app.services.memory_card_tools import message_du_tour
         tour = await message_du_tour(demande['conversation_id'])
@@ -186,8 +238,20 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
         context.memory_used = []
         return
     borner_payload(context, fiches, config, tools, suite)
+    # Le titre, le sujet et le contenu partagent une seule provenance prudente.
+    # Elle reste attachée au contexte jusqu'aux reprises du transport.
+    origines = {f.get('provenance_documents') for f in fiches if f['id'] in (context.memory_used or [])}
+    if origines - {'sans_document'}:
+        context.contient_documents = True
+        if 'documents' in origines or origines - {'sans_document', 'inconnue'}:
+            context.documents_averes = True
+        # Accord présent ici (sinon la fiche a été retirée plus haut) ; un
+        # retrait tardif reste refusé, puis revérifié au transport.
+        from app.services.consentements import verifier_envoi_llm
+        verifier_envoi_llm(config, context)
     destination = destination_cloud(config)
-    if context.memory_used and destination and f"{demande['purpose']}:{destination}" not in demande['grants']:
+    from app.services.consentements import accord_valide
+    if context.memory_used and destination and not accord_valide(demande['purpose'], destination, ('memory_cards_r2_v1',)):
         raise AccordFichesRequis(destination, demande['purpose'])
 
 

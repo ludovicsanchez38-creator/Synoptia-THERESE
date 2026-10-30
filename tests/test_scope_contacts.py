@@ -255,9 +255,8 @@ class TestLaCreationNeDivulguePasUnHomonyme:
 
 class TestLeBridgeMCPNEstPasUnePorteDerobee:
     """Le bridge MCP expose des routes GLOBALES (`list_contacts`,
-    `get_contact`, `search_memory`). C'est légitime : il sert les sessions
-    d'agent de l'Atelier, qui travaillent sur tout l'espace de l'utilisateur et
-    n'ont pas de conversation cloisonnée.
+    `get_contact`, `search_memory`). Les envois OpenClaw sont désormais fermés :
+    le bridge ne doit plus être injecté, y compris dans une session d'agent.
 
     Cela deviendrait un contournement le jour où ces outils seraient exposés au
     CHAT, présenté comme cloisonné : le modèle pourrait alors lire les contacts
@@ -276,10 +275,10 @@ class TestLeBridgeMCPNEstPasUnePorteDerobee:
         ]
         noms = sorted(c.name for c in porteurs)
 
-        assert noms == ["agents.py"], (
-            "le bridge MCP est référencé hors du lancement de session d'agent "
-            f"({noms}) : s'il est exposé au chat, le cloisonnement des contacts "
-            "est contournable. Cloisonner ces outils avant de les brancher."
+        assert noms == [], (
+            f"le bridge MCP est encore injecté ({noms}) alors que les envois "
+            "OpenClaw sont fermés ; son exposition au chat contournerait "
+            "aussi le cloisonnement des contacts."
         )
 
 

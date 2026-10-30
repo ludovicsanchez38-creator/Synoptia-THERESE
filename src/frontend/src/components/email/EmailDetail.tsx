@@ -169,14 +169,14 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     });
   }
 
-  function handleUseResponse(response: string) {
+  function handleUseResponse(response: string, generationId?: string) {
     // Un seul set() atomique pour éviter les problèmes de timing
     // entre le démontage d'EmailDetail et le montage d'EmailCompose
     if (!message || message.reply_to_emails == null) return;
     const recipients = adressesDeReponse();
     const subject = message ? `Re: ${message.subject || ''}` : '';
     setShowResponseModal(false);
-    startComposing(recipients, subject, response, message.reply_to_emails);
+    startComposing(recipients, subject, response, message.reply_to_emails, generationId);
   }
 
   // BUG-102 : construit une réponse citant le message d'origine (comme un vrai

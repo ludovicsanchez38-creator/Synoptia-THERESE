@@ -1,3 +1,5 @@
+import { responseDataCategories } from '../../lib/consent';
+import { CloudConsentDialog } from '../shared/CloudConsentDialog';
 import { notifyMemoryChange } from '../../services/api/memoryCards';
 import {
   useState,
@@ -234,6 +236,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // F-12 : modèle LLM actif + sélecteur rapide
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<LLMProvider | null>(null);
+  const [consentProvider, setConsentProvider] = useState<string | null | undefined>(undefined);
+  const [consentLabel, setConsentLabel] = useState<string | null>(null);
+  const destinationAccord = consentProvider !== undefined ? consentProvider : fournisseurDAccord(currentProvider, currentModel);
   const [pendingCloudConsent, setPendingCloudConsent] = useState<PendingCloudConsent | null>(null);
   // Mémorise le FOURNISSEUR accordé dans la session : changer de fournisseur
   // redemande un accord (consentement par fournisseur, revue 0.40).
@@ -251,7 +256,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const isDisabled = isOffline || hasQueuedPrompt || modelChecking || modelUnavailable;
   // B-1174 : même règle que la bulle (B-1156) : Ollama Cloud part chez ollama.com.
   const ollamaCloud = currentProvider === 'ollama' && !!currentModel && estModeleOllamaCloud(currentModel);
-  const traitementLocal = currentProvider === 'ollama' && !ollamaCloud;
+  const traitementLocal = currentProvider === 'ollama' && destinationAccord === null;
   // Ce composeur envoie les outils à chaque message. Le mini-chat les coupe et n'a pas cette puce.
   const texteEffort = libelleEffortPuce(currentEffort, effortResolu, currentModel, true);
 
@@ -260,9 +265,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       .then((cfg) => {
         setCurrentModel(cfg.model);
         setCurrentProvider(cfg.provider);
+        setConsentProvider(cfg.consent_provider);
+        setConsentLabel(cfg.consent_label ?? null);
         // B-1174 : un modèle Ollama Cloud ne compte pas comme local pour le fil.
         useChatStore.getState().setFournisseurCourant(
-          cfg.provider === 'ollama' && cfg.model && estModeleOllamaCloud(cfg.model)
+          cfg.provider === 'ollama' && (cfg.consent_provider || (cfg.model && estModeleOllamaCloud(cfg.model)))
             ? FOURNISSEUR_OLLAMA_CLOUD
             : cfg.provider ?? null,
         );
@@ -303,6 +310,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     try {
       const cfg = await setLLMConfig(currentProvider, newModel);
       setCurrentModel(cfg.model);
+      setConsentProvider(cfg.consent_provider);
+      setConsentLabel(cfg.consent_label ?? null);
       setAvailableModels(cfg.available_models || []);
       setModelAvailable(cfg.available !== false);
       setCurrentEffort(cfg.effort ?? null);
@@ -640,17 +649,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     envoiEnPreparationRef.current = true;
     try {
     await (async () => {
-    // Revue Soso : envoyer un DOCUMENT est une finalité distincte d'envoyer un
-    // message. Sans elle, quiconque avait déjà accepté le chat n'aurait jamais
-    // été informé que ses documents partent, ni qu'ils repartent à chaque
-    // message depuis qu'ils sont rejoués (BUG-160).
-    // Revue Soso, passe 2 : la finalité ne peut pas dépendre du seul composeur.
-    // Au tour suivant il est vide, alors que le backend rejoue les documents de
-    // la conversation. Un accord donné sous Ollama puis un passage au cloud
-    // enverrait le document sans que rien ne l'annonce.
-    const conversationPorteDesDocuments = Boolean(
-      currentConversation()?.messages.some((m) => m.hasAttachments),
-    );
+    // Sans accord documents, le moteur retire l'historique documentaire et
+    // les anciennes pièces jointes. Seule une nouvelle lecture explicite
+    // demande cet accord dans le composeur.
     // B-1521 : /fichier et /analyse lisent un fichier local et l'envoient au
     // modèle (même motif que le moteur, FILE_COMMAND_PATTERN) : c'est un envoi
     // de document, pas un simple message.
@@ -667,12 +668,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     }
     const finaliteCloud: CloudPurpose =
-      attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
+      attachedFiles.length > 0 || commandeDeFichier
         ? 'documents'
         : 'llm';
     // B-1158 : l'accord porte sur la destination réelle ; un modèle Ollama
     // Cloud part chez ollama.com et le demande comme un fournisseur en ligne.
-    const destinationMessage = fournisseurDAccord(currentProvider, currentModel);
+    const destinationMessage = destinationAccord;
     if (
       destinationMessage
       && cloudConsentGrantedRef.current !== `${finaliteCloud}:${destinationMessage}`
@@ -682,20 +683,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         action: 'message',
         purpose: finaliteCloud,
         provider: destinationMessage,
-        providerLabel: libelleDuFournisseur(destinationMessage),
+        providerLabel: consentLabel || libelleDuFournisseur(destinationMessage),
         dataCategories: [
-          'message saisi',
-          'contexte de conversation',
-          'mémoire locale utile',
+          ...responseDataCategories(true),
           'tes fiches mémoire utiles, renvoyées avec chaque échange où la mémoire est activée',
           MEMORY_CARDS_CATEGORY,
           // B-1515 : ils partent avec chaque message, dans le prompt système.
           'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
-          ...(attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
+          ...(attachedFiles.length > 0 || commandeDeFichier
             ? ['contenu intégral des documents joints ou lus par /fichier et /analyse']
             : []),
-          ...(attachedFiles.length > 0 || conversationPorteDesDocuments
-            ? ['ces documents sont renvoyés à chaque message de la conversation']
+          ...(attachedFiles.length > 0
+            ? ['ces documents peuvent être renvoyés aux tours suivants tant que ton accord documents reste actif pour ce fournisseur']
             : []),
         ],
       });
@@ -894,13 +893,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
             memoryOrigin: `${currentProvider}:${currentModel}`,
-            dataCategories: ['message saisi', 'contexte de conversation',
+            dataCategories: [...responseDataCategories(),
               'tes fiches mémoire utiles avec chaque échange où la mémoire est activée',
               'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
               ...(chunk.purpose === 'documents' ? ['contenu intégral des documents joints ou relus à chaque message'] : []),
               MEMORY_CARDS_CATEGORY] });
           useChatStore.setState(s => ({ conversations: s.conversations.map(c => ({ ...c,
             messages: c.messages.filter(m => m.id !== assistantMessageId) })) }));
+        } else if (chunk.type === 'notice' && chunk.content) {
+          // Tour 11 (relecture 10) : un avis système est rangé à part. Il
+          // n'entre jamais dans le contenu copié, exporté ou mis en fichier.
+          const message = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
+          updateMessage(assistantMessageId, accumulatedContent, {
+            isStreaming: true, avis: [...(message?.avis ?? []), chunk.content],
+          });
         } else if (chunk.type === 'memory_receipt' && chunk.receipt) {
           notifyMemoryChange();
           const message = useChatStore.getState().currentConversation()?.messages.find(m => m.id === assistantMessageId);
@@ -1054,14 +1060,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } finally {
       envoiEnPreparationRef.current = false;
     }
-  }, [input, isOffline, modelAvailable, isStreaming, includeMemory, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
+  }, [destinationAccord, consentLabel, input, isOffline, modelAvailable, isStreaming, includeMemory, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline || isStreaming) return;
 
-    const destinationRecherche = fournisseurDAccord(currentProvider, currentModel);
+    const destinationRecherche = destinationAccord;
     if (
       destinationRecherche
       && cloudConsentGrantedRef.current !== `llm:${destinationRecherche}`
@@ -1071,7 +1077,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         action: 'deep-research',
         purpose: 'llm',
         provider: destinationRecherche,
-        providerLabel: libelleDuFournisseur(destinationRecherche),
+        providerLabel: consentLabel || libelleDuFournisseur(destinationRecherche),
         dataCategories: ['requête saisie', 'contexte de conversation', 'résultats de recherche web'],
       });
       return;
@@ -1168,7 +1174,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, currentProvider, currentModel, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, clearDraft]);
+  }, [destinationAccord, consentLabel, input, isOffline, isStreaming, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, clearDraft]);
 
   // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
   const sendMessageRef = useRef(sendMessage);
@@ -1179,7 +1185,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const confirmCloudConsent = useCallback(() => {
     if (!pendingCloudConsent || (pendingCloudConsent.memoryOrigin
       ? pendingCloudConsent.memoryOrigin !== `${currentProvider}:${currentModel}`
-      : fournisseurDAccord(currentProvider, currentModel) !== pendingCloudConsent.provider)) {
+      : destinationAccord !== pendingCloudConsent.provider)) {
       setPendingCloudConsent(null);
       return;
     }
@@ -1196,7 +1202,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       if (action === 'message') void sendMessageRef.current();
       else void deepResearchRef.current();
     }, 0);
-  }, [currentProvider, currentModel, pendingCloudConsent]);
+  }, [destinationAccord, currentProvider, currentModel, pendingCloudConsent]);
 
   // Auto-send du prompt en file d'attente quand le streaming finit
   useEffect(() => {
@@ -1624,6 +1630,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 title={
                   traitementLocal
                     ? 'Modèle local (Ollama) : le traitement reste sur ta machine'
+                    : consentLabel
+                      ? `Le traitement part vers ${consentLabel}`
                     : ollamaCloud
                       ? 'Modèle Ollama Cloud : le traitement part chez ollama.com'
                       : 'Modèle cloud : le traitement sort vers le fournisseur'
@@ -1670,14 +1678,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       </label>
 
       {pendingCloudConsent && (
-        <div role="alertdialog" aria-labelledby="cloud-consent-title" className="mb-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="chat-cloud-consent">
-          <p id="cloud-consent-title" className="font-semibold">{pendingCloudConsent.memoryOrigin ? 'Autoriser l’envoi de tes fiches mémoire' : pendingCloudConsent.purpose === 'documents' ? 'Autoriser le premier envoi de documents' : pendingCloudConsent.action === 'deep-research' ? 'Autoriser cette recherche approfondie' : 'Autoriser ce premier envoi'} à {pendingCloudConsent.providerLabel} ?</p>
-          <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.filter(c => c !== MEMORY_CARDS_CATEGORY).join(', ')}.</p>
-          <div className="mt-3 flex justify-end gap-2">
-            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
-            <button type="button" onClick={confirmCloudConsent} className="rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Autoriser et envoyer</button>
-          </div>
-        </div>
+        <CloudConsentDialog
+          testId="chat-cloud-consent"
+          title={`${pendingCloudConsent.memoryOrigin ? 'Autoriser l’envoi de tes fiches mémoire' : pendingCloudConsent.purpose === 'documents' ? 'Autoriser le premier envoi de documents' : pendingCloudConsent.action === 'deep-research' ? 'Autoriser cette recherche approfondie' : 'Autoriser ce premier envoi'} à ${pendingCloudConsent.providerLabel} ?`}
+          dataCategories={pendingCloudConsent.dataCategories}
+          onCancel={() => setPendingCloudConsent(null)}
+          onConfirm={confirmCloudConsent}
+        />
       )}
 
       <div

@@ -15,18 +15,20 @@ import { Button } from '../ui/Button';
 import { streamMessage } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
+import { retirerSources, sourcesVerifiees, type RFCMessage } from './rfcSources';
 
-interface RFCMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-}
+export type { RFCMessage } from './rfcSources';
+
+const NOTE_HORS_SUITE = 'Réponse non conservée : elle ne sera pas reprise dans la suite.';
 
 interface RFCChatProps {
   systemPrompt: string;
   placeholder: string;
   initialMessage?: string;
+  initialSourceIds?: string[];
   onConversationUpdate: (messages: RFCMessage[]) => void;
+  /** Tour 8 : références que le moteur signale supprimées, à retirer partout. */
+  onSourcesAbsentes?: (ids: string[]) => void;
 }
 
 /** Limite de contenu par réponse pour couper les boucles LLM (BUG-097) */
@@ -34,7 +36,7 @@ const MAX_RESPONSE_LENGTH = 8_000;
 /** Timeout global par requête en ms (BUG-097) */
 const STREAM_TIMEOUT_MS = 60_000;
 
-export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversationUpdate }: RFCChatProps) {
+export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSourceIds, onConversationUpdate, onSourcesAbsentes }: RFCChatProps) {
   const [messages, setMessages] = useState<RFCMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -94,18 +96,36 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
       // Préfixer le message avec le contexte système pour le RFC
       // Ajouter une instruction explicite de ne pas utiliser d'outils (BUG-097)
       const prefixedMessage = `[Instructions système : ${systemPrompt}\n\nIMPORTANT : Tu es dans un mini-chat RFC (Réfléchir-Faire-Capturer). Ne fais PAS d'appels d'outils (web_search, browser, mémoire, etc.). Réponds uniquement avec du texte. Sois concis (max 500 mots par réponse).]\n\nMessage de l'utilisateur : ${content}`;
+      // Tour 7 : seules les réponses vérifiées sont reprises. Une réponse
+      // refusée ou interrompue n'empêche plus la suite ; sans réponse
+      // vérifiée, le message part seul (aucune référence, aucun document).
+      const sources = sourcesVerifiees(messages, initialSourceIds);
       const stream = streamMessage({
         message: prefixedMessage,
         stream: true,
+        rfc_source_ids: sources.length ? sources : undefined,
         disable_tools: true,  // BUG-097 : pas d'outils dans le mini-chat RFC
+        // Tour 8 (relecture 7) : la consigne du mini-chat exclut la mémoire ;
+        // ni fiche ni extrait indexé n'accompagnent ses messages.
+        include_memory: false,
       }, controller.signal);
 
       let accumulated = '';
       let wasTruncated = false;
+      let absentes: string[] = [];
       for await (const chunk of stream) {
         // Vérifier si annulé (BUG-097)
         if (controller.signal.aborted) break;
 
+        if (chunk.type === 'done' && chunk.message_id) {
+          assistantMsg.sourceId = chunk.message_id;
+        }
+        if (chunk.type === 'done' && chunk.rfc_sources_absentes?.length) {
+          absentes = chunk.rfc_sources_absentes;
+        }
+        if (chunk.type === 'error' || chunk.type === 'memory_consent_required') {
+          throw new Error(chunk.content || 'Cet envoi a été refusé. Vérifie tes accords avant de réessayer.');
+        }
         if (chunk.type === 'text') {
           accumulated += chunk.content;
 
@@ -129,9 +149,11 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
       }
 
       const finalContent = accumulated || (controller.signal.aborted ? '_(Interrompu)_' : '');
-      const finalMessages = [...updatedMessages, { ...assistantMsg, content: finalContent }];
+      const finalMessages = retirerSources(
+        [...updatedMessages, { ...assistantMsg, content: finalContent, horsSuite: !assistantMsg.sourceId }], absentes);
       setMessages(finalMessages);
       onConversationUpdate(finalMessages);
+      if (absentes.length) onSourcesAbsentes?.(absentes);
     } catch (err) {
       // AbortError = annulation volontaire, pas une erreur
       const isAbort = err instanceof DOMException && err.name === 'AbortError';
@@ -141,26 +163,24 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
         setMessages((prev) => {
           const lastMsg = prev.find((m) => m.id === assistantMsg.id);
           const content = lastMsg?.content || '_(Interrompu)_';
-          const final = [...currentMessages, { ...assistantMsg, content }];
+          const final = [...currentMessages, { ...assistantMsg, content, horsSuite: !assistantMsg.sourceId }];
           // Mettre à jour via le callback dans le prochain tick
           setTimeout(() => onConversationUpdate(final), 0);
           return final;
         });
       } else {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsg.id
-              ? { ...m, content: 'Erreur de communication. Réessaie.' }
-              : m
-          )
-        );
+        const content = err instanceof Error ? err.message : 'Erreur de communication. Réessaie.';
+        const final = [...updatedMessages, { ...assistantMsg, sourceId: undefined, content, horsSuite: true }];
+        setMessages(final);
+        // L'étape suivante sait qu'un échange a eu lieu, sans le reprendre.
+        onConversationUpdate(final);
       }
     } finally {
       clearTimeout(timeoutId);
       abortRef.current = null;
       setIsStreaming(false);
     }
-  }, [input, isStreaming, messages, systemPrompt, onConversationUpdate]);
+  }, [input, isStreaming, messages, systemPrompt, initialSourceIds, onConversationUpdate, onSourcesAbsentes]);
 
   return (
     <div className="flex flex-col h-full">
@@ -180,6 +200,9 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
               )}
             >
               <p className="whitespace-pre-wrap">{msg.content}</p>
+              {msg.horsSuite && (
+                <p className="mt-1 text-xs text-text-muted">{NOTE_HORS_SUITE}</p>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>

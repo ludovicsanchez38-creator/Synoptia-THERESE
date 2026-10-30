@@ -24,7 +24,7 @@ const features = [
   {
     icon: Shield,
     title: 'Données locales',
-    description: 'Ton contexte reste sur ta machine. Les réponses passent par le service d’IA de ton choix, en ligne ou sur ta machine.',
+    description: 'Ton contexte est stocké sur ta machine. Les éléments utiles à une réponse sont transmis au service d’IA de ton choix, en ligne ou sur ta machine.',
   },
   {
     icon: Zap,
@@ -57,7 +57,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           Bienvenue sur THÉRÈSE
         </h1>
         <p className="text-text-muted text-lg max-w-md">
-          Ton assistante IA souveraine. Ta mémoire, tes données, ton business.
+          Tes données sont stockées sur ton ordinateur. Tu choisis le service d’IA qui traite tes demandes.
         </p>
       </motion.div>
 

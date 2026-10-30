@@ -1,3 +1,4 @@
+import { installLocalStorageStub } from '../../test/localStorage-stub';
 /** B-1111 : aucune installation automatique Linux hors paquet Debian reconnu. */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -141,6 +142,38 @@ describe('installation des mises à jour', () => {
     await demarrer();
     expect(screen.queryByTestId('update-banner')).not.toBeInTheDocument();
     expect(doubles.getBundleType).not.toHaveBeenCalled();
+    expect(doubles.check).not.toHaveBeenCalled();
+  });
+});
+
+describe('T4 : choix de la vérification automatique', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.stubGlobal('__TAURI__', {});
+    doubles.getBundleType.mockResolvedValue('deb');
+    doubles.check.mockResolvedValue(null);
+  });
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+  it('ne contacte pas le serveur au démarrage ni six heures après si désactivé', async () => {
+    localStorage.setItem('therese-auto-update-check', 'false');
+    await demarrer();
+    await act(async () => { await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000); });
+    expect(doubles.check).not.toHaveBeenCalled();
+  });
+  it('relit le choix après une opération asynchrone avant la requête', async () => {
+    doubles.getBundleType.mockImplementation(async () => {
+      localStorage.setItem('therese-auto-update-check', 'false');
+      return 'deb';
+    });
+    await demarrer();
     expect(doubles.check).not.toHaveBeenCalled();
   });
 });

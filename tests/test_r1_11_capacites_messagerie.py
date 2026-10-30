@@ -11,6 +11,9 @@ from app.services.providers.base import LLMConfig, LLMProvider, StreamEvent
 @pytest.mark.parametrize('branchee', [False, True])
 async def test_outils_et_prompt_suivent_la_messagerie(client, db_session, monkeypatch, branchee):
     from app.routers import chat
+    from app.services.consentements import enregistrer_accord
+
+    enregistrer_accord('llm', 'openai', True, '3', [])
     if branchee:
         db_session.add(EmailAccount(email='recette@example.invalid', provider='imap', imap_host='imap.invalid', imap_password='factice', smtp_host='smtp.invalid'))
         await db_session.commit()

@@ -300,7 +300,7 @@ function ContextCanvas({
   onSelectContact: (contactId: string) => void;
   onRetryContacts: () => void;
   onRetryEmailMessage: () => void;
-  onGenerateEmailDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string>;
+  onGenerateEmailDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string | { draft: string; ai_generation_id: string }>;
   onSaveEmailDraft: (request: SendEmailRequest, draftId?: string | null) => Promise<{ id: string }>;
   onRetryMeeting: () => void;
   onRetryMeetingEvent: () => void;

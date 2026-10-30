@@ -9,6 +9,12 @@ from app.services.llm import LLMConfig, LLMProvider, LLMService
 from app.services.providers.base import StreamEvent
 
 
+@pytest.fixture(autouse=True)
+def accord_de_transport(monkeypatch):
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, provider: (purpose, provider) == ('llm', 'openai'))
+
+
 class _ErrorProvider:
     """Provider qui émet une erreur 429 en streaming, sans lever (comme les vrais)."""
 

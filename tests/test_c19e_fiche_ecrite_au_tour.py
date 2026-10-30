@@ -12,9 +12,12 @@ from app.services import memory_card_context
 from app.services.memory_card_context import bloc_fiches
 from app.services.providers.base import LLMConfig, LLMProvider
 
-ECRITE = {"id": "f1", "kind": "fait", "title": "Velvermi", "content": "Bois de Rouvelvi.", "version": 2}
+# Tour 9 : provenance explicite des témoins. Sans accord « documents », une
+# fiche sans provenance attestée est retirée de l'envoi avant d'être bornée.
+ECRITE = {"id": "f1", "kind": "fait", "title": "Velvermi", "content": "Bois de Rouvelvi.", "version": 2,
+          "provenance_documents": "sans_document"}
 ANCIENNE = {"id": "f2", "kind": "fait", "title": "Autre", "content": "Livraison le lundi.", "version": 1,
-            "message_id": "message-d-hier"}
+            "message_id": "message-d-hier", "provenance_documents": "sans_document"}
 
 
 async def _relire(db_session, monkeypatch, suite):

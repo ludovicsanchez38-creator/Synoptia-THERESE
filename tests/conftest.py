@@ -59,14 +59,20 @@ app.state.auth_disabled = True  # noqa: E402
 @asynccontextmanager
 async def _test_lifespan(_app):
     from app.models.database import close_db, init_db
+    from app.services.user_profile import arreter_l_indexation_du_profil
     _app.state.auth_disabled = True
     # B-1116 : db_session peut laisser des pools ouverts entre deux tests.
     # init_db les remplacerait sans les fermer ; un restore pourrait alors
     # tronquer leur SHM encore mappé et provoquer SIGBUS au prochain accès.
     await close_db()
     await init_db()
-    yield
-    await close_db()
+    try:
+        yield
+    finally:
+        # Une indexation peut encore lire SQL après la réponse HTTP. Attendre
+        # sa session avant de disposer le pool et d'arrêter la boucle du client.
+        await arreter_l_indexation_du_profil()
+        await close_db()
 
 app.router.lifespan_context = _test_lifespan
 

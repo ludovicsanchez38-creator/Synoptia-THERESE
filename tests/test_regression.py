@@ -788,13 +788,11 @@ class TestBUG69OllamaFallbackRespectsProvider:
     """v0.11.5 issue #69 - le fallback LLM ne doit plus retomber sur Ollama
     quand l utilisateur a explicitement choisi un provider cloud sans cle."""
     def test_default_config_no_silent_ollama_fallback_for_cloud_provider(self):
-        """Si selected_provider est un provider cloud mais sans cle, la config
-        retournee doit conserver le provider choisi (api_key=None) et non Ollama.
-        Sinon l utilisateur voit 'Ollama non detecte' qui est un faux diagnostic."""
+        """La clé absente est annoncée pour le fournisseur choisi avant tout appel."""
         from unittest.mock import patch
 
+        from app.services.error_handler import ErreurPourEcran
         from app.services.llm import LLMService
-        from app.services.providers.base import LLMProvider
 
         with patch("app.services.llm._get_api_key_from_db", return_value=None), patch(
             "app.models.database.get_sync_connection"
@@ -835,14 +833,8 @@ class TestBUG69OllamaFallbackRespectsProvider:
 
             mock_db.return_value = _FakeCtx()
 
-            service = LLMService()
-            assert service.config.provider == LLMProvider.OPENROUTER, (
-                f"Le provider selectionne (openrouter) doit etre conserve meme sans cle. "
-                f"Obtenu : {service.config.provider}"
-            )
-            assert service.config.api_key is None, (
-                "api_key doit etre None pour laisser l appel API echouer proprement"
-            )
+            with pytest.raises(ErreurPourEcran, match='openrouter.*Paramètres'):
+                LLMService()
 
 
 class TestP0IA_GardesFousPromptSysteme:
@@ -861,9 +853,9 @@ class TestP0IA_GardesFousPromptSysteme:
             )
     def test_prompt_rendu_affirme_le_stockage_local(self):
         """P0-IA-1 : le prompt rendu affirme le stockage 100% local et nie tout serveur."""
-        from app.services.llm import LLMService
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
-        prompt = LLMService()._get_system_prompt_with_identity()
+        prompt = LLMService(LLMConfig(LLMProvider.OLLAMA, 'modele-test'))._get_system_prompt_with_identity()
         assert "~/.therese/" in prompt, "Le prompt doit nommer le dossier de stockage local"
         # 0.54.0 : ce test exigeait la phrase « Aucun serveur THÉRÈSE n'existe ».
         # Elle est devenue fausse : l'application interroge
@@ -887,9 +879,9 @@ class TestP0IA_GardesFousPromptSysteme:
         )
     def test_prompt_rendu_interdit_l_hallu_juridique(self):
         """P0-IA-2 : le prompt rendu impose les placeholders et interdit d'inventer le droit."""
-        from app.services.llm import LLMService
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
-        prompt = LLMService()._get_system_prompt_with_identity()
+        prompt = LLMService(LLMConfig(LLMProvider.OLLAMA, 'modele-test'))._get_system_prompt_with_identity()
         assert "[à vérifier]" in prompt, (
             "Le prompt doit imposer le placeholder [à vérifier] pour les références incertaines"
         )
@@ -1378,17 +1370,17 @@ class TestQW_PromptHardening:
     """QW2/QW4 : anti-hallu calendrier + distinction stockage/traitement."""
     def test_prompt_distinguishes_storage_vs_treatment(self):
         """QW4 : le prompt distingue stockage local et traitement cloud."""
-        from app.services.llm import LLMService
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
-        prompt = LLMService()._get_system_prompt_with_identity()
+        prompt = LLMService(LLMConfig(LLMProvider.OLLAMA, 'modele-test'))._get_system_prompt_with_identity()
         assert "Distingue TOUJOURS deux couches" in prompt
         # Interdit explicitement la surpromesse observée au 2e passage
         assert "même pas pour traitement" in prompt
     def test_prompt_has_data_honesty_block(self):
         """QW2 : bloc anti-invention quand un outil renvoie un vide/une absence."""
-        from app.services.llm import LLMService
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
-        prompt = LLMService()._get_system_prompt_with_identity()
+        prompt = LLMService(LLMConfig(LLMProvider.OLLAMA, 'modele-test'))._get_system_prompt_with_identity()
         assert "anti-invention" in prompt.lower()
         assert "N'invente JAMAIS d'événement" in prompt
 

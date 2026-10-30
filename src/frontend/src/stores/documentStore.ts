@@ -511,12 +511,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   validateSection: async (sectionId) => {
     set({ error: null });
     try {
-      const updated = await apiValidateSection(sectionId);
+      const { avis, ...updated } = await apiValidateSection(sectionId);
       set((s) => {
         if (!s.currentDocument) return s;
         const document = patchSection(s.currentDocument, sectionId, () => updated);
         const sections_validees = document.sections.filter((sec) => sec.status === 'validee').length;
-        return { currentDocument: { ...document, sections_validees } };
+        // Relecture 6, constat 5 : une validation restée locale le dit, dans
+        // l'emplacement neutre de l'atelier (ce n'est pas une erreur).
+        return { currentDocument: { ...document, sections_validees }, ...(avis ? { outlineNotice: avis } : {}) };
       });
     } catch (e: any) {
       set({ error: e?.message || 'Impossible de valider la section.' });

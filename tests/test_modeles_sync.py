@@ -137,6 +137,7 @@ class TestLIndexPartielSurBaseExistante:
         """Passe 3 de revue : ni create_all ni une révision déjà estampillée
         ne touchent une table existante - l'invariant « une racine active =
         un projet » se pose par migration ad-hoc à CHAQUE démarrage."""
+        from app.models import database
         from app.models.database import get_sync_connection, init_db
         from sqlalchemy import text
 
@@ -144,7 +145,14 @@ class TestLIndexPartielSurBaseExistante:
             conn.execute(text("DROP INDEX IF EXISTS uq_sync_root_racine_active"))
             conn.commit()
 
+        # Garder les anciens pools pour détecter un redémarrage simulé qui
+        # abandonnerait leurs connexions au fichier utilisé par les restores.
+        pool_sync = database.sync_engine.pool
+        pool_async = database.async_engine.pool
+        await database.close_db()
         await init_db()
+        assert pool_sync.checkedin() == 0
+        assert pool_async.checkedin() == 0
 
         with get_sync_connection() as conn:
             restants = conn.execute(text(

@@ -190,22 +190,48 @@ async def lire_pour_chat(requete: str, scope: str, scope_id: str | None,
             return bool(f.contact_id or (scope == 'project' and scope_id and (
                 f.project_id == scope_id or (f.scope == 'project' and f.scope_id == scope_id))))
 
+        def texte(f: MemoryCard) -> str:
+            # Une fiche ancienne ou importée peut avoir un index vide : ses
+            # propres mots décident alors de sa pertinence.
+            return f.search_text or normaliser(f'{f.title} {f.content}')
+
         def rang(f: MemoryCard) -> tuple[Any, ...]:
             return (f.kind not in ('preference', 'correction'),
                     not liee(f),
-                    -len(termes & mots(f.search_text)), -date_utc(f.updated_at).timestamp(), f.id)
+                    -len(termes & mots(texte(f))), -date_utc(f.updated_at).timestamp(), f.id)
+        # Tour 9 (relecture 8) : une fiche d'origine documentaire ou inconnue
+        # perd le privilège « toujours retenue » des préférences, corrections
+        # et fiches liées ; elle ne sert que si elle concerne la demande. Sinon
+        # une seule ancienne préférence marquait chaque échange.
+        def attestee(f: MemoryCard) -> bool:
+            return f.provenance_documents == 'sans_document'
         return [presenter(f) for f in sorted(fiches, key=rang)
-                if f.kind in ('preference', 'correction') or termes & mots(f.search_text)
-                or liee(f)]
+                if (attestee(f) and (f.kind in ('preference', 'correction') or liee(f)))
+                or termes & mots(texte(f))]
+
+
+async def compter_a_confirmer(scope: str, scope_id: str | None, conversation_id: str | None = None) -> int:
+    """Tour 10 : anciennes préférences et corrections visibles ici, d'origine inconnue.
+
+    Elles ne sont plus retenues à chaque message tant que l'utilisateur ne les a
+    pas confirmées ; seul leur nombre est annoncé, jamais leur contenu.
+    """
+    async with get_session_context() as session:
+        return sum(1 for f in await autorisees(session, scope, scope_id, conversation_id)
+                   if f.state == 'active' and f.kind in ('preference', 'correction')
+                   and f.provenance_documents == 'inconnue')
 
 
 async def lister(*, query: str = '', kind: str | None = None, state: str = 'active',
                  offset: int = 0, limit: int = 50, scope: str | None = None,
-                 scope_id: str | None = None) -> dict[str, Any]:
+                 scope_id: str | None = None, provenance: str | None = None) -> dict[str, Any]:
     async with get_session_context() as session:
         requete = select(MemoryCard).where(col(MemoryCard.state) == state)
         if kind:
             requete = requete.where(col(MemoryCard.kind) == kind)
+        if provenance:
+            # Tour 9 : l'écran Mémoire montre les fiches à confirmer ou à réécrire.
+            requete = requete.where(col(MemoryCard.provenance_documents) == provenance)
         if scope:
             requete = requete.where(col(MemoryCard.scope) == scope)
         if scope_id:
@@ -240,7 +266,8 @@ def _cle(f: MemoryCard) -> str:
 async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
                  scope: str = 'global', scope_id: str | None = None,
                  conversation_id: str | None = None, message_id: str | None = None,
-                 contexte: Any = None, generation_attendue: int | None = None) -> dict[str, Any]:
+                 contexte: Any = None, generation_attendue: int | None = None,
+                 contient_documents: bool | None = None) -> dict[str, Any]:
     # Même loquet et même collection de gestes que purge/restauration, CRUD inclus.
     from app.services.memory_tools import _proteger_le_geste, generation_des_donnees
     generation = generation_des_donnees() if generation_attendue is None else generation_attendue
@@ -254,7 +281,8 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
                 if contexte is not None and contexte.annulation_observee():
                     raise RefusMemoire('Écriture mémoire arrêtée.', 409)
                 resultat = await _ecrire(session, donnees, automatique=automatique,
-                    scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id)
+                    scope=scope, scope_id=scope_id, conversation_id=conversation_id, message_id=message_id,
+                    contient_documents=contient_documents)
                 if contexte is not None and contexte.annulation_observee():
                     raise RefusMemoire('Écriture mémoire arrêtée.', 409)
                 await session.commit()
@@ -271,8 +299,19 @@ async def ecrire(donnees: dict[str, Any], *, automatique: bool = False,
     return dict(resultat['card'])
 
 
+def _reecrite_entierement(existante: MemoryCard, donnees: dict[str, Any]) -> bool:
+    """Titre et contenu remplacés à la main, raison remplacée ou absente."""
+    def remplace(champ: str) -> bool:
+        valeur = donnees.get(champ)
+        return isinstance(valeur, str) and bool(valeur.strip()) and valeur.strip() != (getattr(existante, champ) or '').strip()
+    raison_neutre = not (existante.reason or '').strip() or (
+        isinstance(donnees.get('reason'), str) and donnees['reason'].strip() != existante.reason.strip())
+    return remplace('title') and remplace('content') and raison_neutre
+
+
 async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, scope: str,
-                  scope_id: str | None, conversation_id: str | None, message_id: str | None) -> dict[str, Any]:
+                  scope_id: str | None, conversation_id: str | None, message_id: str | None,
+                  contient_documents: bool | None = None) -> dict[str, Any]:
     from app.services.memory_card_security import message_refus
     for champ in ("title", "content", "reason", "subject", "kind", "state"):
         if champ in donnees and not isinstance(donnees[champ], str):
@@ -367,13 +406,43 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             omissions = set()
         negations_seules = sorted(ajouts | retraits | omissions | inversions)
         if manquants or nombres_seuls or negations_seules:
+            # Le détail repart au modèle. Une ancienne fiche non sélectionnée
+            # peut apporter ici ses mots et négations sans garde documents.
+            detail = None
+            if not existante or existante.provenance_documents == 'sans_document':
+                detail = _sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
+                                      nombres_seuls, negations_seules)
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.',
-                               detail=_sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
-                                                  nombres_seuls, negations_seules))
+                               detail=detail)
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
     f = existante or MemoryCard(kind=donnees.get('kind', ''), subject='', title='', content='',
                                 author='therese' if automatique else 'utilisateur')
+    # Toute la fiche hérite du tour, titre et sujet compris. Une correction
+    # manuelle ne prouve pas que les autres champs sont devenus indépendants.
+    from app.services.provenance_documents import provenance as origine_message
+    origines = [existante.provenance_documents] if existante else []
+    if automatique:
+        origines += [origine_message(source) if source else 'inconnue',
+                     'documents' if contient_documents is True else
+                     'sans_document' if contient_documents is False else 'inconnue']
+    elif existante is not None and donnees.get('atteste_par_utilisateur') is True:
+        # Tour 9 : attestation explicite depuis l'écran Mémoire (jamais par
+        # l'outil du modèle, qui refuse cette clé). Elle ne vaut que pour une
+        # origine inconnue ; un document avéré demande une réécriture.
+        if existante.provenance_documents == 'documents':
+            raise RefusMemoire('Cette fiche a été écrite pendant un échange avec un document. Pour qu’elle ne dépende '
+                               'plus de lui, réécris son titre et son contenu.', 409)
+        origines = ['sans_document']
+    elif existante is not None and _reecrite_entierement(existante, donnees):
+        # Relecture 6, réserve 6 : une réécriture manuelle de tout ce qui part
+        # vers le fournisseur (titre, contenu, raison) rend la fiche à
+        # l'utilisateur. Le sujet, clé locale, n'est jamais transmis.
+        origines = ['sans_document']
+    else:
+        origines.append('sans_document')
+    f.provenance_documents = ('documents' if 'documents' in origines else
+                              'inconnue' if any(o != 'sans_document' for o in origines) else 'sans_document')
     champs: tuple[str, ...] = ('kind', 'subject', 'title', 'content', 'reason', 'contact_id', 'project_id')
     if not automatique:
         champs += ('scope', 'scope_id', 'state', 'conversation_id', 'message_id')
@@ -413,14 +482,14 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             if len(cibles) == 1:
                 cible = cibles[0]
                 raise RefusMemoire('Cette correction doit modifier la fiche existante, pas en créer une seconde.', 409,
-                                   cible.id, f'Fiche « {cible.title} » : id {cible.id}, version {cible.version}.')
+                                   cible.id, f'Fiche correspondante : id {cible.id}, version {cible.version}.')
     cle = _cle(f)
     doublon = (await session.execute(select(MemoryCard).where(col(MemoryCard.dedup_key) == cle))).scalars().first()
     if doublon and doublon.id != f.id:
         visible = not automatique or doublon.id in {c.id for c in autorisees_chat}
         raise RefusMemoire('Une fiche correspond déjà à ce sujet. Ouvre-la pour la modifier.', 409,
             doublon.id if visible else None,
-            f'Fiche « {doublon.title} » : id {doublon.id}, version {doublon.version}.' if visible else None)
+            f'Fiche correspondante : id {doublon.id}, version {doublon.version}.' if visible else None)
     f.dedup_key = cle
     f.last_author = 'therese' if automatique else 'utilisateur'
     f.protected = bool(f.protected or not automatique or existante or f.kind == 'correction'

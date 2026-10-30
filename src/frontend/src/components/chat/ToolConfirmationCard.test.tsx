@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToolConfirmationCard } from './ToolConfirmationCard';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
+import { useChatStore } from '../../stores/chatStore';
 
 vi.mock('../../services/api/chat', () => ({
   confirmTool: vi
@@ -116,5 +117,26 @@ describe('ToolConfirmationCard (US-002)', () => {
     expect(screen.getAllByText(/slack__post_message/).length).toBeGreaterThan(0);
     expect(screen.getByText('#general')).toBeTruthy();
     expect(screen.getByText('facture client')).toBeTruthy();
+  });
+
+  it('affiche le refus documents du moteur sans annoncer une exécution', async () => {
+    const refus = 'Ton accord « documents » manque. Rien n’a été envoyé.';
+    vi.mocked(confirmTool).mockResolvedValueOnce({
+      status: 'refused', tool_name: 'web_search', result: refus,
+    });
+    const ajout = vi.spyOn(useChatStore.getState(), 'addMessage');
+    try {
+      useToolConfirmationStore.getState().add({
+        confirmation_id: 'web-refuse', tool_name: 'web_search',
+        arguments: { query: 'Question publique' },
+      });
+      render(<ToolConfirmationCard />);
+      fireEvent.click(screen.getByText('Confirmer'));
+      await waitFor(() => expect(ajout).toHaveBeenCalledWith(expect.objectContaining({ content: refus })));
+      expect(ajout).not.toHaveBeenCalledWith(expect.objectContaining({ content: 'Action exécutée.' }));
+      expect(useToolConfirmationStore.getState().pending).toHaveLength(0);
+    } finally {
+      ajout.mockRestore();
+    }
   });
 });

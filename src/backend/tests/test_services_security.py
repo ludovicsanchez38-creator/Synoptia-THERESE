@@ -471,7 +471,8 @@ class TestDeleteAllData:
 
         data = response.json()
         assert data["deleted"] is True
-        assert "RGPD" in data["message"]
+        assert "base locale" in data["message"]
+        assert "journaux techniques" in data["note"]
 
 
 class TestAuditIntegration:

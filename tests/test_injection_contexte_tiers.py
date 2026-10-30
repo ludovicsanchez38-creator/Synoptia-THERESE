@@ -252,6 +252,7 @@ async def test_read_file_qui_ferme_le_delimiteur(db_session, tmp_path):
     """
     import json
 
+    from app.services.llm import LLMConfig, LLMProvider
     from app.services.memory_tools import execute_read_file
 
     page = tmp_path / "consigne.txt"
@@ -278,7 +279,8 @@ async def test_read_file_qui_ferme_le_delimiteur(db_session, tmp_path):
         )
     ).scalar_one()
 
-    brut = await execute_read_file({"file_id": fichier.id}, db_session)
+    brut = await execute_read_file({"file_id": fichier.id}, db_session,
+                                   llm_config=LLMConfig(LLMProvider.OLLAMA, 'modele-local'))
 
     assert "[Source: fichier]" in brut
     assert brut.count("[End fichier]") == 1
@@ -293,10 +295,12 @@ async def test_read_file_qui_ferme_le_delimiteur(db_session, tmp_path):
 async def test_read_file_refus_reste_brut(db_session):
     import json
 
+    from app.services.llm import LLMConfig, LLMProvider
     from app.services.memory_tools import _REFUS_LECTURE, execute_read_file
 
     brut = await execute_read_file(
-        {"file_id": "00000000-0000-0000-0000-000000000000"}, db_session
+        {"file_id": "00000000-0000-0000-0000-000000000000"}, db_session,
+        llm_config=LLMConfig(LLMProvider.OLLAMA, 'modele-local'),
     )
 
     assert brut == json.dumps(

@@ -399,7 +399,7 @@ class TestDataDeletion:
             web_search.set_brave_api_key(None)
 
     @pytest.mark.asyncio
-    async def test_la_restauration_ne_laisse_pas_l_ancienne_cle_au_service(self, monkeypatch):
+    async def test_la_restauration_ne_laisse_pas_l_ancienne_cle_au_service(self, client, monkeypatch):
         """B-1124 : même trou à la restauration, qui ne vidait que le cache (B-023)."""
         from app.routers import data as module_data
         from app.services import llm

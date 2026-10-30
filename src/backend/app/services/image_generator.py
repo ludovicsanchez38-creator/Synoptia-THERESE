@@ -16,6 +16,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
+from app.services.consentements import exiger_accord
+from app.services.envoi_fournisseur import (
+    TransportAvecAccord,
+    appeler_avec_accord,
+    client_http_avec_accord,
+)
 from app.services.error_handler import ErrorCode, TheresError
 
 logger = logging.getLogger(__name__)
@@ -135,6 +141,9 @@ class ImageGeneratorService:
         if config is None:
             config = ImageConfig(provider=provider)
 
+        from app.services.consentements import exiger_accord
+        exiger_accord('images', provider.value)
+
         if provider == ImageProvider.OPENAI:
             return await self._generate_openai(prompt, config, reference_image_path)
         elif provider == ImageProvider.GEMINI:
@@ -170,58 +179,64 @@ class ImageGeneratorService:
                 user_message="Clé API OpenAI (Image) non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
-        client = OpenAI(api_key=api_key)
+        with client_http_avec_accord(lambda: exiger_accord("images", ImageProvider.OPENAI.value)) as sdk_http:
+            client = OpenAI(api_key=api_key, http_client=sdk_http)
 
-        try:
-            if reference_image_path and Path(reference_image_path).exists():
-                # Edit mode with reference image
-                with open(reference_image_path, "rb") as ref_file:
-                    # B-497 : appel SDK bloquant, hors de la boucle d'événements.
+            try:
+                if reference_image_path and Path(reference_image_path).exists():
+                    # Edit mode with reference image
+                    with open(reference_image_path, "rb") as ref_file:
+                        # B-497 : appel SDK bloquant, hors de la boucle d'événements.
+                        result = await asyncio.to_thread(
+                            appeler_avec_accord,
+                            lambda: exiger_accord('images', ImageProvider.OPENAI.value),
+                            lambda: client.images.edit(
+                                model="gpt-image-2",
+                                image=ref_file,
+                                prompt=prompt,
+                                size=config.size,
+                                quality=config.quality,
+                                input_fidelity="high",  # Crucial for face preservation
+                            )
+                        )
+                else:
+                    # Generation mode without reference
+                    # Note: gpt-image-2 n'accepte plus response_format, retourne URL par défaut
                     result = await asyncio.to_thread(
-                        lambda: client.images.edit(
+                        appeler_avec_accord,
+                        lambda: exiger_accord('images', ImageProvider.OPENAI.value),
+                        lambda: client.images.generate(
                             model="gpt-image-2",
-                            image=ref_file,
                             prompt=prompt,
                             size=config.size,
                             quality=config.quality,
-                            input_fidelity="high",  # Crucial for face preservation
                         )
                     )
-            else:
-                # Generation mode without reference
-                # Note: gpt-image-2 n'accepte plus response_format, retourne URL par défaut
-                result = await asyncio.to_thread(
-                    lambda: client.images.generate(
-                        model="gpt-image-2",
-                        prompt=prompt,
-                        size=config.size,
-                        quality=config.quality,
-                    )
+
+                # Get image data
+                if hasattr(result.data[0], "b64_json") and result.data[0].b64_json:
+                    image_bytes = base64.b64decode(result.data[0].b64_json)
+                elif hasattr(result.data[0], "url") and result.data[0].url:
+                    # Download from URL if b64 not available
+                    from app.services.http_client import get_http_client
+
+                    http_client = TransportAvecAccord(await get_http_client(), lambda: exiger_accord('images', ImageProvider.OPENAI.value))
+                    resp = await http_client.get(result.data[0].url)
+                    image_bytes = resp.content
+                else:
+                    raise ValueError("No image data in response")
+
+                return self._save_image(
+                    image_bytes=image_bytes,
+                    provider=ImageProvider.OPENAI.value,
+                    prompt=prompt,
+                    extension="png",
                 )
 
-            # Get image data
-            if hasattr(result.data[0], "b64_json") and result.data[0].b64_json:
-                image_bytes = base64.b64decode(result.data[0].b64_json)
-            elif hasattr(result.data[0], "url") and result.data[0].url:
-                # Download from URL if b64 not available
-                from app.services.http_client import get_http_client
-
-                http_client = await get_http_client()
-                resp = await http_client.get(result.data[0].url)
-                image_bytes = resp.content
-            else:
-                raise ValueError("No image data in response")
-
-            return self._save_image(
-                image_bytes=image_bytes,
-                provider=ImageProvider.OPENAI.value,
-                prompt=prompt,
-                extension="png",
-            )
-
-        except Exception as e:
-            logger.error(f"OpenAI image generation error: {e}")
-            raise
+            except Exception as e:
+                exiger_accord("images", ImageProvider.OPENAI.value)
+                logger.error(f"OpenAI image generation error: {e}")
+                raise
 
     async def _generate_gemini(
         self,
@@ -251,59 +266,63 @@ class ImageGeneratorService:
                 user_message="Clé API Gemini (Image) non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
-        client = genai.Client(api_key=api_key)
+        with client_http_avec_accord(lambda: exiger_accord("images", ImageProvider.GEMINI.value)) as sdk_http:
+            client = genai.Client(api_key=api_key, http_options=types.HttpOptions(httpx_client=sdk_http))
 
-        try:
-            # Build content list
-            contents = [prompt]
+            try:
+                # Build content list
+                contents = [prompt]
 
-            # Add reference image if provided
-            if reference_image_path and Path(reference_image_path).exists():
-                from PIL import Image
+                # Add reference image if provided
+                if reference_image_path and Path(reference_image_path).exists():
+                    from PIL import Image
 
-                ref_image = Image.open(reference_image_path)
-                contents.append(ref_image)
+                    ref_image = Image.open(reference_image_path)
+                    contents.append(ref_image)
 
-            # Generate image
-            response = await asyncio.to_thread(
-                lambda: client.models.generate_content(
-                    model="gemini-3.1-flash-image-preview",
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        response_modalities=["TEXT", "IMAGE"],
-                        image_config=types.ImageConfig(
-                            aspect_ratio=config.aspect_ratio,
-                            image_size=config.image_size,
+                # Generate image
+                response = await asyncio.to_thread(
+                    appeler_avec_accord,
+                    lambda: exiger_accord('images', ImageProvider.GEMINI.value),
+                    lambda: client.models.generate_content(
+                        model="gemini-3.1-flash-image-preview",
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            response_modalities=["TEXT", "IMAGE"],
+                            image_config=types.ImageConfig(
+                                aspect_ratio=config.aspect_ratio,
+                                image_size=config.image_size,
+                            ),
                         ),
-                    ),
+                    )
                 )
-            )
 
-            # Extract image from response (BUG-085 : supporter plusieurs formats de réponse)
-            image_bytes = None
-            for part in response.candidates[0].content.parts:
-                if hasattr(part, "inline_data") and part.inline_data:
-                    image_bytes = part.inline_data.data
-                    break
-                elif hasattr(part, "data") and part.data:
-                    image_bytes = part.data
-                    break
+                # Extract image from response (BUG-085 : supporter plusieurs formats de réponse)
+                image_bytes = None
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, "inline_data") and part.inline_data:
+                        image_bytes = part.inline_data.data
+                        break
+                    elif hasattr(part, "data") and part.data:
+                        image_bytes = part.data
+                        break
 
-            if not image_bytes:
-                part_types = [type(p).__name__ for p in response.candidates[0].content.parts]
-                logger.error(f"Gemini image: aucune donnée image. Parts: {part_types}")
-                raise ValueError(f"No image data in Gemini response (parts: {part_types})")
+                if not image_bytes:
+                    part_types = [type(p).__name__ for p in response.candidates[0].content.parts]
+                    logger.error(f"Gemini image: aucune donnée image. Parts: {part_types}")
+                    raise ValueError(f"No image data in Gemini response (parts: {part_types})")
 
-            return self._save_image(
-                image_bytes=image_bytes,
-                provider=ImageProvider.GEMINI.value,
-                prompt=prompt,
-                extension="png",
-            )
+                return self._save_image(
+                    image_bytes=image_bytes,
+                    provider=ImageProvider.GEMINI.value,
+                    prompt=prompt,
+                    extension="png",
+                )
 
-        except Exception as e:
-            logger.error(f"Gemini image generation error: {e}")
-            raise
+            except Exception as e:
+                exiger_accord("images", ImageProvider.GEMINI.value)
+                logger.error(f"Gemini image generation error: {e}")
+                raise
 
     async def _generate_fal(
         self,
@@ -325,7 +344,7 @@ class ImageGeneratorService:
                 user_message="Clé API Fal non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
-        client = await get_http_client()
+        client = TransportAvecAccord(await get_http_client(), lambda: exiger_accord('images', ImageProvider.FAL.value))
 
         try:
             # Déterminer la taille d'image
@@ -395,6 +414,21 @@ class ImageGeneratorService:
         file_name = f"therese_{timestamp}_{image_id}.{extension}"
         file_path = self.output_dir / file_name
 
+        from app.models.database import get_sync_session
+        from app.services.marquage_ia import marquer_image, provenance_ia
+        from app.services.provenance_store import ajouter_generation
+        identifiants = {
+            ImageProvider.OPENAI.value: ('openai', 'gpt-image-2'),
+            ImageProvider.GEMINI.value: ('gemini', 'gemini-3.1-flash-image-preview'),
+            ImageProvider.FAL.value: ('fal', 'fal-ai/flux-pro/v1.1'),
+        }
+        fournisseur, modele = identifiants[provider]
+        champs = provenance_ia(fournisseur, modele)
+        image_bytes = marquer_image(image_bytes, champs)
+        with get_sync_session() as session:
+            ajouter_generation(session, 'image', image_id, champs, image_id)
+            session.commit()
+
         # Write image
         file_path.write_bytes(image_bytes)
         file_size = file_path.stat().st_size
@@ -412,6 +446,14 @@ class ImageGeneratorService:
             prompt=prompt,
         )
 
+    @staticmethod
+    def _provider_image(image_id: str) -> str:
+        from app.models.database import get_sync_session
+        from app.models.entities import AIGeneration
+        with get_sync_session() as session:
+            record = session.get(AIGeneration, image_id)
+            return record.provider if record else 'unknown'
+
     def get_image(self, image_id: str) -> GeneratedImage | None:
         """Get a previously generated image by ID."""
         # B-036 : l'identifiant vient d'un paramètre de chemin et partait tel
@@ -427,7 +469,7 @@ class ImageGeneratorService:
             if file_path.is_file():
                 return GeneratedImage(
                     id=image_id,
-                    provider="unknown",
+                    provider=self._provider_image(image_id),
                     file_path=file_path,
                     file_name=file_path.name,
                     file_size=file_path.stat().st_size,
@@ -449,7 +491,7 @@ class ImageGeneratorService:
                 images.append(
                     GeneratedImage(
                         id=image_id,
-                        provider="unknown",
+                        provider=self._provider_image(image_id),
                         file_path=file_path,
                         file_name=file_path.name,
                         file_size=file_path.stat().st_size,

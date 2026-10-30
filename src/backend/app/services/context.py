@@ -5,7 +5,7 @@ Manages conversation context within token limits.
 Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from app.services.providers.base import Message
@@ -22,6 +22,21 @@ class ContextWindow:
     # (bascule du disjoncteur comprise). Les continuations après outils la
     # reprennent, pour ne pas changer de fournisseur au milieu du tour.
     config_effective: Any = None
+    accord_board: bool = False
+    contient_documents: bool = False
+    # Tour 7 : distingue un document avéré (pièce jointe, extrait indexé,
+    # fichier relu, message ou fiche « documents ») d'une provenance seulement
+    # incertaine. None = non calculé : toute marque compte comme avérée.
+    documents_averes: bool | None = None
+    # Tour 9 : fiches retirées de l'envoi faute d'accord documents (avis visible).
+    fiches_retirees: int = 0
+    avis_fiches_affiche: bool = False
+    # Tour 10 : premier message d'une conversation, et anciennes préférences
+    # non confirmées à annoncer une seule fois (leur nombre seulement).
+    premier_tour_conversation: bool = False
+    preferences_a_confirmer: int = 0
+    # Tour 11 : avis système émis pendant le tour, conservés hors du contenu.
+    avis_systeme: list[str] = field(default_factory=list)
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0

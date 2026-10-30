@@ -162,7 +162,7 @@ def texte_du_corps(lecteur):
     lignes = (ligne for page in lecteur.pages for ligne in page.extract_text().splitlines())
     return "".join(
         "".join(ligne.split()) for ligne in lignes
-        if ligne not in {"Synthèse française", "Généré par THÉRÈSE - Synoptïa"}
+        if ligne not in {"Synthèse française", "Rédigé avec l’IA de THÉRÈSE"}
         and not ligne.startswith("Page ")
     )
 
@@ -297,7 +297,7 @@ async def test_dix_codes_apres_astra_v2(registre_pdf, monkeypatch, contenu, atte
     lignes = (ligne for page in lecteur.pages for ligne in page.extract_text().splitlines())
     texte = "\n".join(
         ligne for ligne in lignes
-        if ligne not in {"Synthèse française", "Généré par THÉRÈSE - Synoptïa"}
+        if ligne not in {"Synthèse française", "Rédigé avec l’IA de THÉRÈSE"}
         and not ligne.startswith("Page ")
     )
     # Comparer aussi les espaces : ils font partie du code à recopier.

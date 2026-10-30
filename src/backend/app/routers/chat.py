@@ -64,6 +64,14 @@ from app.services.mcp_service import get_mcp_service
 from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_memory_tool
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
+from app.services.provenance_documents import (
+    AVIS_HISTORIQUE,
+    copier_messages_differes,
+    filtrer_historique,
+    marque_reponse,
+    memoriser_provenance,
+    reprendre_messages_differes,
+)
 from app.services.providers.base import LLMProvider, message_fournisseur_pour_ecran
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
@@ -76,6 +84,7 @@ from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     _base_tool_name,
     canoniser_arguments,
+    canoniser_pour_connecteur,
     empreinte_action,
     pop_pending,
     register_pending,
@@ -646,6 +655,19 @@ async def _pieces_jointes_recentes(
     return rejoues
 
 
+async def _pieces_jointes_autorisees(
+    conversation_id: str | None, session: AsyncSession | None,
+    deja_fournis: list[str], config: Any,
+) -> tuple[list[str], str]:
+    """Le rappel automatique n'est jamais une nouvelle demande de document."""
+    from app.services.memory_card_context import documents_autorises
+
+    pieces = await _pieces_jointes_recentes(conversation_id, session, deja_fournis)
+    if pieces and not documents_autorises(config, None):
+        return [], AVIS_HISTORIQUE
+    return pieces, ''
+
+
 def borner_bloc_fichiers(contextes: list[str]) -> tuple[list[str], int]:
     """Coupe le bloc des fichiers au plafond global, sans jamais couper un bloc.
 
@@ -763,6 +785,17 @@ async def perimetre_de_piece_jointe(
     return "global", None, False
 
 
+class ContexteMemoire(str):
+    """Texte récupéré avec sa provenance, indépendante des accords ultérieurs."""
+
+    contient_documents: bool
+
+    def __new__(cls, texte: str, contient_documents: bool = False) -> "ContexteMemoire":
+        valeur = super().__new__(cls, texte)
+        valeur.contient_documents = contient_documents
+        return valeur
+
+
 async def _get_memory_context(
     user_message: str,
     limit: int = 8,
@@ -786,6 +819,7 @@ async def _get_memory_context(
     Returns formatted context string or None if no relevant memories found.
     """
     context_parts: list[str] = []
+    contient_documents = False
     # Affecté avant le try : il est relu plus bas, hors de sa portée. Un
     # périmètre illisible ne doit pas faire tomber tout le message pour une
     # mention accessoire (relevé par la relecture adversariale).
@@ -864,6 +898,7 @@ async def _get_memory_context(
                     enveloppe = ""
                 if enveloppe:
                     context_parts.append(enveloppe)
+                    contient_documents |= memory_type == "file"
 
             logger.debug(f"Memory context hit: {memory_type} (score={score:.2f})")
 
@@ -907,7 +942,7 @@ async def _get_memory_context(
                 )
 
     if context_parts:
-        return "\n\n".join(context_parts)
+        return ContexteMemoire("\n\n".join(context_parts), contient_documents)
     return None
 
 
@@ -997,6 +1032,10 @@ async def _extract_entities_background(
                 return
             extractor = get_entity_extractor()
             contact_names, project_names = await _get_existing_entity_names(session)
+            source = await session.get(Message, message_id)
+            # Cette tâche peut démarrer après un retrait. La copie de texte
+            # n'est pas une nouvelle demande sans document.
+            documentaire = source is None or memoriser_provenance(source) != 'sans_document'
 
         # B-1139 : le service qui vient de répondre, pas une relecture du
         # service global : une conversation locale reste locale, et un modèle
@@ -1006,6 +1045,7 @@ async def _extract_entities_background(
             existing_contacts=contact_names,
             existing_projects=project_names,
             llm=llm_service,
+            contient_documents=documentaire,
         )
 
         if extraction_result.contacts or extraction_result.projects:
@@ -1565,6 +1605,16 @@ def _avec_texte_retire(bilan: dict[str, int], contexte: Any) -> dict[str, int]:
     return bilan
 
 
+def _memoriser_avis(message: Message, avis: list[str]) -> None:
+    """Tour 11 : les avis du tour sont conservés à part, jamais dans `content`."""
+    uniques = list(dict.fromkeys(a for a in avis if a))
+    if not uniques:
+        return
+    donnees = json.loads(message.extra_data or '{}')
+    donnees['avis'] = uniques
+    message.extra_data = json.dumps(donnees, ensure_ascii=False)
+
+
 def _memoriser_contexte(message: Message, bilan: dict[str, int]) -> None:
     """Pose le bilan dans extra_data sans effacer le reste (fichiers, sources)."""
     donnees: dict[str, Any] = {}
@@ -1598,6 +1648,26 @@ async def send_message(
     """
     _verifier_message_non_vide(request.message, request.file_paths)
 
+    # Tour 7 : les tours RFC repris sont relus en base et rejoués comme des
+    # tours de conversation, avec leur provenance propre. Ils ne sont JAMAIS
+    # recopiés dans le message enregistré (taille qui doublait à chaque tour)
+    # ni soumis aux directives `[contact: …]` (une réponse du modèle ou un
+    # extrait cité devenait une écriture). Une liste vide ne reprend rien :
+    # le message est la seule saisie de l'utilisateur.
+    rfc_origine = "sans_document"
+    rfc_historique: list[LLMMessage] = []
+    # Tour 8 : une réponse supprimée entre-temps n'est plus une impasse ; elle
+    # est ignorée et signalée dans `done` pour que l'interface la retire.
+    rfc_absentes: list[str] = []
+    if request.rfc_source_ids:
+        from app.services.provenance_documents import provenance, reprendre_rfc, texte_rfc
+        sources_rfc, rfc_origine = await reprendre_rfc(session, request.rfc_source_ids, rfc_absentes)
+        rfc_historique = [
+            LLMMessage(role="assistant" if m.role == "assistant" else "user", content=texte_rfc(m),
+                       contient_documents=provenance(m) != "sans_document")
+            for m in sources_rfc
+        ]
+
     # Get or create conversation
     if request.conversation_id:
         result = await session.execute(
@@ -1607,7 +1677,7 @@ async def send_message(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
     else:
-        conversation = Conversation(title=request.message[:50])
+        conversation = Conversation(title="Création de commande" if rfc_origine != "sans_document" else request.message[:50])
         session.add(conversation)
         await session.flush()
 
@@ -1635,15 +1705,21 @@ async def send_message(
     # (message-action + confirmation locale, commandes /) sont EXCLUS du
     # contexte LLM - bruit aujourd'hui, valeurs de variables demain. Les
     # user legacy (avant le tag) restent : bruit sans risque, documenté.
-    history = [
-        LLMMessage(role=msg.role, content=msg.content)
-        for msg in history_messages
+    history_rejouee = [
+        msg for msg in history_messages
         if msg.model not in ("action-deterministe", "commande-deterministe")
         and not (msg.extra_data and '"deterministic": true' in msg.extra_data)
         # B-1221 : le moteur ne stocke que des tours user et assistant ; un
         # « system » importé avant B-1182 serait rejoué comme consigne.
         and msg.role in ("user", "assistant")
     ]
+    origines_historique = [memoriser_provenance(msg) for msg in history_rejouee]
+    history = rfc_historique + [
+        LLMMessage(role=msg.role, content=msg.content, contient_documents=origine != "sans_document")
+        for msg, origine in zip(history_rejouee, origines_historique, strict=True)
+    ]
+    # Un document avéré dans l'historique (pas seulement une origine inconnue).
+    historique_documents_averes = rfc_origine == "documents" or "documents" in origines_historique
 
     # B-1368 : une conversation créée vide (sélecteur de projet, ⌘N) gardait
     # son titre provisoire en base, et aucun envoi n'avançait sa date : le
@@ -1666,6 +1742,14 @@ async def send_message(
     # part en base sans aucune mention du fichier et la conversation perd le
     # document dès le message suivant.
     _memoriser_pieces_jointes(user_message, request.file_paths)
+    memoriser_provenance(
+        user_message,
+        True if request.file_paths or rfc_origine == "documents"
+        else (None if reprise or rfc_origine == "inconnue" else False),
+    )
+    origine_source = memoriser_provenance(user_message)
+    source_contient_documents = origine_source != "sans_document"
+    source_documents_averes = origine_source == "documents"
     session.add(user_message)
     await session.commit()
 
@@ -1883,6 +1967,9 @@ async def send_message(
     # cumulables. Les mutations Agenda sont seulement préparées ; leurs cartes
     # de confirmation s'affichent avant toute exécution.
     inline_preamble = ""
+    # Tour 11 (relecture 10) : les avis système partent à part (événement
+    # « notice », champ `avis`), jamais dans le texte de la réponse.
+    avis_reponse: list[str] = []
     inline_pending_confirmations: list[dict[str, Any]] = []
     actions_context: str | None = None
     llm_user_message = request.message
@@ -1891,11 +1978,16 @@ async def send_message(
         # LLM, et il n'est JAMAIS re-scanné par les directives inline.
         llm_user_message = produce_prompt
         cleaned_message, inline_cmds = request.message, []
+    elif request.rfc_source_ids:
+        # Tour 7 : une reprise RFC n'exécute aucune directive en ligne. Le
+        # mini-chat n'écrit rien ; un modèle de commande peut citer
+        # `[contact: …]` sans que ce soit une demande.
+        cleaned_message, inline_cmds = request.message, []
     else:
         cleaned_message, inline_cmds = parse_inline_commands(request.message)
     if reprise and inline_cmds:
         llm_user_message = cleaned_message
-        inline_preamble = 'Les commandes de ce message ne sont pas rejouées lors de cette reprise.\n\n'
+        avis_reponse.append('Les commandes de ce message ne sont pas rejouées lors de cette reprise.')
         actions_context = ('Les commandes de ce tour ont déjà été traitées ou préparées avant la demande d’accord. '
                            'Ne les relance pas et n’invente pas leur résultat ; leurs cartes précédentes font foi.')
         inline_cmds = []
@@ -2065,6 +2157,11 @@ async def send_message(
                 memory_card_grants=request.memory_card_grants,
                 memory_card_purpose=request.memory_card_purpose,
                 source_message_id=user_message.id,
+                source_contient_documents=source_contient_documents,
+                source_documents_averes=source_documents_averes,
+                historique_documents_averes=historique_documents_averes,
+                rfc_sources_absentes=rfc_absentes,
+                avis=avis_reponse,
             ),
             media_type="text/event-stream",
             headers={
@@ -2098,7 +2195,12 @@ async def send_message(
         )
 
     llm_service = get_llm_service()
-    messages = history + [LLMMessage(role="user", content=llm_user_message)]
+    history, avis_historique = filtrer_historique(history, llm_service.config)
+    if avis_historique:
+        avis_reponse.append(avis_historique)
+    documents_averes = source_documents_averes or (historique_documents_averes and not avis_historique)
+    messages = history + [LLMMessage(role="user", content=llm_user_message,
+                                     contient_documents=source_contient_documents)]
 
     # Get relevant memory context (0d : même texte que le payload LLM,
     # parité avec le chemin stream)
@@ -2109,6 +2211,7 @@ async def send_message(
         llm_user_message, conversation_id=conversation.id, session=session,
         inclure_fichiers=documents_autorises(llm_service.config, request.memory_card_grants),
     ) if request.include_memory else None
+    documents_recuperes = getattr(memory_context, "contient_documents", bool(memory_context))
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
     # indexe : un document déposé dans un dossier client lui appartient.
@@ -2164,9 +2267,12 @@ async def send_message(
 
     # BUG-160 : même rappel que sur le chemin streaming. Pas de contexte
     # ici : le chemin non-stream n'a ni génération ni annulation.
-    for fp in await _pieces_jointes_recentes(
-        conversation.id, session, deja_fournis=list(request.file_paths or [])
-    ):
+    anciennes_pieces, avis_pieces = await _pieces_jointes_autorisees(
+        conversation.id, session, list(request.file_paths or []), llm_service.config
+    )
+    if avis_pieces and not avis_historique:
+        avis_reponse.append(avis_pieces)
+    for fp in anciennes_pieces:
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
             scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
@@ -2177,6 +2283,9 @@ async def send_message(
             logger.info("Pièce jointe d'un tour précédent non rejouée : %s", error)
 
     # Combine memory and file contexts
+    if (file_contexts or any(m.images for m in messages)) and not documents_autorises(llm_service.config, None):
+        from app.services.error_handler import ErreurPourEcran
+        raise ErreurPourEcran("Ton accord « documents » pour ce fournisseur est nécessaire avant l’envoi de fichiers.")
     if file_contexts:
         # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
         # 15 000 caractères chacun évincent l'historique de la conversation
@@ -2215,7 +2324,13 @@ async def send_message(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.contient_documents = bool(file_contexts) or any(m.images or m.contient_documents for m in messages) or documents_recuperes
+    context.documents_averes = bool(
+        file_contexts or any(m.images for m in messages) or documents_recuperes or documents_averes
+    )
     context.memory_cards_enabled = request.include_memory
+    # Avant le filtre : un historique retiré faute d'accord reste un historique.
+    context.premier_tour_conversation = not history_messages and not rfc_historique
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
         attacher_relecture(context, messages_avant_coupe, memory_context,
@@ -2263,8 +2378,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
-    if file_errors:
-        assistant_content = "\n\n".join(file_errors) + "\n\n" + assistant_content
+    avis_reponse.extend(file_errors)
+    avis_reponse.extend(getattr(context, "avis_systeme", None) or [])
     # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
     assistant_content += _suffixe_arret(assistant_content, motif_sink.get("stop_reason"))
 
@@ -2298,10 +2413,12 @@ async def send_message(
     )
     bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
+    memoriser_provenance(assistant_message, marque_reponse(context))
     if isinstance(getattr(context, 'memory_transmitted', None), list) and context.memory_transmitted:
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
         assistant_message.extra_data = json.dumps(extra)
+    _memoriser_avis(assistant_message, avis_reponse)
     # B-1494, voie non diffusée : la suppression pendant la génération
     # l'emporte aussi ici. Construire la réponse avant un éventuel rollback
     # évite de relire une conversation dont les attributs SQL sont expirés.
@@ -2315,6 +2432,7 @@ async def send_message(
         tokens_out=output_tokens,
         warnings=avertissements_plafonds,
         contexte=ContexteTransmis(**bilan_contexte),
+        avis=avis_reponse or None,
         created_at=assistant_message.created_at,
         confirmations=inline_pending_confirmations or None,
     )
@@ -2341,6 +2459,11 @@ async def _stream_response(
     memory_card_grants: list[str] | None = None,
     memory_card_purpose: str = "llm",
     source_message_id: str | None = None,
+    source_contient_documents: bool = False,
+    source_documents_averes: bool = True,
+    historique_documents_averes: bool = True,
+    rfc_sources_absentes: list[str] | None = None,
+    avis: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2418,6 +2541,8 @@ async def _stream_response(
     #
     # On met donc la production et la surveillance en concurrence, et on ferme
     # explicitement le générateur pour propager l'interruption au producteur.
+    from app.services.error_handler import ErreurPourEcran
+
     producteur = _do_stream_response(
         conversation_id, user_message, session, history,
         skill_id=skill_id, file_paths=file_paths,
@@ -2432,6 +2557,11 @@ async def _stream_response(
         include_memory=include_memory,
         memory_card_grants=memory_card_grants, memory_card_purpose=memory_card_purpose,
         source_message_id=source_message_id,
+        source_contient_documents=source_contient_documents,
+        source_documents_averes=source_documents_averes,
+        historique_documents_averes=historique_documents_averes,
+        rfc_sources_absentes=rfc_sources_absentes,
+        avis=avis,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2495,6 +2625,10 @@ async def _stream_response(
                         chunk.removeprefix("data: ").strip()
                     ).get("content", "")[:500]
             yield chunk
+    except ErreurPourEcran as sortie:
+        etat_generation["etat"] = EtatTacheTraitement.FAILED
+        etat_generation["erreur"] = str(sortie)
+        yield f"data: {json.dumps({'type': 'error', 'content': str(sortie)}, ensure_ascii=False)}\n\n"
     except BaseException as sortie:
         # Déconnexion (GeneratorExit) = travail réellement arrêté ; toute
         # autre sortie non prévue est un échec. L'état terminal reste posé
@@ -2577,7 +2711,9 @@ def _texte_du_resultat_mcp(resultat: Any) -> str:
     return json.dumps(resultat, ensure_ascii=False, default=str)
 
 
-async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
+async def _ecrire_reponse(
+    session: AsyncSession, message: Message, contient_documents: bool | None = None
+) -> bool:
     """B-1494 : écrit un message de réponse, sauf si sa conversation a été
     supprimée pendant la génération.
 
@@ -2586,6 +2722,7 @@ async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
     suit et le commit. Conversation disparue : retour arrière, rien n'est
     écrit, et l'appelant s'arrête là.
     """
+    memoriser_provenance(message, contient_documents)
     session.add(message)
     await session.flush()
     existe = (await session.execute(
@@ -2600,7 +2737,7 @@ async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
 
 
 async def _persister_message_partiel(
-    conversation_id: str, contenu: str, llm_service: Any
+    conversation_id: str, contenu: str, llm_service: Any, contient_documents: bool | None = None
 ) -> None:
     """Sauve le texte partiel d'une génération arrêtée - une seule fois.
 
@@ -2628,7 +2765,7 @@ async def _persister_message_partiel(
                 content=contenu,
                 model=modele,
                 provider=fournisseur,
-            ))
+            ), contient_documents)
     except Exception:
         logger.warning("Message partiel non persisté", exc_info=True)
 
@@ -2706,6 +2843,11 @@ async def _do_stream_response(
     memory_card_grants: list[str] | None = None,
     memory_card_purpose: str = "llm",
     source_message_id: str | None = None,
+    source_contient_documents: bool = False,
+    source_documents_averes: bool = True,
+    historique_documents_averes: bool = True,
+    rfc_sources_absentes: list[str] | None = None,
+    avis: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -2810,8 +2952,15 @@ async def _do_stream_response(
     first_token_recorded = False
 
     # Build context with conversation history
-    messages = history or []
-    messages.append(LLMMessage(role="user", content=user_message))
+    messages, avis_historique = filtrer_historique(history or [], llm_service.config)
+    # Tour 11 : les avis du tour, émis à part et conservés hors du contenu.
+    avis_tour: list[str] = list(avis or [])
+    if avis_historique:
+        avis_tour.append(avis_historique)
+    # Le filtre retire toute provenance non attestée : un historique filtré ne
+    # porte plus aucun document (la demande courante garde le sien).
+    documents_averes = source_documents_averes or (historique_documents_averes and not avis_historique)
+    messages.append(LLMMessage(role="user", content=user_message, contient_documents=source_contient_documents))
 
     # Get relevant memory context for the user's message
     # B-1495 : include_memory=false n'injecte pas la mémoire.
@@ -2821,6 +2970,7 @@ async def _do_stream_response(
         user_message, conversation_id=conversation_id, session=session,
         inclure_fichiers=documents_autorises(llm_service.config, memory_card_grants),
     ) if include_memory else None
+    documents_recuperes = getattr(memory_context, "contient_documents", bool(memory_context))
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
     # indexe : un document déposé dans un dossier client lui appartient.
@@ -2877,9 +3027,12 @@ async def _do_stream_response(
     # vide sa liste après l'envoi, donc sans ce rappel la conversation perd le
     # document dès le message suivant et THÉRÈSE répond, à juste titre, qu'elle
     # n'a aucun moyen de le lire.
-    for fp in await _pieces_jointes_recentes(
-        conversation_id, session, deja_fournis=list(file_paths or [])
-    ):
+    anciennes_pieces, avis_pieces = await _pieces_jointes_autorisees(
+        conversation_id, session, list(file_paths or []), llm_service.config
+    )
+    if avis_pieces and not avis_historique:
+        avis_tour.append(avis_pieces)
+    for fp in anciennes_pieces:
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
             scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
@@ -2906,6 +3059,9 @@ async def _do_stream_response(
         yield f"data: {json.dumps(status_data.model_dump())}\n\n"
 
     # Combine memory and file contexts
+    if (file_contexts or any(m.images for m in messages)) and not documents_autorises(llm_service.config, None):
+        from app.services.error_handler import ErreurPourEcran
+        raise ErreurPourEcran("Ton accord « documents » pour ce fournisseur est nécessaire avant l’envoi de fichiers.")
     if file_contexts:
         # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
         # 15 000 caractères chacun évincent l'historique de la conversation
@@ -2933,7 +3089,7 @@ async def _do_stream_response(
             "Pièces jointes non transmises :\n" + "\n".join(file_errors), source="fichier",
         )
         memory_context = f"{memory_context or ''}\n\n{avis_fichiers}"
-        preamble = "\n\n".join(file_errors) + "\n\n" + preamble
+        avis_tour.extend(file_errors)
 
     # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
     if actions_context:
@@ -2945,7 +3101,13 @@ async def _do_stream_response(
         await llm_service.actualiser_fenetre_locale()
     messages_avant_coupe = [copy(m) for m in messages]
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    context.contient_documents = bool(file_contexts) or any(m.images or m.contient_documents for m in messages) or documents_recuperes
+    context.documents_averes = bool(
+        file_contexts or any(m.images for m in messages) or documents_recuperes or documents_averes
+    )
     context.memory_cards_enabled = include_memory
+    # Tour 10 : l'avis des anciennes préférences ne paraît qu'au premier message.
+    context.premier_tour_conversation = not history
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
         attacher_relecture(context, messages_avant_coupe, memory_context,
@@ -3044,6 +3206,11 @@ async def _do_stream_response(
         context.system_prompt += BLOC_PIECES_JOINTES
 
     full_content = ""
+    # Tour 11 : le texte produit par le modèle seul, matière des compétences
+    # de génération (ni avis, ni confirmations de directives, ni annonce de coupe).
+    contenu_modele = ""
+    for texte_avis in avis_tour:
+        yield f"data: {json.dumps({'type': 'notice', 'content': texte_avis, 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
     # Confirmations des directives inline [action: ...] : émises en tête de
     # réponse (vérité d'exécution) et incluses dans le contenu sauvegardé.
     if preamble:
@@ -3090,12 +3257,19 @@ async def _do_stream_response(
                     first_token_recorded = True
 
                 full_content += event.content
+                contenu_modele += event.content
                 data = StreamChunk(
                     type="text",
                     content=event.content,
                     conversation_id=conversation_id,
                 )
                 yield f"data: {json.dumps(data.model_dump())}\n\n"
+
+            elif event.type == "notice" and event.content:
+                # Tour 11 : affiché à part par l'interface ; déjà noté dans
+                # context.avis_systeme pour la conservation.
+                avis_tour.append(event.content)
+                yield f"data: {json.dumps({'type': 'notice', 'content': event.content, 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
 
             elif event.type == "tool_call" and event.tool_call:
                 tool_calls_collected.append(event.tool_call)
@@ -3154,6 +3328,8 @@ async def _do_stream_response(
                                 event_data = json.loads(continued_event[6:].strip())
                                 if event_data.get("type") == "text":
                                     full_content += event_data.get("content", "")
+                                    if not event_data.get("annonce_arret"):
+                                        contenu_modele += event_data.get("content", "")
                                 elif event_data.get("type") == "error" and echec_suite.get("refus"):
                                     # B-1119 : sauver le texte avant le terminal, qui
                                     # fait cesser la lecture du client. Aucun repli
@@ -3178,7 +3354,7 @@ async def _do_stream_response(
                                             message_refus.extra_data = json.dumps(
                                                 {"skill_files": fichiers_outils}
                                             )
-                                        await _ecrire_reponse(session, message_refus)
+                                        await _ecrire_reponse(session, message_refus, marque_reponse(context))
                                     entree, sortie, appels_refus = _usage_du_tour(
                                         usage_totals, user_message, full_content
                                     )
@@ -3230,7 +3406,7 @@ async def _do_stream_response(
                         # Sinon la carte vit le temps du flux et disparaît au
                         # rechargement (motif BUG-130), fichier toujours là.
                         err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-                    await _ecrire_reponse(session, err_msg)
+                    await _ecrire_reponse(session, err_msg, marque_reponse(context))
                 except Exception as db_err:
                     logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
                 return
@@ -3241,7 +3417,7 @@ async def _do_stream_response(
         # (fournisseur bloqué, revue jalon F4) - la garde d'écriture plus bas
         # n'est jamais atteinte. Le texte déjà produit survit ici ; aucun
         # effet (skill, outil) n'est lancé.
-        await _persister_message_partiel(conversation_id, full_content, llm_service)
+        await _persister_message_partiel(conversation_id, full_content, llm_service, marque_reponse(context))
         raise
     except Exception as e:
         from app.services.memory_card_context import AccordFichesRequis
@@ -3279,7 +3455,7 @@ async def _do_stream_response(
                 # Sinon la carte vit le temps du flux et disparaît au
                 # rechargement (motif BUG-130), fichier toujours là.
                 err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-            await _ecrire_reponse(session, err_msg)
+            await _ecrire_reponse(session, err_msg, marque_reponse(context))
         except Exception as db_err:
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
@@ -3356,9 +3532,11 @@ async def _do_stream_response(
             "Annulation demandée : réponse partielle conservée, aucun effet produit"
         )
         await _persister_message_partiel(
-            conversation_id, full_content, llm_service
+            conversation_id, full_content, llm_service, marque_reponse(context)
         )
         return
+
+    memoriser_provenance(assistant_message, marque_reponse(context))
 
     # B-1494 : conversation supprimée pendant la réponse, aucun effet de plus.
     if not await _ecrire_reponse(session, assistant_message):
@@ -3375,7 +3553,7 @@ async def _do_stream_response(
     # l'événement done - le client arrête la lecture du stream sur done
     # (chat.ts), donc tout événement émis après n'atteint jamais l'UI en
     # direct (le testeur découvrait ses fichiers par hasard au rechargement).
-    if skill_id and not (full_content or "").strip():
+    if skill_id and not (contenu_modele or "").strip():
         # Trou couvert (revue design actions) : un skill était attendu mais le
         # modèle n'a produit AUCUN contenu - avant, l'utilisateur ne recevait
         # ni fichier ni explication.
@@ -3389,7 +3567,7 @@ async def _do_stream_response(
     for carte in cartes_outils:
         yield carte
 
-    if skill_id and full_content:
+    if skill_id and contenu_modele.strip():
         try:
             from app.services.skills import get_skills_registry
             registry = get_skills_registry()
@@ -3401,10 +3579,12 @@ async def _do_stream_response(
                 )
             elif skill.output_type.value == "file":
                 logger.info(f"Auto-exécution du skill {skill_id} après streaming")
+                from app.services.marquage_ia import provenance_service
                 result = await registry.execute(
                     skill_id,
-                    SkillExecuteRequest(prompt=user_message, title=None),
-                    full_content,
+                    SkillExecuteRequest(prompt=user_message, title=None,
+                        context={"_ai_provenance": provenance_service(llm_service)}),
+                    contenu_modele,
                 )
                 if result.success:
                     skill_file_payload = {
@@ -3445,10 +3625,12 @@ async def _do_stream_response(
         )
     bilan_contexte = bilan_depuis_fenetre(_passes_que_le_fournisseur_garde(messages), context)
     _memoriser_contexte(assistant_message, bilan_contexte)
+    memoriser_provenance(assistant_message, marque_reponse(context))
     if isinstance(getattr(context, 'memory_transmitted', None), list) and context.memory_transmitted:
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
         assistant_message.extra_data = json.dumps(extra)
+    _memoriser_avis(assistant_message, avis_tour)
     await session.commit()
 
     # Send done event with usage info
@@ -3470,6 +3652,8 @@ async def _do_stream_response(
     done_dict["uncertainty"] = uncertainty
     done_dict["contexte"] = bilan_contexte
     done_dict["memory_used"] = getattr(context, "memory_transmitted", None) if isinstance(getattr(context, "memory_transmitted", None), list) else []
+    if rfc_sources_absentes:
+        done_dict["rfc_sources_absentes"] = list(rfc_sources_absentes)
     yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)
@@ -3628,6 +3812,10 @@ async def _execute_tools_and_continue(
 
     result: _ResultatOutil
     for tc in allowed_calls:
+        if tc.name in ("send_email", "generate_document"):
+            from app.services.marquage_ia import provenance_ia
+            effective = context.config_effective or llm_service.config
+            tc.arguments['_ai_provenance'] = provenance_ia(effective.provider.value, effective.model)
         # Finding 3, troisième passe de revue : la boucle d'outils ignorait
         # complètement l'annulation. Elle émet d'abord un statut, puis exécute
         # — et ces outils ne sont pas anodins : ils créent des contacts et des
@@ -3664,7 +3852,24 @@ async def _execute_tools_and_continue(
         # "Executing tool: send_email" laissait croire à un envoi réel alors que
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
-            pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
+            # Relecture 6, réserve 7 : pour un connecteur MCP, la carte et
+            # l'appel partagent les mêmes arguments publics canonisés ; le
+            # moteur n'ajoute ses clés internes qu'à la copie de la carte.
+            arguments_publics: dict[str, Any] | None = None
+            if "__" in tc.name:
+                schema_outil = next((t.get("function", {}).get("parameters") for t in tools or []
+                                     if t.get("function", {}).get("name") == tc.name), None)
+                arguments_publics = canoniser_pour_connecteur(tc.name, dict(tc.arguments), schema_outil)
+            pending_arguments = (dict(arguments_publics) if arguments_publics is not None
+                                 else canoniser_arguments(tc.name, dict(tc.arguments)))
+            # Les arguments générés peuvent eux-mêmes citer le contexte.
+            # La confirmation d'un outil n'accorde aucune finalité IA.
+            # Tour 7 : trois niveaux. « inconnue » (ancien message, ancienne
+            # fiche) se distingue d'un document avéré ; un contexte illisible
+            # compte comme documentaire.
+            from app.services.provenance_documents import origine_contexte
+            messages_differes = getattr(context, 'messages', None)
+            pending_arguments['_provenance_documents'] = origine_contexte(context)
             outil_base = tc.name.split("__", 1)[-1]
             if tc.name == "create_calendar_event":
                 from app.services.workspace_tools import normaliser_arguments_agenda
@@ -3725,13 +3930,12 @@ async def _execute_tools_and_continue(
             # Une confirmation tardive ne doit pas répondre au dernier message
             # d'une autre question. Ni mémoire ni image ne sont ajoutées ici.
             if tc.name == "web_search":
-                pending_arguments["_web_messages"] = [
-                    {"role": m.role, "content": m.content}
-                    for m in getattr(context, "messages", [])
-                    if m.role in ("user", "assistant")
-                ]
+                pending_arguments["_web_messages"] = copier_messages_differes(
+                    messages_differes if isinstance(messages_differes, list) else []
+                )
             confirmation_id = register_pending(
-                tc.name, pending_arguments, conversation_id=conversation_id
+                tc.name, pending_arguments, conversation_id=conversation_id,
+                public_arguments=arguments_publics,
             )
             confirm_chunk = StreamChunk(
                 type="confirmation_required",
@@ -3821,11 +4025,17 @@ async def _execute_tools_and_continue(
             from types import SimpleNamespace
 
             from app.services.memory_card_tools import executer_outil, texte_resultat
+            from app.services.provenance_documents import origine_contexte
             perimetre, perimetre_id = await _perimetre_de_conversation(conversation_id, session)
+            # Tour 10 : trois niveaux ; une fiche écrite pendant un tour
+            # seulement incertain reste « inconnue », donc attestable.
+            origine_fiche = origine_contexte(context)
             resultat_fiche = await executer_outil(
                 tc.arguments, scope=perimetre or "global", scope_id=perimetre_id,
                 conversation_id=conversation_id,
                 include_memory=context.memory_cards_enabled, contexte=contexte,
+                contient_documents=(True if origine_fiche == "documents"
+                                    else None if origine_fiche == "inconnue" else False),
             )
             result = SimpleNamespace(
                 success=resultat_fiche['success'], result=texte_resultat(resultat_fiche),
@@ -3862,11 +4072,18 @@ async def _execute_tools_and_continue(
                 perimetre, perimetre_id = await _perimetre_de_conversation(
                     conversation_id, session
                 )
+                if tc.name == "read_file":
+                    from app.services.memory_card_context import documents_autorises
+                    if documents_autorises(context.config_effective or llm_service.config, None):
+                        context.contient_documents = True
+                        context.documents_averes = True
                 tool_result_str = await execute_memory_tool(
                     tc.name, tc.arguments, session,
                     scope=perimetre, scope_id=perimetre_id,
                     conversation_id=conversation_id,
                     contexte=contexte,
+                    llm_config=context.config_effective or llm_service.config,
+                    document_grants=(context.memory_request or {}).get("grants", []),
                 )
                 execution_time = (time.time() - start_time) * 1000
 
@@ -4143,6 +4360,8 @@ async def _execute_tools_and_continue(
                 )
                 if suite_arret:
                     continued_content += suite_arret
+                    # Tour 11 : l'annonce reste dans le message (C18), mais le
+                    # parent ne la donne jamais à une compétence de génération.
                     yield (
                         "data: "
                         + json.dumps(
@@ -4150,7 +4369,7 @@ async def _execute_tools_and_continue(
                                 type="text",
                                 content=suite_arret,
                                 conversation_id=conversation_id,
-                            ).model_dump()
+                            ).model_dump() | {"annonce_arret": True}
                         )
                         + "\n\n"
                     )
@@ -4178,10 +4397,16 @@ async def _repondre_apres_recherche(
 ) -> str:
     """Relance de lecture seule : les extraits restent des résultats d'outil."""
     llm = get_llm_service()
-    messages = [LLMMessage(**m) for m in arguments.get("_web_messages", [])]
+    messages = reprendre_messages_differes(arguments.get("_web_messages", []))
+    messages, avis = filtrer_historique(messages, llm.config)
     if not messages:
-        messages = [LLMMessage(role="user", content=arguments.get("query", ""))]
+        messages = [LLMMessage(role="user", content=arguments.get("query", ""),
+                              contient_documents=arguments.get('_provenance_documents') != 'sans_document')]
     context = llm.prepare_context(messages)
+    context.contient_documents = (
+        arguments.get('_provenance_documents') != 'sans_document'
+        or any(m.contient_documents or m.images for m in messages)
+    )
     context.memory_cards_enabled = False
     context.system_prompt = (context.system_prompt or "") + (
         "\nLa recherche web a été confirmée et exécutée. Réponds à la question "
@@ -4200,7 +4425,7 @@ async def _repondre_apres_recherche(
     verdict = _controle_du_prompt(llm, context, jetons)
     if not verdict["allowed"]:
         return "Recherche effectuée, mais la réponse est suspendue : " + " ".join(verdict["errors"])
-    contenu = ""
+    contenu = avis + "\n\n" if avis else ""
     usage: dict[str, int] = {}
     motif = None
     try:
@@ -4231,7 +4456,7 @@ async def _repondre_apres_recherche(
         await _ecrire_reponse(session, Message(
             conversation_id=conversation_id, role="assistant", content=contenu,
             model=modele, provider=fournisseur,
-        ))
+        ), marque_reponse(context))
     return contenu
 
 
@@ -4288,6 +4513,43 @@ async def _executer_action_confirmee(
     session: AsyncSession, trace_id: str,
 ) -> dict[str, Any]:
     from app.services.action_journal import terminer
+
+    # Les copies d'arguments générées depuis des documents sont indivisibles.
+    # Les anciennes cartes sans trace fiable sont traitées de la même façon.
+    from app.services.memory_card_context import documents_autorises
+    if (tool_name == 'web_search' and arguments.get('_provenance_documents') != 'sans_document'
+            and not documents_autorises(get_llm_service().config, None)):
+        result = (
+            "Cette action en attente peut reprendre des documents de ton historique. "
+            "Ton accord « documents » manque pour le fournisseur actuel. "
+            "Rien n’a été envoyé. Reformule ta demande sans ces documents ou autorise leur envoi."
+        )
+        await terminer(trace_id, tool_name, '{"success":false}')
+        return {"status": "refused", "tool_name": tool_name, "result": result}
+
+    # Ces objets persistants n'ont pas encore de provenance par champ : leur
+    # relecture (list_tasks, read_contact, recherche mémoire…) part sous le
+    # seul accord « llm ». Toute origine autre que « sans_document » ferme
+    # donc l'écriture, même avec l'accord documents : après un retrait, la
+    # source resterait filtrée mais sa copie partirait (relecture 7).
+    # Une origine seulement inconnue (conversation antérieure à la mise à
+    # jour, ancienne fiche) reçoit un message distinct, avec ses sorties.
+    if (tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}
+            and arguments.get('_provenance_documents') != 'sans_document'):
+        if arguments.get('_provenance_documents') == 'inconnue':
+            # Tour 10 (relecture 9) : la vraie cause, sans parler d'un document
+            # qui n'existe pas, et ce que l'attestation change ou non.
+            result = ("Cette conversation a repris un ancien échange ou une ancienne fiche mémoire dont l’origine "
+                      "n’est pas vérifiable : enregistrée, cette écriture pourrait repartir plus tard vers ton "
+                      "fournisseur, même après le retrait de ton accord. Rien n’a été enregistré. Saisis-la directement "
+                      "dans son formulaire, ou redemande-la dans une nouvelle conversation, après avoir confirmé dans "
+                      "Mémoire les anciennes fiches qui viennent de toi ou en décochant « Utiliser les fiches mémoire ». "
+                      "Confirmer une fiche ne rouvre pas cette conversation-ci.")
+        else:
+            result = ("Cette écriture reprend un document de cette conversation, et sa destination ne conserve pas "
+                      "encore cette origine. Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")
+        await terminer(trace_id, tool_name, '{"success":false}')
+        return {"status": "refused", "tool_name": tool_name, "result": result}
 
     # Finding 1 (30/08) : la confirmation est une autre requête. Sans
     # reposer le compte collé à la carte, send_email retomberait sur
@@ -4818,6 +5080,12 @@ async def export_conversation(
         if profile_warning:
             logger.warning("Export DOCX : %s", profile_warning)
         render_markdown_docx(markdown, output_path, profile=profile)
+        from app.services.marquage_ia import marquer_document, provenance_ia
+        generations = [(m.provider, m.model) for m in messages if m.role == 'assistant' and m.provider and m.model]
+        if generations:
+            champs = provenance_ia(*generations[-1])
+            champs['fournisseur_modele'] = ','.join(sorted({f'{provider}/{model}' for provider, model in generations}))
+            marquer_document(output_path, champs)
     else:
         output_path.write_text(markdown, encoding="utf-8")
 

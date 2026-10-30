@@ -913,7 +913,8 @@ async def _generate_document(
         # produit dans un flux mort ne doit ni rester ni faire une carte).
         geste = asyncio.create_task(registry.execute(
             skill_id,
-            SkillExecuteRequest(prompt=title or content[:120], title=title),
+            SkillExecuteRequest(prompt=title or content[:120], title=title,
+                                context={"_ai_provenance": args.get('_ai_provenance')}),
             content,
         ))
         _generations_en_cours.add(geste)
@@ -1498,6 +1499,7 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
             body=body,
             cc=cc,
             is_html=is_html,
+            ai_provenance=args.get('_ai_provenance'),
         )
         # BUG-085 : timeout de 30s pour l'envoi (evite les spinners infinis)
         recu = await asyncio.wait_for(provider.send_message(request), timeout=30.0)

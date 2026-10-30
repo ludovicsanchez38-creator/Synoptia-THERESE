@@ -1,3 +1,4 @@
+import { CONSENT_SAVE_ERROR } from '../../lib/consentSync';
 /**
  * THÉRÈSE v2 - Privacy Tab (US-017)
  *
@@ -55,7 +56,9 @@ const RETENTION_TABLE = [
 // Revue 0.40 : consentements cloud par finalité et fournisseur (RGPD art. 7)
 const PURPOSE_LABELS: Record<CloudPurpose, string> = {
   llm: 'Messages et contexte (assistant IA)',
-  documents: 'Contenu des documents joints au chat',
+  // Relecture 6 : cette finalité couvre aussi ce qui reprend un document
+  // (anciennes fiches, échanges RFC issus d'un fichier), pas l'atelier.
+  documents: 'Contenu de tes documents (pièces jointes, fichiers relus) et ce qui en est repris',
   voice: 'Audio de la dictée',
   images: 'Descriptions des visuels (Studio Images)',
 };
@@ -69,6 +72,11 @@ export function PrivacyTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const signaler = () => setError('Ton accord n’a pas pu être enregistré. Vérifie que le moteur local est disponible, puis réessaie.');
+    window.addEventListener(CONSENT_SAVE_ERROR, signaler);
+    return () => window.removeEventListener(CONSENT_SAVE_ERROR, signaler);
+  }, []);
   const [backups, setBackups] = useState<BackupMetadata[]>([]);
   const [backupLoading, setBackupLoading] = useState(true);
   const [dataOperation, setDataOperation] = useState<string | null>(null);
@@ -247,7 +255,7 @@ export function PrivacyTab() {
           Confidentialité et données personnelles
         </h3>
         <p className="mt-1 text-sm text-text-muted">
-          THÉRÈSE respecte le RGPD. Voici comment tes données sont gérées.
+          Tu peux consulter, exporter et effacer tes données depuis THÉRÈSE. Elles sont stockées sur ton ordinateur ; les services que tu actives peuvent en recevoir.
         </p>
       </div>
 

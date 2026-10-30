@@ -42,6 +42,7 @@ from app.services.encryption import decrypt_value, encrypt_value, is_value_encry
 from app.services.error_handler import message_pour_ecran
 from app.services.gmail_service import GmailService, format_message_for_storage
 from app.services.http_client import get_http_client
+from app.services.marquage_ia import parametres_mime
 from app.services.oauth import (
     GOOGLE_ALL_SCOPES,
     GOOGLE_AUTH_URL,
@@ -167,6 +168,7 @@ def _email_message_response(message: EmailMessage) -> dict[str, Any]:
         "is_draft": message.is_draft,
         "has_attachments": message.has_attachments,
         "snippet": message.snippet,
+        "ai_generation_id": message.ai_generation_id,
         "body_plain": message.body_plain,
         "body_html": message.body_html,
         "priority": message.priority,
@@ -1302,6 +1304,9 @@ async def send_email(
     if not account:
         raise HTTPException(status_code=404, detail="Email account not found")
 
+    from app.services.provenance_store import provenance_mail
+    marque_ia = await provenance_mail(session, request.ai_generation_id, account_id)
+
     # Injection de la signature HTML si le compte en a une
     body = request.body
     is_html = request.html
@@ -1335,6 +1340,7 @@ async def send_email(
             cc=request.cc or [],
             bcc=request.bcc or [],
             is_html=is_html,
+            ai_provenance=marque_ia,
         )
         # B-819 : comme les branches IMAP, une panne SMTP se dit en 502 nommé,
         # le détail technique reste au journal.
@@ -1358,6 +1364,7 @@ async def send_email(
             cc=request.cc,
             bcc=request.bcc,
             html=is_html,
+            **parametres_mime(marque_ia),
         )
         return result
 
@@ -1398,6 +1405,11 @@ async def create_draft(
             raise HTTPException(422, 'Choisis une seule référence de brouillon.')
         if account.provider == 'imap':
             draft_id = source_message_id
+        if not request.ai_generation_id:
+            request.ai_generation_id = source.ai_generation_id
+
+    from app.services.provenance_store import provenance_mail
+    marque_ia = await provenance_mail(session, request.ai_generation_id, account_id)
 
     if account.provider == "imap":
         provider = _provider_imap(account)
@@ -1410,6 +1422,7 @@ async def create_draft(
             cc=request.cc or [],
             bcc=request.bcc or [],
             is_html=request.html,
+            ai_provenance=marque_ia,
         )
         try:
             if draft_id:
@@ -1441,6 +1454,7 @@ async def create_draft(
             cc=request.cc,
             bcc=request.bcc,
             html=request.html,
+            **parametres_mime(marque_ia),
         )
         message = remplace.get('message') or {}
         await actualiser_cache(session, account, request, message.get('id'), source_message_id, message.get('threadId'), generation_attendue=generation)
@@ -1452,6 +1466,7 @@ async def create_draft(
         cc=request.cc,
         bcc=request.bcc,
         html=request.html,
+        **parametres_mime(marque_ia),
     )
     message = cree.get('message') or {}
     await actualiser_cache(session, account, request, message.get('id'), thread_id=message.get('threadId'), generation_attendue=generation)
@@ -1958,9 +1973,16 @@ async def generate_email_response(
         # THÉRÈSE. La distinction compte pour qui lit les journaux.
         raise HTTPException(status_code=502, detail=str(e)) from e
 
+    from app.services.provenance_store import ajouter_generation
+    champs = getattr(response_text, 'provenance', None)
+    generation_id = ajouter_generation(session, 'email', account_id, champs) if isinstance(champs, dict) else None
+    if generation_id:
+        await session.commit()
+
     return {
         'message_id': message_id,
-        'draft': response_text,
+        'draft': str(response_text),
+        'ai_generation_id': generation_id,
         'tone': request.tone,
         'length': request.length,
     }

@@ -41,4 +41,4 @@ async def mail_local(message_id: str) -> dict[str, Any]:
                 'to_emails': json.loads(mail.to_emails or '[]'),
                 'cc_emails': json.loads(mail.cc_emails or '[]'),
                 'bcc_emails': json.loads(mail.bcc_emails or '[]'),
-                'body_plain': mail.body_plain, 'body_html': mail.body_html}
+                'ai_generation_id': mail.ai_generation_id, 'body_plain': mail.body_plain, 'body_html': mail.body_html}

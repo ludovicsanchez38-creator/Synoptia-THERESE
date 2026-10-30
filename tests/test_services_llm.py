@@ -122,8 +122,8 @@ class TestLLMProviderSupport:
 class TestLLMServiceConfiguration:
     """Tests for LLM service configuration."""
 
-    def test_default_config(self):
-        """Test LLM service has default configuration."""
+    def test_default_config(self, client):
+        """Le défaut exige une base lisible, ouverte par le client de test."""
         from app.services.llm import LLMService
 
         service = LLMService()

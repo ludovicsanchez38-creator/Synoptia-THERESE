@@ -43,10 +43,12 @@ async def test_message_vide_avec_image_valide_accepte(client, db_session, tmp_pa
     import base64
     from unittest.mock import AsyncMock, MagicMock
 
+    from app.services.consentements import enregistrer_accord
     from app.services.variables_service import create_variable
 
     from tests.test_p159_contexte_transmis import _FauxLLM
 
+    enregistrer_accord('documents', 'anthropic', True, '3', [])
     await create_variable(db_session, "participants", "list", [])
     image = tmp_path / "photo.png"
     image.write_bytes(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4VQAAAAASUVORK5CYII="))

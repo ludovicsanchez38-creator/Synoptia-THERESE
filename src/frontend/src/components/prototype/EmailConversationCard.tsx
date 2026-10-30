@@ -195,7 +195,7 @@ export function EmailMessageCanvas({
    */
   nouvelleRedaction?: boolean;
   onRetry: () => void;
-  onGenerateDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string>;
+  onGenerateDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string | { draft: string; ai_generation_id: string }>;
   onSaveDraft: (request: SendEmailRequest, draftId?: string | null) => Promise<{ id: string }>;
   onOpenClassic: () => void;
 }) {
@@ -205,6 +205,8 @@ export function EmailMessageCanvas({
   const [recipient, setRecipient] = useState('');
   const [subject, setSubject] = useState('');
   const [draft, setDraft] = useState('');
+  const [generationId, setGenerationId] = useState<string | undefined>();
+  const [previousGenerationId, setPreviousGenerationId] = useState<string | undefined>();
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
@@ -242,6 +244,7 @@ export function EmailMessageCanvas({
       setRecipient('');
       setSubject('');
       setDraft('');
+      setGenerationId(undefined);
       setError(null);
       setConfirmSave(false);
       setConfirmReplace(false);
@@ -255,6 +258,7 @@ export function EmailMessageCanvas({
     setRecipient(resource.data.from_email || '');
     setSubject(`Re: ${resource.data.subject || ''}`);
     setDraft('');
+    setGenerationId(undefined);
     setError(null);
     setConfirmSave(false);
     setConfirmReplace(false);
@@ -280,8 +284,9 @@ export function EmailMessageCanvas({
     markDraftDirty();
     try {
       const generated = await onGenerateDraft(resource.data.id, tone, length);
-      if (replacing) setPreviousDraft(draft);
-      setDraft(generated);
+      if (replacing) { setPreviousDraft(draft); setPreviousGenerationId(generationId); }
+      setDraft(typeof generated === 'string' ? generated : generated.draft);
+      setGenerationId(typeof generated === 'string' ? undefined : generated.ai_generation_id);
       setConfirmReplace(false);
     } catch (reason) {
       // BUG-171. Ce bloc remplaçait TOUTE erreur par un message unique, qui ne
@@ -343,6 +348,7 @@ export function EmailMessageCanvas({
         to: [recipient.trim()],
         subject: subject.trim(),
         body: draft,
+        ...(generationId ? { ai_generation_id: generationId } : {}),
         html: false,
       };
       // Sans brouillon deja pose, c'est une creation - et on n'invente pas un
@@ -505,7 +511,7 @@ export function EmailMessageCanvas({
               </div>
             )}
             {previousDraft !== null && (
-              <button type="button" onClick={() => { setDraft(previousDraft); setPreviousDraft(null); markDraftDirty(); }} className="mt-2 rounded-sm border border-border px-3 py-2 text-sm font-semibold text-text">Annuler le remplacement IA</button>
+              <button type="button" onClick={() => { setDraft(previousDraft); setGenerationId(previousGenerationId); setPreviousDraft(null); markDraftDirty(); }} className="mt-2 rounded-sm border border-border px-3 py-2 text-sm font-semibold text-text">Annuler le remplacement IA</button>
             )}
             {brouillonAJour && (
               <div role="status" className="mt-3 flex items-start gap-2 rounded-md border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="email-draft-saved">

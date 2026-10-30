@@ -1,3 +1,4 @@
+import { setAutomaticUpdateChecks, useAutomaticUpdateChecks } from '../../lib/updatePreference';
 // Onglet "À propos" - Version actuelle + Vérification des mises à jour
 // Vérifie les releases GitHub et propose le téléchargement si nouvelle version disponible
 
@@ -55,6 +56,7 @@ function getPlatformAsset(assets: ReleaseInfo['assets']): ReleaseInfo['assets'][
 }
 
 export function AboutTab() {
+  const automaticChecks = useAutomaticUpdateChecks();
   const version = useBackendStore((s) => s.version);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
   const [latestRelease, setLatestRelease] = useState<ReleaseInfo | null>(null);
@@ -131,6 +133,12 @@ export function AboutTab() {
 
   return (
     <div className="space-y-6">
+      <label className="flex items-center gap-3 text-sm text-text">
+        <input type="checkbox" checked={automaticChecks}
+          onChange={(event) => setAutomaticUpdateChecks(event.target.checked)} />
+        Vérifier les mises à jour automatiquement
+      </label>
+
       {/* Version actuelle */}
       <Carte as="section" className="p-5">
         <div className="flex items-center gap-3 mb-4">

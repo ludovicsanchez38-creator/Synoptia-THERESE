@@ -15,6 +15,8 @@ import { ActivityMemoryBranch } from './ActivityMemoryBranch';
 const TYPES = { preference: 'Préférences', fait: 'Faits clients et dossiers', decision: 'Décisions et raisons', correction: 'Corrections' };
 const BRANCHES = ['Profil et consignes', 'Fiches et index', 'Journal des actions confirmées et envois', 'Brouillons en cours', 'Notes de rendez-vous'];
 const PAGE = 25;
+// Tour 9 : l'origine d'une fiche décide de ce qui peut partir sans accord « documents ».
+const ORIGINES = { inconnue: 'Origine à confirmer', documents: 'Issue d’un document' } as const;
 const classe = 'rounded-sm border border-border bg-surface px-3 py-2 text-sm text-text';
 
 function Confirmation({ titre, onConfirm, onCancel, busy }: { titre: string; onConfirm: () => void; onCancel: () => void; busy: boolean }) {
@@ -39,6 +41,9 @@ export function AgentMemoryPanel() {
   const [kind, setKind] = useState('');
   const [state, setState] = useState('active');
   const [scope, setScope] = useState('');
+  const [origine, setOrigine] = useState('');
+  // Tour 10 : nombre d'anciennes fiches à confirmer (jamais leur contenu).
+  const [aConfirmer, setAConfirmer] = useState(0);
   const [scopes, setScopes] = useState<Array<{ id: string; name: string }>>([]);
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -56,14 +61,21 @@ export function AgentMemoryPanel() {
   useEffect(() => { getMemoryScopes().then(setScopes).catch(() => {}); }, []);
   useEffect(() => {
     let actif = true;
+    getMemoryCards({ provenance: 'inconnue', state: 'active', limit: 1 })
+      .then(page => { if (actif) setAConfirmer(page.total); })
+      .catch(() => { if (actif) setAConfirmer(0); });
+    return () => { actif = false; };
+  }, [revision]);
+  useEffect(() => {
+    let actif = true;
     setLoading(true); setError('');
-    getMemoryCards({ query, state, offset, limit: PAGE, ...(kind ? { kind } : {}),
+    getMemoryCards({ query, state, offset, limit: PAGE, ...(kind ? { kind } : {}), ...(origine ? { provenance: origine } : {}),
       ...(scope === 'global' ? { scope } : scope ? { scope_id: scope } : {}) })
       .then(page => { if (actif) { setItems(page.items); setTotal(page.total); } })
       .catch(() => { if (actif) { setItems([]); setError('Impossible de lire tes fiches. Réessaie.'); } })
       .finally(() => { if (actif) setLoading(false); });
     return () => { actif = false; };
-  }, [query, kind, state, scope, offset, revision]);
+  }, [query, kind, state, scope, origine, offset, revision]);
   useEffect(() => {
     let actif = true;
     setEditing(false);
@@ -104,18 +116,23 @@ export function AgentMemoryPanel() {
     </nav>
     <div className="min-w-0 flex-1 space-y-4">
       {branch === 0 ? <MemoryProfileBranch /> : branch === 2 ? <ActivityMemoryBranch /> : branch === 3 ? <MemoryDraftsBranch /> : branch === 4 ? <MemoryMeetingNotesBranch /> : <>
-      <p className="text-sm text-text-muted">Thérèse écrit tes fiches ; tu peux les corriger ou les effacer. Elles restent dans ta base chiffrée. Dans le chat, tes fiches mémoire utiles sont envoyées avec chaque échange où la mémoire est activée, avec ton accord pour un service en ligne.</p>
+      <p className="text-sm text-text-muted">Thérèse écrit tes fiches ; tu peux les corriger ou les effacer. Elles restent dans ta base chiffrée. Dans le chat, tes fiches mémoire utiles sont envoyées avec chaque échange où la mémoire est activée, avec ton accord pour un service en ligne. Une fiche « Origine à confirmer » (antérieure à la mise à jour) ou « Issue d’un document » ne sert que si elle concerne ta demande, et seulement avec ton accord « documents ».</p>
+      {aConfirmer > 0 && <div role="status" aria-label="Anciennes fiches à confirmer" className="flex flex-wrap items-center gap-2 rounded-sm border border-border p-3 text-sm">
+        <span>{aConfirmer === 1 ? '1 fiche ancienne attend ta confirmation' : `${aConfirmer} fiches anciennes attendent ta confirmation`} : antérieures à la mise à jour, elles ne s’appliquent que lorsqu’elles concernent ta demande.</span>
+        <button type="button" className={classe} onClick={() => { setOrigine('inconnue'); setState('active'); setOffset(0); }}>Les afficher</button>
+      </div>}
       <div className="flex flex-wrap gap-2">
         <label>Rechercher<input className={classe} value={demo.enabled ? '' : query} disabled={demo.enabled} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>
         <label>Type<select className={classe} value={kind} onChange={e => { setKind(e.target.value); setOffset(0); }}><option value="">Tous les types</option>{Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
         <label>État<select className={classe} value={state} onChange={e => { setState(e.target.value); setOffset(0); }}><option value="active">Actives</option><option value="archivee">Archivées</option></select></label>
+        <label>Origine<select className={classe} value={origine} onChange={e => { setOrigine(e.target.value); setOffset(0); }}><option value="">Toutes les origines</option><option value="inconnue">{ORIGINES.inconnue}</option><option value="documents">{ORIGINES.documents}</option></select></label>
         <label>Portée<select className={classe} value={scope} onChange={e => { setScope(e.target.value); setOffset(0); }}><option value="">Toutes les portées</option><option value="global">Général</option>{scopes.map(p => <option key={p.id} value={p.id}>{afficher(p.name)}</option>)}</select></label>
       </div>
       {error && <div role="alert">{error} <button className={classe} onClick={() => setRevision(r => r + 1)}>Réessayer</button></div>}
       {loading ? <p role="status">Lecture de tes fiches…</p> : items.length === 0 && !error ? <p>{query || kind || scope || state !== 'active' ? 'Aucune fiche ne correspond à ta recherche.' : 'Rien de noté pour le moment. Thérèse retiendra tes façons de travailler au fil de tes échanges.'}</p> : <ul className="space-y-2">
         {items.map(f => <li key={f.id} className="rounded-md border border-border p-3">
           <button type="button" className="font-semibold text-accent-cyan-ink underline" onClick={() => useAgentMemoryStore.setState({ selectedId: f.id })}>{demo.enabled ? 'Fiche de démonstration' : afficher(f.title)}</button>
-          <p className="text-sm text-text-muted">{TYPES[f.kind]} · {afficher(f.scope_name)} · {new Date(f.updated_at).toLocaleDateString('fr-FR')}</p>
+          <p className="text-sm text-text-muted">{TYPES[f.kind]} · {afficher(f.scope_name)} · {new Date(f.updated_at).toLocaleDateString('fr-FR')}{f.provenance_documents && f.provenance_documents !== 'sans_document' && ` · ${ORIGINES[f.provenance_documents]}`}</p>
         </li>)}
       </ul>}
       {total > PAGE && <div className="flex gap-2"><button type="button" className={classe} disabled={offset === 0} onClick={() => setOffset(p => Math.max(0, p - PAGE))}>Précédentes</button><span>{offset + 1}–{Math.min(offset + PAGE, total)} sur {total}</span><button type="button" className={classe} disabled={offset + PAGE >= total} onClick={() => setOffset(p => p + PAGE)}>Suivantes</button></div>}
@@ -127,6 +144,11 @@ export function AgentMemoryPanel() {
         <p className="text-sm">Mise à jour le {new Date(card.updated_at).toLocaleString('fr-FR')}</p>
         {card.source_deleted ? <p>Source supprimée</p> : card.conversation_id && card.message_id ? <button type="button" className={classe} onClick={() => ouvrirSource(card)}>Voir l’échange source</button> : <p>Sans source de conversation</p>}
         {card.protected && <p>Protégée par ta correction. Thérèse ne peut pas la réécrire.</p>}
+        {card.provenance_documents === 'inconnue' && <div className="space-y-2 rounded-sm border border-border p-3">
+          <p><strong>{ORIGINES.inconnue}.</strong> Cette fiche date d’avant la mise à jour : THÉRÈSE ne sait pas si elle vient de toi ou d’un document. Elle ne part qu’avec ton accord « documents », et seulement quand elle concerne ta demande.</p>
+          <button type="button" className={classe} disabled={busy || demo.enabled} onClick={() => void muter(() => patchMemoryCard(card.id, { version: card.version, atteste_par_utilisateur: true }))}>Cette fiche vient de moi</button>
+        </div>}
+        {card.provenance_documents === 'documents' && <p><strong>{ORIGINES.documents}.</strong> Elle a été écrite pendant un échange avec un document : elle ne part qu’avec ton accord « documents ». Réécris son titre et son contenu pour qu’elle ne dépende plus de lui.</p>}
         <div className="flex flex-wrap gap-2">
           <button type="button" className={classe} disabled={busy || demo.enabled} onClick={() => { if (gesteBloqueEnDemo()) return; setForm({ title: card.title, content: card.content, reason: card.reason }); setEditing(true); }}>Modifier</button>
           <button type="button" className={classe} disabled={busy || demo.enabled} onClick={() => void muter(() => patchMemoryCard(card.id, { version: card.version, state: card.state === 'active' ? 'archivee' : 'active' }))}>{card.state === 'active' ? 'Archiver' : 'Réactiver'}</button>

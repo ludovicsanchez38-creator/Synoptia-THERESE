@@ -303,6 +303,34 @@ class Variable(SQLModel, table=True):
         return []
 
 
+class AIGeneration(SQLModel, table=True):
+    """Provenance technique locale, sans prompt ni contenu généré."""
+    __tablename__ = 'ai_generations'
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    kind: str
+    owner_id: str
+    provider: str
+    model: str
+    created_at: str
+    provenance: str
+
+
+class CloudConsent(SQLModel, table=True):
+    """Décision datée ; un retrait ajoute une ligne et conserve la preuve."""
+
+    __tablename__ = "cloud_consents"
+    event_id: str | None = Field(default=None, unique=True)
+    id: int | None = Field(default=None, primary_key=True)
+    purpose: str
+    provider: str
+    granted: bool
+    text_version: str
+    occurred_at: str
+    recorded_at: str
+    data_categories: str = "[]"
+    source: str = "interface"
+
+
 class Preference(SQLModel, table=True):
     """User preferences and settings."""
 
@@ -436,6 +464,8 @@ class EmailMessage(SQLModel, table=True):
     # Attachments
     has_attachments: bool = False
     attachment_count: int = 0
+
+    ai_generation_id: str | None = None
 
     # Body content
     body_plain: str | None = None
@@ -1046,6 +1076,7 @@ class MemoryCard(SQLModel, table=True):
     content: str
     reason: str = ''
     search_text: str = ''
+    provenance_documents: str = 'inconnue'
     scope: str = Field(default='global', index=True)
     scope_id: str | None = Field(default=None, foreign_key='projects.id', index=True)
     contact_id: str | None = Field(default=None, foreign_key='contacts.id', index=True)

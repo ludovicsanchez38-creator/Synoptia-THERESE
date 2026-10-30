@@ -27,6 +27,11 @@ def _config(fournisseur: str, modele: str = "modele", base_url: str | None = Non
 
 
 class TestLaRegle:
+    @pytest.fixture(autouse=True)
+    def preuve_locale(self, monkeypatch):
+        # Le moteur fait foi ; les chaînes envoyées par l'interface ne sont plus une preuve.
+        monkeypatch.setattr('app.services.consentements.accord_valide', lambda purpose, provider: False)
+
     def test_un_modele_local_recoit_les_documents(self):
         from app.services.memory_card_context import documents_autorises
 
@@ -37,7 +42,8 @@ class TestLaRegle:
 
         assert documents_autorises(_config("anthropic"), ["llm:anthropic"]) is False
 
-    def test_l_accord_documents_du_bon_fournisseur_les_ouvre(self):
+    def test_l_accord_documents_du_bon_fournisseur_les_ouvre(self, monkeypatch):
+        monkeypatch.setattr("app.services.consentements.accord_valide", lambda purpose, provider: (purpose, provider) == ("documents", "anthropic"))
         from app.services.memory_card_context import documents_autorises
 
         assert documents_autorises(_config("anthropic"), ["llm:anthropic", "documents:anthropic"]) is True
@@ -47,12 +53,13 @@ class TestLaRegle:
 
         assert documents_autorises(_config("openai"), ["documents:anthropic"]) is False
 
-    def test_un_ollama_distant_compte_comme_un_fournisseur_en_ligne(self):
+    def test_un_ollama_distant_compte_comme_un_fournisseur_en_ligne(self, monkeypatch):
         from app.services.memory_card_context import documents_autorises
 
         distant = _config("ollama", "mistral-nemo", "https://ollama.exemple.fr")
         assert documents_autorises(distant, []) is False
-        assert documents_autorises(distant, ["documents:ollama-cloud"]) is True
+        monkeypatch.setattr("app.services.consentements.accord_valide", lambda purpose, provider: (purpose, provider) == ("documents", "ollama-cloud"))
+        assert documents_autorises(distant, []) is True
 
     def test_une_configuration_incomplete_ne_casse_pas_le_message(self):
         """Constat des portes du 27/10 : un faux fournisseur sans base_url faisait échouer le chat."""

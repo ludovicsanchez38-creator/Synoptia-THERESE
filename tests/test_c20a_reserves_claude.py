@@ -58,7 +58,7 @@ async def test_b1241_courrier_lignes_citation_separateur(registre_pdf):
 async def test_b1241_dix_entrees_apres_vert(registre_pdf, contenu, lignes):
     lecteur = await generer(registre_pdf, contenu)
     corps = [ligne.strip() for page in lecteur.pages for ligne in page.extract_text().splitlines()
-             if ligne not in {"Synthèse française", "Généré par THÉRÈSE - Synoptïa"}
+             if ligne not in {"Synthèse française", "Rédigé avec l’IA de THÉRÈSE"}
              and not ligne.startswith("Page ")]
     assert corps == lignes
 

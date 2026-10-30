@@ -45,7 +45,7 @@ class FauxLLM:
         )
 
     def prepare_context(self, messages, system_prompt=None):
-        return messages, system_prompt
+        return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
     async def stream_response(self, context, usage_sink=None, raise_on_error=False):
         if self.avant_flux is not None:
@@ -58,10 +58,13 @@ async def _contexte_web_vide(*_a, **_k) -> str:
 
 
 @pytest.fixture
-def board_rapide(monkeypatch):
+def board_rapide(monkeypatch, client):
     """Un board cloud à un conseiller, sans web ni vrai LLM."""
     from app.services import board as board_module
     from app.services.board import BoardService
+    from app.services.consentements import enregistrer_accord
+
+    enregistrer_accord('llm', 'board', True, '3', [])
 
     llm = FauxLLM(["Avis mesuré.", SYNTHESE])
     monkeypatch.setattr(board_module, "get_llm_service", lambda: llm)

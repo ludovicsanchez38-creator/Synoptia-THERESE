@@ -1,3 +1,5 @@
+import { queueConsentDecision } from './consentSync';
+
 /**
  * THÉRÈSE v2 - Consentement transfert cloud (US-003 / RGPD-4)
  *
@@ -30,6 +32,7 @@ export interface CloudGrant {
   provider: string;
   timestamp: string;
   dataCategories?: string[];
+  textVersion?: string;
 }
 
 interface CloudConsentStoreV2 {
@@ -73,9 +76,10 @@ export function grantCloudConsent(
   timestamp: string = new Date().toISOString(),
 ): CloudGrant {
   const store = loadStore();
-  const grant: CloudGrant = { purpose, provider, timestamp, dataCategories };
+  const grant: CloudGrant = { purpose, provider, timestamp, dataCategories, textVersion: '3' };
   store.grants[grantKey(purpose, provider)] = grant;
   saveStore(store);
+  queueConsentDecision(purpose, provider, true, dataCategories, timestamp);
   return grant;
 }
 
@@ -99,6 +103,7 @@ export function revokeCloudConsent(purpose: CloudPurpose, provider: string): voi
   const store = loadStore();
   delete store.grants[grantKey(purpose, provider)];
   saveStore(store);
+  queueConsentDecision(purpose, provider, false);
   window.dispatchEvent(
     new CustomEvent(CLOUD_CONSENT_REVOKED_EVENT, { detail: { purpose, provider } }),
   );
@@ -115,4 +120,13 @@ export function memoryCardGrantsForRequest(): string[] {
   return listCloudConsents().filter(g => (g.purpose === 'llm' || g.purpose === 'documents')
     && g.dataCategories?.includes(MEMORY_CARDS_CATEGORY))
     .map(g => `${g.purpose}:${g.provider.trim().toLowerCase()}`);
+}
+
+/** Catégories consultées par les outils pour préparer une réponse. */
+export const TOOL_READ_DATA_CATEGORY = 'ce que l’IA lit pour te répondre : mails, fiches contacts, factures, agenda, tâches et fichiers (avec ton accord « documents » pour leur contenu)';
+
+/** Liste commune aux demandes d’accord du chat et de l’Atelier. */
+export function responseDataCategories(includeMemory = false): string[] {
+  return ['message saisi', 'contexte de conversation',
+    ...(includeMemory ? ['mémoire locale utile'] : []), TOOL_READ_DATA_CATEGORY];
 }

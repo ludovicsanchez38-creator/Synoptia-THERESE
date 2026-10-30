@@ -34,7 +34,10 @@ class ServeurAvecSignature(_FakeClient):
 @pytest.mark.parametrize('initialement_vide', [True, False])
 async def test_fiche_ecrite_pendant_outil_attend_le_prochain_tour(monkeypatch, initialement_vide):
     from app.services import memory_card_context, memory_card_tools
-    ancienne = {'id': 'f1', 'kind': 'preference', 'content': 'Avant', 'message_id': 'm0'}
+    # Le test de signature part d'un accord acquis, avec la catégorie mémoire.
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+        lambda purpose, provider, categories=(): (purpose, provider) == ('llm', 'anthropic'))
+    ancienne = {'provenance_documents': 'sans_document', 'id': 'f1', 'kind': 'preference', 'content': 'Avant', 'message_id': 'm0'}
     fiches = [] if initialement_vide else [ancienne]
     lecture = AsyncMock(side_effect=lambda *a: list(fiches))
     monkeypatch.setattr(memory_card_context, 'lire_pour_chat', lecture)

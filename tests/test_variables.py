@@ -237,6 +237,7 @@ def _creer_tables_sync_depuis_modeles(db_path):
             "sync_plans", "sync_operations",
             "task_schedules", "task_dependencies",
             "planning_resources", "task_allocations", "planning_snapshots", "memory_cards", "memory_card_uses", "activities",
+            "cloud_consents", "ai_generations",
         )
     ])
     engine.dispose()
@@ -316,6 +317,20 @@ class TestMigration:
         version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
         conn.close()
         assert version == ALEMBIC_HEAD_REVISION
+
+    def test_pas_de_restamp_sans_colonne_de_provenance_des_mails(self, tmp_path):
+        import sqlite3
+        from contextlib import closing
+
+        from app.models.database import ensure_alembic_stamp
+
+        db = self._base_legacy(tmp_path, with_variables=True)
+        with closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("CREATE TABLE email_messages (id TEXT PRIMARY KEY)")
+        ensure_alembic_stamp(db)
+        with closing(sqlite3.connect(db)) as conn, conn:
+            version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+        assert version == "ancienne_tete", "La migration de provenance doit encore s’exécuter"
 
 
 class TestParseVariableActions:

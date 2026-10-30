@@ -96,5 +96,21 @@ describe('ChatInput - une commande de fichier est un envoi de document (B-1521)'
     expect(carte).toHaveTextContent('contenu intégral des documents joints');
     expect(apiMocks.streamMessage).not.toHaveBeenCalled();
   });
+  it('un ancien fichier ne redemande pas la finalité documents', async () => {
+    useChatStore.setState({
+      conversations: [{ ...conversation('orion', 'Orion'), messages: [{
+        id: 'ancien', role: 'user', content: 'Lis le fichier', hasAttachments: true,
+        timestamp: new Date(),
+      }] }],
+    } as never);
+    render(<ChatInput />);
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.change(champ(), { target: { value: 'Bonjour' } });
+    await act(async () => { fireEvent.click(screen.getByTestId('chat-send-btn')); });
+    const carte = await screen.findByTestId('chat-cloud-consent');
+    expect(carte).not.toHaveTextContent('Autoriser le premier envoi de documents');
+    expect(carte).not.toHaveTextContent('contenu intégral des documents joints');
+  });
+
 });
 

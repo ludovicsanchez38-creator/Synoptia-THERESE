@@ -13,6 +13,8 @@ from app.services.providers.base import LLMConfig, LLMProvider, StreamEvent
 
 @pytest.mark.asyncio
 async def test_apres_bascule_l_attribution_est_celle_du_repli(monkeypatch):
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, provider: (purpose, provider) == ('llm', 'openai'))
     from app.services.llm import LLMService
 
     choisi = LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-sonnet-4-6")

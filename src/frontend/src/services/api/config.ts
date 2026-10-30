@@ -250,6 +250,9 @@ export type LLMProvider = 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'grok'
   | 'minimax';
 
 export interface LLMConfig {
+  /** Destination effective, classée par la garde du moteur. null = local. */
+  consent_provider?: string | null;
+  consent_label?: string | null;
   provider: LLMProvider;
   model: string;
   available_models: string[];

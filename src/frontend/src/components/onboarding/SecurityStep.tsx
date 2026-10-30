@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { grantCloudConsent } from '../../lib/consent';
+import { grantCloudConsent, TOOL_READ_DATA_CATEGORY } from '../../lib/consent';
 import type { LLMProvider } from '../../services/api';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { TEXTES_ONBOARDING } from './textes';
@@ -206,7 +206,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             Je consens au transfert de mes données vers {providerLabel}
           </p>
           <p className="text-text-muted mt-1">
-            J'accepte que mes messages et le contexte utile soient envoyés à {providerLabel}{' '}
+            Données transmises : mes messages, le contexte utile et {TOOL_READ_DATA_CATEGORY}. J'accepte que mes messages et le contexte utile soient envoyés à {providerLabel}{' '}
             pour traitement. Je comprends les risques et m'engage à ne pas partager de données sensibles
             (mots de passe, données clients, informations confidentielles).
           </p>
@@ -238,7 +238,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
               // demande son propre accord sous 'documents' à la première pièce
               // jointe ; l'annoncer ici serait enregistrer un accord que la clé
               // écrite ne porte pas.
-              grantCloudConsent('llm', provider, ['messages', 'contexte utile']);
+              grantCloudConsent('llm', provider, ['messages', 'contexte utile', TOOL_READ_DATA_CATEGORY]);
             }
             onNext();
           }}

@@ -8,6 +8,12 @@ localisés passent - jamais str(e) brut. Le technique va aux logs.
 import pytest
 
 
+def _autoriser_transport(monkeypatch, purpose, provider):
+    """Exercer l'erreur du transport après un accord ciblé, pas avant sa garde."""
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda finalite, destination: (finalite, destination) == (purpose, provider))
+
+
 class TestLeMessagePourEcran:
     def test_therese_error_passe_son_message_utilisateur(self):
         from app.services.error_handler import (
@@ -83,6 +89,8 @@ class TestLaRouteImages:
     def test_cle_manquante_reste_un_message_intentionnel(self, client, monkeypatch):
         """Les messages écrits POUR l'utilisateur (clé API manquante)
         traversent la frontière tels quels - via TheresError."""
+        from app.services.consentements import enregistrer_accord
+        enregistrer_accord('images', 'gpt-image-2', True, '3', [])
         for var in ("OPENAI_IMAGE_API_KEY", "OPENAI_API_KEY"):
             monkeypatch.delenv(var, raising=False)
         reponse = client.post(
@@ -303,6 +311,7 @@ class TestLeBoardNAvalePlusLesErreursDeFlux:
 
     @pytest.mark.asyncio
     async def test_un_avis_en_erreur_n_est_jamais_valide_vide(self, monkeypatch):
+        _autoriser_transport(monkeypatch, 'llm', 'board')
         import contextlib
         from types import SimpleNamespace
 
@@ -315,7 +324,7 @@ class TestLeBoardNAvalePlusLesErreursDeFlux:
             config = SimpleNamespace(provider=LLMProvider.OPENAI, model="modele-test")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 # Le contrat : le Board DOIT demander raise_on_error
@@ -446,6 +455,7 @@ class TestPanel048GroupeA:
         fermait le générateur AVANT sa comptabilité post-boucle : le circuit
         du fournisseur ne s'ouvrait jamais depuis le trafic Board - le repli
         explicite (F3 p1) ne s'enclenchait donc jamais."""
+        _autoriser_transport(monkeypatch, 'llm', 'openai')
         from unittest.mock import AsyncMock
 
         from app.services.circuit_breaker import get_circuit_breaker
@@ -484,6 +494,7 @@ class TestPanel048GroupeA:
         """[moyen] Le RuntimeError nu passait au générique via
         message_pour_ecran : les messages actionnables (BUG-040 Ollama,
         « API error: 429 ») étaient perdus en non-stream et à l'Atelier."""
+        _autoriser_transport(monkeypatch, 'llm', 'ollama-cloud')
         from unittest.mock import AsyncMock
 
         from app.services.context import ContextWindow
@@ -839,6 +850,7 @@ class TestRevueSosoPasse2:
         depuis que la frontière est posée à la source - était écrasé par
         « Le conseiller X n'a pas pu terminer son avis » : l'utilisateur
         perdait la cause ET l'action corrective."""
+        _autoriser_transport(monkeypatch, 'llm', 'board')
         import contextlib
         from types import SimpleNamespace
 
@@ -857,7 +869,7 @@ class TestRevueSosoPasse2:
             config = SimpleNamespace(provider=LLMProvider.GEMINI, model="tunedModels/x")
 
             def prepare_context(self, messages, system_prompt=None):
-                return messages, system_prompt
+                return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
             async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 raise ErreurPourEcran(MESSAGE)

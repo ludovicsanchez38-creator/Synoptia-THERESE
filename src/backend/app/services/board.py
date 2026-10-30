@@ -408,11 +408,71 @@ class BoardService:
         Yields chunks pour chaque conseiller puis la synthèse.
         """
         is_sovereign = request.mode == BoardMode.SOVEREIGN
+        if not is_sovereign:
+            from app.services.consentements import exiger_accord
+            exiger_accord('llm', 'board')
         # En mode souverain, aucun service cloud ne doit devenir un filet de
         # secours implicite. Le service par défaut n'est donc chargé qu'en mode
         # cloud. Ollama doit être réellement disponible, sinon on échoue.
         default_llm = None if is_sovereign else get_llm_service()
         advisors = request.advisors or list(AdvisorRole)
+
+        if not is_sovereign:
+            # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
+            if default_llm is None:
+                raise ErreurPourEcran("Aucun service LLM cloud disponible.")
+            advisor_services: dict[AdvisorRole, tuple] = {}
+            for role in advisors:
+                config = ADVISOR_CONFIG[role]
+                preferred_provider = config.get("preferred_provider")
+                advisor_llm = None
+                actual_provider = default_llm.config.provider.value
+                if preferred_provider:
+                    # Aucun autre destinataire ne remplace le conseiller choisi.
+                    from app.services.circuit_breaker import get_circuit_breaker
+
+                    if not get_circuit_breaker().is_available(preferred_provider):
+                        raise ErreurPourEcran(
+                            f"Le fournisseur {preferred_provider} du Board est temporairement indisponible. "
+                            "Réessaie plus tard ou choisis explicitement un autre conseiller."
+                        )
+                    else:
+                        # 0.48 : chaque conseiller cloud reçoit le FRONTIER de
+                        # son fournisseur, l'effort max et le max_tokens
+                        # recommandé - quelles que soient les préférences.
+                        modele_frontier = frontier(preferred_provider)
+                        # Panel 0.48 : à effort MAX, les tokens de
+                        # raisonnement décomptent du plafond de sortie
+                        # (OpenAI max_completion_tokens, Gemini thoughts) -
+                        # le défaut 4096 pouvait rendre un avis vide sans
+                        # erreur. Plancher Board explicite quand le
+                        # catalogue n'a pas de recommandation sourcée.
+                        recommande = (
+                            max_tokens_recommande(modele_frontier)
+                            if modele_frontier else None
+                        )
+                        advisor_llm = get_llm_service_for_provider(
+                            preferred_provider,
+                            model_override=modele_frontier,
+                            effort_override="max",
+                            max_tokens_override=(
+                                recommande
+                                if recommande is not None
+                                else PLANCHER_MAX_TOKENS_CONSEILLER
+                            ),
+                            bascule_circuit=False,
+                        )
+                    if advisor_llm:
+                        actual_provider = preferred_provider
+                        logger.info(f"Advisor {config['name']} using {preferred_provider}")
+                    else:
+                        raise ErreurPourEcran(
+                            f"Le fournisseur {preferred_provider} du Board est indisponible. "
+                            "Vérifie sa clé dans Paramètres, Modèles IA, puis réessaie."
+                        )
+                llm_service = advisor_llm or default_llm
+                advisor_services[role] = (llm_service, actual_provider)
+
 
         # A2 (0.48) : la sonde de dérive du catalogue - au plus une fois par
         # jour, fournisseurs à clé configurée seulement. Une dérive connue
@@ -513,6 +573,7 @@ class BoardService:
 
                 messages = [LLMMessage(role="user", content=context_msg)]
                 context = llm_service.prepare_context(messages, system_prompt=advisor_system)
+                context.accord_board = True
 
                 full_content = ""
                 usage_sink: dict = {}
@@ -572,61 +633,6 @@ class BoardService:
 
         else:
             # --- MODE CLOUD : parallèle multi-providers ---
-            # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
-            if default_llm is None:
-                raise ErreurPourEcran("Aucun service LLM cloud disponible.")
-            advisor_services: dict[AdvisorRole, tuple] = {}
-            for role in advisors:
-                config = ADVISOR_CONFIG[role]
-                preferred_provider = config.get("preferred_provider")
-                advisor_llm = None
-                actual_provider = default_llm.config.provider.value
-                if preferred_provider:
-                    # Revue 0.48 (F3) : circuit ouvert = repli EXPLICITE sur le
-                    # service principal (actual_provider vrai), jamais de
-                    # bascule cachée au sein du flux d'un conseiller.
-                    from app.services.circuit_breaker import get_circuit_breaker
-
-                    if not get_circuit_breaker().is_available(preferred_provider):
-                        logger.warning(
-                            "Board : circuit %s ouvert - repli explicite sur "
-                            "le service principal", preferred_provider,
-                        )
-                        advisor_llm = None
-                    else:
-                        # 0.48 : chaque conseiller cloud reçoit le FRONTIER de
-                        # son fournisseur, l'effort max et le max_tokens
-                        # recommandé - quelles que soient les préférences.
-                        modele_frontier = frontier(preferred_provider)
-                        # Panel 0.48 : à effort MAX, les tokens de
-                        # raisonnement décomptent du plafond de sortie
-                        # (OpenAI max_completion_tokens, Gemini thoughts) -
-                        # le défaut 4096 pouvait rendre un avis vide sans
-                        # erreur. Plancher Board explicite quand le
-                        # catalogue n'a pas de recommandation sourcée.
-                        recommande = (
-                            max_tokens_recommande(modele_frontier)
-                            if modele_frontier else None
-                        )
-                        advisor_llm = get_llm_service_for_provider(
-                            preferred_provider,
-                            model_override=modele_frontier,
-                            effort_override="max",
-                            max_tokens_override=(
-                                recommande
-                                if recommande is not None
-                                else PLANCHER_MAX_TOKENS_CONSEILLER
-                            ),
-                            bascule_circuit=False,
-                        )
-                    if advisor_llm:
-                        actual_provider = preferred_provider
-                        logger.info(f"Advisor {config['name']} using {preferred_provider}")
-                    else:
-                        logger.info(f"Advisor {config['name']} fallback to default")
-                llm_service = advisor_llm or default_llm
-                advisor_services[role] = (llm_service, actual_provider)
-
             chunk_queue: asyncio.Queue[BoardDeliberationChunk | None] = asyncio.Queue()
             opinions_dict: dict[AdvisorRole, AdvisorOpinion] = {}
 
@@ -659,6 +665,7 @@ class BoardService:
 
                 messages = [LLMMessage(role="user", content=context_msg)]
                 context = llm_service.prepare_context(messages, system_prompt=advisor_system)
+                context.accord_board = True
 
                 full_content = ""
                 usage_sink: dict = {}
@@ -946,6 +953,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         ]
 
         context = llm_service.prepare_context(messages)
+        context.accord_board = True
 
         # Generate synthesis
         full_response = ""

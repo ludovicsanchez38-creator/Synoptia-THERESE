@@ -72,11 +72,12 @@ def test_un_modele_local_indisponible_echoue_sans_repli(fournisseurs, modele):
     assert "en ligne" in str(info.value), str(info.value)
 
 
-def test_un_modele_en_ligne_indisponible_garde_le_repli_principal(fournisseurs):
+def test_un_modele_en_ligne_indisponible_refuse_le_repli_principal(fournisseurs):
     _, indisponibles, principal = fournisseurs
     indisponibles.add("anthropic")
-    assert _get_llm_for_model("claude-opus-5") is PRINCIPAL
-    assert principal == [True]
+    with pytest.raises(ErreurPourEcran, match="anthropic"):
+        _get_llm_for_model("claude-opus-5")
+    assert principal == []
 
 
 @pytest.fixture

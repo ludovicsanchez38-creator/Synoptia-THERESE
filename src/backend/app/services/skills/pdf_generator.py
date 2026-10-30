@@ -243,7 +243,7 @@ class PdfSkill(BaseSkill):
         terminer_paragraphe()
 
         def pied_de_page(canvas: Any, doc: Any) -> None:
-            _draw_footer(canvas, doc, theme, ["Généré par THÉRÈSE - Synoptïa"])
+            _draw_footer(canvas, doc, theme, ["Rédigé avec l’IA de THÉRÈSE"])
 
         document.build(elements, onFirstPage=pied_de_page, onLaterPages=pied_de_page)
         return tampon.getvalue()

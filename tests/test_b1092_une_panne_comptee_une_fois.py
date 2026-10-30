@@ -27,6 +27,9 @@ class _Fournisseur:
 
 
 def _service(monkeypatch, fournisseur) -> LLMService:
+    # Test du transport avec un accord déjà acquis ; la garde a ses tests de base locale.
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, provider: (purpose, provider) == ('llm', 'anthropic'))
     service = LLMService(LLMConfig(LLMProvider.ANTHROPIC, "claude-test", api_key="k", max_tokens=1024))
 
     async def _pret():

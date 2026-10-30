@@ -47,6 +47,7 @@ interface EmailStore {
   draftBcc: string[];
   draftSubject: string;
   draftBody: string;
+  draftGenerationId?: string;
   draftIsHtml: boolean;
   toggleEmailPanel: () => void;
   setIsComposing: (isComposing: boolean) => void;
@@ -57,7 +58,7 @@ interface EmailStore {
   setDraftBody: (body: string) => void;
   setDraftIsHtml: (isHtml: boolean) => void;
   clearDraft: () => void;
-  startComposing: (recipients: string[], subject: string, body: string, replyTo?: string[]) => void;
+  startComposing: (recipients: string[], subject: string, body: string, replyTo?: string[], generationId?: string) => void;
 
   // Auth
   needsReauth: boolean;
@@ -116,6 +117,7 @@ export const useEmailStore = create<EmailStore>()(
           draftBcc: [],
           draftSubject: '',
           draftBody: '',
+      draftGenerationId: undefined,
           draftIsHtml: false,
           isComposing: false,
         });
@@ -163,6 +165,7 @@ export const useEmailStore = create<EmailStore>()(
       draftBcc: [],
       draftSubject: '',
       draftBody: '',
+      draftGenerationId: undefined,
       draftIsHtml: false,
       toggleEmailPanel: () => set({ isEmailPanelOpen: !get().isEmailPanelOpen }),
       setIsComposing: (isComposing) => set({ isComposing }),
@@ -181,10 +184,11 @@ export const useEmailStore = create<EmailStore>()(
           draftBcc: [],
           draftSubject: '',
           draftBody: '',
+      draftGenerationId: undefined,
           draftIsHtml: false,
           isComposing: false,
         }),
-      startComposing: (recipients, subject, body, replyTo = []) =>
+      startComposing: (recipients, subject, body, replyTo = [], generationId) =>
         set({
           editingDraftId: null,
           draftRecipients: recipients,
@@ -193,6 +197,7 @@ export const useEmailStore = create<EmailStore>()(
           draftBcc: [],
           draftSubject: subject,
           draftBody: body,
+          draftGenerationId: generationId,
           draftIsHtml: false,
           isComposing: true,
         }),

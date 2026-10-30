@@ -314,7 +314,7 @@ class TestPreferencesDeModele:
         assert module.LLMService.__new__(module.LLMService)._default_config().provider == module.LLMProvider.OLLAMA
 
         monkeypatch.setattr(settings, "therese_env", "development")
-        assert module.LLMService.__new__(module.LLMService)._default_config().provider == module.LLMProvider.ANTHROPIC
+        assert module.LLMService.__new__(module.LLMService)._default_config().provider == module.LLMProvider.OLLAMA
 
 
 # ---------------------------------------------------------------- OpenRouter

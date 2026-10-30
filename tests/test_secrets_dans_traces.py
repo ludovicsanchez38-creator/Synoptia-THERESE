@@ -177,7 +177,7 @@ class TestLeJournalNePortePasCeQueLudoEcrit:
 
         import app.routers.chat as chat_mod
         from app.routers.chat import _execute_tools_and_continue
-        from app.services.llm import ToolCall
+        from app.services.llm import ContextWindow, LLMConfig, LLMProvider, ToolCall
 
         async def _execute_muet(*args, **kwargs):
             return "OK"
@@ -185,6 +185,8 @@ class TestLeJournalNePortePasCeQueLudoEcrit:
         monkeypatch.setattr(chat_mod, "execute_workspace_tool", _execute_muet)
 
         class _LLMMuet:
+            config = LLMConfig(LLMProvider.OLLAMA, 'modele-local')
+
             async def continue_with_tool_results(
                 self, context, assistant_content, tool_calls, tool_results, tools,
                 prior_turns=None, assistant_content_brut=None,
@@ -197,7 +199,7 @@ class TestLeJournalNePortePasCeQueLudoEcrit:
             _ = [
                 chunk
                 async for chunk in _execute_tools_and_continue(
-                    _LLMMuet(), None, None, "", [tc], [], "conv-canari", 3,
+                    _LLMMuet(), None, ContextWindow(messages=[]), "", [tc], [], "conv-canari", 3,
                     session=MagicMock(),
                 )
             ]

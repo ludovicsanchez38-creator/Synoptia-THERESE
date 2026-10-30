@@ -70,6 +70,7 @@ def isolated_finally(cancel_at: str | None):
         # Ce contrôle vise les trois nettoyages ; l’archive est déjà finalisée.
         "safety_finalized": True,
         "_rouvrir_la_base_apres_restauration": reopen,
+        "terminer_restauration": Mock(),
         "get_mcp_service": lambda: SimpleNamespace(recharger_la_configuration=reload_mcp),
         "reprendre_les_creations_du_chat": resume,
         "maintenance_mode": SimpleNamespace(end=end),

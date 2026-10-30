@@ -247,9 +247,10 @@ class GmailService:
         in_reply_to: str | None = None,
         references: str | None = None,
         thread_id: str | None = None,
+        ai_provenance: dict[str, str] | None = None,
     ) -> dict:
         """Send an email (pièces jointes et fil de discussion compris, cycle 6)."""
-        raw = self._encoder_message(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        raw = self._encoder_message(to, subject, body, cc, bcc, html, attachments, in_reply_to, references, ai_provenance)
         charge: dict[str, Any] = {'raw': raw}
         if thread_id:
             charge['threadId'] = thread_id
@@ -266,6 +267,7 @@ class GmailService:
         attachments: list[tuple[str, bytes, str]] | None = None,
         in_reply_to: str | None = None,
         references: str | None = None,
+        ai_provenance: dict[str, str] | None = None,
     ) -> str:
         """MIME complet, encodé pour l'API : corps (texte ou HTML), en-têtes de fil,
         pièces jointes. Cycle 6 : `GmailProvider` recevait le contrat commun
@@ -312,6 +314,10 @@ class GmailService:
                 # pas par une interpolation qu'un accent ou un guillemet cassait.
                 part.add_header('Content-Disposition', 'attachment', filename=filename)
                 message.attach(part)
+        from app.services.marquage_ia import entete_ia
+        marquage = entete_ia(ai_provenance)
+        if marquage:
+            message['X-Therese-IA'] = marquage
         return base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
 
     @staticmethod
@@ -325,9 +331,10 @@ class GmailService:
         attachments: list[tuple[str, bytes, str]] | None = None,
         in_reply_to: str | None = None,
         references: str | None = None,
+        ai_provenance: dict[str, str] | None = None,
     ) -> str:
         """MIME du brouillon, encodé pour l'API (créé comme remplacé)."""
-        return GmailService._encoder_message(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        return GmailService._encoder_message(to, subject, body, cc, bcc, html, attachments, in_reply_to, references, ai_provenance)
 
     async def create_draft(
         self,
@@ -341,9 +348,10 @@ class GmailService:
         in_reply_to: str | None = None,
         references: str | None = None,
         thread_id: str | None = None,
+        ai_provenance: dict[str, str] | None = None,
     ) -> dict:
         """Create a draft email."""
-        raw = self._encode_draft(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        raw = self._encode_draft(to, subject, body, cc, bcc, html, attachments, in_reply_to, references, ai_provenance)
         message: dict[str, Any] = {'raw': raw}
         if thread_id:
             message['threadId'] = thread_id
@@ -362,6 +370,7 @@ class GmailService:
         in_reply_to: str | None = None,
         references: str | None = None,
         thread_id: str | None = None,
+        ai_provenance: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Replace the content of an existing draft (B-060).
 
@@ -369,7 +378,7 @@ class GmailService:
         son identifiant : ré-enregistrer une correction ne laisse donc pas un
         second exemplaire dans la boîte.
         """
-        raw = self._encode_draft(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        raw = self._encode_draft(to, subject, body, cc, bcc, html, attachments, in_reply_to, references, ai_provenance)
         message: dict[str, Any] = {'raw': raw}
         if thread_id:
             message['threadId'] = thread_id

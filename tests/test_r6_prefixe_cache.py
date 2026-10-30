@@ -86,7 +86,7 @@ def prompt_reel(monkeypatch):
         service = llm.LLMService(LLMConfig(provider, CATALOGUE[provider.value].modeles[0]))
         context = service.prepare_context([Message('user', 'Bonjour')], memory_context=f'Dossier témoin du tour {tour}.')
         context.system_prompt = service._avec_consigne_de_langue(context.system_prompt)
-        fiches = [{'id': 'fiche-temoin', 'kind': 'correction',
+        fiches = [{'provenance_documents': 'sans_document', 'id': 'fiche-temoin', 'kind': 'correction',
             'content': f'Correction fictive du tour {tour}.'}]
         borner_payload(context, fiches, service.config, None)
         monkeypatch.setattr(memory_card_context, 'lire_pour_chat', AsyncMock(return_value=fiches))
@@ -139,6 +139,10 @@ async def test_le_prefixe_reste_identique_quand_la_minute_change(prompt_reel, av
 @pytest.mark.asyncio
 @pytest.mark.parametrize('provider', list(LLMProvider))
 async def test_les_adaptateurs_transmettent_tout_le_prompt_reel(prompt_reel, monkeypatch, provider):
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, destination, categories=():
+                        (purpose, destination) == ('llm', provider.value)
+                        and set(categories) <= {'memory_cards_r2_v1'})
     service, context = prompt_reel('2026-10-21T10:00:00+02:00', 0, provider=provider)
     attendu = context.system_prompt
     charges = []

@@ -18,14 +18,17 @@ mode cabinet, adresse de fournisseur invalide) valent aussi pour lui - c'est
 ce que vérifie la seconde classe.
 """
 
+from contextlib import asynccontextmanager
+
 import pytest
 
 
+@asynccontextmanager
 async def _sessions():
     """La session de l'application, pour poser une valeur héritée en base."""
-    from app.models.database import get_session
+    from app.models.database import get_session_context
 
-    async for session in get_session():
+    async with get_session_context() as session:
         yield session
 
 
@@ -139,14 +142,13 @@ class TestLaPreferenceSEcrit:
         la mise à jour pour tous ceux qui l'avaient déjà touché."""
         from app.models.entities import Preference
 
-        async for session in _sessions():
+        async with _sessions() as session:
             session.add(
                 Preference(
                     key="b252_heritee", value="False", category="memory"
                 )
             )
             await session.commit()
-            break
 
         relu = (await client.get("/api/config/preferences")).json()["b252_heritee"][
             "value"
@@ -174,12 +176,14 @@ class TestLaPreferenceSEcrit:
             json={"key": "b252_forme", "value": False, "category": "memory"},
         )
 
-        async for session in _sessions():
+        async with _sessions() as session:
             resultat = await session.execute(
                 select(Preference).where(Preference.key == "b252_forme")
             )
             brut = resultat.scalar_one().value
-            break
+
+        from app.models import database
+        assert database.async_engine.pool.checkedout() == 0
 
         assert json.loads(brut) is False, (
             f"forme stockée non canonique : {brut!r} - le pont des littéraux "

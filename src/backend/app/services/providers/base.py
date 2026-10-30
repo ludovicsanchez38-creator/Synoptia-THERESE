@@ -163,6 +163,8 @@ class Message:
     #: le format texte simple est conservé tant qu'il n'y en a pas, pour ne
     #: rien changer aux échanges existants.
     images: list[ImageJointe] = field(default_factory=list)
+    # Métadonnée locale, jamais sérialisée dans le payload fournisseur.
+    contient_documents: bool = False
 
 
 @dataclass
@@ -208,7 +210,10 @@ class ToolTurn:
 @dataclass
 class StreamEvent:
     """An event from the LLM stream."""
-    type: Literal["text", "tool_call", "done", "error"]
+    # Tour 11 : « notice » = avis système, jamais concaténé au texte de la
+    # réponse (ni document, ni mail, ni post généré). Les appelants qui ne
+    # lisent que « text » l'ignorent ; le chat l'affiche à part.
+    type: Literal["text", "tool_call", "done", "error", "notice"]
     content: str | None = None
     tool_call: ToolCall | None = None
     stop_reason: str | None = None
@@ -439,4 +444,3 @@ def message_fournisseur_pour_ecran(texte: str) -> str:
             "Réessaie dans un moment ou choisis un autre modèle."
         )
     return message_erreur_http(None, code)
-

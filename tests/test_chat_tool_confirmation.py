@@ -11,7 +11,7 @@ import app.routers.chat as chat_mod
 import pytest
 from app.routers.chat import _execute_tools_and_continue
 from app.services import tool_confirmations
-from app.services.llm import ToolCall
+from app.services.llm import ContextWindow, LLMConfig, LLMProvider, ToolCall
 
 
 def _offerts(appels):
@@ -30,6 +30,8 @@ class _Event:
 
 
 class _FakeLLM:
+    config = LLMConfig(LLMProvider.OLLAMA, 'modele-local')
+
     async def continue_with_tool_results(
         self, context, assistant_content, tool_calls, tool_results, tools
     , prior_turns=None, assistant_content_brut=None):
@@ -68,7 +70,7 @@ async def test_send_email_demande_confirmation_sans_envoyer(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            llm, None, None, "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
+            llm, None, ContextWindow(messages=[]), "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
         )
     ]
     chunks = _parse_chunks(raw)
@@ -85,9 +87,11 @@ async def test_send_email_demande_confirmation_sans_envoyer(monkeypatch):
 
     # 3. L'action est réellement en attente et consommable une fois.
     cid = payload["confirmation_id"]
-    assert tool_confirmations.pop_pending(cid) == (
+    nom, arguments, conversation_id = tool_confirmations.pop_pending(cid)
+    assert arguments.pop('_ai_provenance')['fournisseur_modele'] == 'ollama/modele-local'
+    assert (nom, arguments, conversation_id) == (
         "send_email",
-        {"to": "x@y.fr", "subject": "Sujet", "body": "Corps"},
+        {"to": "x@y.fr", "subject": "Sujet", "body": "Corps", "_provenance_documents": "sans_document"},
         # 0.56 : la conversation voyage avec l'action (cloison agenda).
         "conv1",
     )
@@ -124,7 +128,7 @@ async def test_les_arguments_d_un_email_n_atterrissent_pas_dans_le_journal(
         _ = [
             chunk
             async for chunk in _execute_tools_and_continue(
-                llm, None, None, "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
+                llm, None, ContextWindow(messages=[]), "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
             )
         ]
 
@@ -155,7 +159,7 @@ async def test_web_search_demande_confirmation_sans_partir(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            llm, None, None, "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
+            llm, None, ContextWindow(messages=[]), "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
         )
     ]
     chunks = _parse_chunks(raw)
@@ -189,7 +193,7 @@ async def test_outil_mcp_inconnu_demande_confirmation_sans_sexecuter():
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            llm, mcp, None, "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
+            llm, mcp, ContextWindow(messages=[]), "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
         )
     ]
     chunks = _parse_chunks(raw)
@@ -200,7 +204,7 @@ async def test_outil_mcp_inconnu_demande_confirmation_sans_sexecuter():
     assert confirms[0]["confirmation"]["tool_name"] == "slack__post_message"
 
 
-class _FakeLLMReemetSendEmail:
+class _FakeLLMReemetSendEmail(_FakeLLM):
     """Modèle faible qui re-émet send_email dans la continuation (spirale BUG-121)."""
 
     def __init__(self):
@@ -246,7 +250,7 @@ async def test_send_email_reemis_ne_cree_quune_seule_carte(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            llm, None, None, "", [tc], _offerts([tc]), "conv1", 5, session=MagicMock()
+            llm, None, ContextWindow(messages=[]), "", [tc], _offerts([tc]), "conv1", 5, session=MagicMock()
         )
     ]
     chunks = _parse_chunks(raw)
@@ -285,7 +289,7 @@ async def test_send_email_mcp_namespace_non_execute_sans_confirmation(monkeypatc
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            llm, mcp, None, "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
+            llm, mcp, ContextWindow(messages=[]), "", [tc], _offerts([tc]), "conv1", 3, session=MagicMock()
         )
     ]
     chunks = _parse_chunks(raw)
@@ -297,7 +301,7 @@ async def test_send_email_mcp_namespace_non_execute_sans_confirmation(monkeypatc
     # L'action mise en attente conserve le nom MCP préfixé (routage à la confirmation).
     assert tool_confirmations.pop_pending(cid) == (
         "therese__send_email",
-        {"to": "x@y.fr", "subject": "S", "body": "B"},
+        {"to": "x@y.fr", "subject": "S", "body": "B", "_provenance_documents": "sans_document"},
         # 0.56 : la conversation voyage avec l'action (cloison agenda).
         "conv1",
     )
@@ -335,7 +339,7 @@ async def test_deux_send_email_identiques_dans_un_tour_une_seule_carte(monkeypat
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     assert len(_cartes(_parse_chunks(raw))) == 1
@@ -369,7 +373,7 @@ async def test_variantes_du_meme_envoi_ne_font_quune_carte(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     assert len(_cartes(_parse_chunks(raw))) == 1
@@ -399,7 +403,7 @@ async def test_deux_destinataires_differents_gardent_deux_cartes(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     cartes = _cartes(_parse_chunks(raw))
@@ -426,7 +430,7 @@ async def test_destinataire_absent_emet_quand_meme_la_carte(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     assert len(_cartes(_parse_chunks(raw))) == 2
@@ -454,7 +458,7 @@ async def test_meme_envoi_par_loutil_natif_et_par_mcp_une_seule_carte(monkeypatc
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     assert len(_cartes(_parse_chunks(raw))) == 1
@@ -490,7 +494,7 @@ async def test_le_corps_est_conserve_quel_que_soit_lordre_des_alias(monkeypatch)
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     cartes = _cartes(_parse_chunks(raw))
@@ -517,7 +521,7 @@ async def test_un_corps_sous_alias_seul_nest_pas_perdu(monkeypatch):
     raw = [
         chunk
         async for chunk in _execute_tools_and_continue(
-            _FakeLLM(), None, None, "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
+            _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
     cartes = _cartes(_parse_chunks(raw))

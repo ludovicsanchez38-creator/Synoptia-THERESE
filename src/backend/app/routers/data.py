@@ -19,9 +19,11 @@ from app.config import settings
 from app.models.database import close_db, get_session
 from app.models.entities import (
     Activity,
+    AIGeneration,
     BoardDecisionDB,
     Calendar,
     CalendarEvent,
+    CloudConsent,
     Contact,
     Conversation,
     Deliverable,
@@ -301,6 +303,8 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                 for conv in conversations
             ],
             "files": [_export_row(item) for item in files],
+            "ai_generations": [_export_row(item) for item in session.execute(select(AIGeneration)).scalars().all()],
+            "cloud_consents": [_export_row(item) for item in session.execute(select(CloudConsent)).scalars().all()],
             "preferences": [
                 {
                     "id": p.id,
@@ -748,10 +752,13 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     await session.execute(delete(ProcessingTask))
     # Les préférences contiennent aussi le profil et les choix personnels :
     # « toutes les données » doit donc réellement remettre cet espace à zéro.
+    await session.execute(delete(AIGeneration))
     await session.execute(delete(Preference))
-    # On garde les logs d'audit (trace legale)
-
+    # On garde les logs d'audit et l'historique des accords.
     await session.commit()
+
+    from app.services.consentements import retirer_tous_accords
+    retirer_tous_accords()
 
     # B-340 (05/09/2026) : la ligne Preference du profil est effacée, mais le
     # cache de processus (`get_cached_profile`) servait encore nom et SIRET au
@@ -862,14 +869,19 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
 
     logger.warning("Toutes les donnees utilisateur ont ete supprimees (RGPD)")
 
+    note = (
+        "Sont conservés : le journal d’audit, l’historique des accords retirés, "
+        "les journaux techniques (qui peuvent contenir des noms et des adresses mail), "
+        "les fichiers de configuration des connecteurs et les fichiers hors du dossier "
+        "de données, notamment les factures exportées. "
+        "L’effacement des images, documents produits, projets, factures et copies automatiques "
+        "rangés dans le dossier de données a aussi été demandé."
+    )
     if backups_kept:
-        note = (
-            "Les logs d'audit sont conservés pour des raisons légales. "
-            f"{backups_kept} sauvegarde(s) conservée(s) : supprime-les depuis "
-            "la liste des sauvegardes si tu veux vraiment tout effacer."
+        note += (
+            f" {backups_kept} sauvegarde(s) conservée(s) : supprime-les depuis "
+            "la liste des sauvegardes si tu veux aussi les effacer."
         )
-    else:
-        note = "Les logs d'audit sont conservés pour des raisons légales"
     if not index_vide:
         note = (
             f"{note.rstrip('.')}. Attention : l'index de recherche n'a pas pu être vidé. "
@@ -878,7 +890,7 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
 
     return {
         "deleted": True,
-        "message": "Toutes tes données ont été supprimées conformément au RGPD Art. 17",
+        "message": "Tes données métier et tes réglages ont été effacés de la base locale.",
         "note": note,
         "backups_kept": backups_kept,
         "index_vide": index_vide,
@@ -1770,6 +1782,9 @@ async def restore_backup(
         # Aucune session n'est injectée à cette route : tous les appels API
         # admis avant le verrou sont terminés. Les pools sont disposés AVANT
         # l'archive de sécurité et, surtout, avant toute extraction.
+        from app.services.consentements import preparer_restauration, terminer_restauration
+
+        preparer_restauration()
         await close_db()
         # B-1469 : le client Qdrant aussi. Sinon il garde une connexion vers
         # le fichier que la restauration remplace, et toute écriture
@@ -1805,8 +1820,11 @@ async def restore_backup(
                 _verify_restored_db()
             else:
                 shutil.copy2(legacy_db, settings.db_path)
+            await _rouvrir_la_base_apres_restauration()
+            terminer_restauration()
         except HTTPException as exc:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
+            await close_db()
             retabli = _rollback()
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
@@ -1827,6 +1845,7 @@ async def restore_backup(
                 )
             raise
         except Exception as e:
+            await close_db()
             retabli = _rollback()
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
@@ -1858,6 +1877,10 @@ async def restore_backup(
                     backup_dir, current_backup_name, safety_archive, password, safety_included
                 )
             await _rouvrir_la_base_apres_restauration()
+            # Réappliquer aussi après un retour arrière. En cas d'échec, le
+            # journal durable continue de bloquer tous les accords cloud.
+            from app.services.consentements import terminer_restauration
+            terminer_restauration()
             # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
             try:
                 from app.services.mcp_service import get_mcp_service

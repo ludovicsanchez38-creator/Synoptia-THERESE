@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from app.models.entities import Contact, Conversation, MemoryCard, Message, Project
 from app.services import llm, memory_cards
+from app.services.consentements import enregistrer_accord
 from app.services.providers.base import LLMProvider
 
 from tests.test_r2_3_outil import fournisseur  # noqa: F401
@@ -23,8 +24,11 @@ async def test_liens_mots_avant_dernier_message_date_et_uuid(client, db_session,
     conv = Conversation(title='Conversation neuve', project_id=a.id)
     db_session.add_all([personne, autre, conv])
     await db_session.commit()
-    db_session.add(Message(conversation_id=conv.id, role='user', content='Parlons zéphyr.'))
-    db_session.add(Message(conversation_id=conv.id, role='assistant', content='Entendu.'))
+    # Ces témoins rédigés sans document éprouvent le classement, pas la reprise
+    # prudente de l'ancien historique (couverte par test_t4_4_historique_documents).
+    provenance = json.dumps({'provenance_documents': 'sans_document'})
+    db_session.add(Message(conversation_id=conv.id, role='user', content='Parlons zéphyr.', extra_data=provenance))
+    db_session.add(Message(conversation_id=conv.id, role='assistant', content='Entendu.', extra_data=provenance))
     await db_session.commit()
     async def fiche(sujet, **liens):
         return await memory_cards.ecrire({'kind': kind, 'subject': sujet, 'title': sujet,
@@ -48,6 +52,7 @@ async def test_liens_mots_avant_dernier_message_date_et_uuid(client, db_session,
         ligne.updated_at = date + timedelta(seconds=decalage)
         db_session.add(ligne)
     await db_session.commit()
+    enregistrer_accord('llm', 'openai', True, '3', ['memory_cards_r2_v1'])
     reponse = await client.post('/api/chat/send', json={'conversation_id': conv.id,
         'message': 'Bonjour', 'stream': True, 'memory_card_grants': ['llm:openai']})
     assert reponse.status_code == 200

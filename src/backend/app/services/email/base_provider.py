@@ -95,6 +95,7 @@ class SendEmailRequest:
     reply_to_message_id: str | None = None
     in_reply_to: str | None = None
     references: str | None = None
+    ai_provenance: dict[str, str] | None = None
 
 
 class EmailProvider(ABC):

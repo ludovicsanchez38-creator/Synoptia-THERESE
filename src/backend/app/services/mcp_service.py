@@ -866,10 +866,15 @@ class MCPService:
                 error="Server not running",
             )
 
+        # L'enveloppe d'une confirmation contient des données du moteur qui
+        # ne font pas partie du contrat MCP. Les noms publics, même avec un
+        # underscore, sont préservés à l'identique.
+        from app.services.tool_confirmations import ArgumentsConfirmes
+        publics = arguments.publics if isinstance(arguments, ArgumentsConfirmes) else arguments
         try:
             result = await self._send_request(server_id, "tools/call", {
                 "name": tool_name,
-                "arguments": arguments or {},
+                "arguments": dict(publics or {}),
             }, timeout=120.0)
 
             execution_time = (time.time() - start_time) * 1000

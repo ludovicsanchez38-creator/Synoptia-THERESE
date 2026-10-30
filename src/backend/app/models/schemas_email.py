@@ -7,7 +7,7 @@ Request/Response models pour les opérations email (OAuth, IMAP, messages, label
 from datetime import datetime
 
 from app.services.civil_time import echeance_de_relance
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 # ============================================================
 # OAuth
@@ -98,6 +98,7 @@ class MessageListRequest(BaseModel):
 class SendEmailRequest(BaseModel):
     """Send email request."""
 
+    ai_generation_id: str | None = Field(default=None, max_length=64)
     to: list[str]
     subject: str
     body: str

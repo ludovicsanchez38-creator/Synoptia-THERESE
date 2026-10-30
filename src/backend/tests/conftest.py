@@ -59,11 +59,20 @@ app.state.auth_disabled = True
 async def _test_lifespan(_app):
     """Lifespan minimal : init DB seulement, ni Qdrant ni embeddings ni MCP."""
     from app.models.database import close_db, init_db
+    from app.services.user_profile import arreter_l_indexation_du_profil
 
     _app.state.auth_disabled = True
-    await init_db()
-    yield
+    # Comme le harnais racine : une fixture db_session peut laisser un pool
+    # ouvert. Le remplacer sans fermeture fragilise les restaurations WAL.
     await close_db()
+    await init_db()
+    try:
+        yield
+    finally:
+        # Le profil poursuit sa lecture SQL après la réponse HTTP ; fermer
+        # cette session avant le pool, sur la boucle qui l'a créée.
+        await arreter_l_indexation_du_profil()
+        await close_db()
 
 
 app.router.lifespan_context = _test_lifespan

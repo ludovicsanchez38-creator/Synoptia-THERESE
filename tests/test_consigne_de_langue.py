@@ -195,6 +195,8 @@ class TestLeReglageMortEstRetire:
 @pytest.mark.asyncio
 async def test_le_chat_transmet_la_consigne_au_provider(monkeypatch):
     """Bout en bout : ce que le provider reçoit réellement."""
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, provider: (purpose, provider) == ('llm', 'openai'))
     from app.services.context import ContextWindow
     from app.services.llm import LLMConfig, LLMProvider, LLMService
 

@@ -32,6 +32,10 @@ class _Fournisseur:
 
 @pytest.mark.asyncio
 async def test_la_suite_part_chez_le_fournisseur_qui_a_servi_le_tour(monkeypatch):
+    # La destination effective simulée possède un accord ; on teste ici
+    # la continuité du transport, sans autoriser de repli implicite réel.
+    monkeypatch.setattr('app.services.consentements.accord_valide',
+                        lambda purpose, provider: (purpose, provider) == ('llm', 'openai'))
     from app.services.context import ContextWindow
     from app.services.llm import LLMConfig, LLMProvider, LLMService
     from app.services.providers.base import ToolCall, ToolResult

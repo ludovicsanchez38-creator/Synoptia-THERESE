@@ -12,9 +12,12 @@ from app.models.command import (
     GenerateTemplateRequest,
     UpdateUserCommandRequest,
 )
+from app.models.database import get_session
 from app.services.command_registry import get_command_registry
+from app.services.consentements import AccordEnvoiRequis
 from app.services.error_handler import message_pour_ecran
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -79,9 +82,37 @@ async def get_command_schema(command_id: str):
     }
 
 
+async def verifier_persistance_rfc(session: AsyncSession, source_ids: list[str] | None) -> None:
+    if not source_ids:
+        # Saisie directe dans le formulaire, ou assistant sans réponse
+        # vérifiée : rien n'a été généré à partir d'un échange.
+        return
+    from app.services.provenance_documents import reprendre_rfc
+    absentes: list[str] = []
+    _, origine = await reprendre_rfc(session, source_ids, absentes)
+    if absentes:
+        # L'origine d'un échange supprimé n'est plus vérifiable : on n'enregistre
+        # pas, mais on dit comment repartir (la capture retire la référence).
+        raise HTTPException(409, "Un échange repris a été supprimé entre-temps : son origine n’est plus vérifiable. "
+                            "La commande n’a pas été enregistrée. Reviens à « Faire » puis clique sur « Capturer » "
+                            "avant d’enregistrer.")
+    if origine == "sans_document":
+        return
+    if origine == "inconnue":
+        # Relecture 7 : une commande enregistrée repart sous l'accord « llm » à
+        # chaque exécution. Une origine inconnue reste donc fermée, accord
+        # documents présent ou non.
+        raise HTTPException(409, "Cette commande reprend un échange dont l’origine n’est pas vérifiable (ancien échange "
+                            "ou ancienne fiche mémoire) : enregistrée, elle pourrait repartir plus tard sans ton accord "
+                            "« documents ». Elle n’a pas été enregistrée. Crée-la sans reprendre ces échanges.")
+    raise HTTPException(409, "Cette commande reprend un document. Son format ne conserve pas encore cette origine. "
+                        "Elle n’a pas été enregistrée. Crée une commande sans ces informations.")
+
+
 @router.post("/user", response_model=CommandDefinitionResponse, status_code=201)
-async def create_user_command(request: CreateUserCommandRequest):
+async def create_user_command(request: CreateUserCommandRequest, session: AsyncSession = Depends(get_session)):
     """Crée une nouvelle commande utilisateur."""
+    await verifier_persistance_rfc(session, request.rfc_source_ids)
     registry = get_command_registry()
     try:
         cmd = await registry.create_user_command(
@@ -99,8 +130,9 @@ async def create_user_command(request: CreateUserCommandRequest):
 
 
 @router.put("/user/{command_id}", response_model=CommandDefinitionResponse)
-async def update_user_command(command_id: str, request: UpdateUserCommandRequest):
+async def update_user_command(command_id: str, request: UpdateUserCommandRequest, session: AsyncSession = Depends(get_session)):
     """Met à jour une commande utilisateur."""
+    await verifier_persistance_rfc(session, request.rfc_source_ids)
     registry = get_command_registry()
     cmd = await registry.update_user_command(
         command_id=command_id,
@@ -128,7 +160,7 @@ async def delete_user_command(command_id: str):
 
 
 @router.post("/generate-template")
-async def generate_template(request: GenerateTemplateRequest):
+async def generate_template(request: GenerateTemplateRequest, session: AsyncSession = Depends(get_session)):
     """RFC : Génère un template de commande depuis un brief (via LLM)."""
     from app.services.llm import get_llm_service
 
@@ -154,12 +186,26 @@ async def generate_template(request: GenerateTemplateRequest):
         )
         prompt = f"{historique}\n\nuser: {request.brief}"
 
+    # Anciennes copies (brief ET context) sans référence : origine incertaine.
+    documentaire = True
+    absentes: list[str] = []
+    if request.rfc_source_ids is not None:
+        from app.services.provenance_documents import reprendre_rfc, transcription_rfc
+        sources, origine = await reprendre_rfc(session, request.rfc_source_ids, absentes)
+        if not sources:
+            raise HTTPException(409, "Les échanges repris ont été supprimés : remplis la commande à la main.")
+        # La consigne est celle du serveur : un brief client resterait une
+        # copie sans provenance.
+        prompt = transcription_rfc(sources) + "\n\nuser: Crée une commande à partir de ces échanges."
+        documentaire = origine != "sans_document"
+
     try:
         # generate_content renvoie directement la chaine de reponse (non-streaming)
         content = await llm.generate_content(
             prompt=prompt,
             system_prompt=system_prompt,
             max_tokens=500,
+            contient_documents=documentaire,
         )
 
         # Parser le JSON de la réponse
@@ -177,7 +223,12 @@ async def generate_template(request: GenerateTemplateRequest):
             "icon": template.get("icon", ""),
             "category": template.get("category", "production"),
             "prompt_template": template.get("prompt_template", ""),
+            # Tour 8 : références supprimées, ignorées ici, à retirer côté interface.
+            "rfc_sources_absentes": absentes,
         }
+    except AccordEnvoiRequis as e:
+        # Réserve 8 de la relecture 6 : un refus d'accord n'est pas une panne.
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Erreur génération template : {e}")
         raise HTTPException(status_code=500, detail=message_pour_ecran(e, ou="pendant la génération du modèle de commande"))

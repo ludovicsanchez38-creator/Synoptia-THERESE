@@ -19,6 +19,7 @@ export interface ChatRequest {
   conversation_id?: string;
   include_memory?: boolean;
   resume_message_id?: string;
+  rfc_source_ids?: string[];
   memory_card_grants?: string[];
   memory_card_purpose?: "llm" | "documents";
   stream?: boolean;
@@ -68,7 +69,7 @@ export interface DetectedEntities {
 }
 
 export interface StreamChunk {
-  type: 'memory_consent_required' | 'memory_receipt' | 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'skill_file_error' | 'confirmation_required' | 'client_action' | 'generation' | 'cancelled' | 'warning';
+  type: 'memory_consent_required' | 'memory_receipt' | 'notice' | 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'skill_file_error' | 'confirmation_required' | 'client_action' | 'generation' | 'cancelled' | 'warning';
   content: string;
   conversation_id?: string;
   message_id?: string;
@@ -78,6 +79,8 @@ export interface StreamChunk {
   receipt?: { id: string; version: number; operation: string };
   purpose?: "llm" | "documents";
   memory_used?: string[];
+  /** RFC : réponses référencées puis supprimées, ignorées par le moteur. */
+  rfc_sources_absentes?: string[];
   tool_name?: string;
   skill_file?: {
     skill_id: string;
@@ -376,7 +379,7 @@ export async function exportConversation(
 }
 
 export interface ConfirmToolResponse {
-  status: 'executed' | 'cancelled';
+  status: 'executed' | 'cancelled' | 'refused';
   tool_name: string;
   result?: string;
   skill_files?: Array<{

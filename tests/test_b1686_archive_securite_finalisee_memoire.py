@@ -137,6 +137,8 @@ def isolated_path(cancel_at=None, error=None, kept=True, archive_created=True,
     ns = {
         "simuler_restauration": restore,
         "_rouvrir_la_base_apres_restauration": reopen,
+        "close_db": AsyncMock(),
+        "terminer_restauration": Mock(),
         "get_mcp_service": lambda: SimpleNamespace(recharger_la_configuration=reload_mcp),
         "reprendre_les_creations_du_chat": resume_mock,
         "maintenance_mode": SimpleNamespace(end=end_mock),

@@ -250,6 +250,11 @@ export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Re
   const { timeoutMs = API_TIMEOUT_MS, ...init } = options;
 
   return (async () => {
+    if (init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())
+      && !new URL(url, API_BASE).pathname.startsWith('/api/consents')) {
+      const { flushConsentDecisions } = await import('../../lib/consentSync');
+      await flushConsentDecisions();
+    }
     const jetonEnvoye = _sessionToken;
     const reponse = await envoyer(url, init, timeoutMs);
 

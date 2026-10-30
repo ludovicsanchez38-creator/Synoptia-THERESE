@@ -19,6 +19,13 @@ from app.services.board import BoardService
 from app.services.llm import LLMProvider
 
 
+@pytest.fixture(autouse=True)
+def accord_board_explicite(client, db_session):
+    """Ces scénarios de génération partent d'un accord Board enregistré."""
+    from app.services.consentements import enregistrer_accord
+    enregistrer_accord('llm', 'board', True, '3', [])
+
+
 class FakeLLM:
     def __init__(self, responses: list[str], provider: LLMProvider = LLMProvider.OPENAI):
         self.responses = responses
@@ -26,7 +33,7 @@ class FakeLLM:
         self.config = SimpleNamespace(provider=provider, model="modele-test")
 
     def prepare_context(self, messages, system_prompt=None):
-        return messages, system_prompt
+        return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
     async def stream_response(self, context, usage_sink=None, raise_on_error=False):
         response = self.responses[self.calls]
@@ -127,7 +134,7 @@ async def test_closing_stream_cancels_advisor_tasks(monkeypatch):
             self.cancelled = 0
 
         def prepare_context(self, messages, system_prompt=None):
-            return messages, system_prompt
+            return SimpleNamespace(messages=messages, system_prompt=system_prompt)
 
         async def stream_response(self, context, usage_sink=None, raise_on_error=False):
             try:
