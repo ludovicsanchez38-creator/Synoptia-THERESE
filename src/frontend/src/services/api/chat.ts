@@ -376,7 +376,7 @@ export async function exportConversation(
 }
 
 export interface ConfirmToolResponse {
-  status: 'executed' | 'cancelled';
+  status: 'executed' | 'cancelled' | 'refused';
   tool_name: string;
   result?: string;
   skill_files?: Array<{
