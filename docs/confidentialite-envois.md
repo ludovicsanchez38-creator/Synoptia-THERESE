@@ -45,7 +45,7 @@ ou inconnus sont retirés du contexte transmis. Ils restent visibles dans
 l'historique local. Les anciennes pièces jointes sont également exclues du
 rappel automatique, avant la lecture de leur contenu. La nouvelle question
 continue avec le contexte autorisé, dans les deux modes, avec ou sans flux.
-La réponse commence par une phrase au tutoiement expliquant ce retrait.
+Un avis au tutoiement, affiché à part de la réponse, explique ce retrait.
 Un fichier nouvellement joint ou explicitement demandé par `/fichier` ou
 `/analyse` exige toujours l'accord documents ; l'ancien historique seul ne
 déclenche plus cette demande dans le composeur.
@@ -158,8 +158,8 @@ sert que si elle concerne la demande (mots communs). Une ancienne préférence n
 marque donc plus chaque échange. Quand elle concerne la demande, son envoi
 exige l'accord documents du fournisseur effectif ; l'accord fiches sous la
 finalité LLM ne le remplace pas. Sans cet accord, elle est retirée de l'envoi :
-rien d'elle ne part, le reste du message part, et la réponse commence par un
-avis qui le dit (sans citer la fiche) et renvoie à l'écran Mémoire. Avec
+rien d'elle ne part, le reste du message part, et un avis affiché à part le
+dit (sans citer la fiche) et renvoie à l'écran Mémoire. Avec
 l'accord, elle part : la réponse est enregistrée avec l'origine de la fiche
 (« inconnue » pour une ancienne fiche, « documents » seulement si un document
 avéré a servi), et les créations natives restent refusées dans toute la suite
@@ -172,11 +172,22 @@ attestée s'applique normalement. Le retrait tardif reste contrôlé au
 transport.
 
 Les anciennes préférences et corrections non confirmées sont annoncées sans
-être citées : au premier message de chaque conversation, la réponse commence
-par un avis qui donne leur nombre et renvoie à Mémoire (un seul avis par
-tour ; celui d'une fiche retirée le remplace). L'écran Mémoire affiche un
-bandeau qui compte les fiches à confirmer et les isole d'un geste. Rien des
-fiches ne part pour ces avis.
+être citées : au premier message de chaque conversation, un avis donne leur
+nombre et renvoie à Mémoire (un seul avis de ce genre par tour ; celui d'une
+fiche retirée le remplace). L'écran Mémoire affiche un bandeau qui compte les
+fiches à confirmer et les isole d'un geste. Rien des fiches ne part pour ces
+avis.
+
+Les avis système ne font jamais partie du texte de la réponse : historique
+retiré, anciennes pièces jointes, fiche retirée, anciennes préférences,
+fenêtre d'un modèle local, pièce jointe non transmise, commandes non rejouées
+lors d'une reprise. Ils partent dans un événement `notice` distinct (champ
+`avis` sur la voie non diffusée), s'affichent au-dessus du message et sont
+conservés à part dans `extra_data`. Ils ne sont ni copiés avec le message, ni
+transmis à une compétence de génération (document, mail, post). Une
+compétence de fichier ne reçoit que le texte produit par le modèle : ni les
+confirmations de directives en ligne, ni l'annonce d'une réponse coupée ou
+refusée, qui restent dans le message affiché et son historique.
 
 Les refus d'écriture pour doublon ou correction ne renvoient au modèle que
 l'identifiant et la version de la fiche correspondante, sans son ancien titre.
