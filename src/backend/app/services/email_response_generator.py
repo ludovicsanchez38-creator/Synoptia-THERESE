@@ -228,7 +228,11 @@ Rédige une réponse appropriée en français."""
                 response_text += f"\n\nCordialement,\n{user_name}"
 
             from app.services.marquage_ia import TexteIA, provenance_service
-            return TexteIA(response_text, provenance_service(llm_service))
+            # Jamais str() ici : TexteIA est un str qui porte la provenance du
+            # marquage IA, une conversion la perdrait. La variable annotée suffit
+            # à mypy, qui voit les imports `app.` comme Any.
+            brouillon: str = TexteIA(response_text, provenance_service(llm_service))
+            return brouillon
 
         except GenerationImpossible:
             raise

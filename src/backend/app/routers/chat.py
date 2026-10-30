@@ -1973,6 +1973,7 @@ async def send_message(
     inline_pending_confirmations: list[dict[str, Any]] = []
     actions_context: str | None = None
     llm_user_message = request.message
+    inline_cmds: list[tuple[str, str]]
     if produce_prompt is not None:
         # Tranche 0b : le prompt de rédaction dérivé du sujet est le texte
         # LLM, et il n'est JAMAIS re-scanné par les directives inline.

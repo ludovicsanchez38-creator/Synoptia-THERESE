@@ -8,8 +8,12 @@ from typing import Any
 
 from app.models.database import get_sync_session
 from app.models.entities import CloudConsent
-from app.services.error_handler import ErreurPourEcran
 from sqlmodel import Session, col, select
+
+# Import relatif, comme les fournisseurs pour `.base` : mypy nomme ce fichier
+# `backend.app.services…` et verrait `app.services.error_handler` comme Any,
+# donc une classe mère inconnue pour AccordEnvoiRequis. Même module à l'exécution.
+from .error_handler import ErreurPourEcran
 
 _VERROU = RLock()
 TEXT_VERSION = "3"

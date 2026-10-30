@@ -151,8 +151,10 @@ class TestCliquetMypy:
         # erreurs (image_generator, openclaw_bridge) et en ajoute quatre
         # (chat, consentements, memory_cards, email_response_generator) : 927 à
         # froid sous Linux, base 08d0a8a0 à 935 avec la même commande.
+        # 31/10/2026 (correctifs 0.83) : ces quatre erreurs sont corrigées,
+        # rien d'autre ne bouge : 923 à froid sous Linux, même commande.
         # Confirmation sur le runner à venir.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "927"
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "923"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")

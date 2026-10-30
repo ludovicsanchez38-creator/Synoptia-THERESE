@@ -204,7 +204,7 @@ async def lire_pour_chat(requete: str, scope: str, scope_id: str | None,
         # et fiches liées ; elle ne sert que si elle concerne la demande. Sinon
         # une seule ancienne préférence marquait chaque échange.
         def attestee(f: MemoryCard) -> bool:
-            return f.provenance_documents == 'sans_document'
+            return bool(f.provenance_documents == 'sans_document')
         return [presenter(f) for f in sorted(fiches, key=rang)
                 if (attestee(f) and (f.kind in ('preference', 'correction') or liee(f)))
                 or termes & mots(texte(f))]
