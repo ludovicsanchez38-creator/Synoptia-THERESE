@@ -147,8 +147,18 @@ function ApplicationBootstrap() {
           }
           if (isolation === 'switched') return;
 
+          // Correctifs 0.83 : une synchronisation des accords en échec ne bloque
+          // jamais le démarrage. Le cache local reste tel quel (rien de perdu ni
+          // de réactivé), le moteur revérifie l'accord avant chaque envoi, et la
+          // reprise est retentée au démarrage suivant. Avant, l'exception faisait
+          // échouer la tentative entière, relancée cinq fois, puis la
+          // vérification de mise en route était sautée.
           const { synchroniserConsentements } = await import('./lib/consentSync');
-          await synchroniserConsentements();
+          try {
+            await synchroniserConsentements();
+          } catch (err) {
+            console.warn('Synchronisation des accords reportée au prochain démarrage :', err);
+          }
 
           // Vérifier le statut onboarding
           const status = await api.getOnboardingStatus();

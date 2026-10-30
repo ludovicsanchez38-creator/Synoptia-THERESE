@@ -83,26 +83,38 @@ export function flushConsentDecisions(): Promise<void> {
   return flight;
 }
 
-/** Appelé après l'isolation du profil local, avant de monter les écrans métier. */
+/**
+ * Appelé après l'isolation du profil local, avant de monter les écrans métier.
+ *
+ * Correctifs 0.83 : l'import n'écrit que s'il reste des accords v2 sans version
+ * de texte, et une seule fois ; sinon on relit le moteur (`GET`). Toute erreur
+ * remonte sans toucher au cache : les accords anciens restent en place et la
+ * reprise est retentée au démarrage suivant. L'appelant ne bloque pas dessus.
+ */
 export async function synchroniserConsentements(): Promise<void> {
   const id = profile();
   const { request } = await import('../services/api/core');
   checkProfile(id);
   const { CLOUD_CONSENT_KEY, listCloudConsents } = await import('./consent');
   const legacy = listCloudConsents().filter(g => !g.textVersion);
-  await flushConsentDecisions();
-  checkProfile(id);
-  const revision = localStorage.getItem(`${outbox(id)}:revision`);
-  const result = await request<{ grants: CloudGrant[] }>('/api/consents/import', {
-    method: 'POST', body: JSON.stringify({ grants: legacy, data_profile: id }),
-  });
-  checkProfile(id);
-  if (localStorage.getItem(`${outbox(id)}:revision`) !== revision) {
-    await synchroniserConsentements();
+  let importer = legacy.length > 0;
+  for (;;) {
+    await flushConsentDecisions();
+    checkProfile(id);
+    const revision = localStorage.getItem(`${outbox(id)}:revision`);
+    const result = importer
+      ? await request<{ grants: CloudGrant[] }>('/api/consents/import', {
+        method: 'POST', body: JSON.stringify({ grants: legacy, data_profile: id }),
+      })
+      : await request<{ grants: CloudGrant[] }>('/api/consents');
+    // Import acquitté : si une décision est arrivée entre-temps, une relecture suffit.
+    importer = false;
+    checkProfile(id);
+    if (localStorage.getItem(`${outbox(id)}:revision`) !== revision) continue;
+    // Un retrait arrivé pendant l'import gagne aussi sur sa réponse périmée.
+    const retraits = new Set(pending(id).filter(d => !d.granted).map(d => `${d.purpose}:${d.provider}`));
+    const grants = Object.fromEntries(result.grants.filter(g => !retraits.has(`${g.purpose}:${g.provider.toLowerCase()}`)).map(g => [`${g.purpose}:${g.provider.toLowerCase()}`, g]));
+    localStorage.setItem(CLOUD_CONSENT_KEY, JSON.stringify({ version: '2', grants }));
     return;
   }
-  // Un retrait arrivé pendant l'import gagne aussi sur sa réponse périmée.
-  const retraits = new Set(pending(id).filter(d => !d.granted).map(d => `${d.purpose}:${d.provider}`));
-  const grants = Object.fromEntries(result.grants.filter(g => !retraits.has(`${g.purpose}:${g.provider.toLowerCase()}`)).map(g => [`${g.purpose}:${g.provider.toLowerCase()}`, g]));
-  localStorage.setItem(CLOUD_CONSENT_KEY, JSON.stringify({ version: '2', grants }));
 }

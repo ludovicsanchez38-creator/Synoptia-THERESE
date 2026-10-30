@@ -23,8 +23,9 @@ it('garde le retrait hors ligne dans A après A → B → A sans le transmettre 
   localStorage.setItem(DATA_PROFILE_STORAGE_KEY, moteur);
   request.mockImplementation(async (path, options) => {
     if (horsLigne) throw new Error('Moteur indisponible');
-    const body = JSON.parse(options.body);
-    if (path === '/api/consents') {
+    // Correctifs 0.83 : sans accord ancien, le démarrage relit le moteur par un GET sans corps.
+    const body = options?.body ? JSON.parse(options.body) : {};
+    if (path === '/api/consents' && options?.method === 'POST') {
       if (body.data_profile && body.data_profile !== moteur) throw new Error('Profil incorrect');
       decisions.push({ profil: moteur, granted: body.granted });
       if (moteur === '/profils/A') accordA = body.granted;
@@ -60,6 +61,9 @@ it('ne remplace pas le cache du nouveau profil avec une réponse tardive de l’
 
 it('un retrait acquitté pendant un import gagne sur la réponse ancienne', async () => {
   localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A');
+  // Un accord v2 sans version de texte : c'est lui qui déclenche l'import (correctifs 0.83).
+  localStorage.setItem('therese-cloud-consent', JSON.stringify({ version: '2', grants: {
+    'llm:openai': { purpose: 'llm', provider: 'openai', timestamp: '2026-01-01T00:00:00Z' } } }));
   let terminer!: (value: unknown) => void;
   request.mockImplementationOnce(() => new Promise(resolve => { terminer = resolve; }))
     .mockResolvedValue({ grants: [] });
@@ -69,6 +73,7 @@ it('un retrait acquitté pendant un import gagne sur la réponse ancienne', asyn
   await flushConsentDecisions();
   terminer({ grants: [{ purpose: 'llm', provider: 'openai', timestamp: '2026-10-01T00:00:00Z' }] });
   await synchro;
+  expect(request.mock.calls[0][0]).toBe('/api/consents/import');
   expect(hasCloudConsent('llm', 'openai')).toBe(false);
 });
 
