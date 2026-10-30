@@ -65,6 +65,7 @@ from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_m
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
 from app.services.provenance_documents import (
+    AVIS_HISTORIQUE,
     copier_messages_differes,
     filtrer_historique,
     memoriser_provenance,
@@ -650,6 +651,19 @@ async def _pieces_jointes_recentes(
             if len(rejoues) >= PLAFOND_PIECES_JOINTES_REJOUEES:
                 return rejoues
     return rejoues
+
+
+async def _pieces_jointes_autorisees(
+    conversation_id: str | None, session: AsyncSession | None,
+    deja_fournis: list[str], config: Any,
+) -> tuple[list[str], str]:
+    """Le rappel automatique n'est jamais une nouvelle demande de document."""
+    from app.services.memory_card_context import documents_autorises
+
+    pieces = await _pieces_jointes_recentes(conversation_id, session, deja_fournis)
+    if pieces and not documents_autorises(config, None):
+        return [], AVIS_HISTORIQUE
+    return pieces, ''
 
 
 def borner_bloc_fichiers(contextes: list[str]) -> tuple[list[str], int]:
@@ -2197,9 +2211,12 @@ async def send_message(
 
     # BUG-160 : même rappel que sur le chemin streaming. Pas de contexte
     # ici : le chemin non-stream n'a ni génération ni annulation.
-    for fp in await _pieces_jointes_recentes(
-        conversation.id, session, deja_fournis=list(request.file_paths or [])
-    ):
+    anciennes_pieces, avis_pieces = await _pieces_jointes_autorisees(
+        conversation.id, session, list(request.file_paths or []), llm_service.config
+    )
+    if avis_pieces and not avis_historique:
+        inline_preamble = avis_pieces + "\n\n" + inline_preamble
+    for fp in anciennes_pieces:
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
             scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
@@ -2930,9 +2947,12 @@ async def _do_stream_response(
     # vide sa liste après l'envoi, donc sans ce rappel la conversation perd le
     # document dès le message suivant et THÉRÈSE répond, à juste titre, qu'elle
     # n'a aucun moyen de le lire.
-    for fp in await _pieces_jointes_recentes(
-        conversation_id, session, deja_fournis=list(file_paths or [])
-    ):
+    anciennes_pieces, avis_pieces = await _pieces_jointes_autorisees(
+        conversation_id, session, list(file_paths or []), llm_service.config
+    )
+    if avis_pieces and not avis_historique:
+        preamble = avis_pieces + "\n\n" + preamble
+    for fp in anciennes_pieces:
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
             scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,

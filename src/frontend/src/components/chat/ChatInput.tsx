@@ -649,17 +649,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     envoiEnPreparationRef.current = true;
     try {
     await (async () => {
-    // Revue Soso : envoyer un DOCUMENT est une finalité distincte d'envoyer un
-    // message. Sans elle, quiconque avait déjà accepté le chat n'aurait jamais
-    // été informé que ses documents partent, ni qu'ils repartent à chaque
-    // message depuis qu'ils sont rejoués (BUG-160).
-    // Revue Soso, passe 2 : la finalité ne peut pas dépendre du seul composeur.
-    // Au tour suivant il est vide, alors que le backend rejoue les documents de
-    // la conversation. Un accord donné sous Ollama puis un passage au cloud
-    // enverrait le document sans que rien ne l'annonce.
-    const conversationPorteDesDocuments = Boolean(
-      currentConversation()?.messages.some((m) => m.hasAttachments),
-    );
+    // Sans accord documents, le moteur retire l'historique documentaire et
+    // les anciennes pièces jointes. Seule une nouvelle lecture explicite
+    // demande cet accord dans le composeur.
     // B-1521 : /fichier et /analyse lisent un fichier local et l'envoient au
     // modèle (même motif que le moteur, FILE_COMMAND_PATTERN) : c'est un envoi
     // de document, pas un simple message.
@@ -676,7 +668,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     }
     const finaliteCloud: CloudPurpose =
-      attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
+      attachedFiles.length > 0 || commandeDeFichier
         ? 'documents'
         : 'llm';
     // B-1158 : l'accord porte sur la destination réelle ; un modèle Ollama
@@ -698,11 +690,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           MEMORY_CARDS_CATEGORY,
           // B-1515 : ils partent avec chaque message, dans le prompt système.
           'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
-          ...(attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
+          ...(attachedFiles.length > 0 || commandeDeFichier
             ? ['contenu intégral des documents joints ou lus par /fichier et /analyse']
             : []),
-          ...(attachedFiles.length > 0 || conversationPorteDesDocuments
-            ? ['ces documents sont renvoyés à chaque message de la conversation']
+          ...(attachedFiles.length > 0
+            ? ['ces documents peuvent être renvoyés aux tours suivants tant que ton accord documents reste actif pour ce fournisseur']
             : []),
         ],
       });
