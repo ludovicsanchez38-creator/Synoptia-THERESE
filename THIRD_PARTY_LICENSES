@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 3c3736635ad1539a1c9f04aaa3a4c128a7221d06c9eced49e9d89f240dc00a96
+Empreinte des verrous : 1d4bb3cc34d5a42476e9f89fcbaeac6ba155d606691dc0f58792bdfde199ba74
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -7729,11 +7729,12 @@ Archive : https://files.pythonhosted.org/packages/05/99/49ee85903dee060d9f08297b
 Intégrité : sha256:79a66ad50688c0b794dd501dc340a736992a6342f7f95e5811be60b5224a26a7
 Notice : faster_whisper-1.2.1.dist-info/LICENSE — texte SHA256 4a4e89b114f4d7326f3df3d1eb8eb8a3920a6992b709dda7d59fc2a1760e81a7
 
-python:filelock@3.20.3
-Licence déclarée : Unlicense
-Archive : https://files.pythonhosted.org/packages/1d/65/ce7f1b70157833bf3cb851b556a37d4547ceafc158aa9b34b36782f23696/filelock-3.20.3.tar.gz
-Intégrité : sha256:18c57ee915c7ec61cff0ecf7f0f869936c7c30191bb0cf406f1341778d0834e1
-Notice : filelock-3.20.3/LICENSE — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+python:filelock@4.2.5
+Licence déclarée : MIT
+Archive : https://files.pythonhosted.org/packages/aa/4b/2320d9fa03b65b4beb43b521fe1b12b7f87ab91ee42de3a286075016d205/filelock-4.2.5.tar.gz
+Intégrité : sha256:37d8fa4f8b5e9233612e68ab23bf64cae41771322c8797361088ae2895b12894
+Notice : filelock-4.2.5/LICENSE — texte SHA256 ddadcd70a64d2713f1c7543d6c0a2ab46dbe260779181ac0cc04a3c779f360c7
+Notice : filelock-4.2.5/docs/license.rst — texte SHA256 31630117cd3ff8016b7bd9746d86be03a4704e9201af3dadb1988433434e5645
 
 python:flatbuffers@25.12.19
 Licence déclarée : Apache-2.0
@@ -28648,6 +28649,16 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+========================================================================
+TEXTE SHA256 31630117cd3ff8016b7bd9746d86be03a4704e9201af3dadb1988433434e5645
+#########
+ License
+#########
+
+*py-filelock* is licensed under the MIT License:
+
+.. literalinclude:: ../LICENSE
 
 ========================================================================
 TEXTE SHA256 31d52158e4bc522a5a244ef3daef69996fbd7316912547041dd316cd046c3ac7
@@ -85246,6 +85257,30 @@ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+========================================================================
+TEXTE SHA256 ddadcd70a64d2713f1c7543d6c0a2ab46dbe260779181ac0cc04a3c779f360c7
+MIT License
+
+Copyright (c) 2025 Bernát Gábor and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ========================================================================
 TEXTE SHA256 de561d2b653aaad47bbf13147692d4f9286e545021f27b46affb44cc0df88c65
