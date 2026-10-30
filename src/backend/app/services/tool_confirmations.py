@@ -226,6 +226,23 @@ def canoniser_arguments(tool_name: str, arguments: dict[str, Any]) -> dict[str, 
     return canonises
 
 
+def canoniser_pour_connecteur(
+    tool_name: str, arguments: dict[str, Any], schema: Any = None
+) -> dict[str, Any]:
+    """Arguments publics d'un outil MCP : ceux que la carte montre et que le
+    connecteur reçoit (relecture 6, réserve 7).
+
+    L'alias du corps n'est recopié dans `body` que si le connecteur déclare ce
+    champ, ou ne publie pas ses propriétés : un connecteur strict qui attend
+    `content` ne reçoit pas un champ qu'il refuserait.
+    """
+    canonises = canoniser_arguments(tool_name, dict(arguments))
+    proprietes = schema.get("properties") if isinstance(schema, dict) else None
+    if "body" in canonises and "body" not in arguments and isinstance(proprietes, dict) and "body" not in proprietes:
+        canonises.pop("body")
+    return deepcopy(canonises)
+
+
 def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
     """La confirmation alimente la bulle et l'aperçu, pas le modèle."""
     try:

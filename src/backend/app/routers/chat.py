@@ -83,6 +83,7 @@ from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     _base_tool_name,
     canoniser_arguments,
+    canoniser_pour_connecteur,
     empreinte_action,
     pop_pending,
     register_pending,
@@ -3801,7 +3802,16 @@ async def _execute_tools_and_continue(
         # "Executing tool: send_email" laissait croire à un envoi réel alors que
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
-            pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
+            # Relecture 6, réserve 7 : pour un connecteur MCP, la carte et
+            # l'appel partagent les mêmes arguments publics canonisés ; le
+            # moteur n'ajoute ses clés internes qu'à la copie de la carte.
+            arguments_publics: dict[str, Any] | None = None
+            if "__" in tc.name:
+                schema_outil = next((t.get("function", {}).get("parameters") for t in tools or []
+                                     if t.get("function", {}).get("name") == tc.name), None)
+                arguments_publics = canoniser_pour_connecteur(tc.name, dict(tc.arguments), schema_outil)
+            pending_arguments = (dict(arguments_publics) if arguments_publics is not None
+                                 else canoniser_arguments(tc.name, dict(tc.arguments)))
             # Les arguments générés peuvent eux-mêmes citer le contexte.
             # La confirmation d'un outil n'accorde aucune finalité IA.
             # Tour 7 : trois niveaux. « inconnue » (ancien message, ancienne
@@ -3875,7 +3885,7 @@ async def _execute_tools_and_continue(
                 )
             confirmation_id = register_pending(
                 tc.name, pending_arguments, conversation_id=conversation_id,
-                public_arguments=tc.arguments if "__" in tc.name else None,
+                public_arguments=arguments_publics,
             )
             confirm_chunk = StreamChunk(
                 type="confirmation_required",
