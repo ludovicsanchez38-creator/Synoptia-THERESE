@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 007da676ed804485846b029ce6659689fade95ce800e423c275fa2d62fcf6f2d
+Empreinte des verrous : f2fcb1af564ae09b3b142c37989963f7e068d3fb412063916eb12de025011eef
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -110961,6 +110961,12 @@ Incorporé dans : usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib
 SHA-256 : 8df73b143372f963fa64adb3be9a41ee261e5a3c19dfca0b2be516506fbbfec0
 Notices : licenses/cpython/ElementTree-LICENSE.txt, licenses/cpython/LICENSE.txt
 
+SipHash-2-4 (William Ahern, incorporated into Expat) — CPython v3.13.17 / Expat 2.8.5 (adaptation du fichier siphash.h)
+Licence : CC0-1.0
+Incorporé dans : usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/pyexpat.cpython-313-x86_64-linux-gnu.so
+SHA-256 : 83b0fc81ac9b06f2871ef4c2c884954d8f0cf258d3408d7ddb5dc58e161709e0
+Notices : licenses/cpython/expat-SipHash-LICENSE.txt, licenses/cpython/CC0-1.0.txt
+
 ========================================================================
 licenses/cpython/BLAKE2-LICENSE.txt
 Source : https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_blake2/impl/blake2b.c
@@ -112928,6 +112934,110 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+========================================================================
+licenses/cpython/expat-SipHash-LICENSE.txt
+Source : https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/expat/siphash.h
+SHA-256 notice : e2b6d69c477ee2f44be5f7da94c853599719021eaf30fb285aa3a18706215113
+/* ==========================================================================
+ * siphash.h - SipHash-2-4 in a single header file
+ * --------------------------------------------------------------------------
+ * Derived by William Ahern from the reference implementation[1] published[2]
+ * by Jean-Philippe Aumasson and Daniel J. Berstein.
+ * Minimal changes by Sebastian Pipping and Victor Stinner on top, see below.
+ * Licensed under the CC0 Public Domain Dedication license.
+ *
+ * 1. https://www.131002.net/siphash/siphash24.c
+ * 2. https://www.131002.net/siphash/
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ * --------------------------------------------------------------------------
+ * HISTORY:
+ *
+ * 2020-10-03  (Sebastian Pipping)
+ *   - Drop support for Visual Studio 9.0/2008 and earlier
+ *
+ * 2019-08-03  (Sebastian Pipping)
+ *   - Mark part of sip24_valid as to be excluded from clang-format
+ *   - Re-format code using clang-format 9
+ *
+ * 2018-07-08  (Anton Maklakov)
+ *   - Add "fall through" markers for GCC's -Wimplicit-fallthrough
+ *
+ * 2017-11-03  (Sebastian Pipping)
+ *   - Hide sip_tobin and sip_binof unless SIPHASH_TOBIN macro is defined
+ *
+ * 2017-07-25  (Vadim Zeitlin)
+ *   - Fix use of SIPHASH_MAIN macro
+ *
+ * 2017-07-05  (Sebastian Pipping)
+ *   - Use _SIP_ULL macro to not require a C++11 compiler if compiled as C++
+ *   - Add const qualifiers at two places
+ *   - Ensure <=80 characters line length (assuming tab width 4)
+ *
+ * 2017-06-23  (Victor Stinner)
+ *   - Address Win64 compile warnings
+ *
+ * 2017-06-18  (Sebastian Pipping)
+ *   - Clarify license note in the header
+ *   - Address C89 issues:
+ *     - Stop using inline keyword (and let compiler decide)
+ *     - Replace _Bool by int
+ *     - Turn macro siphash24 into a function
+ *     - Address invalid conversion (void pointer) by explicit cast
+ *   - Address lack of stdint.h for Visual Studio 2003 to 2008
+ *   - Always expose sip24_valid (for self-tests)
+ *
+ * 2012-11-04 - Born.  (William Ahern)
+ * --------------------------------------------------------------------------
+ * USAGE:
+ *
+ * SipHash-2-4 takes as input two 64-bit words as the key, some number of
+ * message bytes, and outputs a 64-bit word as the message digest. This
+ * implementation employs two data structures: a struct sipkey for
+ * representing the key, and a struct siphash for representing the hash
+ * state.
+ *
+ * For converting a 16-byte unsigned char array to a key, use either the
+ * macro sip_keyof or the routine sip_tokey. The former instantiates a
+ * compound literal key, while the latter requires a key object as a
+ * parameter.
+ *
+ * 	unsigned char secret[16];
+ * 	arc4random_buf(secret, sizeof secret);
+ * 	struct sipkey *key = sip_keyof(secret);
+ *
+ * For hashing a message, use either the convenience macro siphash24 or the
+ * routines sip24_init, sip24_update, and sip24_final.
+ *
+ * 	struct siphash state;
+ * 	void *msg;
+ * 	size_t len;
+ * 	uint64_t hash;
+ *
+ * 	sip24_init(&state, key);
+ * 	sip24_update(&state, msg, len);
+ * 	hash = sip24_final(&state);
+ *
+ * or
+ *
+ * 	hash = siphash24(msg, len, key);
+ *
+ * To convert the 64-bit hash value to a canonical 8-byte little-endian
+ * binary representation, use either the macro sip_binof or the routine
+ * sip_tobin. The former instantiates and returns a compound literal array,
+ * while the latter requires an array object as a parameter.
+ * --------------------------------------------------------------------------
+ * NOTES:
+ *
+ * o Neither sip_keyof, sip_binof, nor siphash24 will work with compilers
+ *   lacking compound literal support. Instead, you must use the lower-level
+ *   interfaces which take as parameters the temporary state objects.
+ *
+ * o Uppercase macros may evaluate parameters more than once. Lowercase
+ *   macros should not exhibit any such side effects.
+ * ==========================================================================
+ */
 
 ========================================================================
 licenses/cpython/getopt-LICENSE.txt

@@ -1,0 +1,99 @@
+/* ==========================================================================
+ * siphash.h - SipHash-2-4 in a single header file
+ * --------------------------------------------------------------------------
+ * Derived by William Ahern from the reference implementation[1] published[2]
+ * by Jean-Philippe Aumasson and Daniel J. Berstein.
+ * Minimal changes by Sebastian Pipping and Victor Stinner on top, see below.
+ * Licensed under the CC0 Public Domain Dedication license.
+ *
+ * 1. https://www.131002.net/siphash/siphash24.c
+ * 2. https://www.131002.net/siphash/
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ * --------------------------------------------------------------------------
+ * HISTORY:
+ *
+ * 2020-10-03  (Sebastian Pipping)
+ *   - Drop support for Visual Studio 9.0/2008 and earlier
+ *
+ * 2019-08-03  (Sebastian Pipping)
+ *   - Mark part of sip24_valid as to be excluded from clang-format
+ *   - Re-format code using clang-format 9
+ *
+ * 2018-07-08  (Anton Maklakov)
+ *   - Add "fall through" markers for GCC's -Wimplicit-fallthrough
+ *
+ * 2017-11-03  (Sebastian Pipping)
+ *   - Hide sip_tobin and sip_binof unless SIPHASH_TOBIN macro is defined
+ *
+ * 2017-07-25  (Vadim Zeitlin)
+ *   - Fix use of SIPHASH_MAIN macro
+ *
+ * 2017-07-05  (Sebastian Pipping)
+ *   - Use _SIP_ULL macro to not require a C++11 compiler if compiled as C++
+ *   - Add const qualifiers at two places
+ *   - Ensure <=80 characters line length (assuming tab width 4)
+ *
+ * 2017-06-23  (Victor Stinner)
+ *   - Address Win64 compile warnings
+ *
+ * 2017-06-18  (Sebastian Pipping)
+ *   - Clarify license note in the header
+ *   - Address C89 issues:
+ *     - Stop using inline keyword (and let compiler decide)
+ *     - Replace _Bool by int
+ *     - Turn macro siphash24 into a function
+ *     - Address invalid conversion (void pointer) by explicit cast
+ *   - Address lack of stdint.h for Visual Studio 2003 to 2008
+ *   - Always expose sip24_valid (for self-tests)
+ *
+ * 2012-11-04 - Born.  (William Ahern)
+ * --------------------------------------------------------------------------
+ * USAGE:
+ *
+ * SipHash-2-4 takes as input two 64-bit words as the key, some number of
+ * message bytes, and outputs a 64-bit word as the message digest. This
+ * implementation employs two data structures: a struct sipkey for
+ * representing the key, and a struct siphash for representing the hash
+ * state.
+ *
+ * For converting a 16-byte unsigned char array to a key, use either the
+ * macro sip_keyof or the routine sip_tokey. The former instantiates a
+ * compound literal key, while the latter requires a key object as a
+ * parameter.
+ *
+ * 	unsigned char secret[16];
+ * 	arc4random_buf(secret, sizeof secret);
+ * 	struct sipkey *key = sip_keyof(secret);
+ *
+ * For hashing a message, use either the convenience macro siphash24 or the
+ * routines sip24_init, sip24_update, and sip24_final.
+ *
+ * 	struct siphash state;
+ * 	void *msg;
+ * 	size_t len;
+ * 	uint64_t hash;
+ *
+ * 	sip24_init(&state, key);
+ * 	sip24_update(&state, msg, len);
+ * 	hash = sip24_final(&state);
+ *
+ * or
+ *
+ * 	hash = siphash24(msg, len, key);
+ *
+ * To convert the 64-bit hash value to a canonical 8-byte little-endian
+ * binary representation, use either the macro sip_binof or the routine
+ * sip_tobin. The former instantiates and returns a compound literal array,
+ * while the latter requires an array object as a parameter.
+ * --------------------------------------------------------------------------
+ * NOTES:
+ *
+ * o Neither sip_keyof, sip_binof, nor siphash24 will work with compilers
+ *   lacking compound literal support. Instead, you must use the lower-level
+ *   interfaces which take as parameters the temporary state objects.
+ *
+ * o Uppercase macros may evaluate parameters more than once. Lowercase
+ *   macros should not exhibit any such side effects.
+ * ==========================================================================
+ */

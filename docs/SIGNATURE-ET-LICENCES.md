@@ -316,12 +316,12 @@ La reliaison fonctionnelle reste à démontrer sur une vraie construction.
 `licenses/cpython-components.lock.json` et sa preuve
 `licenses/cpython/evidence-v0820.json` couvrent **58 fichiers Linux** de la
 v0.82.0 : **57 extensions et libpython**, dont **14 fichiers incorporent les
-19 composants ou adaptations tiers identifiés**. Les symboles définis, imports,
+20 composants ou adaptations tiers identifiés**. Les symboles définis, imports,
 DT_NEEDED, chaînes de version et empreintes sont enregistrés. Les versions
 d'adaptations dépourvues de numéro amont distinct désignent explicitement
 la révision CPython `v3.13.17`.
 
-Expat 2.8.5 et libmpdec 2.5.1 sont incorporés ; HACL* et son support KaRaMeL/F*,
+Expat 2.8.5, son SipHash-2-4 sous CC0, et libmpdec 2.5.1 sont incorporés ; HACL* et son support KaRaMeL/F*,
 BLAKE2, mimalloc 2.1.2, Mersenne Twister, SipHash, dtoa, cfuhash, GUS et Unicode
 sont également identifiés. Le catalogue conserve aussi les notices propres de
 pysqlite/psycopg, des wrappers curses/syslog/locale, de getopt, de la chaîne
@@ -330,10 +330,10 @@ DT_NEEDED livrées séparément gardent leurs versions et notices du catalogue
 système. La copie BLAKE2 est celle de référence sous CC0 ; aucune version libb2
 n'est déduite de son nom. Les cas non incorporés sont motivés dans la preuve.
 
-**34 textes originaux** sont conservés dans `licenses/cpython/`, dont le
+**35 textes originaux** sont conservés dans `licenses/cpython/`, dont le
 `Doc/license.rst` complet et les notices des sources incorporées du tag exact.
 Le texte CC0 complet vient du catalogue SPDX v3.27.0. Les empreintes de l'archive
-CPython, de 39 fichiers source et des extractions permettent de rejouer la
+CPython, de 40 fichiers source et des extractions permettent de rejouer la
 collecte. Les deux premiers petits commentaires d'un fichier source ne sont pas
 nécessairement sa licence : les extractions sélectionnent le bloc de permission
 complet et les tests vérifient les titulaires et clauses attendus.

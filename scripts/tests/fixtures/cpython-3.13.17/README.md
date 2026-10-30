@@ -14,7 +14,9 @@ Chemin dans le paquet :
 Compression gzip déterministe (`mtime=0`), sans modification des ELF. Provenance :
 témoins de `/tmp/therese-relecture6-d94p6vfv/`, rapprochés une nouvelle fois du
 paquet publié. CPython est sous PSF-2.0 ; Expat incorporé sous MIT et libmpdec
-sous BSD-2-Clause. Notices originales dans `licenses/cpython/`, reprises dans
+sous BSD-2-Clause. pyexpat incorpore aussi le SipHash-2-4 de William Ahern sous
+CC0-1.0, attesté par ses définitions `sip24_update` et `sip24_final`.
+Notices originales dans `licenses/cpython/`, reprises dans
 `THIRD_PARTY_LICENSES`. Les définitions locales et versions sont enregistrées
 dans `licenses/cpython/evidence-v0820.json`.
 

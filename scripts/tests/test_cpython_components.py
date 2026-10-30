@@ -67,7 +67,7 @@ class CPythonComponentsTests(unittest.TestCase):
         for name, record in manifest['files'].items():
             with self.subTest(name=name):
                 self.assertNotEqual(record['license'], 'PSF-2.0')
-                self.assertEqual(len(record['components']), 1)
+                self.assertEqual(len(record['components']), 2 if 'pyexpat' in name else 1)
                 c = record['components'][0]
                 self.assertEqual((c['id'], c['version'], c['license']),
                                  ('expat', '2.8.5', 'MIT') if 'pyexpat' in name else
@@ -161,6 +161,19 @@ class CPythonComponentsTests(unittest.TestCase):
                                 for line in symbols.splitlines()))
             self.assertIn(version + b'\0', binary.read_bytes())
 
+    def test_expat_embeds_separate_cc0_siphash(self):
+        binary = next((self.stdlib / 'lib-dynload').glob('pyexpat*'))
+        symbols = subprocess.check_output(['readelf', '-Ws', str(binary)], text=True)
+        self.assertTrue(any(line.split()[-1:] == ['sip24_final'] and ' UND ' not in line
+                            for line in symbols.splitlines()))
+        record = components.identify(system.file_sha(binary), 'Linux', components.load(ROOT))
+        by_id = {c['id']: c for c in record['components']}
+        self.assertIn('expat-siphash', by_id)
+        self.assertEqual(by_id['expat-siphash']['license'], 'CC0-1.0')
+        notice = (ROOT / by_id['expat-siphash']['notices'][0]['path']).read_text()
+        self.assertIn('William Ahern', notice)
+        self.assertIn('CC0 Public Domain Dedication', notice)
+
     def test_catalog_bindings_and_original_notices_cannot_be_changed(self):
         original = components.load(self.root)
         for kind in ('component', 'binding', 'version', 'duplicate'):
@@ -194,7 +207,7 @@ class CPythonComponentsTests(unittest.TestCase):
             self.assertEqual({c['id'] for c in record['components']}, ids)
             components.verify_record({'sha256': row['sha256'], **record}, 'Linux', catalog)
         self.assertEqual(len(catalog['files']), 58)
-        self.assertEqual(len(catalog['components']), 19)
+        self.assertEqual(len(catalog['components']), 20)
 
     def test_complement_rejects_other_deb_before_creating_output(self):
         wrong = self.root / 'wrong.deb'
