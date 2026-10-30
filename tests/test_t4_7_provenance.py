@@ -137,14 +137,20 @@ async def _transport_tache(req):
 
 
 async def test_tache_dans_une_conversation_anterieure(client, monkeypatch):
+    """Tour 8 (relecture 7, constat 1) : avec l'accord documents, l'ancien
+    historique part ; la carte est « inconnue » et l'écriture reste fermée,
+    sinon sa copie survivrait au retrait de l'accord. Le refus dit pourquoi et
+    propose les sorties (voir aussi tests/test_t4_8_inconnue.py, où l'écriture
+    passe sans accord, l'historique incertain étant alors retiré)."""
     from app.models.entities import Task
 
     enregistrer_accord("llm", "openai", True, "3", ["memory_cards_r2_v1"])
     enregistrer_accord("documents", "openai", True, "3", ["memory_cards_r2_v1"])
     resultat = await _creer_tache(client, monkeypatch, _transport_tache, _conversation(None))
-    assert resultat.get("status") == "executed", resultat
+    assert resultat.get("status") == "refused", resultat
+    assert "origine n’est pas vérifiable" in resultat["result"] and "nouvelle conversation" in resultat["result"]
     with get_sync_session() as s:
-        assert [t.title for t in s.exec(select(Task)).all()] == ["Appeler Paul"]
+        assert s.exec(select(Task)).all() == []
 
 
 async def test_conversation_anterieure_retrait_avant_confirmation(client, monkeypatch):

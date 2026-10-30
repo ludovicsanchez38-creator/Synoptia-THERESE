@@ -84,12 +84,17 @@ de l'utilisateur ne marque plus la conversation : seule l'origine enregistrée
 des fiches réellement retenues compte.
 
 Les créations natives de contacts, projets, tâches, factures et événements
-issues d'un contexte « documents » sont refusées à la confirmation : ces
-objets ne savent pas encore conserver cette origine. Celles d'un contexte
-« inconnue » sont exécutées si l'accord documents du fournisseur actuel est
-valide au moment de confirmer, refusées sinon. Le refus explique que rien
-n'a été enregistré et propose la saisie directe dans le formulaire. Les
-directives explicites d'agenda portent une provenance sans document.
+issues d'un contexte « documents » ou « inconnue » sont refusées à la
+confirmation, accord documents présent ou non : ces objets ne conservent pas
+encore cette origine, et leur relecture (liste des tâches, fiche contact,
+agenda, factures, recherche) part sous le seul accord « llm ». Une copie
+enregistrée repartirait donc après un retrait de l'accord documents, alors
+que sa source resterait filtrée. Le refus explique que rien n'a été
+enregistré ; pour une origine inconnue, il propose aussi de redemander
+l'écriture dans une nouvelle conversation, sans les fiches mémoire. Sans
+accord documents, l'historique incertain est retiré du contexte : la demande
+seule produit alors une carte « sans_document », exécutable. Les directives
+explicites d'agenda portent une provenance sans document.
 
 Pour les connecteurs MCP, les arguments publics sont copiés séparément de
 l'enveloppe interne de confirmation. Seuls ces arguments publics deviennent
@@ -116,13 +121,13 @@ La génération transmet la provenance jusqu'à la garde du transport, qui
 revérifie l'accord documents pour le fournisseur effectif, notamment après
 un changement de fournisseur. Un refus d'accord revient en 403 ; tout échec de
 la capture ouvre le formulaire à remplir à la main, avec le motif affiché.
-L'enregistrement d'une commande issue d'échanges « documents » est refusé, car
-le format des commandes enregistrées ne conserve pas cette origine ; celui
-d'échanges d'origine « inconnue » (ancienne fiche) suit la règle des créations
-natives. Une commande issue d'échanges sans document, fiches nées des mots de
-l'utilisateur comprises, reste enregistrable. Le mode modification d'une
-commande reprend son modèle actuel comme une saisie : ce modèle part déjà sous
-l'accord « llm » à chaque exécution de la commande.
+L'enregistrement d'une commande issue d'échanges « documents » ou d'origine
+« inconnue » est refusé, accord documents présent ou non, car une commande
+enregistrée repart sous l'accord « llm » à chaque exécution. Une commande
+issue d'échanges sans document, fiches nées des mots de l'utilisateur
+comprises, reste enregistrable. Le mode modification d'une commande, que
+l'interface n'ouvre pas aujourd'hui, reprend son modèle actuel comme une
+saisie : son origine est à trancher avant de le rendre accessible.
 
 ## Fiches et autres textes persistants
 

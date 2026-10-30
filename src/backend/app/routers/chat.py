@@ -4471,26 +4471,25 @@ async def _executer_action_confirmee(
         await terminer(trace_id, tool_name, '{"success":false}')
         return {"status": "refused", "tool_name": tool_name, "result": result}
 
-    # Ces objets persistants n'ont pas encore de provenance par champ.
-    # La confirmation métier ne permet pas d'effacer l'origine des arguments.
-    # Tour 7 : un document avéré ferme toujours l'écriture. Une origine
-    # seulement inconnue (conversation antérieure à la mise à jour, ancienne
-    # fiche) ne la ferme que si l'accord « documents » manque au moment de
-    # confirmer : avec lui, le contexte a pu partir, et l'objet n'expose rien
-    # de plus que ces anciennes données locales elles-mêmes.
-    if tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}:
-        origine = arguments.get('_provenance_documents')
-        if origine == 'inconnue' and not documents_autorises(get_llm_service().config, None):
-            result = ("Cette écriture peut reprendre un ancien échange dont l’origine n’est pas vérifiable, "
-                      "et ton accord « documents » manque pour le fournisseur actuel. Rien n’a été enregistré. "
-                      "Autorise l’envoi des documents, ou saisis ces informations directement dans leur formulaire.")
-            await terminer(trace_id, tool_name, '{"success":false}')
-            return {"status": "refused", "tool_name": tool_name, "result": result}
-        if origine not in ('sans_document', 'inconnue'):
+    # Ces objets persistants n'ont pas encore de provenance par champ : leur
+    # relecture (list_tasks, read_contact, recherche mémoire…) part sous le
+    # seul accord « llm ». Toute origine autre que « sans_document » ferme
+    # donc l'écriture, même avec l'accord documents : après un retrait, la
+    # source resterait filtrée mais sa copie partirait (relecture 7).
+    # Une origine seulement inconnue (conversation antérieure à la mise à
+    # jour, ancienne fiche) reçoit un message distinct, avec ses sorties.
+    if (tool_name in {'create_contact', 'create_project', 'create_task', 'create_invoice', 'create_calendar_event'}
+            and arguments.get('_provenance_documents') != 'sans_document'):
+        if arguments.get('_provenance_documents') == 'inconnue':
+            result = ("Cette écriture peut reprendre un ancien échange ou une ancienne fiche mémoire dont l’origine "
+                      "n’est pas vérifiable : enregistrée, elle pourrait repartir plus tard vers ton fournisseur sans "
+                      "ton accord « documents ». Rien n’a été enregistré. Saisis-la directement dans son formulaire, "
+                      "ou redemande-la dans une nouvelle conversation, sans les fiches mémoire.")
+        else:
             result = ("Cette écriture reprend un document de cette conversation, et sa destination ne conserve pas "
                       "encore cette origine. Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")
-            await terminer(trace_id, tool_name, '{"success":false}')
-            return {"status": "refused", "tool_name": tool_name, "result": result}
+        await terminer(trace_id, tool_name, '{"success":false}')
+        return {"status": "refused", "tool_name": tool_name, "result": result}
 
     # Finding 1 (30/08) : la confirmation est une autre requête. Sans
     # reposer le compte collé à la carte, send_email retomberait sur

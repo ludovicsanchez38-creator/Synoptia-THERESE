@@ -92,16 +92,12 @@ async def verifier_persistance_rfc(session: AsyncSession, source_ids: list[str] 
     if origine == "sans_document":
         return
     if origine == "inconnue":
-        # Tour 7 : une origine seulement inconnue (ancienne fiche) suit la même
-        # règle que les autres écritures locales : l'accord « documents » du
-        # fournisseur actuel suffit, son absence ferme l'enregistrement.
-        from app.services.llm import get_llm_service
-        from app.services.memory_card_context import documents_autorises
-        if documents_autorises(get_llm_service().config, None):
-            return
-        raise HTTPException(409, "Cette commande reprend un échange dont l’origine n’est pas vérifiable, et ton accord "
-                            "« documents » manque pour le fournisseur actuel. Elle n’a pas été enregistrée. Autorise "
-                            "l’envoi des documents, ou crée la commande sans reprendre ces échanges.")
+        # Relecture 7 : une commande enregistrée repart sous l'accord « llm » à
+        # chaque exécution. Une origine inconnue reste donc fermée, accord
+        # documents présent ou non.
+        raise HTTPException(409, "Cette commande reprend un échange dont l’origine n’est pas vérifiable (ancien échange "
+                            "ou ancienne fiche mémoire) : enregistrée, elle pourrait repartir plus tard sans ton accord "
+                            "« documents ». Elle n’a pas été enregistrée. Crée-la sans reprendre ces échanges.")
     raise HTTPException(409, "Cette commande reprend un document. Son format ne conserve pas encore cette origine. "
                         "Elle n’a pas été enregistrée. Crée une commande sans ces informations.")
 
