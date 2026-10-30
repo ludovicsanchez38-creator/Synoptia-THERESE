@@ -3,7 +3,7 @@
 Tour 6 les traitait comme documentaires ; la relecture 6 (constat 5) a montré
 que l'atelier ne lit aucun fichier : tout vient de la saisie de l'utilisateur.
 Retirer l'accord « documents » ne bloque donc plus l'atelier ; sans accord
-« llm », rien ne part (voir tests/test_t4_7_regressions.py)."""
+« llm », rien ne part (voir tests/test_t4_7_atelier.py)."""
 
 import httpx
 import pytest
