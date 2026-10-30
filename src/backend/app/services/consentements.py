@@ -154,18 +154,22 @@ def accords_courants() -> list[dict[str, Any]]:
             for r in latest.values() if r['granted']]
 
 
+class AccordEnvoiRequis(ErreurPourEcran):
+    """Un refus d'envoi ne doit jamais être masqué par un repli fonctionnel."""
+
+
 def exiger_accord(purpose: str, provider: str) -> None:
     try:
         en_attente = _restauration_en_attente()
     except Exception:
         en_attente = True
     if en_attente:
-        raise ErreurPourEcran(
+        raise AccordEnvoiRequis(
             "Les accords n’ont pas pu être rétablis après la restauration. Aucun envoi cloud n’est autorisé. "
             "Relance la restauration de ta sauvegarde pour reprendre cette étape."
         )
     if not accord_valide(purpose, provider):
-        raise ErreurPourEcran(
+        raise AccordEnvoiRequis(
             f"Ton accord « {purpose} » pour {provider} est nécessaire. "
             "Autorise cet envoi dans THÉRÈSE avant de réessayer."
         )

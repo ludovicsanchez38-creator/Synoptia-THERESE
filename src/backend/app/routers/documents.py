@@ -40,6 +40,7 @@ from app.models.schemas_documents import (
     SectionUpdate,
 )
 from app.services import task_registry, traitements
+from app.services.consentements import AccordEnvoiRequis
 from app.services.document_orchestrator import (
     assemble_markdown,
     build_outline_prompt,
@@ -330,7 +331,7 @@ async def _draft_stream(
     """
     llm_service = get_llm_service()
     prompt = build_section_context(document, sections, target, instruction)
-    context = llm_service.prepare_context(messages=[Message(role="user", content=prompt)])
+    context = llm_service.prepare_context(messages=[Message(role="user", content=prompt, contient_documents=True)])
 
     accumulated = ""
     last_flush = time.monotonic()
@@ -505,11 +506,13 @@ async def validate_section(
     llm_service = get_llm_service()
     try:
         usage_resume: dict[str, int] = {}
-        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section), usage_sink=usage_resume)).strip()
+        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section), usage_sink=usage_resume, contient_documents=True)).strip()
         enregistrer_usage_llm(llm_service, usage_resume, f"document:{section.document_id}", section.content, summary)
         if not summary:
             summary = section.content[:300]
-    except Exception as exc:  # fallback volontaire : la validation ne bloque jamais
+    except AccordEnvoiRequis as exc:
+        raise HTTPException(403, detail=str(exc)) from exc
+    except Exception as exc:  # indisponibilité du fournisseur : résumé local
         logger.warning(
             "Validation section %s : résumé LLM indisponible (%s), fallback 300 caractères",
             section_id,
@@ -703,6 +706,7 @@ async def _generer_la_trame(
         raw_response = await llm_service.generate_content(
             usage_sink=usage_trame,
             prompt=build_outline_prompt(titre, brief),
+            contient_documents=True,
         )
         enregistrer_usage_llm(llm_service, usage_trame, f"document:{document_id}", brief or titre, raw_response)
         try:
