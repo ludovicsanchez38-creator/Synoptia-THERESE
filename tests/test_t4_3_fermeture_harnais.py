@@ -11,7 +11,11 @@ from sqlalchemy import text
 from sqlalchemy.util.concurrency import greenlet_spawn
 
 
-@pytest.mark.parametrize('racine', ['tests', 'src/backend/tests'])
+# La CI lance `tests/` et `src/backend/tests/` dans deux sessions distinctes
+# (tests/test_workflow_linux_harnais.py l'exige) : chaque harnais n'est chargé
+# que dans la sienne. Le harnais autonome est vérifié par
+# src/backend/tests/test_t4_3_fermeture_harnais_autonome.py.
+@pytest.mark.parametrize('racine', ['tests'])
 async def test_le_lifespan_attend_la_lecture_du_profil(racine, monkeypatch):
     chemin = (Path(racine) / 'conftest.py').resolve()
     harnais = next(m for m in list(sys.modules.values())
