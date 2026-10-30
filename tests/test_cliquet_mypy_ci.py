@@ -147,7 +147,12 @@ class TestCliquetMypy:
         # 28/10/2026 (lot 11) : référence c21 mesurée à 936 sous Linux,
         # intégration corrigée à 935, sans diagnostic nouveau. La baisse
         # vient de CalDAV dans c22b ; confirmation sur le runner à venir.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "935"
+        # 30/10/2026 (lot 4, intégration 0.83) : la confidentialité retire douze
+        # erreurs (image_generator, openclaw_bridge) et en ajoute quatre
+        # (chat, consentements, memory_cards, email_response_generator) : 927 à
+        # froid sous Linux, base 08d0a8a0 à 935 avec la même commande.
+        # Confirmation sur le runner à venir.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "927"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
