@@ -3838,7 +3838,8 @@ async def _execute_tools_and_continue(
                     messages_differes if isinstance(messages_differes, list) else []
                 )
             confirmation_id = register_pending(
-                tc.name, pending_arguments, conversation_id=conversation_id
+                tc.name, pending_arguments, conversation_id=conversation_id,
+                public_arguments=tc.arguments if "__" in tc.name else None,
             )
             confirm_chunk = StreamChunk(
                 type="confirmation_required",

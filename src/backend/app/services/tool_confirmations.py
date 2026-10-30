@@ -88,8 +88,17 @@ def bloc_outils_sous_confirmation(tool_names: list[str]) -> str:
     )
 
 
+class ArgumentsConfirmes(dict[str, Any]):
+    """Enveloppe interne ; les arguments MCP originaux restent séparés."""
+
+    def __init__(self, arguments: dict[str, Any], publics: dict[str, Any]):
+        super().__init__(deepcopy(arguments))
+        self.publics = deepcopy(publics)
+
+
 def register_pending(
-    tool_name: str, arguments: dict[str, Any], conversation_id: str | None = None
+    tool_name: str, arguments: dict[str, Any], conversation_id: str | None = None,
+    *, public_arguments: dict[str, Any] | None = None,
 ) -> str:
     """Enregistre une action en attente et renvoie son identifiant.
 
@@ -100,7 +109,9 @@ def register_pending(
     pas le cas qui a produit le constat.
     """
     confirmation_id = uuid.uuid4().hex
-    _pending[confirmation_id] = (tool_name, deepcopy(arguments), conversation_id)
+    copie = (ArgumentsConfirmes(arguments, public_arguments)
+             if public_arguments is not None else deepcopy(arguments))
+    _pending[confirmation_id] = (tool_name, copie, conversation_id)
     return confirmation_id
 
 
