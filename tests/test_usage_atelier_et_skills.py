@@ -15,9 +15,12 @@ class FauxServiceLlm:
     def __init__(self, reponse: str = "1. Introduction\n2. Développement\n3. Conclusion"):
         self.reponse = reponse
         self.appels = 0
+        self.origines_documents = []
 
-    async def generate_content(self, prompt, context=None, system_prompt=None, max_tokens=None, usage_sink=None):
+    async def generate_content(self, prompt, context=None, system_prompt=None, max_tokens=None,
+                               usage_sink=None, contient_documents=False):
         self.appels += 1
+        self.origines_documents.append(contient_documents)
         if usage_sink is not None:
             usage_sink["input_tokens"] = 321
             usage_sink["output_tokens"] = 123
@@ -57,6 +60,7 @@ async def test_la_trame_de_l_atelier_est_comptee_avec_l_usage_reel(client, monke
 
     apres = _compte(tracker)
     assert faux.appels >= 1
+    assert faux.origines_documents == [True]
     assert apres[0] - avant[0] >= 321 and apres[1] - avant[1] >= 123, (avant, apres)
 
 
