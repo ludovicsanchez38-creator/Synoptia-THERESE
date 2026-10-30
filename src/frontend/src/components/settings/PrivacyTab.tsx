@@ -56,7 +56,9 @@ const RETENTION_TABLE = [
 // Revue 0.40 : consentements cloud par finalité et fournisseur (RGPD art. 7)
 const PURPOSE_LABELS: Record<CloudPurpose, string> = {
   llm: 'Messages et contexte (assistant IA)',
-  documents: 'Contenu des documents joints au chat',
+  // Relecture 6 : cette finalité couvre aussi ce qui reprend un document
+  // (anciennes fiches, échanges RFC issus d'un fichier), pas l'atelier.
+  documents: 'Contenu de tes documents (pièces jointes, fichiers relus) et ce qui en est repris',
   voice: 'Audio de la dictée',
   images: 'Descriptions des visuels (Studio Images)',
 };

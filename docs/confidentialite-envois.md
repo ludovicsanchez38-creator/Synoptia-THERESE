@@ -74,60 +74,89 @@ pour la relecture mémoire ; elle ne dépend pas du seul drapeau du contexte.
 L'extraction automatique différée relit la provenance en base et la transmet
 à sa garde IA. Une trace absente y reste documentaire par prudence.
 
-Les cartes d'outils gardent aussi la provenance de leurs arguments. Les
-créations natives de contacts, projets, tâches, factures et événements issues
-d'un contexte documentaire ou inconnu sont refusées à la confirmation : ces
-objets ne savent pas encore conserver cette origine. Le refus explique que
-rien n'a été enregistré et propose la saisie directe dans le formulaire.
-Les directives explicites d'agenda portent une provenance sans document.
+Les cartes d'outils gardent aussi la provenance de leurs arguments, sur trois
+niveaux : « documents » quand un document avéré figure dans le contexte
+(pièce jointe, extrait indexé, fichier relu, message ou fiche marqués
+« documents »), « inconnue » quand seule une origine incertaine le marque
+(message antérieur à la mise à jour, ancienne fiche), « sans_document »
+sinon. Un contexte illisible compte comme documentaire. Une fiche née des mots
+de l'utilisateur ne marque plus la conversation : seule l'origine enregistrée
+des fiches réellement retenues compte.
+
+Les créations natives de contacts, projets, tâches, factures et événements
+issues d'un contexte « documents » sont refusées à la confirmation : ces
+objets ne savent pas encore conserver cette origine. Celles d'un contexte
+« inconnue » sont exécutées si l'accord documents du fournisseur actuel est
+valide au moment de confirmer, refusées sinon. Le refus explique que rien
+n'a été enregistré et propose la saisie directe dans le formulaire. Les
+directives explicites d'agenda portent une provenance sans document.
 
 Pour les connecteurs MCP, les arguments publics sont copiés séparément de
 l'enveloppe interne de confirmation. Seuls ces arguments publics deviennent
-`tools/call.arguments`, y compris les noms publics commençant par `_`.
-La confirmation métier reste distincte de l'accord IA.
+`tools/call.arguments`, y compris les noms publics commençant par `_`. Ce sont
+ceux que la carte affiche : l'alias du corps d'un e-mail est recopié dans
+`body` seulement si le connecteur déclare ce champ. La confirmation métier
+reste distincte de l'accord IA.
 
 ## Mini-chat Réfléchir–Faire–Capturer
 
 Les transitions et les messages suivants conservent les identifiants serveur
-des réponses. Le moteur relit les tours correspondants et leur provenance en
-base. Un identifiant perdu ou une réponse interrompue empêche la transition,
-avec une explication au tutoiement. Les références remplacent les copies de
-texte dans `brief` et `context` ; les anciennes requêtes sans références sont
-traitées comme documentaires pour ces deux champs.
+des réponses vérifiées. Le moteur relit les tours d'origine en base et les
+rejoue comme des tours de conversation, chacun avec sa provenance ; il ne les
+recopie jamais dans le message enregistré et n'y exécute aucune directive en
+ligne (`[contact: …]`). Une réponse refusée, interrompue ou coupée reste
+affichée avec la mention « Réponse non conservée » et n'est pas reprise ; la
+transition n'est arrêtée que si aucune réponse vérifiée n'existe. Une liste
+de références vide ne reprend rien : le message ne porte que la saisie de
+l'utilisateur. Les références remplacent les copies de texte dans `brief` et
+`context` ; les anciennes requêtes de capture sans références sont traitées
+comme documentaires pour ces deux champs.
 
 La génération transmet la provenance jusqu'à la garde du transport, qui
 revérifie l'accord documents pour le fournisseur effectif, notamment après
-un changement de fournisseur. L'aperçu peut être généré avec cet accord ;
-l'enregistrement d'une commande RFC documentaire ou d'origine inconnue est
-refusé, car le format des commandes enregistrées ne conserve pas cette origine.
-Une commande créée à partir de messages attestés sans document reste enregistrable.
+un changement de fournisseur. Un refus d'accord revient en 403 ; tout échec de
+la capture ouvre le formulaire à remplir à la main, avec le motif affiché.
+L'enregistrement d'une commande issue d'échanges « documents » est refusé, car
+le format des commandes enregistrées ne conserve pas cette origine ; celui
+d'échanges d'origine « inconnue » (ancienne fiche) suit la règle des créations
+natives. Une commande issue d'échanges sans document, fiches nées des mots de
+l'utilisateur comprises, reste enregistrable. Le mode modification d'une
+commande reprend son modèle actuel comme une saisie : ce modèle part déjà sous
+l'accord « llm » à chaque exécution de la commande.
 
 ## Fiches et autres textes persistants
 
 `memory_cards.provenance_documents` porte l'origine de toute la fiche :
 titre, sujet, contenu et raison. Elle vient du contexte serveur du tour et du
-message source, jamais d'un argument du modèle. Une correction conserve une
-origine documentaire ou inconnue. Les anciennes fiches restent intactes et
-reçoivent `inconnue` lors de la migration ; supprimer leur message source
-n'efface pas cette marque.
+message source, jamais d'un argument du modèle. Une correction partielle
+conserve une origine documentaire ou inconnue ; une réécriture manuelle du
+titre et du contenu (et de la raison, si la fiche en avait une) rend la fiche
+« sans_document », le sujet n'étant jamais transmis. Les anciennes fiches
+restent intactes et reçoivent `inconnue` lors de la migration ; supprimer leur
+message source n'efface pas cette marque.
 
 Si une fiche retenue pour le contexte est documentaire ou inconnue, l'envoi
 exige aussi l'accord documents du fournisseur effectif. L'accord fiches sous
-la finalité LLM ne le remplace pas. Sans cet accord, l'échange est refusé avec
-une explication ; désactiver la mémoire permet une nouvelle demande avec les
-seuls éléments autorisés. Le retrait tardif reste contrôlé au transport.
+la finalité LLM ne le remplace pas. Sans cet accord, rien ne part : le
+composeur reçoit une demande d'accord « documents » qui nomme la cause (une
+fiche ancienne ou issue d'un document, sans la citer) et les sorties
+(autoriser, décocher « Utiliser les fiches mémoire », réécrire la fiche). Le
+retrait tardif reste contrôlé au transport.
 
 Les refus d'écriture pour doublon ou correction ne renvoient au modèle que
 l'identifiant et la version de la fiche correspondante, sans son ancien titre.
 Les détails de validation pouvant reprendre les mots d'une ancienne fiche
 documentaire ou inconnue sont omis ; le message de refus reste visible.
 
-Dans l'atelier documentaire, les titres, trames, contenus et résumés de
-sections sont tous traités comme documentaires lors de leur réutilisation.
-Un refus d'accord lors de la validation n'est pas masqué par le résumé local
-de secours. Les titres automatiques de conversation viennent de la demande
-utilisateur, sans génération LLM ; une reprise RFC documentaire reçoit un
-titre neutre. Aucun générateur de résumé de conversation n'est actif ici.
+L'atelier documentaire ne lit aucun fichier : titres, briefs, sections et
+résumés viennent de la saisie de l'utilisateur ou de réponses produites à
+partir d'elle. Ils partent donc sous l'accord « llm », comme un message du
+chat. Sans cet accord, rien ne part : la rédaction et la trame sont refusées
+avec le motif, et la validation d'une section reste possible avec un résumé
+local et un avis visible. Les titres automatiques de conversation viennent de
+la demande utilisateur, sans génération LLM ; une reprise RFC documentaire ou
+d'origine inconnue reçoit un titre neutre. Aucun générateur de résumé de
+conversation n'est actif ici.
 
 Ces garanties décrivent ces chemins précis du code. Elles ne prétendent pas
 retrouver l'origine d'un texte recopié manuellement dans une nouvelle saisie,
