@@ -15,13 +15,11 @@ import { Button } from '../ui/Button';
 import { streamMessage } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
+import { sourcesVerifiees, type RFCMessage } from './rfcSources';
 
-export interface RFCMessage {
-  sourceId?: string;
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-}
+export type { RFCMessage } from './rfcSources';
+
+const NOTE_HORS_SUITE = 'Réponse non conservée : elle ne sera pas reprise dans la suite.';
 
 interface RFCChatProps {
   systemPrompt: string;
@@ -96,12 +94,14 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       // Préfixer le message avec le contexte système pour le RFC
       // Ajouter une instruction explicite de ne pas utiliser d'outils (BUG-097)
       const prefixedMessage = `[Instructions système : ${systemPrompt}\n\nIMPORTANT : Tu es dans un mini-chat RFC (Réfléchir-Faire-Capturer). Ne fais PAS d'appels d'outils (web_search, browser, mémoire, etc.). Réponds uniquement avec du texte. Sois concis (max 500 mots par réponse).]\n\nMessage de l'utilisateur : ${content}`;
+      // Tour 7 : seules les réponses vérifiées sont reprises. Une réponse
+      // refusée ou interrompue n'empêche plus la suite ; sans réponse
+      // vérifiée, le message part seul (aucune référence, aucun document).
+      const sources = sourcesVerifiees(messages, initialSourceIds);
       const stream = streamMessage({
         message: prefixedMessage,
         stream: true,
-        rfc_source_ids: messages.length
-          ? [...new Set([...(initialSourceIds || []), ...messages.flatMap(m => m.sourceId ? [m.sourceId] : [])])]
-          : initialSourceIds,
+        rfc_source_ids: sources.length ? sources : undefined,
         disable_tools: true,  // BUG-097 : pas d'outils dans le mini-chat RFC
       }, controller.signal);
 
@@ -114,7 +114,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
         if (chunk.type === 'done' && chunk.message_id) {
           assistantMsg.sourceId = chunk.message_id;
         }
-        if (chunk.type === 'error') {
+        if (chunk.type === 'error' || chunk.type === 'memory_consent_required') {
           throw new Error(chunk.content || 'Cet envoi a été refusé. Vérifie tes accords avant de réessayer.');
         }
         if (chunk.type === 'text') {
@@ -140,7 +140,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       }
 
       const finalContent = accumulated || (controller.signal.aborted ? '_(Interrompu)_' : '');
-      const finalMessages = [...updatedMessages, { ...assistantMsg, content: finalContent }];
+      const finalMessages = [...updatedMessages, { ...assistantMsg, content: finalContent, horsSuite: !assistantMsg.sourceId }];
       setMessages(finalMessages);
       onConversationUpdate(finalMessages);
     } catch (err) {
@@ -152,19 +152,17 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
         setMessages((prev) => {
           const lastMsg = prev.find((m) => m.id === assistantMsg.id);
           const content = lastMsg?.content || '_(Interrompu)_';
-          const final = [...currentMessages, { ...assistantMsg, content }];
+          const final = [...currentMessages, { ...assistantMsg, content, horsSuite: !assistantMsg.sourceId }];
           // Mettre à jour via le callback dans le prochain tick
           setTimeout(() => onConversationUpdate(final), 0);
           return final;
         });
       } else {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsg.id
-              ? { ...m, content: err instanceof Error ? err.message : 'Erreur de communication. Réessaie.' }
-              : m
-          )
-        );
+        const content = err instanceof Error ? err.message : 'Erreur de communication. Réessaie.';
+        const final = [...updatedMessages, { ...assistantMsg, sourceId: undefined, content, horsSuite: true }];
+        setMessages(final);
+        // L'étape suivante sait qu'un échange a eu lieu, sans le reprendre.
+        onConversationUpdate(final);
       }
     } finally {
       clearTimeout(timeoutId);
@@ -191,6 +189,9 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
               )}
             >
               <p className="whitespace-pre-wrap">{msg.content}</p>
+              {msg.horsSuite && (
+                <p className="mt-1 text-xs text-text-muted">{NOTE_HORS_SUITE}</p>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>

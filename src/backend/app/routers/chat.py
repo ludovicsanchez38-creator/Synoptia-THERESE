@@ -1636,15 +1636,22 @@ async def send_message(
     """
     _verifier_message_non_vide(request.message, request.file_paths)
 
-    rfc_documentaire = False
-    if request.rfc_source_ids is not None:
-        from app.services.provenance_documents import reprendre_rfc
-        if request.rfc_source_ids:
-            sources_rfc, rfc_documentaire = await reprendre_rfc(session, request.rfc_source_ids)
-            request.message += "\n\nÉchanges RFC précédents :\n" + sources_rfc
-        else:
-            # Modification d'une ancienne commande : origine non attestée.
-            rfc_documentaire = True
+    # Tour 7 : les tours RFC repris sont relus en base et rejoués comme des
+    # tours de conversation, avec leur provenance propre. Ils ne sont JAMAIS
+    # recopiés dans le message enregistré (taille qui doublait à chaque tour)
+    # ni soumis aux directives `[contact: …]` (une réponse du modèle ou un
+    # extrait cité devenait une écriture). Une liste vide ne reprend rien :
+    # le message est la seule saisie de l'utilisateur.
+    rfc_origine = "sans_document"
+    rfc_historique: list[LLMMessage] = []
+    if request.rfc_source_ids:
+        from app.services.provenance_documents import provenance, reprendre_rfc, texte_rfc
+        sources_rfc, rfc_origine = await reprendre_rfc(session, request.rfc_source_ids)
+        rfc_historique = [
+            LLMMessage(role="assistant" if m.role == "assistant" else "user", content=texte_rfc(m),
+                       contient_documents=provenance(m) != "sans_document")
+            for m in sources_rfc
+        ]
 
     # Get or create conversation
     if request.conversation_id:
@@ -1655,7 +1662,7 @@ async def send_message(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
     else:
-        conversation = Conversation(title="Création de commande" if rfc_documentaire else request.message[:50])
+        conversation = Conversation(title="Création de commande" if rfc_origine != "sans_document" else request.message[:50])
         session.add(conversation)
         await session.flush()
 
@@ -1683,7 +1690,7 @@ async def send_message(
     # (message-action + confirmation locale, commandes /) sont EXCLUS du
     # contexte LLM - bruit aujourd'hui, valeurs de variables demain. Les
     # user legacy (avant le tag) restent : bruit sans risque, documenté.
-    history = [
+    history = rfc_historique + [
         LLMMessage(role=msg.role, content=msg.content,
                    contient_documents=memoriser_provenance(msg) != "sans_document")
         for msg in history_messages
@@ -1715,7 +1722,11 @@ async def send_message(
     # part en base sans aucune mention du fichier et la conversation perd le
     # document dès le message suivant.
     _memoriser_pieces_jointes(user_message, request.file_paths)
-    memoriser_provenance(user_message, True if request.file_paths or rfc_documentaire else (None if reprise else False))
+    memoriser_provenance(
+        user_message,
+        True if request.file_paths or rfc_origine == "documents"
+        else (None if reprise or rfc_origine == "inconnue" else False),
+    )
     source_contient_documents = memoriser_provenance(user_message) != "sans_document"
     session.add(user_message)
     await session.commit()
@@ -1941,6 +1952,11 @@ async def send_message(
         # Tranche 0b : le prompt de rédaction dérivé du sujet est le texte
         # LLM, et il n'est JAMAIS re-scanné par les directives inline.
         llm_user_message = produce_prompt
+        cleaned_message, inline_cmds = request.message, []
+    elif request.rfc_source_ids:
+        # Tour 7 : une reprise RFC n'exécute aucune directive en ligne. Le
+        # mini-chat n'écrit rien ; un modèle de commande peut citer
+        # `[contact: …]` sans que ce soit une demande.
         cleaned_message, inline_cmds = request.message, []
     else:
         cleaned_message, inline_cmds = parse_inline_commands(request.message)

@@ -30,6 +30,14 @@ def provenance(message: Message) -> str:
     return valeur if isinstance(valeur, str) and valeur in ('documents', 'sans_document') else 'inconnue'
 
 
+def origine_cumulee(origines: Any) -> str:
+    """« documents » l'emporte, puis « inconnue » ; sinon « sans_document »."""
+    vues = set(origines)
+    if 'documents' in vues:
+        return 'documents'
+    return 'inconnue' if vues - {'sans_document'} else 'sans_document'
+
+
 def memoriser_provenance(message: Message, contient_documents: bool | None = None) -> str:
     data = _donnees(message)
     valeur = provenance(message)
@@ -67,8 +75,26 @@ def reprendre_messages_differes(copies: Any) -> list[LLMMessage]:
             and isinstance(m.get('content'), str)]
 
 
-async def reprendre_rfc(session: Any, source_ids: list[str]) -> tuple[str, bool]:
-    """Relire les tours RFC en base ; aucune copie du navigateur ne fait preuve."""
+# Préfixe que RFCChat pose devant chaque saisie : la consigne du mini-chat
+# est renvoyée avec le message courant, jamais répétée pour les tours repris.
+_MARQUE_SAISIE_RFC = "\n\nMessage de l'utilisateur : "
+
+
+def texte_rfc(message: Message) -> str:
+    """Le texte d'un tour RFC repris, sans la consigne répétée du mini-chat."""
+    contenu = message.content or ''
+    if message.role == 'user' and contenu.startswith('[Instructions système :') and _MARQUE_SAISIE_RFC in contenu:
+        return contenu.split(_MARQUE_SAISIE_RFC, 1)[1]
+    return contenu
+
+
+async def reprendre_rfc(session: Any, source_ids: list[str]) -> tuple[list[Message], str]:
+    """Relire les tours RFC en base ; aucune copie du navigateur ne fait preuve.
+
+    Tour 7 : rend les messages d'origine (jamais une transcription recopiée
+    dans un message enregistré) et leur origine cumulée, « documents »,
+    « inconnue » ou « sans_document ».
+    """
     from fastapi import HTTPException
     from sqlmodel import col, select
 
@@ -87,8 +113,12 @@ async def reprendre_rfc(session: Any, source_ids: list[str]) -> tuple[str, bool]
         for message in tours:
             if message.role in ('user', 'assistant'):
                 messages[message.id] = message
-    return ('\n\n'.join(f'{m.role}: {m.content}' for m in messages.values()),
-            any(provenance(m) != 'sans_document' for m in messages.values()))
+    ordonnes = sorted(messages.values(), key=lambda m: (m.created_at, m.id))
+    return ordonnes, origine_cumulee(provenance(m) for m in ordonnes)
+
+
+def transcription_rfc(messages: list[Message]) -> str:
+    return '\n\n'.join(f'{m.role}: {texte_rfc(m)}' for m in messages)
 
 
 def contexte_documentaire(context: Any) -> bool:
@@ -98,3 +128,4 @@ def contexte_documentaire(context: Any) -> bool:
     return any(getattr(m, 'contient_documents', None) is not False or bool(getattr(m, 'images', None))
                for m in [*(getattr(context, 'messages', None) or []),
                          *(getattr(context, 'memory_original_messages', None) or [])])
+

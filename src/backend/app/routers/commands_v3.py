@@ -14,6 +14,7 @@ from app.models.command import (
 )
 from app.models.database import get_session
 from app.services.command_registry import get_command_registry
+from app.services.consentements import AccordEnvoiRequis
 from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -82,13 +83,16 @@ async def get_command_schema(command_id: str):
 
 
 async def verifier_persistance_rfc(session: AsyncSession, source_ids: list[str] | None) -> None:
-    if source_ids is None:
-        return  # Saisie directe dans le formulaire, sans sortie RFC.
+    if not source_ids:
+        # Saisie directe dans le formulaire, ou assistant sans réponse
+        # vérifiée : rien n'a été généré à partir d'un échange.
+        return
     from app.services.provenance_documents import reprendre_rfc
-    _, documentaire = await reprendre_rfc(session, source_ids)
-    if documentaire:
-        raise HTTPException(409, "Cette commande reprend un document. Son format ne conserve pas encore cette origine. "
-                            "Elle n’a pas été enregistrée. Crée une commande sans ces informations.")
+    _, origine = await reprendre_rfc(session, source_ids)
+    if origine == "sans_document":
+        return
+    raise HTTPException(409, "Cette commande reprend un document. Son format ne conserve pas encore cette origine. "
+                        "Elle n’a pas été enregistrée. Crée une commande sans ces informations.")
 
 
 @router.post("/user", response_model=CommandDefinitionResponse, status_code=201)
@@ -171,8 +175,12 @@ async def generate_template(request: GenerateTemplateRequest, session: AsyncSess
     # Anciennes copies (brief ET context) sans référence : origine incertaine.
     documentaire = True
     if request.rfc_source_ids is not None:
-        from app.services.provenance_documents import reprendre_rfc
-        prompt, documentaire = await reprendre_rfc(session, request.rfc_source_ids)
+        from app.services.provenance_documents import reprendre_rfc, transcription_rfc
+        sources, origine = await reprendre_rfc(session, request.rfc_source_ids)
+        # La consigne est celle du serveur : un brief client resterait une
+        # copie sans provenance.
+        prompt = transcription_rfc(sources) + "\n\nuser: Crée une commande à partir de ces échanges."
+        documentaire = origine != "sans_document"
 
     try:
         # generate_content renvoie directement la chaine de reponse (non-streaming)
@@ -199,6 +207,9 @@ async def generate_template(request: GenerateTemplateRequest, session: AsyncSess
             "category": template.get("category", "production"),
             "prompt_template": template.get("prompt_template", ""),
         }
+    except AccordEnvoiRequis as e:
+        # Réserve 8 de la relecture 6 : un refus d'accord n'est pas une panne.
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Erreur génération template : {e}")
         raise HTTPException(status_code=500, detail=message_pour_ecran(e, ou="pendant la génération du modèle de commande"))

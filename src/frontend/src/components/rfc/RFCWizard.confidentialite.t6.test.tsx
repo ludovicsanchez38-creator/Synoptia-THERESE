@@ -41,7 +41,7 @@ describe('Tour 6 : provenance du mini-chat RFC', () => {
   });
 });
 
-it('explique une réponse incomplète et bloque la transition', async () => {
+it('explique l’absence de toute réponse complète et bloque la transition', async () => {
   vi.mocked(streamMessage).mockImplementationOnce(async function* () {
     yield {type: 'text', content: 'Réponse documentaire interrompue'};
   });
@@ -51,14 +51,16 @@ it('explique une réponse incomplète et bloque la transition', async () => {
   expect(streamMessage).toHaveBeenCalledTimes(1);
 });
 
-it('affiche le refus français de la capture et garde la conversation', async () => {
+// Tour 7 (relecture 6, réserve 8) : le refus reste affiché, en français, mais
+// il n'enferme plus l'utilisateur dans « Faire » : le formulaire local s'ouvre.
+it('affiche le refus français de la capture et ouvre le formulaire local', async () => {
   vi.mocked(generateTemplate).mockRejectedValueOnce(new Error('Ton accord documents pour Mistral est nécessaire.'));
   await reflechir();
   fireEvent.click(screen.getByRole('button', {name: /Passer à Faire/}));
   await waitFor(() => expect(screen.getByRole('button', {name: 'Capturer'})).toBeEnabled());
   fireEvent.click(screen.getByRole('button', {name: 'Capturer'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Ton accord documents pour Mistral');
-  expect(screen.getByPlaceholderText('Itère sur le template...')).toBeInTheDocument();
+  expect(await screen.findByLabelText('Nom (slug)')).toBeInTheDocument();
 });
 
 it('affiche le refus du moteur dans le mini-chat', async () => {

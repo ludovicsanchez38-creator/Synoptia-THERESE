@@ -9,7 +9,8 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Lightbulb, Wrench, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { RFCChat, type RFCMessage } from './RFCChat';
+import { RFCChat } from './RFCChat';
+import { sourcesVerifiees, type RFCMessage } from './rfcSources';
 import { RFCCapture } from './RFCCapture';
 import { useCommandsStore } from '../../stores/commandsStore';
 import { generateTemplate } from '../../services/api/commands-v3';
@@ -69,8 +70,10 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
 
   const goToMake = useCallback(async () => {
-    if (reflectMessages.some(m => m.role === 'assistant' && !m.sourceId)) {
-      setError('Cette réponse est incomplète. Renvoie ton message avant de continuer.');
+    // Tour 7 : une réponse refusée ou interrompue n'est simplement pas
+    // reprise. Seule l'absence de toute réponse vérifiée arrête la suite.
+    if (!sourcesVerifiees(reflectMessages).length) {
+      setError('Aucune réponse complète à reprendre. Renvoie ton message avant de continuer.');
       return;
     }
     setError('');
@@ -78,16 +81,19 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   }, [reflectMessages]);
 
   const goToCapture = useCallback(async () => {
+    const sources = sourcesVerifiees([...reflectMessages, ...makeMessages]);
+    if (!sources.length) {
+      // Rien de vérifié à reprendre : le formulaire local reste ouvert.
+      setError('Aucune réponse complète à reprendre : remplis la commande à la main.');
+      setStep('capture');
+      return;
+    }
     // Essayer de générer un template depuis la conversation
     setIsGenerating(true);
     try {
-      const allMessages = [...reflectMessages, ...makeMessages];
-      if (allMessages.some(m => m.role === 'assistant' && !m.sourceId)) {
-        throw new Error('Cette réponse est incomplète. Renvoie ton message avant de continuer.');
-      }
       const template = await generateTemplate({
         brief: 'Crée une commande à partir de ces échanges.',
-        rfc_source_ids: [...new Set(allMessages.flatMap(m => m.sourceId ? [m.sourceId] : []))],
+        rfc_source_ids: sources,
       });
 
       setCaptureData({
@@ -97,18 +103,21 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
         category: template.category || captureData.category,
         prompt_template: template.prompt_template || captureData.prompt_template,
       });
+      setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'La capture a été refusée. Vérifie tes accords avant de réessayer.');
-      return;
+      // Réserve 8 de la relecture 6 : un échec (refus d'accord compris)
+      // n'empêche pas de remplir la commande à la main ; la sauvegarde
+      // revérifie l'origine des échanges.
+      const motif = err instanceof Error && err.message ? err.message : 'La génération automatique n’a pas abouti.';
+      setError(`${motif} Tu peux remplir la commande à la main.`);
     } finally {
       setIsGenerating(false);
     }
-    setError('');
     setStep('capture');
   }, [reflectMessages, makeMessages, captureData]);
 
   const handleSave = useCallback(async (data: typeof captureData) => {
-    const rfc_source_ids = [...new Set([...reflectMessages, ...makeMessages].flatMap(m => m.sourceId ? [m.sourceId] : []))];
+    const rfc_source_ids = sourcesVerifiees([...reflectMessages, ...makeMessages]);
     if (editCommand) {
       await updateCommand(`user-${editCommand.name}`, {
         rfc_source_ids,
@@ -243,7 +252,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 <RFCChat
                   systemPrompt={MAKE_SYSTEM_PROMPT}
                   placeholder="Itère sur le template..."
-                  initialSourceIds={editCommand ? [] : [...new Set(reflectMessages.flatMap(m => m.sourceId ? [m.sourceId] : []))]}
+                  initialSourceIds={editCommand ? undefined : sourcesVerifiees(reflectMessages)}
                   initialMessage={
                     editCommand
                       ? `Je veux modifier ma commande "${editCommand.name}". Voici le template actuel :\n\n${editCommand.prompt_template}`
@@ -285,7 +294,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
               <RFCCapture
                 initialData={captureData}
                 onSave={handleSave}
-                onBack={() => setStep('make')}
+                onBack={() => { setError(''); setStep('make'); }}
               />
             </motion.div>
           )}
