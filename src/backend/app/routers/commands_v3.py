@@ -88,7 +88,14 @@ async def verifier_persistance_rfc(session: AsyncSession, source_ids: list[str] 
         # vérifiée : rien n'a été généré à partir d'un échange.
         return
     from app.services.provenance_documents import reprendre_rfc
-    _, origine = await reprendre_rfc(session, source_ids)
+    absentes: list[str] = []
+    _, origine = await reprendre_rfc(session, source_ids, absentes)
+    if absentes:
+        # L'origine d'un échange supprimé n'est plus vérifiable : on n'enregistre
+        # pas, mais on dit comment repartir (la capture retire la référence).
+        raise HTTPException(409, "Un échange repris a été supprimé entre-temps : son origine n’est plus vérifiable. "
+                            "La commande n’a pas été enregistrée. Reviens à « Faire » puis clique sur « Capturer » "
+                            "avant d’enregistrer.")
     if origine == "sans_document":
         return
     if origine == "inconnue":
@@ -181,9 +188,12 @@ async def generate_template(request: GenerateTemplateRequest, session: AsyncSess
 
     # Anciennes copies (brief ET context) sans référence : origine incertaine.
     documentaire = True
+    absentes: list[str] = []
     if request.rfc_source_ids is not None:
         from app.services.provenance_documents import reprendre_rfc, transcription_rfc
-        sources, origine = await reprendre_rfc(session, request.rfc_source_ids)
+        sources, origine = await reprendre_rfc(session, request.rfc_source_ids, absentes)
+        if not sources:
+            raise HTTPException(409, "Les échanges repris ont été supprimés : remplis la commande à la main.")
         # La consigne est celle du serveur : un brief client resterait une
         # copie sans provenance.
         prompt = transcription_rfc(sources) + "\n\nuser: Crée une commande à partir de ces échanges."
@@ -213,6 +223,8 @@ async def generate_template(request: GenerateTemplateRequest, session: AsyncSess
             "icon": template.get("icon", ""),
             "category": template.get("category", "production"),
             "prompt_template": template.get("prompt_template", ""),
+            # Tour 8 : références supprimées, ignorées ici, à retirer côté interface.
+            "rfc_sources_absentes": absentes,
         }
     except AccordEnvoiRequis as e:
         # Réserve 8 de la relecture 6 : un refus d'accord n'est pas une panne.

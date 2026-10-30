@@ -1645,9 +1645,12 @@ async def send_message(
     # le message est la seule saisie de l'utilisateur.
     rfc_origine = "sans_document"
     rfc_historique: list[LLMMessage] = []
+    # Tour 8 : une réponse supprimée entre-temps n'est plus une impasse ; elle
+    # est ignorée et signalée dans `done` pour que l'interface la retire.
+    rfc_absentes: list[str] = []
     if request.rfc_source_ids:
         from app.services.provenance_documents import provenance, reprendre_rfc, texte_rfc
-        sources_rfc, rfc_origine = await reprendre_rfc(session, request.rfc_source_ids)
+        sources_rfc, rfc_origine = await reprendre_rfc(session, request.rfc_source_ids, rfc_absentes)
         rfc_historique = [
             LLMMessage(role="assistant" if m.role == "assistant" else "user", content=texte_rfc(m),
                        contient_documents=provenance(m) != "sans_document")
@@ -2143,6 +2146,7 @@ async def send_message(
                 source_contient_documents=source_contient_documents,
                 source_documents_averes=source_documents_averes,
                 historique_documents_averes=historique_documents_averes,
+                rfc_sources_absentes=rfc_absentes,
             ),
             media_type="text/event-stream",
             headers={
@@ -2439,6 +2443,7 @@ async def _stream_response(
     source_contient_documents: bool = False,
     source_documents_averes: bool = True,
     historique_documents_averes: bool = True,
+    rfc_sources_absentes: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2535,6 +2540,7 @@ async def _stream_response(
         source_contient_documents=source_contient_documents,
         source_documents_averes=source_documents_averes,
         historique_documents_averes=historique_documents_averes,
+        rfc_sources_absentes=rfc_sources_absentes,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2819,6 +2825,7 @@ async def _do_stream_response(
     source_contient_documents: bool = False,
     source_documents_averes: bool = True,
     historique_documents_averes: bool = True,
+    rfc_sources_absentes: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -3604,6 +3611,8 @@ async def _do_stream_response(
     done_dict["uncertainty"] = uncertainty
     done_dict["contexte"] = bilan_contexte
     done_dict["memory_used"] = getattr(context, "memory_transmitted", None) if isinstance(getattr(context, "memory_transmitted", None), list) else []
+    if rfc_sources_absentes:
+        done_dict["rfc_sources_absentes"] = list(rfc_sources_absentes)
     yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)

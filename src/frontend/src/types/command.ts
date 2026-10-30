@@ -74,6 +74,8 @@ export interface GenerateTemplateResponse {
   icon: string;
   category: string;
   prompt_template: string;
+  /** Références supprimées entre-temps, ignorées par la capture. */
+  rfc_sources_absentes?: string[];
 }
 
 /** Catégories ordonnées pour l'affichage accueil */

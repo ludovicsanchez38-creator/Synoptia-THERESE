@@ -113,9 +113,14 @@ ligne (`[contact: …]`). Une réponse refusée, interrompue ou coupée reste
 affichée avec la mention « Réponse non conservée » et n'est pas reprise ; la
 transition n'est arrêtée que si aucune réponse vérifiée n'existe. Une liste
 de références vide ne reprend rien : le message ne porte que la saisie de
-l'utilisateur. Les références remplacent les copies de texte dans `brief` et
-`context` ; les anciennes requêtes de capture sans références sont traitées
-comme documentaires pour ces deux champs.
+l'utilisateur. Le mini-chat n'utilise ni les fiches mémoire ni les extraits
+indexés. Une réponse référencée puis supprimée (conversation effacée de
+l'historique) est ignorée par le message et la capture, et signalée à
+l'interface qui la retire ; rien n'en part. L'enregistrement qui la
+référencerait encore est refusé et invite à relancer la capture. Les
+références remplacent les copies de texte dans `brief` et `context` ; les
+anciennes requêtes de capture sans références sont traitées comme
+documentaires pour ces deux champs.
 
 La génération transmet la provenance jusqu'à la garde du transport, qui
 revérifie l'accord documents pour le fournisseur effectif, notamment après

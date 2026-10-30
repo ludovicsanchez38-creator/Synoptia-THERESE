@@ -91,13 +91,15 @@ async def test_retrait_tardif_rfc_avant_transport(client, monkeypatch, destinati
         assert "documents" in response.text and "accord" in response.text
 
 
-@pytest.mark.parametrize("ids", [[], ["introuvable"]])
-async def test_capture_source_inconnue_refusee(client, ids):
+# Tour 8 : une référence disparue n'est plus une impasse ; sans aucune source
+# relue, la capture refuse toujours (409) et renvoie au formulaire.
+@pytest.mark.parametrize("ids, motif", [([], "Renvoie ton message"), (["introuvable"], "à la main")])
+async def test_capture_source_inconnue_refusee(client, ids, motif):
     response = await client.post(
         "/api/v3/commands/generate-template", json={"brief": "Fictif", "rfc_source_ids": ids}
     )
     assert response.status_code == 409
-    assert "Renvoie ton message" in response.text
+    assert motif in response.text
 
 
 @pytest.mark.parametrize("modifier", [False, True])

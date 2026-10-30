@@ -94,12 +94,18 @@ def texte_rfc(message: Message) -> str:
     return contenu
 
 
-async def reprendre_rfc(session: Any, source_ids: list[str]) -> tuple[list[Message], str]:
+async def reprendre_rfc(session: Any, source_ids: list[str],
+                       absentes: list[str] | None = None) -> tuple[list[Message], str]:
     """Relire les tours RFC en base ; aucune copie du navigateur ne fait preuve.
 
     Tour 7 : rend les messages d'origine (jamais une transcription recopiée
     dans un message enregistré) et leur origine cumulée, « documents »,
     « inconnue » ou « sans_document ».
+
+    Tour 8 : avec une liste `absentes`, une réponse supprimée entre-temps est
+    ignorée et notée au lieu d'être refusée : rien n'en part, et l'appelant
+    la signale à l'interface. Une référence qui désigne autre chose qu'une
+    réponse reste refusée.
     """
     from fastapi import HTTPException
     from sqlmodel import col, select
@@ -109,6 +115,9 @@ async def reprendre_rfc(session: Any, source_ids: list[str]) -> tuple[list[Messa
     messages: dict[str, Message] = {}
     for source_id in dict.fromkeys(source_ids):
         source = await session.get(Message, source_id)
+        if source is None and absentes is not None:
+            absentes.append(source_id)
+            continue
         if not source or source.role != 'assistant':
             raise HTTPException(409, "Cet échange est introuvable. Renvoie ton message avant de continuer.")
         # Chaque réponse référence aussi les demandes qui l'ont produite.

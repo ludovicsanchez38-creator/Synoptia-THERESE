@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Lightbulb, Wrench, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { RFCChat } from './RFCChat';
-import { sourcesVerifiees, type RFCMessage } from './rfcSources';
+import { retirerSources, sourcesVerifiees, type RFCMessage } from './rfcSources';
 import { RFCCapture } from './RFCCapture';
 import { useCommandsStore } from '../../stores/commandsStore';
 import { generateTemplate } from '../../services/api/commands-v3';
@@ -69,6 +69,12 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
 
+  // Tour 8 : une réponse supprimée côté moteur est retirée des deux étapes.
+  const retirerAbsentes = useCallback((ids: string[]) => {
+    setReflectMessages(m => retirerSources(m, ids));
+    setMakeMessages(m => retirerSources(m, ids));
+  }, []);
+
   const goToMake = useCallback(async () => {
     // Tour 7 : une réponse refusée ou interrompue n'est simplement pas
     // reprise. Seule l'absence de toute réponse vérifiée arrête la suite.
@@ -103,6 +109,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
         category: template.category || captureData.category,
         prompt_template: template.prompt_template || captureData.prompt_template,
       });
+      if (template.rfc_sources_absentes?.length) retirerAbsentes(template.rfc_sources_absentes);
       setError('');
     } catch (err) {
       // Réserve 8 de la relecture 6 : un échec (refus d'accord compris)
@@ -114,7 +121,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
       setIsGenerating(false);
     }
     setStep('capture');
-  }, [reflectMessages, makeMessages, captureData]);
+  }, [reflectMessages, makeMessages, captureData, retirerAbsentes]);
 
   const handleSave = useCallback(async (data: typeof captureData) => {
     const rfc_source_ids = sourcesVerifiees([...reflectMessages, ...makeMessages]);
@@ -211,6 +218,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                   systemPrompt={REFLECT_SYSTEM_PROMPT}
                   placeholder="Décris ta commande idéale..."
                   onConversationUpdate={setReflectMessages}
+                  onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
               <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
@@ -261,6 +269,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                         : undefined
                   }
                   onConversationUpdate={setMakeMessages}
+                  onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
               <div className="px-4 py-3 border-t border-border flex justify-between">

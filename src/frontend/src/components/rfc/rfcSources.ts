@@ -18,3 +18,10 @@ export interface RFCMessage {
 export function sourcesVerifiees(messages: RFCMessage[], initiales: string[] = []): string[] {
   return [...new Set([...initiales, ...messages.flatMap(m => (m.role === 'assistant' && m.sourceId ? [m.sourceId] : []))])];
 }
+
+/** Tour 8 : une réponse supprimée côté moteur n'est plus reprise ni bloquante. */
+export function retirerSources(messages: RFCMessage[], absentes: string[]): RFCMessage[] {
+  if (!absentes.length) return messages;
+  const retirees = new Set(absentes);
+  return messages.map(m => (m.sourceId && retirees.has(m.sourceId) ? { ...m, sourceId: undefined, horsSuite: true } : m));
+}

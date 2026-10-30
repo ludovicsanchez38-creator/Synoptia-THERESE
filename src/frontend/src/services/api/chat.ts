@@ -79,6 +79,8 @@ export interface StreamChunk {
   receipt?: { id: string; version: number; operation: string };
   purpose?: "llm" | "documents";
   memory_used?: string[];
+  /** RFC : réponses référencées puis supprimées, ignorées par le moteur. */
+  rfc_sources_absentes?: string[];
   tool_name?: string;
   skill_file?: {
     skill_id: string;

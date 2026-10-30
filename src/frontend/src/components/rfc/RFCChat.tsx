@@ -15,7 +15,7 @@ import { Button } from '../ui/Button';
 import { streamMessage } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
-import { sourcesVerifiees, type RFCMessage } from './rfcSources';
+import { retirerSources, sourcesVerifiees, type RFCMessage } from './rfcSources';
 
 export type { RFCMessage } from './rfcSources';
 
@@ -27,6 +27,8 @@ interface RFCChatProps {
   initialMessage?: string;
   initialSourceIds?: string[];
   onConversationUpdate: (messages: RFCMessage[]) => void;
+  /** Tour 8 : références que le moteur signale supprimées, à retirer partout. */
+  onSourcesAbsentes?: (ids: string[]) => void;
 }
 
 /** Limite de contenu par réponse pour couper les boucles LLM (BUG-097) */
@@ -34,7 +36,7 @@ const MAX_RESPONSE_LENGTH = 8_000;
 /** Timeout global par requête en ms (BUG-097) */
 const STREAM_TIMEOUT_MS = 60_000;
 
-export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSourceIds, onConversationUpdate }: RFCChatProps) {
+export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSourceIds, onConversationUpdate, onSourcesAbsentes }: RFCChatProps) {
   const [messages, setMessages] = useState<RFCMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -103,16 +105,23 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
         stream: true,
         rfc_source_ids: sources.length ? sources : undefined,
         disable_tools: true,  // BUG-097 : pas d'outils dans le mini-chat RFC
+        // Tour 8 (relecture 7) : la consigne du mini-chat exclut la mémoire ;
+        // ni fiche ni extrait indexé n'accompagnent ses messages.
+        include_memory: false,
       }, controller.signal);
 
       let accumulated = '';
       let wasTruncated = false;
+      let absentes: string[] = [];
       for await (const chunk of stream) {
         // Vérifier si annulé (BUG-097)
         if (controller.signal.aborted) break;
 
         if (chunk.type === 'done' && chunk.message_id) {
           assistantMsg.sourceId = chunk.message_id;
+        }
+        if (chunk.type === 'done' && chunk.rfc_sources_absentes?.length) {
+          absentes = chunk.rfc_sources_absentes;
         }
         if (chunk.type === 'error' || chunk.type === 'memory_consent_required') {
           throw new Error(chunk.content || 'Cet envoi a été refusé. Vérifie tes accords avant de réessayer.');
@@ -140,9 +149,11 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       }
 
       const finalContent = accumulated || (controller.signal.aborted ? '_(Interrompu)_' : '');
-      const finalMessages = [...updatedMessages, { ...assistantMsg, content: finalContent, horsSuite: !assistantMsg.sourceId }];
+      const finalMessages = retirerSources(
+        [...updatedMessages, { ...assistantMsg, content: finalContent, horsSuite: !assistantMsg.sourceId }], absentes);
       setMessages(finalMessages);
       onConversationUpdate(finalMessages);
+      if (absentes.length) onSourcesAbsentes?.(absentes);
     } catch (err) {
       // AbortError = annulation volontaire, pas une erreur
       const isAbort = err instanceof DOMException && err.name === 'AbortError';
@@ -169,7 +180,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       abortRef.current = null;
       setIsStreaming(false);
     }
-  }, [input, isStreaming, messages, systemPrompt, initialSourceIds, onConversationUpdate]);
+  }, [input, isStreaming, messages, systemPrompt, initialSourceIds, onConversationUpdate, onSourcesAbsentes]);
 
   return (
     <div className="flex flex-col h-full">
