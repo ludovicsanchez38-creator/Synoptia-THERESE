@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+"""Composition native CPython revue sur les octets publiés, jamais sur un nom.
+
+Le catalogue est fermé : un nouveau build/ABI doit être rapproché et relu.
+Les empreintes lient chaque fichier aux composants, versions et notices originales.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+import tarfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+CATALOG = 'licenses/cpython-components.lock.json'
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def checked(root, item):
+    path = root / item['path']
+    if (Path(item['path']).is_absolute() or '..' in Path(item['path']).parts or
+            not path.resolve().is_relative_to(root.resolve())):
+        raise ValueError('Chemin de preuve CPython invalide')
+    raw = path.read_bytes()
+    if sha(raw) != item['sha256']:
+        raise ValueError('Preuve/notice CPython modifiée : ' + item['path'])
+    return raw
+
+
+def notice_files(catalog):
+    notices = list(catalog['base_notices'])
+    notices += [n for c in catalog['components'] for n in c['notices']]
+    return {n['path']: n for n in notices}.values()
+
+
+def validate(catalog, root):
+    evidence = json.loads(checked(root, catalog['evidence']))
+    if (catalog.get('schema') != 1 or catalog.get('version') != '3.13.17' or
+            catalog['version'] != evidence['version'] or
+            catalog['upstream'] != evidence['upstream'] or
+            catalog['components'] != evidence['components'] or
+            catalog['files'] != [{k: v for k, v in f.items()
+                                  if k not in ('incorporation_evidence', 'imported_symbols')}
+                                 for f in evidence['files']]):
+        raise ValueError('Composition CPython différente de la preuve relue')
+    ids = {c['id'] for c in catalog['components']}
+    hashes = {f['sha256'] for f in catalog['files']}
+    if len(ids) != len(catalog['components']) or len(hashes) != len(catalog['files']):
+        raise ValueError('Composant/fichier CPython dupliqué')
+    used = set()
+    for f in evidence['files']:
+        if (not re.fullmatch('[0-9a-f]{64}', f['sha256']) or
+                set(f['components']) != set(f['incorporation_evidence']) or
+                not set(f['components']) <= ids):
+            raise ValueError('Liaison composant/fichier CPython absente')
+        used.update(f['components'])
+    if used != ids:
+        raise ValueError('Composant CPython sans preuve binaire')
+    for c in catalog['components']:
+        if not c['version'] or not c['license'] or not c['notices']:
+            raise ValueError('Version/licence/notice CPython absente')
+    for notice in notice_files(catalog):
+        checked(root, notice)
+    return catalog
+
+
+def load(root=ROOT):
+    return validate(json.loads((root / CATALOG).read_text(encoding='utf-8')), root)
+
+
+def identify(digest, platform, catalog):
+    row = next((f for f in catalog['files'] if f['sha256'] == digest and f['platform'] == platform), None)
+    if row is None:
+        return None
+    components = [c for c in catalog['components'] if c['id'] in row['components']]
+    licenses = ['PSF-2.0', *sorted({c['license'] for c in components} - {'PSF-2.0'})]
+    return {'origin': 'CPython@' + catalog['version'], 'license': ' AND '.join(licenses),
+            'cpython_sha256': digest,
+            'components': [{k: c[k] for k in ('id', 'name', 'version', 'license', 'notices')}
+                           for c in components]}
+
+
+def verify_record(record, platform, catalog):
+    digest = record['sha256'] if platform == 'Linux' else record.get('source_sha256', record['sha256'])
+    expected = identify(digest, platform, catalog)
+    if expected is None:
+        if record.get('origin', '').startswith(('CPython@', 'system:CPython@')) or 'cpython_sha256' in record:
+            raise ValueError('Binaire CPython hors catalogue')
+        return
+    if (any(record.get(k) != v for k, v in expected.items()) or
+            record.get('source_sha256', digest) != digest or
+            (platform == 'Linux' and record['sha256'] != expected['cpython_sha256'])):
+        raise ValueError('Composants/licences CPython absents ou différents de la preuve')
+
+
+def render(root=ROOT, catalog=None):
+    catalog = catalog if catalog is not None else load(root)
+    lines = ['Composants tiers incorporés à CPython ' + catalog['version'],
+             'Provenance : ' + catalog['upstream']['url'],
+             'SHA-256 archive CPython : ' + catalog['upstream']['sha256'],
+             'Catalogue fermé aux octets relus ; versions sans numéro amont : révision CPython indiquée.',
+             'Les notices originales ci-dessous sont conservées sans modification.', '']
+    for c in catalog['components']:
+        lines += [c['name'] + ' — ' + c['version'], 'Licence : ' + c['license']]
+        for f in catalog['files']:
+            if c['id'] in f['components']:
+                lines += ['Incorporé dans : ' + f['path'], 'SHA-256 : ' + f['sha256']]
+        lines += ['Notices : ' + ', '.join(n['path'] for n in c['notices']), '']
+    for n in sorted(notice_files(catalog), key=lambda n: n['path']):
+        lines += ['=' * 72, n['path'], 'Source : ' + n['upstream']['url'],
+                  'SHA-256 notice : ' + n['sha256'], checked(root, n).decode('utf-8'), '']
+    return '\n'.join(lines)
+
+
+def require_notices(root, catalog):
+    # Comparer aussi la composition rendue, pas seulement une empreinte auto-déclarée.
+    if render(root, catalog).encode() not in (root / 'THIRD_PARTY_LICENSES').read_bytes():
+        raise ValueError('Notices des composants CPython absentes ou périmées')
+
+
+def verify_sources(archive_path, root=ROOT):
+    """Rejouer l'extraction des notices depuis l'archive amont exacte, sans exécuter."""
+    catalog = load(root)
+    evidence = json.loads(checked(root, catalog['evidence']))
+    with archive_path.open('rb') as stream:
+        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    if digest != catalog['upstream']['sha256']:
+        raise ValueError('Archive source CPython différente du tag relu')
+    sources = {}
+    with tarfile.open(archive_path) as archive:
+        for member in archive:
+            name = member.name.removeprefix('cpython-3.13.17/')
+            if member.isfile() and name in evidence['source_files']:
+                raw = archive.extractfile(member).read()
+                ref = evidence['source_files'][name]
+                if name in sources or sha(raw) != ref['sha256'] or len(raw) != ref['size']:
+                    raise ValueError('Source CPython différente : ' + name)
+                sources[name] = raw
+    if set(sources) != set(evidence['source_files']):
+        raise ValueError('Source CPython manquante')
+    by_url = {ref['url']: sources[name] for name, ref in evidence['source_files'].items()}
+    count = 0
+    for n in notice_files(catalog):
+        if n['upstream']['url'] not in by_url:
+            continue  # CC0 complet : texte SPDX séparé, empreinté dans le catalogue.
+        raw = by_url[n['upstream']['url']]
+        if n['extraction'] != 'whole file':
+            start, end = n['extraction']['start'].encode(), n['extraction']['end'].encode()
+            begin = raw.index(start)
+            raw = raw[begin:raw.index(end, begin) + len(end)]
+        if raw != checked(root, n):
+            raise ValueError('Notice CPython différente du texte amont : ' + n['path'])
+        count += 1
+    return len(sources), count
+
+
+def verify_deb(path, root=ROOT):
+    """Rapprochement sans installation/exécution du paquet historique exact."""
+    catalog = load(root)
+    evidence = json.loads(checked(root, catalog['evidence']))
+    with path.open('rb') as stream:
+        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    if digest != evidence['published_deb_sha256']:
+        raise ValueError('SHA-256 du .deb différent de la v0.82.0 relue')
+    expected = {f['path']: f for f in catalog['files']}
+    found = set()
+    with subprocess.Popen(['dpkg-deb', '--fsys-tarfile', str(path)], stdout=subprocess.PIPE) as proc:
+        with tarfile.open(fileobj=proc.stdout, mode='r|') as archive:
+            for member in archive:
+                name = member.name.removeprefix('./')
+                if not member.isfile():
+                    continue
+                if '/python3.13/lib-dynload/' not in name and not name.endswith('/libpython3.13.so.1.0'):
+                    continue
+                raw = archive.extractfile(member).read()
+                if (name not in expected or name in found or sha(raw) != expected[name]['sha256'] or
+                        len(raw) != expected[name]['size']):
+                    raise ValueError('Octets CPython différents du catalogue : ' + name)
+                found.add(name)
+        if proc.wait() != 0:
+            raise ValueError('Lecture du .deb impossible')
+    if found != set(expected):
+        raise ValueError('Fichiers CPython manquants du .deb')
+    return catalog, digest
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('command', choices=['check', 'complement', 'verify-sources'])
+    parser.add_argument('--deb', type=Path)
+    parser.add_argument('--output', type=Path)
+    parser.add_argument('--source-archive', type=Path)
+    args = parser.parse_args()
+    if args.command == 'verify-sources':
+        if not args.source_archive:
+            parser.error('--source-archive requis')
+        count, notices = verify_sources(args.source_archive)
+        print(f'{count} fichiers source amont vérifiés ; {notices} notices extraites identiques')
+        catalog = load()
+    elif args.command == 'complement':
+        if not args.deb or not args.output:
+            parser.error('--deb et --output requis')
+        catalog, digest = verify_deb(args.deb)
+        text = ('THÉRÈSE v0.82.0 — complément de notices CPython incorporées\n'
+                'SHA-256 du .deb vérifié : ' + digest + '\n'
+                'Lecture sans installation ni exécution. Complément local à soumettre à Ludo.\n'
+                'Les bibliothèques liées dynamiquement sont couvertes par le complément système.\n\n' + render())
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        with args.output.open('x', encoding='utf-8', newline='\n') as stream:
+            stream.write(text)
+        print(f'Complément : {len(text.encode())} octets ; SHA-256 {sha(text.encode())}')
+    else:
+        catalog = load()
+        require_notices(ROOT, catalog)
+    print(f'{len(catalog["files"])} fichiers CPython ; {len(catalog["components"])} composants incorporés ; '
+          f'{len(list(notice_files(catalog)))} notices originales')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (ValueError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)

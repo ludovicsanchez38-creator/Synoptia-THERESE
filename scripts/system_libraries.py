@@ -21,6 +21,8 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
+import cpython_components
+
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/system-libraries.lock.json'
 BUILD = '.work-release/system-libraries.json'
@@ -112,6 +114,7 @@ def validate_catalog(catalog, root):
 def load_catalog(root=ROOT):
     catalog = json.loads((root / CATALOG).read_text(encoding='utf-8'))
     validate_catalog(catalog, root)
+    catalog['cpython'] = cpython_components.load(root)
     return catalog
 
 
@@ -137,7 +140,7 @@ def render_notices(root=ROOT):
         notices['licence complète/' + filename] = json.loads(raw)['text'] if filename.endswith('.json') else raw
     for path, text in sorted(notices.items()):
         lines += ['', '=' * 72, path, text]
-    return '\n'.join(lines) + '\n'
+    return '\n'.join(lines) + '\n\n' + cpython_components.render(root, catalog['cpython'])
 
 
 def assemble_sources(folder, root=ROOT, cache=None):
@@ -159,6 +162,11 @@ def assemble_sources(folder, root=ROOT, cache=None):
         target = folder / item['path']
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(checked_file(root, item))
+    for item in [catalog['cpython']['evidence'], *cpython_components.notice_files(catalog['cpython'])]:
+        target = folder / item['path']
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(cpython_components.checked(root, item))
+    (folder / cpython_components.CATALOG).write_bytes((root / cpython_components.CATALOG).read_bytes())
     (folder / 'system-libraries.lock.json').write_bytes((root / CATALOG).read_bytes())
     (folder / 'THIRD_PARTY_LICENSES-systeme-linux.txt').write_text(render_notices(root), encoding='utf-8')
     (folder / 'LISEZMOI-SOURCES.txt').write_bytes((root / 'licenses/LISEZMOI-SOURCES.txt').read_bytes())
@@ -219,6 +227,9 @@ def dpkg_identity(path):
 
 
 def match_system(path, digest, catalog, platform):
+    cpython = cpython_components.identify(digest, platform, catalog['cpython'])
+    if cpython:
+        return cpython
     rows = [r for r in catalog['libraries'] if r['sha256'] == digest and r['platform'] == platform]
     if not rows:
         raise ValueError('Bibliothèque système hors catalogue : ' + path.name + ' SHA-256 ' + digest)
@@ -267,6 +278,9 @@ def classify(source, catalog, packages, installed, platform):
     path = Path(source['path'])
     if file_sha(path) != source['sha256']:
         raise ValueError('Origine modifiée après Analysis : ' + path.name)
+    cpython = cpython_components.identify(source['sha256'], platform, catalog['cpython'])
+    if cpython:
+        return cpython
     owned = installed.get(path.resolve())
     if owned:
         name, version, digest = owned
@@ -282,8 +296,8 @@ def classify(source, catalog, packages, installed, platform):
             raise ValueError('Paquet natif hors verrou/licence : ' + key)
         return {'origin': key, 'license': ' ; '.join(sorted({r['license'] for r in candidates})),
                 'record_sha256': digest}
-    # Seules les extensions de CPython sont couvertes par sa notice ; jamais les
-    # bibliothèques tierces voisines (OpenSSL, ncurses, DLL runtime Microsoft...).
+    # Un nom de module, un suffixe ABI et une version ne prouvent pas la composition.
+    # Seuls les octets rapprochés ci-dessus autorisent l'attribution CPython.
     stdlib = Path(sysconfig.get_path('stdlib')).resolve()
     cpython = next(r for r in catalog['libraries'] if r['package'] == 'CPython')
     runtime_version = '.'.join(map(str, sys.version_info[:3]))
@@ -292,7 +306,7 @@ def classify(source, catalog, packages, installed, platform):
                        for suffix in importlib.machinery.EXTENSION_SUFFIXES}
     if (relative.startswith('lib-dynload/') and '/' not in relative.removeprefix('lib-dynload/')
             and Path(relative).name in extension_names and runtime_version == cpython['version']):
-        return {'origin': 'CPython@' + runtime_version, 'license': cpython['license']}
+        raise ValueError('Extension CPython hors catalogue de composition : ' + path.name)
     return match_system(path, source['sha256'], catalog, platform)
 
 
@@ -311,6 +325,7 @@ def onefile(executable):
 
 def build_inventory(platform, root=ROOT):
     catalog = load_catalog(root)
+    cpython_components.require_notices(root, catalog['cpython'])
     origins = json.loads((root / ANALYSIS).read_text(encoding='utf-8'))
     packages = json.loads((root / 'licenses/inventory.json').read_text(encoding='utf-8'))['packages']
     installed = distribution_files()
@@ -359,6 +374,7 @@ def build_inventory(platform, root=ROOT):
                          '\n'.join(failures))
     verify_files(actual, records)
     manifest = {'schema': 1, 'platform': platform, 'catalog_sha256': file_sha(root / CATALOG),
+                'cpython_catalog_sha256': file_sha(root / cpython_components.CATALOG),
                 'notices_sha256': file_sha(root / 'THIRD_PARTY_LICENSES'), 'files': records}
     (root / BUILD).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(f'{len(records)} fichiers natifs inventoriés ; {sum(r["origin"].startswith("system:") for r in records.values())} fichiers système.')
@@ -367,13 +383,15 @@ def build_inventory(platform, root=ROOT):
 
 def load_build(root=ROOT):
     manifest = json.loads((root / BUILD).read_text(encoding='utf-8'))
-    load_catalog(root)
+    catalog = load_catalog(root)
+    cpython_components.require_notices(root, catalog['cpython'])
     if (manifest.get('schema') != 1 or manifest.get('catalog_sha256') != file_sha(root / CATALOG)
+            or manifest.get('cpython_catalog_sha256') != file_sha(root / cpython_components.CATALOG)
             or manifest.get('notices_sha256') != file_sha(root / 'THIRD_PARTY_LICENSES')):
         raise ValueError('Inventaire du build périmé')
     verify_files({n: r['sha256'] for n, r in manifest['files'].items()}, manifest['files'])
-    catalog = load_catalog(root)
     for record in manifest['files'].values():
+        cpython_components.verify_record(record, manifest['platform'], catalog['cpython'])
         if record['origin'].startswith('system:'):
             row = next((r for r in catalog['libraries'] if r['sha256'] == record.get('catalog_sha256')), None)
             if (row is None or record['license'] != row['license'] or
@@ -404,7 +422,9 @@ def main():
         print(f'{count} ressources source système ; {size} octets vérifiés')
     else:
         data = load_catalog()
+        cpython_components.require_notices(ROOT, data['cpython'])
         print(f'{len(data["libraries"])} bibliothèques système ; {len(data["sources"])} ressources source')
+        print(f'{len(data["cpython"]["files"])} fichiers CPython ; {len(data["cpython"]["components"])} composants incorporés')
 
 
 if __name__ == '__main__':

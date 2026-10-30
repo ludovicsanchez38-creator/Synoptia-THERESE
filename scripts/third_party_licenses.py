@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import attribution_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json', 'licenses/attribution-sources.json', 'licenses/system-libraries.lock.json']
+LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json', 'licenses/attribution-sources.json', 'licenses/system-libraries.lock.json', 'licenses/cpython-components.lock.json']
 INVENTORY = 'licenses/inventory.json'
 OUTPUT = 'THIRD_PARTY_LICENSES'
 SOURCE_AVAILABILITY = "Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d)."
@@ -44,6 +44,8 @@ def lock_digest(root, paths=LOCKS):
     # Le catalogue et les preuves/notices système font partie de la fraîcheur.
     if (root / 'licenses/system-linux').exists():
         paths = list(paths) + sorted(str(p.relative_to(root)) for p in (root / 'licenses/system-linux').iterdir() if p.is_file())
+    if (root / 'licenses/cpython').exists():
+        paths = list(paths) + sorted(str(p.relative_to(root)) for p in (root / 'licenses/cpython').iterdir() if p.is_file())
     return digest(b''.join(p.encode() + b'\0' + (root / p).read_bytes() for p in paths))
 
 

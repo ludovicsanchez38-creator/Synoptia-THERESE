@@ -262,7 +262,7 @@ y compris ceux classés comme données. Après PyInstaller et la signature du mo
 `system_libraries.py inventory --platform <Linux|macOS|Windows>` parcourt les
 binaires réels (onedir ou contenu onefile). Il reconnaît ELF, Mach-O et PE par leurs
 octets, rapproche les roues de leur RECORD et des versions de l'inventaire, les
-extensions CPython de leur origine lib-dynload et version, et les bibliothèques
+extensions et libpython par leurs empreintes et leur composition revue, et les bibliothèques
 Ubuntu par **SHA-256 et identité dpkg** (paquet et source, versions exactes).
 Le nom/SONAME seul n'autorise jamais une bibliothèque système.
 
@@ -310,6 +310,64 @@ La méthode de reconstruction et de remplacement LGPL est dans
 les deux archives. Elle couvre les paquets source Ubuntu, libmvec et la copie
 privée du moteur Linux, ainsi que la reconstruction nécessaire des onefile.
 La reliaison fonctionnelle reste à démontrer sur une vraie construction.
+
+## Composants incorporés à CPython (tour 7)
+
+`licenses/cpython-components.lock.json` et sa preuve
+`licenses/cpython/evidence-v0820.json` couvrent **58 fichiers Linux** de la
+v0.82.0 : **57 extensions et libpython**, dont **14 fichiers incorporent les
+19 composants ou adaptations tiers identifiés**. Les symboles définis, imports,
+DT_NEEDED, chaînes de version et empreintes sont enregistrés. Les versions
+d'adaptations dépourvues de numéro amont distinct désignent explicitement
+la révision CPython `v3.13.17`.
+
+Expat 2.8.5 et libmpdec 2.5.1 sont incorporés ; HACL* et son support KaRaMeL/F*,
+BLAKE2, mimalloc 2.1.2, Mersenne Twister, SipHash, dtoa, cfuhash, GUS et Unicode
+sont également identifiés. Le catalogue conserve aussi les notices propres de
+pysqlite/psycopg, des wrappers curses/syslog/locale, de getopt, de la chaîne
+Unicode et d'ElementTree. Zlib, OpenSSL, libffi et les autres bibliothèques
+DT_NEEDED livrées séparément gardent leurs versions et notices du catalogue
+système. La copie BLAKE2 est celle de référence sous CC0 ; aucune version libb2
+n'est déduite de son nom. Les cas non incorporés sont motivés dans la preuve.
+
+**34 textes originaux** sont conservés dans `licenses/cpython/`, dont le
+`Doc/license.rst` complet et les notices des sources incorporées du tag exact.
+Le texte CC0 complet vient du catalogue SPDX v3.27.0. Les empreintes de l'archive
+CPython, de 39 fichiers source et des extractions permettent de rejouer la
+collecte. Les deux premiers petits commentaires d'un fichier source ne sont pas
+nécessairement sa licence : les extractions sélectionnent le bloc de permission
+complet et les tests vérifient les titulaires et clauses attendus.
+
+`classify()` ne couvre plus un module par son nom/suffixe/version : ses octets
+doivent être ceux d'un fichier revu. L'inventaire du build inclut chaque composant,
+sa version, sa licence et ses notices. `load_build()` les rapproche à nouveau
+de la preuve ; retirer un composant, réduire sa licence à PSF ou modifier sa
+notice bloque. La garde exige le bloc complet de notices rendu, même si
+l'empreinte déclarée d'un ancien fichier de notices a été recalculée. Le contrôle
+des fichiers Linux dans l'installeur vérifie aussi les composants.
+
+```bash
+python3 scripts/cpython_components.py check
+python3 scripts/cpython_components.py verify-sources --source-archive /chemin/cpython-v3.13.17.tar.gz
+python3 scripts/cpython_components.py complement --deb /chemin/THERESE_0.82.0_amd64.deb --output /nouveau/dossier/THIRD_PARTY_LICENSES-cpython-incorpores.txt
+```
+
+Le complément refuse un autre SHA-256 de `.deb`, vérifie les 58 fichiers avant
+d'écrire et refuse d'écraser un fichier existant. Aucun téléversement n'est appelé.
+Les notices complètes sont aussi embarquées par la ressource existante
+`THIRD_PARTY_LICENSES` et copiées dans l'assemblage système.
+
+Les tests conservent les vraies extensions pyexpat et _decimal, compressées sans
+modification, ainsi que la notice du tour 6. Un petit `.deb` avec les anciennes
+notices est refusé par la vraie CLI ; avec les notices complétées, sa preuve
+est acceptée par le précontrôle de publication, sans publier. Les fixtures
+fonctionnent sur un checkout superficiel et ne téléchargent rien.
+
+Le prochain runner Linux peut produire d'autres octets, même avec la même
+version CPython : ils seront refusés jusqu'à revue des nouvelles preuves.
+Les compositions natives macOS/Windows restent à établir sur ces plateformes.
+Cette fermeture est intentionnelle ; ces résultats locaux ne valident aucune
+construction ou signature réelle de plateforme.
 
 ## Copyleft et travail avant diffusion publique
 

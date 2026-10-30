@@ -29,3 +29,5 @@ licenses/supplements/LGPL-2.0.txt text eol=lf
 # Conserver les espaces des notices amont reproduites octet pour octet.
 THIRD_PARTY_LICENSES whitespace=-blank-at-eol,-blank-at-eof
 licenses/system-linux/** whitespace=-blank-at-eol,-blank-at-eof
+licenses/cpython/** text eol=lf whitespace=-blank-at-eol,-blank-at-eof
+scripts/tests/fixtures/cpython-3.13.17/*.gz -text

@@ -1,0 +1,2038 @@
+{
+  "schema": 1,
+  "version": "3.13.17",
+  "published_deb_sha256": "211423b73bd5d5ba19b2520cce936a8322f0fee95626cb7ed3b48c17ce39fd3b",
+  "upstream": {
+    "tag": "v3.13.17",
+    "url": "https://codeload.github.com/python/cpython/tar.gz/refs/tags/v3.13.17",
+    "sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a"
+  },
+  "source_files": {
+    "Doc/license.rst": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Doc/license.rst",
+      "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+      "size": 58181
+    },
+    "LICENSE": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/LICENSE",
+      "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+      "size": 13809
+    },
+    "Modules/expat/COPYING": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/expat/COPYING",
+      "sha256": "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87",
+      "size": 1144
+    },
+    "Modules/expat/expat.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/expat/expat.h",
+      "sha256": "17cd1fc3b4c61d00de96091ceed0a3721d5bac9755c6d04e89d9f8a79d037c12",
+      "size": 45522
+    },
+    "Modules/_decimal/libmpdec/mpdecimal.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_decimal/libmpdec/mpdecimal.h",
+      "sha256": "ea0b9c6b296c13aed6ecaa50b463e39a9c1bdc059b84f50507fd8247b2e660f9",
+      "size": 41684
+    },
+    "Modules/_hacl/Hacl_Hash_SHA2.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/Hacl_Hash_SHA2.c",
+      "sha256": "30638efb75c8b185bb09c3df6977e3f3c5d21a1e696218cf7ade6bc4d5201b31",
+      "size": 36131
+    },
+    "Modules/_hacl/refresh.sh": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/refresh.sh",
+      "sha256": "d8b79058056e8ed823d3191ab98a45196379989c51aafa918d4005f4bfeec7ab",
+      "size": 4907
+    },
+    "Modules/_hacl/include/krml/lowstar_endianness.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/include/krml/lowstar_endianness.h",
+      "sha256": "3734c7942bec9a434e16df069fa45bdcb84b130f14417bc5f7bfe8546272d9f5",
+      "size": 7757
+    },
+    "Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h",
+      "sha256": "65decdb74c24049aa19430462a51219250cfc65d8c162778e42df88b3142fa42",
+      "size": 3026
+    },
+    "Modules/_blake2/impl/blake2b.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_blake2/impl/blake2b.c",
+      "sha256": "b932aa273b2504606a48895a50ff08c883f7a68a7e4aced5daa909c43348605a",
+      "size": 11772
+    },
+    "Modules/_blake2/blake2module.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_blake2/blake2module.c",
+      "sha256": "8ff6d4d87a99d6d65def731fd93e14598a597ef921d7a26ee31f13adca21d344",
+      "size": 4149
+    },
+    "Objects/mimalloc/alloc-aligned.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/alloc-aligned.c",
+      "sha256": "13d5005a8f52a5bd8fe51879186953c647b3072c66efcf5f0180f862707032b1",
+      "size": 14598
+    },
+    "Objects/mimalloc/alloc.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/alloc.c",
+      "sha256": "3a44229c5f62b32467aa899423e751138d585387a9a894cf1b69ef16d2f261c9",
+      "size": 39322
+    },
+    "Objects/mimalloc/arena.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/arena.c",
+      "sha256": "01e8eff5db1937e901e5cdc237ea056306071019f3f676a6d202da7e83b27014",
+      "size": 39910
+    },
+    "Objects/mimalloc/bitmap.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/bitmap.c",
+      "sha256": "b13c5fa3b5d4504aebd336d8c0c90d9a1201eb294188ffa5319368314c1bb7d6",
+      "size": 18600
+    },
+    "Objects/mimalloc/heap.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/heap.c",
+      "sha256": "4445db042da74354c84eab0edc8afee46f2dc7ce3c7106e553c85c63e54bb287",
+      "size": 23387
+    },
+    "Objects/mimalloc/os.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/os.c",
+      "sha256": "79013682c4de105ad2a9c51d6efaa40f2882c9bf7849f11aae293ef66105c217",
+      "size": 28299
+    },
+    "Objects/mimalloc/page-queue.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/page-queue.c",
+      "sha256": "e5bcd6c4795332f0ab98779beb48dc53b527e699570396f84d0003364e2d8a53",
+      "size": 11571
+    },
+    "Objects/mimalloc/random.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/random.c",
+      "sha256": "958fab84a8bef1a6cf9dfbc2c6ac826a9232d56c4e55b5ba7065018c0bebee95",
+      "size": 8973
+    },
+    "Objects/mimalloc/segment.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/segment.c",
+      "sha256": "8ccde07d9f8535cb7fd6181edb61d24dbb22341797243364fc21804a4329ff3e",
+      "size": 70763
+    },
+    "Include/internal/mimalloc/mimalloc/atomic.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Include/internal/mimalloc/mimalloc/atomic.h",
+      "sha256": "b16c4bc7a92bcfd768993e183ade07892ef726fea0fe3951a836735249dc1ba2",
+      "size": 16798
+    },
+    "Include/internal/mimalloc/mimalloc.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Include/internal/mimalloc/mimalloc.h",
+      "sha256": "7c4e2fc555724fe674efbb2cfe64344fafa86f8c43d22e48263c33dd07ac7d81",
+      "size": 36071
+    },
+    "Modules/_randommodule.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_randommodule.c",
+      "sha256": "bf544315f29e68879347de72541b90d307913b770e60884b1eda7cde66d10d3b",
+      "size": 19145
+    },
+    "Python/pyhash.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/pyhash.c",
+      "sha256": "703939f6ce6197d9454fb147092d6854eab598dfc905b811c875d5d3020f2e09",
+      "size": 15249
+    },
+    "Python/dtoa.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/dtoa.c",
+      "sha256": "4a80dbd05c7eb555e00c9fbd1a680ecd4754ef78940042c1845d2cd9aa86910c",
+      "size": 81285
+    },
+    "Python/hashtable.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/hashtable.c",
+      "sha256": "cc7c41607d3039d7b987b889f31a3221a07ed6570549b48971ce147da7fc7eaf",
+      "size": 11614
+    },
+    "Python/qsbr.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/qsbr.c",
+      "sha256": "5a282b1c932020dc44df9e46b9960dd7dee9d21ec4c6604967bb19c840ce25f7",
+      "size": 9250
+    },
+    "Modules/unicodedata_db.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/unicodedata_db.h",
+      "sha256": "17281e9dd67de57c23ad16903a21dd1ce2f027eb3ac739609b29ea9a0cee2d7a",
+      "size": 572368
+    },
+    "Objects/unicodetype_db.h": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/unicodetype_db.h",
+      "sha256": "a9d936c873431a4e310d6bcc068c41fc12b6b980306991e2e971243a8a07f26e",
+      "size": 264797
+    },
+    "Tools/unicode/makeunicodedata.py": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Tools/unicode/makeunicodedata.py",
+      "sha256": "6c4a119ec7e0cb029407c205b948aaee1115506b11af44c9a79644afd4726828",
+      "size": 45377
+    },
+    "Modules/_sqlite/module.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sqlite/module.c",
+      "sha256": "1e62fbeffb05046986f4df2347198e06057d5297b31b4ffbf3f5b47d0f796843",
+      "size": 25274
+    },
+    "Modules/_sqlite/prepare_protocol.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sqlite/prepare_protocol.c",
+      "sha256": "2fc1312d910f069d9c6201623a8d0e8d45fae88c451cf1b406a4cd519480f258",
+      "size": 2442
+    },
+    "Modules/_sqlite/microprotocols.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sqlite/microprotocols.c",
+      "sha256": "2b43a7620580175f5641c149619a1e0c0d8e3185ab7dced9748e6f089862b879",
+      "size": 4312
+    },
+    "Modules/_cursesmodule.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_cursesmodule.c",
+      "sha256": "7f740ce3d66e8cd86c3e514cc0c850a35ea81c6e2ff077d3d1a36d3c2c561639",
+      "size": 149451
+    },
+    "Modules/syslogmodule.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/syslogmodule.c",
+      "sha256": "53a34b3ec27f3e3c989b07728d1cda0355d56bc904f350f2ff24bbd635e9f1b1",
+      "size": 12853
+    },
+    "Modules/_localemodule.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_localemodule.c",
+      "sha256": "b7987514c829055449b7d446b4d44bae2e8f89ce540cbde964c67e2821953285",
+      "size": 27218
+    },
+    "Python/getopt.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/getopt.c",
+      "sha256": "65f0db353ec829f73eb09af141fcd551f2e2cc169d6f6313f69af12cc42c8670",
+      "size": 4817
+    },
+    "Objects/unicodeobject.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/unicodeobject.c",
+      "sha256": "68a5618c520f5b348e9e2abe1a77688c4b0c1f377d86f79e3399b41b445c24ab",
+      "size": 475025
+    },
+    "Modules/_elementtree.c": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_elementtree.c",
+      "sha256": "5a842145c8dce16a29b7bda51ee7660b40deec90c82c0b017e341374f0a75562",
+      "size": 128970
+    }
+  },
+  "source_version_observations": {
+    "Modules/expat/expat.h": [
+      "#  define XML_MAJOR_VERSION 2",
+      "#  define XML_MINOR_VERSION 8",
+      "#  define XML_MICRO_VERSION 5"
+    ],
+    "Modules/_decimal/libmpdec/mpdecimal.h": [
+      "#define MPD_VERSION \"2.5.1\""
+    ],
+    "Include/internal/mimalloc/mimalloc.h": [
+      "#define MI_MALLOC_VERSION 212   // major + 2 digits minor"
+    ],
+    "Modules/_hacl/refresh.sh": [
+      "expected_hacl_star_rev=bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0"
+    ],
+    "Tools/unicode/makeunicodedata.py": [
+      "UNIDATA_VERSION = \"15.1.0\""
+    ]
+  },
+  "components": [
+    {
+      "id": "expat",
+      "name": "Expat",
+      "version": "2.8.5",
+      "license": "MIT",
+      "notices": [
+        {
+          "path": "licenses/cpython/expat-COPYING.txt",
+          "sha256": "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/expat/COPYING",
+            "sha256": "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87",
+            "size": 1144
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/expat/expat.h",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/expat/expat.h",
+          "sha256": "17cd1fc3b4c61d00de96091ceed0a3721d5bac9755c6d04e89d9f8a79d037c12",
+          "size": 45522
+        }
+      ]
+    },
+    {
+      "id": "libmpdec",
+      "name": "libmpdec",
+      "version": "2.5.1",
+      "license": "BSD-2-Clause",
+      "notices": [
+        {
+          "path": "licenses/cpython/libmpdec-LICENSE.txt",
+          "sha256": "e5217e08225fee5ea0c5b9dbbd0907a4f6bed878c806d1ded65482489f3865ad",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_decimal/libmpdec/mpdecimal.h",
+            "sha256": "ea0b9c6b296c13aed6ecaa50b463e39a9c1bdc059b84f50507fd8247b2e660f9",
+            "size": 41684
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/_decimal/libmpdec/mpdecimal.h",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_decimal/libmpdec/mpdecimal.h",
+          "sha256": "ea0b9c6b296c13aed6ecaa50b463e39a9c1bdc059b84f50507fd8247b2e660f9",
+          "size": 41684
+        }
+      ]
+    },
+    {
+      "id": "hacl",
+      "name": "HACL*",
+      "version": "bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0",
+      "license": "MIT",
+      "notices": [
+        {
+          "path": "licenses/cpython/HACL-LICENSE.txt",
+          "sha256": "912ad428ca5f4b181100446204776c71c53552a265e13413d769ef6671204993",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/Hacl_Hash_SHA2.c",
+            "sha256": "30638efb75c8b185bb09c3df6977e3f3c5d21a1e696218cf7ade6bc4d5201b31",
+            "size": 36131
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/_hacl/refresh.sh",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/refresh.sh",
+          "sha256": "d8b79058056e8ed823d3191ab98a45196379989c51aafa918d4005f4bfeec7ab",
+          "size": 4907
+        }
+      ]
+    },
+    {
+      "id": "karamel",
+      "name": "KaRaMeL / F* support for HACL*",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "Apache-2.0",
+      "notices": [
+        {
+          "path": "licenses/cpython/karamel-LICENSE.txt",
+          "sha256": "c08e0378f872c9c177f03a27220f62226672a1fe5a24675db91c9250793e2f1a",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/include/krml/lowstar_endianness.h",
+            "sha256": "3734c7942bec9a434e16df069fa45bdcb84b130f14417bc5f7bfe8546272d9f5",
+            "size": 7757
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/FStar-LICENSE.txt",
+          "sha256": "511880afbff3f2f29d61ef38837a610f8c9fc9b50581c974583c1a2501d3eac7",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h",
+            "sha256": "65decdb74c24049aa19430462a51219250cfc65d8c162778e42df88b3142fa42",
+            "size": 3026
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/Doc-license.rst",
+          "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Doc/license.rst",
+            "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+            "size": 58181
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/_hacl/refresh.sh",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_hacl/refresh.sh",
+          "sha256": "d8b79058056e8ed823d3191ab98a45196379989c51aafa918d4005f4bfeec7ab",
+          "size": 4907
+        }
+      ]
+    },
+    {
+      "id": "blake2",
+      "name": "BLAKE2 reference implementation and Python wrapper",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "CC0-1.0",
+      "notices": [
+        {
+          "path": "licenses/cpython/BLAKE2-LICENSE.txt",
+          "sha256": "578d4e72d29e273c7af29862a4aed8ebfd722a348272a0012ccf97809901528e",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_blake2/impl/blake2b.c",
+            "sha256": "b932aa273b2504606a48895a50ff08c883f7a68a7e4aced5daa909c43348605a",
+            "size": 11772
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/BLAKE2-wrapper-LICENSE.txt",
+          "sha256": "7904661b41dc30471d166b975785e194f70c7bf7d9b43e40b8af4e9a4680333c",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_blake2/blake2module.c",
+            "sha256": "8ff6d4d87a99d6d65def731fd93e14598a597ef921d7a26ee31f13adca21d344",
+            "size": 4149
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/CC0-1.0.txt",
+          "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/CC0-1.0.txt",
+            "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+            "size": 7048
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "mimalloc",
+      "name": "mimalloc",
+      "version": "2.1.2",
+      "license": "MIT",
+      "notices": [
+        {
+          "path": "licenses/cpython/mimalloc-header-1.txt",
+          "sha256": "4da3a041a99f06f35d5315666d667215989069705815370797849ac31193fe9c",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/alloc-aligned.c",
+            "sha256": "13d5005a8f52a5bd8fe51879186953c647b3072c66efcf5f0180f862707032b1",
+            "size": 14598
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-2.txt",
+          "sha256": "9a385e80e0858024e431a7caf2d483edd8492f489c5460cf96aa5473bb5854a7",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/alloc.c",
+            "sha256": "3a44229c5f62b32467aa899423e751138d585387a9a894cf1b69ef16d2f261c9",
+            "size": 39322
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-3.txt",
+          "sha256": "33883b4541c3fee743ab5c4bb898bdb9218faeeb1c47235c4fbabc486bef0022",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/arena.c",
+            "sha256": "01e8eff5db1937e901e5cdc237ea056306071019f3f676a6d202da7e83b27014",
+            "size": 39910
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-4.txt",
+          "sha256": "328619ae7073960e7017ec860b86a9f8ae1d1dfbb29da5179b0adc4f4d6a2b0b",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/bitmap.c",
+            "sha256": "b13c5fa3b5d4504aebd336d8c0c90d9a1201eb294188ffa5319368314c1bb7d6",
+            "size": 18600
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-5.txt",
+          "sha256": "b8e97a8f97a87734d7915cc236246a058fa8da48b7f1f402b8187f639f1c2bae",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/heap.c",
+            "sha256": "4445db042da74354c84eab0edc8afee46f2dc7ce3c7106e553c85c63e54bb287",
+            "size": 23387
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-6.txt",
+          "sha256": "9c539f023f58cf16211c185ffdbd513c962b5837590d31b3548c97d59017909a",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/os.c",
+            "sha256": "79013682c4de105ad2a9c51d6efaa40f2882c9bf7849f11aae293ef66105c217",
+            "size": 28299
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-7.txt",
+          "sha256": "954defc4f1aaec4f32235a864c2bc0b1638c596c5ba47ae55b76c5e9cef7e75c",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/page-queue.c",
+            "sha256": "e5bcd6c4795332f0ab98779beb48dc53b527e699570396f84d0003364e2d8a53",
+            "size": 11571
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-8.txt",
+          "sha256": "1e6a8703ee950defade268ddf0508e980ff6d6e5a79a5600cd4d9f3abf06cf39",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/random.c",
+            "sha256": "958fab84a8bef1a6cf9dfbc2c6ac826a9232d56c4e55b5ba7065018c0bebee95",
+            "size": 8973
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-9.txt",
+          "sha256": "40154cfb99f39cf2ae977d2128342b57c6609f16f122cf8ca8b9d083f780614d",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/mimalloc/segment.c",
+            "sha256": "8ccde07d9f8535cb7fd6181edb61d24dbb22341797243364fc21804a4329ff3e",
+            "size": 70763
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/mimalloc-header-10.txt",
+          "sha256": "3c80c260904ec7dfac2596c4a6c7708fc2e74921a9de220f7c9418651744d6e6",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Include/internal/mimalloc/mimalloc/atomic.h",
+            "sha256": "b16c4bc7a92bcfd768993e183ade07892ef726fea0fe3951a836735249dc1ba2",
+            "size": 16798
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/Doc-license.rst",
+          "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Doc/license.rst",
+            "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+            "size": 58181
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Include/internal/mimalloc/mimalloc.h",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Include/internal/mimalloc/mimalloc.h",
+          "sha256": "7c4e2fc555724fe674efbb2cfe64344fafa86f8c43d22e48263c33dd07ac7d81",
+          "size": 36071
+        }
+      ]
+    },
+    {
+      "id": "mt19937",
+      "name": "Mersenne Twister MT19937",
+      "version": "2002-01-26; adaptation CPython v3.13.17",
+      "license": "BSD-3-Clause",
+      "notices": [
+        {
+          "path": "licenses/cpython/MT19937-LICENSE.txt",
+          "sha256": "d454ad6ba0513da75bcf70b613a66c9a305c22f46300dcd94e2de8df9a643efe",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_randommodule.c",
+            "sha256": "bf544315f29e68879347de72541b90d307913b770e60884b1eda7cde66d10d3b",
+            "size": 19145
+          },
+          "extraction": {
+            "start": "/* ------------------------------------------------------------------",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "siphash",
+      "name": "SipHash (csiphash, variant SipHash13)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "MIT",
+      "notices": [
+        {
+          "path": "licenses/cpython/SipHash-LICENSE.txt",
+          "sha256": "445b681dc3ce8e5bb55d1b86d655c8d51f19db32b4cafa669ec48ea92b5eb195",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/pyhash.c",
+            "sha256": "703939f6ce6197d9454fb147092d6854eab598dfc905b811c875d5d3020f2e09",
+            "size": 15249
+          },
+          "extraction": {
+            "start": "/* **************************************************************************\n <MIT License>",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "dtoa",
+      "name": "David M. Gay dtoa / strtod",
+      "version": "2009-03-16; adaptation CPython v3.13.17",
+      "license": "dtoa",
+      "notices": [
+        {
+          "path": "licenses/cpython/dtoa-LICENSE.txt",
+          "sha256": "45a0b19676f406b6aaeb9ebc04961ba711d38b13003a15b38ff7174b2568b0c4",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/dtoa.c",
+            "sha256": "4a80dbd05c7eb555e00c9fbd1a680ecd4754ef78940042c1845d2cd9aa86910c",
+            "size": 81285
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "cfuhash",
+      "name": "cfuhash-derived hash table",
+      "version": "2005-06-24; adaptation CPython v3.13.17",
+      "license": "BSD-3-Clause",
+      "notices": [
+        {
+          "path": "licenses/cpython/cfuhash-LICENSE.txt",
+          "sha256": "6e303fe86c30369b29ae57b45142a0ac43b699745e8cb4a416a9acbbaf393b37",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/hashtable.c",
+            "sha256": "cc7c41607d3039d7b987b889f31a3221a07ed6570549b48971ce147da7fc7eaf",
+            "size": 11614
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "gus",
+      "name": "FreeBSD GUS / QSBR",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "BSD-2-Clause",
+      "notices": [
+        {
+          "path": "licenses/cpython/GUS-LICENSE.txt",
+          "sha256": "ab5d59deb128bd63cb24ddcb57a1d125ad4af9cca4fa2e188cd0a66febd9deb6",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/qsbr.c",
+            "sha256": "5a282b1c932020dc44df9e46b9960dd7dee9d21ec4c6604967bb19c840ce25f7",
+            "size": 9250
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "unicode",
+      "name": "Unicode Character Database",
+      "version": "15.1.0 (compatibility database 3.2.0)",
+      "license": "Unicode-3.0",
+      "notices": [
+        {
+          "path": "licenses/cpython/Doc-license.rst",
+          "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Doc/license.rst",
+            "sha256": "952ac05720d7f1dcb63589b35eb0931b1442eb250230a4ad31198eddf0ad6abc",
+            "size": 58181
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Modules/unicodedata_db.h",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/unicodedata_db.h",
+          "sha256": "17281e9dd67de57c23ad16903a21dd1ce2f027eb3ac739609b29ea9a0cee2d7a",
+          "size": 572368
+        },
+        {
+          "path": "Objects/unicodetype_db.h",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/unicodetype_db.h",
+          "sha256": "a9d936c873431a4e310d6bcc068c41fc12b6b980306991e2e971243a8a07f26e",
+          "size": 264797
+        },
+        {
+          "path": "Tools/unicode/makeunicodedata.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Tools/unicode/makeunicodedata.py",
+          "sha256": "6c4a119ec7e0cb029407c205b948aaee1115506b11af44c9a79644afd4726828",
+          "size": 45377
+        }
+      ]
+    },
+    {
+      "id": "pysqlite",
+      "name": "pysqlite (including adapted psycopg microprotocols)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "Zlib",
+      "notices": [
+        {
+          "path": "licenses/cpython/pysqlite-LICENSE.txt",
+          "sha256": "9a025cca5d0cef67966a0da2d938563180b0fbf2a216b3fc876d6873b1c81611",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sqlite/module.c",
+            "sha256": "1e62fbeffb05046986f4df2347198e06057d5297b31b4ffbf3f5b47d0f796843",
+            "size": 25274
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/pysqlite-prepare-LICENSE.txt",
+          "sha256": "3458cb7c44a1c7106cabb69f4f9c5c8b661563b53e0506226dec3b4077631bc2",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sqlite/prepare_protocol.c",
+            "sha256": "2fc1312d910f069d9c6201623a8d0e8d45fae88c451cf1b406a4cd519480f258",
+            "size": 2442
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/psycopg-microprotocols-LICENSE.txt",
+          "sha256": "8d6ac039e42324e4895e82585448066fa37662925ee3e9e1b041bc2b1fc0e233",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_sqlite/microprotocols.c",
+            "sha256": "2b43a7620580175f5641c149619a1e0c0d8e3185ab7dced9748e6f089862b879",
+            "size": 4312
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "curses-wrapper",
+      "name": "Python curses wrapper (Ellinghouse / Andrich)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "LicenseRef-CPython-curses",
+      "notices": [
+        {
+          "path": "licenses/cpython/curses-wrapper-LICENSE.txt",
+          "sha256": "644a87fdbfe975ee891c524797dc0b05515b609f89308b4e0f9d0b274aa31f2f",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_cursesmodule.c",
+            "sha256": "7f740ce3d66e8cd86c3e514cc0c850a35ea81c6e2ff077d3d1a36d3c2c561639",
+            "size": 149451
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "syslog-wrapper",
+      "name": "Python syslog wrapper (Lance Ellinghouse)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "HPND",
+      "notices": [
+        {
+          "path": "licenses/cpython/syslog-wrapper-LICENSE.txt",
+          "sha256": "8d8482e4930fdc31c54c72515f50019faa0fd02e9892fd2cb3de3053127553ff",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/syslogmodule.c",
+            "sha256": "53a34b3ec27f3e3c989b07728d1cda0355d56bc904f350f2ff24bbd635e9f1b1",
+            "size": 12853
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "locale-wrapper",
+      "name": "Python locale wrapper (Martin von Loewis)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "LicenseRef-CPython-locale",
+      "notices": [
+        {
+          "path": "licenses/cpython/locale-wrapper-LICENSE.txt",
+          "sha256": "d657d096621324297e355d9e7a73fbedf95bbb755c47ba063fbca9898f37293d",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_localemodule.c",
+            "sha256": "b7987514c829055449b7d446b4d44bae2e8f89ce540cbde964c67e2821953285",
+            "size": 27218
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "getopt",
+      "name": "getopt (David Gottner)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "LicenseRef-CPython-getopt",
+      "notices": [
+        {
+          "path": "licenses/cpython/getopt-LICENSE.txt",
+          "sha256": "347207cd2185dbc0f6052c25962b5c5cc9d237d8e0a6c41acf495b6a2188ad79",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Python/getopt.c",
+            "sha256": "65f0db353ec829f73eb09af141fcd551f2e2cc169d6f6313f69af12cc42c8670",
+            "size": 4817
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "unicode-string",
+      "name": "Original Unicode string implementation (Secret Labs / Fredrik Lundh)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "HPND",
+      "notices": [
+        {
+          "path": "licenses/cpython/unicode-string-LICENSE.txt",
+          "sha256": "b5c4cbfc66417e8dd7f03a0b3740b35938289e46b0d31fc8de04faa3aa614065",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Objects/unicodeobject.c",
+            "sha256": "68a5618c520f5b348e9e2abe1a77688c4b0c1f377d86f79e3399b41b445c24ab",
+            "size": 475025
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        }
+      ],
+      "version_sources": []
+    },
+    {
+      "id": "elementtree",
+      "name": "ElementTree (Secret Labs / Fredrik Lundh)",
+      "version": "CPython v3.13.17 (version incorporée, sans numéro amont distinct)",
+      "license": "PSF-2.0",
+      "notices": [
+        {
+          "path": "licenses/cpython/ElementTree-LICENSE.txt",
+          "sha256": "a519b5ee66730d7b2822086262942a04e806a39fe33d55c03447335adc6b1578",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Modules/_elementtree.c",
+            "sha256": "5a842145c8dce16a29b7bda51ee7660b40deec90c82c0b017e341374f0a75562",
+            "size": 128970
+          },
+          "extraction": {
+            "start": "/*",
+            "end": "*/"
+          }
+        },
+        {
+          "path": "licenses/cpython/LICENSE.txt",
+          "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+          "upstream": {
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/LICENSE",
+            "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+            "size": 13809
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": []
+    }
+  ],
+  "files": [
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/libpython3.13.so.1.0",
+      "sha256": "a2402bd49cbfaa23e9cdeb7dde5feed0c21f3d915a84ee8d909b9d9d6b75560c",
+      "size": 31220120,
+      "name": "libpython3.13.so.1.0",
+      "platform": "Linux",
+      "components": [
+        "cfuhash",
+        "dtoa",
+        "getopt",
+        "gus",
+        "locale-wrapper",
+        "mimalloc",
+        "siphash",
+        "unicode",
+        "unicode-string"
+      ],
+      "needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "incorporation_evidence": {
+        "mimalloc": {
+          "defined_symbols": [
+            "12627: 00000000000d7fa2    10 FUNC    LOCAL  DEFAULT   14 mi_version",
+            "12103: 00000000000dee01   269 FUNC    LOCAL  DEFAULT   14 _mi_malloc_generic"
+          ],
+          "strings": [],
+          "disassembly": "\n/home/synoptia/staging/therese-lot4-20261029/wt-therese/.work-t2/round7/binaries/libpython3.13.so.1.0:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n00000000000d7fa2 <mi_version>:\n   d7fa2:\tf3 0f 1e fa          \tendbr64\n   d7fa6:\tb8 d4 00 00 00       \tmov    $0xd4,%eax\n   d7fab:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "version_value": 212
+        },
+        "siphash": {
+          "defined_symbols": [
+            "7181: 000000000024aac0   495 FUNC    LOCAL  DEFAULT   14 siphash13"
+          ],
+          "strings": []
+        },
+        "dtoa": {
+          "defined_symbols": [
+            "12278: 0000000000253710 13370 FUNC    LOCAL  DEFAULT   14 _Py_dg_dtoa",
+            "12435: 00000000002517b0  8023 FUNC    LOCAL  DEFAULT   14 _Py_dg_strtod"
+          ],
+          "strings": []
+        },
+        "cfuhash": {
+          "defined_symbols": [
+            "14396: 00000000002dc160   220 FUNC    GLOBAL DEFAULT   14 _Py_hashtable_new_full"
+          ],
+          "strings": []
+        },
+        "gus": {
+          "defined_symbols": [
+            "11887: 000000000015e04c   114 FUNC    LOCAL  DEFAULT   14 _Py_qsbr_poll"
+          ],
+          "strings": []
+        },
+        "unicode": {
+          "defined_symbols": [
+            "12085: 000000000035d380  8080 OBJECT  LOCAL  DEFAULT   16 _PyUnicode_TypeRecords"
+          ],
+          "strings": []
+        },
+        "locale-wrapper": {
+          "defined_symbols": [
+            "13198: 0000000000317220    16 FUNC    GLOBAL DEFAULT   14 PyInit__locale"
+          ],
+          "strings": []
+        },
+        "getopt": {
+          "defined_symbols": [
+            "11912: 00000000002ef3d0   301 FUNC    LOCAL  DEFAULT   14 _PyOS_GetOpt"
+          ],
+          "strings": []
+        },
+        "unicode-string": {
+          "defined_symbols": [
+            "14494: 0000000000207b40   520 FUNC    GLOBAL DEFAULT   14 PyUnicode_New"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_pickle.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "ce8d04c33a7f06bfff66aafc3e603975ef8f549633e0d81b08dd02c5ca8cd78b",
+      "size": 782000,
+      "name": "_pickle.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_sha1.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "381dafc1c479437b7910bcd625bfa896a3b1f2dc967876a6c40f0f296cb65cbb",
+      "size": 83384,
+      "name": "_sha1.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "56: 0000000000002a50  1135 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_SHA1_update"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "56: 0000000000002a50  1135 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_SHA1_update"
+          ],
+          "strings": [
+            "load32"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_codecs_kr.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "0efcaf5448f1a259ac667cd946df0c37a57f7cbae795ec81fe81c5b491f89465",
+      "size": 182400,
+      "name": "_codecs_kr.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/unicodedata.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "d0b8cf2f1f8199ad65425d68cc47d17924f88cb0ae39f67245e3d314b85565a8",
+      "size": 828080,
+      "name": "unicodedata.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "unicode"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "unicode": {
+          "defined_symbols": [
+            "105: 00000000000a95c0  2064 OBJECT  LOCAL  DEFAULT   16 _PyUnicode_Database_Records"
+          ],
+          "strings": [
+            "15.1.0",
+            "3.2.0"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/math.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "e4756ddc62d5986b7b6eb61c7102a75d4725c0c9cf85dcfb05b8f55b8654f364",
+      "size": 437224,
+      "name": "math.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_queue.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "86eb51ea86f6bdd0c35832b7545973964349fcd615e75cb872625ca619a6c945",
+      "size": 58112,
+      "name": "_queue.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/cmath.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "9c7910d0172da57f111d379ad6a44968a04069e3e96f212bdc317521009c0b87",
+      "size": 176344,
+      "name": "cmath.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_codecs_hk.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "4d8dc2c9be5050a3bd9562f7b4bd335160f05766414866fcff6bb3228ee3e356",
+      "size": 197360,
+      "name": "_codecs_hk.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_posixshmem.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "053fa89c7c8866abe7567ffae5af60d67fea366839c75ca482d70467594ef450",
+      "size": 24992,
+      "name": "_posixshmem.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_codecs_tw.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "c32842b052c8fc41e61cf568e8f373f24098c0c78213a65431dd23ea33243ebf",
+      "size": 149504,
+      "name": "_codecs_tw.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/mmap.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "e6dc2221e862cc19d0d6783f0bd468989ec5e84e5844538a043458f0bbaa5220",
+      "size": 188072,
+      "name": "mmap.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/select.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "6e14f2e163f0ff11f391efd1531f465d6cdfe0ffca46904fb1d03883aacde75f",
+      "size": 203680,
+      "name": "select.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/resource.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "26f2064e4542d841e3a3f5597f8748a3b5d337794733c68ab053f743ab588d96",
+      "size": 57792,
+      "name": "resource.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_blake2.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "b613bc9ae699b0392c64826d7f414cc5a912bec62dc31ea215c83eefaaeab17f",
+      "size": 453168,
+      "name": "_blake2.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "blake2"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "blake2": {
+          "defined_symbols": [
+            "19: 0000000000004b40  6079 FUNC    LOCAL  DEFAULT   14 PyBlake2_blake2b_compress",
+            "48: 0000000000008470  4433 FUNC    LOCAL  DEFAULT   14 PyBlake2_blake2s_compress"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_struct.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "7d9242d7f92856389350bc2533dec49d50f9c1bed1f3407044306493887d078a",
+      "size": 247456,
+      "name": "_struct.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_statistics.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "8e5cc38f94179de0907ca37cab90dcda58e3362835ae1e4f5227b811b5d90ca7",
+      "size": 24664,
+      "name": "_statistics.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libm.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_multiprocessing.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "a3b5ad314cdbb311c9740ce863535c2b94496589910aa53c657125651eb962be",
+      "size": 166736,
+      "name": "_multiprocessing.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_codecs_iso2022.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "69f7049e62113f230f19a2765f4929711a34d2dc90f4816f536fcb8d7c004485",
+      "size": 105440,
+      "name": "_codecs_iso2022.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "463442013826b5c6f89e5786ba235fce061f6787b8100d213e352c7c06e2679d",
+      "size": 104968,
+      "name": "_bz2.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libbz2.so.1.0",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "18: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzDecompressInit",
+        "21: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzDecompressEnd",
+        "24: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzCompressInit",
+        "26: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzCompressEnd",
+        "36: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzCompress",
+        "39: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzDecompress",
+        "89: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzDecompressInit",
+        "92: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzDecompressEnd",
+        "95: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzCompressInit",
+        "97: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzCompressEnd",
+        "107: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzCompress",
+        "110: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND BZ2_bzDecompress"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/syslog.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "2284689f0c956b443e4e234d90b935bac454180028840a449b0134994cc2b0a4",
+      "size": 142376,
+      "name": "syslog.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "syslog-wrapper"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "syslog-wrapper": {
+          "defined_symbols": [
+            "48: 0000000000001b60    16 FUNC    GLOBAL DEFAULT   14 PyInit_syslog"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "0851cce69039de518a27ea5f48db6b6841d2c0331709b580195b2cf2b90396cf",
+      "size": 159640,
+      "name": "_lzma.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "liblzma.so.5",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "7: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_code@XZ_5.0 (3)",
+        "21: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_easy_encoder@XZ_5.0 (3)",
+        "27: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_raw_encoder@XZ_5.0 (3)",
+        "32: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_properties_size@XZ_5.0 (3)",
+        "34: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_auto_decoder@XZ_5.0 (3)",
+        "43: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_properties_decode@XZ_5.0 (3)",
+        "48: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_stream_decoder@XZ_5.0 (3)",
+        "49: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_alone_decoder@XZ_5.0 (3)",
+        "50: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_end@XZ_5.0 (3)",
+        "54: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_get_check@XZ_5.0 (3)",
+        "57: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_raw_decoder@XZ_5.0 (3)",
+        "60: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_alone_encoder@XZ_5.0 (3)",
+        "63: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_properties_encode@XZ_5.0 (3)",
+        "70: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_check_is_supported@XZ_5.0 (3)",
+        "71: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_stream_encoder@XZ_5.0 (3)",
+        "75: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_lzma_preset@XZ_5.0 (3)",
+        "107: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_code@XZ_5.0",
+        "121: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_easy_encoder@XZ_5.0",
+        "127: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_raw_encoder@XZ_5.0",
+        "132: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_properties_size@XZ_5.0",
+        "134: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_auto_decoder@XZ_5.0",
+        "143: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_properties_decode@XZ_5.0",
+        "148: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_stream_decoder@XZ_5.0",
+        "149: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_alone_decoder@XZ_5.0",
+        "150: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_end@XZ_5.0",
+        "154: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_get_check@XZ_5.0",
+        "157: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_raw_decoder@XZ_5.0",
+        "161: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_alone_encoder@XZ_5.0",
+        "164: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_properties_encode@XZ_5.0",
+        "171: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_check_is_supported@XZ_5.0",
+        "172: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_stream_encoder@XZ_5.0",
+        "176: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND lzma_lzma_preset@XZ_5.0"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_curses.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "e40c0db926f4903790ca3a9872ae43f16e7a6d2b1c9b7b0b1c9fa9be7d24720e",
+      "size": 506040,
+      "name": "_curses.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "curses-wrapper"
+      ],
+      "needed": [
+        "libncursesw.so.6",
+        "libtinfo.so.6",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "curses-wrapper": {
+          "defined_symbols": [
+            "546: 0000000000011580  5671 FUNC    GLOBAL DEFAULT   14 PyInit__curses"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/pyexpat.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "83b0fc81ac9b06f2871ef4c2c884954d8f0cf258d3408d7ddb5dc58e161709e0",
+      "size": 957232,
+      "name": "pyexpat.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "expat"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "expat": {
+          "defined_symbols": [
+            "642: 0000000000023520    12 FUNC    LOCAL  DEFAULT   14 PyExpat_XML_ExpatVersion",
+            "630: 000000000001ac60  1394 FUNC    LOCAL  DEFAULT   14 PyExpat_XML_Parse"
+          ],
+          "strings": [
+            "expat_2.8.5"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_codecs_cn.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "9e1f64d5d9b6e55cacfff6bb0a5e2ec4e5eb52b1f9d9992b5c7c48e2b2d13785",
+      "size": 202568,
+      "name": "_codecs_cn.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/array.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "3ef768b3de7b3a9d9a41f10f85218033b92c70ae0d77ad5323ce5ac6a2014137",
+      "size": 412216,
+      "name": "array.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_uuid.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "da9f132cb8ce0c6165f2c1e3d1f3d9b2b9dc1c44369c93536280c9eb49631daf",
+      "size": 20608,
+      "name": "_uuid.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libuuid.so.1",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "7: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND uuid_generate_time_safe@UUID_2.20 (3)",
+        "32: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND uuid_generate_time_safe@UUID_2.20"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/binascii.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "538a0a2e79f3ec8bb6a8acf0eff715851a68da38e9673bd45133af63f40bb7a6",
+      "size": 204160,
+      "name": "binascii.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libz.so.1",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "6: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND crc32",
+        "89: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND crc32"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_contextvars.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "fc4f2af7d4026f989139cd8de7c27c62d066497b9c681c7fa2ff9150e8db8b00",
+      "size": 25880,
+      "name": "_contextvars.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_opcode.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "95232a0a7b121fd07ee21bedaf890113ffc527fa6d5f44ed66a6052cf8b4a491",
+      "size": 87488,
+      "name": "_opcode.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_ctypes.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "3619474818015b01f5d2aa8fd01ae3518147268aed0ac39a7ae4450198625757",
+      "size": 990488,
+      "name": "_ctypes.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libffi.so.8",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "84: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND ffi_call@LIBFFI_BASE_8.0 (4)",
+        "519: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND ffi_call@LIBFFI_BASE_8.0"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "76627d8f0a1a5b506c409dc6a4329ac360e7cf53a092ef8d0f9ddfe167cc3529",
+      "size": 632560,
+      "name": "_ssl.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libssl.so.3",
+        "libcrypto.so.3",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "170: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND SSL_new@OPENSSL_3.0.0 (2)",
+        "456: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND SSL_new@OPENSSL_3.0.0"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/termios.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "d7833ca34b9265741861aa31dd541ec90f579178f2893769fbd5f73ce8a3223b",
+      "size": 65936,
+      "name": "termios.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/readline.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "194846dc177a4ef5d7076d0686709ebcc4524ece71c19381d55e832a44435e36",
+      "size": 213080,
+      "name": "readline.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libreadline.so.8",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "84: 0000000000000000     0 OBJECT  GLOBAL DEFAULT  UND rl_readline_name",
+        "98: 0000000000000000     0 OBJECT  GLOBAL DEFAULT  UND rl_readline_version",
+        "198: 0000000000000000     0 OBJECT  GLOBAL DEFAULT  UND rl_readline_name",
+        "212: 0000000000000000     0 OBJECT  GLOBAL DEFAULT  UND rl_readline_version"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_zoneinfo.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "6d462c89f1235452595dc2bdd05f35ac96abb382125f9c7eec5e0daa750e80cf",
+      "size": 237312,
+      "name": "_zoneinfo.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/zlib.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "d6e6a7f845e401151fdcae88eb9ba53450a93833f4e835a9e7d51b7d0ab8a412",
+      "size": 163968,
+      "name": "zlib.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libz.so.1",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "9: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflate",
+        "14: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND crc32",
+        "42: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateEnd",
+        "43: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateCopy@ZLIB_1.2.0 (4)",
+        "46: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateSetDictionary",
+        "58: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateInit2_",
+        "144: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflate",
+        "149: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND crc32",
+        "178: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateEnd",
+        "179: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateCopy@ZLIB_1.2.0",
+        "182: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateSetDictionary",
+        "194: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND inflateInit2_"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "0b70eb681959126873257124699152e173f8c7e424e71838eb9e7ec95b26b7cd",
+      "size": 237688,
+      "name": "_hashlib.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libcrypto.so.3",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "52: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestUpdate@OPENSSL_3.0.0 (2)",
+        "57: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestFinalXOF@OPENSSL_3.0.0 (2)",
+        "81: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestFinal@OPENSSL_3.0.0 (2)",
+        "82: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestInit_ex@OPENSSL_3.0.0 (2)",
+        "261: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestUpdate@OPENSSL_3.0.0",
+        "266: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestFinalXOF@OPENSSL_3.0.0",
+        "290: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestFinal@OPENSSL_3.0.0",
+        "291: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND EVP_DigestInit_ex@OPENSSL_3.0.0"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_socket.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "83920e005f7c745c8b02d1ab58d3ef5b91cb9980a9ef6d65f0a8dbd914b262a1",
+      "size": 304432,
+      "name": "_socket.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "59: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND getnameinfo@GLIBC_2.2.5 (2)",
+        "139: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND getaddrinfo@GLIBC_2.2.5 (2)",
+        "259: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND getnameinfo@GLIBC_2.2.5",
+        "340: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND getaddrinfo@GLIBC_2.2.5"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_codecs_jp.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "b4a3ba39888988fdf6ae220cfdfdf7019e0af1017d3c1708c82b6620886af5ea",
+      "size": 330888,
+      "name": "_codecs_jp.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_sha2.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "1e64ac362bbccc664369cf0eea35908e6912e3d7617ee80fa9633d157b9dc154",
+      "size": 1476128,
+      "name": "_sha2.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "107: 000000000000b8d0  1591 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_SHA2_update_256"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "107: 000000000000b8d0  1591 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_SHA2_update_256"
+          ],
+          "strings": [
+            "FStar_UInt128_add"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_datetime.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "663854bb9dc965807d89cba7645affd63b155f8351346efe204d99495acf8192",
+      "size": 826832,
+      "name": "_datetime.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/fcntl.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "70e1b5abd4b536333a68c0fe3b5a4927faaaa779f5a3f874272da77648b5957b",
+      "size": 47016,
+      "name": "fcntl.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_lsprof.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "0d091a03a7e8f92b9178c9c963b9c1354f4bddee2435dc78b1a682dab0447957",
+      "size": 184472,
+      "name": "_lsprof.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_json.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "ecf7cb7b41f0bd5eaf49a0073e352ee41cc28ff01fed9193e9ca5e46b7c4544b",
+      "size": 330992,
+      "name": "_json.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_bisect.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "1ee795222f38cd4011647ba72ae0a2b4611aeb1d4feb5a73e40b4bca62155922",
+      "size": 97816,
+      "name": "_bisect.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_decimal.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "a7760dba58eb7feb93dfbb508d073383c5651943bda673591728037e779732f5",
+      "size": 1915176,
+      "name": "_decimal.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "libmpdec"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "libmpdec": {
+          "defined_symbols": [
+            "840: 0000000000041ed0    12 FUNC    LOCAL  DEFAULT   14 mpd_version",
+            "922: 000000000001dc10   147 FUNC    LOCAL  DEFAULT   14 mpd_qadd"
+          ],
+          "strings": [
+            "2.5.1"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_md5.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "c7e712b525d624f508e1e4c91ad4c33d92a1e949ada3689e0dfbcf99b9e2ce58",
+      "size": 119760,
+      "name": "_md5.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "56: 0000000000003e70  1596 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_MD5_update"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "56: 0000000000003e70  1596 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_MD5_update"
+          ],
+          "strings": [
+            "load32"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_elementtree.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "8df73b143372f963fa64adb3be9a41ee261e5a3c19dfca0b2be516506fbbfec0",
+      "size": 568032,
+      "name": "_elementtree.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "elementtree"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "elementtree": {
+          "defined_symbols": [
+            "328: 000000000000cf40    16 FUNC    GLOBAL DEFAULT   14 PyInit__elementtree"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_sha3.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "41138abb2e7d608cc04edf0058ee2a3cecb3f2fb91f8dceb6e35f9636c60295d",
+      "size": 212592,
+      "name": "_sha3.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "125: 0000000000004860   643 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_SHA3_update"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "125: 0000000000004860   643 FUNC    LOCAL  DEFAULT   14 python_hashlib_Hacl_Hash_SHA3_update"
+          ],
+          "strings": [
+            "load64"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_csv.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "8d9ec591d4cdc7773e34003fca21525992c8ec141eef7476070b790199332206",
+      "size": 117992,
+      "name": "_csv.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_heapq.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "5a07050855c3abf308bcbcbec1ea439fdd84a19a46bdfc8d233859385a299eeb",
+      "size": 128904,
+      "name": "_heapq.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/grp.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "bd4a8b91ba126d2a579a0cf1fe664ca7b4e5083e3d3104b7abf102e1b69734e2",
+      "size": 54768,
+      "name": "grp.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_multibytecodec.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "f4107500eb153608e29175faada8518d7dc003bc175579f1f27b6831b36afbb0",
+      "size": 224736,
+      "name": "_multibytecodec.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_sqlite3.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "1ecdb564428a9a9e984e33bf5ae461778e98896af09ddb60d05214f0a14da1d7",
+      "size": 915888,
+      "name": "_sqlite3.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "pysqlite"
+      ],
+      "needed": [
+        "libsqlite3.so.0",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "pysqlite": {
+          "defined_symbols": [
+            "384: 00000000000169a0   567 FUNC    LOCAL  DEFAULT   14 pysqlite_microprotocols_adapt"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": [
+        "11: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND sqlite3_libversion",
+        "45: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND sqlite3_libversion_number",
+        "395: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND sqlite3_libversion",
+        "429: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND sqlite3_libversion_number"
+      ]
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_asyncio.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "b11153c6ead27d7a91f8cafcb19d353e0a5b38624bce1e146531e7ca51a3f9b4",
+      "size": 367488,
+      "name": "_asyncio.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_posixsubprocess.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "56a847bf63b915d328df9373e8c7d6ea2f7d4c05cb8ac875b788ef273d18debe",
+      "size": 200280,
+      "name": "_posixsubprocess.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_random.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "c31280518b07b17d4337cdf0961600aff1871b5dd9159d01ca514af135a810b9",
+      "size": 70880,
+      "name": "_random.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [
+        "mt19937"
+      ],
+      "needed": [
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {
+        "mt19937": {
+          "defined_symbols": [
+            "11: 0000000000003ff0   921 FUNC    LOCAL  DEFAULT   14 init_by_array"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "usr/lib/THERESE/binaries/backend-libs/_internal/python3.13/lib-dynload/_dbm.cpython-313-x86_64-linux-gnu.so",
+      "sha256": "7d503949b2029835c0ed572d58cbd905075616ead0fe45ac728bd15ec45b5875",
+      "size": 60568,
+      "name": "_dbm.cpython-313-x86_64-linux-gnu.so",
+      "platform": "Linux",
+      "components": [],
+      "needed": [
+        "libgdbm_compat.so.4",
+        "libc.so.6"
+      ],
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "44: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND dbm_open",
+        "103: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND dbm_open"
+      ]
+    }
+  ],
+  "assessment": [
+    {
+      "component": "libb2",
+      "result": "No DT_NEEDED libb2; defined PyBlake2_blake2b_compress/PyBlake2_blake2s_compress match the vendored CC0 reference implementation, not an assumed libb2 release."
+    },
+    {
+      "component": "zlib, OpenSSL, libffi, sqlite3, bzip2, xz, readline, gdbm, ncurses, libuuid",
+      "result": "Dynamic DT_NEEDED and UND symbols recorded per file; exact shipped shared libraries and notices remain in system-libraries.lock.json."
+    },
+    {
+      "component": "WIDE getaddrinfo/getnameinfo",
+      "result": "_socket imports getaddrinfo@GLIBC_2.2.5 and getnameinfo@GLIBC_2.2.5, with no implementation definitions. No WIDE fallback incorporated."
+    },
+    {
+      "component": "select kqueue",
+      "result": "select has no kqueue or kevent definitions/imports in this Linux build; epoll/poll/select implementation only."
+    },
+    {
+      "component": "binascii Gary S. Brown CRC32",
+      "result": "binascii imports crc32 from libz.so.1; no local crc_32_tab or internal_crc32. The alternative under #else USE_ZLIB_CRC32 is not incorporated."
+    },
+    {
+      "component": "Google dynamic annotations",
+      "result": "No Annotate* or RunningOnValgrind definitions in libpython."
+    },
+    {
+      "component": "asyncio / uvloop 0.16.0",
+      "result": "Doc/license.rst attribution concerns Lib/asyncio/sslproto.py, not native _asynciomodule.c. Full Doc/license.rst retained; no claim of native uvloop incorporation."
+    },
+    {
+      "component": "asynchat, asyncore, test_epoll, W3C C14N tests, http.cookies, trace, uu codec, xmlrpc.client",
+      "result": "Python code / test data, not native extension components. Entire upstream Doc/license.rst retained, including these notices."
+    }
+  ]
+}

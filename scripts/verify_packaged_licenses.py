@@ -85,6 +85,8 @@ def verify_linux_files(actual, manifest, root=ROOT):
                 raise ValueError('Bibliothèque absente de l’inventaire ou modifiée : ' + name)
     system.verify_files(embedded, expected)
     catalog = system.load_catalog(root)
+    for record in expected.values():
+        system.cpython_components.verify_record(record, 'Linux', catalog['cpython'])
     # Le seul binaire applicatif autorisé vient du compilateur de ce build.
     target = root / 'src/frontend/src-tauri/target/release'
     own = {system.file_sha(p) for p in (target / 'therese', target / 'THERESE') if p.is_file()}
