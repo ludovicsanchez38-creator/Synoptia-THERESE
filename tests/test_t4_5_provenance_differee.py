@@ -12,6 +12,33 @@ from app.services.llm import LLMConfig, LLMProvider, LLMService
 from app.services.providers.base import Message, StreamEvent
 
 
+def test_copie_ancienne_sans_attribut_reste_documentaire():
+    from app.services.provenance_documents import copier_messages_differes
+
+    copie = copier_messages_differes([SimpleNamespace(role='assistant', content='EXTRAIT')])
+    assert copie[0]['contient_documents'] is True
+
+
+@pytest.mark.parametrize('trace', [None, 'inconnue'])
+async def test_carte_sans_provenance_refusee_avant_recherche(client, monkeypatch, trace):
+    from app.routers import chat
+    from app.services.tool_confirmations import register_pending
+
+    enregistrer_accord('llm', 'openai', True, '3', [])
+    svc = LLMService(LLMConfig(LLMProvider.OPENAI, 'fictif', api_key='factice'))
+    monkeypatch.setattr(chat, 'get_llm_service', lambda: svc)
+    recherche = AsyncMock()
+    monkeypatch.setattr(chat, 'execute_web_search', recherche)
+    arguments = {'query': 'Question ancienne'}
+    if trace is not None:
+        arguments['_provenance_documents'] = trace
+    carte = register_pending('web_search', arguments)
+    reponse = await client.post('/api/chat/confirm-tool', json={'confirmation_id': carte, 'approved': True})
+    assert reponse.json()['status'] == 'refused'
+    assert 'accord' in reponse.text and 'documents' in reponse.text
+    recherche.assert_not_called()
+
+
 def test_carte_possede_sa_copie_de_provenance():
     from app.services.tool_confirmations import pop_pending, register_pending
 

@@ -58,6 +58,7 @@ Les cartes gardent une copie indépendante de leurs arguments et de leur
 provenance. Les instantanés textuels de recherche web conservent la provenance
 de chaque message, même lorsqu'une image est retirée de la copie. Une ancienne
 copie sans booléen fiable reste documentaire par prudence.
+Un contexte absent ou incomplet ne devient jamais une preuve d'absence de document.
 
 À la confirmation, l'historique copié est filtré pour le fournisseur effectif
 avant la rédaction. Les arguments générés par un modèle qui a vu des documents

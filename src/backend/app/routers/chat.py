@@ -3753,11 +3753,17 @@ async def _execute_tools_and_continue(
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
             # Les arguments générés peuvent eux-mêmes citer le contexte.
             # La confirmation d'un outil n'accorde aucune finalité IA.
-            pending_arguments['_provenance_documents'] = (
-                'documents' if getattr(context, 'contient_documents', False)
-                or any(m.contient_documents or m.images for m in context.messages)
-                else 'sans_document'
-            )
+            messages_differes = getattr(context, 'messages', None)
+            documentaire = getattr(context, 'contient_documents', None)
+            if documentaire is None or not isinstance(messages_differes, list):
+                pending_arguments['_provenance_documents'] = 'inconnue'
+            else:
+                pending_arguments['_provenance_documents'] = (
+                    'documents' if documentaire is not False
+                    or any(getattr(m, 'contient_documents', None) is not False
+                           or getattr(m, 'images', None) for m in messages_differes)
+                    else 'sans_document'
+                )
             outil_base = tc.name.split("__", 1)[-1]
             if tc.name == "create_calendar_event":
                 from app.services.workspace_tools import normaliser_arguments_agenda
@@ -3818,7 +3824,9 @@ async def _execute_tools_and_continue(
             # Une confirmation tardive ne doit pas répondre au dernier message
             # d'une autre question. Ni mémoire ni image ne sont ajoutées ici.
             if tc.name == "web_search":
-                pending_arguments["_web_messages"] = copier_messages_differes(context.messages)
+                pending_arguments["_web_messages"] = copier_messages_differes(
+                    messages_differes if isinstance(messages_differes, list) else []
+                )
             confirmation_id = register_pending(
                 tc.name, pending_arguments, conversation_id=conversation_id
             )

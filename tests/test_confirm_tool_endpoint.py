@@ -131,7 +131,8 @@ async def test_confirm_tool_route_web_search_vers_le_moteur(client, monkeypatch)
     tracker = MagicMock()
     monkeypatch.setattr(chat_mod, "get_token_tracker", lambda: tracker)
 
-    cid = register_pending("web_search", {"query": "horaire marseille"})
+    arguments = {"query": "horaire marseille", "_provenance_documents": "sans_document"}
+    cid = register_pending("web_search", arguments)
     resp = await client.post(
         "/api/chat/confirm-tool", json={"confirmation_id": cid, "approved": True}
     )
@@ -139,11 +140,12 @@ async def test_confirm_tool_route_web_search_vers_le_moteur(client, monkeypatch)
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "executed"
-    assert captured["args"] == {"query": "horaire marseille"}
+    assert captured["args"] == arguments
     assert data["result"] == "Voici les horaires de Marseille issus de la recherche."
     assert captured["context"].messages[-1].content == "horaire marseille"
     assert captured["suite"]["tool_results"][0].result == "3 résultats"
     assert captured["suite"]["tool_calls"][0].name == "web_search"
+    assert captured["suite"]["tool_calls"][0].arguments == {"query": "horaire marseille"}
     assert captured["suite"]["tools"] is None
     tracker.record_usage.assert_called_once()
 

@@ -52,7 +52,8 @@ def filtrer_historique(messages: list[LLMMessage], config: Any) -> tuple[list[LL
 def copier_messages_differes(messages: list[LLMMessage]) -> list[dict[str, Any]]:
     """Copie textuelle locale : retirer les images ne retire pas leur provenance."""
     return [dict(role=m.role, content=m.content,
-                 contient_documents=m.contient_documents is not False or bool(m.images))
+                 contient_documents=getattr(m, 'contient_documents', None) is not False
+                 or bool(getattr(m, 'images', None)))
             for m in messages if m.role in ('user', 'assistant')]
 
 

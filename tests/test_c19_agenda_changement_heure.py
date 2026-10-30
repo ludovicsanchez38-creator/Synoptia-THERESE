@@ -110,6 +110,7 @@ async def test_carte_confirmation_et_heure_enregistree_identiques(
     carte, = [c["confirmation"] for c in chunks if c["type"] == "confirmation_required"]
     assert not (await db_session.execute(select(CalendarEvent))).scalars().all()
     affiches = carte["arguments"]
+    assert affiches['_provenance_documents'] == 'inconnue'
     # L'interface affiche un ISO daté dans ce fuseau, une heure sans fuseau telle quelle.
     def heure_affichee(valeur):
         heure = datetime.fromisoformat(valeur)
