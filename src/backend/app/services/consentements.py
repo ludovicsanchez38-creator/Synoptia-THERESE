@@ -184,7 +184,9 @@ def verifier_envoi_llm(config: Any, context: Any) -> None:
     if not (accord_valide('llm', destination) or accord_valide('documents', destination)):
         exiger_accord('llm', destination)
     if (getattr(context, 'contient_documents', False) is True
-            or any(getattr(m, 'images', None) for m in (getattr(context, 'messages', None) or []))):
+            or any(getattr(m, 'contient_documents', None) is not False or getattr(m, 'images', None)
+                   for m in [*(getattr(context, 'messages', None) or []),
+                             *(getattr(context, 'memory_original_messages', None) or [])])):
         exiger_accord('documents', destination)
     demande = getattr(context, 'memory_request', None)
     if isinstance(demande, dict) and getattr(context, 'memory_used', None):

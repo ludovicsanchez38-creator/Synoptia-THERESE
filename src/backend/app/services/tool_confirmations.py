@@ -13,6 +13,7 @@ conséquence : l'action n'a tout simplement pas eu lieu (fail-safe).
 """
 import json
 import uuid
+from copy import deepcopy
 from typing import Any
 
 from app.services.contexte_execution import LECTURE_SEULE, classe_de
@@ -99,7 +100,7 @@ def register_pending(
     pas le cas qui a produit le constat.
     """
     confirmation_id = uuid.uuid4().hex
-    _pending[confirmation_id] = (tool_name, dict(arguments), conversation_id)
+    _pending[confirmation_id] = (tool_name, deepcopy(arguments), conversation_id)
     return confirmation_id
 
 

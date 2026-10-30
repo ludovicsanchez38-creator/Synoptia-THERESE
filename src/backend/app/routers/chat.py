@@ -64,7 +64,12 @@ from app.services.mcp_service import get_mcp_service
 from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_memory_tool
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
-from app.services.provenance_documents import filtrer_historique, memoriser_provenance
+from app.services.provenance_documents import (
+    copier_messages_differes,
+    filtrer_historique,
+    memoriser_provenance,
+    reprendre_messages_differes,
+)
 from app.services.providers.base import LLMProvider, message_fournisseur_pour_ecran
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
@@ -1011,6 +1016,10 @@ async def _extract_entities_background(
                 return
             extractor = get_entity_extractor()
             contact_names, project_names = await _get_existing_entity_names(session)
+            source = await session.get(Message, message_id)
+            # Cette tâche peut démarrer après un retrait. La copie de texte
+            # n'est pas une nouvelle demande sans document.
+            documentaire = source is None or memoriser_provenance(source) != 'sans_document'
 
         # B-1139 : le service qui vient de répondre, pas une relecture du
         # service global : une conversation locale reste locale, et un modèle
@@ -1020,6 +1029,7 @@ async def _extract_entities_background(
             existing_contacts=contact_names,
             existing_projects=project_names,
             llm=llm_service,
+            contient_documents=documentaire,
         )
 
         if extraction_result.contacts or extraction_result.projects:
@@ -3721,6 +3731,13 @@ async def _execute_tools_and_continue(
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
+            # Les arguments générés peuvent eux-mêmes citer le contexte.
+            # La confirmation d'un outil n'accorde aucune finalité IA.
+            pending_arguments['_provenance_documents'] = (
+                'documents' if getattr(context, 'contient_documents', False)
+                or any(m.contient_documents or m.images for m in context.messages)
+                else 'sans_document'
+            )
             outil_base = tc.name.split("__", 1)[-1]
             if tc.name == "create_calendar_event":
                 from app.services.workspace_tools import normaliser_arguments_agenda
@@ -3781,11 +3798,7 @@ async def _execute_tools_and_continue(
             # Une confirmation tardive ne doit pas répondre au dernier message
             # d'une autre question. Ni mémoire ni image ne sont ajoutées ici.
             if tc.name == "web_search":
-                pending_arguments["_web_messages"] = [
-                    {"role": m.role, "content": m.content}
-                    for m in getattr(context, "messages", [])
-                    if m.role in ("user", "assistant")
-                ]
+                pending_arguments["_web_messages"] = copier_messages_differes(context.messages)
             confirmation_id = register_pending(
                 tc.name, pending_arguments, conversation_id=conversation_id
             )
@@ -4240,10 +4253,16 @@ async def _repondre_apres_recherche(
 ) -> str:
     """Relance de lecture seule : les extraits restent des résultats d'outil."""
     llm = get_llm_service()
-    messages = [LLMMessage(**m) for m in arguments.get("_web_messages", [])]
+    messages = reprendre_messages_differes(arguments.get("_web_messages", []))
+    messages, avis = filtrer_historique(messages, llm.config)
     if not messages:
-        messages = [LLMMessage(role="user", content=arguments.get("query", ""))]
+        messages = [LLMMessage(role="user", content=arguments.get("query", ""),
+                              contient_documents=arguments.get('_provenance_documents') != 'sans_document')]
     context = llm.prepare_context(messages)
+    context.contient_documents = (
+        arguments.get('_provenance_documents') != 'sans_document'
+        or any(m.contient_documents or m.images for m in messages)
+    )
     context.memory_cards_enabled = False
     context.system_prompt = (context.system_prompt or "") + (
         "\nLa recherche web a été confirmée et exécutée. Réponds à la question "
@@ -4262,7 +4281,7 @@ async def _repondre_apres_recherche(
     verdict = _controle_du_prompt(llm, context, jetons)
     if not verdict["allowed"]:
         return "Recherche effectuée, mais la réponse est suspendue : " + " ".join(verdict["errors"])
-    contenu = ""
+    contenu = avis + "\n\n" if avis else ""
     usage: dict[str, int] = {}
     motif = None
     try:
@@ -4293,7 +4312,7 @@ async def _repondre_apres_recherche(
         await _ecrire_reponse(session, Message(
             conversation_id=conversation_id, role="assistant", content=contenu,
             model=modele, provider=fournisseur,
-        ))
+        ), bool(context.contient_documents))
     return contenu
 
 
@@ -4350,6 +4369,19 @@ async def _executer_action_confirmee(
     session: AsyncSession, trace_id: str,
 ) -> dict[str, Any]:
     from app.services.action_journal import terminer
+
+    # Les copies d'arguments générées depuis des documents sont indivisibles.
+    # Les anciennes cartes sans trace fiable sont traitées de la même façon.
+    from app.services.memory_card_context import documents_autorises
+    if (tool_name == 'web_search' and arguments.get('_provenance_documents') != 'sans_document'
+            and not documents_autorises(get_llm_service().config, None)):
+        result = (
+            "Cette action en attente peut reprendre des documents de ton historique. "
+            "Ton accord « documents » manque pour le fournisseur actuel. "
+            "Rien n’a été envoyé. Reformule ta demande sans ces documents ou autorise leur envoi."
+        )
+        await terminer(trace_id, tool_name, '{"success":false}')
+        return {"status": "refused", "tool_name": tool_name, "result": result}
 
     # Finding 1 (30/08) : la confirmation est une autre requête. Sans
     # reposer le compte collé à la carte, send_email retomberait sur

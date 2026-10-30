@@ -275,6 +275,8 @@ async def _prepare_rdv(
         "description": kw.get("description"),
         "timezone": "Europe/Paris",
         "_confirmation_destination": await get_calendar_confirmation_destination(session),
+        # Directive explicite : aucun contexte documentaire lu par le modèle.
+        "_provenance_documents": "sans_document",
     }
     confirmation_id = register_pending(
         "create_calendar_event", arguments, conversation_id=conversation_id

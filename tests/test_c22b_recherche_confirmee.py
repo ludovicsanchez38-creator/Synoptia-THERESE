@@ -32,7 +32,8 @@ async def test_recherche_confirmee_repond_et_ne_colle_pas_les_resultats(client, 
     tracker = MagicMock()
     monkeypatch.setattr(chat, 'get_token_tracker', lambda: tracker)
     cid = register_pending('web_search', {
-        'query': 'aide 2026', '_web_messages': [{'role': 'user', 'content': 'Quel est le montant de cette aide ?'}],
+        'query': 'aide 2026', '_provenance_documents': 'sans_document',
+        '_web_messages': [{'role': 'user', 'content': 'Quel est le montant de cette aide ?', 'contient_documents': False}],
     })
     reponse = await client.post('/api/chat/confirm-tool', json={'confirmation_id': cid, 'approved': True})
     assert reponse.status_code == 200

@@ -45,5 +45,22 @@ def memoriser_provenance(message: Message, contient_documents: bool | None = Non
 def filtrer_historique(messages: list[LLMMessage], config: Any) -> tuple[list[LLMMessage], str]:
     if documents_autorises(config, None):
         return list(messages), ''
-    gardes = [m for m in messages if not m.contient_documents]
+    gardes = [m for m in messages if m.contient_documents is False and not m.images]
     return gardes, AVIS_HISTORIQUE if len(gardes) != len(messages) else ''
+
+
+def copier_messages_differes(messages: list[LLMMessage]) -> list[dict[str, Any]]:
+    """Copie textuelle locale : retirer les images ne retire pas leur provenance."""
+    return [dict(role=m.role, content=m.content,
+                 contient_documents=m.contient_documents is not False or bool(m.images))
+            for m in messages if m.role in ('user', 'assistant')]
+
+
+def reprendre_messages_differes(copies: Any) -> list[LLMMessage]:
+    """Les anciens instantanés sans booléen fiable restent documentaires."""
+    if not isinstance(copies, list):
+        return []
+    return [LLMMessage(role=m['role'], content=m['content'],
+                       contient_documents=m.get('contient_documents') is not False or bool(m.get('images')))
+            for m in copies if isinstance(m, dict) and m.get('role') in ('user', 'assistant')
+            and isinstance(m.get('content'), str)]

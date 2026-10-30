@@ -91,7 +91,7 @@ async def test_send_email_demande_confirmation_sans_envoyer(monkeypatch):
     assert arguments.pop('_ai_provenance')['fournisseur_modele'] == 'ollama/modele-local'
     assert (nom, arguments, conversation_id) == (
         "send_email",
-        {"to": "x@y.fr", "subject": "Sujet", "body": "Corps"},
+        {"to": "x@y.fr", "subject": "Sujet", "body": "Corps", "_provenance_documents": "sans_document"},
         # 0.56 : la conversation voyage avec l'action (cloison agenda).
         "conv1",
     )
@@ -301,7 +301,7 @@ async def test_send_email_mcp_namespace_non_execute_sans_confirmation(monkeypatc
     # L'action mise en attente conserve le nom MCP préfixé (routage à la confirmation).
     assert tool_confirmations.pop_pending(cid) == (
         "therese__send_email",
-        {"to": "x@y.fr", "subject": "S", "body": "B"},
+        {"to": "x@y.fr", "subject": "S", "body": "B", "_provenance_documents": "sans_document"},
         # 0.56 : la conversation voyage avec l'action (cloison agenda).
         "conv1",
     )
