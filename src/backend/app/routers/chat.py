@@ -2315,6 +2315,8 @@ async def send_message(
         file_contexts or any(m.images for m in messages) or documents_recuperes or documents_averes
     )
     context.memory_cards_enabled = request.include_memory
+    # Avant le filtre : un historique retiré faute d'accord reste un historique.
+    context.premier_tour_conversation = not history_messages and not rfc_historique
     if request.include_memory:
         from app.services.memory_card_context import attacher_relecture
         attacher_relecture(context, messages_avant_coupe, memory_context,
@@ -3083,6 +3085,8 @@ async def _do_stream_response(
         file_contexts or any(m.images for m in messages) or documents_recuperes or documents_averes
     )
     context.memory_cards_enabled = include_memory
+    # Tour 10 : l'avis des anciennes préférences ne paraît qu'au premier message.
+    context.premier_tour_conversation = not history
     if include_memory:
         from app.services.memory_card_context import attacher_relecture
         attacher_relecture(context, messages_avant_coupe, memory_context,

@@ -31,6 +31,10 @@ class ContextWindow:
     # Tour 9 : fiches retirées de l'envoi faute d'accord documents (avis visible).
     fiches_retirees: int = 0
     avis_fiches_affiche: bool = False
+    # Tour 10 : premier message d'une conversation, et anciennes préférences
+    # non confirmées à annoncer une seule fois (leur nombre seulement).
+    premier_tour_conversation: bool = False
+    preferences_a_confirmer: int = 0
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0

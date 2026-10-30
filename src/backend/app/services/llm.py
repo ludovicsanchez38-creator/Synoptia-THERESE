@@ -983,6 +983,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 from app.services.memory_card_context import avis_fiches_retirees
                 context.avis_fiches_affiche = True
                 yield StreamEvent(type="text", content=avis_fiches_retirees(context.fiches_retirees))
+            elif getattr(context, 'preferences_a_confirmer', 0) and not getattr(context, 'avis_fiches_affiche', False):
+                # Un seul avis par tour ; celui des fiches retirées renvoie déjà à Mémoire.
+                from app.services.memory_card_context import avis_preferences_a_confirmer
+                context.avis_fiches_affiche = True
+                yield StreamEvent(type="text", content=avis_preferences_a_confirmer(context.preferences_a_confirmer))
         elif effective_config.provider == LLMProvider.OLLAMA and isinstance(context, ContextWindow):
             from app.services.memory_card_context import borner_payload
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)

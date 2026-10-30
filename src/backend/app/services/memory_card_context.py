@@ -30,6 +30,17 @@ def avis_fiches_retirees(nombre: int) -> str:
     return (f'*({sujet} : ton accord « documents » manque. Pour qu’une ancienne fiche serve de nouveau, ouvre '
             'Mémoire et confirme qu’elle vient de toi.)*\n\n')
 
+def avis_preferences_a_confirmer(nombre: int) -> str:
+    """Tour 10 : une fois par conversation, sans rien citer ni envoyer des fiches."""
+    sujet = ('1 ancienne préférence ou correction attend' if nombre == 1
+             else f'{nombre} anciennes préférences ou corrections attendent')
+    return (f'*({sujet} ta confirmation dans Mémoire : antérieure à la mise à jour, son origine n’est pas '
+            'vérifiée. En attendant, elle ne s’applique que lorsqu’elle concerne ta demande.)*\n\n'
+            if nombre == 1 else
+            f'*({sujet} ta confirmation dans Mémoire : antérieures à la mise à jour, leur origine n’est pas '
+            'vérifiée. En attendant, elles ne s’appliquent que lorsqu’elles concernent ta demande.)*\n\n')
+
+
 def _json(valeur: Any) -> str:
     return json.dumps(valeur, ensure_ascii=False, separators=(',', ':'),
                       default=lambda x: dataclasses.asdict(x) if dataclasses.is_dataclass(x) and not isinstance(x, type) else str(x))
@@ -206,6 +217,10 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
     if not demande:
         return  # Board, atelier, agents : aucun chemin de relecture R2.
     fiches = await lire_pour_chat(demande['requete'], demande['scope'], demande['scope_id'], demande['conversation_id'])
+    if suite is None and getattr(context, 'premier_tour_conversation', False):
+        from app.services.memory_cards import compter_a_confirmer
+        context.preferences_a_confirmer = await compter_a_confirmer(
+            demande['scope'], demande['scope_id'], demande['conversation_id'])
     # Tour 9 (relecture 8) : sans accord « documents », une fiche d'origine
     # documentaire ou inconnue est retirée de l'envoi avec un avis, au lieu
     # de bloquer tout le message. Rien d'elle ne part ; la demande garde sa

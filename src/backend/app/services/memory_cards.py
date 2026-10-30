@@ -210,6 +210,18 @@ async def lire_pour_chat(requete: str, scope: str, scope_id: str | None,
                 or termes & mots(texte(f))]
 
 
+async def compter_a_confirmer(scope: str, scope_id: str | None, conversation_id: str | None = None) -> int:
+    """Tour 10 : anciennes préférences et corrections visibles ici, d'origine inconnue.
+
+    Elles ne sont plus retenues à chaque message tant que l'utilisateur ne les a
+    pas confirmées ; seul leur nombre est annoncé, jamais leur contenu.
+    """
+    async with get_session_context() as session:
+        return sum(1 for f in await autorisees(session, scope, scope_id, conversation_id)
+                   if f.state == 'active' and f.kind in ('preference', 'correction')
+                   and f.provenance_documents == 'inconnue')
+
+
 async def lister(*, query: str = '', kind: str | None = None, state: str = 'active',
                  offset: int = 0, limit: int = 50, scope: str | None = None,
                  scope_id: str | None = None, provenance: str | None = None) -> dict[str, Any]:

@@ -42,6 +42,8 @@ export function AgentMemoryPanel() {
   const [state, setState] = useState('active');
   const [scope, setScope] = useState('');
   const [origine, setOrigine] = useState('');
+  // Tour 10 : nombre d'anciennes fiches à confirmer (jamais leur contenu).
+  const [aConfirmer, setAConfirmer] = useState(0);
   const [scopes, setScopes] = useState<Array<{ id: string; name: string }>>([]);
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -57,6 +59,13 @@ export function AgentMemoryPanel() {
   const afficher = (texte: string) => demo.enabled ? 'Contenu masqué en démonstration' : demo.maskText(texte);
   useEffect(() => listenMemoryChanges(() => { setItems([]); setLoading(true); setCard(null); setRevision(r => r + 1); }), []);
   useEffect(() => { getMemoryScopes().then(setScopes).catch(() => {}); }, []);
+  useEffect(() => {
+    let actif = true;
+    getMemoryCards({ provenance: 'inconnue', state: 'active', limit: 1 })
+      .then(page => { if (actif) setAConfirmer(page.total); })
+      .catch(() => { if (actif) setAConfirmer(0); });
+    return () => { actif = false; };
+  }, [revision]);
   useEffect(() => {
     let actif = true;
     setLoading(true); setError('');
@@ -108,6 +117,10 @@ export function AgentMemoryPanel() {
     <div className="min-w-0 flex-1 space-y-4">
       {branch === 0 ? <MemoryProfileBranch /> : branch === 2 ? <ActivityMemoryBranch /> : branch === 3 ? <MemoryDraftsBranch /> : branch === 4 ? <MemoryMeetingNotesBranch /> : <>
       <p className="text-sm text-text-muted">Thérèse écrit tes fiches ; tu peux les corriger ou les effacer. Elles restent dans ta base chiffrée. Dans le chat, tes fiches mémoire utiles sont envoyées avec chaque échange où la mémoire est activée, avec ton accord pour un service en ligne. Une fiche « Origine à confirmer » (antérieure à la mise à jour) ou « Issue d’un document » ne sert que si elle concerne ta demande, et seulement avec ton accord « documents ».</p>
+      {aConfirmer > 0 && <div role="status" aria-label="Anciennes fiches à confirmer" className="flex flex-wrap items-center gap-2 rounded-sm border border-border p-3 text-sm">
+        <span>{aConfirmer === 1 ? '1 fiche ancienne attend ta confirmation' : `${aConfirmer} fiches anciennes attendent ta confirmation`} : antérieures à la mise à jour, elles ne s’appliquent que lorsqu’elles concernent ta demande.</span>
+        <button type="button" className={classe} onClick={() => { setOrigine('inconnue'); setState('active'); setOffset(0); }}>Les afficher</button>
+      </div>}
       <div className="flex flex-wrap gap-2">
         <label>Rechercher<input className={classe} value={demo.enabled ? '' : query} disabled={demo.enabled} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label>
         <label>Type<select className={classe} value={kind} onChange={e => { setKind(e.target.value); setOffset(0); }}><option value="">Tous les types</option>{Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
