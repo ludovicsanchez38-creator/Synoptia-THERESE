@@ -21,6 +21,8 @@ class Correction(Version):
     reason: str | None = Field(default=None, max_length=600)
     kind: Literal['preference', 'fait', 'decision', 'correction'] | None = None
     state: Literal['active', 'archivee'] | None = None
+    # Tour 9 : « cette fiche vient de moi », pour une fiche d'origine inconnue.
+    atteste_par_utilisateur: Literal[True] | None = None
 
 
 async def presenter_localement(session: Any, f: MemoryCard) -> dict[str, Any]:
@@ -36,9 +38,10 @@ async def presenter_localement(session: Any, f: MemoryCard) -> dict[str, Any]:
 async def lister(query: str = '', kind: Literal['preference', 'fait', 'decision', 'correction'] | None = None,
                  state: Literal['active', 'archivee'] = 'active',
                  scope: Literal['global', 'project'] | None = None, scope_id: str | None = None,
+                 provenance: Literal['documents', 'inconnue', 'sans_document'] | None = None,
                  offset: int = Query(default=0, ge=0), limit: int = Query(default=25, ge=1, le=100)) -> dict[str, Any]:
     resultat = await service.lister(query=query, kind=kind, state=state, scope=scope,
-                                    scope_id=scope_id, offset=offset, limit=limit)
+                                    scope_id=scope_id, provenance=provenance, offset=offset, limit=limit)
     async with get_session_context() as session:
         resultat['items'] = [await presenter_localement(session, f) for identifiant in [f['id'] for f in resultat['items']]
                              if (f := await session.get(MemoryCard, identifiant)) is not None]

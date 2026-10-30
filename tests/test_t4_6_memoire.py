@@ -137,8 +137,21 @@ async def test_fiche_issue_document(client, monkeypatch, retrait, memoire, flux,
         )
         assert second.status_code == 200
         if memoire and retrait:
-            assert len(envois) == avant, second.text
-            assert "documents" in second.text and "accord" in second.text
+            # Tour 9 (relecture 8) : au lieu de bloquer tout le message, la fiche
+            # documentaire est retirée de l'envoi avec un avis ; rien d'elle ne part.
+            assert len(envois) == avant + 1, second.text
+            assert EXTRAIT not in envois[-1]["body"]
+            texte = (
+                "".join(
+                    json.loads(ligne[6:]).get("content") or ""
+                    for ligne in second.text.splitlines()
+                    if ligne.startswith("data: ") and json.loads(ligne[6:]).get("type") == "text"
+                )
+                if flux
+                else second.json()["content"]
+            )
+            assert "n’a pas été transmise" in texte and "accord « documents »" in texte
+            assert EXTRAIT not in texte
         else:
             assert len(envois) == avant + 1, second.text
             assert (EXTRAIT in envois[-1]["body"]) == memoire

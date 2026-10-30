@@ -979,6 +979,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
             from app.services.memory_card_context import actualiser_fiches
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
             await actualiser_fiches(context, effective_config, tools)
+            if getattr(context, 'fiches_retirees', 0) and not getattr(context, 'avis_fiches_affiche', False):
+                from app.services.memory_card_context import avis_fiches_retirees
+                context.avis_fiches_affiche = True
+                yield StreamEvent(type="text", content=avis_fiches_retirees(context.fiches_retirees))
         elif effective_config.provider == LLMProvider.OLLAMA and isinstance(context, ContextWindow):
             from app.services.memory_card_context import borner_payload
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)

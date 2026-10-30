@@ -22,17 +22,13 @@ class AccordFichesRequis(ErreurPourEcran):
         self.provider, self.purpose = provider, purpose
 
 
-def message_fiches_documentaires(destination: str) -> str:
-    """Réserve 6 de la relecture 6 : nommer la cause et la sortie.
 
-    Le texte ne cite jamais la fiche : il peut repartir dans l'historique.
-    """
-    return (
-        'Une fiche mémoire ancienne, ou issue d’un document, sert à cet échange, et ton accord « documents » '
-        f'pour {destination} manque. Rien n’a été envoyé. Autorise l’envoi des documents, décoche « Utiliser '
-        'les fiches mémoire » pour ce message, ou réécris entièrement la fiche dans Mémoire.'
-    )
-
+def avis_fiches_retirees(nombre: int) -> str:
+    """Tour 9 : la fiche retirée se dit, sans être citée (l'avis reste dans l'historique)."""
+    sujet = ('Une fiche mémoire ancienne, ou issue d’un document, n’a pas été transmise'
+             if nombre == 1 else f'{nombre} fiches mémoire anciennes, ou issues d’un document, n’ont pas été transmises')
+    return (f'*({sujet} : ton accord « documents » manque. Pour qu’une ancienne fiche serve de nouveau, ouvre '
+            'Mémoire et confirme qu’elle vient de toi.)*\n\n')
 
 def _json(valeur: Any) -> str:
     return json.dumps(valeur, ensure_ascii=False, separators=(',', ':'),
@@ -210,6 +206,15 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
     if not demande:
         return  # Board, atelier, agents : aucun chemin de relecture R2.
     fiches = await lire_pour_chat(demande['requete'], demande['scope'], demande['scope_id'], demande['conversation_id'])
+    # Tour 9 (relecture 8) : sans accord « documents », une fiche d'origine
+    # documentaire ou inconnue est retirée de l'envoi avec un avis, au lieu
+    # de bloquer tout le message. Rien d'elle ne part ; la demande garde sa
+    # propre provenance.
+    if destination_cloud(config) and not documents_autorises(config, None):
+        retirees = [f for f in fiches if f.get('provenance_documents') != 'sans_document']
+        if retirees:
+            fiches = [f for f in fiches if f.get('provenance_documents') == 'sans_document']
+            context.fiches_retirees = max(getattr(context, 'fiches_retirees', 0) or 0, len(retirees))
     if suite is not None and fiches:
         from app.services.memory_card_tools import message_du_tour
         tour = await message_du_tour(demande['conversation_id'])
@@ -225,11 +230,8 @@ async def actualiser_fiches(context: ContextWindow, config: Any, tools: list[dic
         context.contient_documents = True
         if 'documents' in origines or origines - {'sans_document', 'inconnue'}:
             context.documents_averes = True
-        cible = destination_cloud(config)
-        if cible and not documents_autorises(config, None):
-            # Le composeur propose alors l'accord « documents » ou l'envoi
-            # sans mémoire ; le transport revérifie de toute façon.
-            raise AccordFichesRequis(cible, 'documents', message_fiches_documentaires(cible))
+        # Accord présent ici (sinon la fiche a été retirée plus haut) ; un
+        # retrait tardif reste refusé, puis revérifié au transport.
         from app.services.consentements import verifier_envoi_llm
         verifier_envoi_llm(config, context)
     destination = destination_cloud(config)

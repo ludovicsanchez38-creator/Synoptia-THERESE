@@ -4493,7 +4493,8 @@ async def _executer_action_confirmee(
             result = ("Cette écriture peut reprendre un ancien échange ou une ancienne fiche mémoire dont l’origine "
                       "n’est pas vérifiable : enregistrée, elle pourrait repartir plus tard vers ton fournisseur sans "
                       "ton accord « documents ». Rien n’a été enregistré. Saisis-la directement dans son formulaire, "
-                      "ou redemande-la dans une nouvelle conversation, sans les fiches mémoire.")
+                      "redemande-la dans une nouvelle conversation sans les fiches mémoire, ou confirme dans Mémoire "
+                      "les anciennes fiches qui viennent de toi.")
         else:
             result = ("Cette écriture reprend un document de cette conversation, et sa destination ne conserve pas "
                       "encore cette origine. Rien n’a été enregistré. Saisis ces informations directement dans leur formulaire.")

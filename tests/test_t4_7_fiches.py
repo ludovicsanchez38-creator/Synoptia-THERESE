@@ -55,7 +55,9 @@ async def test_reecriture_garde_une_ancienne_raison(client):
         assert s.get(MemoryCard, identifiant).provenance_documents == "inconnue"
 
 
-async def test_ancienne_fiche_nomme_la_cause_puis_part_apres_reecriture(client, monkeypatch):
+async def test_ancienne_fiche_retiree_avec_un_avis_puis_part_apres_reecriture(client, monkeypatch):
+    """Tour 9 (relecture 8) : sans accord documents, l'ancienne fiche est retirée
+    de l'envoi avec un avis qui dit la sortie, au lieu de bloquer le message."""
     enregistrer_accord("llm", "openai", True, "3", ["memory_cards_r2_v1"])
     identifiant = _fiche_ancienne()
     envois = []
@@ -68,16 +70,14 @@ async def test_ancienne_fiche_nomme_la_cause_puis_part_apres_reecriture(client, 
         preparer(monkeypatch, http)
         ev = evenements(await client.post("/api/chat/send", json={"message": "Bonjour, préparons un devis.",
                                                                    "include_memory": True, "stream": True}))
-        assert not envois
-        demande = next(e for e in ev if e.get("type") == "memory_consent_required")
-        # Le composeur propose l'accord « documents » ou l'envoi sans mémoire.
-        assert demande["purpose"] == "documents" and demande["provider"] == "openai"
-        assert "fiche mémoire ancienne" in demande["content"] and "Utiliser les fiches mémoire" in demande["content"]
-        assert "Maison Ambre" not in demande["content"]
+        assert len(envois) == 1 and "Maison Ambre" not in envois[0]
+        assert not [e for e in ev if e.get("type") in ("memory_consent_required", "error")]
+        avis = "".join(e.get("content") or "" for e in ev if e.get("type") == "text")
+        assert "n’a pas été transmise" in avis and "Mémoire" in avis and "Maison Ambre" not in avis
         r = await client.patch(f"/api/memory/cards/{identifiant}", json={
             "version": 1, "title": "Devis courts", "content": "Je préfère des devis courts"})
         assert r.status_code == 200, r.text
         ev = evenements(await client.post("/api/chat/send", json={"message": "Bonjour, préparons un devis.",
                                                                    "include_memory": True, "stream": True}))
         assert any(e.get("type") == "done" for e in ev), ev
-        assert len(envois) == 1 and "devis courts" in envois[0]
+        assert len(envois) == 2 and "devis courts" in envois[1]

@@ -28,6 +28,9 @@ class ContextWindow:
     # fichier relu, message ou fiche « documents ») d'une provenance seulement
     # incertaine. None = non calculé : toute marque compte comme avérée.
     documents_averes: bool | None = None
+    # Tour 9 : fiches retirées de l'envoi faute d'accord documents (avis visible).
+    fiches_retirees: int = 0
+    avis_fiches_affiche: bool = False
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0

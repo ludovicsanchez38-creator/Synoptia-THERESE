@@ -190,22 +190,36 @@ async def lire_pour_chat(requete: str, scope: str, scope_id: str | None,
             return bool(f.contact_id or (scope == 'project' and scope_id and (
                 f.project_id == scope_id or (f.scope == 'project' and f.scope_id == scope_id))))
 
+        def texte(f: MemoryCard) -> str:
+            # Une fiche ancienne ou importée peut avoir un index vide : ses
+            # propres mots décident alors de sa pertinence.
+            return f.search_text or normaliser(f'{f.title} {f.content}')
+
         def rang(f: MemoryCard) -> tuple[Any, ...]:
             return (f.kind not in ('preference', 'correction'),
                     not liee(f),
-                    -len(termes & mots(f.search_text)), -date_utc(f.updated_at).timestamp(), f.id)
+                    -len(termes & mots(texte(f))), -date_utc(f.updated_at).timestamp(), f.id)
+        # Tour 9 (relecture 8) : une fiche d'origine documentaire ou inconnue
+        # perd le privilège « toujours retenue » des préférences, corrections
+        # et fiches liées ; elle ne sert que si elle concerne la demande. Sinon
+        # une seule ancienne préférence marquait chaque échange.
+        def attestee(f: MemoryCard) -> bool:
+            return f.provenance_documents == 'sans_document'
         return [presenter(f) for f in sorted(fiches, key=rang)
-                if f.kind in ('preference', 'correction') or termes & mots(f.search_text)
-                or liee(f)]
+                if (attestee(f) and (f.kind in ('preference', 'correction') or liee(f)))
+                or termes & mots(texte(f))]
 
 
 async def lister(*, query: str = '', kind: str | None = None, state: str = 'active',
                  offset: int = 0, limit: int = 50, scope: str | None = None,
-                 scope_id: str | None = None) -> dict[str, Any]:
+                 scope_id: str | None = None, provenance: str | None = None) -> dict[str, Any]:
     async with get_session_context() as session:
         requete = select(MemoryCard).where(col(MemoryCard.state) == state)
         if kind:
             requete = requete.where(col(MemoryCard.kind) == kind)
+        if provenance:
+            # Tour 9 : l'écran Mémoire montre les fiches à confirmer ou à réécrire.
+            requete = requete.where(col(MemoryCard.provenance_documents) == provenance)
         if scope:
             requete = requete.where(col(MemoryCard.scope) == scope)
         if scope_id:
@@ -400,6 +414,14 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
         origines += [origine_message(source) if source else 'inconnue',
                      'documents' if contient_documents is True else
                      'sans_document' if contient_documents is False else 'inconnue']
+    elif existante is not None and donnees.get('atteste_par_utilisateur') is True:
+        # Tour 9 : attestation explicite depuis l'écran Mémoire (jamais par
+        # l'outil du modèle, qui refuse cette clé). Elle ne vaut que pour une
+        # origine inconnue ; un document avéré demande une réécriture.
+        if existante.provenance_documents == 'documents':
+            raise RefusMemoire('Cette fiche a été écrite pendant un échange avec un document. Pour qu’elle ne dépende '
+                               'plus de lui, réécris son titre et son contenu.', 409)
+        origines = ['sans_document']
     elif existante is not None and _reecrite_entierement(existante, donnees):
         # Relecture 6, réserve 6 : une réécriture manuelle de tout ce qui part
         # vers le fournisseur (titre, contenu, raison) rend la fiche à
