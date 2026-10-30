@@ -160,9 +160,23 @@ exige l'accord documents du fournisseur effectif ; l'accord fiches sous la
 finalité LLM ne le remplace pas. Sans cet accord, elle est retirée de l'envoi :
 rien d'elle ne part, le reste du message part, et la réponse commence par un
 avis qui le dit (sans citer la fiche) et renvoie à l'écran Mémoire. Avec
-l'accord, elle part, et le tour est d'origine documentaire ou inconnue : les
-créations natives de ce tour restent refusées. Le retrait tardif reste
-contrôlé au transport.
+l'accord, elle part : la réponse est enregistrée avec l'origine de la fiche
+(« inconnue » pour une ancienne fiche, « documents » seulement si un document
+avéré a servi), et les créations natives restent refusées dans toute la suite
+de cette conversation, puisque cette réponse fait partie de son historique.
+Attester la fiche ensuite ne rouvre pas la conversation : la réponse déjà
+enregistrée garde son origine, car rien ne prouve qu'elle ne doit son
+incertitude qu'à cette fiche (ancien historique, autres fiches). Le refus le
+dit et propose le formulaire ou une nouvelle conversation, où la fiche
+attestée s'applique normalement. Le retrait tardif reste contrôlé au
+transport.
+
+Les anciennes préférences et corrections non confirmées sont annoncées sans
+être citées : au premier message de chaque conversation, la réponse commence
+par un avis qui donne leur nombre et renvoie à Mémoire (un seul avis par
+tour ; celui d'une fiche retirée le remplace). L'écran Mémoire affiche un
+bandeau qui compte les fiches à confirmer et les isole d'un geste. Rien des
+fiches ne part pour ces avis.
 
 Les refus d'écriture pour doublon ou correction ne renvoient au modèle que
 l'identifiant et la version de la fiche correspondante, sans son ancien titre.
