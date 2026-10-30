@@ -91,7 +91,8 @@ agenda, factures, recherche) part sous le seul accord « llm ». Une copie
 enregistrée repartirait donc après un retrait de l'accord documents, alors
 que sa source resterait filtrée. Le refus explique que rien n'a été
 enregistré ; pour une origine inconnue, il propose aussi de redemander
-l'écriture dans une nouvelle conversation, sans les fiches mémoire. Sans
+l'écriture dans une nouvelle conversation, sans les fiches mémoire, ou de
+confirmer dans Mémoire les anciennes fiches qui viennent de l'utilisateur. Sans
 accord documents, l'historique incertain est retiré du contexte : la demande
 seule produit alors une carte « sans_document », exécutable. Les directives
 explicites d'agenda portent une provenance sans document.
@@ -143,15 +144,25 @@ conserve une origine documentaire ou inconnue ; une réécriture manuelle du
 titre et du contenu (et de la raison, si la fiche en avait une) rend la fiche
 « sans_document », le sujet n'étant jamais transmis. Les anciennes fiches
 restent intactes et reçoivent `inconnue` lors de la migration ; supprimer leur
-message source n'efface pas cette marque.
+message source n'efface pas cette marque. Dans l'écran Mémoire, chaque fiche
+montre son origine (« Origine à confirmer », « Issue d'un document »), un
+filtre les isole, et une fiche d'origine inconnue peut être attestée par
+l'utilisateur (« Cette fiche vient de moi ») : elle passe alors en
+« sans_document ». L'attestation n'existe que dans l'écran ; l'outil du
+modèle refuse cette clé, et une fiche issue d'un document demande une
+réécriture.
 
-Si une fiche retenue pour le contexte est documentaire ou inconnue, l'envoi
-exige aussi l'accord documents du fournisseur effectif. L'accord fiches sous
-la finalité LLM ne le remplace pas. Sans cet accord, rien ne part : le
-composeur reçoit une demande d'accord « documents » qui nomme la cause (une
-fiche ancienne ou issue d'un document, sans la citer) et les sorties
-(autoriser, décocher « Utiliser les fiches mémoire », réécrire la fiche). Le
-retrait tardif reste contrôlé au transport.
+Une fiche documentaire ou inconnue ne bénéficie pas du privilège des
+préférences, corrections et fiches liées, retenues à chaque message : elle ne
+sert que si elle concerne la demande (mots communs). Une ancienne préférence ne
+marque donc plus chaque échange. Quand elle concerne la demande, son envoi
+exige l'accord documents du fournisseur effectif ; l'accord fiches sous la
+finalité LLM ne le remplace pas. Sans cet accord, elle est retirée de l'envoi :
+rien d'elle ne part, le reste du message part, et la réponse commence par un
+avis qui le dit (sans citer la fiche) et renvoie à l'écran Mémoire. Avec
+l'accord, elle part, et le tour est d'origine documentaire ou inconnue : les
+créations natives de ce tour restent refusées. Le retrait tardif reste
+contrôlé au transport.
 
 Les refus d'écriture pour doublon ou correction ne renvoient au modèle que
 l'identifiant et la version de la fiche correspondante, sans son ancien titre.
