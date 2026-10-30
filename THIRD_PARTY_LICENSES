@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 1d4bb3cc34d5a42476e9f89fcbaeac6ba155d606691dc0f58792bdfde199ba74
+Empreinte des verrous : 68bff62a41a41aa1a9a8e8b5d2274265bda0b2a3ec49d7f8fb582fb7022a858d
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -8421,12 +8421,12 @@ Archive : https://files.pythonhosted.org/packages/e9/e6/78ebbb10a8c8e4b61a592493
 Intégrité : sha256:677091de870a80aae844b1ca6134f54652fa2c8c5a52aa396440ac3106e941e6
 Notice : pyasn1_modules-0.4.2/LICENSE.txt — texte SHA256 5b9bf00011bb4c5c0caf7cb27d9120dff6bc24c5876c94a6e6eda2a900c6e55b
 
-python:pyasn1@0.6.4
+python:pyasn1@0.6.5
 Licence déclarée : BSD-2-Clause
-Archive : https://files.pythonhosted.org/packages/a4/9a/23310166d960def5897e91fe20e5b724601b02a22e84ba1f94232c0b7f67/pyasn1-0.6.4.tar.gz
-Intégrité : sha256:9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81
-Notice : pyasn1-0.6.4/LICENSE.rst — texte SHA256 5b9bf00011bb4c5c0caf7cb27d9120dff6bc24c5876c94a6e6eda2a900c6e55b
-Notice : pyasn1-0.6.4/docs/source/license.rst — texte SHA256 3e3dc06603a1b9c8b5e0ce67bec02131c60b60de4824afc2a2b37389b4df5d5f
+Archive : https://files.pythonhosted.org/packages/88/7e/3c0da41061a2021cac7cd524fd57092adbe5b515e8bf9005702e366802e2/pyasn1-0.6.5.tar.gz
+Intégrité : sha256:6b11616a6bcf3a40e635f082bb232fa57b5e0dd7f517bd7ddd69ec3794508a47
+Notice : pyasn1-0.6.5/LICENSE.rst — texte SHA256 5b9bf00011bb4c5c0caf7cb27d9120dff6bc24c5876c94a6e6eda2a900c6e55b
+Notice : pyasn1-0.6.5/docs/source/license.rst — texte SHA256 3e3dc06603a1b9c8b5e0ce67bec02131c60b60de4824afc2a2b37389b4df5d5f
 
 python:pycparser@3.0
 Licence déclarée : BSD-3-Clause

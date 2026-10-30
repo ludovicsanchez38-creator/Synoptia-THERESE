@@ -1,5 +1,5 @@
 {
-  "locks": "1d4bb3cc34d5a42476e9f89fcbaeac6ba155d606691dc0f58792bdfde199ba74",
+  "locks": "68bff62a41a41aa1a9a8e8b5d2274265bda0b2a3ec49d7f8fb582fb7022a858d",
   "packages": [
     {
       "id": "cargo:adler2@2.0.1",
@@ -19030,17 +19030,17 @@
       ]
     },
     {
-      "id": "python:pyasn1@0.6.4",
-      "artifact": "https://files.pythonhosted.org/packages/a4/9a/23310166d960def5897e91fe20e5b724601b02a22e84ba1f94232c0b7f67/pyasn1-0.6.4.tar.gz",
-      "integrity": "sha256:9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81",
+      "id": "python:pyasn1@0.6.5",
+      "artifact": "https://files.pythonhosted.org/packages/88/7e/3c0da41061a2021cac7cd524fd57092adbe5b515e8bf9005702e366802e2/pyasn1-0.6.5.tar.gz",
+      "integrity": "sha256:6b11616a6bcf3a40e635f082bb232fa57b5e0dd7f517bd7ddd69ec3794508a47",
       "license": "BSD-2-Clause",
       "notices": [
         {
-          "path": "pyasn1-0.6.4/LICENSE.rst",
+          "path": "pyasn1-0.6.5/LICENSE.rst",
           "text": "Copyright (c) 2005-2020, Ilya Etingof <etingof@gmail.com>\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n  * Redistributions of source code must retain the above copyright notice, \n    this list of conditions and the following disclaimer.\n\n  * Redistributions in binary form must reproduce the above copyright notice,\n    this list of conditions and the following disclaimer in the documentation\n    and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE \nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE \nARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE\nLIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\nCONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\nSUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\nINTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\nCONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\nARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\nPOSSIBILITY OF SUCH DAMAGE."
         },
         {
-          "path": "pyasn1-0.6.4/docs/source/license.rst",
+          "path": "pyasn1-0.6.5/docs/source/license.rst",
           "text": ".. _license:\n\nLicense\n=======\n\n.. include:: ../../LICENSE.rst"
         }
       ]
