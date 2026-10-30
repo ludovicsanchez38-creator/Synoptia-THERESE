@@ -58,10 +58,13 @@ jobs:
         python-version: '3.12'
     - name: Vérifier le manifeste des sources
       run: python scripts/copyleft_sources.py verifier
+          python scripts/system_libraries.py check
     - name: Assembler les sources et vérifier leurs empreintes
       run: |-
         python scripts/copyleft_sources.py assembler .work-t2/sources-copyleft
         tar -czf .work-t2/THERESE-sources-copyleft.tar.gz -C .work-t2/sources-copyleft .
+        python scripts/system_libraries.py assemble-sources .work-t2/sources-systeme-linux
+        tar -czf .work-t2/THERESE-sources-systeme-linux.tar.gz -C .work-t2/sources-systeme-linux .
     - name: Joindre les sources au brouillon de la même version
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -82,7 +85,7 @@ jobs:
           printf '%s' "$RELEASE_BODY" > .work-t2/sources-release-notes.md
           gh release create "$RELEASE_TAG" --draft --prerelease --title "THÉRÈSE $RELEASE_TAG" --notes-file .work-t2/sources-release-notes.md
         fi
-        gh release upload "$RELEASE_TAG" .work-t2/THERESE-sources-copyleft.tar.gz --clobber
+        gh release upload "$RELEASE_TAG" .work-t2/THERESE-sources-copyleft.tar.gz .work-t2/THERESE-sources-systeme-linux.tar.gz --clobber
 
   build:
     name: Build ${{ matrix.platform.name }}
@@ -135,7 +138,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+          sudo apt-get install -y squashfs-tools libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
 
       # ---- Python + PyInstaller ----
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -162,6 +165,7 @@ jobs:
         run: |
           python scripts/third_party_licenses.py check
           python scripts/copyleft_sources.py verifier
+          python scripts/system_libraries.py check
       - name: Préparer la signature Apple ou ad hoc
         if: runner.os == 'macOS'
         env:
@@ -283,6 +287,15 @@ jobs:
           exclude-interactive-browser-credential: true
           files-folder: ${{ github.workspace }}/src/frontend/src-tauri/binaries
 
+      - name: Inventorier les bibliothèques réellement embarquées
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/python.exe scripts/system_libraries.py inventory --platform "${{ runner.os }}"
+          else
+            .venv/bin/python scripts/system_libraries.py inventory --platform "${{ runner.os }}"
+          fi
+
       - name: Libérer espace après PyInstaller (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -290,7 +303,7 @@ jobs:
           rm -rf src/backend/dist src/backend/build
           rm -rf .venv
           pip cache purge 2>/dev/null || true
-          sudo rm -rf /opt/hostedtoolcache/Python
+          # Conserver Python setup-python pour les gardes après Tauri.
           echo "=== Espace disponible ==="
           free -h && df -h /
 
@@ -364,7 +377,6 @@ jobs:
           echo "=== Taille totale ==="
           du -sh src/frontend/src-tauri/binaries/backend-libs/
           echo "=== Config Linux ==="
-          cat src/frontend/src-tauri/tauri.linux.conf.json
 
       # ---- Build Tauri ----
       - name: Build THÉRÈSE (Tauri)

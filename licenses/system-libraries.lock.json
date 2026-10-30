@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "evidence": {
+    "path": "licenses/system-linux/evidence-v0820.json",
+    "sha256": "4f07135c401682864b09c69d89c23b28852a712106c8088ba0dced64ca5b02c6"
+  },
+  "libraries": [
+    {
+      "name": "libbz2.so.1.0",
+      "sha256": "54d16979912ab62282350dd2dc5dceb5b73b13e27bb02792087aff752d16f6e9",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libbz2-1.0",
+      "version": "1.0.8-5ubuntu0.1",
+      "source_package": "bzip2",
+      "source_version": "1.0.8-5ubuntu0.1",
+      "license": "bzip2-1.0.6",
+      "notice": {
+        "path": "licenses/system-linux/bzip2.copyright",
+        "sha256": "832ed535ff3c3d025a8d2348eb1b697b89addcf2eaadbc17650262040b9145e2"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/b/bzip2/libbz2-1.0_1.0.8-5ubuntu0.1_amd64.deb",
+      "binary_package_sha256": "2fd35bb1ac601fa1bf35da2fa08dba3541766ca791927342b5efcb18ef17aecb",
+      "binary_member": "lib/x86_64-linux-gnu/libbz2.so.1.0.4"
+    },
+    {
+      "name": "libcrypto.so.3",
+      "sha256": "7cc817ff1841b59516d684f357bc0c3fc2cc52c3fa9b4ffb8ce8bdc215f02915",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libssl3",
+      "version": "3.0.2-0ubuntu1.30",
+      "source_package": "openssl",
+      "source_version": "3.0.2-0ubuntu1.30",
+      "license": "Apache-2.0",
+      "notice": {
+        "path": "licenses/system-linux/openssl.copyright",
+        "sha256": "6a7da622fe0637a334d2a8fc470852d2ffb77d9a2b2f930f854e32a41ad6ef35"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl3_3.0.2-0ubuntu1.30_amd64.deb",
+      "binary_package_sha256": "d1b4636e32ac6d3b95d583ac05ac548b1aa248414bae1c51b14f54be0f8fd7bc",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libcrypto.so.3"
+    },
+    {
+      "name": "libffi.so.8",
+      "sha256": "247da4d5d34a91cadcdd6282be4c4644fcb8af001334d2b8a82ecda435418cbf",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libffi8",
+      "version": "3.4.2-4",
+      "source_package": "libffi",
+      "source_version": "3.4.2-4",
+      "license": "MIT",
+      "notice": {
+        "path": "licenses/system-linux/libffi.copyright",
+        "sha256": "7258c8acc378030d8dbe1fcdf394e915769fa31dcbaf3d2991d9a79891f3bcdc"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi8_3.4.2-4_amd64.deb",
+      "binary_package_sha256": "b4f88c91fa6f4c942097be6abfc365fb133c5e147640168cbb7704fd855eac10",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libffi.so.8.1.0"
+    },
+    {
+      "name": "libgcc_s.so.1",
+      "sha256": "fc9d43b2f6c20e53b009238f767c5b949d202389e20de9e202ea684b4ba3729a",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libgcc-s1",
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "source_package": "gcc-12",
+      "source_version": "12.3.0-1ubuntu1~22.04.3",
+      "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "notice": {
+        "path": "licenses/system-linux/gcc-12.copyright",
+        "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-12/libgcc-s1_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "binary_package_sha256": "d383e642d83263147f7b4b69fb92cf1036e5246c6be3accf10b77f986684589a",
+      "binary_member": "lib/x86_64-linux-gnu/libgcc_s.so.1"
+    },
+    {
+      "name": "libgdbm.so.6",
+      "sha256": "ffa9adb042df32f985ca2f1deb9247dfcb61d46fa513de2aa7159ecd55c18d67",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libgdbm6",
+      "version": "1.23-1",
+      "source_package": "gdbm",
+      "source_version": "1.23-1",
+      "license": "GPL-3.0-or-later",
+      "notice": {
+        "path": "licenses/system-linux/gdbm.copyright",
+        "sha256": "8bea8cf2f94cd8b37a0b8b3a2b974122b9194c1165e6ad508e366c74679e8817"
+      },
+      "source_required": true,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/libgdbm6_1.23-1_amd64.deb",
+      "binary_package_sha256": "acf9e905a3ecbd4d919938e1cfd4bcd9d861bc794648046a9af1fbbefd0cc495",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libgdbm.so.6.0.0"
+    },
+    {
+      "name": "libgdbm_compat.so.4",
+      "sha256": "cd77f7a952bc04649ce0608251b5a99d76219b1132c7375921e0c8bf6ff20c80",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libgdbm-compat4",
+      "version": "1.23-1",
+      "source_package": "gdbm",
+      "source_version": "1.23-1",
+      "license": "GPL-3.0-or-later",
+      "notice": {
+        "path": "licenses/system-linux/gdbm.copyright",
+        "sha256": "8bea8cf2f94cd8b37a0b8b3a2b974122b9194c1165e6ad508e366c74679e8817"
+      },
+      "source_required": true,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/libgdbm-compat4_1.23-1_amd64.deb",
+      "binary_package_sha256": "58636e2ad6bab216b70f83a114f4e37d1f733fd6eb69e220cb9a4d53c2b5868d",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libgdbm_compat.so.4.0.0"
+    },
+    {
+      "name": "liblzma.so.5",
+      "sha256": "3147e2cb512d17a4064d34f61e69591b6473543db2ec63cd797f766cd3b09037",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "liblzma5",
+      "version": "5.2.5-2ubuntu1.2",
+      "source_package": "xz-utils",
+      "source_version": "5.2.5-2ubuntu1.2",
+      "license": "LicenseRef-Public-Domain",
+      "notice": {
+        "path": "licenses/system-linux/xz-utils.copyright",
+        "sha256": "a2dc8fac0f496e1c58aff67018cf0c6b88336316afa5642f9335b71642e28aa8"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/x/xz-utils/liblzma5_5.2.5-2ubuntu1.2_amd64.deb",
+      "binary_package_sha256": "a88fca7506963c443c42a578db6c35424336ae28abcdaa60c89f06d30aeb625b",
+      "binary_member": "lib/x86_64-linux-gnu/liblzma.so.5.2.5"
+    },
+    {
+      "name": "libmvec.so.1",
+      "sha256": "44e31b0cd6dcb6f8147ffc820f51e7140c429a6e0e7724dd00ad0ea4d18f4f51",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libc6",
+      "version": "2.35-0ubuntu3.15",
+      "source_package": "glibc",
+      "source_version": "2.35-0ubuntu3.15",
+      "license": "LGPL-2.1-or-later",
+      "notice": {
+        "path": "licenses/system-linux/glibc.copyright",
+        "sha256": "d3c95b56fa33e28b57860580f0baf4e4f4de2a268a2b80f1d031a5191bade265"
+      },
+      "source_required": true,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.35-0ubuntu3.15_amd64.deb",
+      "binary_package_sha256": "79e35256227e16a607c154cdeb8d76ff12d20e31de286ea7fd9ad3b96fe0452d",
+      "binary_member": "lib/x86_64-linux-gnu/libmvec.so.1"
+    },
+    {
+      "name": "libncursesw.so.6",
+      "sha256": "96a5920c1f6d1fd6ff3ac35c03b8fc9725e8fe6964c10e0299f772667d522a6b",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libncursesw6",
+      "version": "6.3-2ubuntu0.3",
+      "source_package": "ncurses",
+      "source_version": "6.3-2ubuntu0.3",
+      "license": "X11",
+      "notice": {
+        "path": "licenses/system-linux/ncurses.copyright",
+        "sha256": "f0974fb41778e23c94111ff90da0546de8971f8270c58877283d372e6bd7f17e"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libncursesw6_6.3-2ubuntu0.3_amd64.deb",
+      "binary_package_sha256": "734107c126c2685508e4186f6be65f4edc0d393f1bc1cb4c307a76d1beb09496",
+      "binary_member": "lib/x86_64-linux-gnu/libncursesw.so.6.3"
+    },
+    {
+      "name": "libobjc.so.4",
+      "sha256": "e973362942ac035464873a3b1f55a56f43f48d7ab00929423e63463212343ebc",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libobjc4",
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "source_package": "gcc-12",
+      "source_version": "12.3.0-1ubuntu1~22.04.3",
+      "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "notice": {
+        "path": "licenses/system-linux/gcc-12.copyright",
+        "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/universe/g/gcc-12/libobjc4_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "binary_package_sha256": "f3346404ee0c5d90aca8b3d7483d105d8677f564f28d6fdd71da0a62669f64cc",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libobjc.so.4.0.0"
+    },
+    {
+      "name": "libreadline.so.8",
+      "sha256": "57419e3b177639246ecf7ffd2eba170bde779b7369d70e68b9b4c5fc3051cbc1",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libreadline8",
+      "version": "8.1.2-1",
+      "source_package": "readline",
+      "source_version": "8.1.2-1",
+      "license": "GPL-3.0-or-later",
+      "notice": {
+        "path": "licenses/system-linux/readline.copyright",
+        "sha256": "3a3174c995a17c797069650c273120b145bc26157eed25ad6bd1be18a25d1096"
+      },
+      "source_required": true,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/r/readline/libreadline8_8.1.2-1_amd64.deb",
+      "binary_package_sha256": "51fd16f608efa710c987e4b071ffba0bec63a9ac8e55eddd5770f5e5252edc09",
+      "binary_member": "lib/x86_64-linux-gnu/libreadline.so.8.1"
+    },
+    {
+      "name": "libsqlite3.so.0",
+      "sha256": "f5a7fc236f80f3185608d14e9f4dea3e3fd647582e123e8a00f253629fe16830",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libsqlite3-0",
+      "version": "3.37.2-2ubuntu0.8",
+      "source_package": "sqlite3",
+      "source_version": "3.37.2-2ubuntu0.8",
+      "license": "LicenseRef-Public-Domain",
+      "notice": {
+        "path": "licenses/system-linux/sqlite3.copyright",
+        "sha256": "78e9df8f8153c91c762ec970b82d224ac4d30f05aa7773e7e17e268141e53873"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/s/sqlite3/libsqlite3-0_3.37.2-2ubuntu0.8_amd64.deb",
+      "binary_package_sha256": "6e22b1e8d375fed6a1d52cad5887e762b6cdeaba137595e726c95486968dfab5",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libsqlite3.so.0.8.6"
+    },
+    {
+      "name": "libssl.so.3",
+      "sha256": "51fc92556f11ddce62f3f988d3fe973fab8fb4742032e61a713688581c924262",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libssl3",
+      "version": "3.0.2-0ubuntu1.30",
+      "source_package": "openssl",
+      "source_version": "3.0.2-0ubuntu1.30",
+      "license": "Apache-2.0",
+      "notice": {
+        "path": "licenses/system-linux/openssl.copyright",
+        "sha256": "6a7da622fe0637a334d2a8fc470852d2ffb77d9a2b2f930f854e32a41ad6ef35"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl3_3.0.2-0ubuntu1.30_amd64.deb",
+      "binary_package_sha256": "d1b4636e32ac6d3b95d583ac05ac548b1aa248414bae1c51b14f54be0f8fd7bc",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libssl.so.3"
+    },
+    {
+      "name": "libstdc++.so.6",
+      "sha256": "ff0825e113603c3866680d5d52216bc6d8eedf3a59f52a0aef67ff01994db128",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libstdc++6",
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "source_package": "gcc-12",
+      "source_version": "12.3.0-1ubuntu1~22.04.3",
+      "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "notice": {
+        "path": "licenses/system-linux/gcc-12.copyright",
+        "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-12/libstdc++6_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "binary_package_sha256": "29ef3d289b272704b75141906c8f683db0f2bdb0942061366691333bfb289bdc",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30"
+    },
+    {
+      "name": "libtinfo.so.6",
+      "sha256": "856b8451914abc2277c3d91c64ba3e72b2e0d519806397afecae92fda1a6b10c",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libtinfo6",
+      "version": "6.3-2ubuntu0.3",
+      "source_package": "ncurses",
+      "source_version": "6.3-2ubuntu0.3",
+      "license": "X11",
+      "notice": {
+        "path": "licenses/system-linux/ncurses.copyright",
+        "sha256": "f0974fb41778e23c94111ff90da0546de8971f8270c58877283d372e6bd7f17e"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libtinfo6_6.3-2ubuntu0.3_amd64.deb",
+      "binary_package_sha256": "3b8dff43a31168f5020928f2ab9a97324c5b47ae708311781f6bd01306c96214",
+      "binary_member": "lib/x86_64-linux-gnu/libtinfo.so.6.3"
+    },
+    {
+      "name": "libuuid.so.1",
+      "sha256": "4472cf91dbc01395761fb45d0f4b25f6241406fe54cbf540c13755a3706a7b17",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "libuuid1",
+      "version": "2.37.2-4ubuntu3.6",
+      "source_package": "util-linux",
+      "source_version": "2.37.2-4ubuntu3.6",
+      "license": "BSD-3-Clause",
+      "notice": {
+        "path": "licenses/system-linux/util-linux.copyright",
+        "sha256": "2c447817698777e3b2365a5afe2a58ececb85367dfdf0ea2c0df49add90e93eb"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/u/util-linux/libuuid1_2.37.2-4ubuntu3.6_amd64.deb",
+      "binary_package_sha256": "97eaa1090c2e7ddaad55d58f9d0d7907d64b70f89228405d68a7ce7d56a89d67",
+      "binary_member": "usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0"
+    },
+    {
+      "name": "libz.so.1",
+      "sha256": "64c206f0146cc58bbddc4f22054436f4ff278f5a554aa3ce6921ddf7e9133370",
+      "platform": "Linux",
+      "distribution": "Ubuntu 22.04 amd64",
+      "package": "zlib1g",
+      "version": "1:1.2.11.dfsg-2ubuntu9.2",
+      "source_package": "zlib",
+      "source_version": "1:1.2.11.dfsg-2ubuntu9.2",
+      "license": "Zlib",
+      "notice": {
+        "path": "licenses/system-linux/zlib.copyright",
+        "sha256": "d77204eee882807240f6351c4f5ae2a4bcdb5b773ff77d10647b9b66b826b2fb"
+      },
+      "source_required": false,
+      "binary_package_url": "https://archive.ubuntu.com/ubuntu/pool/main/z/zlib/zlib1g_1.2.11.dfsg-2ubuntu9.2_amd64.deb",
+      "binary_package_sha256": "9dc17e51a1be2d9ed63b7b84ef0e4e29c5abe6f1bc62cb03e7181483cce8a2f2",
+      "binary_member": "lib/x86_64-linux-gnu/libz.so.1.2.11"
+    },
+    {
+      "name": "libpython3.13.so.1.0",
+      "sha256": "a2402bd49cbfaa23e9cdeb7dde5feed0c21f3d915a84ee8d909b9d9d6b75560c",
+      "platform": "Linux",
+      "distribution": "actions/setup-python",
+      "package": "CPython",
+      "version": "3.13.17",
+      "source_package": "CPython",
+      "source_version": "3.13.17",
+      "license": "PSF-2.0",
+      "notice": {
+        "path": "licenses/system-linux/cpython-3.13.17-LICENSE.txt",
+        "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+      },
+      "source_required": false
+    }
+  ],
+  "sources": [
+    {
+      "package": "readline",
+      "version": "8.1.2-1",
+      "filename": "readline_8.1.2-1.dsc",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/r/readline/readline_8.1.2-1.dsc",
+      "sha256": "8558058b41165ffbbf406e744e726326e649a55c0f2c1490a467c01d314adec2",
+      "size": 2432
+    },
+    {
+      "package": "readline",
+      "version": "8.1.2-1",
+      "filename": "readline_8.1.2.orig.tar.gz",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/r/readline/readline_8.1.2.orig.tar.gz",
+      "sha256": "7589a2381a8419e68654a47623ce7dfcb756815c8fee726b98f90bf668af7bc6",
+      "size": 2993073
+    },
+    {
+      "package": "readline",
+      "version": "8.1.2-1",
+      "filename": "readline_8.1.2-1.debian.tar.xz",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/r/readline/readline_8.1.2-1.debian.tar.xz",
+      "sha256": "0c39840fbed2abd3f93083d75c974e39855fd41aa6df5fa1be06d147e86071ca",
+      "size": 29292
+    },
+    {
+      "package": "gdbm",
+      "version": "1.23-1",
+      "filename": "gdbm_1.23-1.dsc",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23-1.dsc",
+      "sha256": "fae26cb50da1af1d7b152495dbb2bca0301e65973d0a6a6d6d771e7e58a82d72",
+      "size": 2583
+    },
+    {
+      "package": "gdbm",
+      "version": "1.23-1",
+      "filename": "gdbm_1.23.orig.tar.gz",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23.orig.tar.gz",
+      "sha256": "74b1081d21fff13ae4bd7c16e5d6e504a4c26f7cde1dca0d963a484174bbcacd",
+      "size": 1115854
+    },
+    {
+      "package": "gdbm",
+      "version": "1.23-1",
+      "filename": "gdbm_1.23.orig.tar.gz.asc",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23.orig.tar.gz.asc",
+      "sha256": "64ebb68cc68e8915d62cb20ea40323c00b56051f844589ee0a52169fff34cecb",
+      "size": 181
+    },
+    {
+      "package": "gdbm",
+      "version": "1.23-1",
+      "filename": "gdbm_1.23-1.debian.tar.xz",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23-1.debian.tar.xz",
+      "sha256": "cc86b10814c2045967d29571ea7bed810fc4ec917d2918d056b8eb3e5622eb1c",
+      "size": 18484
+    },
+    {
+      "package": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "filename": "glibc_2.35.orig.tar.xz",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35.orig.tar.xz",
+      "sha256": "5123732f6b67ccd319305efd399971d58592122bcc2a6518a1bd2510dd0cf52e",
+      "size": 18165952
+    },
+    {
+      "package": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "filename": "glibc_2.35.orig.tar.xz.asc",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35.orig.tar.xz.asc",
+      "sha256": "853aaaf17d7366817e814057a467625ee7c0b26240e8b878db0f33c389c7bcb6",
+      "size": 833
+    },
+    {
+      "package": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "filename": "glibc_2.35-0ubuntu3.15.debian.tar.xz",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.15.debian.tar.xz",
+      "sha256": "ea3f016b1987d995addb1c2b093a8f2679179d9bb3ebb9e2ea086469d56498c5",
+      "size": 962196
+    },
+    {
+      "package": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "filename": "glibc_2.35-0ubuntu3.15.dsc",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.15.dsc",
+      "sha256": "7b3e318ea5ac8b039a0fb5ef2e78b1812346bb753365d6d09622f698427cee56",
+      "size": 8888
+    }
+  ],
+  "scope": "Versions relues du complément v0.82.0. Tout nouvel octet système exige rapprochement et revue avant release."
+}

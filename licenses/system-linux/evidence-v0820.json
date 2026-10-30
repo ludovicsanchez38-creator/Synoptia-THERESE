@@ -1,0 +1,275 @@
+{
+  "bibliotheques": {
+    "libbz2.so.1.0": {
+      "paquet": "libbz2-1.0",
+      "version": "1.0.8-5ubuntu0.1",
+      "suite": "jammy-security",
+      "source": "bzip2",
+      "fichier": "lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+      "deb": "pool/main/b/bzip2/libbz2-1.0_1.0.8-5ubuntu0.1_amd64.deb",
+      "deb_sha256": "2fd35bb1ac601fa1bf35da2fa08dba3541766ca791927342b5efcb18ef17aecb",
+      "sha256_dans_le_deb": "54d16979912ab62282350dd2dc5dceb5b73b13e27bb02792087aff752d16f6e9"
+    },
+    "libcrypto.so.3": {
+      "paquet": "libssl3",
+      "version": "3.0.2-0ubuntu1.30",
+      "suite": "jammy-security",
+      "source": "openssl",
+      "fichier": "usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+      "deb": "pool/main/o/openssl/libssl3_3.0.2-0ubuntu1.30_amd64.deb",
+      "deb_sha256": "d1b4636e32ac6d3b95d583ac05ac548b1aa248414bae1c51b14f54be0f8fd7bc",
+      "sha256_dans_le_deb": "7cc817ff1841b59516d684f357bc0c3fc2cc52c3fa9b4ffb8ce8bdc215f02915"
+    },
+    "libssl.so.3": {
+      "paquet": "libssl3",
+      "version": "3.0.2-0ubuntu1.30",
+      "suite": "jammy-security",
+      "source": "openssl",
+      "fichier": "usr/lib/x86_64-linux-gnu/libssl.so.3",
+      "deb": "pool/main/o/openssl/libssl3_3.0.2-0ubuntu1.30_amd64.deb",
+      "deb_sha256": "d1b4636e32ac6d3b95d583ac05ac548b1aa248414bae1c51b14f54be0f8fd7bc",
+      "sha256_dans_le_deb": "51fc92556f11ddce62f3f988d3fe973fab8fb4742032e61a713688581c924262"
+    },
+    "libffi.so.8": {
+      "paquet": "libffi8",
+      "version": "3.4.2-4",
+      "suite": "jammy",
+      "source": "libffi",
+      "fichier": "usr/lib/x86_64-linux-gnu/libffi.so.8.1.0",
+      "deb": "pool/main/libf/libffi/libffi8_3.4.2-4_amd64.deb",
+      "deb_sha256": "b4f88c91fa6f4c942097be6abfc365fb133c5e147640168cbb7704fd855eac10",
+      "sha256_dans_le_deb": "247da4d5d34a91cadcdd6282be4c4644fcb8af001334d2b8a82ecda435418cbf"
+    },
+    "libgcc_s.so.1": {
+      "paquet": "libgcc-s1",
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "suite": "jammy-security",
+      "source": "gcc-12",
+      "fichier": "lib/x86_64-linux-gnu/libgcc_s.so.1",
+      "deb": "pool/main/g/gcc-12/libgcc-s1_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "deb_sha256": "d383e642d83263147f7b4b69fb92cf1036e5246c6be3accf10b77f986684589a",
+      "sha256_dans_le_deb": "fc9d43b2f6c20e53b009238f767c5b949d202389e20de9e202ea684b4ba3729a"
+    },
+    "libgdbm_compat.so.4": {
+      "paquet": "libgdbm-compat4",
+      "version": "1.23-1",
+      "suite": "jammy",
+      "source": "gdbm",
+      "fichier": "usr/lib/x86_64-linux-gnu/libgdbm_compat.so.4.0.0",
+      "deb": "pool/main/g/gdbm/libgdbm-compat4_1.23-1_amd64.deb",
+      "deb_sha256": "58636e2ad6bab216b70f83a114f4e37d1f733fd6eb69e220cb9a4d53c2b5868d",
+      "sha256_dans_le_deb": "cd77f7a952bc04649ce0608251b5a99d76219b1132c7375921e0c8bf6ff20c80"
+    },
+    "libgdbm.so.6": {
+      "paquet": "libgdbm6",
+      "version": "1.23-1",
+      "suite": "jammy",
+      "source": "gdbm",
+      "fichier": "usr/lib/x86_64-linux-gnu/libgdbm.so.6.0.0",
+      "deb": "pool/main/g/gdbm/libgdbm6_1.23-1_amd64.deb",
+      "deb_sha256": "acf9e905a3ecbd4d919938e1cfd4bcd9d861bc794648046a9af1fbbefd0cc495",
+      "sha256_dans_le_deb": "ffa9adb042df32f985ca2f1deb9247dfcb61d46fa513de2aa7159ecd55c18d67"
+    },
+    "liblzma.so.5": {
+      "paquet": "liblzma5",
+      "version": "5.2.5-2ubuntu1.2",
+      "suite": "jammy-security",
+      "source": "xz-utils",
+      "fichier": "lib/x86_64-linux-gnu/liblzma.so.5.2.5",
+      "deb": "pool/main/x/xz-utils/liblzma5_5.2.5-2ubuntu1.2_amd64.deb",
+      "deb_sha256": "a88fca7506963c443c42a578db6c35424336ae28abcdaa60c89f06d30aeb625b",
+      "sha256_dans_le_deb": "3147e2cb512d17a4064d34f61e69591b6473543db2ec63cd797f766cd3b09037"
+    },
+    "libmvec.so.1": {
+      "paquet": "libc6",
+      "version": "2.35-0ubuntu3.15",
+      "suite": "jammy-security",
+      "source": "glibc",
+      "fichier": "lib/x86_64-linux-gnu/libmvec.so.1",
+      "deb": "pool/main/g/glibc/libc6_2.35-0ubuntu3.15_amd64.deb",
+      "deb_sha256": "79e35256227e16a607c154cdeb8d76ff12d20e31de286ea7fd9ad3b96fe0452d",
+      "sha256_dans_le_deb": "44e31b0cd6dcb6f8147ffc820f51e7140c429a6e0e7724dd00ad0ea4d18f4f51"
+    },
+    "libncursesw.so.6": {
+      "paquet": "libncursesw6",
+      "version": "6.3-2ubuntu0.3",
+      "suite": "jammy-security",
+      "source": "ncurses",
+      "fichier": "lib/x86_64-linux-gnu/libncursesw.so.6.3",
+      "deb": "pool/main/n/ncurses/libncursesw6_6.3-2ubuntu0.3_amd64.deb",
+      "deb_sha256": "734107c126c2685508e4186f6be65f4edc0d393f1bc1cb4c307a76d1beb09496",
+      "sha256_dans_le_deb": "96a5920c1f6d1fd6ff3ac35c03b8fc9725e8fe6964c10e0299f772667d522a6b"
+    },
+    "libobjc.so.4": {
+      "paquet": "libobjc4",
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "suite": "jammy-updates (universe)",
+      "source": "gcc-12",
+      "fichier": "usr/lib/x86_64-linux-gnu/libobjc.so.4.0.0",
+      "deb": "pool/universe/g/gcc-12/libobjc4_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "deb_sha256": "f3346404ee0c5d90aca8b3d7483d105d8677f564f28d6fdd71da0a62669f64cc",
+      "sha256_dans_le_deb": "e973362942ac035464873a3b1f55a56f43f48d7ab00929423e63463212343ebc"
+    },
+    "libreadline.so.8": {
+      "paquet": "libreadline8",
+      "version": "8.1.2-1",
+      "suite": "jammy",
+      "source": "readline",
+      "fichier": "lib/x86_64-linux-gnu/libreadline.so.8.1",
+      "deb": "pool/main/r/readline/libreadline8_8.1.2-1_amd64.deb",
+      "deb_sha256": "51fd16f608efa710c987e4b071ffba0bec63a9ac8e55eddd5770f5e5252edc09",
+      "sha256_dans_le_deb": "57419e3b177639246ecf7ffd2eba170bde779b7369d70e68b9b4c5fc3051cbc1"
+    },
+    "libsqlite3.so.0": {
+      "paquet": "libsqlite3-0",
+      "version": "3.37.2-2ubuntu0.8",
+      "suite": "jammy-security",
+      "source": "sqlite3",
+      "fichier": "usr/lib/x86_64-linux-gnu/libsqlite3.so.0.8.6",
+      "deb": "pool/main/s/sqlite3/libsqlite3-0_3.37.2-2ubuntu0.8_amd64.deb",
+      "deb_sha256": "6e22b1e8d375fed6a1d52cad5887e762b6cdeaba137595e726c95486968dfab5",
+      "sha256_dans_le_deb": "f5a7fc236f80f3185608d14e9f4dea3e3fd647582e123e8a00f253629fe16830"
+    },
+    "libstdc++.so.6": {
+      "paquet": "libstdc++6",
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "suite": "jammy-security",
+      "source": "gcc-12",
+      "fichier": "usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30",
+      "deb": "pool/main/g/gcc-12/libstdc++6_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "deb_sha256": "29ef3d289b272704b75141906c8f683db0f2bdb0942061366691333bfb289bdc",
+      "sha256_dans_le_deb": "ff0825e113603c3866680d5d52216bc6d8eedf3a59f52a0aef67ff01994db128"
+    },
+    "libtinfo.so.6": {
+      "paquet": "libtinfo6",
+      "version": "6.3-2ubuntu0.3",
+      "suite": "jammy-security",
+      "source": "ncurses",
+      "fichier": "lib/x86_64-linux-gnu/libtinfo.so.6.3",
+      "deb": "pool/main/n/ncurses/libtinfo6_6.3-2ubuntu0.3_amd64.deb",
+      "deb_sha256": "3b8dff43a31168f5020928f2ab9a97324c5b47ae708311781f6bd01306c96214",
+      "sha256_dans_le_deb": "856b8451914abc2277c3d91c64ba3e72b2e0d519806397afecae92fda1a6b10c"
+    },
+    "libuuid.so.1": {
+      "paquet": "libuuid1",
+      "version": "2.37.2-4ubuntu3.6",
+      "suite": "jammy-security",
+      "source": "util-linux",
+      "fichier": "usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0",
+      "deb": "pool/main/u/util-linux/libuuid1_2.37.2-4ubuntu3.6_amd64.deb",
+      "deb_sha256": "97eaa1090c2e7ddaad55d58f9d0d7907d64b70f89228405d68a7ce7d56a89d67",
+      "sha256_dans_le_deb": "4472cf91dbc01395761fb45d0f4b25f6241406fe54cbf540c13755a3706a7b17"
+    },
+    "libz.so.1": {
+      "paquet": "zlib1g",
+      "version": "1:1.2.11.dfsg-2ubuntu9.2",
+      "suite": "jammy-security",
+      "source": "zlib",
+      "fichier": "lib/x86_64-linux-gnu/libz.so.1.2.11",
+      "deb": "pool/main/z/zlib/zlib1g_1.2.11.dfsg-2ubuntu9.2_amd64.deb",
+      "deb_sha256": "9dc17e51a1be2d9ed63b7b84ef0e4e29c5abe6f1bc62cb03e7181483cce8a2f2",
+      "sha256_dans_le_deb": "64c206f0146cc58bbddc4f22054436f4ff278f5a554aa3ce6921ddf7e9133370"
+    }
+  },
+  "sources": [
+    {
+      "paquet_source": "readline",
+      "version": "8.1.2-1",
+      "suite": "jammy",
+      "fichier": "readline_8.1.2-1.dsc",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/r/readline/readline_8.1.2-1.dsc",
+      "sha256": "8558058b41165ffbbf406e744e726326e649a55c0f2c1490a467c01d314adec2",
+      "octets": 2432
+    },
+    {
+      "paquet_source": "readline",
+      "version": "8.1.2-1",
+      "suite": "jammy",
+      "fichier": "readline_8.1.2.orig.tar.gz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/r/readline/readline_8.1.2.orig.tar.gz",
+      "sha256": "7589a2381a8419e68654a47623ce7dfcb756815c8fee726b98f90bf668af7bc6",
+      "octets": 2993073
+    },
+    {
+      "paquet_source": "readline",
+      "version": "8.1.2-1",
+      "suite": "jammy",
+      "fichier": "readline_8.1.2-1.debian.tar.xz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/r/readline/readline_8.1.2-1.debian.tar.xz",
+      "sha256": "0c39840fbed2abd3f93083d75c974e39855fd41aa6df5fa1be06d147e86071ca",
+      "octets": 29292
+    },
+    {
+      "paquet_source": "gdbm",
+      "version": "1.23-1",
+      "suite": "jammy",
+      "fichier": "gdbm_1.23-1.dsc",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23-1.dsc",
+      "sha256": "fae26cb50da1af1d7b152495dbb2bca0301e65973d0a6a6d6d771e7e58a82d72",
+      "octets": 2583
+    },
+    {
+      "paquet_source": "gdbm",
+      "version": "1.23-1",
+      "suite": "jammy",
+      "fichier": "gdbm_1.23.orig.tar.gz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23.orig.tar.gz",
+      "sha256": "74b1081d21fff13ae4bd7c16e5d6e504a4c26f7cde1dca0d963a484174bbcacd",
+      "octets": 1115854
+    },
+    {
+      "paquet_source": "gdbm",
+      "version": "1.23-1",
+      "suite": "jammy",
+      "fichier": "gdbm_1.23.orig.tar.gz.asc",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23.orig.tar.gz.asc",
+      "sha256": "64ebb68cc68e8915d62cb20ea40323c00b56051f844589ee0a52169fff34cecb",
+      "octets": 181
+    },
+    {
+      "paquet_source": "gdbm",
+      "version": "1.23-1",
+      "suite": "jammy",
+      "fichier": "gdbm_1.23-1.debian.tar.xz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/gdbm/gdbm_1.23-1.debian.tar.xz",
+      "sha256": "cc86b10814c2045967d29571ea7bed810fc4ec917d2918d056b8eb3e5622eb1c",
+      "octets": 18484
+    },
+    {
+      "paquet_source": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "suite": "jammy-security",
+      "fichier": "glibc_2.35.orig.tar.xz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35.orig.tar.xz",
+      "sha256": "5123732f6b67ccd319305efd399971d58592122bcc2a6518a1bd2510dd0cf52e",
+      "octets": 18165952
+    },
+    {
+      "paquet_source": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "suite": "jammy-security",
+      "fichier": "glibc_2.35.orig.tar.xz.asc",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35.orig.tar.xz.asc",
+      "sha256": "853aaaf17d7366817e814057a467625ee7c0b26240e8b878db0f33c389c7bcb6",
+      "octets": 833
+    },
+    {
+      "paquet_source": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "suite": "jammy-security",
+      "fichier": "glibc_2.35-0ubuntu3.15.debian.tar.xz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.15.debian.tar.xz",
+      "sha256": "ea3f016b1987d995addb1c2b093a8f2679179d9bb3ebb9e2ea086469d56498c5",
+      "octets": 962196
+    },
+    {
+      "paquet_source": "glibc",
+      "version": "2.35-0ubuntu3.15",
+      "suite": "jammy-security",
+      "fichier": "glibc_2.35-0ubuntu3.15.dsc",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.15.dsc",
+      "sha256": "7b3e318ea5ac8b039a0fb5ef2e78b1812346bb753365d6d09622f698427cee56",
+      "octets": 8888
+    }
+  ]
+}

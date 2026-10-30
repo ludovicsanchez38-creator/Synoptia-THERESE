@@ -20,3 +20,12 @@ licenses/copyleft-sources.json text eol=lf
 licenses/copyleft-version-evidence.json text eol=lf
 scripts/attribution_evidence.py text eol=lf
 scripts/copyleft_sources.py text eol=lf
+
+# Preuves et notices système : mêmes octets sur les trois runners.
+licenses/system-linux/** text eol=lf
+licenses/LISEZMOI-SOURCES.txt text eol=lf
+licenses/supplements/LGPL-2.0.txt text eol=lf
+
+# Conserver les espaces des notices amont reproduites octet pour octet.
+THIRD_PARTY_LICENSES whitespace=-blank-at-eol,-blank-at-eof
+licenses/system-linux/** whitespace=-blank-at-eol,-blank-at-eof

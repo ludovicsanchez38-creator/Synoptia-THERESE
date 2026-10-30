@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import attribution_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json', 'licenses/attribution-sources.json']
+LOCKS = ['package-lock.json', 'src/frontend/package-lock.json', 'src/frontend/src-tauri/Cargo.lock', 'uv.lock', 'licenses/native-components.lock.json', 'licenses/overrides.json', 'licenses/runtime-wheels.lock.json', 'licenses/attribution-sources.json', 'licenses/system-libraries.lock.json']
 INVENTORY = 'licenses/inventory.json'
 OUTPUT = 'THIRD_PARTY_LICENSES'
 SOURCE_AVAILABILITY = "Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d)."
@@ -41,6 +41,9 @@ def lock_digest(root, paths=LOCKS):
         overrides = json.loads((root / 'licenses/overrides.json').read_text(encoding='utf-8'))
         paths = paths + sorted({n['local_path'] for o in overrides.values()
                                 for n in o['notices'] if 'local_path' in n})
+    # Le catalogue et les preuves/notices système font partie de la fraîcheur.
+    if (root / 'licenses/system-linux').exists():
+        paths = list(paths) + sorted(str(p.relative_to(root)) for p in (root / 'licenses/system-linux').iterdir() if p.is_file())
     return digest(b''.join(p.encode() + b'\0' + (root / p).read_bytes() for p in paths))
 
 
@@ -594,6 +597,9 @@ def main():
     sources = json.loads(proof_path.read_text(encoding='utf-8')) if proof_path.exists() else []
     validate_inventory(packages, data['packages'], release=args.command == 'check', attribution_sources=sources, root=root)
     expected = render(data['packages'], fingerprint, attribution_sources=sources, root=root)
+    import system_libraries
+    if (root / system_libraries.CATALOG).exists():
+        expected += '\n' + system_libraries.render_notices(root)
     if args.command == 'check':
         check_output(root / OUTPUT, expected)
     else:

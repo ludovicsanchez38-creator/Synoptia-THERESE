@@ -2335,7 +2335,7 @@
   "evidence_files": [
     {
       "path": "licenses/copyleft-version-evidence.json",
-      "sha256": "334936a3c74645913cb66eab980fdf188a7d13b4983560284663ca563c44ee69"
+      "sha256": "82ae13794f507450c0c9ea3a408b5007e08478c7c73bc260dc5574ca358fd46b"
     }
   ]
 }

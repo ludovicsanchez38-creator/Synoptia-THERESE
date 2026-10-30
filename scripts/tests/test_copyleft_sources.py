@@ -218,6 +218,32 @@ class CorpusTests(unittest.TestCase):
                 folder.mkdir.assert_not_called()
                 download.assert_not_called()
 
+    def test_other_valid_support_archive_under_required_name_is_rejected(self):
+        original_read = Path.read_text
+        for filename in ('pyav-ffmpeg-8.1.1-2-build-tree.tar.gz',
+                         'mingw-w64-libiconv-1.19-1.src.tar.zst'):
+            with self.subTest(filename=filename):
+                self.manifest = copy.deepcopy(self.original)
+                replacement = next(r for r in self.manifest['supporting_sources']
+                                   if r['filename'] == 'PyAV-17.1.0-build-tree.tar.gz')
+                target = next(r for r in self.manifest['supporting_sources'] if r['filename'] == filename)
+                target.update({k: replacement[k] for k in ('url', 'sha256', 'commit')})
+                errors = self.m.verify_manifest(self.manifest, self.rows, self.root)
+                self.assertTrue(any(filename in e for e in errors), errors)
+                def read(path, *args, **kwargs):
+                    if path == self.root / self.m.MANIFEST:
+                        return json.dumps(self.manifest)
+                    return original_read(path, *args, **kwargs)
+                with (patch.object(Path, 'read_text', read),
+                      patch.object(sys, 'argv', ['copyleft_sources.py', 'verifier']),
+                      self.assertRaisesRegex(ValueError, filename)):
+                    self.m.main()
+                folder = Mock()
+                with (patch.object(self.m, 'download', side_effect=AssertionError('network')),
+                      self.assertRaisesRegex(ValueError, filename)):
+                    self.m.assemble(self.manifest, folder, root=self.root)
+                folder.mkdir.assert_not_called()
+
     def test_required_support_reference_cannot_be_removed_or_redirected(self):
         for replacement in (None, [], ['inconnue.tar.gz']):
             with self.subTest(replacement=replacement):

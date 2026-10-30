@@ -1160,5 +1160,35 @@
         "setuptools-84.2.1.tar.gz"
       ]
     }
+  },
+  "supporting_source_bindings": {
+    "PyAV-17.1.0-build-tree.tar.gz": {
+      "url": "https://codeload.github.com/PyAV-Org/PyAV/tar.gz/97241598792f4c980c32458187154c7c999d68b3",
+      "sha256": "f4ff776ee23cf0b514e3682382cd88f9cf31da9f43599b680bad6a275be24c41",
+      "filename": "PyAV-17.1.0-build-tree.tar.gz",
+      "commit": "97241598792f4c980c32458187154c7c999d68b3"
+    },
+    "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz": {
+      "url": "https://codeload.github.com/PyAV-Org/pyav-ffmpeg/tar.gz/b84838a003b1626152ef530750d5c3e0022c3db9",
+      "sha256": "9bf73ed500b28b379b8e3ffce90f7f33b71dbe56c3cda6050de79caa15807ade",
+      "filename": "pyav-ffmpeg-8.1.1-2-build-tree.tar.gz",
+      "commit": "b84838a003b1626152ef530750d5c3e0022c3db9"
+    },
+    "piper-1.4.2-build-tree.tar.gz": {
+      "url": "https://codeload.github.com/OHF-Voice/piper1-gpl/tar.gz/d6975e21a440c0d8b6e5fb7c41027409af13d44d",
+      "sha256": "ebf535912b5760e33ff5c01a483bfc9c58b13c18c7c6ccfb4cec0184dc14f747",
+      "filename": "piper-1.4.2-build-tree.tar.gz",
+      "commit": "d6975e21a440c0d8b6e5fb7c41027409af13d44d"
+    },
+    "mingw-w64-libiconv-1.19-1.src.tar.zst": {
+      "url": "https://mirror.msys2.org/mingw/sources/mingw-w64-libiconv-1.19-1.src.tar.zst",
+      "sha256": "74428280c17094da5b702c29b2e1a0abae59556ea5dfdd65705cc8ccc1e000fb",
+      "filename": "mingw-w64-libiconv-1.19-1.src.tar.zst"
+    },
+    "setuptools-84.2.1.tar.gz": {
+      "url": "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz",
+      "sha256": "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc",
+      "filename": "setuptools-84.2.1.tar.gz"
+    }
   }
 }

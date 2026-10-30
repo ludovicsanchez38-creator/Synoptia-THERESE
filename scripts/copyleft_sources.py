@@ -104,6 +104,18 @@ def verify_manifest(manifest, rows, root=None):
         errors.append('Manifeste périmé : empreinte de l’inventaire différente')
     names = set()
     support = {r.get('filename'): r for r in manifest.get('supporting_sources', [])}
+    if len(support) != len(manifest.get('supporting_sources', [])):
+        errors.append('Archive de construction dupliquée')
+    # L'identité complète est portée par la preuve dont l'empreinte est contrôlée,
+    # pas seulement par un nom qui pourrait masquer une autre archive valide.
+    if root is not None:
+        bindings = {}
+        for proof in proofs.values():
+            if proof is not None:
+                bindings.update(proof.get('supporting_source_bindings', {}))
+        for name in sorted(set(bindings) | set(support)):
+            if name not in support or name not in bindings or support[name] != bindings[name]:
+                errors.append('Archive de construction différente de la preuve : ' + str(name))
     for item in manifest.get('components', []):
         name = item.get('component', '?')
         if name in names:
@@ -244,7 +256,7 @@ def readme(manifest):
              'appliqués par les fabricants des roues. Aucun code téléchargé n’a été exécuté.',
              'Les numéros de SONAME ne sont pas utilisés comme versions source.',
              'Les modalités de remplacement/reliaison des bibliothèques LGPL, notamment dans',
-             'le moteur onefile, restent distinctes de la disponibilité de ces sources.', '',
+             'le moteur onefile, sont décrites dans la méthode de reconstruction ci-dessous.', '',
              'Correspondances :']
     for item in manifest['components']:
         source = item.get('source') or {}
@@ -263,7 +275,7 @@ def readme(manifest):
     lines += ['', 'Entrées écartées :']
     for item in manifest.get('exclusions', []):
         lines.append(', '.join(item['packages']) + ' : ' + item['reason'])
-    return '\n'.join(lines) + '\n'
+    return '\n'.join(lines) + '\n\n' + (ROOT / 'licenses/LISEZMOI-SOURCES.txt').read_text(encoding='utf-8')
 
 
 def checked_inventory(root):

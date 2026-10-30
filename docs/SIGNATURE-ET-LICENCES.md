@@ -137,7 +137,8 @@ reste une amélioration à faire, pas une propriété de cette version.
 formats distribués : app/DMG macOS, NSIS et MSI Windows, paquet Debian Linux.
 La surcharge Linux conserve explicitement cette ressource. La CI vérifie le
 fichier versionné ; la release compare aussi les notices extraites des deux
-installeurs Windows, du `.deb` et du bundle macOS, octet pour octet.
+installeurs Windows, du `.deb`, du DMG et de l’archive updater macOS, octet pour octet.
+Toute AppImage produite est aussi inspectée ; la release actuelle ne demande que `deb`.
 
 ```bash
 # Après un changement de verrou : réseau requis, aucun paquet exécuté.
@@ -247,6 +248,69 @@ sont consignées dans `licenses/native-components.lock.json`. Leurs textes sont
 épinglés ; le manifeste des sources correspondant au quatrième tour complète
 le rapprochement des composants copyleft avec leurs recettes de construction.
 
+## Bibliothèques du système de build (tour 6)
+
+Les verrous npm/Cargo/uv ne décrivent pas les bibliothèques que PyInstaller copie
+depuis Ubuntu. `licenses/system-libraries.lock.json` complète ces verrous :
+**18 bibliothèques**, dont **17 fichiers de 16 paquets binaires Ubuntu 22.04**,
+et libpython CPython 3.13.17 de setup-python. Les 13 notices originales et le
+rapprochement du complément v0.82.0 sont conservés dans `licenses/system-linux/`.
+Le générateur les ajoute à `THIRD_PARTY_LICENSES`, avec les textes GNU complets.
+
+Le spec enregistre la provenance de tous les fichiers natifs trouvés par Analysis,
+y compris ceux classés comme données. Après PyInstaller et la signature du moteur,
+`system_libraries.py inventory --platform <Linux|macOS|Windows>` parcourt les
+binaires réels (onedir ou contenu onefile). Il reconnaît ELF, Mach-O et PE par leurs
+octets, rapproche les roues de leur RECORD et des versions de l'inventaire, les
+extensions CPython de leur origine lib-dynload et version, et les bibliothèques
+Ubuntu par **SHA-256 et identité dpkg** (paquet et source, versions exactes).
+Le nom/SONAME seul n'autorise jamais une bibliothèque système.
+
+Le résultat `.work-release/system-libraries.json` est une ressource Tauri.
+`verify_packaged_licenses.py` lit chaque installeur final et exige les mêmes
+notices, le même inventaire et les mêmes octets natifs. Un ajout par l'empaqueteur
+Linux est également rapproché du catalogue et des paquets du runner. Une
+bibliothèque inconnue ou modifiée arrête la release. Chaque artefact reçoit une
+preuve JSON avec son SHA-256 et son inventaire ; le publieur vérifie cette preuve
+avant de joindre les fichiers au brouillon. Les preuves sont jointes à la release.
+
+Le catalogue est fermé sur les versions relues : un changement du runner peut
+faire échouer la garde. Le relevé `system-libraries-unreviewed.json` conserve alors
+les fichiers et candidats dpkg à examiner. Pour mettre à jour le catalogue,
+rapprocher les **octets** du nouveau build des membres des paquets binaires,
+contrôler leurs notices et leurs paquets source exacts (index de distribution
+signés), puis réviser catalogue, preuve et empreintes ensemble. Ne pas contourner
+le contrôle en conservant un nom sous une autre version. Les entrées CPython et
+les règles de licence relues dans le script doivent également être actualisées.
+
+Le complément exige les sources de **readline 8.1.2-1**, **gdbm 1.23-1** et
+**glibc 2.35-0ubuntu3.15** : 11 fichiers, 23 299 768 octets (dsc, orig, correctifs
+Debian/Ubuntu et signatures amont). Le job de sources les assemble et joint
+`THERESE-sources-systeme-linux.tar.gz` avant les installeurs. Le catalogue couvre
+également les licences permissives et l'exception GCC des autres fichiers.
+
+```bash
+python scripts/system_libraries.py check
+python scripts/system_libraries.py assemble-sources .work-t2/sources-systeme-linux
+```
+
+macOS et Windows : la garde sait ouvrir le contenu natif du moteur onefile et
+comparer les DMG/archive updater ou MSI/NSIS. **Le catalogue de bibliothèques
+hors roues actuellement relu est Linux seulement.** La première CI macOS/Windows
+peut donc refuser des composants comme OpenSSL, ncurses, Python.framework,
+python313.dll ou les runtimes Microsoft : il faut alors établir leurs versions,
+notices et preuves, pas les assimiler globalement à Python. Le complément relu
+indique que libedit reste liée au système macOS et n'est pas embarquée ; ce constat
+v0.82.0 ne dispense pas de scanner le prochain build. Les binaires auxiliaires
+introduits par NSIS/AppImage ne bénéficient d'aucune exemption implicite.
+Ces extracteurs et la reliaison ne sont pas validés par un build de plateforme ici.
+
+La méthode de reconstruction et de remplacement LGPL est dans
+[`licenses/LISEZMOI-SOURCES.txt`](../licenses/LISEZMOI-SOURCES.txt), incluse dans
+les deux archives. Elle couvre les paquets source Ubuntu, libmvec et la copie
+privée du moteur Linux, ainsi que la reconstruction nécessaire des onefile.
+La reliaison fonctionnelle reste à démontrer sur une vraie construction.
+
 ## Copyleft et travail avant diffusion publique
 
 Piper et recurring-ical-events déclarent **GPL-3.0-or-later** ; x-wr-timezone
@@ -284,7 +348,10 @@ ou sa référence bloque le contrôle. Les archives FFmpeg incluent notamment
 
 Les douze sources directement présentes dans Cargo.lock ou uv.lock sont
 comparées au verrou lui-même (URL, SHA-256 et version), indépendamment de
-l'inventaire. La source de soutien setuptools est aussi comparée à uv.lock.
+l'inventaire. La source de soutien setuptools est aussi comparée à uv.lock. Les cinq objets
+complets de soutien (URL, SHA-256, commit et autres champs) sont désormais liés
+à `supporting_source_bindings` dans la preuve empreintée : une archive valide
+substituée sous le nom FFmpeg ou MSYS2 libiconv est refusée avant téléchargement.
 Les autres sources exigent `evidence_refs` et `recipe_refs` non vides et
 résolubles. Les références peuvent désigner une recette copiée localement ou
 un membre de l'archive complète (axe-core, lightningcss, setuptools).

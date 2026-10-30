@@ -47,7 +47,8 @@
     "category": "Productivity",
     "resources": {
       "resources/guide-therese-0.82.pdf": "resources/guide-therese-0.82.pdf",
-      "../../../THIRD_PARTY_LICENSES": "THIRD_PARTY_LICENSES"
+      "../../../THIRD_PARTY_LICENSES": "THIRD_PARTY_LICENSES",
+      "../../../.work-release/system-libraries.json": "system-libraries.json"
     },
     "macOS": {
       "minimumSystemVersion": "10.15",

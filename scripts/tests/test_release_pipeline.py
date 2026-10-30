@@ -53,6 +53,30 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(any('THERESE-sources-copyleft.tar.gz' in r for r in runs))
         self.assertFalse(any(s.get('continue-on-error') for s in steps))
 
+    def test_system_inventory_and_sources_gate_every_release(self):
+        jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
+        steps = jobs['build']['steps']
+        runs = [s.get('run', '') for s in steps]
+        inventory = next(i for i, r in enumerate(runs) if 'system_libraries.py inventory' in r)
+        build = next(i for i, s in enumerate(steps) if 'tauri-apps/tauri-action@' in s.get('uses', ''))
+        verify = next(i for i, r in enumerate(runs) if 'verify_packaged_licenses.py' in r)
+        publish = next(i for i, r in enumerate(runs) if 'publish_release_artifacts.py' in r)
+        self.assertLess(inventory, build)
+        self.assertLess(build, verify)
+        self.assertLess(verify, publish)
+        self.assertFalse(steps[inventory].get('continue-on-error'))
+        self.assertFalse(steps[verify].get('continue-on-error'))
+        source_runs = '\n'.join(s.get('run', '') for s in jobs['sources-copyleft']['steps'])
+        self.assertIn('system_libraries.py assemble-sources', source_runs)
+        self.assertIn('THERESE-sources-systeme-linux.tar.gz', source_runs)
+
+    def test_inventory_precedes_cleanup_and_final_verifier_keeps_python(self):
+        steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
+        inventory = next(i for i, s in enumerate(steps) if 'system_libraries.py inventory' in s.get('run', ''))
+        cleanup = next(i for i, s in enumerate(steps) if s.get('name') == 'Libérer espace après PyInstaller (Linux)')
+        self.assertLess(inventory, cleanup)
+        self.assertNotIn('/opt/hostedtoolcache/Python', steps[cleanup]['run'])
+
     def test_microsoft_action_is_official_and_pinned(self):
         steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
         actions = [s for s in steps if s.get('uses', '').startswith('Azure/artifact-signing-action@')]
@@ -89,7 +113,9 @@ class PipelineTests(unittest.TestCase):
         paths = ['package-lock.json', 'src/frontend/package-lock.json',
                  'src/frontend/src-tauri/Cargo.lock', 'uv.lock',
                  'licenses/overrides.json', 'licenses/native-components.lock.json',
-                 'licenses/runtime-wheels.lock.json', 'THIRD_PARTY_LICENSES']
+                 'licenses/runtime-wheels.lock.json', 'THIRD_PARTY_LICENSES',
+                 'licenses/system-libraries.lock.json', 'licenses/system-linux/readline.copyright',
+                 'licenses/LISEZMOI-SOURCES.txt']
         result = subprocess.run(['git', 'check-attr', '-z', 'eol', '--', *paths],
                                 cwd=ROOT, text=True, capture_output=True, check=True)
         values = result.stdout.split('\0')[2::3]

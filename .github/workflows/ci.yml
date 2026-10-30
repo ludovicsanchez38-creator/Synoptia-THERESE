@@ -33,6 +33,7 @@ jobs:
       - run: |
           python scripts/third_party_licenses.py check
           python scripts/copyleft_sources.py verifier
+          python scripts/system_libraries.py check
 
   lint:
     name: Lint (Python)
