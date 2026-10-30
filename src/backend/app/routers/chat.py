@@ -1605,6 +1605,16 @@ def _avec_texte_retire(bilan: dict[str, int], contexte: Any) -> dict[str, int]:
     return bilan
 
 
+def _memoriser_avis(message: Message, avis: list[str]) -> None:
+    """Tour 11 : les avis du tour sont conservés à part, jamais dans `content`."""
+    uniques = list(dict.fromkeys(a for a in avis if a))
+    if not uniques:
+        return
+    donnees = json.loads(message.extra_data or '{}')
+    donnees['avis'] = uniques
+    message.extra_data = json.dumps(donnees, ensure_ascii=False)
+
+
 def _memoriser_contexte(message: Message, bilan: dict[str, int]) -> None:
     """Pose le bilan dans extra_data sans effacer le reste (fichiers, sources)."""
     donnees: dict[str, Any] = {}
@@ -1957,6 +1967,9 @@ async def send_message(
     # cumulables. Les mutations Agenda sont seulement préparées ; leurs cartes
     # de confirmation s'affichent avant toute exécution.
     inline_preamble = ""
+    # Tour 11 (relecture 10) : les avis système partent à part (événement
+    # « notice », champ `avis`), jamais dans le texte de la réponse.
+    avis_reponse: list[str] = []
     inline_pending_confirmations: list[dict[str, Any]] = []
     actions_context: str | None = None
     llm_user_message = request.message
@@ -1974,7 +1987,7 @@ async def send_message(
         cleaned_message, inline_cmds = parse_inline_commands(request.message)
     if reprise and inline_cmds:
         llm_user_message = cleaned_message
-        inline_preamble = 'Les commandes de ce message ne sont pas rejouées lors de cette reprise.\n\n'
+        avis_reponse.append('Les commandes de ce message ne sont pas rejouées lors de cette reprise.')
         actions_context = ('Les commandes de ce tour ont déjà été traitées ou préparées avant la demande d’accord. '
                            'Ne les relance pas et n’invente pas leur résultat ; leurs cartes précédentes font foi.')
         inline_cmds = []
@@ -2148,6 +2161,7 @@ async def send_message(
                 source_documents_averes=source_documents_averes,
                 historique_documents_averes=historique_documents_averes,
                 rfc_sources_absentes=rfc_absentes,
+                avis=avis_reponse,
             ),
             media_type="text/event-stream",
             headers={
@@ -2183,7 +2197,7 @@ async def send_message(
     llm_service = get_llm_service()
     history, avis_historique = filtrer_historique(history, llm_service.config)
     if avis_historique:
-        inline_preamble = avis_historique + "\n\n" + inline_preamble
+        avis_reponse.append(avis_historique)
     documents_averes = source_documents_averes or (historique_documents_averes and not avis_historique)
     messages = history + [LLMMessage(role="user", content=llm_user_message,
                                      contient_documents=source_contient_documents)]
@@ -2257,7 +2271,7 @@ async def send_message(
         conversation.id, session, list(request.file_paths or []), llm_service.config
     )
     if avis_pieces and not avis_historique:
-        inline_preamble = avis_pieces + "\n\n" + inline_preamble
+        avis_reponse.append(avis_pieces)
     for fp in anciennes_pieces:
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
@@ -2364,8 +2378,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
-    if file_errors:
-        assistant_content = "\n\n".join(file_errors) + "\n\n" + assistant_content
+    avis_reponse.extend(file_errors)
+    avis_reponse.extend(getattr(context, "avis_systeme", None) or [])
     # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
     assistant_content += _suffixe_arret(assistant_content, motif_sink.get("stop_reason"))
 
@@ -2404,6 +2418,7 @@ async def send_message(
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
         assistant_message.extra_data = json.dumps(extra)
+    _memoriser_avis(assistant_message, avis_reponse)
     # B-1494, voie non diffusée : la suppression pendant la génération
     # l'emporte aussi ici. Construire la réponse avant un éventuel rollback
     # évite de relire une conversation dont les attributs SQL sont expirés.
@@ -2417,6 +2432,7 @@ async def send_message(
         tokens_out=output_tokens,
         warnings=avertissements_plafonds,
         contexte=ContexteTransmis(**bilan_contexte),
+        avis=avis_reponse or None,
         created_at=assistant_message.created_at,
         confirmations=inline_pending_confirmations or None,
     )
@@ -2447,6 +2463,7 @@ async def _stream_response(
     source_documents_averes: bool = True,
     historique_documents_averes: bool = True,
     rfc_sources_absentes: list[str] | None = None,
+    avis: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2544,6 +2561,7 @@ async def _stream_response(
         source_documents_averes=source_documents_averes,
         historique_documents_averes=historique_documents_averes,
         rfc_sources_absentes=rfc_sources_absentes,
+        avis=avis,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2829,6 +2847,7 @@ async def _do_stream_response(
     source_documents_averes: bool = True,
     historique_documents_averes: bool = True,
     rfc_sources_absentes: list[str] | None = None,
+    avis: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -2934,8 +2953,10 @@ async def _do_stream_response(
 
     # Build context with conversation history
     messages, avis_historique = filtrer_historique(history or [], llm_service.config)
+    # Tour 11 : les avis du tour, émis à part et conservés hors du contenu.
+    avis_tour: list[str] = list(avis or [])
     if avis_historique:
-        preamble = avis_historique + "\n\n" + preamble
+        avis_tour.append(avis_historique)
     # Le filtre retire toute provenance non attestée : un historique filtré ne
     # porte plus aucun document (la demande courante garde le sien).
     documents_averes = source_documents_averes or (historique_documents_averes and not avis_historique)
@@ -3010,7 +3031,7 @@ async def _do_stream_response(
         conversation_id, session, list(file_paths or []), llm_service.config
     )
     if avis_pieces and not avis_historique:
-        preamble = avis_pieces + "\n\n" + preamble
+        avis_tour.append(avis_pieces)
     for fp in anciennes_pieces:
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
@@ -3068,7 +3089,7 @@ async def _do_stream_response(
             "Pièces jointes non transmises :\n" + "\n".join(file_errors), source="fichier",
         )
         memory_context = f"{memory_context or ''}\n\n{avis_fichiers}"
-        preamble = "\n\n".join(file_errors) + "\n\n" + preamble
+        avis_tour.extend(file_errors)
 
     # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
     if actions_context:
@@ -3185,6 +3206,11 @@ async def _do_stream_response(
         context.system_prompt += BLOC_PIECES_JOINTES
 
     full_content = ""
+    # Tour 11 : le texte produit par le modèle seul, matière des compétences
+    # de génération (ni avis, ni confirmations de directives, ni annonce de coupe).
+    contenu_modele = ""
+    for texte_avis in avis_tour:
+        yield f"data: {json.dumps({'type': 'notice', 'content': texte_avis, 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
     # Confirmations des directives inline [action: ...] : émises en tête de
     # réponse (vérité d'exécution) et incluses dans le contenu sauvegardé.
     if preamble:
@@ -3231,12 +3257,19 @@ async def _do_stream_response(
                     first_token_recorded = True
 
                 full_content += event.content
+                contenu_modele += event.content
                 data = StreamChunk(
                     type="text",
                     content=event.content,
                     conversation_id=conversation_id,
                 )
                 yield f"data: {json.dumps(data.model_dump())}\n\n"
+
+            elif event.type == "notice" and event.content:
+                # Tour 11 : affiché à part par l'interface ; déjà noté dans
+                # context.avis_systeme pour la conservation.
+                avis_tour.append(event.content)
+                yield f"data: {json.dumps({'type': 'notice', 'content': event.content, 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
 
             elif event.type == "tool_call" and event.tool_call:
                 tool_calls_collected.append(event.tool_call)
@@ -3295,6 +3328,8 @@ async def _do_stream_response(
                                 event_data = json.loads(continued_event[6:].strip())
                                 if event_data.get("type") == "text":
                                     full_content += event_data.get("content", "")
+                                    if not event_data.get("annonce_arret"):
+                                        contenu_modele += event_data.get("content", "")
                                 elif event_data.get("type") == "error" and echec_suite.get("refus"):
                                     # B-1119 : sauver le texte avant le terminal, qui
                                     # fait cesser la lecture du client. Aucun repli
@@ -3518,7 +3553,7 @@ async def _do_stream_response(
     # l'événement done - le client arrête la lecture du stream sur done
     # (chat.ts), donc tout événement émis après n'atteint jamais l'UI en
     # direct (le testeur découvrait ses fichiers par hasard au rechargement).
-    if skill_id and not (full_content or "").strip():
+    if skill_id and not (contenu_modele or "").strip():
         # Trou couvert (revue design actions) : un skill était attendu mais le
         # modèle n'a produit AUCUN contenu - avant, l'utilisateur ne recevait
         # ni fichier ni explication.
@@ -3532,7 +3567,7 @@ async def _do_stream_response(
     for carte in cartes_outils:
         yield carte
 
-    if skill_id and full_content:
+    if skill_id and contenu_modele.strip():
         try:
             from app.services.skills import get_skills_registry
             registry = get_skills_registry()
@@ -3549,7 +3584,7 @@ async def _do_stream_response(
                     skill_id,
                     SkillExecuteRequest(prompt=user_message, title=None,
                         context={"_ai_provenance": provenance_service(llm_service)}),
-                    full_content,
+                    contenu_modele,
                 )
                 if result.success:
                     skill_file_payload = {
@@ -3595,6 +3630,7 @@ async def _do_stream_response(
         extra = json.loads(assistant_message.extra_data or '{}')
         extra['memory_used'] = context.memory_transmitted
         assistant_message.extra_data = json.dumps(extra)
+    _memoriser_avis(assistant_message, avis_tour)
     await session.commit()
 
     # Send done event with usage info
@@ -4324,6 +4360,8 @@ async def _execute_tools_and_continue(
                 )
                 if suite_arret:
                     continued_content += suite_arret
+                    # Tour 11 : l'annonce reste dans le message (C18), mais le
+                    # parent ne la donne jamais à une compétence de génération.
                     yield (
                         "data: "
                         + json.dumps(
@@ -4331,7 +4369,7 @@ async def _execute_tools_and_continue(
                                 type="text",
                                 content=suite_arret,
                                 conversation_id=conversation_id,
-                            ).model_dump()
+                            ).model_dump() | {"annonce_arret": True}
                         )
                         + "\n\n"
                     )

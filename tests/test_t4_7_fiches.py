@@ -72,7 +72,8 @@ async def test_ancienne_fiche_retiree_avec_un_avis_puis_part_apres_reecriture(cl
                                                                    "include_memory": True, "stream": True}))
         assert len(envois) == 1 and "Maison Ambre" not in envois[0]
         assert not [e for e in ev if e.get("type") in ("memory_consent_required", "error")]
-        avis = "".join(e.get("content") or "" for e in ev if e.get("type") == "text")
+        avis = "".join(e.get("content") or "" for e in ev if e.get("type") == "notice")
+        assert "".join(e.get("content") or "" for e in ev if e.get("type") == "text") == "Réponse ordinaire."
         assert "n’a pas été transmise" in avis and "Mémoire" in avis and "Maison Ambre" not in avis
         r = await client.patch(f"/api/memory/cards/{identifiant}", json={
             "version": 1, "title": "Devis courts", "content": "Je préfère des devis courts"})

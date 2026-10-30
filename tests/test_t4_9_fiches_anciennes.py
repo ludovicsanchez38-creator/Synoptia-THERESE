@@ -93,10 +93,14 @@ async def test_fiche_concernee_sans_accord_retiree_avec_un_avis(client, monkeypa
         r = await client.post("/api/chat/send", json={"message": "Prépare un devis.", "stream": flux})
         assert len(envois) == 1
         assert "Maison Ambre" not in envois[0]
-        texte = "".join(e.get("content") or "" for e in evenements(r) if e.get("type") == "text") if flux \
-            else r.json()["content"]
+        # Tour 11 : l'avis arrive à part (événement « notice » ou champ `avis`).
+        texte = " ".join(e.get("content") or "" for e in evenements(r) if e.get("type") == "notice") if flux \
+            else " ".join(r.json()["avis"])
         assert "n’a pas été transmise" in texte and "Mémoire" in texte
         assert "Maison Ambre" not in texte
+        contenu = "".join(e.get("content") or "" for e in evenements(r) if e.get("type") == "text") if flux \
+            else r.json()["content"]
+        assert contenu == "Réponse ordinaire."
 
 
 async def test_fiche_concernee_avec_accord_part_et_ferme_les_ecritures(client, monkeypatch):

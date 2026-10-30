@@ -52,6 +52,11 @@ def textes(r):
     return "".join(e.get("content") or "" for e in evenements(r) if e.get("type") == "text")
 
 
+def avis(r):
+    """Tour 11 : les avis arrivent à part, jamais dans le texte."""
+    return " ".join(e.get("content") or "" for e in evenements(r) if e.get("type") == "notice")
+
+
 async def _tache(client, conv=None):
     payload = {"message": "Crée une tâche : relancer Paul demain.", "stream": True}
     if conv:
@@ -125,15 +130,17 @@ async def test_preference_ancienne_annoncee_une_fois_par_conversation(client, mo
         preparer(monkeypatch, http)
         fiche(subject="ton", title="Vouvoiement", content="Je préfère que tu me vouvoies", dedup_key="ton")
         r = await client.post("/api/chat/send", json={"message": "Bonjour, quoi de neuf ?", "stream": True})
-        avis = textes(r)
+        annonce = avis(r)
         assert "vouvoies" not in envois[-1] and "Vouvoiement" not in envois[-1]
-        assert "1 ancienne préférence" in avis and "Mémoire" in avis
-        assert "Vouvoiement" not in avis and "vouvoies" not in avis
+        assert "1 ancienne préférence" in annonce and "Mémoire" in annonce
+        assert "Vouvoiement" not in annonce and "vouvoies" not in annonce
+        assert textes(r) == "Réponse ordinaire."
         conv = next(e for e in evenements(r) if e.get("type") == "done")["conversation_id"]
         r2 = await client.post("/api/chat/send", json={"message": "Et sinon ?", "conversation_id": conv, "stream": True})
-        assert "Mémoire" not in textes(r2)
+        assert "Mémoire" not in avis(r2) + textes(r2)
         r3 = await client.post("/api/chat/send", json={"message": "Bonjour à nouveau.", "stream": False})
-        assert "1 ancienne préférence" in r3.json()["content"]
+        assert "1 ancienne préférence" in " ".join(r3.json()["avis"])
+        assert r3.json()["content"] == "Réponse ordinaire."
 
 
 async def test_sans_ancienne_fiche_aucun_avis_et_attestee_elle_s_applique(client, monkeypatch):
@@ -142,9 +149,9 @@ async def test_sans_ancienne_fiche_aucun_avis_et_attestee_elle_s_applique(client
     async with httpx.AsyncClient(transport=httpx.MockTransport(transport_factory(envois))) as http:
         preparer(monkeypatch, http)
         r = await client.post("/api/chat/send", json={"message": "Bonjour, quoi de neuf ?", "stream": True})
-        assert "Mémoire" not in textes(r)
+        assert "Mémoire" not in avis(r) + textes(r)
         fid = fiche(subject="ton", title="Vouvoiement", content="Je préfère que tu me vouvoies", dedup_key="ton")
         await client.patch(f"/api/memory/cards/{fid}", json={"version": 1, "atteste_par_utilisateur": True})
         r = await client.post("/api/chat/send", json={"message": "Bonjour, quoi de neuf ?", "stream": True})
-        assert "Mémoire" not in textes(r)
+        assert "Mémoire" not in avis(r) + textes(r)
         assert "vouvoies" in envois[-1]

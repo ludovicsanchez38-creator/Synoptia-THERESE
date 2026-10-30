@@ -956,6 +956,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         async for event in getattr(provider, methode)(*args, **kwargs):
             yield event
 
+    @staticmethod
+    def _avis(context: ContextWindow, texte: str) -> StreamEvent:
+        """Tour 11 (relecture 10) : un avis système part à part, jamais dans le texte."""
+        avis = getattr(context, 'avis_systeme', None)
+        if isinstance(avis, list):
+            avis.append(texte)
+        return StreamEvent(type="notice", content=texte)
+
     async def stream_response_with_tools(
         self,
         context: ContextWindow,
@@ -982,20 +990,20 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
             if getattr(context, 'fiches_retirees', 0) and not getattr(context, 'avis_fiches_affiche', False):
                 from app.services.memory_card_context import avis_fiches_retirees
                 context.avis_fiches_affiche = True
-                yield StreamEvent(type="text", content=avis_fiches_retirees(context.fiches_retirees))
+                yield self._avis(context, avis_fiches_retirees(context.fiches_retirees))
             elif getattr(context, 'preferences_a_confirmer', 0) and not getattr(context, 'avis_fiches_affiche', False):
                 # Un seul avis par tour ; celui des fiches retirées renvoie déjà à Mémoire.
                 from app.services.memory_card_context import avis_preferences_a_confirmer
                 context.avis_fiches_affiche = True
-                yield StreamEvent(type="text", content=avis_preferences_a_confirmer(context.preferences_a_confirmer))
+                yield self._avis(context, avis_preferences_a_confirmer(context.preferences_a_confirmer))
         elif effective_config.provider == LLMProvider.OLLAMA and isinstance(context, ContextWindow):
             from app.services.memory_card_context import borner_payload
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
             borner_payload(context, [], effective_config, tools)
         if getattr(context, 'ollama_outils_reduits', False) is True:
-            yield StreamEvent(type="text", content=(
-                "*(La fenêtre du modèle local limite les outils disponibles pour cet échange. "
-                "Ton profil, tes consignes et tes préférences sont conservés.)*\n\n"))
+            yield self._avis(context, (
+                "La fenêtre du modèle local limite les outils disponibles pour cet échange. "
+                "Ton profil, tes consignes et tes préférences sont conservés."))
         provider_switched = effective_config is not self.config
         context.config_effective = effective_config
 

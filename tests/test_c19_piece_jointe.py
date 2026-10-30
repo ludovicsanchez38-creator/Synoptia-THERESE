@@ -31,14 +31,23 @@ async def test_piece_trop_grosse_signalee(client, tmp_path, monkeypatch, stream,
         "file_paths": [str(fichier)], "include_memory": False, "disable_tools": True,
     })
     assert reponse.status_code == 200
-    texte = "".join(json.loads(ligne[6:]).get("content", "") for ligne in reponse.text.splitlines()
-                    if ligne.startswith("data: ")) if stream else reponse.json()["content"]
+    # Tour 11 (relecture 10) : l'avis part à part (événement « notice » ou champ
+    # `avis`), jamais dans le texte de la réponse ni dans un fichier généré.
+    if stream:
+        evenements = [json.loads(ligne[6:]) for ligne in reponse.text.splitlines() if ligne.startswith("data: ")]
+        texte = " ".join(e.get("content", "") for e in evenements if e.get("type") == "notice")
+        assert not any(nom in e.get("content", "") for e in evenements if e.get("type") == "text")
+    else:
+        texte = " ".join(reponse.json().get("avis") or [])
+        assert nom not in reponse.json()["content"]
     assert nom in texte and limite in texte
     assert captures and nom in captures[-1] and limite in captures[-1]
     assert str(tmp_path) not in captures[-1]
     conversations = (await client.get("/api/chat/conversations")).json()
     messages = (await client.get(f"/api/chat/conversations/{conversations[0]['id']}/messages")).json()
-    assert any(nom in m["content"] and limite in m["content"] for m in messages if m["role"] == "assistant")
+    reponses = [m for m in messages if m["role"] == "assistant"]
+    assert any(nom in a and limite in a for m in reponses for a in json.loads(m.get("extra_data") or "{}").get("avis", []))
+    assert not any(nom in m["content"] for m in reponses)
 
 
 @pytest.mark.parametrize("nom", ["stock.txt", "achats.md", "résumé.csv", "devis.docx", "plans.pdf",

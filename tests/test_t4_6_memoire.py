@@ -141,14 +141,15 @@ async def test_fiche_issue_document(client, monkeypatch, retrait, memoire, flux,
             # documentaire est retirée de l'envoi avec un avis ; rien d'elle ne part.
             assert len(envois) == avant + 1, second.text
             assert EXTRAIT not in envois[-1]["body"]
+            # Tour 11 : l'avis arrive à part (événement « notice » ou champ `avis`).
             texte = (
-                "".join(
+                " ".join(
                     json.loads(ligne[6:]).get("content") or ""
                     for ligne in second.text.splitlines()
-                    if ligne.startswith("data: ") and json.loads(ligne[6:]).get("type") == "text"
+                    if ligne.startswith("data: ") and json.loads(ligne[6:]).get("type") == "notice"
                 )
                 if flux
-                else second.json()["content"]
+                else " ".join(second.json()["avis"] or [])
             )
             assert "n’a pas été transmise" in texte and "accord « documents »" in texte
             assert EXTRAIT not in texte

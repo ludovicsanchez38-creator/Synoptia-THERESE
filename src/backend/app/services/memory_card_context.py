@@ -27,18 +27,18 @@ def avis_fiches_retirees(nombre: int) -> str:
     """Tour 9 : la fiche retirée se dit, sans être citée (l'avis reste dans l'historique)."""
     sujet = ('Une fiche mémoire ancienne, ou issue d’un document, n’a pas été transmise'
              if nombre == 1 else f'{nombre} fiches mémoire anciennes, ou issues d’un document, n’ont pas été transmises')
-    return (f'*({sujet} : ton accord « documents » manque. Pour qu’une ancienne fiche serve de nouveau, ouvre '
-            'Mémoire et confirme qu’elle vient de toi.)*\n\n')
+    return (f'{sujet} : ton accord « documents » manque. Pour qu’une ancienne fiche serve de nouveau, ouvre '
+            'Mémoire et confirme qu’elle vient de toi.')
 
 def avis_preferences_a_confirmer(nombre: int) -> str:
     """Tour 10 : une fois par conversation, sans rien citer ni envoyer des fiches."""
     sujet = ('1 ancienne préférence ou correction attend' if nombre == 1
              else f'{nombre} anciennes préférences ou corrections attendent')
-    return (f'*({sujet} ta confirmation dans Mémoire : antérieure à la mise à jour, son origine n’est pas '
-            'vérifiée. En attendant, elle ne s’applique que lorsqu’elle concerne ta demande.)*\n\n'
+    return (f'{sujet} ta confirmation dans Mémoire : antérieure à la mise à jour, son origine n’est pas '
+            'vérifiée. En attendant, elle ne s’applique que lorsqu’elle concerne ta demande.'
             if nombre == 1 else
-            f'*({sujet} ta confirmation dans Mémoire : antérieures à la mise à jour, leur origine n’est pas '
-            'vérifiée. En attendant, elles ne s’appliquent que lorsqu’elles concernent ta demande.)*\n\n')
+            f'{sujet} ta confirmation dans Mémoire : antérieures à la mise à jour, leur origine n’est pas '
+            'vérifiée. En attendant, elles ne s’appliquent que lorsqu’elles concernent ta demande.')
 
 
 def _json(valeur: Any) -> str:

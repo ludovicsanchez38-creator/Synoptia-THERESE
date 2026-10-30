@@ -210,7 +210,10 @@ class ToolTurn:
 @dataclass
 class StreamEvent:
     """An event from the LLM stream."""
-    type: Literal["text", "tool_call", "done", "error"]
+    # Tour 11 : « notice » = avis système, jamais concaténé au texte de la
+    # réponse (ni document, ni mail, ni post généré). Les appelants qui ne
+    # lisent que « text » l'ignorent ; le chat l'affiche à part.
+    type: Literal["text", "tool_call", "done", "error", "notice"]
     content: str | None = None
     tool_call: ToolCall | None = None
     stop_reason: str | None = None

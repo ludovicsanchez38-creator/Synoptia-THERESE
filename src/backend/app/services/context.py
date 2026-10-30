@@ -5,7 +5,7 @@ Manages conversation context within token limits.
 Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from app.services.providers.base import Message
@@ -35,6 +35,8 @@ class ContextWindow:
     # non confirmées à annoncer une seule fois (leur nombre seulement).
     premier_tour_conversation: bool = False
     preferences_a_confirmer: int = 0
+    # Tour 11 : avis système émis pendant le tour, conservés hors du contenu.
+    avis_systeme: list[str] = field(default_factory=list)
     # Caractères du dernier message retirés pour tenir dans le budget.
     # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
     caracteres_retires: int = 0

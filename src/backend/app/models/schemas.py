@@ -161,13 +161,15 @@ class ChatResponse(BaseModel):
     warnings: list[str] | None = None
     # P-159 : absent (null) quand la réponse n'a pas appelé de modèle.
     contexte: ContexteTransmis | None = None
+    # Tour 11 : avis système, jamais concaténés à `content`.
+    avis: list[str] | None = None
     created_at: HorodatageUTC
 
 
 class StreamChunk(BaseModel):
     """Streaming response chunk."""
 
-    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required", "client_action"] = "text"
+    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required", "client_action", "notice"] = "text"
     content: str = ""
     conversation_id: str | None = None
     message_id: str | None = None
