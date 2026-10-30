@@ -65,3 +65,36 @@ def reprendre_messages_differes(copies: Any) -> list[LLMMessage]:
                        contient_documents=m.get('contient_documents') is not False or bool(m.get('images')))
             for m in copies if isinstance(m, dict) and m.get('role') in ('user', 'assistant')
             and isinstance(m.get('content'), str)]
+
+
+async def reprendre_rfc(session: Any, source_ids: list[str]) -> tuple[str, bool]:
+    """Relire les tours RFC en base ; aucune copie du navigateur ne fait preuve."""
+    from fastapi import HTTPException
+    from sqlmodel import col, select
+
+    if not source_ids or len(source_ids) > 100:
+        raise HTTPException(409, "La source de cet échange est incertaine. Renvoie ton message avant de continuer.")
+    messages: dict[str, Message] = {}
+    for source_id in dict.fromkeys(source_ids):
+        source = await session.get(Message, source_id)
+        if not source or source.role != 'assistant':
+            raise HTTPException(409, "Cet échange est introuvable. Renvoie ton message avant de continuer.")
+        # Chaque réponse référence aussi les demandes qui l'ont produite.
+        tours = (await session.execute(select(Message).where(
+            Message.conversation_id == source.conversation_id,
+            Message.created_at <= source.created_at,
+        ).order_by(col(Message.created_at), col(Message.id)))).scalars().all()
+        for message in tours:
+            if message.role in ('user', 'assistant'):
+                messages[message.id] = message
+    return ('\n\n'.join(f'{m.role}: {m.content}' for m in messages.values()),
+            any(provenance(m) != 'sans_document' for m in messages.values()))
+
+
+def contexte_documentaire(context: Any) -> bool:
+    """Inclure aussi les copies conservées pour les continuations mémoire."""
+    if getattr(context, 'contient_documents', None) is not False:
+        return True
+    return any(getattr(m, 'contient_documents', None) is not False or bool(getattr(m, 'images', None))
+               for m in [*(getattr(context, 'messages', None) or []),
+                         *(getattr(context, 'memory_original_messages', None) or [])])

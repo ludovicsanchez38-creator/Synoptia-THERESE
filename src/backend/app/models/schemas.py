@@ -109,6 +109,7 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: str | None = None
     resume_message_id: str | None = None
+    rfc_source_ids: list[str] | None = None
     include_memory: bool = True
     memory_card_grants: list[str] = []
     memory_card_purpose: Literal["llm", "documents"] = "llm"

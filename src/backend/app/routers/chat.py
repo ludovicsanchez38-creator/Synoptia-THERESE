@@ -1636,6 +1636,16 @@ async def send_message(
     """
     _verifier_message_non_vide(request.message, request.file_paths)
 
+    rfc_documentaire = False
+    if request.rfc_source_ids is not None:
+        from app.services.provenance_documents import reprendre_rfc
+        if request.rfc_source_ids:
+            sources_rfc, rfc_documentaire = await reprendre_rfc(session, request.rfc_source_ids)
+            request.message += "\n\nÉchanges RFC précédents :\n" + sources_rfc
+        else:
+            # Modification d'une ancienne commande : origine non attestée.
+            rfc_documentaire = True
+
     # Get or create conversation
     if request.conversation_id:
         result = await session.execute(
@@ -1645,7 +1655,7 @@ async def send_message(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
     else:
-        conversation = Conversation(title=request.message[:50])
+        conversation = Conversation(title="Création de commande" if rfc_documentaire else request.message[:50])
         session.add(conversation)
         await session.flush()
 
@@ -1705,8 +1715,8 @@ async def send_message(
     # part en base sans aucune mention du fichier et la conversation perd le
     # document dès le message suivant.
     _memoriser_pieces_jointes(user_message, request.file_paths)
-    memoriser_provenance(user_message, True if request.file_paths else (None if reprise else False))
-    source_contient_documents = reprise is not None and memoriser_provenance(user_message) != "sans_document"
+    memoriser_provenance(user_message, True if request.file_paths or rfc_documentaire else (None if reprise else False))
+    source_contient_documents = memoriser_provenance(user_message) != "sans_document"
     session.add(user_message)
     await session.commit()
 

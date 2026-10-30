@@ -12,9 +12,11 @@ from app.models.command import (
     GenerateTemplateRequest,
     UpdateUserCommandRequest,
 )
+from app.models.database import get_session
 from app.services.command_registry import get_command_registry
 from app.services.error_handler import message_pour_ecran
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -79,9 +81,20 @@ async def get_command_schema(command_id: str):
     }
 
 
+async def verifier_persistance_rfc(session: AsyncSession, source_ids: list[str] | None) -> None:
+    if source_ids is None:
+        return  # Saisie directe dans le formulaire, sans sortie RFC.
+    from app.services.provenance_documents import reprendre_rfc
+    _, documentaire = await reprendre_rfc(session, source_ids)
+    if documentaire:
+        raise HTTPException(409, "Cette commande reprend un document. Son format ne conserve pas encore cette origine. "
+                            "Elle n’a pas été enregistrée. Crée une commande sans ces informations.")
+
+
 @router.post("/user", response_model=CommandDefinitionResponse, status_code=201)
-async def create_user_command(request: CreateUserCommandRequest):
+async def create_user_command(request: CreateUserCommandRequest, session: AsyncSession = Depends(get_session)):
     """Crée une nouvelle commande utilisateur."""
+    await verifier_persistance_rfc(session, request.rfc_source_ids)
     registry = get_command_registry()
     try:
         cmd = await registry.create_user_command(
@@ -99,8 +112,9 @@ async def create_user_command(request: CreateUserCommandRequest):
 
 
 @router.put("/user/{command_id}", response_model=CommandDefinitionResponse)
-async def update_user_command(command_id: str, request: UpdateUserCommandRequest):
+async def update_user_command(command_id: str, request: UpdateUserCommandRequest, session: AsyncSession = Depends(get_session)):
     """Met à jour une commande utilisateur."""
+    await verifier_persistance_rfc(session, request.rfc_source_ids)
     registry = get_command_registry()
     cmd = await registry.update_user_command(
         command_id=command_id,
@@ -128,7 +142,7 @@ async def delete_user_command(command_id: str):
 
 
 @router.post("/generate-template")
-async def generate_template(request: GenerateTemplateRequest):
+async def generate_template(request: GenerateTemplateRequest, session: AsyncSession = Depends(get_session)):
     """RFC : Génère un template de commande depuis un brief (via LLM)."""
     from app.services.llm import get_llm_service
 
@@ -154,12 +168,19 @@ async def generate_template(request: GenerateTemplateRequest):
         )
         prompt = f"{historique}\n\nuser: {request.brief}"
 
+    # Anciennes copies (brief ET context) sans référence : origine incertaine.
+    documentaire = True
+    if request.rfc_source_ids is not None:
+        from app.services.provenance_documents import reprendre_rfc
+        prompt, documentaire = await reprendre_rfc(session, request.rfc_source_ids)
+
     try:
         # generate_content renvoie directement la chaine de reponse (non-streaming)
         content = await llm.generate_content(
             prompt=prompt,
             system_prompt=system_prompt,
             max_tokens=500,
+            contient_documents=documentaire,
         )
 
         # Parser le JSON de la réponse

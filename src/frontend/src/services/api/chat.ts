@@ -19,6 +19,7 @@ export interface ChatRequest {
   conversation_id?: string;
   include_memory?: boolean;
   resume_message_id?: string;
+  rfc_source_ids?: string[];
   memory_card_grants?: string[];
   memory_card_purpose?: "llm" | "documents";
   stream?: boolean;

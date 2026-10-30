@@ -41,6 +41,7 @@ export interface ImageConfig {
 }
 
 export interface CreateUserCommandRequest {
+  rfc_source_ids?: string[];
   name: string;
   description?: string;
   icon?: string;
@@ -51,6 +52,7 @@ export interface CreateUserCommandRequest {
 }
 
 export interface UpdateUserCommandRequest {
+  rfc_source_ids?: string[];
   name?: string;
   description?: string;
   icon?: string;
@@ -61,6 +63,7 @@ export interface UpdateUserCommandRequest {
 }
 
 export interface GenerateTemplateRequest {
+  rfc_source_ids?: string[];
   brief: string;
   context?: Array<{ role: string; content: string }>;
 }

@@ -81,6 +81,7 @@ class CreateUserCommandRequest(BaseModel):
     prompt_template: str = Field("", description="Template avec {{placeholders}}")
     show_on_home: bool = True
     show_in_slash: bool = True
+    rfc_source_ids: list[str] | None = None
 
     # B-187 : V3 fabrique `id = f"user-{name}"` et reprend cet id en chemin.
     # Le même nom fait donc le même trou : créé en 201, injoignable ensuite.
@@ -106,6 +107,7 @@ class UpdateUserCommandRequest(BaseModel):
     prompt_template: str | None = None
     show_on_home: bool | None = None
     show_in_slash: bool | None = None
+    rfc_source_ids: list[str] | None = None
 
     @field_validator("name")
     @classmethod
@@ -121,3 +123,4 @@ class GenerateTemplateRequest(BaseModel):
 
     brief: str = Field(..., description="Description libre de ce que la commande doit faire")
     context: list[dict] | None = Field(None, description="Messages de contexte RFC")
+    rfc_source_ids: list[str] | None = None

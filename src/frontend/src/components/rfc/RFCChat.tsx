@@ -16,7 +16,8 @@ import { streamMessage } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
 
-interface RFCMessage {
+export interface RFCMessage {
+  sourceId?: string;
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -26,6 +27,7 @@ interface RFCChatProps {
   systemPrompt: string;
   placeholder: string;
   initialMessage?: string;
+  initialSourceIds?: string[];
   onConversationUpdate: (messages: RFCMessage[]) => void;
 }
 
@@ -34,7 +36,7 @@ const MAX_RESPONSE_LENGTH = 8_000;
 /** Timeout global par requête en ms (BUG-097) */
 const STREAM_TIMEOUT_MS = 60_000;
 
-export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversationUpdate }: RFCChatProps) {
+export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSourceIds, onConversationUpdate }: RFCChatProps) {
   const [messages, setMessages] = useState<RFCMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -97,6 +99,9 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
       const stream = streamMessage({
         message: prefixedMessage,
         stream: true,
+        rfc_source_ids: messages.length
+          ? [...new Set([...(initialSourceIds || []), ...messages.flatMap(m => m.sourceId ? [m.sourceId] : [])])]
+          : initialSourceIds,
         disable_tools: true,  // BUG-097 : pas d'outils dans le mini-chat RFC
       }, controller.signal);
 
@@ -106,6 +111,12 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
         // Vérifier si annulé (BUG-097)
         if (controller.signal.aborted) break;
 
+        if (chunk.type === 'done' && chunk.message_id) {
+          assistantMsg.sourceId = chunk.message_id;
+        }
+        if (chunk.type === 'error') {
+          throw new Error(chunk.content || 'Cet envoi a été refusé. Vérifie tes accords avant de réessayer.');
+        }
         if (chunk.type === 'text') {
           accumulated += chunk.content;
 
@@ -150,7 +161,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMsg.id
-              ? { ...m, content: 'Erreur de communication. Réessaie.' }
+              ? { ...m, content: err instanceof Error ? err.message : 'Erreur de communication. Réessaie.' }
               : m
           )
         );
@@ -160,7 +171,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
       abortRef.current = null;
       setIsStreaming(false);
     }
-  }, [input, isStreaming, messages, systemPrompt, onConversationUpdate]);
+  }, [input, isStreaming, messages, systemPrompt, initialSourceIds, onConversationUpdate]);
 
   return (
     <div className="flex flex-col h-full">

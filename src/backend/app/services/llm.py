@@ -1157,6 +1157,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         system_prompt: str | None = None,
         max_tokens: int | None = None,
         usage_sink: dict[str, int] | None = None,
+        contient_documents: bool = False,
     ) -> str:
         """Generate complete content (non-streaming).
 
@@ -1173,7 +1174,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
             system_prompt: System prompt personnalisé
             max_tokens: Limite de tokens en sortie (défaut: config du provider)
         """
-        messages = [Message(role="user", content=prompt)]
+        messages = [Message(role="user", content=prompt, contient_documents=contient_documents)]
         effective_system = system_prompt or self._get_system_prompt_with_identity()
 
         if context:
