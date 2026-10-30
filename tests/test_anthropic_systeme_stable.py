@@ -37,7 +37,7 @@ async def test_fiche_ecrite_pendant_outil_attend_le_prochain_tour(monkeypatch, i
     # Le test de signature part d'un accord acquis, avec la catégorie mémoire.
     monkeypatch.setattr('app.services.consentements.accord_valide',
         lambda purpose, provider, categories=(): (purpose, provider) == ('llm', 'anthropic'))
-    ancienne = {'id': 'f1', 'kind': 'preference', 'content': 'Avant', 'message_id': 'm0'}
+    ancienne = {'provenance_documents': 'sans_document', 'id': 'f1', 'kind': 'preference', 'content': 'Avant', 'message_id': 'm0'}
     fiches = [] if initialement_vide else [ancienne]
     lecture = AsyncMock(side_effect=lambda *a: list(fiches))
     monkeypatch.setattr(memory_card_context, 'lire_pour_chat', lecture)

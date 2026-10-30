@@ -86,7 +86,7 @@ def prompt_reel(monkeypatch):
         service = llm.LLMService(LLMConfig(provider, CATALOGUE[provider.value].modeles[0]))
         context = service.prepare_context([Message('user', 'Bonjour')], memory_context=f'Dossier témoin du tour {tour}.')
         context.system_prompt = service._avec_consigne_de_langue(context.system_prompt)
-        fiches = [{'id': 'fiche-temoin', 'kind': 'correction',
+        fiches = [{'provenance_documents': 'sans_document', 'id': 'fiche-temoin', 'kind': 'correction',
             'content': f'Correction fictive du tour {tour}.'}]
         borner_payload(context, fiches, service.config, None)
         monkeypatch.setattr(memory_card_context, 'lire_pour_chat', AsyncMock(return_value=fiches))
