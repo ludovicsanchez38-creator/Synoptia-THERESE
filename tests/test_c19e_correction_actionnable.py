@@ -23,11 +23,16 @@ async def _fiche_puis_correction(db_session):
     conv = Conversation(title="Sacducbi")
     db_session.add(conv)
     await db_session.commit()
-    db_session.add(Message(conversation_id=conv.id, role="user", content=MESSAGE))
+    # Ces témoins de correction n'utilisent aucun document. Une fiche sans
+    # provenance vérifiable ne doit plus exposer ses mots dans un refus.
+    db_session.add(Message(conversation_id=conv.id, role="user", content=MESSAGE,
+                           extra_data=json.dumps({"provenance_documents": "sans_document"})))
     await db_session.commit()
-    creation = await memory_card_tools.executer_outil(dict(FICHE), scope="global", scope_id=None, conversation_id=conv.id)
+    creation = await memory_card_tools.executer_outil(dict(FICHE), scope="global", scope_id=None,
+                                                     conversation_id=conv.id, contient_documents=False)
     assert creation["success"], creation
-    db_session.add(Message(conversation_id=conv.id, role="user", content=CORRECTION))
+    db_session.add(Message(conversation_id=conv.id, role="user", content=CORRECTION,
+                           extra_data=json.dumps({"provenance_documents": "sans_document"})))
     await db_session.commit()
     return conv.id, creation["receipt"]["id"]
 
@@ -35,7 +40,7 @@ async def _fiche_puis_correction(db_session):
 async def _corriger(conversation_id, fiche_id, **champs):
     return await memory_card_tools.executer_outil(
         {"id": fiche_id, "version": 1, "kind": "correction", "subject": "Chantier Sacducbi", **champs},
-        scope="global", scope_id=None, conversation_id=conversation_id)
+        scope="global", scope_id=None, conversation_id=conversation_id, contient_documents=False)
 
 
 async def test_le_refus_nomme_les_mots_sans_source_pour_le_modele(db_session):
