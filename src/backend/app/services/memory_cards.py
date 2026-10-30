@@ -370,9 +370,14 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             omissions = set()
         negations_seules = sorted(ajouts | retraits | omissions | inversions)
         if manquants or nombres_seuls or negations_seules:
+            # Le détail repart au modèle. Une ancienne fiche non sélectionnée
+            # peut apporter ici ses mots et négations sans garde documents.
+            detail = None
+            if not existante or existante.provenance_documents == 'sans_document':
+                detail = _sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
+                                      nombres_seuls, negations_seules)
             raise RefusMemoire('Cette fiche doit reprendre uniquement une information donnée dans ton message.',
-                               detail=_sans_source(f"{factuel} {donnees.get('title', '')}", manquants,
-                                                  nombres_seuls, negations_seules))
+                               detail=detail)
     if existante and donnees.get('version') != existante.version:
         raise RefusMemoire('Cette fiche a changé. Recharge-la avant de la modifier.', 409)
     f = existante or MemoryCard(kind=donnees.get('kind', ''), subject='', title='', content='',
@@ -428,14 +433,14 @@ async def _ecrire(session: Any, donnees: dict[str, Any], *, automatique: bool, s
             if len(cibles) == 1:
                 cible = cibles[0]
                 raise RefusMemoire('Cette correction doit modifier la fiche existante, pas en créer une seconde.', 409,
-                                   cible.id, f'Fiche « {cible.title} » : id {cible.id}, version {cible.version}.')
+                                   cible.id, f'Fiche correspondante : id {cible.id}, version {cible.version}.')
     cle = _cle(f)
     doublon = (await session.execute(select(MemoryCard).where(col(MemoryCard.dedup_key) == cle))).scalars().first()
     if doublon and doublon.id != f.id:
         visible = not automatique or doublon.id in {c.id for c in autorisees_chat}
         raise RefusMemoire('Une fiche correspond déjà à ce sujet. Ouvre-la pour la modifier.', 409,
             doublon.id if visible else None,
-            f'Fiche « {doublon.title} » : id {doublon.id}, version {doublon.version}.' if visible else None)
+            f'Fiche correspondante : id {doublon.id}, version {doublon.version}.' if visible else None)
     f.dedup_key = cle
     f.last_author = 'therese' if automatique else 'utilisateur'
     f.protected = bool(f.protected or not automatique or existante or f.kind == 'correction'

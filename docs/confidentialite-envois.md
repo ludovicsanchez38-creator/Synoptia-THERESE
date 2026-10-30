@@ -117,6 +117,11 @@ la finalité LLM ne le remplace pas. Sans cet accord, l'échange est refusé ave
 une explication ; désactiver la mémoire permet une nouvelle demande avec les
 seuls éléments autorisés. Le retrait tardif reste contrôlé au transport.
 
+Les refus d'écriture pour doublon ou correction ne renvoient au modèle que
+l'identifiant et la version de la fiche correspondante, sans son ancien titre.
+Les détails de validation pouvant reprendre les mots d'une ancienne fiche
+documentaire ou inconnue sont omis ; le message de refus reste visible.
+
 Dans l'atelier documentaire, les titres, trames, contenus et résumés de
 sections sont tous traités comme documentaires lors de leur réutilisation.
 Un refus d'accord lors de la validation n'est pas masqué par le résumé local
