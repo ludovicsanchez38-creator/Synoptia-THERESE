@@ -8,6 +8,8 @@ export interface MemoryCard {
   scope: 'global' | 'project'; scope_id?: string | null; scope_name: string;
   contact_id?: string | null; contact_name?: string | null;
   conversation_id?: string | null; message_id?: string | null; source_deleted?: boolean;
+  /** Origine enregistrée : « inconnue » pour les fiches antérieures à la mise à jour. */
+  provenance_documents?: 'documents' | 'inconnue' | 'sans_document';
 }
 export interface CardPage { items: MemoryCard[]; total: number }
 export function getMemoryCards(params: Record<string, string | number> = {}): Promise<CardPage> {
@@ -16,7 +18,7 @@ export function getMemoryCards(params: Record<string, string | number> = {}): Pr
 }
 export const getMemoryCard = (id: string): Promise<MemoryCard> => request(`/api/memory/cards/${encodeURIComponent(id)}`);
 export const getMemoryScopes = (): Promise<Array<{ id: string; name: string }>> => request('/api/memory/cards/scopes');
-export const patchMemoryCard = (id: string, patch: Partial<MemoryCard> & { version: number }): Promise<MemoryCard> => request(`/api/memory/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) });
+export const patchMemoryCard = (id: string, patch: Partial<MemoryCard> & { version: number; atteste_par_utilisateur?: true }): Promise<MemoryCard> => request(`/api/memory/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) });
 export const deleteMemoryCard = (id: string, version: number): Promise<void> => request(`/api/memory/cards/${encodeURIComponent(id)}?version=${version}`, { method: 'DELETE' });
 export const releaseMemoryCard = (id: string, version: number): Promise<MemoryCard> => request(`/api/memory/cards/${encodeURIComponent(id)}/release`, { method: 'POST', body: JSON.stringify({ version }) });
 
