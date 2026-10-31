@@ -1,19 +1,23 @@
 """B-1128 : des doublons historiques ne doivent pas annuler le passage."""
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from app.models.entities import Calendar, CalendarEvent, Contact, Invoice, Notification, Task
 from app.services import notification_service as service
 from sqlmodel import select
 
+PARIS = ZoneInfo("Europe/Paris")
 RUBRIQUES = {"invoice": "factures_impayees", "crm": "prospects_inactifs",
              "task": "taches_en_retard", "calendar": "rdv_demain"}
 
 
-async def verifier_passage(session, source, nombre=2, heures=1, lu=False, nom="initial"):
-    maintenant = datetime.now(UTC)
+async def verifier_passage(session, source, nombre=2, heures=1, lu=False, nom="initial", maintenant=None):
+    maintenant = maintenant or datetime.now(UTC)
     hier = maintenant - timedelta(days=45)
-    demain = (maintenant + timedelta(days=1)).replace(hour=10, minute=0)
+    # Comme le service et l'API : heure murale de Paris naïve, lendemain civil de Paris.
+    demain = (maintenant.astimezone(PARIS) + timedelta(days=1)).replace(
+        hour=10, minute=0, second=0, microsecond=0, tzinfo=None)
     calendrier = Calendar(summary=nom)
     session.add(calendrier)
     urls = {}
@@ -66,3 +70,23 @@ async def test_un_doublon_ne_bloque_aucune_rubrique(db_session, source):
 ])
 async def test_rejeu_apres_correctif(db_session, source, nombre, heures, lu, nom):
     await verifier_passage(db_session, source, nombre, heures, lu, nom)
+
+
+# 31/10/2026 (correctifs 0.83) : ce fichier échouait chaque nuit entre minuit et
+# 1 h (2 h en été), heure de Paris : il datait le rendez-vous de « demain » sur
+# le jour UTC, alors que le service prend le lendemain au calendrier de Paris.
+# L'horloge du service est figée aux deux côtés de la frontière, hiver et été.
+@pytest.mark.parametrize("heure_paris", [
+    "2026-01-15T00:30", "2026-01-15T01:30", "2026-07-15T00:30", "2026-07-15T01:30",
+])
+@pytest.mark.parametrize("source", RUBRIQUES)
+async def test_le_passage_tient_a_toute_heure_de_paris(db_session, monkeypatch, source, heure_paris):
+    instant = datetime.fromisoformat(heure_paris).replace(tzinfo=PARIS).astimezone(UTC)
+
+    class HorlogeFigee(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return instant.astimezone(tz) if tz is not None else instant
+
+    monkeypatch.setattr(service, "datetime", HorlogeFigee)
+    await verifier_passage(db_session, source, maintenant=instant)
