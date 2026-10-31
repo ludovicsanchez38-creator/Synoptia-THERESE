@@ -235,6 +235,28 @@ function envoyer(url: string, init: RequestInit, timeoutMs: number | null): Prom
 }
 
 /**
+ * Un accord en attente que le moteur a refusé d'enregistrer (profil changé,
+ * restauration en attente, décision invalide) : l'écriture métier n'est pas
+ * partie. Ce n'est ni une panne réseau ni la réponse de la route appelée.
+ * Correctifs 0.83 : le message est celui du moteur, et le statut HTTP de
+ * `/api/consents` n'est pas exposé, pour qu'aucun appelant ne le lise comme le
+ * sien (un 409 y signifie « profil changé », pas un conflit de réorganisation).
+ */
+export class AccordNonEnregistre extends Error {
+  constructor(message: string, readonly cause: unknown) {
+    super(message);
+    this.name = 'AccordNonEnregistre';
+  }
+}
+
+/** Une coupure pendant l'accord reste une coupure : l'appelant la traite comme telle. */
+function estUneCoupure(erreur: unknown): boolean {
+  const nom = (erreur as { name?: string } | null)?.name;
+  return erreur instanceof TypeError || nom === 'AbortError' || nom === 'TimeoutError'
+    || (erreur instanceof ApiError && erreur.status === 0);
+}
+
+/**
  * Requête authentifiée, avec UN rejeu si le moteur a été relancé.
  *
  * Campagne dix personas : Tauri relance le sidecar (jusqu'à 3 fois), chaque
@@ -253,7 +275,13 @@ export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Re
     if (init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())
       && !new URL(url, API_BASE).pathname.startsWith('/api/consents')) {
       const { flushConsentDecisions } = await import('../../lib/consentSync');
-      await flushConsentDecisions();
+      try {
+        await flushConsentDecisions();
+      } catch (erreur) {
+        if (estUneCoupure(erreur)) throw erreur;
+        throw new AccordNonEnregistre(erreur instanceof Error && erreur.message
+          ? erreur.message : 'Ton accord n’a pas pu être enregistré. Rien n’a été envoyé.', erreur);
+      }
     }
     const jetonEnvoye = _sessionToken;
     const reponse = await envoyer(url, init, timeoutMs);
@@ -307,6 +335,8 @@ export async function request<T>(
     // de contacter le serveur » empêchait l'appelant de distinguer un abandon
     // assumé d'un vrai incident, et affichait une fausse erreur à l'écran.
     if (e?.name === 'AbortError' || e?.name === 'TimeoutError') throw e;
+    // Correctifs 0.83 : un accord refusé par le moteur garde son message.
+    if (e instanceof AccordNonEnregistre) throw e;
     // Erreur réseau (Load failed / Failed to fetch)
     throw new ApiError(0, 'NetworkError', 'Impossible de contacter le serveur');
   }

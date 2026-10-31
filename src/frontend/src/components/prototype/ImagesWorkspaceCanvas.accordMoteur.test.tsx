@@ -25,8 +25,17 @@ const IMAGE = {
   download_url: '/api/images/download/image-generee',
 };
 
+type Refus = { status: number; corps: unknown } | 'reseau' | null;
 let appels: Appel[] = [];
-let refusAccord = false;
+let refusAccord: Refus = null;
+let refusGeneration: Refus = null;
+const PROFIL_CHANGE = 'Le profil a changé. Reviens au profil concerné avant de réessayer.';
+const RESTAURATION = 'Les accords n’ont pas pu être rétablis après la restauration. Aucun envoi cloud n’est autorisé. Relance la restauration de ta sauvegarde pour reprendre cette étape.';
+
+function refuser(refus: Refus): Response | null {
+  if (refus === 'reseau') throw new TypeError('Failed to fetch');
+  return refus ? reponse(refus.corps, refus.status) : null;
+}
 
 function reponse(corps: unknown, status = 200): Response {
   return new Response(JSON.stringify(corps), { status, headers: { 'Content-Type': 'application/json' } });
@@ -42,10 +51,9 @@ function moteur(): void {
     }
     if (url.pathname === '/api/images/list') return reponse({ images: [], total: 0 });
     if (url.pathname === '/api/consents' && methode === 'POST') {
-      if (refusAccord) return reponse({ detail: 'Le profil a changé. Reviens au profil concerné avant de réessayer.' }, 409);
-      return reponse({ grants: [], history: [] });
+      return refuser(refusAccord) ?? reponse({ grants: [], history: [] });
     }
-    if (url.pathname === '/api/images/generate' && methode === 'POST') return reponse(IMAGE);
+    if (url.pathname === '/api/images/generate' && methode === 'POST') return refuser(refusGeneration) ?? reponse(IMAGE);
     return reponse({ detail: 'Introuvable' }, 404);
   });
 }
@@ -67,7 +75,8 @@ describe('Studio Images : l’accord part au moteur avant la génération', () =
     installLocalStorageStub();
     localStorage.setItem('therese:data-profile', '/profils/test');
     appels = [];
-    refusAccord = false;
+    refusAccord = null;
+    refusGeneration = null;
     vi.mocked(globalThis.fetch).mockReset();
     moteur();
   });
@@ -96,16 +105,18 @@ describe('Studio Images : l’accord part au moteur avant la génération', () =
     });
   });
 
-  it('accord refusé par le moteur : rien n’est généré, et « Réessayer » repart avec la même décision', async () => {
-    refusAccord = true;
+  it('accord refusé par le moteur : son message, rien n’est généré, et « Réessayer » repart avec la même décision', async () => {
+    refusAccord = { status: 409, corps: { detail: PROFIL_CHANGE } };
     await preparer();
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirmer et générer' })); });
 
     expect(await screen.findByText('Génération impossible')).toBeInTheDocument();
+    expect(screen.getByText(PROFIL_CHANGE)).toBeInTheDocument();
+    expect(screen.queryByText('Impossible de contacter le serveur')).not.toBeInTheDocument();
     expect(ecritures()).toEqual(['POST /api/consents']);
 
-    refusAccord = false;
+    refusAccord = null;
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirmer et générer' })); });
 
@@ -113,6 +124,30 @@ describe('Studio Images : l’accord part au moteur avant la génération', () =
     expect(ecritures()).toEqual(['POST /api/consents', 'POST /api/consents', 'POST /api/images/generate']);
     const [premier, second] = appels.filter(a => a.chemin === '/api/consents');
     expect(second.corps!.event_id).toBe(premier.corps!.event_id);
+  });
+
+  it.each([
+    ['accord refusé pendant une restauration (400)', { accord: { status: 400, corps: { detail: RESTAURATION, message: RESTAURATION } } }, RESTAURATION, ['POST /api/consents']],
+    ['moteur injoignable pendant l’accord', { accord: 'reseau' as const }, 'Impossible de contacter le serveur', ['POST /api/consents']],
+    ['génération refusée par le fournisseur (500)', { generation: { status: 500, corps: { detail: 'Le fournisseur a refusé la demande.' } } }, 'Le fournisseur a refusé la demande.', ['POST /api/consents', 'POST /api/images/generate']],
+    ['moteur injoignable pendant la génération', { generation: 'reseau' as const }, 'Impossible de contacter le serveur', ['POST /api/consents', 'POST /api/images/generate']],
+  ])('%s : le bon message, puis « Réessayer » aboutit', async (_nom, refus: { accord?: Refus; generation?: Refus }, message, ecrit) => {
+    refusAccord = refus.accord ?? null;
+    refusGeneration = refus.generation ?? null;
+    await preparer();
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirmer et générer' })); });
+
+    expect(await screen.findByText('Génération impossible')).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(ecritures()).toEqual(ecrit);
+
+    refusAccord = null;
+    refusGeneration = null;
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirmer et générer' })); });
+    await waitFor(() => expect(screen.getByTestId('selected-generated-image')).toHaveTextContent('Portrait éditorial de Thérèse'));
+    expect(screen.queryByText('Génération impossible')).not.toBeInTheDocument();
   });
 
   it('accord déjà enregistré : la génération part seule, sans nouvelle décision', async () => {
