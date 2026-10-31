@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 603c7725fcec6158fdb7468dd6920a5855ac3d2d2c3b29eabbc9b40192de9f8d
+Empreinte des verrous : 8a4105c2df658b22dac99defd63db4003e08f69fd74e7079a9928d2db6defced
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -21,7 +21,7 @@ Archive : https://static.crates.io/crates/aho-corasick/aho-corasick-1.1.4.crate
 Intégrité : sha256:ddd31a130427c27518df266943a5308ed92d4b226cc639f5a8f1002816174301
 Notice : aho-corasick-1.1.4/COPYING — texte SHA256 65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066
 Notice : aho-corasick-1.1.4/LICENSE-MIT — texte SHA256 154c1af2b38e25e5c18613dfe352eed29b0863cb39e494007822cdeb39150ac5
-Notice : licenses/supplements/Unlicense.json — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+Notice : licenses/supplements/Unlicense.json — texte SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
 
 cargo:alloc-no-stdlib@2.0.4
 Licence déclarée : BSD-3-Clause
@@ -300,7 +300,7 @@ Archive : https://static.crates.io/crates/byteorder/byteorder-1.5.0.crate
 Intégrité : sha256:1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b
 Notice : byteorder-1.5.0/COPYING — texte SHA256 65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066
 Notice : byteorder-1.5.0/LICENSE-MIT — texte SHA256 154c1af2b38e25e5c18613dfe352eed29b0863cb39e494007822cdeb39150ac5
-Notice : licenses/supplements/Unlicense.json — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+Notice : licenses/supplements/Unlicense.json — texte SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
 
 cargo:bytes@1.11.0
 Licence déclarée : MIT
@@ -1534,7 +1534,7 @@ cargo:memchr@2.7.6
 Licence déclarée : Unlicense OR MIT
 Archive : https://static.crates.io/crates/memchr/memchr-2.7.6.crate
 Intégrité : sha256:f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273
-Notice : licenses/supplements/Unlicense.json — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+Notice : licenses/supplements/Unlicense.json — texte SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
 Notice : memchr-2.7.6/COPYING — texte SHA256 65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066
 Notice : memchr-2.7.6/LICENSE-MIT — texte SHA256 154c1af2b38e25e5c18613dfe352eed29b0863cb39e494007822cdeb39150ac5
 
@@ -2387,7 +2387,7 @@ cargo:same-file@1.0.6
 Licence déclarée : Unlicense/MIT
 Archive : https://static.crates.io/crates/same-file/same-file-1.0.6.crate
 Intégrité : sha256:93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502
-Notice : licenses/supplements/Unlicense.json — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+Notice : licenses/supplements/Unlicense.json — texte SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
 Notice : same-file-1.0.6/COPYING — texte SHA256 65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066
 Notice : same-file-1.0.6/LICENSE-MIT — texte SHA256 739620ea44ad8f99e96ea272e583b63a7d44a83a71250d7550b2544ea6b49fbf
 
@@ -3281,7 +3281,7 @@ cargo:walkdir@2.5.0
 Licence déclarée : Unlicense/MIT
 Archive : https://static.crates.io/crates/walkdir/walkdir-2.5.0.crate
 Intégrité : sha256:29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b
-Notice : licenses/supplements/Unlicense.json — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+Notice : licenses/supplements/Unlicense.json — texte SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
 Notice : walkdir-2.5.0/COPYING — texte SHA256 65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066
 Notice : walkdir-2.5.0/LICENSE-MIT — texte SHA256 154c1af2b38e25e5c18613dfe352eed29b0863cb39e494007822cdeb39150ac5
 
@@ -3412,7 +3412,7 @@ cargo:winapi-util@0.1.11
 Licence déclarée : Unlicense OR MIT
 Archive : https://static.crates.io/crates/winapi-util/winapi-util-0.1.11.crate
 Intégrité : sha256:c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22
-Notice : licenses/supplements/Unlicense.json — texte SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
+Notice : licenses/supplements/Unlicense.json — texte SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
 Notice : winapi-util-0.1.11/COPYING — texte SHA256 65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066
 Notice : winapi-util-0.1.11/LICENSE-MIT — texte SHA256 739620ea44ad8f99e96ea272e583b63a7d44a83a71250d7550b2544ea6b49fbf
 
@@ -56384,33 +56384,6 @@ Full contributor list
 .. include:: ../../AUTHORS
 
 ========================================================================
-TEXTE SHA256 79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8
-This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
-
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-For more information, please refer to <http://unlicense.org>
-
-========================================================================
 TEXTE SHA256 79df7b0692bc945ad893597f5f1fb841739493b61760d07dcd2190673695189d
 COBYQA license
 ==============
@@ -81705,6 +81678,33 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+========================================================================
+TEXTE SHA256 ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <http://unlicense.org/>
 
 ========================================================================
 TEXTE SHA256 cbcf8a308c2418a86d93b5272f9658dc6e28279685b41d1276725b34a69104f4

@@ -797,10 +797,13 @@
   },
   {
     "file": "licenses/supplements/Unlicense.json",
-    "source_package": "python:filelock@3.20.3",
-    "source_notice": "filelock-3.20.3/LICENSE",
-    "source_text_sha256": "79d0fc44716007dddc375601bca8879ad45bc1165bf9342b7a16572b4f41abe8",
-    "transformation": "Texte intégral inchangé ; sérialisation JSON."
+    "source_package": "cargo:memchr@2.7.6",
+    "source_notice": "memchr-2.7.6/UNLICENSE",
+    "archive": "https://static.crates.io/crates/memchr/memchr-2.7.6.crate",
+    "archive_integrity": "sha256:f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273",
+    "member_sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c",
+    "source_text_sha256": "ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83",
+    "transformation": "Texte intégral inchangé, sans le saut de ligne final ; sérialisation JSON. Même fichier UNLICENSE, octet pour octet, dans aho-corasick 1.1.4, byteorder 1.5.0, same-file 1.0.6, walkdir 2.5.0 et winapi-util 0.1.11."
   },
   {
     "file": "licenses/supplements/MIT-0.json",
