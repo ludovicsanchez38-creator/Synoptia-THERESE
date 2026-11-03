@@ -57,8 +57,11 @@ jobs:
       with:
         python-version: '3.12'
     - name: Vérifier le manifeste des sources
-      run: python scripts/copyleft_sources.py verifier
-          python scripts/system_libraries.py check
+      # Bloc littéral obligatoire : en scalaire simple, YAML replie les deux
+      # lignes en une seule commande et argparse refuse les arguments en trop.
+      run: |-
+        python scripts/copyleft_sources.py verifier
+        python scripts/system_libraries.py check
     - name: Assembler les sources et vérifier leurs empreintes
       run: |-
         python scripts/copyleft_sources.py assembler .work-t2/sources-copyleft
