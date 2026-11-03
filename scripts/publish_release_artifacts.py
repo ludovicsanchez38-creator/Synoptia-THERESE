@@ -75,8 +75,11 @@ def main():
     # qu'il existe réellement, sans masquer une erreur d'authentification.
     result = subprocess.run(['gh', 'release', 'view', tag], capture_output=True)
     if result.returncode:
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import release_notes
         notes = bundle / 'release-notes.md'
-        notes.write_text(os.environ['RELEASE_BODY'], encoding='utf-8')
+        notes.write_text(release_notes.body_from_env(), encoding='utf-8')
         result = subprocess.run(['gh', 'release', 'create', tag, '--draft', '--prerelease', '--title', 'THÉRÈSE ' + tag, '--notes-file', str(notes)], capture_output=True)
         if result.returncode:
             subprocess.run(['gh', 'release', 'view', tag], check=True, capture_output=True)
