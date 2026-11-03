@@ -1,6 +1,8 @@
 # Signature et licences
 
-État au 29 octobre 2026. La release fonctionne sans compte Apple ou Microsoft :
+État au 29 octobre 2026, complété le 3 novembre 2026 (notarisation par clé
+d'API, saisie partielle signalée, `SIGNATURE_OBLIGATOIRE`, notes de release).
+La release fonctionne sans compte Apple ou Microsoft :
 macOS utilise une signature ad hoc vérifiée, Windows reste sans Authenticode.
 L'absence d'un secret de plateforme ne fait pas échouer le build. Une configuration
 complète mais invalide, une signature incorrecte ou une notarisation refusée fait
@@ -10,8 +12,11 @@ La signature cryptographique de l'updater Tauri reste obligatoire et indépendan
 ## Chaîne macOS
 
 1. `scripts/sign_macos.py prepare` importe le certificat dans un trousseau du
-   runner **avant PyInstaller**, seulement lorsque les six secrets Apple sont
-   présents. Il prépare le profil `notarytool`. Sinon, l'identité devient `-`.
+   runner **avant PyInstaller**, seulement lorsque le certificat et une voie de
+   notarisation complète sont présents (voir plus bas). Il vérifie que
+   l'identité est bien un « Developer ID Application » du P12, retire le P12
+   et la clé .p8 du disque, puis enregistre le profil `notarytool`. Sinon,
+   l'identité devient `-`.
 2. `backend.spec` transmet cette identité et `Entitlements.plist` à PyInstaller.
    Chaque bibliothèque native est signée après réécriture de ses chemins et
    avant compression dans le moteur onefile. Le runtime renforcé est activé,
@@ -24,17 +29,21 @@ La signature cryptographique de l'updater Tauri reste obligatoire et indépendan
    décroissante, puis du bundle principal. `--deep` sert à **vérifier**, jamais
    à déléguer la signature. Aucun lien symbolique n'est re-signé.
 5. Avec Apple : soumission du bundle dans un ZIP, attente de `Accepted`,
-   agrafage du bundle et `spctl --assess --type execute`.
+   agrafage du bundle, `spctl --assess --type execute`, puis contrôle de
+   l'Authority Developer ID, de la Team ID et du runtime renforcé. Un refus
+   imprime le journal d'Apple (fichiers et motifs) avant d'arrêter le job.
 6. Reconstruction du DMG à partir de ce bundle, avec le lien Applications,
    signature du DMG, puis soumission **du DMG lui-même**, agrafage et validation.
    Sans Apple : signature ad hoc et vérification stricte du DMG, sans appel
    réseau à la notarisation ni attente d'une acceptation Gatekeeper.
-7. Recréation de l'archive updater depuis le bundle final ; les signatures
-   updater sont recalculées sur ces octets avant publication. Les recettes
+7. Recréation de l'archive updater depuis le bundle final, puis réextraction
+   et contrôle (`codesign`, et avec Apple `stapler validate` et `spctl`) ; les
+   signatures updater sont recalculées sur ces octets avant publication. Les recettes
    et les contrôles des licences précèdent également la publication.
 
-Le plafond du job est de 150 minutes ; chaque soumission Apple attend au plus
-45 minutes. Le DMG reconstruit a une présentation simple, avec l'app et le lien
+Le plafond du job est de 210 minutes ; chaque soumission Apple attend au plus
+60 minutes (Apple : « the notarization process typically takes less than an
+hour »). Le DMG reconstruit a une présentation simple, avec l'app et le lien
 Applications. Le runner hébergé est éphémère ; le trousseau et le P12 sont dans
 son répertoire temporaire, jamais archivés. Ne pas réutiliser cette procédure
 sur un runner persistant sans définir la gestion de ces fichiers sensibles.
@@ -49,31 +58,71 @@ exécutable non signée supplémentaire n'est ajoutée sans preuve de nécessit�
 ## Créer les secrets Apple
 
 Dans GitHub, enregistrer les secrets du dépôt, sans modifier les fichiers du
-projet ni y copier de certificat ou de mot de passe :
+projet ni y copier de certificat, de clé ou de mot de passe.
+
+Certificat, toujours requis :
 
 | Nom | Contenu attendu |
 | --- | --- |
 | `APPLE_CERTIFICATE` | Export P12 du certificat **Developer ID Application** et de sa clé privée, encodé en base64 |
 | `APPLE_CERTIFICATE_PASSWORD` | Mot de passe non vide de cet export |
-| `APPLE_SIGNING_IDENTITY` | Nom exact de l'identité Developer ID Application |
+| `APPLE_SIGNING_IDENTITY` | Nom exact de l'identité (`Developer ID Application: … (TEAMID)`) ou son empreinte SHA-1 |
+| `APPLE_TEAM_ID` | Identifiant de l'équipe Apple Developer |
+
+Notarisation, voie recommandée en CI, clé d'API App Store Connect :
+
+| Nom | Contenu attendu |
+| --- | --- |
+| `APPLE_API_KEY` | Identifiant de la clé (Key ID) |
+| `APPLE_API_ISSUER` | Identifiant de l'émetteur (Issuer ID) |
+| `APPLE_API_PRIVATE_KEY` | Contenu du fichier `AuthKey_<Key ID>.p8`, tel quel ou encodé en base64 |
+
+Notarisation, voie de repli, identifiant Apple (utilisée seulement si la clé
+d'API est absente) :
+
+| Nom | Contenu attendu |
+| --- | --- |
 | `APPLE_ID` | Compte Apple autorisé à notariser pour l'organisation |
 | `APPLE_PASSWORD` | Mot de passe **spécifique à l'application**, créé pour la notarisation |
-| `APPLE_TEAM_ID` | Identifiant de l'équipe Apple Developer |
 
 Ludo inscrit l'organisation à l'[Apple Developer Program](https://developer.apple.com/programs/enroll/)
 avec les justificatifs demandés, dont le D-U-N-S pour une organisation. Depuis
 un Mac, le titulaire du compte crée le certificat Developer ID Application,
 avec une CSR et sa clé privée dans le trousseau, puis exporte l'identité en P12
 protégé. Suivre la [procédure Apple du certificat](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/).
-Le compte Apple doit avoir l'authentification à deux facteurs ; créer ensuite
-le mot de passe spécifique à l'application dans la gestion de ce compte.
-Cette implémentation choisit l'authentification Apple ID de `notarytool` ; les
-secrets API App Store Connect ne sont pas consommés.
+La clé d'API se crée dans App Store Connect (Utilisateurs et accès,
+onglet Intégrations, App Store Connect API, **clés d'équipe**) : une clé
+individuelle ne peut pas servir à `notarytool` (« Individual keys aren't able
+to use [...] notaryTool »). Le titulaire du compte doit d'abord demander
+l'accès à l'API, accordé au cas par cas. Apple ne fixe pas de rôle minimal
+pour notariser ; choisir le plus restreint qui fonctionne. Le fichier .p8 ne
+se télécharge qu'une fois et Apple n'en garde pas de copie : le ranger aussitôt
+dans le coffre.
 
-Une saisie partielle revient explicitement à l'ad hoc. Lorsque les six secrets
-existent, l'activation est automatique au prochain build autorisé. L'ad hoc ne
-prouve ni l'identité de l'éditeur ni l'acceptation par Gatekeeper. Référence :
+Un certificat Developer ID émis par l'autorité G2 **expire au bout d'un an**
+(annonce Apple du 1er octobre 2026) : le renouveler chaque année et remplacer
+`APPLE_CERTIFICATE` et `APPLE_CERTIFICATE_PASSWORD`. Les versions déjà
+signées, horodatées et notarisées continuent de s'ouvrir après l'expiration. Les noms des
+secrets suivent ceux de Tauri (`APPLE_API_KEY`, `APPLE_API_ISSUER`), mais aucun
+n'est transmis à `tauri-action` : Tauri notariserait alors lui-même, avant la
+re-signature de `finish`.
+
+Sans aucun secret Apple : ad hoc, sans avertissement. **Saisie partielle** :
+annotation `::warning::` dans le résumé du run, avec les noms manquants, et
+build ad hoc. L'ad hoc ne prouve ni l'identité de l'éditeur ni l'acceptation
+par Gatekeeper. Référence :
 [notarisation et agrafage Apple](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow).
+
+### Variables de dépôt (pas des secrets)
+
+| Nom | Effet |
+| --- | --- |
+| `SIGNATURE_OBLIGATOIRE` | `true` : une release sans signature complète, Apple ou Microsoft, échoue au lieu de sortir ad hoc ou non signée. À poser une fois les deux plateformes recettées. |
+| `EDITEUR_WINDOWS_ATTENDU` | Facultatif : nom de l'organisation tel qu'il figure dans le champ `O=` du certificat Microsoft ; toute signature d'un autre éditeur fait échouer le contrôle. |
+
+Les notes du brouillon sont produites par `scripts/release_notes.py` : texte
+historique sans signature, sans contournement (`xattr`, exclusion antivirus)
+pour une plateforme signée.
 
 ## Signature Windows et limite du onefile
 
@@ -124,7 +173,9 @@ Créer un secret client avec une échéance et organiser son renouvellement.
 | `AZURE_SIGNING_ACCOUNT` | Nom du compte Artifact Signing |
 | `AZURE_CERTIFICATE_PROFILE` | Nom du profil Public Trust |
 
-La présence des six secrets active la chaîne. Les autres méthodes de connexion
+La présence des six secrets active la chaîne ; une saisie partielle est
+signalée par une annotation `::warning::` avec les noms manquants, ou refusée
+si `SIGNATURE_OBLIGATOIRE=true`. Les autres méthodes de connexion
 Azure sont désactivées pour éviter l'emploi involontaire d'une identité du runner.
 Aucun secret ni jeton n'est requis pour les tests Linux du lot. Les installations
 npm de release utilisent `--ignore-scripts`, mais les builds Rust et les outils
