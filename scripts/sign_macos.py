@@ -196,7 +196,7 @@ def print_notary_log(submission, run=run):
 
 def submit(path, run=run):
     """Soumet à Apple et attend le verdict ; un refus imprime le journal puis échoue."""
-    output = run(['xcrun', 'notarytool', 'submit', str(path), *notary_credentials(), '--wait', '--timeout', '45m', '--output-format', 'json'], check=False)
+    output = run(['xcrun', 'notarytool', 'submit', str(path), *notary_credentials(), '--wait', '--timeout', '60m', '--output-format', 'json'], check=False)
     try:
         result = json.loads(output or '{}')
     except json.JSONDecodeError:
