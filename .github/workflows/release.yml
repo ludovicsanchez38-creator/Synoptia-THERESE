@@ -135,7 +135,9 @@ jobs:
             binary-ext: ""
 
     runs-on: ${{ matrix.platform.runner }}
-    timeout-minutes: 150
+    # macOS signé : build (~1 h) + deux notarisations d'au plus 60 min chacune
+    # (Apple : « typically takes less than an hour »).
+    timeout-minutes: 210
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
