@@ -20,6 +20,14 @@ on:
 permissions:
   contents: write
 
+# Signature des installeurs (docs/SIGNATURE-ET-LICENCES.md). Seuls des booléens
+# sortent des secrets ici : ils choisissent les notes du brouillon. Les mêmes
+# ensembles sont exigés par scripts/sign_macos.py et prepare_windows_signing.py
+# (test_release_pipeline vérifie la concordance des noms).
+env:
+  MACOS_SIGNE: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_SIGNING_IDENTITY != '' && secrets.APPLE_TEAM_ID != '' && ((secrets.APPLE_API_KEY != '' && secrets.APPLE_API_ISSUER != '' && secrets.APPLE_API_PRIVATE_KEY != '') || (secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '')) }}
+  WINDOWS_SIGNE: ${{ secrets.AZURE_TENANT_ID != '' && secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_CLIENT_SECRET != '' && secrets.AZURE_SIGNING_ENDPOINT != '' && secrets.AZURE_SIGNING_ACCOUNT != '' && secrets.AZURE_CERTIFICATE_PROFILE != '' }}
+
 jobs:
   preflight:
     name: Vérifier la clé de signature updater
@@ -89,20 +97,11 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
-        RELEASE_BODY: |
-          ## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
-
-          Installeurs disponibles ci-dessous.
-
-          ### Notes
-          - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu'il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
-          - **Mises à jour automatiques (depuis 0.23)** : l'app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l'installation en un clic.
-          - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l'app.
-          - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
-          - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
       run: |-
         if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-          printf '%s' "$RELEASE_BODY" > .work-t2/sources-release-notes.md
+          # Notes selon MACOS_SIGNE et WINDOWS_SIGNE : plus de contournement
+          # (xattr, exclusion antivirus) quand l'installeur est signé (US-015).
+          python scripts/release_notes.py --sortie .work-t2/sources-release-notes.md
           gh release create "$RELEASE_TAG" --draft --prerelease --title "THÉRÈSE $RELEASE_TAG" --notes-file .work-t2/sources-release-notes.md
         fi
         gh release upload "$RELEASE_TAG" .work-t2/THERESE-sources-copyleft.tar.gz .work-t2/THERESE-sources-systeme-linux.tar.gz --clobber
@@ -203,9 +202,17 @@ jobs:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Notarisation : clé d'API App Store Connect (recommandée en CI)...
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          # ... ou, à défaut, identifiant Apple et mot de passe d'application.
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Variable de dépôt (pas un secret) : « true » refuse toute release
+          # non signée ou configurée à moitié. Absente : l'alpha sort en ad hoc.
+          SIGNATURE_OBLIGATOIRE: ${{ vars.SIGNATURE_OBLIGATOIRE }}
         run: python scripts/sign_macos.py prepare
       - name: Préparer la signature Microsoft
         id: windows-signing
@@ -217,6 +224,7 @@ jobs:
           AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
           AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
           AZURE_CERTIFICATE_PROFILE: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          SIGNATURE_OBLIGATOIRE: ${{ vars.SIGNATURE_OBLIGATOIRE }}
         run: python scripts/prepare_windows_signing.py
 
       - name: Build sidecar (PyInstaller)
@@ -475,7 +483,9 @@ jobs:
       - name: Vérifier Authenticode
         if: runner.os == 'Windows' && steps.windows-signing.outputs.enabled == 'true'
         shell: pwsh
-        run: ./scripts/verify_windows_signing.ps1 -Roots @('src/frontend/src-tauri/binaries', 'src/frontend/src-tauri/target/release/bundle')
+        env:
+          EDITEUR_WINDOWS_ATTENDU: ${{ vars.EDITEUR_WINDOWS_ATTENDU }}
+        run: ./scripts/verify_windows_signing.ps1 -Roots @('src/frontend/src-tauri/binaries', 'src/frontend/src-tauri/target/release/bundle') -ExpectedPublisher "$env:EDITEUR_WINDOWS_ATTENDU"
 
       - name: Vérifier la signature du bundle macOS complet
         if: runner.os == 'macOS'
@@ -527,26 +537,6 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
-          RELEASE_BODY: '## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
-
-
-            Installeurs disponibles ci-dessous.
-
-
-            ### Notes
-
-            - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière
-            après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu''il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
-
-            - **Mises à jour automatiques (depuis 0.23)** : l''app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l''installation en un clic.
-
-            - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l''app.
-
-            - **Windows** : Exclure l''app de l''antivirus si faux positif PyInstaller
-
-            - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
-
-            '
         run: python scripts/publish_release_artifacts.py src/frontend/src-tauri/target/release/bundle --platform "${{ runner.os }}"
 
   manifeste-updater:
