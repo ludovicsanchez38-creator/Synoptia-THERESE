@@ -115,6 +115,10 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
 
 ## Limites connues (sans certificat de signature de code)
 
+La signature Developer ID, la notarisation et Authenticode s'activent seules
+dès que leurs secrets existent : voir [SIGNATURE-ET-LICENCES.md](SIGNATURE-ET-LICENCES.md).
+Les limites ci-dessous valent tant qu'ils sont absents.
+
 - **macOS** : le format de mise à jour est produit, mais le parcours N vers N+1
   de la release courante n'a pas été exercé. L'app reste seulement signée
   ad-hoc (pas notarisée). Au premier lancement d'une version mise à jour,
