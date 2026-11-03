@@ -26,6 +26,21 @@ class PipelineTests(unittest.TestCase):
                         if action.startswith(('actions/', 'Swatinem/')):
                             self.assertRegex(source, re.escape(action) + r'\s+# v\d+\.\d+\.\d+')
 
+    def test_no_run_folds_two_script_calls_into_one_line(self):
+        # Un scalaire YAML simple sur deux lignes est replié en une seule
+        # commande : `a.py verifier b.py check` part en arguments de a.py.
+        for path in sorted((ROOT / '.github/workflows').glob('*.yml')):
+            jobs = yaml.safe_load(path.read_text())['jobs']
+            for job_name, job in jobs.items():
+                for step in job.get('steps', []) or []:
+                    run = step.get('run')
+                    if not isinstance(run, str):
+                        continue
+                    for line in run.splitlines():
+                        calls = re.findall(r'(?:^|\s)\S*python3?(?:\.exe)?\s+\S+\.py\b', line)
+                        with self.subTest(workflow=path.name, job=job_name, step=step.get('name')):
+                            self.assertLessEqual(len(calls), 1, line)
+
     def test_no_upload_before_platform_checks(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
         steps = jobs['build']['steps']
