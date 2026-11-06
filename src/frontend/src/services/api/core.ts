@@ -256,6 +256,18 @@ function estUneCoupure(erreur: unknown): boolean {
     || (erreur instanceof ApiError && erreur.status === 0);
 }
 
+/** Vide la file avant une mission ou une écriture métier, sans masquer le refus du moteur. */
+export async function viderLesAccords(): Promise<void> {
+  const { flushConsentDecisions } = await import('../../lib/consentSync');
+  try {
+    await flushConsentDecisions();
+  } catch (erreur) {
+    if (estUneCoupure(erreur)) throw erreur;
+    throw new AccordNonEnregistre(erreur instanceof Error && erreur.message
+      ? erreur.message : 'Ton accord n’a pas pu être enregistré. Rien n’a été envoyé.', erreur);
+  }
+}
+
 /**
  * Requête authentifiée, avec UN rejeu si le moteur a été relancé.
  *
@@ -274,14 +286,7 @@ export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Re
   return (async () => {
     if (init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())
       && !new URL(url, API_BASE).pathname.startsWith('/api/consents')) {
-      const { flushConsentDecisions } = await import('../../lib/consentSync');
-      try {
-        await flushConsentDecisions();
-      } catch (erreur) {
-        if (estUneCoupure(erreur)) throw erreur;
-        throw new AccordNonEnregistre(erreur instanceof Error && erreur.message
-          ? erreur.message : 'Ton accord n’a pas pu être enregistré. Rien n’a été envoyé.', erreur);
-      }
+      await viderLesAccords();
     }
     const jetonEnvoye = _sessionToken;
     const reponse = await envoyer(url, init, timeoutMs);

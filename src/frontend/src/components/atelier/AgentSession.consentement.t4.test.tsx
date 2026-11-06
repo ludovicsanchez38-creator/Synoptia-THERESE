@@ -8,7 +8,11 @@ const moteur = vi.hoisted(() => ({
   acquitter: undefined as undefined | (() => void),
   decisions: [] as Array<{ purpose: string; provider: string; granted: boolean }>,
 }));
-vi.mock('../../services/api/core', () => ({ request: (...args: unknown[]) => moteur.request(...args) }));
+// Correctifs 0.83 : AgentSession vide la file par `viderLesAccords` (core) ; seul `request` est doublé.
+vi.mock('../../services/api/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../services/api/core')>()),
+  request: (...args: unknown[]) => moteur.request(...args),
+}));
 vi.mock('../../services/api/agents', () => ({
   getAgentProfiles: async () => [{ id: 'researcher', name: 'Chercheur', tools: ['read_file'], default_model: 'openai::modele-test' }],
   getAgentConsent: async () => ({ model: 'openai::modele-test', provider: moteur.destinationChangee ? 'anthropic' : 'openai', label: 'OpenAI',
