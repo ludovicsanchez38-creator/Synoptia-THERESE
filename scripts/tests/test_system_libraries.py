@@ -72,6 +72,12 @@ class SystemLibraryTests(unittest.TestCase):
         self.assertLess(filtre, spec.index('_system_module.record_analysis('))
         self.assertIn('if sys.platform == "win32":', spec[filtre - 200:filtre])
 
+    def test_rendered_notices_have_unix_line_endings(self):
+        # THIRD_PARTY_LICENSES est versionné en LF (.gitattributes) ; deux
+        # notices Windows amont (LICENSE.txt de python.org, conditions
+        # Microsoft) gardent leurs CRLF : le rendu doit les normaliser.
+        self.assertNotIn('\r', self.m.render_notices(ROOT))
+
     def test_catalog_has_exact_18_libraries_and_three_source_packages(self):
         catalog = self.m.load_catalog(ROOT)
         self.assertEqual(len(catalog['libraries']), 18)

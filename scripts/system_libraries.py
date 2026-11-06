@@ -224,7 +224,7 @@ def render_notices(root=ROOT):
                   'SHA-256 : ' + row['sha256'], 'Source : ' + row['source_package'] + ' ' + row['source_version']]
         if 'GPL' in row['license']:
             lines.append('ATTENTION COPYLEFT' + (' — exception GCC Runtime Library 3.1' if 'WITH' in row['license'] else ' — sources jointes'))
-        notices[row['notice']['path']] = checked_file(root, row['notice']).decode('utf-8')
+        notices[row['notice']['path']] = checked_file(root, row['notice']).decode('utf-8').replace('\r\n', '\n')
     # Les copyright Debian renvoient parfois aux common-licenses du système.
     for filename in ('GPL-2.0.json', 'GPL-3.0.txt', 'LGPL-2.0.txt', 'LGPL-2.1.txt', 'GCC-exception-3.1.txt'):
         path = root / 'licenses/supplements' / filename

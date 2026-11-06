@@ -203,7 +203,7 @@ def render(root=ROOT, catalog=None):
         lines += ['Notices : ' + ', '.join(n['path'] for n in c['notices']), '']
     for n in sorted(notice_files(catalog), key=lambda n: n['path']):
         lines += ['=' * 72, n['path'], 'Source : ' + n['upstream']['url'],
-                  'SHA-256 notice : ' + n['sha256'], checked(root, n).decode('utf-8'), '']
+                  'SHA-256 notice : ' + n['sha256'], checked(root, n).decode('utf-8').replace('\r\n', '\n'), '']
     return '\n'.join(lines)
 
 
