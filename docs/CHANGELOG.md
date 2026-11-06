@@ -7,6 +7,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.83.0-alpha] - préparée le 6 novembre 2026, non publiée - Signature, licences, confidentialité et marquage IA
+
+- Licences : notices tierces et inventaire des bibliothèques natives embarqués dans les installeurs, sources copyleft jointes à la release, catalogues fermés par défaut sur Linux et macOS.
+- Confidentialité : accords par finalité et par fournisseur tenus par le moteur, avis système séparés des réponses, provenance des fiches mémoire.
+- Marquage IA des documents, images et brouillons de mail générés (voir `docs/marquage-ia.md`).
+- Détail, contrôles et limites : [notes de la 0.83.0-alpha](releases/v0.83.0-alpha.md).
+
+> Ce journal reprend à la 0.83.0. Les versions 0.78.0 à 0.82.0 sont décrites dans `docs/releases/` (rapports de release) et dans les notes publiées sur GitHub ; elles ne sont pas recopiées ici.
+
 ## [v0.77.2-alpha] - 4 octobre 2026 - Fiabilité du cycle 16
 
 - Messagerie : ignore les réponses et erreurs tardives d'une génération quittée ou d'un autre compte/message ; seul le brouillon courant peut être utilisé.
