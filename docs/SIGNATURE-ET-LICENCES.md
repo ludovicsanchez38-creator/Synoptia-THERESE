@@ -403,9 +403,28 @@ RECORD. `licenses/cpython/evidence-v0830-windows.json` lie 21 fichiers CPython
 ou `lib`. `licenses/system-windows/evidence-v0830.json` lie sept lignes système,
 dont la ligne CPython de `python313.dll`, aux MSI `core`, `lib` et `exe`.
 Les 27 fichiers python.org sont rapprochés par SHA-256 du relevé et des membres
-des MSI officiels. Le catalogue n'accorde aucun droit aux trois DLL issues du
-redistribuable Visual Studio (`msvcp140.dll`, `msvcp140_1.dll`, `vcomp140.dll`).
-Leur redistribution attend une décision de Ludo.
+des MSI officiels.
+
+Les trois autres natifs viennent du redistribuable de Visual Studio
+(`msvcp140.dll`, `msvcp140_1.dll`, `vcomp140.dll`, version 14.51.36247.0) :
+ctranslate2, onnxruntime, scikit-learn et torch les importent. Sur décision de
+Ludo du 06/11/2026 (carte `val-2026-11-06-24`), ils sont livrés avec THÉRÈSE
+sous les conditions « Distributable Code » de Visual Studio Community 2026.
+`scripts/windows_runtime.py` les prend dans le dossier de redistribution trouvé
+par vswhere (`VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC145.CRT` et
+`.OpenMP`) et fait échouer le build si une autre source s'impose. Le bloc
+`visual_studio_redist` de `evidence-v0830.json` porte la preuve : décision,
+relevé (run 42266635353), chemin du runner, empreintes, ressource de version,
+certificats, et les copies datées des deux textes Microsoft
+(`visual-studio-2026-community-license-ENU-20261106.docx`, section « 8.
+DISTRIBUTABLE CODE », et `visual-studio-2026-redistribution-20261106.html`,
+rubrique « Visual C++ Runtime Files »). La notice
+`microsoft-visual-studio-distributable-code.txt`, rendue dans
+`THIRD_PARTY_LICENSES`, reproduit ces deux passages en version originale.
+La garde exige le dossier MSVC exact, CRT ou OpenMP seulement (jamais
+`debug_nonredist` ni `OpenMP.LLVM`, qui relèvent des « Utilities ») ; une
+nouvelle version de Visual Studio sur le runner change les octets et demande
+un nouveau relevé.
 
 Les PE n'exposent pas les symboles locaux comme les ELF/Mach-O. La preuve de
 composition associe la configuration de build du tag CPython exact et une
