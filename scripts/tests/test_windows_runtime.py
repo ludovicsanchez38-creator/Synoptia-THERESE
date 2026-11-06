@@ -63,6 +63,8 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertLess(prefer, analysis)
         self.assertLess(analysis, check)
         self.assertLess(check, spec.index('_system_module.record_analysis('))
+        # vcruntime140*.dll reste celui de python.org : Python passe avant Visual Studio.
+        self.assertIn('[sys.base_prefix, *map(str, _vc_redist), os.environ.get("PATH", "")]', spec)
 
 
 if __name__ == '__main__':

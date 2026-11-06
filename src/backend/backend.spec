@@ -151,7 +151,8 @@ if sys.platform == "win32":
     _windows_runtime = importlib.util.module_from_spec(_runtime_spec)
     _runtime_spec.loader.exec_module(_windows_runtime)
     _vc_redist = _windows_runtime.redist_dirs()
-    os.environ["PATH"] = os.pathsep.join([*map(str, _vc_redist), os.environ.get("PATH", "")])
+    # Python d'abord : vcruntime140*.dll reste celui de python.org (couvert par sa notice).
+    os.environ["PATH"] = os.pathsep.join([sys.base_prefix, *map(str, _vc_redist), os.environ.get("PATH", "")])
     print("backend.spec : runtime VC++ depuis " + ", ".join(map(str, _vc_redist)))
 
 a = Analysis(
