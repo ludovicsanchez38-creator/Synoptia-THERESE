@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "inventory_sha256": "a312b611d35c43f0f5a30d1add02b579501b12e6518269af97edb36039c9ae1b",
+  "inventory_sha256": "e40fad9556aadc0f78345a15867bfb533dc09dd963a587df2f5ec5e500d47a63",
   "retention": "Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).",
   "components": [
     {

@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : 8a4105c2df658b22dac99defd63db4003e08f69fd74e7079a9928d2db6defced
+Empreinte des verrous : 5c76574c8fb349a030d8f18ab3c8cacfde73395c30d8e9c186b595c47463a096
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -8258,11 +8258,11 @@ Archive : https://files.pythonhosted.org/packages/a2/eb/86626c1bbc2edb8632302237
 Intégrité : sha256:5b17e2001cc0d751a5bc2c6ec6d26ad95913324a4adb86788c944f8ce9ba441f
 Notice : nvidia_nvtx_cu12-12.8.90.dist-info/License.txt — texte SHA256 b3ab415c17131cf0d318be123506ddafe4965c7b01b09d08cc8150c53e8a0bc9
 
-python:oauthlib@4.0.0
+python:oauthlib@4.0.1
 Licence déclarée : BSD-3-Clause
-Archive : https://files.pythonhosted.org/packages/7a/d8/a1bcc8ba112a627f8ffbdc212a78ce18d3ac07e91a5ca65d27918eee25a1/oauthlib-4.0.0.tar.gz
-Intégrité : sha256:efb274799819440f95b4ab3b818869f1ce9ae26c5beacba0201d1a1b76b54f86
-Notice : oauthlib-4.0.0/LICENSE — texte SHA256 7de19779113d8f841a81f68872dd1bbd6a6303dcb2d8632d0b19a48aa34a4957
+Archive : https://files.pythonhosted.org/packages/33/17/2bb072de0b990303c985f26869fd47bb179024a051f47e7f9d208eb92f8e/oauthlib-4.0.1.tar.gz
+Intégrité : sha256:3d73febdb6faa00f277c81fb04be7b7586fb96fc3b7f0b9c772dada69a25ede7
+Notice : oauthlib-4.0.1/LICENSE — texte SHA256 7de19779113d8f841a81f68872dd1bbd6a6303dcb2d8632d0b19a48aa34a4957
 
 python:onnxruntime@1.27.0
 Licence déclarée : MIT License
