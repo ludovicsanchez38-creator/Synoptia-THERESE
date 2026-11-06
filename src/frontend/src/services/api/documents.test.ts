@@ -11,6 +11,8 @@
  *   dans core.ts) plutôt que de mettre le JSON brut dans `error.message`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushConsentDecisions, queueConsentDecision } from '../../lib/consentSync';
+import { installLocalStorageStub } from '../../test/localStorage-stub';
 
 const mockApiFetch = vi.fn();
 
@@ -23,7 +25,8 @@ vi.mock('./core', async () => {
   };
 });
 
-import { downloadExportedDocument, draftSection } from './documents';
+import { downloadExportedDocument, draftSection, reorderSections } from './documents';
+import { AccordNonEnregistre, ApiError } from './core';
 
 describe('downloadExportedDocument', () => {
   beforeEach(() => {
@@ -92,5 +95,59 @@ describe('draftSection - erreur HTTP non-ok', () => {
       status: 500,
       message: 'Erreur 500',
     });
+  });
+});
+
+describe('reorderSections : accord préalable', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockApiFetch.mockReset();
+    vi.mocked(globalThis.fetch).mockReset();
+    installLocalStorageStub();
+    localStorage.setItem('therese:data-profile', '/profils/test');
+
+    // La première tentative échoue pour laisser l'accord dans la file durable.
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    queueConsentDecision('images', 'gpt-image-2', true, ['description du visuel']);
+    await flushConsentDecisions().catch(() => {});
+    vi.mocked(globalThis.fetch).mockReset();
+
+    const { apiFetch } = await vi.importActual<typeof import('./core')>('./core');
+    mockApiFetch.mockImplementation(apiFetch);
+  });
+
+  it('relance le refus du moteur sans appeler la route de réorganisation', async () => {
+    const message = 'Le profil a changé. Reviens au profil concerné avant de réessayer.';
+    const routes: string[] = [];
+    vi.mocked(globalThis.fetch).mockImplementation(async (entree) => {
+      const route = new URL(String(entree)).pathname;
+      routes.push(route);
+      if (route === '/api/consents') {
+        return new Response(JSON.stringify({ detail: message }), { status: 409 });
+      }
+      throw new Error(`Route inattendue : ${route}`);
+    });
+
+    const erreur = await reorderSections('document-1', []).catch(e => e);
+
+    expect(erreur).toBeInstanceOf(AccordNonEnregistre);
+    expect(erreur).toMatchObject({ message });
+    expect((erreur as { status?: number }).status).toBeUndefined();
+    expect(routes).toEqual(['/api/consents']);
+  });
+
+  it('garde une coupure pendant l’accord comme erreur réseau de statut 0', async () => {
+    const routes: string[] = [];
+    vi.mocked(globalThis.fetch).mockImplementation(async (entree) => {
+      routes.push(new URL(String(entree)).pathname);
+      throw new TypeError('Failed to fetch');
+    });
+
+    const erreur = await reorderSections('document-1', []).catch(e => e);
+    expect(erreur).toBeInstanceOf(ApiError);
+    expect(erreur).toMatchObject({
+      status: 0, statusText: 'NetworkError', message: 'Impossible de contacter le serveur',
+    });
+    expect(routes).toEqual(['/api/consents']);
   });
 });

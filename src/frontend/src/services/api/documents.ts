@@ -6,7 +6,7 @@
  * Miroir typé du router backend `app/routers/documents.py` (tâche D1).
  */
 
-import { API_BASE, apiFetch, request, ApiError } from './core';
+import { API_BASE, apiFetch, request, ApiError, AccordNonEnregistre } from './core';
 
 // ============================================================
 // Types - Documents
@@ -222,7 +222,8 @@ export async function reorderSections(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items }),
     });
-  } catch {
+  } catch (e) {
+    if (e instanceof AccordNonEnregistre) throw e;
     throw new ApiError(0, 'NetworkError', 'Impossible de contacter le serveur');
   }
 
