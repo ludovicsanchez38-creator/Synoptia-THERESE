@@ -93,6 +93,14 @@ class PipelineTests(unittest.TestCase):
         self.assertGreater(step['timeout-minutes'] * 60, ceiling + 60)
         self.assertGreater(job['timeout-minutes'], step['timeout-minutes'] + 3)
 
+    def test_release_build_pins_the_reviewed_cpython(self):
+        # "3.13" résout 3.13.18 sur ubuntu-22.04 depuis fin octobre 2026 : les
+        # octets CPython ne seraient plus ceux du catalogue relu (3.13.17).
+        catalog = json.loads((ROOT / 'licenses/cpython-components.lock.json').read_text(encoding='utf-8'))
+        steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
+        setup = next(s for s in steps if s.get('uses', '').startswith('actions/setup-python@'))
+        self.assertEqual(setup['with']['python-version'], catalog['version'])
+
     def test_no_upload_before_platform_checks(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
         steps = jobs['build']['steps']

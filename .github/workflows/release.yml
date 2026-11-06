@@ -146,7 +146,10 @@ jobs:
       # ---- Python + PyInstaller ----
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: "3.13"
+          # Épinglé sur la version des catalogues relus : "3.13" résout 3.13.18
+          # sur ubuntu-22.04 depuis fin octobre 2026 (3.13.17 sur macOS et
+          # Windows), et la garde d'inventaire refuserait ces octets.
+          python-version: "3.13.17"
 
       - name: Installer UV et dépendances Python
         # --extra voice-local : embarque faster-whisper + Piper dans le sidecar
