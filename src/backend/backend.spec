@@ -179,6 +179,10 @@ _system_spec = importlib.util.spec_from_file_location(
 )
 _system_module = importlib.util.module_from_spec(_system_spec)
 _system_spec.loader.exec_module(_system_module)
+# UCRT (api-ms-win-*, ucrtbase) : composant de Windows 10+, jamais embarquée.
+# PyInstaller la ramassait dans le dossier du JDK du runner (relevé du 06/11/2026).
+if sys.platform == "win32":
+    a.binaries = _system_module.without_windows_ucrt(a.binaries)
 _system_module.record_analysis([*a.binaries, *a.datas])
 
 pyz = PYZ(a.pure, cipher=block_cipher)

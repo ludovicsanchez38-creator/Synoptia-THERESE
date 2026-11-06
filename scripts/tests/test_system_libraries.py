@@ -51,6 +51,27 @@ class SystemLibraryTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 self.m.verify_files(a, r)
 
+    def test_windows_ucrt_is_never_embedded(self):
+        # Relevé du 06/11/2026 : PyInstaller ramassait l'UCRT (44 api-ms-win-*,
+        # ucrtbase) dans le dossier du JDK du runner. Composant de Windows 10+.
+        toc = [('api-ms-win-crt-runtime-l1-1-0.dll', 'C:/jdk/bin/api-ms-win-crt-runtime-l1-1-0.dll', 'BINARY'),
+               ('ucrtbase.dll', 'C:/jdk/bin/ucrtbase.dll', 'BINARY'),
+               ('API-MS-WIN-CORE-FILE-L1-1-0.DLL', 'C:/x/API-MS-WIN-CORE-FILE-L1-1-0.DLL', 'BINARY'),
+               ('python313.dll', 'C:/py/python313.dll', 'BINARY'),
+               ('msvcp140.dll', 'C:/x/msvcp140.dll', 'BINARY')]
+        self.assertEqual([e[0] for e in self.m.without_windows_ucrt(toc)], ['python313.dll', 'msvcp140.dll'])
+        data = b'MZucrt'
+        for name in ('ucrtbase.dll', 'sous/api-ms-win-core-heap-l1-1-0.dll'):
+            records = {name: {'sha256': self.m.sha(data), 'license': 'MIT', 'origin': 'fixture'}}
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'UCRT'):
+                self.m.verify_files({name: self.m.sha(data)}, records)
+
+    def test_backend_spec_drops_windows_ucrt_before_recording_origins(self):
+        spec = (ROOT / 'src/backend/backend.spec').read_text(encoding='utf-8')
+        filtre = spec.index('a.binaries = _system_module.without_windows_ucrt(a.binaries)')
+        self.assertLess(filtre, spec.index('_system_module.record_analysis('))
+        self.assertIn('if sys.platform == "win32":', spec[filtre - 200:filtre])
+
     def test_catalog_has_exact_18_libraries_and_three_source_packages(self):
         catalog = self.m.load_catalog(ROOT)
         self.assertEqual(len(catalog['libraries']), 18)

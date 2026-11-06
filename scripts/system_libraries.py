@@ -191,7 +191,25 @@ def scan_tree(directory):
     return result
 
 
+# Runtime C universel (UCRT) : composant de Windows depuis Windows 10, que
+# Tauri 2 exige déjà. Microsoft déconseille son déploiement local ; PyInstaller
+# le ramasse là où le PATH du runner le trouve (dossier d'un JDK le 06/11/2026).
+UCRT = re.compile(r'(?:api-ms-win-[a-z0-9-]+|ucrtbase)\.dll', re.I)
+
+
+def is_windows_ucrt(name):
+    return bool(UCRT.fullmatch(Path(name.replace('\\', '/')).name))
+
+
+def without_windows_ucrt(toc):
+    """Retirer l'UCRT de la table des binaires PyInstaller (Windows)."""
+    return [entry for entry in toc if not is_windows_ucrt(entry[0])]
+
+
 def verify_files(actual, records):
+    ucrt = sorted(n for n in actual if is_windows_ucrt(n))
+    if ucrt:
+        raise ValueError('UCRT de Windows embarquée, composant du système à exclure du moteur : ' + ', '.join(ucrt))
     if set(actual) != set(records):
         raise ValueError('Bibliothèque absente de l’inventaire ou du paquet : ' +
                          ', '.join(sorted(set(actual) ^ set(records))))
@@ -352,6 +370,8 @@ def build_inventory(platform, root=ROOT):
         key = name.removeprefix('_internal/')
         source = origins.get(key) or by_source_hash.get(digest)
         try:
+            if is_windows_ucrt(name):
+                raise ValueError('UCRT de Windows embarquée, composant du système à exclure du moteur')
             if source is None:
                 raise ValueError('Binaire sans origine Analysis : ' + name)
             record = classify(source, catalog, packages, installed, platform)
