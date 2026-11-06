@@ -45,6 +45,19 @@ WINDOWS_IDENTITY = {
     'libffi-8.dll': ('libffi', '3.4.4', 'libffi'),
     'sqlite3.dll': ('SQLite', '3.50.4', 'sqlite3'),
 }
+# Runtime VC++ pris dans le redistribuable de Visual Studio (windows_runtime.py),
+# livré sur décision de Ludo du 06/11/2026 (carte val-2026-11-06-24) sous les
+# conditions « Distributable Code » de Visual Studio Community 2026, notice jointe.
+VS_REDIST_VERSION = '14.51.36231'
+VS_REDIST_MEMBERS = {
+    'msvcp140.dll': 'Microsoft.VC145.CRT',
+    'msvcp140_1.dll': 'Microsoft.VC145.CRT',
+    'vcomp140.dll': 'Microsoft.VC145.OpenMP',
+}
+VS_REDIST_DISTRIBUTION = 'Visual Studio 18, redistribuable MSVC ' + VS_REDIST_VERSION + ' x64'
+VS_REDIST_NOTICE = 'licenses/system-windows/microsoft-visual-studio-distributable-code.txt'
+VS_LICENSE_TERMS = 'licenses/system-windows/visual-studio-2026-community-license-ENU-20261106.docx'
+VS_DISTRIBUTABLE_LIST = 'licenses/system-windows/visual-studio-2026-redistribution-20261106.html'
 BUILD = '.work-release/system-libraries.json'
 ANALYSIS = '.work-release/pyinstaller-origins.json'
 KNOWN = {'GPL-3.0-or-later', 'LGPL-2.1-or-later', 'GPL-3.0-or-later WITH GCC-exception-3.1',
@@ -55,7 +68,8 @@ REVIEWED_LICENSES = {'readline': 'GPL-3.0-or-later', 'gdbm': 'GPL-3.0-or-later',
     'bzip2': 'bzip2-1.0.6', 'openssl': 'Apache-2.0', 'libffi': 'MIT',
     'xz-utils': 'LicenseRef-Public-Domain', 'ncurses': 'X11', 'sqlite3': 'LicenseRef-Public-Domain',
     'util-linux': 'BSD-3-Clause', 'zlib': 'Zlib', 'CPython': 'PSF-2.0',
-    'microsoft-distributable-code': 'LicenseRef-Microsoft-Distributable-Code'}
+    'microsoft-distributable-code': 'LicenseRef-Microsoft-Distributable-Code',
+    'visual-studio-redist': 'LicenseRef-Microsoft-Distributable-Code'}
 MAGICS = {b'\x7fELF', b'\xfe\xed\xfa\xce', b'\xce\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
           b'\xcf\xfa\xed\xfe', b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca', b'\xca\xfe\xba\xbf'}
 
@@ -165,13 +179,14 @@ def validate_catalog(catalog, root):
         raise ValueError('OpenSSL macOS sans paire vérifiée')
     win = json.loads(checked_file(root, catalog['windows_evidence']))
     packages = win['binary_packages']
+    visual_studio = win['visual_studio_redist']['libraries']
     if (win.get('schema') != 1 or len(packages) != 3 or
             {p['id']: (p['url'], p['sha256']) for p in packages} !=
             {key: (cpython_components.windows_msi_url(key), value)
              for key, value in cpython_components.WINDOWS_MSI.items()} or
-            catalog['windows_libraries'] != [entry['catalog_row'] for entry in win['libraries']] or
+            catalog['windows_libraries'] != [entry['catalog_row'] for entry in win['libraries'] + visual_studio] or
             len(win['libraries']) != 7 or
-            {r['name'] for r in catalog['windows_libraries']} != set(WINDOWS_MEMBERS)):
+            {r['name'] for r in catalog['windows_libraries']} != set(WINDOWS_MEMBERS) | set(VS_REDIST_MEMBERS)):
         raise ValueError('Catalogue système Windows différent de la preuve relue')
     package_notice = win['package_notice']
     if (package_notice['binary_package'] != 'exe' or package_notice['member'] != 'LICENSE.txt' or
@@ -196,11 +211,46 @@ def validate_catalog(catalog, root):
                 entry['notice_provenance']['sha256'] != row['notice']['sha256']):
             raise ValueError('Identité système Windows différente de la preuve : ' + row['name'])
         checked_file(root, row['notice'])
-    if ({e['name'].lower() for e in win['excluded']} !=
-            {'msvcp140.dll', 'msvcp140_1.dll', 'vcomp140.dll'} or
-            any(e['name'].lower() in {r['name'].lower() for r in catalog['windows_libraries']}
-                for e in win['excluded'])):
-        raise ValueError('Exclusions Visual Studio ambiguës')
+    if win['excluded']:
+        raise ValueError('Exclusion Windows sans décision : ' + ', '.join(e['name'] for e in win['excluded']))
+    validate_visual_studio_redist(win['visual_studio_redist'], root)
+
+
+def validate_visual_studio_redist(vs, root):
+    """Runtime VC++ de Visual Studio : octets du runner et conditions Microsoft relues.
+
+    Seuls les dossiers CRT et OpenMP du redistribuable sont redistribuables ;
+    debug_nonredist (et OpenMP.LLVM qu'il contient) relève des « Utilities ».
+    """
+    for key, path in (('license_terms', VS_LICENSE_TERMS), ('distributable_list', VS_DISTRIBUTABLE_LIST),
+                      ('notice', VS_REDIST_NOTICE)):
+        if vs[key]['path'] != path:
+            raise ValueError('Conditions Microsoft différentes de la preuve : ' + key)
+        checked_file(root, vs[key])
+    base = vs['redist_root'].replace('\\', '/').lower().rstrip('/')
+    if (vs['redist_version'] != VS_REDIST_VERSION or
+            not base.endswith('/vc/redist/msvc/' + VS_REDIST_VERSION + '/x64') or
+            vs['license_terms']['section'] != '8. DISTRIBUTABLE CODE' or
+            vs['distributable_list']['section'] != 'Visual C++ Runtime Files' or
+            len(vs['libraries']) != len(VS_REDIST_MEMBERS) or
+            {e['catalog_row']['name'] for e in vs['libraries']} != set(VS_REDIST_MEMBERS)):
+        raise ValueError('Redistribuable Visual Studio différent de la preuve relue')
+    for entry in vs['libraries']:
+        row = entry['catalog_row']
+        folder = VS_REDIST_MEMBERS[row['name']]
+        runner = entry['runner_path'].replace('\\', '/').lower()
+        if (row['platform'] != 'Windows' or row['distribution'] != VS_REDIST_DISTRIBUTION or
+                row['package'] != 'Microsoft Visual C++ Redistributable' or
+                row['source_package'] != 'visual-studio-redist' or row['source_version'] != row['version'] or
+                row['binary_member'] != f'VC/Redist/MSVC/{VS_REDIST_VERSION}/x64/{folder}/{row["name"]}' or
+                runner != f'{base}/{folder.lower()}/{row["name"]}' or 'debug_nonredist' in runner or
+                row['size'] <= 0 or not re.fullmatch('[0-9a-f]{64}', row['sha256']) or
+                row['license'] != REVIEWED_LICENSES.get(row['source_package']) or
+                row['license'] not in KNOWN or row['source_required'] or row['notice'] != vs['notice'] or
+                entry['version_observation'] != {'kind': 'utf16le', 'value': row['version']} or
+                entry['version_resource'].get('FileVersion') != row['version'] or
+                not entry['authenticode_certificates']):
+            raise ValueError('Identité Visual Studio différente de la preuve : ' + row['name'])
 
 
 def load_catalog(root=ROOT):
@@ -250,10 +300,13 @@ def assemble_sources(folder, root=ROOT, cache=None):
         target = folder / 'sources' / item['filename']
         target.parent.mkdir(exist_ok=True)
         target.write_bytes(raw)
+    windows = json.loads(checked_file(root, catalog['windows_evidence']))
     for item in [catalog['evidence'], catalog['macos_evidence'], catalog['windows_evidence'],
                  {'path': 'licenses/system-macos/License.rtf',
                   'sha256': json.loads(checked_file(root, catalog['macos_evidence']))['package_notice']['sha256']},
-                 json.loads(checked_file(root, catalog['windows_evidence']))['package_notice'],
+                 windows['package_notice'],
+                 windows['visual_studio_redist']['license_terms'],
+                 windows['visual_studio_redist']['distributable_list'],
                  *[r['notice'] for r in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']]]:
         target = folder / item['path']
         target.parent.mkdir(parents=True, exist_ok=True)

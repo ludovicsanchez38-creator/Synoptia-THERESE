@@ -437,32 +437,7 @@
       }
     }
   ],
-  "excluded": [
-    {
-      "name": "MSVCP140_1.dll",
-      "sha256": "206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982",
-      "size": 35768,
-      "file_version": "14.51.36247.0",
-      "signer": "Microsoft Windows Software Compatibility Publisher",
-      "reason": "Redistribution Visual Studio réservée à Ludo"
-    },
-    {
-      "name": "VCOMP140.DLL",
-      "sha256": "95d4ce4a6802d1e18b5e0e1722cc30ea72ca7e033f83828f05c0b7b993fe7cbf",
-      "size": 212920,
-      "file_version": "14.51.36247.0",
-      "signer": "Microsoft Windows Software Compatibility Publisher",
-      "reason": "Redistribution Visual Studio réservée à Ludo"
-    },
-    {
-      "name": "msvcp140.dll",
-      "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca",
-      "size": 643512,
-      "file_version": "14.51.36247.0",
-      "signer": "Microsoft Windows Software Compatibility Publisher",
-      "reason": "Redistribution Visual Studio réservée à Ludo"
-    }
-  ],
+  "excluded": [],
   "source_archives": [
     {
       "id": "bzip2",
@@ -647,5 +622,209 @@
         "size": 4508
       }
     }
+  },
+  "visual_studio_redist": {
+    "decision": {
+      "date": "2026-11-06",
+      "by": "Ludo Sanchez",
+      "card": "val-2026-11-06-24",
+      "choice": "Les livrer avec THÉRÈSE, notice Microsoft jointe",
+      "brief": "synoptia-dq-agents/briefs/therese-0.83-suite-2026-10-31/DECISION-LUDO-2026-11-06-vcpp.md"
+    },
+    "observation": {
+      "workflow": ".github/workflows/releve-natif.yml",
+      "run_id": 42266635353,
+      "run_url": "https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/actions/runs/42266635353",
+      "head_sha": "1aa90eadcde153a2372a09d4c5d1e00a8fb8e887",
+      "artifact": "releve-Windows-42266635353-1",
+      "runner": "windows-latest",
+      "runner_platform": "Windows-2025Server-10.0.26100-SP0",
+      "python": "3.13.17"
+    },
+    "redist_root": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Redist\\MSVC\\14.51.36231\\x64",
+    "redist_version": "14.51.36231",
+    "selection": "scripts/windows_runtime.py : vswhere, dernière version MSVC, dossiers Microsoft.VC14*.CRT et Microsoft.VC14*.OpenMP ; tout runtime VC++ de premier niveau venu d’ailleurs fait échouer le build",
+    "license_terms": {
+      "title": "Microsoft Software License Terms, Microsoft Visual Studio Community 2026",
+      "last_updated": "October 1, 2025",
+      "eulaid": "VS2026_Comm_ENU.1033",
+      "section": "8. DISTRIBUTABLE CODE",
+      "page_url": "https://visualstudio.microsoft.com/license-terms/vs2026-ga-community/",
+      "document_url": "https://visualstudio.microsoft.com/wp-content/uploads/2025/10/Visual_Studio_2026-License-Community_ENU.docx",
+      "http_last_modified": "Fri, 31 Oct 2025 22:26:01 GMT",
+      "retrieved": "2026-11-06",
+      "path": "licenses/system-windows/visual-studio-2026-community-license-ENU-20261106.docx",
+      "sha256": "02ac07637f4a513a807cd3721c7620433fc483bc049d25784b0c10c54b05e1fb"
+    },
+    "distributable_list": {
+      "url": "https://aka.ms/vs/18/redistribution",
+      "resolved_url": "https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution",
+      "section": "Visual C++ Runtime Files",
+      "http_last_modified": "Wed, 05 Aug 2026 07:26:31 GMT",
+      "retrieved": "2026-11-06",
+      "path": "licenses/system-windows/visual-studio-2026-redistribution-20261106.html",
+      "sha256": "28965d9e737f43912e49d1d4cff0c2f195c1d27da55e2ba556ea30aebdfde14e"
+    },
+    "notice": {
+      "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+      "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+    },
+    "libraries": [
+      {
+        "catalog_row": {
+          "name": "msvcp140.dll",
+          "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca",
+          "size": 643512,
+          "platform": "Windows",
+          "distribution": "Visual Studio 18, redistribuable MSVC 14.51.36231 x64",
+          "package": "Microsoft Visual C++ Redistributable",
+          "version": "14.51.36247.0",
+          "source_package": "visual-studio-redist",
+          "source_version": "14.51.36247.0",
+          "license": "LicenseRef-Microsoft-Distributable-Code",
+          "notice": {
+            "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+            "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+          },
+          "source_required": false,
+          "binary_member": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT/msvcp140.dll"
+        },
+        "runner_name": "msvcp140.dll",
+        "runner_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Redist\\MSVC\\14.51.36231\\x64\\Microsoft.VC145.CRT\\msvcp140.dll",
+        "needed": [
+          "VCRUNTIME140.dll",
+          "VCRUNTIME140_1.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-locale-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll",
+          "api-ms-win-crt-math-l1-1-0.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-utility-l1-1-0.dll",
+          "KERNEL32.dll"
+        ],
+        "imported_by": [
+          "ctranslate2",
+          "onnxruntime",
+          "scikit-learn",
+          "torch"
+        ],
+        "version_observation": {
+          "kind": "utf16le",
+          "value": "14.51.36247.0"
+        },
+        "version_resource": {
+          "CompanyName": "Microsoft Corporation",
+          "FileDescription": "Microsoft® C Runtime Library",
+          "FileVersion": "14.51.36247.0",
+          "ProductName": "Microsoft® Visual Studio®",
+          "ProductVersion": "14.51.36247.0",
+          "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+          "OriginalFilename": "msvcp140.dll"
+        },
+        "authenticode_certificates": [
+          "Microsoft Windows Software Compatibility Publisher",
+          "Microsoft Windows Third Party Component CA 2013"
+        ]
+      },
+      {
+        "catalog_row": {
+          "name": "msvcp140_1.dll",
+          "sha256": "206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982",
+          "size": 35768,
+          "platform": "Windows",
+          "distribution": "Visual Studio 18, redistribuable MSVC 14.51.36231 x64",
+          "package": "Microsoft Visual C++ Redistributable",
+          "version": "14.51.36247.0",
+          "source_package": "visual-studio-redist",
+          "source_version": "14.51.36247.0",
+          "license": "LicenseRef-Microsoft-Distributable-Code",
+          "notice": {
+            "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+            "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+          },
+          "source_required": false,
+          "binary_member": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT/msvcp140_1.dll"
+        },
+        "runner_name": "MSVCP140_1.dll",
+        "runner_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Redist\\MSVC\\14.51.36231\\x64\\Microsoft.VC145.CRT\\msvcp140_1.dll",
+        "needed": [
+          "MSVCP140.dll",
+          "VCRUNTIME140.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "KERNEL32.dll"
+        ],
+        "imported_by": [
+          "onnxruntime"
+        ],
+        "version_observation": {
+          "kind": "utf16le",
+          "value": "14.51.36247.0"
+        },
+        "version_resource": {
+          "CompanyName": "Microsoft Corporation",
+          "FileDescription": "Microsoft® C Runtime Library _1",
+          "FileVersion": "14.51.36247.0",
+          "ProductName": "Microsoft® Visual Studio®",
+          "ProductVersion": "14.51.36247.0",
+          "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+          "OriginalFilename": "msvcp140_1.dll"
+        },
+        "authenticode_certificates": [
+          "Microsoft Windows Software Compatibility Publisher",
+          "Microsoft Windows Third Party Component CA 2013"
+        ]
+      },
+      {
+        "catalog_row": {
+          "name": "vcomp140.dll",
+          "sha256": "95d4ce4a6802d1e18b5e0e1722cc30ea72ca7e033f83828f05c0b7b993fe7cbf",
+          "size": 212920,
+          "platform": "Windows",
+          "distribution": "Visual Studio 18, redistribuable MSVC 14.51.36231 x64",
+          "package": "Microsoft Visual C++ Redistributable",
+          "version": "14.51.36247.0",
+          "source_package": "visual-studio-redist",
+          "source_version": "14.51.36247.0",
+          "license": "LicenseRef-Microsoft-Distributable-Code",
+          "notice": {
+            "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+            "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+          },
+          "source_required": false,
+          "binary_member": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.OpenMP/vcomp140.dll"
+        },
+        "runner_name": "VCOMP140.DLL",
+        "runner_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Redist\\MSVC\\14.51.36231\\x64\\Microsoft.VC145.OpenMP\\vcomp140.dll",
+        "needed": [
+          "KERNEL32.dll"
+        ],
+        "imported_by": [
+          "scikit-learn"
+        ],
+        "version_observation": {
+          "kind": "utf16le",
+          "value": "14.51.36247.0"
+        },
+        "version_resource": {
+          "CompanyName": "Microsoft Corporation",
+          "FileDescription": "Microsoft® C/C++ OpenMP Runtime",
+          "FileVersion": "14.51.36247.0",
+          "ProductName": "Microsoft® Visual Studio®",
+          "ProductVersion": "14.51.36247.0",
+          "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+          "OriginalFilename": "VCOMP140.DLL"
+        },
+        "authenticode_certificates": [
+          "Microsoft Windows Software Compatibility Publisher",
+          "Microsoft Windows Third Party Component CA 2013"
+        ]
+      }
+    ]
   }
 }

@@ -524,7 +524,7 @@
   ],
   "windows_evidence": {
     "path": "licenses/system-windows/evidence-v0830.json",
-    "sha256": "58136e282b360de9cf50962b3b0456d119efe37fa99d44ac9129d04cdae5509a"
+    "sha256": "0b42d8b737a8ed711e23bb588fb1969a413deefeec1be4b1856e099f40c489e1"
   },
   "windows_libraries": [
     {
@@ -666,6 +666,60 @@
       "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/exe.msi",
       "binary_package_sha256": "985e3ce8b3f0a432fdadfa5aacac506635816c5d24a36fd6222b9e390da279d5",
       "binary_member": "vcruntime140_1.dll"
+    },
+    {
+      "name": "msvcp140.dll",
+      "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca",
+      "size": 643512,
+      "platform": "Windows",
+      "distribution": "Visual Studio 18, redistribuable MSVC 14.51.36231 x64",
+      "package": "Microsoft Visual C++ Redistributable",
+      "version": "14.51.36247.0",
+      "source_package": "visual-studio-redist",
+      "source_version": "14.51.36247.0",
+      "license": "LicenseRef-Microsoft-Distributable-Code",
+      "notice": {
+        "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+        "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+      },
+      "source_required": false,
+      "binary_member": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT/msvcp140.dll"
+    },
+    {
+      "name": "msvcp140_1.dll",
+      "sha256": "206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982",
+      "size": 35768,
+      "platform": "Windows",
+      "distribution": "Visual Studio 18, redistribuable MSVC 14.51.36231 x64",
+      "package": "Microsoft Visual C++ Redistributable",
+      "version": "14.51.36247.0",
+      "source_package": "visual-studio-redist",
+      "source_version": "14.51.36247.0",
+      "license": "LicenseRef-Microsoft-Distributable-Code",
+      "notice": {
+        "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+        "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+      },
+      "source_required": false,
+      "binary_member": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT/msvcp140_1.dll"
+    },
+    {
+      "name": "vcomp140.dll",
+      "sha256": "95d4ce4a6802d1e18b5e0e1722cc30ea72ca7e033f83828f05c0b7b993fe7cbf",
+      "size": 212920,
+      "platform": "Windows",
+      "distribution": "Visual Studio 18, redistribuable MSVC 14.51.36231 x64",
+      "package": "Microsoft Visual C++ Redistributable",
+      "version": "14.51.36247.0",
+      "source_package": "visual-studio-redist",
+      "source_version": "14.51.36247.0",
+      "license": "LicenseRef-Microsoft-Distributable-Code",
+      "notice": {
+        "path": "licenses/system-windows/microsoft-visual-studio-distributable-code.txt",
+        "sha256": "139ff12236a81c1ce847202c4ec4c3d46ce845f1574d5ebd8412cdd4b5376760"
+      },
+      "source_required": false,
+      "binary_member": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.OpenMP/vcomp140.dll"
     }
   ]
 }

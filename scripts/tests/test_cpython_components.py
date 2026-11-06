@@ -29,6 +29,7 @@ class CPythonComponentsTests(unittest.TestCase):
                  catalog['cpython']['windows_evidence']['path'],
                  'licenses/system-macos/License.rtf',
                  'licenses/system-windows/python-3.13.17-LICENSE.txt',
+                 system.VS_LICENSE_TERMS, system.VS_DISTRIBUTABLE_LIST,
                  *{r['notice']['path'] for r in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']},
                  *{r['path'] for r in components.notice_files(catalog['cpython'])},
                  'scripts/system_libraries.py', 'scripts/cpython_components.py',
