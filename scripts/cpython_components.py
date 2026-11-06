@@ -17,6 +17,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/cpython-components.lock.json'
+MACOS_PACKAGE_URL = 'https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg'
+MACOS_PACKAGE_SHA256 = '3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3'
 
 
 def sha(raw):
@@ -36,7 +38,7 @@ def checked(root, item):
 
 def notice_files(catalog):
     notices = list(catalog['base_notices'])
-    notices += [n for c in catalog['components'] for n in c['notices']]
+    notices += [n for c in catalog['components'] + catalog['macos_components'] for n in c['notices']]
     return {n['path']: n for n in notices}.values()
 
 
@@ -63,7 +65,39 @@ def validate(catalog, root):
         used.update(f['components'])
     if used != ids:
         raise ValueError('Composant CPython sans preuve binaire')
-    for c in catalog['components']:
+    mac = json.loads(checked(root, catalog['macos_evidence']))
+    if (mac.get('schema') != 1 or mac.get('version') != catalog['version'] or
+            mac.get('upstream') != catalog['upstream'] or
+            mac.get('binary_package_url') != MACOS_PACKAGE_URL or
+            mac.get('binary_package_sha256') != MACOS_PACKAGE_SHA256 or
+            mac.get('components') != catalog['macos_components'] or
+            catalog['macos_files'] != [{k: v for k, v in f.items()
+                                       if k not in ('incorporation_evidence', 'imported_symbols')}
+                                      for f in mac['files']]):
+        raise ValueError('Composition CPython macOS différente de la preuve relue')
+    mac_ids = {c['id'] for c in catalog['macos_components']}
+    if (len(mac_ids) != len(catalog['macos_components']) or mac_ids & ids or
+            len({f['sha256'] for f in mac['files']}) != len(mac['files']) or
+            len({f['path'] for f in mac['files']}) != len(mac['files']) or
+            len(mac['files']) != 59 or mac['excluded']):
+        raise ValueError('Couverture CPython macOS ambiguë')
+    mac_used = set()
+    for f in mac['files']:
+        member = ('Versions/3.13/' + f['path'].removeprefix('Python.framework/Versions/3.13/')
+                  if f['path'].startswith('Python.framework/Versions/3.13/') else
+                  'Versions/3.13/lib/' + f['path'])
+        if (f['platform'] != 'macOS' or f['name'] != Path(f['path']).name or
+                f['binary_member'] != member or not re.fullmatch('[0-9a-f]{64}', f['sha256']) or
+                f['size'] <= 0 or set(f['components']) != set(f['incorporation_evidence']) or
+                not set(f['components']) <= ids | mac_ids):
+            raise ValueError('Liaison composant/fichier CPython macOS absente')
+        for proof in f['incorporation_evidence'].values():
+            if not proof['defined_symbols'] or any('(undefined)' in s for s in proof['defined_symbols']):
+                raise ValueError('Définition Mach-O absente')
+        mac_used.update(set(f['components']) & mac_ids)
+    if mac_used != mac_ids:
+        raise ValueError('Composant CPython macOS sans preuve binaire')
+    for c in catalog['components'] + catalog['macos_components']:
         if not c['version'] or not c['license'] or not c['notices']:
             raise ValueError('Version/licence/notice CPython absente')
     for notice in notice_files(catalog):
@@ -76,10 +110,12 @@ def load(root=ROOT):
 
 
 def identify(digest, platform, catalog):
-    row = next((f for f in catalog['files'] if f['sha256'] == digest and f['platform'] == platform), None)
+    row = next((f for f in catalog['files'] + catalog['macos_files']
+                if f['sha256'] == digest and f['platform'] == platform), None)
     if row is None:
         return None
-    components = [c for c in catalog['components'] if c['id'] in row['components']]
+    components = [c for c in catalog['components'] + catalog['macos_components']
+                  if c['id'] in row['components']]
     licenses = ['PSF-2.0', *sorted({c['license'] for c in components} - {'PSF-2.0'})]
     return {'origin': 'CPython@' + catalog['version'], 'license': ' AND '.join(licenses),
             'cpython_sha256': digest,
@@ -107,9 +143,9 @@ def render(root=ROOT, catalog=None):
              'SHA-256 archive CPython : ' + catalog['upstream']['sha256'],
              'Catalogue fermé aux octets relus ; versions sans numéro amont : révision CPython indiquée.',
              'Les notices originales ci-dessous sont conservées sans modification.', '']
-    for c in catalog['components']:
+    for c in catalog['components'] + catalog['macos_components']:
         lines += [c['name'] + ' — ' + c['version'], 'Licence : ' + c['license']]
-        for f in catalog['files']:
+        for f in catalog['files'] + catalog['macos_files']:
             if c['id'] in f['components']:
                 lines += ['Incorporé dans : ' + f['path'], 'SHA-256 : ' + f['sha256']]
         lines += ['Notices : ' + ', '.join(n['path'] for n in c['notices']), '']
@@ -219,7 +255,8 @@ def main():
     else:
         catalog = load()
         require_notices(ROOT, catalog)
-    print(f'{len(catalog["files"])} fichiers CPython ; {len(catalog["components"])} composants incorporés ; '
+    print(f'{len(catalog["files"])} fichiers CPython Linux ; {len(catalog["macos_files"])} macOS ; '
+          f'{len(catalog["components"])} composants Linux ; {len(catalog["macos_components"])} macOS ; '
           f'{len(list(notice_files(catalog)))} notices originales')
 
 

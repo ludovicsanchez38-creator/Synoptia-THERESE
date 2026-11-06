@@ -44,6 +44,8 @@ def lock_digest(root, paths=LOCKS):
     # Le catalogue et les preuves/notices système font partie de la fraîcheur.
     if (root / 'licenses/system-linux').exists():
         paths = list(paths) + sorted(str(p.relative_to(root)) for p in (root / 'licenses/system-linux').iterdir() if p.is_file())
+    if (root / 'licenses/system-macos').exists():
+        paths = list(paths) + sorted(str(p.relative_to(root)) for p in (root / 'licenses/system-macos').iterdir() if p.is_file())
     if (root / 'licenses/cpython').exists():
         paths = list(paths) + sorted(str(p.relative_to(root)) for p in (root / 'licenses/cpython').iterdir() if p.is_file())
     return digest(b''.join(p.encode() + b'\0' + (root / p).read_bytes() for p in paths))

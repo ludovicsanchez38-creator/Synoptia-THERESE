@@ -1,0 +1,304 @@
+{
+  "schema": 1,
+  "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+  "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+  "package_notice": {
+    "member": "Resources/License.rtf",
+    "sha256": "8ee980c63943569fac268139c971d728039cf74f61bbf48d08c38a25d9b4cee7",
+    "local_copy": "licenses/system-macos/License.rtf"
+  },
+  "libraries": [
+    {
+      "catalog_row": {
+        "name": "Python.framework/Versions/3.13/Python",
+        "sha256": "8868c2a88bf2b13e70b347d133d39ccb00e4a792cfd84c36ec6028bdd256ea81",
+        "size": 13602160,
+        "platform": "macOS",
+        "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+        "package": "CPython",
+        "version": "3.13.17",
+        "source_package": "CPython",
+        "source_version": "3.13.17",
+        "license": "PSF-2.0",
+        "notice": {
+          "path": "licenses/cpython/LICENSE.txt",
+          "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+        },
+        "source_required": false,
+        "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+        "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+        "binary_member": "Versions/3.13/Python"
+      },
+      "needed": [
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "version_observation": {
+        "strings": [
+          "v3.13.17"
+        ]
+      },
+      "notice_provenance": {
+        "member": "Python_Framework.pkg/Payload/Versions/3.13/lib/python3.13/LICENSE.txt",
+        "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+      },
+      "version_sources": []
+    },
+    {
+      "catalog_row": {
+        "name": "libcrypto.3.dylib",
+        "sha256": "009c8357b906c6db755a9c1ab8a5221986b8f17b98b2966556257053e547f4ad",
+        "size": 10773888,
+        "platform": "macOS",
+        "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+        "package": "OpenSSL",
+        "version": "3.5.9",
+        "source_package": "openssl",
+        "source_version": "3.5.9",
+        "license": "Apache-2.0",
+        "notice": {
+          "path": "licenses/system-macos/python-3.13.17-license.html",
+          "sha256": "843acad31a627272cf24375365a4333b850b12d1f8993e4df2aaa35ce5933307"
+        },
+        "source_required": false,
+        "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+        "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+        "binary_member": "Versions/3.13/lib/libcrypto.3.dylib"
+      },
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "version_observation": {
+        "strings": [
+          "OpenSSL 3.5.9 29 Sep 2026"
+        ]
+      },
+      "notice_provenance": {
+        "member": "Python_Documentation.pkg/Payload/license.html",
+        "sha256": "843acad31a627272cf24375365a4333b850b12d1f8993e4df2aaa35ce5933307",
+        "section": "openssl"
+      },
+      "version_sources": [
+        {
+          "path": "Mac/BuildScript/build-installer.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Mac/BuildScript/build-installer.py",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+          "size": 65795,
+          "lines": [
+            249,
+            251
+          ],
+          "declaration": {
+            "name": "OpenSSL 3.5.9",
+            "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+            "checksum": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a"
+          }
+        }
+      ]
+    },
+    {
+      "catalog_row": {
+        "name": "libncurses.6.dylib",
+        "sha256": "8a9c8182ab1e7022e37dc336f141917172b6ace0e04b03ee940cbf5f5e4bb779",
+        "size": 905216,
+        "platform": "macOS",
+        "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+        "package": "NCurses",
+        "version": "6.5",
+        "source_package": "ncurses",
+        "source_version": "6.5",
+        "license": "X11",
+        "notice": {
+          "path": "licenses/system-macos/ncurses-6.5-COPYING.txt",
+          "sha256": "b2feb54f39529abe226f709a292584fde48a2e5721559fee417d2cdd51cb7cc1"
+        },
+        "source_required": false,
+        "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+        "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+        "binary_member": "Versions/3.13/lib/libncurses.6.dylib"
+      },
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "version_observation": {
+        "strings": [
+          "ncurses 6.5.20240427"
+        ]
+      },
+      "notice_provenance": {
+        "archive_url": "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+        "archive_sha256": "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
+        "member": "ncurses-6.5/COPYING",
+        "member_sha256": "b2feb54f39529abe226f709a292584fde48a2e5721559fee417d2cdd51cb7cc1",
+        "size": 1447,
+        "sha256": "b2feb54f39529abe226f709a292584fde48a2e5721559fee417d2cdd51cb7cc1"
+      },
+      "version_sources": [
+        {
+          "path": "Mac/BuildScript/build-installer.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Mac/BuildScript/build-installer.py",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+          "size": 65795,
+          "lines": [
+            328,
+            330
+          ],
+          "declaration": {
+            "name": "NCurses 6.5",
+            "url": "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+            "checksum": "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6"
+          },
+          "source_archive": "ncurses"
+        }
+      ]
+    },
+    {
+      "catalog_row": {
+        "name": "libssl.3.dylib",
+        "sha256": "195b106d3d8dcb1dcf7bf9d042b7fad83505c8b79c8cf6b2a71223ff8595704d",
+        "size": 2097296,
+        "platform": "macOS",
+        "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+        "package": "OpenSSL",
+        "version": "3.5.9",
+        "source_package": "openssl",
+        "source_version": "3.5.9",
+        "license": "Apache-2.0",
+        "notice": {
+          "path": "licenses/system-macos/python-3.13.17-license.html",
+          "sha256": "843acad31a627272cf24375365a4333b850b12d1f8993e4df2aaa35ce5933307"
+        },
+        "source_required": false,
+        "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+        "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+        "binary_member": "Versions/3.13/lib/libssl.3.dylib"
+      },
+      "needed": [
+        "/Library/Frameworks/Python.framework/Versions/3.13/lib/libcrypto.3.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "version_observation": {
+        "linked_library": "libcrypto.3.dylib",
+        "linked_library_sha256": "009c8357b906c6db755a9c1ab8a5221986b8f17b98b2966556257053e547f4ad",
+        "package_notice": "OpenSSL 3.5.9"
+      },
+      "notice_provenance": {
+        "member": "Python_Documentation.pkg/Payload/license.html",
+        "sha256": "843acad31a627272cf24375365a4333b850b12d1f8993e4df2aaa35ce5933307",
+        "section": "openssl"
+      },
+      "version_sources": [
+        {
+          "path": "Mac/BuildScript/build-installer.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Mac/BuildScript/build-installer.py",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+          "size": 65795,
+          "lines": [
+            249,
+            251
+          ],
+          "declaration": {
+            "name": "OpenSSL 3.5.9",
+            "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+            "checksum": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a"
+          }
+        }
+      ]
+    }
+  ],
+  "excluded": [],
+  "cpython_build_source": {
+    "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+    "archive_size": 30744820,
+    "member": "cpython-3.13.17/Mac/BuildScript/build-installer.py",
+    "relative_member": "Mac/BuildScript/build-installer.py",
+    "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+    "size": 65795
+  },
+  "source_archives": [
+    {
+      "id": "xz",
+      "filename": "xz-5.2.3.tar.gz",
+      "url": "https://tukaani.org/xz/xz-5.2.3.tar.gz",
+      "sha256": "71928b357d0a09a12a4b4c5fafca8c31c19b0e7d3b8ebb19622e96f26dbf28cb",
+      "size": 1490665,
+      "members": [
+        {
+          "path": "xz-5.2.3/COPYING",
+          "sha256": "c4f8e14fafe458d84808a4cd8b69f94673ebe2bf8fc992291629a69ac12218f8",
+          "size": 2774,
+          "extraction": "whole file",
+          "notice": {
+            "path": "licenses/cpython/xz-5.2.3-COPYING.txt",
+            "sha256": "c4f8e14fafe458d84808a4cd8b69f94673ebe2bf8fc992291629a69ac12218f8"
+          }
+        }
+      ],
+      "md5": "ef68674fb47a8b8e741b34e429d86e9d"
+    },
+    {
+      "id": "ncurses",
+      "filename": "ncurses-6.5.tar.gz",
+      "url": "https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+      "sha256": "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
+      "size": 3688489,
+      "members": [
+        {
+          "path": "ncurses-6.5/COPYING",
+          "sha256": "b2feb54f39529abe226f709a292584fde48a2e5721559fee417d2cdd51cb7cc1",
+          "size": 1447,
+          "extraction": "whole file",
+          "notice": {
+            "path": "licenses/system-macos/ncurses-6.5-COPYING.txt",
+            "sha256": "b2feb54f39529abe226f709a292584fde48a2e5721559fee417d2cdd51cb7cc1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "filename": "sqlite-autoconf-3500400.tar.gz",
+      "url": "https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
+      "sha256": "a3db587a1b92ee5ddac2f66b3edb41b26f9c867275782d46c3a088977d6a5b18",
+      "size": 3173050,
+      "members": [
+        {
+          "path": "sqlite-autoconf-3500400/sqlite3.c",
+          "sha256": "e3f5d6901e7492af4a1fc8c4d745cae84c264942524c3fbfc02b82a5ca8818c8",
+          "size": 9282866,
+          "extraction": {
+            "anchor": "/************** Begin file sqliteInt.h ***************************************/",
+            "start": "/*\n** 2001 September 15\n",
+            "end": "*/\n"
+          },
+          "notice": {
+            "path": "licenses/cpython/sqlite-3.50.4-PUBLIC-DOMAIN.txt",
+            "sha256": "49cf7bcb103eb3244150a23bb23d840370a4762914faf1b450072a4b03c14670"
+          }
+        }
+      ]
+    },
+    {
+      "id": "libmpdec",
+      "filename": "mpdecimal-4.0.1.tar.gz",
+      "url": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+      "sha256": "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+      "size": 316268,
+      "members": [
+        {
+          "path": "mpdecimal-4.0.1/COPYRIGHT.txt",
+          "sha256": "dba079e24a0286052f9f36a5e0b4f6cc95bc83ada657eb26bef8c0b6473f6512",
+          "size": 1285,
+          "extraction": "whole file",
+          "notice": {
+            "path": "licenses/cpython/mpdecimal-4.0.1-COPYRIGHT.txt",
+            "sha256": "dba079e24a0286052f9f36a5e0b4f6cc95bc83ada657eb26bef8c0b6473f6512"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -25,6 +25,8 @@ import cpython_components
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/system-libraries.lock.json'
+MACOS_PACKAGE_URL = 'https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg'
+MACOS_PACKAGE_SHA256 = '3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3'
 BUILD = '.work-release/system-libraries.json'
 ANALYSIS = '.work-release/pyinstaller-origins.json'
 KNOWN = {'GPL-3.0-or-later', 'LGPL-2.1-or-later', 'GPL-3.0-or-later WITH GCC-exception-3.1',
@@ -109,6 +111,39 @@ def validate_catalog(catalog, root):
                 for s in evidence['sources']]
     if catalog['sources'] != expected:
         raise ValueError('Sources système différentes de la preuve (dsc/orig/correctifs/signatures requis)')
+    mac = json.loads(checked_file(root, catalog['macos_evidence']))
+    notice = mac['package_notice']
+    if notice['member'] != 'Resources/License.rtf':
+        raise ValueError('Notice du paquet macOS différente de la preuve')
+    checked_file(root, {'path': notice['local_copy'], 'sha256': notice['sha256']})
+    if (mac.get('schema') != 1 or mac.get('binary_package_url') != MACOS_PACKAGE_URL or
+            mac.get('binary_package_sha256') != MACOS_PACKAGE_SHA256 or
+            catalog['macos_libraries'] != [entry['catalog_row'] for entry in mac['libraries']] or
+            len(mac['libraries']) != 4 or mac['excluded']):
+        raise ValueError('Catalogue système macOS différent de la preuve relue')
+    mac_names = {r['name'] for r in catalog['macos_libraries']}
+    if mac_names != {'Python.framework/Versions/3.13/Python', 'libcrypto.3.dylib',
+                     'libncurses.6.dylib', 'libssl.3.dylib'}:
+        raise ValueError('Couverture système macOS ambiguë')
+    mac_by_name = {r['name']: r for r in catalog['macos_libraries']}
+    for entry in mac['libraries']:
+        row = entry['catalog_row']
+        member = ('Versions/3.13/' + row['name'].removeprefix('Python.framework/Versions/3.13/')
+                  if row['name'].startswith('Python.framework/Versions/3.13/') else
+                  'Versions/3.13/lib/' + row['name'])
+        if (row['platform'] != 'macOS' or row['binary_member'] != member or
+                row['binary_package_url'] != MACOS_PACKAGE_URL or
+                row['binary_package_sha256'] != MACOS_PACKAGE_SHA256 or
+                row['distribution'] != 'python.org CPython 3.13.17 macOS 11+ universal2' or
+                row['license'] != REVIEWED_LICENSES.get(row['source_package']) or
+                row['license'] not in KNOWN or not re.fullmatch('[0-9a-f]{64}', row['sha256']) or
+                row['size'] <= 0 or row['source_required'] or not entry['version_observation'] or
+                not entry['notice_provenance']['sha256'] == row['notice']['sha256']):
+            raise ValueError('Identité système macOS différente de la preuve : ' + row['name'])
+        checked_file(root, row['notice'])
+    ssl = next(e for e in mac['libraries'] if e['catalog_row']['name'] == 'libssl.3.dylib')
+    if ssl['version_observation'].get('linked_library_sha256') != mac_by_name['libcrypto.3.dylib']['sha256']:
+        raise ValueError('OpenSSL macOS sans paire vérifiée')
 
 
 def load_catalog(root=ROOT):
@@ -126,7 +161,7 @@ def render_notices(root=ROOT):
              'Sources exactes : THERESE-sources-systeme-linux.tar.gz, jointe à la même release.',
              'Les trois composants readline, gdbm et glibc y incluent les correctifs de distribution.', '']
     notices = {}
-    for row in catalog['libraries']:
+    for row in catalog['libraries'] + catalog['macos_libraries']:
         lines += [row['name'] + ' — ' + row['package'] + ' ' + row['version'],
                   'Distribution : ' + row['distribution'], 'Licence : ' + row['license'],
                   'SHA-256 : ' + row['sha256'], 'Source : ' + row['source_package'] + ' ' + row['source_version']]
@@ -158,11 +193,15 @@ def assemble_sources(folder, root=ROOT, cache=None):
         target = folder / 'sources' / item['filename']
         target.parent.mkdir(exist_ok=True)
         target.write_bytes(raw)
-    for item in [catalog['evidence'], *[r['notice'] for r in catalog['libraries']]]:
+    for item in [catalog['evidence'], catalog['macos_evidence'],
+                 {'path': 'licenses/system-macos/License.rtf',
+                  'sha256': json.loads(checked_file(root, catalog['macos_evidence']))['package_notice']['sha256']},
+                 *[r['notice'] for r in catalog['libraries'] + catalog['macos_libraries']]]:
         target = folder / item['path']
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(checked_file(root, item))
-    for item in [catalog['cpython']['evidence'], *cpython_components.notice_files(catalog['cpython'])]:
+    for item in [catalog['cpython']['evidence'], catalog['cpython']['macos_evidence'],
+                 *cpython_components.notice_files(catalog['cpython'])]:
         target = folder / item['path']
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(cpython_components.checked(root, item))
@@ -248,12 +287,15 @@ def match_system(path, digest, catalog, platform):
     cpython = cpython_components.identify(digest, platform, catalog['cpython'])
     if cpython:
         return cpython
-    rows = [r for r in catalog['libraries'] if r['sha256'] == digest and r['platform'] == platform]
+    rows = [r for r in catalog['libraries'] + catalog['macos_libraries']
+            if r['sha256'] == digest and r['platform'] == platform]
     if not rows:
         raise ValueError('Bibliothèque système hors catalogue : ' + path.name + ' SHA-256 ' + digest)
     row = rows[0]
-    if row['package'] != 'CPython':
-        identity = dpkg_identity(path) if platform == 'Linux' else None
+    if platform not in {'Linux', 'macOS'}:
+        raise ValueError('Plateforme système sans preuve : ' + platform)
+    if row['package'] != 'CPython' and platform == 'Linux':
+        identity = dpkg_identity(path)
         if identity != (row['package'], row['version'], row['source_package'], row['source_version']):
             raise ValueError('Version du paquet différente du catalogue : ' + path.name)
     return {'origin': 'system:' + row['package'] + '@' + row['version'], 'license': row['license'],
@@ -413,7 +455,9 @@ def load_build(root=ROOT):
     for record in manifest['files'].values():
         cpython_components.verify_record(record, manifest['platform'], catalog['cpython'])
         if record['origin'].startswith('system:'):
-            row = next((r for r in catalog['libraries'] if r['sha256'] == record.get('catalog_sha256')), None)
+            row = next((r for r in catalog['libraries'] + catalog['macos_libraries']
+                        if r['sha256'] == record.get('catalog_sha256') and
+                        r['platform'] == manifest['platform']), None)
             if (row is None or record['license'] != row['license'] or
                     record.get('source_required') != row['source_required'] or
                     record.get('source_package') != row['source_package'] or
@@ -443,8 +487,10 @@ def main():
     else:
         data = load_catalog()
         cpython_components.require_notices(ROOT, data['cpython'])
-        print(f'{len(data["libraries"])} bibliothèques système ; {len(data["sources"])} ressources source')
-        print(f'{len(data["cpython"]["files"])} fichiers CPython ; {len(data["cpython"]["components"])} composants incorporés')
+        print(f'{len(data["libraries"])} bibliothèques système Linux ; '
+              f'{len(data["macos_libraries"])} macOS ; {len(data["sources"])} ressources source')
+        print(f'{len(data["cpython"]["files"])} fichiers CPython Linux ; '
+              f'{len(data["cpython"]["macos_files"])} macOS')
 
 
 if __name__ == '__main__':

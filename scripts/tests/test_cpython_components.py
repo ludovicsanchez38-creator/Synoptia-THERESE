@@ -24,8 +24,10 @@ class CPythonComponentsTests(unittest.TestCase):
         # Copier seulement les preuves nécessaires, sans roues ni sources de test.
         catalog = system.load_catalog(ROOT)
         names = [system.CATALOG, components.CATALOG, 'licenses/inventory.json',
-                 catalog['evidence']['path'], catalog['cpython']['evidence']['path'],
-                 *{r['notice']['path'] for r in catalog['libraries']},
+                 catalog['evidence']['path'], catalog['macos_evidence']['path'],
+                 catalog['cpython']['evidence']['path'], catalog['cpython']['macos_evidence']['path'],
+                 'licenses/system-macos/License.rtf',
+                 *{r['notice']['path'] for r in catalog['libraries'] + catalog['macos_libraries']},
                  *{r['path'] for r in components.notice_files(catalog['cpython'])},
                  'scripts/system_libraries.py', 'scripts/cpython_components.py',
                  'scripts/verify_packaged_licenses.py']

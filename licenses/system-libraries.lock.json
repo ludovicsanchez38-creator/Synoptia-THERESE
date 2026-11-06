@@ -435,5 +435,91 @@
       "size": 8888
     }
   ],
-  "scope": "Versions relues du complément v0.82.0. Tout nouvel octet système exige rapprochement et revue avant release."
+  "scope": "Versions relues du complément v0.82.0. Tout nouvel octet système exige rapprochement et revue avant release.",
+  "macos_evidence": {
+    "path": "licenses/system-macos/evidence-v0830.json",
+    "sha256": "f27d2e7e6df3847f4c88b6f59517e4c625fa2b55dc88788f5ce6c9fb4234d624"
+  },
+  "macos_libraries": [
+    {
+      "name": "Python.framework/Versions/3.13/Python",
+      "sha256": "8868c2a88bf2b13e70b347d133d39ccb00e4a792cfd84c36ec6028bdd256ea81",
+      "size": 13602160,
+      "platform": "macOS",
+      "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+      "package": "CPython",
+      "version": "3.13.17",
+      "source_package": "CPython",
+      "source_version": "3.13.17",
+      "license": "PSF-2.0",
+      "notice": {
+        "path": "licenses/cpython/LICENSE.txt",
+        "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+      "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+      "binary_member": "Versions/3.13/Python"
+    },
+    {
+      "name": "libcrypto.3.dylib",
+      "sha256": "009c8357b906c6db755a9c1ab8a5221986b8f17b98b2966556257053e547f4ad",
+      "size": 10773888,
+      "platform": "macOS",
+      "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+      "package": "OpenSSL",
+      "version": "3.5.9",
+      "source_package": "openssl",
+      "source_version": "3.5.9",
+      "license": "Apache-2.0",
+      "notice": {
+        "path": "licenses/system-macos/python-3.13.17-license.html",
+        "sha256": "843acad31a627272cf24375365a4333b850b12d1f8993e4df2aaa35ce5933307"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+      "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+      "binary_member": "Versions/3.13/lib/libcrypto.3.dylib"
+    },
+    {
+      "name": "libncurses.6.dylib",
+      "sha256": "8a9c8182ab1e7022e37dc336f141917172b6ace0e04b03ee940cbf5f5e4bb779",
+      "size": 905216,
+      "platform": "macOS",
+      "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+      "package": "NCurses",
+      "version": "6.5",
+      "source_package": "ncurses",
+      "source_version": "6.5",
+      "license": "X11",
+      "notice": {
+        "path": "licenses/system-macos/ncurses-6.5-COPYING.txt",
+        "sha256": "b2feb54f39529abe226f709a292584fde48a2e5721559fee417d2cdd51cb7cc1"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+      "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+      "binary_member": "Versions/3.13/lib/libncurses.6.dylib"
+    },
+    {
+      "name": "libssl.3.dylib",
+      "sha256": "195b106d3d8dcb1dcf7bf9d042b7fad83505c8b79c8cf6b2a71223ff8595704d",
+      "size": 2097296,
+      "platform": "macOS",
+      "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+      "package": "OpenSSL",
+      "version": "3.5.9",
+      "source_package": "openssl",
+      "source_version": "3.5.9",
+      "license": "Apache-2.0",
+      "notice": {
+        "path": "licenses/system-macos/python-3.13.17-license.html",
+        "sha256": "843acad31a627272cf24375365a4333b850b12d1f8993e4df2aaa35ce5933307"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+      "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+      "binary_member": "Versions/3.13/lib/libssl.3.dylib"
+    }
+  ]
 }

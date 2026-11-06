@@ -1,0 +1,1309 @@
+{
+  "schema": 1,
+  "version": "3.13.17",
+  "upstream": {
+    "tag": "v3.13.17",
+    "url": "https://codeload.github.com/python/cpython/tar.gz/refs/tags/v3.13.17",
+    "sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a"
+  },
+  "binary_package_url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg",
+  "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
+  "distribution": "python.org CPython 3.13.17 macOS 11+ universal2",
+  "components": [
+    {
+      "id": "libmpdec-4",
+      "name": "libmpdec",
+      "version": "4.0.1",
+      "license": "BSD-2-Clause",
+      "notices": [
+        {
+          "path": "licenses/cpython/mpdecimal-4.0.1-COPYRIGHT.txt",
+          "sha256": "dba079e24a0286052f9f36a5e0b4f6cc95bc83ada657eb26bef8c0b6473f6512",
+          "upstream": {
+            "url": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+            "archive_sha256": "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+            "member": "COPYRIGHT.txt",
+            "sha256": "dba079e24a0286052f9f36a5e0b4f6cc95bc83ada657eb26bef8c0b6473f6512",
+            "size": 1285
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Mac/BuildScript/build-installer.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Mac/BuildScript/build-installer.py",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+          "size": 65795,
+          "lines": [
+            381,
+            383
+          ],
+          "declaration": {
+            "name": "libmpdec 4.0.1",
+            "url": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+            "checksum": "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8"
+          },
+          "source_archive": "libmpdec"
+        }
+      ]
+    },
+    {
+      "id": "liblzma-5.2.3",
+      "name": "liblzma",
+      "version": "5.2.3",
+      "license": "LicenseRef-Public-Domain",
+      "notices": [
+        {
+          "path": "licenses/cpython/xz-5.2.3-COPYING.txt",
+          "sha256": "c4f8e14fafe458d84808a4cd8b69f94673ebe2bf8fc992291629a69ac12218f8",
+          "upstream": {
+            "url": "https://tukaani.org/xz/xz-5.2.3.tar.gz",
+            "archive_sha256": "71928b357d0a09a12a4b4c5fafca8c31c19b0e7d3b8ebb19622e96f26dbf28cb",
+            "member": "COPYING",
+            "sha256": "c4f8e14fafe458d84808a4cd8b69f94673ebe2bf8fc992291629a69ac12218f8",
+            "size": 2774
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Mac/BuildScript/build-installer.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Mac/BuildScript/build-installer.py",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+          "size": 65795,
+          "lines": [
+            317,
+            319
+          ],
+          "declaration": {
+            "name": "XZ 5.2.3",
+            "url": "http://tukaani.org/xz/xz-5.2.3.tar.gz",
+            "checksum": "ef68674fb47a8b8e741b34e429d86e9d"
+          },
+          "source_archive": "xz"
+        }
+      ]
+    },
+    {
+      "id": "sqlite-3.50.4",
+      "name": "SQLite",
+      "version": "3.50.4",
+      "license": "LicenseRef-Public-Domain",
+      "notices": [
+        {
+          "path": "licenses/cpython/sqlite-3.50.4-PUBLIC-DOMAIN.txt",
+          "sha256": "49cf7bcb103eb3244150a23bb23d840370a4762914faf1b450072a4b03c14670",
+          "upstream": {
+            "url": "https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
+            "archive_sha256": "a3db587a1b92ee5ddac2f66b3edb41b26f9c867275782d46c3a088977d6a5b18",
+            "member": "sqlite3.c",
+            "sha256": "e3f5d6901e7492af4a1fc8c4d745cae84c264942524c3fbfc02b82a5ca8818c8",
+            "size": 9282866
+          },
+          "extraction": {
+            "anchor": "/************** Begin file sqliteInt.h ***************************************/",
+            "start": "/*\n** 2001 September 15\n",
+            "end": "*/\n"
+          }
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "Mac/BuildScript/build-installer.py",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/Mac/BuildScript/build-installer.py",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "c433b2028294083bd7f175b93e7210c5ecafe1aa493f9f27e7fa4f7c824c2ea1",
+          "size": 65795,
+          "lines": [
+            362,
+            364
+          ],
+          "declaration": {
+            "name": "SQLite 3.50.4",
+            "url": "https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
+            "checksum": "a3db587a1b92ee5ddac2f66b3edb41b26f9c867275782d46c3a088977d6a5b18"
+          },
+          "source_archive": "sqlite"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "Python.framework/Versions/3.13/Python",
+      "sha256": "8868c2a88bf2b13e70b347d133d39ccb00e4a792cfd84c36ec6028bdd256ea81",
+      "size": 13602160,
+      "name": "Python",
+      "platform": "macOS",
+      "components": [
+        "cfuhash",
+        "dtoa",
+        "getopt",
+        "locale-wrapper",
+        "mimalloc",
+        "siphash",
+        "sre",
+        "unicode",
+        "unicode-string"
+      ],
+      "needed": [
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/Python",
+      "incorporation_evidence": {
+        "cfuhash": {
+          "defined_symbols": [
+            "00000000002b5824 (__TEXT,__text) external __Py_hashtable_new_full"
+          ],
+          "strings": []
+        },
+        "dtoa": {
+          "defined_symbols": [
+            "00000000003144e8 (__TEXT,__text) non-external __Py_dg_dtoa"
+          ],
+          "strings": []
+        },
+        "getopt": {
+          "defined_symbols": [
+            "000000000030f8dc (__TEXT,__text) non-external __PyOS_GetOpt"
+          ],
+          "strings": []
+        },
+        "locale-wrapper": {
+          "defined_symbols": [
+            "00000000003a04ec (__TEXT,__text) external _PyInit__locale"
+          ],
+          "strings": []
+        },
+        "mimalloc": {
+          "defined_symbols": [
+            "000000000012ebec (__TEXT,__text) non-external __mi_malloc_generic"
+          ],
+          "strings": []
+        },
+        "siphash": {
+          "defined_symbols": [
+            "00000000002dd448 (__TEXT,__text) non-external _siphash13"
+          ],
+          "strings": []
+        },
+        "sre": {
+          "defined_symbols": [
+            "0000000000388e0c (__TEXT,__text) non-external _sre_match"
+          ],
+          "strings": [
+            " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB "
+          ]
+        },
+        "unicode": {
+          "defined_symbols": [
+            "00000000003c10e0 (__TEXT,__const) non-external __PyUnicode_TypeRecords"
+          ],
+          "strings": []
+        },
+        "unicode-string": {
+          "defined_symbols": [
+            "000000000017f2e4 (__TEXT,__text) external _PyUnicode_New"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_asyncio.cpython-313-darwin.so",
+      "sha256": "f9199d4ba98cd64df0becaf03a90c1446e7977f2e595cdc996440f26e10deb31",
+      "size": 242912,
+      "name": "_asyncio.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_asyncio.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_bisect.cpython-313-darwin.so",
+      "sha256": "34ed92949aafdf376ee4dd5437cf1e9b0830733641e788352626d736c3682d8b",
+      "size": 137744,
+      "name": "_bisect.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_bisect.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_blake2.cpython-313-darwin.so",
+      "sha256": "e0389dce7646cb06fa42b45cbac1bb1f1e0f359f49f7d27dbebae1e50d3d8327",
+      "size": 173824,
+      "name": "_blake2.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "blake2"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_blake2.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "blake2": {
+          "defined_symbols": [
+            "000000000000171c (__TEXT,__text) non-external _PyBlake2_blake2b_compress"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_bz2.cpython-313-darwin.so",
+      "sha256": "1c2b7911cdebcc9feefb5f3e336612c5d5393d8a99feb2ddac5682a58078ad75",
+      "size": 140432,
+      "name": "_bz2.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libbz2.1.0.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_bz2.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "                 (undefined) external _BZ2_bzCompress (from libbz2)",
+        "                 (undefined) external _BZ2_bzCompressEnd (from libbz2)",
+        "                 (undefined) external _BZ2_bzCompressInit (from libbz2)",
+        "                 (undefined) external _BZ2_bzDecompress (from libbz2)",
+        "                 (undefined) external _BZ2_bzDecompressEnd (from libbz2)",
+        "                 (undefined) external _BZ2_bzDecompressInit (from libbz2)"
+      ]
+    },
+    {
+      "path": "python3.13/lib-dynload/_codecs_cn.cpython-313-darwin.so",
+      "sha256": "3574b4a2005a3b2feb48b99a0ee1380768d5cf8444f3bb116c6f29453601cb3e",
+      "size": 367632,
+      "name": "_codecs_cn.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_codecs_cn.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_codecs_hk.cpython-313-darwin.so",
+      "sha256": "f25e2f6959aa013721826facb1ac21187ab07d4f820ba0334f8d8b48c04c6200",
+      "size": 383584,
+      "name": "_codecs_hk.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_codecs_hk.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_codecs_iso2022.cpython-313-darwin.so",
+      "sha256": "6b89d1fa7313de346a5804a4008f9d29216e6a77209708dee59769d958ea50a5",
+      "size": 141632,
+      "name": "_codecs_iso2022.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_codecs_iso2022.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_codecs_jp.cpython-313-darwin.so",
+      "sha256": "905be101012bc3fb018b58702d5f7d8ed07b0c74dd9fa4ad54b69203a959b226",
+      "size": 598336,
+      "name": "_codecs_jp.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_codecs_jp.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_codecs_kr.cpython-313-darwin.so",
+      "sha256": "2b19f99881cddb0027ff6154f48587ce2384c6c83b283faecc4b0c54a1ffd596",
+      "size": 351072,
+      "name": "_codecs_kr.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_codecs_kr.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_codecs_tw.cpython-313-darwin.so",
+      "sha256": "7dd3be7deaf07dee7073c080119cb52a150f2aa5dc071b10805415520f443e9a",
+      "size": 317472,
+      "name": "_codecs_tw.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_codecs_tw.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_contextvars.cpython-313-darwin.so",
+      "sha256": "b1f06647eed8b069574b669fb096944d65b270b76494f161e11714d6f5884a4a",
+      "size": 118352,
+      "name": "_contextvars.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_contextvars.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_csv.cpython-313-darwin.so",
+      "sha256": "d1cb06e0a95d9b6dcf325c3df32c8afc7b29e275082d92f62044cca0efcf482b",
+      "size": 176400,
+      "name": "_csv.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_csv.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_ctypes.cpython-313-darwin.so",
+      "sha256": "8b31c190b2f589ac0237cac1618152e5f5cfcbedc4d3f8c6414466be313f0766",
+      "size": 396528,
+      "name": "_ctypes.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libffi.dylib",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_ctypes.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "                 (undefined) external _ffi_call (from libffi)",
+        "                 (undefined) weak external _ffi_closure_alloc (from libffi)",
+        "                 (undefined) weak external _ffi_closure_free (from libffi)",
+        "                 (undefined) external _ffi_prep_cif (from libffi)",
+        "                 (undefined) weak external _ffi_prep_cif_var (from libffi)",
+        "                 (undefined) weak external _ffi_prep_closure_loc (from libffi)",
+        "                 (undefined) external _ffi_type_double (from libffi)",
+        "                 (undefined) external _ffi_type_float (from libffi)",
+        "                 (undefined) external _ffi_type_pointer (from libffi)",
+        "                 (undefined) external _ffi_type_sint16 (from libffi)",
+        "                 (undefined) external _ffi_type_sint32 (from libffi)",
+        "                 (undefined) external _ffi_type_sint64 (from libffi)",
+        "                 (undefined) external _ffi_type_sint8 (from libffi)",
+        "                 (undefined) external _ffi_type_uint16 (from libffi)",
+        "                 (undefined) external _ffi_type_uint32 (from libffi)",
+        "                 (undefined) external _ffi_type_uint64 (from libffi)",
+        "                 (undefined) external _ffi_type_uint8 (from libffi)",
+        "                 (undefined) external _ffi_type_void (from libffi)"
+      ]
+    },
+    {
+      "path": "python3.13/lib-dynload/_curses.cpython-313-darwin.so",
+      "sha256": "ee7ef35c45cde258f9d47a8917bda68498da4c0768ea35c1637e5a6d0ecf3fc5",
+      "size": 397776,
+      "name": "_curses.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "curses-wrapper"
+      ],
+      "needed": [
+        "/Library/Frameworks/Python.framework/Versions/3.13/lib/libncurses.6.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_curses.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "curses-wrapper": {
+          "defined_symbols": [
+            "00000000000056dc (__TEXT,__text) external _PyInit__curses"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_datetime.cpython-313-darwin.so",
+      "sha256": "95c7853bfd693f1292462d7431717c076b6b318273c2db09a7cd6aeae6bcebdd",
+      "size": 329248,
+      "name": "_datetime.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_datetime.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_dbm.cpython-313-darwin.so",
+      "sha256": "8752d137f296af1beab33cd1013846dd0808284f7f022b8d1d57d75f1ff492d4",
+      "size": 139824,
+      "name": "_dbm.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_dbm.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_decimal.cpython-313-darwin.so",
+      "sha256": "4353451455a096f013e872c4ce2c91a6479d69a98f380f02e4778e66d2e9cf84",
+      "size": 716448,
+      "name": "_decimal.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "libmpdec-4"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_decimal.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "libmpdec-4": {
+          "defined_symbols": [
+            "0000000000002f4c (__TEXT,__text) external _mpd_version"
+          ],
+          "strings": [
+            "4.0.1"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_elementtree.cpython-313-darwin.so",
+      "sha256": "a6f75b51a1831fef1ecf2349269b1738a2bf843ae9bf8f0553e7f6dbd754e1dc",
+      "size": 258224,
+      "name": "_elementtree.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "elementtree"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_elementtree.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "elementtree": {
+          "defined_symbols": [
+            "00000000000005d8 (__TEXT,__text) external _PyInit__elementtree"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_hashlib.cpython-313-darwin.so",
+      "sha256": "5d85cf1b3866c4768cd5bae481ace7fb73bc26986c03053b98dd9059c7b644e5",
+      "size": 202784,
+      "name": "_hashlib.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/Library/Frameworks/Python.framework/Versions/3.13/lib/libcrypto.3.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_hashlib.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "                 (undefined) external _EVP_DigestFinal (from libcrypto)",
+        "                 (undefined) external _EVP_DigestFinalXOF (from libcrypto)",
+        "                 (undefined) external _EVP_DigestInit_ex (from libcrypto)",
+        "                 (undefined) external _EVP_DigestUpdate (from libcrypto)",
+        "                 (undefined) external _EVP_MD_CTX_copy (from libcrypto)",
+        "                 (undefined) external _EVP_MD_CTX_free (from libcrypto)",
+        "                 (undefined) external _EVP_MD_CTX_get0_md (from libcrypto)",
+        "                 (undefined) external _EVP_MD_CTX_get_size_ex (from libcrypto)",
+        "                 (undefined) external _EVP_MD_CTX_md (from libcrypto)",
+        "                 (undefined) external _EVP_MD_CTX_new (from libcrypto)",
+        "                 (undefined) external _EVP_MD_do_all_provided (from libcrypto)",
+        "                 (undefined) external _EVP_MD_fetch (from libcrypto)",
+        "                 (undefined) external _EVP_MD_free (from libcrypto)",
+        "                 (undefined) external _EVP_MD_get_block_size (from libcrypto)",
+        "                 (undefined) external _EVP_MD_get_flags (from libcrypto)",
+        "                 (undefined) external _EVP_MD_get_size (from libcrypto)",
+        "                 (undefined) external _EVP_MD_get_type (from libcrypto)",
+        "                 (undefined) external _EVP_MD_up_ref (from libcrypto)",
+        "                 (undefined) external _EVP_PBE_scrypt (from libcrypto)",
+        "                 (undefined) external _EVP_default_properties_is_fips_enabled (from libcrypto)"
+      ]
+    },
+    {
+      "path": "python3.13/lib-dynload/_heapq.cpython-313-darwin.so",
+      "sha256": "3e7ebe0f0e94ac473260bbc0b631d88de87a553b82d2bb2b99037c46f40772c9",
+      "size": 136784,
+      "name": "_heapq.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_heapq.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_json.cpython-313-darwin.so",
+      "sha256": "81dc94d6b22a2843cd56ca1c3c3fc7140fac20582b5b023a3dba23a4ff6517ba",
+      "size": 174800,
+      "name": "_json.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_json.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_lsprof.cpython-313-darwin.so",
+      "sha256": "556b3afdffb85b5e9cd61108f706d0042c1bc78c9dec6a2b96b782997c1d9460",
+      "size": 140608,
+      "name": "_lsprof.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_lsprof.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_lzma.cpython-313-darwin.so",
+      "sha256": "fab5dbc010662b62ff378ca07a5123f3c761188ff5d7246a00ba32dd144e90fe",
+      "size": 520480,
+      "name": "_lzma.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "liblzma-5.2.3"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_lzma.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "liblzma-5.2.3": {
+          "defined_symbols": [
+            "00000000000005e4 (__TEXT,__text) external _lzma_version_string"
+          ],
+          "strings": [
+            "5.2.3"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_md5.cpython-313-darwin.so",
+      "sha256": "909977daad345fed2edf148bfcb331f8fefdd714e71cf8b713b0dfd14739bbaf",
+      "size": 139120,
+      "name": "_md5.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_md5.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "0000000000001cc0 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_MD5_update"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "0000000000001cc0 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_MD5_update"
+          ],
+          "strings": [],
+          "source_relation": "Support KaRaMeL en ligne des HACL* du tag CPython v3.13.17 ; le symbole HACL* est réobservé dans ce Mach-O."
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_multibytecodec.cpython-313-darwin.so",
+      "sha256": "20fbc69b8490e1279cc6dda0cc3f36e36a1f4e9f38948eb98b732b1d42a6722a",
+      "size": 183776,
+      "name": "_multibytecodec.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_multibytecodec.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_multiprocessing.cpython-313-darwin.so",
+      "sha256": "3ad6c85e026508ef523a8c8b3779cd2a9cb835ee657e49eb6f57ab74dd08cdd2",
+      "size": 141408,
+      "name": "_multiprocessing.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_multiprocessing.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_opcode.cpython-313-darwin.so",
+      "sha256": "2aa122c91ba5746f3664f088fb4763f5a581ffbd4709a1570356b1bf8267b121",
+      "size": 141216,
+      "name": "_opcode.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_opcode.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_pickle.cpython-313-darwin.so",
+      "sha256": "aa12d199d4bc03bf54812bd6701a0fe4b78f7b247293a2e4aa8bb7bacf7a9bff",
+      "size": 357040,
+      "name": "_pickle.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_pickle.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_posixshmem.cpython-313-darwin.so",
+      "sha256": "fa58b0d1567a836ca7084a84920eaf65c64deaeecbaaf42694403d258d37ac3b",
+      "size": 119472,
+      "name": "_posixshmem.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_posixshmem.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_posixsubprocess.cpython-313-darwin.so",
+      "sha256": "10e561ea46d9f77ee70739b7c8838c9a7b0979436bb38079b34cea0dafa76d7e",
+      "size": 139008,
+      "name": "_posixsubprocess.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_posixsubprocess.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_queue.cpython-313-darwin.so",
+      "sha256": "3d358eb1f100775c7a926c2436489a3d16811b0f7cb0c259a3a3e5035fc6bdce",
+      "size": 139872,
+      "name": "_queue.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_queue.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_random.cpython-313-darwin.so",
+      "sha256": "378fddbe459e9c5be55db9ecc06062ede73e9b772012ca9bfa6235fff3488906",
+      "size": 138976,
+      "name": "_random.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "mt19937"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_random.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "mt19937": {
+          "defined_symbols": [
+            "0000000000000bc0 (__TEXT,__text) non-external _init_by_array"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_scproxy.cpython-313-darwin.so",
+      "sha256": "b8b75938d8a91b5eed54f35b9aa62d53be283df62a764ae42e68aea85ab54f5d",
+      "size": 121088,
+      "name": "_scproxy.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_scproxy.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_sha1.cpython-313-darwin.so",
+      "sha256": "95526703d03f695d80724b202a58e5d026a00f8e514aa7ff8bad9503393d4dfb",
+      "size": 138928,
+      "name": "_sha1.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_sha1.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "00000000000010c8 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_SHA1_update"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "00000000000010c8 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_SHA1_update"
+          ],
+          "strings": [],
+          "source_relation": "Support KaRaMeL en ligne des HACL* du tag CPython v3.13.17 ; le symbole HACL* est réobservé dans ce Mach-O."
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_sha2.cpython-313-darwin.so",
+      "sha256": "0edd8a86e836f85331fcce466f24e0a25a9b58a8de91affcb5546fe4746d440b",
+      "size": 191024,
+      "name": "_sha2.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_sha2.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "0000000000006a80 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_SHA2_update_256"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "0000000000006a80 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_SHA2_update_256"
+          ],
+          "strings": [],
+          "source_relation": "Support KaRaMeL en ligne des HACL* du tag CPython v3.13.17 ; le symbole HACL* est réobservé dans ce Mach-O."
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_sha3.cpython-313-darwin.so",
+      "sha256": "faf0c99fb7e48454f049186c35f6119066404ab3a1b907acacb9b3ec64e05ccc",
+      "size": 141440,
+      "name": "_sha3.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "hacl",
+        "karamel"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_sha3.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "hacl": {
+          "defined_symbols": [
+            "0000000000001e50 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_SHA3_update"
+          ],
+          "strings": []
+        },
+        "karamel": {
+          "defined_symbols": [
+            "0000000000001e50 (__TEXT,__text) non-external _python_hashlib_Hacl_Hash_SHA3_update"
+          ],
+          "strings": [],
+          "source_relation": "Support KaRaMeL en ligne des HACL* du tag CPython v3.13.17 ; le symbole HACL* est réobservé dans ce Mach-O."
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_socket.cpython-313-darwin.so",
+      "sha256": "10fbdc3839945ce1f339f325c10325affcb98df260b485989d64984ce671ae51",
+      "size": 272672,
+      "name": "_socket.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_socket.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_sqlite3.cpython-313-darwin.so",
+      "sha256": "c558b98b04cedd1d58886b81217d7003855c79c96b9fd9b5894c527b3685aa6b",
+      "size": 2557232,
+      "name": "_sqlite3.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "pysqlite",
+        "sqlite-3.50.4"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_sqlite3.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "pysqlite": {
+          "defined_symbols": [
+            "00000000000e3998 (__TEXT,__text) non-external _pysqlite_adapt"
+          ],
+          "strings": []
+        },
+        "sqlite-3.50.4": {
+          "defined_symbols": [
+            "000000000000f944 (__TEXT,__text) external _sqlite3_libversion"
+          ],
+          "strings": [
+            "3.50.4"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_ssl.cpython-313-darwin.so",
+      "sha256": "a1ca02e6647d6a5928011e4d816b7ace15199bd55510ee3a25b944fddd3b3723",
+      "size": 483184,
+      "name": "_ssl.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/Library/Frameworks/Python.framework/Versions/3.13/lib/libssl.3.dylib",
+        "/Library/Frameworks/Python.framework/Versions/3.13/lib/libcrypto.3.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_ssl.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "                 (undefined) external _SSL_CIPHER_description (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_auth_nid (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_bits (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_cipher_nid (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_digest_nid (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_id (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_kx_nid (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_name (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_get_version (from libssl)",
+        "                 (undefined) external _SSL_CIPHER_is_aead (from libssl)",
+        "                 (undefined) external _SSL_CTX_callback_ctrl (from libssl)",
+        "                 (undefined) external _SSL_CTX_check_private_key (from libssl)",
+        "                 (undefined) external _SSL_CTX_clear_options (from libssl)",
+        "                 (undefined) external _SSL_CTX_ctrl (from libssl)",
+        "                 (undefined) external _SSL_CTX_free (from libssl)",
+        "                 (undefined) external _SSL_CTX_get0_param (from libssl)",
+        "                 (undefined) external _SSL_CTX_get_cert_store (from libssl)",
+        "                 (undefined) external _SSL_CTX_get_default_passwd_cb (from libssl)",
+        "                 (undefined) external _SSL_CTX_get_default_passwd_cb_userdata (from libssl)",
+        "                 (undefined) external _SSL_CTX_get_num_tickets (from libssl)"
+      ]
+    },
+    {
+      "path": "python3.13/lib-dynload/_statistics.cpython-313-darwin.so",
+      "sha256": "d779d5d40ce4cde1aac1a6720dc5c41ddb540cb0d4988d9b9aa7090dbffbc7a1",
+      "size": 118432,
+      "name": "_statistics.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_statistics.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_struct.cpython-313-darwin.so",
+      "sha256": "d50a14eac0e22cd1e50c3316aa6249fda5b9bc0641be503ddf5a28d30ec4e617",
+      "size": 201008,
+      "name": "_struct.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_struct.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_uuid.cpython-313-darwin.so",
+      "sha256": "45b540c68a43ba8472931e99a79ff524454a51c2f9eb01e9edcc24bdc6331365",
+      "size": 118240,
+      "name": "_uuid.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_uuid.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/_zoneinfo.cpython-313-darwin.so",
+      "sha256": "e91d08c7a257f0e122ccfb71475b874a1a58989a78b7bf3a915006cbbaf270f5",
+      "size": 176400,
+      "name": "_zoneinfo.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/_zoneinfo.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/array.cpython-313-darwin.so",
+      "sha256": "b41c546cbd1eb0252295697bfdcbdde65c86edda4cbba1b029da2540497a002f",
+      "size": 220400,
+      "name": "array.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/array.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/binascii.cpython-313-darwin.so",
+      "sha256": "ec2e4b73670bca8dc374d927805d784e048904de749cd9335a214d0e13424b17",
+      "size": 139936,
+      "name": "binascii.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libz.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/binascii.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "                 (undefined) external _crc32 (from libz)"
+      ]
+    },
+    {
+      "path": "python3.13/lib-dynload/cmath.cpython-313-darwin.so",
+      "sha256": "38b7a32ac78307daf158eaf4a41a14351145c68c43c917a4a8cd5359701d46b9",
+      "size": 173840,
+      "name": "cmath.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/cmath.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/fcntl.cpython-313-darwin.so",
+      "sha256": "532706360ae84c50a38ff63ab1d21bb394619ee866181f1b6f9420088dc88ae9",
+      "size": 137200,
+      "name": "fcntl.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/fcntl.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/grp.cpython-313-darwin.so",
+      "sha256": "df4b83834a0a825d58b2294111a28acc0ca006c6ddeefb9d3da5a24f2eb5e455",
+      "size": 137904,
+      "name": "grp.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/grp.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/math.cpython-313-darwin.so",
+      "sha256": "756166ecea2737d18372fc09cf2125f78a7bb0f8099b98e32760acbf60524024",
+      "size": 232592,
+      "name": "math.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/math.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/mmap.cpython-313-darwin.so",
+      "sha256": "493e4c7b1b066aa7d31fe746ef17a41bc9c64a64610d565b9ce7c509357414f0",
+      "size": 141552,
+      "name": "mmap.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/mmap.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/pyexpat.cpython-313-darwin.so",
+      "sha256": "ae2b126a14f95a0d6f0f6225a71964cc21316f85ebda8a483a32016411617ac5",
+      "size": 547984,
+      "name": "pyexpat.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "expat",
+        "expat-siphash"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/pyexpat.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "expat": {
+          "defined_symbols": [
+            "00000000000107dc (__TEXT,__text) non-external _PyExpat_XML_Parse"
+          ],
+          "strings": [
+            "expat_2.8.5"
+          ]
+        },
+        "expat-siphash": {
+          "defined_symbols": [
+            "000000000000effc (__TEXT,__text) non-external _sip24_final"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/readline.cpython-313-darwin.so",
+      "sha256": "e3b1c744dffdab4c0ca2adda5ceed42a8f64a123050f8310e22dbf5187ef8f45",
+      "size": 164704,
+      "name": "readline.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libedit.3.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/readline.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/resource.cpython-313-darwin.so",
+      "sha256": "e0a8fc70abb0d0ffbb95fd146069a52f1b6e88c4bed96d514d5ceab0c46ed55e",
+      "size": 138192,
+      "name": "resource.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/resource.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/select.cpython-313-darwin.so",
+      "sha256": "3550e8b7678c5fd87236120c10acfe5aff107f95c6cb5608ca58d3118d8de45c",
+      "size": 177984,
+      "name": "select.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/select.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/syslog.cpython-313-darwin.so",
+      "sha256": "8b863acc3f16ad952bbccba3e2b19b82227149bba414c3e828cec55ce0746262",
+      "size": 137200,
+      "name": "syslog.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "syslog-wrapper"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/syslog.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "syslog-wrapper": {
+          "defined_symbols": [
+            "0000000000000628 (__TEXT,__text) external _PyInit_syslog"
+          ],
+          "strings": []
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/termios.cpython-313-darwin.so",
+      "sha256": "1b16c34e61f4f0d310727d32b1dc68c6e9278256a080b6096e0e01f032b0f440",
+      "size": 139360,
+      "name": "termios.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/termios.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/unicodedata.cpython-313-darwin.so",
+      "sha256": "e56f9e4b94688fa2d08c510b70472b83a2f03343bb51bd541e6c2cbc88ccc4a6",
+      "size": 1505328,
+      "name": "unicodedata.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [
+        "unicode"
+      ],
+      "needed": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/unicodedata.cpython-313-darwin.so",
+      "incorporation_evidence": {
+        "unicode": {
+          "defined_symbols": [
+            "0000000000004128 (__TEXT,__const) non-external __PyUnicode_Database_Records"
+          ],
+          "strings": [
+            "15.1.0",
+            "3.2.0"
+          ]
+        }
+      },
+      "imported_symbols": []
+    },
+    {
+      "path": "python3.13/lib-dynload/zlib.cpython-313-darwin.so",
+      "sha256": "ea6cf1903bc0def57d3ff1619fc7edbfd2c2d83c58a5028dcb87944894e8badf",
+      "size": 197312,
+      "name": "zlib.cpython-313-darwin.so",
+      "platform": "macOS",
+      "components": [],
+      "needed": [
+        "/usr/lib/libz.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "binary_member": "Versions/3.13/lib/python3.13/lib-dynload/zlib.cpython-313-darwin.so",
+      "incorporation_evidence": {},
+      "imported_symbols": [
+        "                 (undefined) external _crc32 (from libz)",
+        "                 (undefined) external _deflate (from libz)",
+        "                 (undefined) external _deflateCopy (from libz)",
+        "                 (undefined) external _deflateEnd (from libz)",
+        "                 (undefined) external _deflateInit2_ (from libz)",
+        "                 (undefined) external _deflateSetDictionary (from libz)",
+        "                 (undefined) external _inflate (from libz)",
+        "                 (undefined) external _inflateCopy (from libz)",
+        "                 (undefined) external _inflateEnd (from libz)",
+        "                 (undefined) external _inflateInit2_ (from libz)",
+        "                 (undefined) external _inflateSetDictionary (from libz)"
+      ]
+    }
+  ],
+  "excluded": []
+}
