@@ -63,3 +63,24 @@ it('une purge désarme aussi les sauvegardes de textes encore différées', asyn
   await vi.advanceTimersByTimeAsync(1000);
   expect(poster).not.toHaveBeenCalled();
 });
+
+it('transmet le message du moteur quand un accord bloque la sauvegarde', async () => {
+  const { AccordNonEnregistre } = await vi.importActual<typeof import('../services/api/core')>('../services/api/core');
+  const message = 'Le profil a changé. Reviens au profil concerné avant de réessayer.';
+  const ecoute = vi.fn();
+  window.addEventListener('therese:chat-save-error', ecoute);
+  poster.mockRejectedValueOnce(new AccordNonEnregistre(message, new Error(message)));
+  const storage = createChatStorage();
+  activerSauvegardeChat();
+  storage.setItem('therese-chat', JSON.stringify({ state: {
+    conversations: [{ id: 'conv', messages: [{ content: 'Texte en attente' }] }],
+    isStreaming: false,
+  } }));
+
+  await vi.advanceTimersByTimeAsync(500);
+
+  expect(ecoute).toHaveBeenCalledOnce();
+  expect((ecoute.mock.calls[0][0] as CustomEvent<{ message: string }>).detail)
+    .toEqual({ message });
+  window.removeEventListener('therese:chat-save-error', ecoute);
+});

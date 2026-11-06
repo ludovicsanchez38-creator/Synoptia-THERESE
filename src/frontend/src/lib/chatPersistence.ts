@@ -61,8 +61,12 @@ export function createChatStorage(): Storage {
       controller = new AbortController();
       await request('/api/chat/cache-migration', { method: 'POST', signal: controller.signal, body: JSON.stringify({ conversations: state.conversations }) });
       if (pending === valeur) pending = null;
-    } catch {
-      if (!persistenceIsDisabled()) window.dispatchEvent(new CustomEvent('therese:chat-save-error'));
+    } catch (erreur) {
+      if (!persistenceIsDisabled()) window.dispatchEvent(
+        erreur instanceof Error && erreur.name === 'AccordNonEnregistre'
+          ? new CustomEvent('therese:chat-save-error', { detail: { message: erreur.message } })
+          : new CustomEvent('therese:chat-save-error'),
+      );
     } finally {
       controller = null;
     }

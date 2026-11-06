@@ -219,9 +219,10 @@ export function useConversationSync() {
   }, [setConversationMessages]);
 
   useEffect(() => {
-    const erreur = () => useStatusStore.getState().addNotification({ type: 'error',
+    const erreur = (evenement: Event) => useStatusStore.getState().addNotification({ type: 'error',
       title: 'Échange en attente de sauvegarde',
-      message: 'Garde cette fenêtre ouverte et réessaie la synchronisation.', duration: 0,
+      message: (evenement as CustomEvent<{ message?: string }>).detail?.message
+        || 'Garde cette fenêtre ouverte et réessaie la synchronisation.', duration: 0,
       action: { label: 'Réessayer', onClick: () => { void syncConversations(); } } });
     window.addEventListener('therese:chat-save-error', erreur);
     return () => window.removeEventListener('therese:chat-save-error', erreur);
