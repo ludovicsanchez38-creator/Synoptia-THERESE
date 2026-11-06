@@ -475,6 +475,10 @@ jobs:
           # resources (backend-libs) doivent matcher au moins un fichier
           mkdir -p binaries/backend-libs/_internal
           touch binaries/backend-libs/backend binaries/backend-libs/_internal/factice
+          # Lot licences 0.83 : l'inventaire des natifs embarqués est une
+          # ressource du bundle, produite par la release avant le build Tauri.
+          mkdir -p ../../../.work-release
+          printf '{}\n' > ../../../.work-release/system-libraries.json
 
       - name: Clippy - BLOQUANT (zéro warning)
         working-directory: src/frontend/src-tauri

@@ -41,6 +41,27 @@ class PipelineTests(unittest.TestCase):
                         with self.subTest(workflow=path.name, job=job_name, step=step.get('name')):
                             self.assertLessEqual(len(calls), 1, line)
 
+    def test_rust_ci_job_provides_every_untracked_tauri_resource(self):
+        # Le build script Tauri refuse une ressource absente. La CI analyse le
+        # code Rust sans build Python : chaque ressource non versionnée doit y
+        # avoir un factice, sinon clippy (porte de release.yml) échoue.
+        import subprocess
+        tracked = set(subprocess.run(['git', 'ls-files'], cwd=ROOT, capture_output=True,
+                                     text=True, check=True).stdout.splitlines())
+        jobs = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())['jobs']
+        factices = next(s['run'] for s in jobs['rust']['steps'] if s.get('name') == 'Sidecar et dist factices')
+        tauri = ROOT / 'src/frontend/src-tauri'
+        for name in ['tauri.conf.json', 'tauri.linux.conf.json']:
+            resources = json.loads((tauri / name).read_text())['bundle'].get('resources', {})
+            for source in resources:
+                if '*' in source:
+                    continue
+                path = (tauri / source).resolve().relative_to(ROOT.resolve()).as_posix()
+                if path in tracked:
+                    continue
+                with self.subTest(config=name, resource=source):
+                    self.assertIn(source, factices)
+
     def test_no_upload_before_platform_checks(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
         steps = jobs['build']['steps']
