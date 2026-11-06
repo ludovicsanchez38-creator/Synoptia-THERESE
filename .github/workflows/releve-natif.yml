@@ -1,0 +1,222 @@
+name: Relevé à blanc des bibliothèques natives
+
+# Carte val-2026-10-30-32 (Ludo, 31/10/2026) : établir les catalogues macOS et
+# Windows sur les octets réels des runners, SANS RIEN PUBLIER. Ce workflow
+# reprend le job `build` de release.yml jusqu'à l'inventaire inclus, plus les
+# deux portes que la release appelle (CI complète, parcours e2e), puis conserve
+# en artefact les octets natifs qu'aucune roue ne revendique. Aucun tag, aucune
+# release, aucun brouillon, aucun secret, permissions en lecture seule ; la
+# garde `test_releve_natif_ne_publie_rien` le vérifie.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['integration/**']
+    paths:
+      - '.github/workflows/releve-natif.yml'
+      - 'scripts/releve_runner.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: releve-natif-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI complète (comme la porte de release)
+    uses: ./.github/workflows/ci.yml
+
+  e2e:
+    name: Parcours de bout en bout (comme la porte de release)
+    uses: ./.github/workflows/tests-e2e.yml
+
+  releve:
+    name: Relevé ${{ matrix.platform.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: macOS ARM64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            binary-ext: ""
+          - name: Windows x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary-ext: ".exe"
+          - name: Linux x64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            binary-ext: ""
+
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Libérer espace disque et ajouter swap (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "=== Nettoyage agressif ==="
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/share/swift /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/share/powershell /usr/local/share/chromium /usr/local/lib/heroku
+          sudo rm -rf /opt/hostedtoolcache/go /opt/hostedtoolcache/Ruby /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk
+          sudo rm -rf /usr/local/graalvm /usr/local/.ghcup /usr/local/share/edge_driver
+          sudo rm -rf /imagegeneration /opt/actionarchivecache
+          sudo docker image prune --all --force || true
+          sudo apt-get clean || true
+          echo "=== Swap 14 Go ==="
+          sudo swapoff -a || true
+          sudo rm -f /swapfile /mnt/swapfile || true
+          sudo fallocate -l 14G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          echo "=== État ==="
+          swapon --show && free -h && df -h /
+
+      - name: Installer dépendances Linux (Tauri)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+
+      # ---- Python + PyInstaller ----
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          # Épinglé : "3.13" résout 3.13.18 sur ubuntu-22.04 depuis fin octobre,
+          # 3.13.17 sur macOS et Windows, alors que le catalogue CPython est relu
+          # sur 3.13.17 (python-versions 3.13.17-39711892467).
+          python-version: "3.13.17"
+
+      - name: Installer UV et dépendances Python
+        # --extra voice-local : embarque faster-whisper + Piper dans le sidecar
+        # (voix locale « un clic », les modèles restent téléchargés au 1er usage)
+        run: pip install uv && uv sync --frozen --dev --extra voice-local
+
+      - name: Installer torch CPU-only (réduction ~1 Go)
+        if: runner.os != 'macOS'
+        shell: bash
+        # US-018 : version ÉPINGLÉE sur celle d'uv.lock - sans ==, chaque
+        # release embarquait le dernier torch CPU publié (build non
+        # reproductible, et divergent de la version testée en CI).
+        run: |
+          echo "=== Remplacement de torch par la version CPU-only (épinglée) ==="
+
+          python scripts/install_cpu_torch.py
+
+      - name: Contrôler les licences tierces
+        run: |
+          python scripts/third_party_licenses.py check
+          python scripts/copyleft_sources.py verifier
+          python scripts/system_libraries.py check
+      # Sans secret : identité ad hoc « - », comme une release sans compte Apple.
+      - name: Préparer la signature ad hoc (macOS)
+        if: runner.os == 'macOS'
+        run: python scripts/sign_macos.py prepare
+
+      - name: Build sidecar (PyInstaller)
+        shell: bash
+        run: |
+          cd src/backend
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ../../.venv/Scripts/pyinstaller backend.spec --noconfirm --clean
+          else
+            ../../.venv/bin/pyinstaller backend.spec --noconfirm --clean
+          fi
+
+      - name: Copier le sidecar dans Tauri
+        shell: bash
+        run: |
+          mkdir -p src/frontend/src-tauri/binaries
+
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            # BUG-044 : mode onedir Linux
+            # PyInstaller produit dist/backend/ (dossier) au lieu de dist/backend (binaire unique)
+            # On crée un wrapper shell comme "sidecar" + on copie le dossier dans binaries/backend-libs/
+
+            WRAPPER="src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}"
+            LIBS_DIR="src/frontend/src-tauri/binaries/backend-libs"
+
+            # Vérifier que l'output onedir existe
+            if [ ! -d "src/backend/dist/backend" ]; then
+              echo "ERREUR : src/backend/dist/backend/ introuvable (onedir attendu)" >&2
+              exit 1
+            fi
+
+            # Créer le wrapper shell
+            # Note : pas besoin de LD_LIBRARY_PATH explicite en PyInstaller 6.x onedir.
+            # Le bootloader PyInstaller configure LD_LIBRARY_PATH vers _internal/ en interne
+            # avant de charger Python. Les .so sont dans $LIBS_DIR/_internal/.
+            printf '%s\n' \
+              '#!/bin/sh' \
+              '# THERESE - wrapper backend Linux (PyInstaller onedir, BUG-044)' \
+              '# THERESE_BACKEND_LIBS est passe par lib.rs via app.path().resource_dir()' \
+              'LIBS_DIR="${THERESE_BACKEND_LIBS:-$(cd "$(dirname "$0")" && pwd)/backend-libs}"' \
+              'exec "$LIBS_DIR/backend" "$@"' \
+              > "$WRAPPER"
+            chmod +x "$WRAPPER"
+            echo "Wrapper shell créé : $WRAPPER"
+
+            # Copier le CONTENU du dossier onedir dans backend-libs/
+            # Attention : cp -r dist/backend backend-libs/ copierait backend/ DANS backend-libs/
+            # (crée backend-libs/backend/backend, wrapper pointerait sur un dossier).
+            # On copie dist/backend/* pour avoir backend-libs/backend (binaire) directement.
+            mkdir -p "$LIBS_DIR"
+            cp -r src/backend/dist/backend/. "$LIBS_DIR/"
+            chmod +x "$LIBS_DIR/backend"
+            echo "Libs onedir copiés : $LIBS_DIR ($(du -sh "$LIBS_DIR" | cut -f1))"
+
+          else
+            # macOS et Windows : mode onefile (comportement actuel)
+            SRC="src/backend/dist/backend${{ matrix.platform.binary-ext }}"
+            DEST="src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}${{ matrix.platform.binary-ext }}"
+            cp "$SRC" "$DEST"
+            chmod +x "$DEST" 2>/dev/null || true
+            echo "Sidecar copié : $DEST ($(du -sh "$DEST" | cut -f1))"
+
+            # Pas besoin de backend-libs sur macOS/Windows (resources vide dans tauri.conf.json)
+            # Le dossier backend-libs est uniquement utilisé sur Linux (onedir PyInstaller)
+          fi
+
+      - name: Signer et vérifier le moteur macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: 'python scripts/sign_macos.py tree src/frontend/src-tauri/binaries/backend-aarch64-apple-darwin
+
+          .venv/bin/python scripts/verify_embedded_macos.py src/frontend/src-tauri/binaries/backend-aarch64-apple-darwin'
+
+      - name: Inventorier les bibliothèques réellement embarquées
+        id: inventaire
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/python.exe scripts/system_libraries.py inventory --platform "${{ runner.os }}"
+          else
+            .venv/bin/python scripts/system_libraries.py inventory --platform "${{ runner.os }}"
+          fi
+
+      - name: Relever les octets natifs hors RECORD
+        if: always()
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/python.exe scripts/releve_runner.py "$RUNNER_TEMP/releve"
+          else
+            .venv/bin/python scripts/releve_runner.py "$RUNNER_TEMP/releve"
+          fi
+          echo "inventaire=${{ steps.inventaire.outcome }}" > "$RUNNER_TEMP/releve/inventaire-resultat.txt"
+
+      - name: Conserver le relevé
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: releve-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/releve/
+          if-no-files-found: error
+          retention-days: 14
