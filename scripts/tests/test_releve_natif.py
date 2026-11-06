@@ -85,10 +85,11 @@ class ReleveRunnerTests(unittest.TestCase):
             origins = {n: {'path': str(p.resolve()), 'sha256': digest[p]}
                        for n, p in [('libpython.dylib', libre), ('pkg/roue.so', roue)]}
             installed = {roue.resolve(): ('pkg', '1.0', digest[roue])}
-            report = self.m.survey(origins, installed, base / 'out')
+            report = self.m.survey(origins, installed, base / 'out', needed=lambda p: ['libc.so.6'])
             self.assertEqual(report['hors_record'], 1)
             rows = {r['name']: r for r in report['files']}
             self.assertEqual(rows['pkg/roue.so']['record']['distribution'], 'pkg')
+            self.assertEqual(rows['pkg/roue.so']['needed'], ['libc.so.6'])
             self.assertNotIn('copie', rows['pkg/roue.so'])
             copied = base / 'out' / rows['libpython.dylib']['copie']
             self.assertEqual(copied.read_bytes(), libre.read_bytes())

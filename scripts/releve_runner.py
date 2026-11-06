@@ -15,6 +15,7 @@ import argparse
 import json
 import platform
 import shutil
+import subprocess
 import sys
 import sysconfig
 from pathlib import Path
@@ -32,14 +33,35 @@ def _relative_to_python(path: Path) -> str | None:
     return None
 
 
-def survey(origins: dict, installed: dict, output: Path) -> dict:
+def dependencies(path: Path) -> list[str] | str:
+    """Bibliothèques demandées par un natif (champ `needed` des catalogues)."""
+    try:
+        if sys.platform == 'darwin':
+            out = subprocess.run(['otool', '-L', str(path)], capture_output=True, text=True, check=True).stdout
+            return [line.split(' (')[0].strip() for line in out.splitlines()[1:] if line.strip()]
+        if sys.platform.startswith('linux'):
+            out = subprocess.run(['readelf', '-d', str(path)], capture_output=True, text=True, check=True).stdout
+            return [line.split('[', 1)[1].split(']', 1)[0] for line in out.splitlines() if '(NEEDED)' in line]
+        import pefile  # installé par le relevé seulement, jamais par le moteur
+        pe = pefile.PE(str(path), fast_load=True)
+        pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+                                               pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT']])
+        names = [e.dll.decode() for e in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', [])]
+        names += [e.dll.decode() + ' (différé)' for e in getattr(pe, 'DIRECTORY_ENTRY_DELAY_IMPORT', [])]
+        return names
+    except Exception as exc:  # le relevé consigne, il ne juge pas
+        return f'illisible : {type(exc).__name__}'
+
+
+def survey(origins: dict, installed: dict, output: Path, needed=dependencies) -> dict:
     """Copier les natifs hors RECORD ; lister les autres. Rend le relevé."""
     files = output / 'fichiers'
     rows = []
     for name, source in sorted(origins.items()):
         path = Path(source['path'])
         row = {'name': name, 'path': str(path), 'sha256': source['sha256'],
-               'size': path.stat().st_size, 'python_relative': _relative_to_python(path.resolve())}
+               'size': path.stat().st_size, 'python_relative': _relative_to_python(path.resolve()),
+               'needed': needed(path)}
         owner = installed.get(path.resolve())
         if owner:
             row['record'] = {'distribution': owner[0], 'version': owner[1], 'sha256': owner[2]}

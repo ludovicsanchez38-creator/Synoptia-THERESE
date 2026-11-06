@@ -206,6 +206,8 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
+            # Après l'inventaire : lire les tables d'imports PE (outil du relevé seul).
+            uv pip install --python .venv/Scripts/python.exe "pefile==2024.8.26"
             .venv/Scripts/python.exe scripts/releve_runner.py "$RUNNER_TEMP/releve"
           else
             .venv/bin/python scripts/releve_runner.py "$RUNNER_TEMP/releve"
