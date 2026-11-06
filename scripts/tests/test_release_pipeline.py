@@ -81,6 +81,18 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr[-600:])
         self.assertEqual(result.stdout.strip(), 'licenses/cpython-components.lock.json')
 
+    def test_pytest_ceiling_keeps_margin_and_fits_its_timeouts(self):
+        # Réserve 4 de la relecture 0.83 : 1 027 s mesurées pour un plafond de
+        # 1 080 s. Le plafond garde au moins 25 % de marge sur cette mesure,
+        # et l'étape puis le job laissent le temps à `timeout` de conclure.
+        job = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())['jobs']['backend-tests']
+        step = next(s for s in job['steps'] if s.get('name') == 'Tests unitaires (pytest)')
+        ceiling = int(re.search(r'timeout (\d+) uv run pytest', step['run']).group(1))
+        self.assertGreaterEqual(ceiling, 1027 * 1.25)
+        self.assertIn(f'après {ceiling // 60} min', step['run'])
+        self.assertGreater(step['timeout-minutes'] * 60, ceiling + 60)
+        self.assertGreater(job['timeout-minutes'], step['timeout-minutes'] + 3)
+
     def test_no_upload_before_platform_checks(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
         steps = jobs['build']['steps']
