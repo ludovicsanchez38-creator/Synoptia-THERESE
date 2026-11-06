@@ -27,16 +27,35 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/system-libraries.lock.json'
 MACOS_PACKAGE_URL = 'https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg'
 MACOS_PACKAGE_SHA256 = '3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3'
+WINDOWS_MEMBERS = {
+    'python313.dll': ('core', 'python.dll'),
+    'vcruntime140.dll': ('exe', 'vcruntime140.dll'),
+    'vcruntime140_1.dll': ('exe', 'vcruntime140_1.dll'),
+    'libcrypto-3.dll': ('lib', 'libcrypto_3.dll'),
+    'libssl-3.dll': ('lib', 'libssl_3.dll'),
+    'libffi-8.dll': ('lib', 'libffi_8.dll'),
+    'sqlite3.dll': ('lib', 'sqlite3.dll'),
+}
+WINDOWS_IDENTITY = {
+    'python313.dll': ('CPython', '3.13.17', 'CPython'),
+    'vcruntime140.dll': ('Microsoft VC Runtime', '14.51.36247.0', 'microsoft-distributable-code'),
+    'vcruntime140_1.dll': ('Microsoft VC Runtime', '14.51.36247.0', 'microsoft-distributable-code'),
+    'libcrypto-3.dll': ('OpenSSL', '3.5.9', 'openssl'),
+    'libssl-3.dll': ('OpenSSL', '3.5.9', 'openssl'),
+    'libffi-8.dll': ('libffi', '3.4.4', 'libffi'),
+    'sqlite3.dll': ('SQLite', '3.50.4', 'sqlite3'),
+}
 BUILD = '.work-release/system-libraries.json'
 ANALYSIS = '.work-release/pyinstaller-origins.json'
 KNOWN = {'GPL-3.0-or-later', 'LGPL-2.1-or-later', 'GPL-3.0-or-later WITH GCC-exception-3.1',
          'bzip2-1.0.6', 'Apache-2.0', 'MIT', 'LicenseRef-Public-Domain', 'X11',
-         'BSD-3-Clause', 'Zlib', 'PSF-2.0'}
+         'BSD-3-Clause', 'Zlib', 'PSF-2.0', 'LicenseRef-Microsoft-Distributable-Code'}
 REVIEWED_LICENSES = {'readline': 'GPL-3.0-or-later', 'gdbm': 'GPL-3.0-or-later',
     'glibc': 'LGPL-2.1-or-later', 'gcc-12': 'GPL-3.0-or-later WITH GCC-exception-3.1',
     'bzip2': 'bzip2-1.0.6', 'openssl': 'Apache-2.0', 'libffi': 'MIT',
     'xz-utils': 'LicenseRef-Public-Domain', 'ncurses': 'X11', 'sqlite3': 'LicenseRef-Public-Domain',
-    'util-linux': 'BSD-3-Clause', 'zlib': 'Zlib', 'CPython': 'PSF-2.0'}
+    'util-linux': 'BSD-3-Clause', 'zlib': 'Zlib', 'CPython': 'PSF-2.0',
+    'microsoft-distributable-code': 'LicenseRef-Microsoft-Distributable-Code'}
 MAGICS = {b'\x7fELF', b'\xfe\xed\xfa\xce', b'\xce\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
           b'\xcf\xfa\xed\xfe', b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca', b'\xca\xfe\xba\xbf'}
 
@@ -144,6 +163,44 @@ def validate_catalog(catalog, root):
     ssl = next(e for e in mac['libraries'] if e['catalog_row']['name'] == 'libssl.3.dylib')
     if ssl['version_observation'].get('linked_library_sha256') != mac_by_name['libcrypto.3.dylib']['sha256']:
         raise ValueError('OpenSSL macOS sans paire vérifiée')
+    win = json.loads(checked_file(root, catalog['windows_evidence']))
+    packages = win['binary_packages']
+    if (win.get('schema') != 1 or len(packages) != 3 or
+            {p['id']: (p['url'], p['sha256']) for p in packages} !=
+            {key: (cpython_components.windows_msi_url(key), value)
+             for key, value in cpython_components.WINDOWS_MSI.items()} or
+            catalog['windows_libraries'] != [entry['catalog_row'] for entry in win['libraries']] or
+            len(win['libraries']) != 7 or
+            {r['name'] for r in catalog['windows_libraries']} != set(WINDOWS_MEMBERS)):
+        raise ValueError('Catalogue système Windows différent de la preuve relue')
+    package_notice = win['package_notice']
+    if (package_notice['binary_package'] != 'exe' or package_notice['member'] != 'LICENSE.txt' or
+            package_notice['section']['path'] != 'licenses/system-windows/microsoft-distributable-code.txt'):
+        raise ValueError('Notice Microsoft différente de la preuve')
+    checked_file(root, package_notice)
+    checked_file(root, package_notice['section'])
+    for entry in win['libraries']:
+        row = entry['catalog_row']
+        package, member = WINDOWS_MEMBERS[row['name']]
+        identity = WINDOWS_IDENTITY[row['name']]
+        if (row['platform'] != 'Windows' or row['distribution'] != 'python.org CPython 3.13.17 Windows x64' or
+                (row['package'], row['version'], row['source_package']) != identity or
+                row['source_version'] != row['version'] or
+                row['binary_package_url'] != cpython_components.windows_msi_url(package) or
+                row['binary_package_sha256'] != cpython_components.WINDOWS_MSI[package] or
+                row['binary_member'] != member or row['size'] <= 0 or
+                not re.fullmatch('[0-9a-f]{64}', row['sha256']) or
+                row['license'] != REVIEWED_LICENSES.get(row['source_package']) or
+                row['license'] not in KNOWN or row['source_required'] or
+                not entry['version_observation'].get('value') or
+                entry['notice_provenance']['sha256'] != row['notice']['sha256']):
+            raise ValueError('Identité système Windows différente de la preuve : ' + row['name'])
+        checked_file(root, row['notice'])
+    if ({e['name'].lower() for e in win['excluded']} !=
+            {'msvcp140.dll', 'msvcp140_1.dll', 'vcomp140.dll'} or
+            any(e['name'].lower() in {r['name'].lower() for r in catalog['windows_libraries']}
+                for e in win['excluded'])):
+        raise ValueError('Exclusions Visual Studio ambiguës')
 
 
 def load_catalog(root=ROOT):
@@ -161,7 +218,7 @@ def render_notices(root=ROOT):
              'Sources exactes : THERESE-sources-systeme-linux.tar.gz, jointe à la même release.',
              'Les trois composants readline, gdbm et glibc y incluent les correctifs de distribution.', '']
     notices = {}
-    for row in catalog['libraries'] + catalog['macos_libraries']:
+    for row in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']:
         lines += [row['name'] + ' — ' + row['package'] + ' ' + row['version'],
                   'Distribution : ' + row['distribution'], 'Licence : ' + row['license'],
                   'SHA-256 : ' + row['sha256'], 'Source : ' + row['source_package'] + ' ' + row['source_version']]
@@ -193,14 +250,16 @@ def assemble_sources(folder, root=ROOT, cache=None):
         target = folder / 'sources' / item['filename']
         target.parent.mkdir(exist_ok=True)
         target.write_bytes(raw)
-    for item in [catalog['evidence'], catalog['macos_evidence'],
+    for item in [catalog['evidence'], catalog['macos_evidence'], catalog['windows_evidence'],
                  {'path': 'licenses/system-macos/License.rtf',
                   'sha256': json.loads(checked_file(root, catalog['macos_evidence']))['package_notice']['sha256']},
-                 *[r['notice'] for r in catalog['libraries'] + catalog['macos_libraries']]]:
+                 json.loads(checked_file(root, catalog['windows_evidence']))['package_notice'],
+                 *[r['notice'] for r in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']]]:
         target = folder / item['path']
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(checked_file(root, item))
     for item in [catalog['cpython']['evidence'], catalog['cpython']['macos_evidence'],
+                 catalog['cpython']['windows_evidence'],
                  *cpython_components.notice_files(catalog['cpython'])]:
         target = folder / item['path']
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -287,12 +346,12 @@ def match_system(path, digest, catalog, platform):
     cpython = cpython_components.identify(digest, platform, catalog['cpython'])
     if cpython:
         return cpython
-    rows = [r for r in catalog['libraries'] + catalog['macos_libraries']
+    rows = [r for r in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']
             if r['sha256'] == digest and r['platform'] == platform]
     if not rows:
         raise ValueError('Bibliothèque système hors catalogue : ' + path.name + ' SHA-256 ' + digest)
     row = rows[0]
-    if platform not in {'Linux', 'macOS'}:
+    if platform not in {'Linux', 'macOS', 'Windows'}:
         raise ValueError('Plateforme système sans preuve : ' + platform)
     if row['package'] != 'CPython' and platform == 'Linux':
         identity = dpkg_identity(path)
@@ -455,7 +514,7 @@ def load_build(root=ROOT):
     for record in manifest['files'].values():
         cpython_components.verify_record(record, manifest['platform'], catalog['cpython'])
         if record['origin'].startswith('system:'):
-            row = next((r for r in catalog['libraries'] + catalog['macos_libraries']
+            row = next((r for r in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']
                         if r['sha256'] == record.get('catalog_sha256') and
                         r['platform'] == manifest['platform']), None)
             if (row is None or record['license'] != row['license'] or
@@ -488,9 +547,11 @@ def main():
         data = load_catalog()
         cpython_components.require_notices(ROOT, data['cpython'])
         print(f'{len(data["libraries"])} bibliothèques système Linux ; '
-              f'{len(data["macos_libraries"])} macOS ; {len(data["sources"])} ressources source')
+              f'{len(data["macos_libraries"])} macOS ; {len(data["windows_libraries"])} Windows ; '
+              f'{len(data["sources"])} ressources source')
         print(f'{len(data["cpython"]["files"])} fichiers CPython Linux ; '
-              f'{len(data["cpython"]["macos_files"])} macOS')
+              f'{len(data["cpython"]["macos_files"])} macOS ; '
+              f'{len(data["cpython"]["windows_files"])} Windows')
 
 
 if __name__ == '__main__':

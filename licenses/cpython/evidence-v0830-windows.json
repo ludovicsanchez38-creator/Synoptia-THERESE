@@ -1,0 +1,1106 @@
+{
+  "schema": 1,
+  "version": "3.13.17",
+  "upstream": {
+    "tag": "v3.13.17",
+    "url": "https://codeload.github.com/python/cpython/tar.gz/refs/tags/v3.13.17",
+    "sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a"
+  },
+  "binary_packages": [
+    {
+      "id": "core",
+      "filename": "core.msi",
+      "url": "https://www.python.org/ftp/python/3.13.17/amd64/core.msi",
+      "sha256": "592af28b25b8142111b3600c82792f778ffb522b12768170a205fb90e40c72e8",
+      "size": 2084864
+    },
+    {
+      "id": "lib",
+      "filename": "lib.msi",
+      "url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "size": 7651328
+    },
+    {
+      "id": "exe",
+      "filename": "exe.msi",
+      "url": "https://www.python.org/ftp/python/3.13.17/amd64/exe.msi",
+      "sha256": "985e3ce8b3f0a432fdadfa5aacac506635816c5d24a36fd6222b9e390da279d5",
+      "size": 868352
+    }
+  ],
+  "components": [
+    {
+      "id": "bzip2-1.0.8",
+      "name": "bzip2/libbzip2",
+      "version": "1.0.8",
+      "license": "bzip2-1.0.6",
+      "notices": [
+        {
+          "path": "licenses/cpython/bzip2-1.0.8-LICENSE.txt",
+          "sha256": "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3",
+          "upstream": {
+            "url": "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+            "archive_sha256": "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
+            "member": "LICENSE",
+            "sha256": "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3",
+            "size": 1896
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "PCbuild/python.props",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/python.props",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "9fd0d0d7869c1096a6b1a95a3173f478c1e74235d383d79c45191fe8d286ff1a",
+          "size": 18798,
+          "line": 73,
+          "declaration": "bzip2-1.0.8"
+        },
+        {
+          "path": "PCbuild/get_externals.bat",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/get_externals.bat",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "4b32c5a58daac7323abf1576459b8d9a1d12cf784f775796cc8f14951344483c",
+          "size": 4508,
+          "line": 54,
+          "declaration": "bzip2-1.0.8"
+        }
+      ]
+    },
+    {
+      "id": "liblzma-5.2.5",
+      "name": "liblzma",
+      "version": "5.2.5",
+      "license": "LicenseRef-Public-Domain",
+      "notices": [
+        {
+          "path": "licenses/cpython/xz-5.2.5-COPYING.txt",
+          "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c",
+          "upstream": {
+            "url": "https://tukaani.org/xz/xz-5.2.5.tar.gz",
+            "archive_sha256": "f6f4910fd033078738bd82bfba4f49219d03b17eb0794eb91efbae419f4aba10",
+            "member": "COPYING",
+            "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c",
+            "size": 2775
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "PCbuild/python.props",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/python.props",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "9fd0d0d7869c1096a6b1a95a3173f478c1e74235d383d79c45191fe8d286ff1a",
+          "size": 18798,
+          "line": 74,
+          "declaration": "xz-5.2.5"
+        },
+        {
+          "path": "PCbuild/get_externals.bat",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/get_externals.bat",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "4b32c5a58daac7323abf1576459b8d9a1d12cf784f775796cc8f14951344483c",
+          "size": 4508,
+          "line": 61,
+          "declaration": "xz-5.2.5"
+        }
+      ]
+    },
+    {
+      "id": "libmpdec-4.0.0",
+      "name": "libmpdec",
+      "version": "4.0.0",
+      "license": "BSD-2-Clause",
+      "notices": [
+        {
+          "path": "licenses/cpython/mpdecimal-4.0.0-COPYRIGHT.txt",
+          "sha256": "2713324211652ce4a60e6e21e54f9dc3004299e591b0933a352f1a89c5fb53c2",
+          "upstream": {
+            "url": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
+            "archive_sha256": "942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+            "member": "COPYRIGHT.txt",
+            "sha256": "2713324211652ce4a60e6e21e54f9dc3004299e591b0933a352f1a89c5fb53c2",
+            "size": 1285
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "PCbuild/python.props",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/python.props",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "9fd0d0d7869c1096a6b1a95a3173f478c1e74235d383d79c45191fe8d286ff1a",
+          "size": 18798,
+          "line": 78,
+          "declaration": "mpdecimal-4.0.0"
+        },
+        {
+          "path": "PCbuild/get_externals.bat",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/get_externals.bat",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "4b32c5a58daac7323abf1576459b8d9a1d12cf784f775796cc8f14951344483c",
+          "size": 4508,
+          "line": 57,
+          "declaration": "mpdecimal-4.0.0"
+        }
+      ]
+    },
+    {
+      "id": "zlib-1.3.1",
+      "name": "zlib",
+      "version": "1.3.1",
+      "license": "Zlib",
+      "notices": [
+        {
+          "path": "licenses/cpython/zlib-1.3.1-LICENSE.txt",
+          "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
+          "upstream": {
+            "url": "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
+            "archive_sha256": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+            "member": "LICENSE",
+            "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
+            "size": 1002
+          },
+          "extraction": "whole file"
+        }
+      ],
+      "version_sources": [
+        {
+          "path": "PCbuild/python.props",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/python.props",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "9fd0d0d7869c1096a6b1a95a3173f478c1e74235d383d79c45191fe8d286ff1a",
+          "size": 18798,
+          "line": 83,
+          "declaration": "zlib-1.3.1"
+        },
+        {
+          "path": "PCbuild/get_externals.bat",
+          "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/get_externals.bat",
+          "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+          "sha256": "4b32c5a58daac7323abf1576459b8d9a1d12cf784f775796cc8f14951344483c",
+          "size": 4508,
+          "line": 62,
+          "declaration": "zlib-1.3.1"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "_asyncio.pyd",
+      "sha256": "0e53f227048492830bf0328bbc3bebc336268821c88c1da1ba1711855b51cd01",
+      "size": 72928,
+      "name": "_asyncio.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_asyncio.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__asyncio"
+      }
+    },
+    {
+      "path": "_bz2.pyd",
+      "sha256": "0adf0680f54eec173401230df0aa561aa188c7f4d40e5f2ba790d333c6057d8d",
+      "size": 86752,
+      "name": "_bz2.pyd",
+      "platform": "Windows",
+      "components": [
+        "bzip2-1.0.8"
+      ],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_bz2.pyd",
+      "incorporation_evidence": {
+        "bzip2-1.0.8": {
+          "build_source": {
+            "path": "PCbuild/_bz2.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/_bz2.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "1b094190bf482fcb706a5541839ba549d7d3b72cfd27dfd17e38d1e46dd6a695",
+            "size": 5408,
+            "line": 105,
+            "declaration": "$(bz2Dir)\\bzlib.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "1.0.8"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__bz2"
+      }
+    },
+    {
+      "path": "_ctypes.pyd",
+      "sha256": "487d9041455132d74ed26c0eae514675c31010a926db0cd6c6f391fcccc66c42",
+      "size": 134368,
+      "name": "_ctypes.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "libffi-8.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_ctypes.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__ctypes"
+      }
+    },
+    {
+      "path": "_decimal.pyd",
+      "sha256": "7e8e5d026e22be2669b2ac6175fece6b7fbe2faf1e456fa4785130832d244955",
+      "size": 286432,
+      "name": "_decimal.pyd",
+      "platform": "Windows",
+      "components": [
+        "libmpdec-4.0.0"
+      ],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_decimal.pyd",
+      "incorporation_evidence": {
+        "libmpdec-4.0.0": {
+          "build_source": {
+            "path": "PCbuild/_decimal.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/_decimal.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "98a96e657aa0b8b28d57cf241ab8f99e8c347b60fbb86bee32aee7d4a0488a8b",
+            "size": 8217,
+            "line": 138,
+            "declaration": "$(mpdecimalDir)\\libmpdec\\mpdecimal.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "4.0.0"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__decimal"
+      }
+    },
+    {
+      "path": "_elementtree.pyd",
+      "sha256": "5436c3d722e4b7709d20cb9bbb8385253337651417cc6a5d447f7b9e8a9da7a9",
+      "size": 136416,
+      "name": "_elementtree.pyd",
+      "platform": "Windows",
+      "components": [
+        "elementtree"
+      ],
+      "needed": [
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_elementtree.pyd",
+      "incorporation_evidence": {
+        "elementtree": {
+          "build_source": {
+            "path": "PCbuild/_elementtree.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/_elementtree.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "b204e1d0d355f588163ab610c11af3415fc628f77878e518701892c9420e29e0",
+            "size": 5948,
+            "line": 120,
+            "declaration": "..\\Modules\\_elementtree.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "PyInit__elementtree"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__elementtree"
+      }
+    },
+    {
+      "path": "_hashlib.pyd",
+      "sha256": "fc9075f3a836fdcbb826b541f4d1e9382d84c73f830f5f51f8ca3b9ccb9d42cb",
+      "size": 69344,
+      "name": "_hashlib.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "libcrypto-3.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_hashlib.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__hashlib"
+      }
+    },
+    {
+      "path": "_lzma.pyd",
+      "sha256": "09596ee41dadfabe006429f1cbb7505a3006daa80206ae2dd2d0d8d5936b6229",
+      "size": 159456,
+      "name": "_lzma.pyd",
+      "platform": "Windows",
+      "components": [
+        "liblzma-5.2.5"
+      ],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_lzma.pyd",
+      "incorporation_evidence": {
+        "liblzma-5.2.5": {
+          "build_source": {
+            "path": "PCbuild/_lzma.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/_lzma.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "64461af3ea0d9005ab580138dd6183b8a78af6b732f5fd5447645f0209ba7649",
+            "size": 5168,
+            "line": 114,
+            "declaration": "liblzma.vcxproj"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "PyInit__lzma"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__lzma"
+      }
+    },
+    {
+      "path": "_multiprocessing.pyd",
+      "sha256": "56bc0f253e74f965d5565377e40737093ee084a8ca4b4347f2f6bb9c15661c6d",
+      "size": 38112,
+      "name": "_multiprocessing.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "WS2_32.dll",
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_multiprocessing.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__multiprocessing"
+      }
+    },
+    {
+      "path": "_overlapped.pyd",
+      "sha256": "b2dcaefadf6194783f24184fd074b83983091d46c6b50e88dc8a652a8569d614",
+      "size": 57568,
+      "name": "_overlapped.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "WS2_32.dll",
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_overlapped.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__overlapped"
+      }
+    },
+    {
+      "path": "_queue.pyd",
+      "sha256": "aa1bc394ac6ed619b2525e631665431e9fbd798cd7d8374755efed9c3d325539",
+      "size": 35552,
+      "name": "_queue.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_queue.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__queue"
+      }
+    },
+    {
+      "path": "_socket.pyd",
+      "sha256": "03ac131ec3fa4c550d36fa7c5cad3601cbe6c8f18e1a65b9bd8a65ce1131f9e1",
+      "size": 86752,
+      "name": "_socket.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "WS2_32.dll",
+        "IPHLPAPI.DLL",
+        "RPCRT4.dll",
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_socket.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__socket"
+      }
+    },
+    {
+      "path": "_sqlite3.pyd",
+      "sha256": "721707b1a66b51e2c1a3be964f4d5d0c6eb89dc6671b8ea121a10d46f5041338",
+      "size": 131296,
+      "name": "_sqlite3.pyd",
+      "platform": "Windows",
+      "components": [
+        "pysqlite"
+      ],
+      "needed": [
+        "python313.dll",
+        "sqlite3.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_sqlite3.pyd",
+      "incorporation_evidence": {
+        "pysqlite": {
+          "build_source": {
+            "path": "PCbuild/_sqlite3.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/_sqlite3.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "1e88f4e7a26d06f044ae10828868cd782122539f61af81b2b114a09fdd6bfe10",
+            "size": 6019,
+            "line": 114,
+            "declaration": "..\\Modules\\_sqlite\\microprotocols.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "PyInit__sqlite3"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__sqlite3"
+      }
+    },
+    {
+      "path": "_ssl.pyd",
+      "sha256": "74bfe7a396737cf5910cf4a789d9cf4263ba6ba93c994ce8d5e2f61fa972097d",
+      "size": 190688,
+      "name": "_ssl.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "WS2_32.dll",
+        "CRYPT32.dll",
+        "libcrypto-3.dll",
+        "libssl-3.dll",
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_ssl.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__ssl"
+      }
+    },
+    {
+      "path": "_uuid.pyd",
+      "sha256": "0d7589ac0965d1ad7b19bcdfddc726eefa5896aafa6702d68dc9ca6cd58820dc",
+      "size": 27872,
+      "name": "_uuid.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "RPCRT4.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_uuid.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__uuid"
+      }
+    },
+    {
+      "path": "_wmi.pyd",
+      "sha256": "927aab8eef564d2dee1bbcf8e11f488789f664eafb4a0d2aacd99e224be2f10a",
+      "size": 39648,
+      "name": "_wmi.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "PROPSYS.dll",
+        "OLEAUT32.dll",
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140_1.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "ole32.dll (différé)"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_wmi.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__wmi"
+      }
+    },
+    {
+      "path": "_zoneinfo.pyd",
+      "sha256": "12603a4fd550248d86c41d6faef73c77b27e20ccf6a942cea1329ae393742e8b",
+      "size": 51424,
+      "name": "_zoneinfo.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "_zoneinfo.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit__zoneinfo"
+      }
+    },
+    {
+      "path": "pyexpat.pyd",
+      "sha256": "4095f444c5d0fe9d24c1a46a8630459f8488c5392dc82be9af67f4045ea9c368",
+      "size": 200416,
+      "name": "pyexpat.pyd",
+      "platform": "Windows",
+      "components": [
+        "expat",
+        "expat-siphash"
+      ],
+      "needed": [
+        "KERNEL32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "pyexpat.pyd",
+      "incorporation_evidence": {
+        "expat": {
+          "build_source": {
+            "path": "PCbuild/pyexpat.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pyexpat.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "09108fdff3c953c70448980a76332e58357493a549073d72a83974f0c822a492",
+            "size": 5203,
+            "line": 106,
+            "declaration": "..\\Modules\\expat\\xmlparse.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "expat_2.8.5"
+          }
+        },
+        "expat-siphash": {
+          "build_source": {
+            "path": "PCbuild/pyexpat.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pyexpat.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "09108fdff3c953c70448980a76332e58357493a549073d72a83974f0c822a492",
+            "size": 5203,
+            "line": 106,
+            "declaration": "..\\Modules\\expat\\xmlparse.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "expat_2.8.5"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit_pyexpat"
+      }
+    },
+    {
+      "path": "python3.dll",
+      "sha256": "a45d898ba8b796f1883fc2fcd55e4736163dfb7cea825d52e3477f1957dfb45a",
+      "size": 72416,
+      "name": "python3.dll",
+      "platform": "Windows",
+      "components": [],
+      "needed": [],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/core.msi",
+      "binary_package_sha256": "592af28b25b8142111b3600c82792f778ffb522b12768170a205fb90e40c72e8",
+      "binary_member": "python_stable.dll",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "utf16le",
+        "value": "3.13.17"
+      }
+    },
+    {
+      "path": "python313.dll",
+      "sha256": "26026530507a7389e7892ce130e7c1753b32a2df03ec3721d45ad8c1705d40eb",
+      "size": 6142688,
+      "name": "python313.dll",
+      "platform": "Windows",
+      "components": [
+        "blake2",
+        "cfuhash",
+        "dtoa",
+        "getopt",
+        "hacl",
+        "karamel",
+        "locale-wrapper",
+        "mimalloc",
+        "mt19937",
+        "siphash",
+        "sre",
+        "unicode",
+        "unicode-string",
+        "zlib-1.3.1"
+      ],
+      "needed": [
+        "VERSION.dll",
+        "WS2_32.dll",
+        "api-ms-win-core-path-l1-1-0.dll",
+        "bcrypt.dll",
+        "ADVAPI32.dll",
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-process-l1-1-0.dll",
+        "api-ms-win-crt-conio-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/core.msi",
+      "binary_package_sha256": "592af28b25b8142111b3600c82792f778ffb522b12768170a205fb90e40c72e8",
+      "binary_member": "python.dll",
+      "incorporation_evidence": {
+        "blake2": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 416,
+            "declaration": "..\\Modules\\_blake2\\blake2module.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "_blake2b provides BLAKE2b for hashlib"
+          }
+        },
+        "cfuhash": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 594,
+            "declaration": "..\\Python\\hashtable.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "_Py_hashtable_new_full"
+          }
+        },
+        "dtoa": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 629,
+            "declaration": "..\\Python\\dtoa.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "PyOS_double_to_string"
+          }
+        },
+        "getopt": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 589,
+            "declaration": "..\\Python\\getopt.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "Unknown option: -%c"
+          }
+        },
+        "hacl": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 426,
+            "declaration": "..\\Modules\\_hacl\\Hacl_Hash_SHA2.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "Hacl"
+          }
+        },
+        "karamel": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 426,
+            "declaration": "..\\Modules\\_hacl\\Hacl_Hash_SHA2.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "KaRaMeL"
+          }
+        },
+        "locale-wrapper": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 430,
+            "declaration": "..\\Modules\\_localemodule.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "_Py_SetLocaleFromEnv"
+          }
+        },
+        "mimalloc": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 522,
+            "declaration": "..\\Objects\\obmalloc.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "mimalloc_"
+          }
+        },
+        "mt19937": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 433,
+            "declaration": "..\\Modules\\_randommodule.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "Mersenne Twister"
+          }
+        },
+        "siphash": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 556,
+            "declaration": "..\\Python\\pyhash.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "siphash13"
+          }
+        },
+        "sre": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 434,
+            "declaration": "..\\Modules\\_sre\\sre.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB"
+          }
+        },
+        "unicode": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 532,
+            "declaration": "..\\Objects\\unicodectype.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "PyUnicode_New"
+          }
+        },
+        "unicode-string": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 533,
+            "declaration": "..\\Objects\\unicodeobject.c"
+          },
+          "binary_observation": {
+            "kind": "export",
+            "value": "PyUnicode_New"
+          }
+        },
+        "zlib-1.3.1": {
+          "build_source": {
+            "path": "PCbuild/pythoncore.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/pythoncore.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "def5be1ad80c0b20c22fc2ad05cd299113d71adc09faf7a58d652a11b08204f1",
+            "size": 41247,
+            "line": 645,
+            "declaration": "..\\Modules\\zlibmodule.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "1.3.1"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyUnicode_New"
+      }
+    },
+    {
+      "path": "select.pyd",
+      "sha256": "f2b8f6008d9e8697700b73fd645a76d83e096e8214a6e31e644de32f56122f6a",
+      "size": 32992,
+      "name": "select.pyd",
+      "platform": "Windows",
+      "components": [],
+      "needed": [
+        "WS2_32.dll",
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "select.pyd",
+      "incorporation_evidence": {},
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit_select"
+      }
+    },
+    {
+      "path": "unicodedata.pyd",
+      "sha256": "541f46cf1ab49239b008a563eee6762086c7288f64631cb5cf59451cf22fc70c",
+      "size": 712416,
+      "name": "unicodedata.pyd",
+      "platform": "Windows",
+      "components": [
+        "unicode"
+      ],
+      "needed": [
+        "python313.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "unicodedata.pyd",
+      "incorporation_evidence": {
+        "unicode": {
+          "build_source": {
+            "path": "PCbuild/unicodedata.vcxproj",
+            "url": "https://raw.githubusercontent.com/python/cpython/v3.13.17/PCbuild/unicodedata.vcxproj",
+            "archive_sha256": "49f5498c8bcbbab39b0c10c2a1fa2d44c580c7d5cdffc66a5f7401652c0e024a",
+            "sha256": "876763670cc1f920964c96daa266be3d8e3d68fca1f28a840cff5d8ffcdf1fc3",
+            "size": 4582,
+            "line": 99,
+            "declaration": "..\\Modules\\unicodedata.c"
+          },
+          "binary_observation": {
+            "kind": "ascii",
+            "value": "15.1.0"
+          }
+        }
+      },
+      "imported_symbols": [],
+      "pe_observation": {
+        "kind": "export",
+        "value": "PyInit_unicodedata"
+      }
+    }
+  ],
+  "excluded": []
+}

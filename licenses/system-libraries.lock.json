@@ -521,5 +521,151 @@
       "binary_package_sha256": "3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3",
       "binary_member": "Versions/3.13/lib/libssl.3.dylib"
     }
+  ],
+  "windows_evidence": {
+    "path": "licenses/system-windows/evidence-v0830.json",
+    "sha256": "58136e282b360de9cf50962b3b0456d119efe37fa99d44ac9129d04cdae5509a"
+  },
+  "windows_libraries": [
+    {
+      "name": "libcrypto-3.dll",
+      "sha256": "75495fe0e079ab00d49be740d3c710a0b94e3f74f9648cb7cc9f768fc7f52319",
+      "size": 6021880,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "OpenSSL",
+      "version": "3.5.9",
+      "source_package": "openssl",
+      "source_version": "3.5.9",
+      "license": "Apache-2.0",
+      "notice": {
+        "path": "licenses/system-windows/openssl-3.5.9-LICENSE.txt",
+        "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "libcrypto_3.dll"
+    },
+    {
+      "name": "libffi-8.dll",
+      "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+      "size": 39696,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "libffi",
+      "version": "3.4.4",
+      "source_package": "libffi",
+      "source_version": "3.4.4",
+      "license": "MIT",
+      "notice": {
+        "path": "licenses/system-windows/libffi-3.4.4-LICENSE.txt",
+        "sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "libffi_8.dll"
+    },
+    {
+      "name": "libssl-3.dll",
+      "sha256": "8957182a9c385bfd9f3f790921de2ddc614cf91f99edbed4e9e5446a46504e32",
+      "size": 1308920,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "OpenSSL",
+      "version": "3.5.9",
+      "source_package": "openssl",
+      "source_version": "3.5.9",
+      "license": "Apache-2.0",
+      "notice": {
+        "path": "licenses/system-windows/openssl-3.5.9-LICENSE.txt",
+        "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "libssl_3.dll"
+    },
+    {
+      "name": "python313.dll",
+      "sha256": "26026530507a7389e7892ce130e7c1753b32a2df03ec3721d45ad8c1705d40eb",
+      "size": 6142688,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "CPython",
+      "version": "3.13.17",
+      "source_package": "CPython",
+      "source_version": "3.13.17",
+      "license": "PSF-2.0",
+      "notice": {
+        "path": "licenses/cpython/LICENSE.txt",
+        "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/core.msi",
+      "binary_package_sha256": "592af28b25b8142111b3600c82792f778ffb522b12768170a205fb90e40c72e8",
+      "binary_member": "python.dll"
+    },
+    {
+      "name": "sqlite3.dll",
+      "sha256": "ef18d4493faf4c0d0674fe472dc8eec246f4dd22043d851997a3e3e5c868e9b5",
+      "size": 1584864,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "SQLite",
+      "version": "3.50.4",
+      "source_package": "sqlite3",
+      "source_version": "3.50.4",
+      "license": "LicenseRef-Public-Domain",
+      "notice": {
+        "path": "licenses/cpython/sqlite-3.50.4-PUBLIC-DOMAIN.txt",
+        "sha256": "49cf7bcb103eb3244150a23bb23d840370a4762914faf1b450072a4b03c14670"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/lib.msi",
+      "binary_package_sha256": "7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff",
+      "binary_member": "sqlite3.dll"
+    },
+    {
+      "name": "vcruntime140.dll",
+      "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7",
+      "size": 178616,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "Microsoft VC Runtime",
+      "version": "14.51.36247.0",
+      "source_package": "microsoft-distributable-code",
+      "source_version": "14.51.36247.0",
+      "license": "LicenseRef-Microsoft-Distributable-Code",
+      "notice": {
+        "path": "licenses/system-windows/microsoft-distributable-code.txt",
+        "sha256": "8dd16c1ee6e98896c96cc6411b965818059c312ace621538a99c1259a65d927c"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/exe.msi",
+      "binary_package_sha256": "985e3ce8b3f0a432fdadfa5aacac506635816c5d24a36fd6222b9e390da279d5",
+      "binary_member": "vcruntime140.dll"
+    },
+    {
+      "name": "vcruntime140_1.dll",
+      "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e",
+      "size": 50112,
+      "platform": "Windows",
+      "distribution": "python.org CPython 3.13.17 Windows x64",
+      "package": "Microsoft VC Runtime",
+      "version": "14.51.36247.0",
+      "source_package": "microsoft-distributable-code",
+      "source_version": "14.51.36247.0",
+      "license": "LicenseRef-Microsoft-Distributable-Code",
+      "notice": {
+        "path": "licenses/system-windows/microsoft-distributable-code.txt",
+        "sha256": "8dd16c1ee6e98896c96cc6411b965818059c312ace621538a99c1259a65d927c"
+      },
+      "source_required": false,
+      "binary_package_url": "https://www.python.org/ftp/python/3.13.17/amd64/exe.msi",
+      "binary_package_sha256": "985e3ce8b3f0a432fdadfa5aacac506635816c5d24a36fd6222b9e390da279d5",
+      "binary_member": "vcruntime140_1.dll"
+    }
   ]
 }

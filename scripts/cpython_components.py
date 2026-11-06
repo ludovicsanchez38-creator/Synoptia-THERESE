@@ -19,6 +19,15 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/cpython-components.lock.json'
 MACOS_PACKAGE_URL = 'https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg'
 MACOS_PACKAGE_SHA256 = '3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3'
+WINDOWS_MSI = {
+    'core': '592af28b25b8142111b3600c82792f778ffb522b12768170a205fb90e40c72e8',
+    'lib': '7d047ae8b57857e33c3827fe77b052297e61bdab6b3fd4fecd343c3c30e3a8ff',
+    'exe': '985e3ce8b3f0a432fdadfa5aacac506635816c5d24a36fd6222b9e390da279d5',
+}
+
+
+def windows_msi_url(package):
+    return 'https://www.python.org/ftp/python/3.13.17/amd64/' + package + '.msi'
 
 
 def sha(raw):
@@ -38,7 +47,8 @@ def checked(root, item):
 
 def notice_files(catalog):
     notices = list(catalog['base_notices'])
-    notices += [n for c in catalog['components'] + catalog['macos_components'] for n in c['notices']]
+    notices += [n for c in catalog['components'] + catalog['macos_components'] + catalog['windows_components']
+                for n in c['notices']]
     return {n['path']: n for n in notices}.values()
 
 
@@ -97,7 +107,49 @@ def validate(catalog, root):
         mac_used.update(set(f['components']) & mac_ids)
     if mac_used != mac_ids:
         raise ValueError('Composant CPython macOS sans preuve binaire')
-    for c in catalog['components'] + catalog['macos_components']:
+    win = json.loads(checked(root, catalog['windows_evidence']))
+    packages = win.get('binary_packages', [])
+    if (win.get('schema') != 1 or win.get('version') != catalog['version'] or
+            win.get('upstream') != catalog['upstream'] or
+            {p['id']: (p['url'], p['sha256']) for p in packages} !=
+            {key: (windows_msi_url(key), value) for key, value in WINDOWS_MSI.items()} or
+            len(packages) != 3 or win.get('components') != catalog['windows_components'] or
+            catalog['windows_files'] != [{k: v for k, v in f.items()
+                                          if k not in ('incorporation_evidence', 'imported_symbols', 'pe_observation')}
+                                         for f in win['files']] or win['excluded']):
+        raise ValueError('Composition CPython Windows différente de la preuve relue')
+    win_ids = {c['id'] for c in catalog['windows_components']}
+    if (len(win_ids) != len(catalog['windows_components']) or win_ids & (ids | mac_ids) or
+            len(win['files']) != 21 or len({f['sha256'] for f in win['files']}) != 21 or
+            len({f['path'] for f in win['files']}) != 21):
+        raise ValueError('Couverture CPython Windows ambiguë')
+    win_used = set()
+    for f in win['files']:
+        package = ('core' if f['name'] in ('python313.dll', 'python3.dll') else 'lib')
+        member = ('python.dll' if f['name'] == 'python313.dll' else
+                  'python_stable.dll' if f['name'] == 'python3.dll' else
+                  f['name'].replace('-', '_') if f['name'].endswith('.dll') else f['name'])
+        if (f['platform'] != 'Windows' or f['path'] != f['name'] or
+                f['binary_package_url'] != windows_msi_url(package) or
+                f['binary_package_sha256'] != WINDOWS_MSI[package] or
+                f['binary_member'] != member or f['size'] <= 0 or
+                not re.fullmatch('[0-9a-f]{64}', f['sha256']) or
+                set(f['components']) != set(f['incorporation_evidence']) or
+                not set(f['components']) <= ids | mac_ids | win_ids or
+                not f['pe_observation'].get('value')):
+            raise ValueError('Liaison composant/fichier CPython Windows absente')
+        for proof in f['incorporation_evidence'].values():
+            source = proof['build_source']
+            binary = proof['binary_observation']
+            if (not source['path'].startswith('PCbuild/') or
+                    not re.fullmatch('[0-9a-f]{64}', source['sha256']) or
+                    source['line'] <= 0 or not source['declaration'] or
+                    binary['kind'] not in {'ascii', 'utf16le', 'export'} or not binary['value']):
+                raise ValueError('Preuve de composition PE absente')
+        win_used.update(set(f['components']) & win_ids)
+    if win_used != win_ids:
+        raise ValueError('Composant CPython Windows sans preuve binaire')
+    for c in catalog['components'] + catalog['macos_components'] + catalog['windows_components']:
         if not c['version'] or not c['license'] or not c['notices']:
             raise ValueError('Version/licence/notice CPython absente')
     for notice in notice_files(catalog):
@@ -110,11 +162,11 @@ def load(root=ROOT):
 
 
 def identify(digest, platform, catalog):
-    row = next((f for f in catalog['files'] + catalog['macos_files']
+    row = next((f for f in catalog['files'] + catalog['macos_files'] + catalog['windows_files']
                 if f['sha256'] == digest and f['platform'] == platform), None)
     if row is None:
         return None
-    components = [c for c in catalog['components'] + catalog['macos_components']
+    components = [c for c in catalog['components'] + catalog['macos_components'] + catalog['windows_components']
                   if c['id'] in row['components']]
     licenses = ['PSF-2.0', *sorted({c['license'] for c in components} - {'PSF-2.0'})]
     return {'origin': 'CPython@' + catalog['version'], 'license': ' AND '.join(licenses),
@@ -143,9 +195,9 @@ def render(root=ROOT, catalog=None):
              'SHA-256 archive CPython : ' + catalog['upstream']['sha256'],
              'Catalogue fermé aux octets relus ; versions sans numéro amont : révision CPython indiquée.',
              'Les notices originales ci-dessous sont conservées sans modification.', '']
-    for c in catalog['components'] + catalog['macos_components']:
+    for c in catalog['components'] + catalog['macos_components'] + catalog['windows_components']:
         lines += [c['name'] + ' — ' + c['version'], 'Licence : ' + c['license']]
-        for f in catalog['files'] + catalog['macos_files']:
+        for f in catalog['files'] + catalog['macos_files'] + catalog['windows_files']:
             if c['id'] in f['components']:
                 lines += ['Incorporé dans : ' + f['path'], 'SHA-256 : ' + f['sha256']]
         lines += ['Notices : ' + ', '.join(n['path'] for n in c['notices']), '']
@@ -256,7 +308,9 @@ def main():
         catalog = load()
         require_notices(ROOT, catalog)
     print(f'{len(catalog["files"])} fichiers CPython Linux ; {len(catalog["macos_files"])} macOS ; '
+          f'{len(catalog["windows_files"])} Windows ; '
           f'{len(catalog["components"])} composants Linux ; {len(catalog["macos_components"])} macOS ; '
+          f'{len(catalog["windows_components"])} Windows ; '
           f'{len(list(notice_files(catalog)))} notices originales')
 
 
