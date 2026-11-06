@@ -169,8 +169,13 @@ a = Analysis(
 
 # Enregistrer la provenance avant strip/signature/compression, y compris les
 # bibliothèques rangées parmi les données. La garde inspecte ensuite les octets.
+# system_libraries importe cpython_components, son voisin de scripts/ : le
+# dossier doit être importable (l'Analysis est déjà faite, rien n'est collecté).
+_scripts_dir = os.path.normpath(os.path.join(backend_dir, "../../scripts"))
+if _scripts_dir not in sys.path:
+    sys.path.insert(0, _scripts_dir)
 _system_spec = importlib.util.spec_from_file_location(
-    "system_libraries", os.path.join(backend_dir, "../../scripts/system_libraries.py")
+    "system_libraries", os.path.join(_scripts_dir, "system_libraries.py")
 )
 _system_module = importlib.util.module_from_spec(_system_spec)
 _system_spec.loader.exec_module(_system_module)

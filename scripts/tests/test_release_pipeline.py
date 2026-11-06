@@ -62,6 +62,25 @@ class PipelineTests(unittest.TestCase):
                 with self.subTest(config=name, resource=source):
                     self.assertIn(source, factices)
 
+    def test_backend_spec_loads_system_libraries_with_its_sibling_modules(self):
+        # Le spec charge system_libraries.py par chemin ; ce module importe
+        # cpython_components. Sans le dossier scripts/ importable, PyInstaller
+        # échouait sur les trois plateformes (relevé à blanc, run 42243611488).
+        import subprocess
+        import sys
+        import tempfile
+        spec = (ROOT / 'src/backend/backend.spec').read_text(encoding='utf-8')
+        start = spec.index('# Enregistrer la provenance avant strip')
+        end = spec.index('_system_module.record_analysis(')
+        snippet = ('import importlib.util, os, sys\n'
+                   f'backend_dir = {str(ROOT / "src/backend")!r}\n' + spec[start:end] +
+                   'print(_system_module.cpython_components.CATALOG)\n')
+        with tempfile.TemporaryDirectory() as tmp:
+            result = subprocess.run([sys.executable, '-I', '-c', snippet], cwd=tmp,
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr[-600:])
+        self.assertEqual(result.stdout.strip(), 'licenses/cpython-components.lock.json')
+
     def test_no_upload_before_platform_checks(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']
         steps = jobs['build']['steps']
