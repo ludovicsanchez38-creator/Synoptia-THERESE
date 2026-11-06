@@ -1,6 +1,6 @@
 # Marquage des contenus produits avec l’IA
 
-Implémentation du lot confidentialité du 29 octobre 2026, sans changement de version. Ce document décrit les champs techniques ; il ne constitue pas une déclaration de conformité juridique.
+Implémentation du lot confidentialité du 29 octobre 2026, livrée avec la 0.83.0. Ce document décrit les champs techniques ; il ne constitue pas une déclaration de conformité juridique.
 
 ## Champs
 
@@ -18,7 +18,7 @@ Les champs ne contiennent ni prompt, ni contenu du document, ni nom de client, n
 - **DOCX, XLSX et PPTX** : propriétés personnalisées `therese:ia_generee`, `therese:systeme`, `therese:fournisseur_modele` et `therese:date`, dans `docProps/custom.xml` du fichier ZIP Office. Les autres propriétés personnalisées sont conservées. Les relations et types de contenu OOXML sont ajoutés si nécessaire.
 - **PDF** : entrée `/ThereseIA` du dictionnaire d’information, contenant les quatre champs en JSON ; flux XMP `/Metadata` du catalogue PDF. Les pages et leur contenu ne sont pas rédigés de nouveau.
 - **Images PNG, JPEG et WebP sans marque IA d’origine** : bloc XMP, espace de noms `https://synoptia.fr/ns/therese/ia/1.0/`. Cette URI est un identifiant : l’application ne la consulte pas sur Internet. Insertion dans un chunk PNG `iTXt` (`XML:com.adobe.xmp`), un segment JPEG APP1 XMP ou un chunk WebP `XMP `. Les données de pixels compressées ne sont pas réencodées.
-- **Mails et brouillons rédigés par l’IA** : en-tête MIME `X-Therese-IA`. Exemple : `genere; ia_generee=oui; systeme=THERESE/0.82.0; fournisseur_modele=openai/modele; date=2026-10-29T10:00:00+00:00`. Le système est écrit en ASCII dans cet en-tête. Le corps et la signature ne reçoivent aucune mention visible supplémentaire.
+- **Mails et brouillons rédigés par l’IA** : en-tête MIME `X-Therese-IA`. Exemple : `genere; ia_generee=oui; systeme=THERESE/0.83.0; fournisseur_modele=openai/modele; date=2026-10-29T10:00:00+00:00`. Le système est écrit en ASCII dans cet en-tête. Le corps et la signature ne reçoivent aucune mention visible supplémentaire.
 
 Le XMP ajoute également `Iptc4xmpExt:DigitalSourceType`, avec la valeur `http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia`. Voir le [vocabulaire officiel IPTC](https://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia).
 
