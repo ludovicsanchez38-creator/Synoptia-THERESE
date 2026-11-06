@@ -295,15 +295,13 @@ python scripts/system_libraries.py assemble-sources .work-t2/sources-systeme-lin
 ```
 
 macOS et Windows : la garde sait ouvrir le contenu natif du moteur onefile et
-comparer les DMG/archive updater ou MSI/NSIS. **Le catalogue de bibliothèques
-hors roues actuellement relu est Linux seulement.** La première CI macOS/Windows
-peut donc refuser des composants comme OpenSSL, ncurses, Python.framework,
-python313.dll ou les runtimes Microsoft : il faut alors établir leurs versions,
-notices et preuves, pas les assimiler globalement à Python. Le complément relu
-indique que libedit reste liée au système macOS et n'est pas embarquée ; ce constat
-v0.82.0 ne dispense pas de scanner le prochain build. Les binaires auxiliaires
-introduits par NSIS/AppImage ne bénéficient d'aucune exemption implicite.
-Ces extracteurs et la reliaison ne sont pas validés par un build de plateforme ici.
+comparer les DMG/archive updater ou MSI/NSIS. Les catalogues des natifs hors
+RECORD sont décrits ci-dessous. Une nouvelle CI peut produire d'autres octets :
+ils seront refusés jusqu'à rapprochement des paquets, sources et notices.
+Libedit reste liée au système macOS sur le relevé relu et n'est pas embarquée.
+Les binaires auxiliaires introduits par NSIS/AppImage ne bénéficient d'aucune
+exemption implicite. Ces extracteurs et la reliaison ne sont pas validés par
+un build de plateforme ici.
 
 La méthode de reconstruction et de remplacement LGPL est dans
 [`licenses/LISEZMOI-SOURCES.txt`](../licenses/LISEZMOI-SOURCES.txt), incluse dans
@@ -369,8 +367,8 @@ fonctionnent sur un checkout superficiel et ne téléchargent rien.
 
 Le prochain runner Linux peut produire d'autres octets, même avec la même
 version CPython : ils seront refusés jusqu'à revue des nouvelles preuves.
-La composition native Windows reste à établir. Cette fermeture est intentionnelle ;
-ces résultats locaux ne valident aucune construction ou signature réelle de plateforme.
+La composition Windows du relevé 0.83 est décrite plus bas. Ces résultats locaux
+ne valident aucune construction ou signature réelle de plateforme.
 
 ### Catalogue macOS du moteur 0.83
 
@@ -396,6 +394,45 @@ Le script lit les archives comme des données et compare leurs empreintes, leurs
 membres et les notices versionnées. Un nouveau fichier ou un octet modifié reste
 refusé par le catalogue. Le contrôle porte sur les octets relevés ; l'inventaire
 d'un nouveau build macOS et son installeur exigent leur propre vérification.
+
+### Catalogue Windows du moteur 0.83
+
+Le relevé `windows-latest` de CPython 3.13.17 python.org contient 30 natifs hors
+RECORD. `licenses/cpython/evidence-v0830-windows.json` lie 21 fichiers CPython
+(19 `.pyd`, `python313.dll`, `python3.dll`) à leur membre exact des MSI `core`
+ou `lib`. `licenses/system-windows/evidence-v0830.json` lie sept lignes système,
+dont la ligne CPython de `python313.dll`, aux MSI `core`, `lib` et `exe`.
+Les 27 fichiers python.org sont rapprochés par SHA-256 du relevé et des membres
+des MSI officiels. Le catalogue n'accorde aucun droit aux trois DLL issues du
+redistribuable Visual Studio (`msvcp140.dll`, `msvcp140_1.dll`, `vcomp140.dll`).
+Leur redistribution attend une décision de Ludo.
+
+Les PE n'exposent pas les symboles locaux comme les ELF/Mach-O. La preuve de
+composition associe la configuration de build du tag CPython exact et une
+observation dans le PE : export `PyInit_*`, autre export, chaîne de version ou
+marqueur propre au code. Les imports PE sont conservés dans `needed`. Les
+composants incorporés nouveaux sont bzip2 1.0.8, liblzma 5.2.5, libmpdec 4.0.0
+et zlib 1.3.1. La version de liblzma provient de `PCbuild/python.props` et du
+projet `_lzma` lié à `liblzma` ; `_lzma.pyd` ne contient pas de chaîne ASCII
+`5.2.5`. La notice de liblzma 5.2.5 déclare son code dans le domaine public.
+Les dépendances distinctes OpenSSL 3.5.9, libffi 3.4.4 et SQLite 3.50.4 ont
+leurs notices amont. La section « Additional Conditions for this Windows binary
+build » du `LICENSE.txt` de `exe.msi` couvre le Microsoft Distributable Code
+livré par python.org. Son identifiant local est
+`LicenseRef-Microsoft-Distributable-Code` : il conserve ce texte et ses
+restrictions spécifiques sans l'assimiler à une licence SPDX permissive.
+
+Pour rejouer hors réseau les sept notices amont, les déclarations de build,
+les trois MSI et les 27 membres binaires :
+
+```bash
+python3 -I scripts/windows_sources.py verify-sources --msi-directory /chemin/pyorg-msi --source-directory /chemin/scratchpad --cpython-source-archive /chemin/cpython-v3.13.17.tar.gz
+```
+
+Le script vérifie le SHA-256 des MSI avant de lire leur flux CAB, puis contrôle
+les membres, observations PE, imports et notices. La validation porte sur le
+relevé contrôlé ; un nouveau build Windows et ses installeurs demandent leur
+propre inventaire et leur propre preuve.
 
 ## Copyleft et travail avant diffusion publique
 
