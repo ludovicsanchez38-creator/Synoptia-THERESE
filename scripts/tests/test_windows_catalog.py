@@ -59,23 +59,30 @@ class WindowsCatalogTests(unittest.TestCase):
         names.update(r['name'].lower() for r in catalog['cpython']['windows_files'])
         self.assertFalse(names & {'msvcp140.dll', 'msvcp140_1.dll', 'vcomp140.dll'})
 
-    def test_linux_and_macos_rows_remain_byte_identical_to_head(self):
+    def test_linux_and_macos_rows_remain_byte_identical_to_review(self):
+        # Empreintes figées des tranches relues : un clone superficiel de la CI
+        # n'a pas l'historique, et comparer à HEAD ne prouve rien.
+        import hashlib
+
         def exact_array(raw, key):
             tail = raw.split(('"' + key + '":').encode(), 1)[1].lstrip().decode('utf-8')
             _, end = json.JSONDecoder().raw_decode(tail)
             return tail[:end].encode('utf-8')
 
-        for path, keys in ((system.CATALOG, ('libraries', 'macos_libraries')),
-                           (cpython.CATALOG, ('components', 'files', 'macos_components', 'macos_files'))):
-            old = subprocess.check_output(['git', 'show', 'HEAD:' + path], cwd=ROOT)
-            new = (ROOT / path).read_bytes()
-            for key in keys:
-                with self.subTest(path=path, key=key):
-                    self.assertEqual(exact_array(new, key), exact_array(old, key))
-        for path in ('licenses/system-linux/evidence-v0820.json',
-                     'licenses/cpython/evidence-v0820.json',
-                     'licenses/system-macos/evidence-v0830.json',
-                     'licenses/cpython/evidence-v0830-macos.json'):
-            with self.subTest(path=path):
-                self.assertEqual((ROOT / path).read_bytes(),
-                                 subprocess.check_output(['git', 'show', 'HEAD:' + path], cwd=ROOT))
+        expected = {
+            'licenses/system-libraries.lock.json:libraries': 'e66c6dcbb43399a84dcaa92a68272c3098440221c1c3a2a50225509459d48a3f',
+            'licenses/system-libraries.lock.json:macos_libraries': '348871bb2245e775d7a8b54f358dfe5c98ecdf5d0de3fd3527436e261a067c2a',
+            'licenses/cpython-components.lock.json:components': 'bbce12bd0a722ef7ba9d91ff851685cb8571180e75345fc445b0768ad6c22647',
+            'licenses/cpython-components.lock.json:files': '446a02c3f2acfef8df12d0d6b8ebd7aee5adbc0d0bf344e6bfca61f742bd5583',
+            'licenses/cpython-components.lock.json:macos_components': '7df04effeedb9754fcc482f6a8d077ee9176f20878db3aec3768608e9ce532c9',
+            'licenses/cpython-components.lock.json:macos_files': 'f686d164a8854478a0a209a643b385bbd2ad210bbc72babe6879016b0c9de604',
+            'licenses/system-linux/evidence-v0820.json': '4f07135c401682864b09c69d89c23b28852a712106c8088ba0dced64ca5b02c6',
+            'licenses/cpython/evidence-v0820.json': '11116ab401bbff6d8e2c09c3292d9385bc7f1682a448bbfb98a0b0b778dcb151',
+            'licenses/system-macos/evidence-v0830.json': 'f27d2e7e6df3847f4c88b6f59517e4c625fa2b55dc88788f5ce6c9fb4234d624',
+            'licenses/cpython/evidence-v0830-macos.json': 'e960f6fa65026e40ae37af91ae64b0cea16a09ce2ea5bc21caaca1aabd4ed786',
+        }
+        for name, digest in expected.items():
+            path, _, key = name.partition(':')
+            raw = (ROOT / path).read_bytes()
+            with self.subTest(name=name):
+                self.assertEqual(hashlib.sha256(exact_array(raw, key) if key else raw).hexdigest(), digest)

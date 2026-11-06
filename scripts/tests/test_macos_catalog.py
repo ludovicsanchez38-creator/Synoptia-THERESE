@@ -107,17 +107,28 @@ class MacOSCatalogTests(unittest.TestCase):
                 system.classify(source, system.load_catalog(ROOT), [], {}, 'macOS')
 
     def test_linux_catalog_rows_are_byte_identical_to_base(self):
-        import subprocess
-        for path, key, following in ((system.CATALOG, b'"libraries": [\n', b'\n  ],\n  "sources": ['),
-                                     (cpython.CATALOG, b'"files": [\n', b'\n  ]')):
-            original = subprocess.check_output(['git', 'show', '4a7346a8:' + path], cwd=ROOT)
-            current = (ROOT / path).read_bytes()
-            self.assertEqual(current.split(key, 1)[1].split(following, 1)[0],
-                             original.split(key, 1)[1].split(following, 1)[0])
-        for path in ('licenses/system-linux/evidence-v0820.json',
-                     'licenses/cpython/evidence-v0820.json'):
-            original = subprocess.check_output(['git', 'show', '4a7346a8:' + path], cwd=ROOT)
-            self.assertEqual((ROOT / path).read_bytes(), original)
+        # Empreintes figées des tranches relues : un clone superficiel de la CI
+        # n'a pas l'historique, et comparer à HEAD ne prouve rien.
+        import hashlib
+        import json as _json
+
+        def exact_array(raw, key):
+            tail = raw.split(('"' + key + '":').encode(), 1)[1].lstrip().decode('utf-8')
+            _, end = _json.JSONDecoder().raw_decode(tail)
+            return tail[:end].encode('utf-8')
+
+        expected = {
+            'licenses/system-libraries.lock.json:libraries': 'e66c6dcbb43399a84dcaa92a68272c3098440221c1c3a2a50225509459d48a3f',
+            'licenses/cpython-components.lock.json:components': 'bbce12bd0a722ef7ba9d91ff851685cb8571180e75345fc445b0768ad6c22647',
+            'licenses/cpython-components.lock.json:files': '446a02c3f2acfef8df12d0d6b8ebd7aee5adbc0d0bf344e6bfca61f742bd5583',
+            'licenses/system-linux/evidence-v0820.json': '4f07135c401682864b09c69d89c23b28852a712106c8088ba0dced64ca5b02c6',
+            'licenses/cpython/evidence-v0820.json': '11116ab401bbff6d8e2c09c3292d9385bc7f1682a448bbfb98a0b0b778dcb151',
+        }
+        for name, digest in expected.items():
+            path, _, key = name.partition(':')
+            raw = (ROOT / path).read_bytes()
+            with self.subTest(name=name):
+                self.assertEqual(hashlib.sha256(exact_array(raw, key) if key else raw).hexdigest(), digest)
 
 
 if __name__ == '__main__':
