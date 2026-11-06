@@ -140,6 +140,20 @@ if all(importlib.util.find_spec(p) for p in _VOICE_PKGS):
 else:
     print("backend.spec : voix locale absente de l'env de build, non embarquee")
 
+# Runtime VC++ (msvcp140*, vcomp140) : le dossier de redistribution officiel de
+# Visual Studio passe en tête du PATH, sinon PyInstaller le prenait au hasard du
+# PATH du runner (JDK, ImageMagick ; relevé du 06/11/2026). Vérifié après Analysis.
+_vc_redist = []
+if sys.platform == "win32":
+    _runtime_spec = importlib.util.spec_from_file_location(
+        "windows_runtime", os.path.normpath(os.path.join(backend_dir, "../../scripts/windows_runtime.py"))
+    )
+    _windows_runtime = importlib.util.module_from_spec(_runtime_spec)
+    _runtime_spec.loader.exec_module(_windows_runtime)
+    _vc_redist = _windows_runtime.redist_dirs()
+    os.environ["PATH"] = os.pathsep.join([*map(str, _vc_redist), os.environ.get("PATH", "")])
+    print("backend.spec : runtime VC++ depuis " + ", ".join(map(str, _vc_redist)))
+
 a = Analysis(
     [os.path.join(backend_dir, "main.py")],
     pathex=[backend_dir],
@@ -183,6 +197,7 @@ _system_spec.loader.exec_module(_system_module)
 # PyInstaller la ramassait dans le dossier du JDK du runner (relevé du 06/11/2026).
 if sys.platform == "win32":
     a.binaries = _system_module.without_windows_ucrt(a.binaries)
+    _windows_runtime.check_sources(a.binaries, [sys.base_prefix, *_vc_redist])
 _system_module.record_analysis([*a.binaries, *a.datas])
 
 pyz = PYZ(a.pure, cipher=block_cipher)
