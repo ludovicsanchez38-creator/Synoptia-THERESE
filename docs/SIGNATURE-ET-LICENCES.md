@@ -369,9 +369,33 @@ fonctionnent sur un checkout superficiel et ne téléchargent rien.
 
 Le prochain runner Linux peut produire d'autres octets, même avec la même
 version CPython : ils seront refusés jusqu'à revue des nouvelles preuves.
-Les compositions natives macOS/Windows restent à établir sur ces plateformes.
-Cette fermeture est intentionnelle ; ces résultats locaux ne valident aucune
-construction ou signature réelle de plateforme.
+La composition native Windows reste à établir. Cette fermeture est intentionnelle ;
+ces résultats locaux ne valident aucune construction ou signature réelle de plateforme.
+
+### Catalogue macOS du moteur 0.83
+
+Le relevé `macos-latest` de CPython 3.13.17 python.org contient 62 natifs hors
+RECORD. Les 59 fichiers CPython sont liés par empreinte à
+`licenses/cpython/evidence-v0830-macos.json` ; trois bibliothèques distinctes
+(`libcrypto`, `libncurses`, `libssl`) et le framework Python figurent dans
+`licenses/system-macos/evidence-v0830.json`. Les deux preuves renvoient aux
+octets du paquet python.org `python-3.13.17-macos11.pkg` et à leurs notices.
+Les versions de liblzma 5.2.3, NCurses 6.5, SQLite 3.50.4, libmpdec 4.0.1 et
+OpenSSL 3.5.9 sont rapprochées de `Mac/BuildScript/build-installer.py` dans le
+tag CPython exact. Les quatre notices amont hors paquet et leurs règles
+d'extraction sont décrites dans la preuve système macOS.
+
+Pour rejouer ces quatre extractions sans réseau depuis les archives amont
+épinglées, puis vérifier les déclarations du BuildScript :
+
+```bash
+python3 -I scripts/macos_sources.py verify-sources --source-directory /chemin/amont --cpython-source-archive /chemin/cpython-v3.13.17.tar.gz
+```
+
+Le script lit les archives comme des données et compare leurs empreintes, leurs
+membres et les notices versionnées. Un nouveau fichier ou un octet modifié reste
+refusé par le catalogue. Le contrôle porte sur les octets relevés ; l'inventaire
+d'un nouveau build macOS et son installeur exigent leur propre vérification.
 
 ## Copyleft et travail avant diffusion publique
 
