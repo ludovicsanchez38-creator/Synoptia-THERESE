@@ -157,6 +157,30 @@ class PipelineTests(unittest.TestCase):
         self.assertIn('elif [ "${{ runner.os }}" = "macOS" ]; then', lines)
         self.assertIsNone(step.get('if'))
 
+    def test_dry_run_builds_and_checks_but_never_publishes(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())
+        dry = workflow[True]['workflow_dispatch']['inputs']['dry_run']
+        self.assertEqual((dry['type'], dry['default']), ('boolean', False))
+        jobs = workflow['jobs']
+        guard = jobs['preflight']['steps'][0]
+        self.assertEqual(guard['if'], '${{ inputs.dry_run }}')
+        self.assertIn('a-blanc-*)', guard['run'])
+        self.assertEqual(jobs['manifeste-updater']['if'], '${{ !inputs.dry_run }}')
+        publishing = re.compile(r'gh release (create|upload|edit|delete)|publish_release_artifacts\.py|git (tag|push)')
+        for job_name, job in jobs.items():
+            for step in job.get('steps', []):
+                if publishing.search(step.get('run', '')):
+                    with self.subTest(job=job_name, step=step.get('name')):
+                        self.assertTrue(step.get('if') == '${{ !inputs.dry_run }}'
+                                        or job.get('if') == '${{ !inputs.dry_run }}')
+        # Les gardes de licence et de signature restent inconditionnelles.
+        for name in ('Vérifier les licences dans les installeurs', 'Inventorier les bibliothèques réellement embarquées',
+                     'Contrôler les licences tierces'):
+            step = next(s for s in jobs['build']['steps'] if s.get('name') == name)
+            self.assertNotIn('dry_run', str(step.get('if', '')))
+        tauri = next(s for s in jobs['build']['steps'] if 'tauri-apps/tauri-action@' in s.get('uses', ''))
+        self.assertFalse({'tagName', 'releaseId'} & set(tauri['with']))
+
     def test_inventory_precedes_cleanup_and_final_verifier_keeps_python(self):
         steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
         inventory = next(i for i, s in enumerate(steps) if 'system_libraries.py inventory' in s.get('run', ''))

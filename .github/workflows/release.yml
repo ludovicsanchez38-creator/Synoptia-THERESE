@@ -7,8 +7,15 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag de version (ex: v0.1.0-alpha)"
+        description: "Tag de version (ex: v0.1.0-alpha) ; à blanc, un libellé a-blanc-..."
         required: true
+      dry_run:
+        # Construit les trois installeurs et passe toutes leurs gardes, sans
+        # créer ni release ni tag ni publier quoi que ce soit.
+        description: "À blanc : construire et vérifier les installeurs, ne rien publier"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -18,6 +25,15 @@ jobs:
     name: Vérifier la clé de signature updater
     runs-on: ubuntu-latest
     steps:
+      - name: Le mode à blanc ne vise aucune release
+        if: ${{ inputs.dry_run }}
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          case "$TAG" in
+            a-blanc-*) echo "Mode à blanc : construction et vérification seules, aucune publication." ;;
+            *) echo "::error::À blanc, le libellé doit commencer par a-blanc- (reçu : $TAG)"; exit 1 ;;
+          esac
       - name: La clé de signature updater est-elle présente ?
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -69,6 +85,7 @@ jobs:
         python scripts/system_libraries.py assemble-sources .work-t2/sources-systeme-linux
         tar -czf .work-t2/THERESE-sources-systeme-linux.tar.gz -C .work-t2/sources-systeme-linux .
     - name: Joindre les sources au brouillon de la même version
+      if: ${{ !inputs.dry_run }}
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
@@ -496,6 +513,7 @@ jobs:
 
 
       - name: Publier les artefacts vérifiés
+        if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -526,6 +544,7 @@ jobs:
   manifeste-updater:
     name: Assembler le manifeste updater sans alias Linux dangereux
     needs: [build]
+    if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
