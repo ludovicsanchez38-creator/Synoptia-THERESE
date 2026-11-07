@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 
-import { BACKEND_URL } from './backend';
+import { authentifierAmorcageNavigateur, BACKEND_URL, lireJetonPriveBackend } from './backend';
 
 /**
  * Ouvrir une surface sans dépendre du chemin qui y mène.
@@ -107,12 +107,13 @@ export async function fermerLaSurface(page: Page): Promise<void> {
 async function lireUneFoisDePlusSiLaConnexionLache(
   requete: APIRequestContext,
   url: string,
+  headers: Record<string, string>,
 ): Promise<import('@playwright/test').APIResponse> {
   try {
-    return await requete.get(url);
+    return await requete.get(url, { headers });
   } catch {
     await new Promise((resoudre) => setTimeout(resoudre, 500));
-    return requete.get(url);
+    return requete.get(url, { headers });
   }
 }
 
@@ -131,7 +132,9 @@ async function lireUneFoisDePlusSiLaConnexionLache(
 async function entetesAuthentifies(
   requete: APIRequestContext,
 ): Promise<Record<string, string>> {
-  const jeton = await lireUneFoisDePlusSiLaConnexionLache(requete, `${BACKEND_URL}/api/auth/token`);
+  const jeton = await lireUneFoisDePlusSiLaConnexionLache(requete, `${BACKEND_URL}/api/auth/token`, {
+    'X-Therese-Token': await lireJetonPriveBackend(),
+  });
   const { token } = (await jeton.json()) as { token: string };
   return { 'X-Therese-Token': token };
 }
@@ -298,6 +301,7 @@ export async function poserUnModeleActif(requete: APIRequestContext): Promise<vo
 export async function ouvrirLApplication(page: Page, requete: APIRequestContext): Promise<void> {
   await passerLaMiseEnRoute(requete);
   await poserUnModeleActif(requete);
+  await authentifierAmorcageNavigateur(page);
   await page.goto('/');
   await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
   await attendreLeRegistre(page);

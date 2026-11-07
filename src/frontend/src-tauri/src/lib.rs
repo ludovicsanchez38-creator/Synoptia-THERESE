@@ -595,6 +595,7 @@ pub fn run() {
             commands::ouvrir_pdf_facture,
             commands::get_system_info,
             commands::get_backend_port,
+            commands::get_session_token,
             commands::restart_backend,
             commands::prepare_backend_shutdown,
         ])

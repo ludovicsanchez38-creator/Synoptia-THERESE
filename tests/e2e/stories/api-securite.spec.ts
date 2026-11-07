@@ -8,7 +8,7 @@
 
 import { test, expect } from '@playwright/test';
 
-import { BACKEND_URL } from './helpers/backend';
+import { BACKEND_URL, lireJetonPriveBackend } from './helpers/backend';
 
 test.describe('API Securite', () => {
 
@@ -64,12 +64,13 @@ test.describe('API Securite', () => {
     expect(response.status()).toBe(401);
   });
 
-  test('US-806.HP : GET /api/auth/token retourne un token (endpoint exempt)', async ({ request }) => {
+  test('US-806.HP : GET /api/auth/token refuse de divulguer le jeton', async ({ request }) => {
     const response = await request.get(`${BACKEND_URL}/api/auth/token`);
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(401);
 
     const body = await response.json();
-    expect(body).toHaveProperty('token');
+    expect(body).not.toHaveProperty('token');
+    expect(body.code).toBe('UNAUTHORIZED');
   });
 
   test('US-807.HP : un token invalide retourne 401', async ({ request }) => {
@@ -87,7 +88,9 @@ test.describe('API Securite', () => {
 
   test('US-808.HP : XSS dans les parametres est rejete ou echappe', async ({ request }) => {
     // Recuperer un token valide
-    const tokenResp = await request.get(`${BACKEND_URL}/api/auth/token`);
+    const tokenResp = await request.get(`${BACKEND_URL}/api/auth/token`, {
+      headers: { 'X-Therese-Token': await lireJetonPriveBackend() },
+    });
     const { token } = await tokenResp.json();
 
     if (!token) {
@@ -108,7 +111,7 @@ test.describe('API Securite', () => {
   });
 
   test('US-802.HP : les endpoints exempts n\'exigent pas de token', async ({ request }) => {
-    const exemptPaths = ['/health', '/api/auth/token'];
+    const exemptPaths = ['/health'];
 
     for (const path of exemptPaths) {
       const response = await request.get(`${BACKEND_URL}${path}`);
@@ -118,6 +121,7 @@ test.describe('API Securite', () => {
 
   test('US-803.HP : les endpoints proteges exigent tous un token', async ({ request }) => {
     const protectedPaths = [
+      '/api/auth/token',
       '/api/config',
       '/api/memory/contacts',
       '/api/memory/projects',

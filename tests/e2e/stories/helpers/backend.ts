@@ -1,3 +1,8 @@
+import { readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { Page } from '@playwright/test';
+
 /**
  * Backend E2E dédié (revue 0.40).
  *
@@ -16,3 +21,21 @@ if (E2E_BACKEND_PORT === 17293) {
 }
 
 export const BACKEND_URL = `http://127.0.0.1:${E2E_BACKEND_PORT}`;
+
+/** Le secret vient du fichier de l'instance jetable, sous le compte du test. */
+export async function lireJetonPriveBackend(): Promise<string> {
+  const token = (await readFile(
+    join(tmpdir(), `therese-e2e-${E2E_BACKEND_PORT}`, '.session_token'), 'utf8',
+  )).trim();
+  if (!token) throw new Error('Jeton privé du backend E2E absent.');
+  return token;
+}
+
+/** Remplace le canal IPC absent du navigateur par une preuve du secret privé. */
+export async function authentifierAmorcageNavigateur(page: Page): Promise<void> {
+  await page.route(`${BACKEND_URL}/api/auth/token`, async (route) => {
+    await route.continue({
+      headers: { ...route.request().headers(), 'X-Therese-Token': await lireJetonPriveBackend() },
+    });
+  });
+}

@@ -95,8 +95,23 @@ export function getApiBase(): string {
 // Auth token de session (SEC-010)
 let _sessionToken: string | null = null;
 
+function estDansTauri(): boolean {
+  return typeof window !== 'undefined'
+    && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+}
+
+async function lireLeJetonPrive(): Promise<string> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<string>('get_session_token');
+}
+
 export async function initializeAuth(): Promise<void> {
   try {
+    if (estDansTauri()) {
+      _sessionToken = await lireLeJetonPrive();
+      return;
+    }
+    // Le harnais navigateur doit fournir lui-même le secret du fichier privé.
     // Borné : un backend muet au démarrage ne doit pas bloquer l'app (F7).
     const response = await apiFetch(`${API_BASE}/api/auth/token`, { timeoutMs: 10_000 });
     if (response.ok) {
@@ -151,16 +166,21 @@ export type ApiFetchOptions = RequestInit & {
 let _rafraichissementEnCours: Promise<string | null> | null = null;
 
 /**
- * Recharge le jeton avec un `fetch` BRUT.
+ * Recharge le jeton privé par IPC dans Tauri, avec un `fetch` brut dans le harnais web.
  *
  * Repasser par `apiFetch` ferait qu'un 401 sur cette requête déclencherait un
  * rejeu, qui rechargerait le jeton, qui... — récursion. Et l'ancien jeton
- * périmé ne doit pas être envoyé : la route est exemptée d'authentification.
+ * périmé ne doit pas être envoyé. Le harnais web authentifie sa requête
+ * séparément, à partir du fichier privé de son instance jetable.
  */
 async function rechargerLeJeton(): Promise<string | null> {
   if (_rafraichissementEnCours) return _rafraichissementEnCours;
   _rafraichissementEnCours = (async () => {
     try {
+      if (estDansTauri()) {
+        _sessionToken = await lireLeJetonPrive();
+        return _sessionToken;
+      }
       const reponse = await fetch(`${API_BASE}/api/auth/token`);
       if (!reponse.ok) return null;
       const donnees = await reponse.json();

@@ -8,13 +8,15 @@
 
 import { test, expect } from '@playwright/test';
 
-import { BACKEND_URL } from './helpers/backend';
+import { BACKEND_URL, lireJetonPriveBackend } from './helpers/backend';
 
 let authToken: string;
 
 test.beforeAll(async ({ request }) => {
   // Recuperer le token d'authentification
-  const tokenResp = await request.get(`${BACKEND_URL}/api/auth/token`);
+  const tokenResp = await request.get(`${BACKEND_URL}/api/auth/token`, {
+    headers: { 'X-Therese-Token': await lireJetonPriveBackend() },
+  });
   expect(tokenResp.status()).toBe(200);
   const body = await tokenResp.json();
   // B-397 : un 200 sans jeton ferait tourner toute la suite sans en-tête,

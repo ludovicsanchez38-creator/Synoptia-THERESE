@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page, type Route } from '@playwright/test';
-import { BACKEND_URL } from './helpers/backend';
+import { authentifierAmorcageNavigateur, BACKEND_URL } from './helpers/backend';
 import { passerLaMiseEnRoute } from './helpers/surfaces';
 
 const calendar = {
@@ -116,6 +116,7 @@ async function installerLeBackendDeControle(page: Page) {
 async function ouvrirLeScenarioRendezVous(page: Page, requete: APIRequestContext) {
   await passerLaMiseEnRoute(requete);
   const writes = await installerLeBackendDeControle(page);
+  await authentifierAmorcageNavigateur(page);
   await page.goto('/?prototype=conversation-canvas&scenario=meeting');
   return writes;
 }
