@@ -41,7 +41,6 @@ Avant de commencer, vérifiez que votre environnement remplit les conditions sui
 | Node.js | 20+ | `brew install node` |
 | UV | dernière version | `brew install uv` (ou `pip install uv`) |
 | Rust | stable | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
-| Docker | dernière version | [Docker Desktop pour Mac](https://www.docker.com/products/docker-desktop/) |
 
 #### Windows
 
@@ -51,7 +50,6 @@ Avant de commencer, vérifiez que votre environnement remplit les conditions sui
 | Node.js | 20+ | `winget install OpenJS.NodeJS.LTS` |
 | UV | dernière version | `pip install uv` (ou `irm https://astral.sh/uv/install.ps1 \| iex`) |
 | Rust | stable | [rustup-init.exe](https://rustup.rs) (+ Visual Studio Build Tools C++) |
-| Docker | dernière version | [Docker Desktop pour Windows](https://www.docker.com/products/docker-desktop/) |
 
 ### Vérification rapide
 
@@ -60,13 +58,11 @@ python3 --version    # Python 3.11+  (Windows : python --version)
 node --version       # v20+
 uv --version         # uv 0.x+
 rustc --version      # rustc 1.x+
-docker --version     # Docker 2x+
 ```
 
-### Services externes
+### Mémoire vectorielle embarquée
 
-- **Docker** (obligatoire) - nécessaire pour faire tourner Qdrant
-- **Qdrant** (base de données vectorielle) - lancé via Docker (voir section Lancement)
+Le backend initialise Qdrant en mode embarqué. L'index est stocké dans `~/.therese/qdrant` par défaut.
 
 ---
 
@@ -153,17 +149,9 @@ Une clé API est nécessaire pour un fournisseur distant ; Ollama en local n’e
 
 ## 4. Lancement
 
-THÉRÈSE nécessite **3 processus** lancés simultanément dans des terminaux séparés.
+THÉRÈSE se lance avec **2 processus**, dans deux terminaux ouverts à la racine du dépôt. Le backend initialise lui-même Qdrant en mode embarqué.
 
-### Terminal 1 - Qdrant (base vectorielle)
-
-```bash
-docker run -p 6333:6333 qdrant/qdrant
-```
-
-> Qdrant stocke les embeddings pour la mémoire sémantique (contacts, projets, fichiers). Il doit tourner en permanence pendant l'utilisation de THÉRÈSE.
-
-### Terminal 2 - Backend (API FastAPI)
+### Terminal 1 - Backend (API FastAPI)
 
 ```bash
 cd src/backend
@@ -172,7 +160,7 @@ uv run uvicorn app.main:app --reload --port 17293
 
 > Le backend démarre sur `http://127.0.0.1:17293`. Le flag `--reload` active le rechargement automatique en cas de modification du code.
 
-### Terminal 3 - Frontend (application Tauri)
+### Terminal 2 - Frontend (application Tauri)
 
 ```bash
 cd src/frontend
@@ -194,7 +182,7 @@ npm run dev
 
 ### Raccourci Makefile
 
-Depuis la racine du projet, la commande suivante lance le backend et Tauri simultanément (nécessite que Qdrant soit déjà démarré) :
+Depuis la racine du projet, la commande suivante lance le backend et Tauri simultanément. Le backend initialise Qdrant en mode embarqué :
 
 ```bash
 make dev
@@ -296,22 +284,11 @@ Si Windows Defender ou un autre antivirus bloque THÉRÈSE :
 2. Dans **Exclusions**, ajoutez le dossier du projet (ex. `C:\Users\...\Synoptia-THERESE`)
 3. Relancez l'application
 
-### Qdrant non accessible
+### Qdrant embarqué indisponible
 
-Si THÉRÈSE signale que Qdrant n'est pas joignable :
-
-1. Vérifiez que Docker est lancé :
-   ```bash
-   docker ps
-   ```
-2. Si aucun conteneur Qdrant n'apparaît, relancez-le :
-   ```bash
-   docker run -p 6333:6333 qdrant/qdrant
-   ```
-3. Vérifiez que le port 6333 est accessible :
-   ```bash
-   curl http://localhost:6333/healthz
-   ```
+1. Consultez `http://127.0.0.1:17293/health` et vérifiez la valeur de `services.qdrant`.
+2. Vérifiez l'espace disque disponible et les droits d'écriture de votre compte sur le dossier de l'index, `~/.therese/qdrant` par défaut. Conservez les fichiers existants.
+3. Fermez les autres instances de THÉRÈSE avant de relancer le backend. Si le problème persiste, conservez l'index et demandez de l'aide avec le message d'erreur expurgé de toute donnée personnelle ou secrète.
 
 > THÉRÈSE fonctionne en **mode dégradé** si Qdrant est indisponible : le chat reste utilisable, mais la mémoire sémantique (recherche de contacts, projets, fichiers) est désactivée.
 
@@ -356,16 +333,21 @@ make reset-onboarding
 
 ### Réinitialiser complètement THÉRÈSE
 
-Pour supprimer toutes les données locales et repartir de zéro :
+Pour repartir avec un dossier de données vide, conservez d'abord une sauvegarde vérifiée.
 
-```bash
-# Supprimer les données utilisateur
-mv ~/.therese ~/.Trash/
+1. Dans **Paramètres > Sécurité et confidentialité**, section **Export et sauvegardes**, saisissez une phrase secrète d'au moins 12 caractères dans le champ prévu, puis cliquez sur **Créer une sauvegarde**. Conservez cette phrase dans votre gestionnaire de mots de passe. L'export JSON ne remplace pas cette sauvegarde complète.
+2. Copiez l'archive `.tar.gz.enc` créée dans `~/.therese/backups` et son fichier de métadonnées `.json` dans un dossier privé situé hors de `~/.therese`. Sous Windows, le dossier par défaut est `%USERPROFILE%\.therese\backups`. Gardez cette copie hors des dépôts Git et des espaces partagés.
+3. Dans les métadonnées de cette sauvegarde, vérifiez uniquement que `encrypted` vaut `true` et que la liste `included` contient `.encryption_key`. N'ouvrez pas le fichier de clé et n'en affichez jamais le contenu. Cet inventaire déclare les fichiers inclus ; il ne prouve pas qu'une restauration réussira. Avant de poursuivre, faites vérifier une restauration de la copie dans un profil d'essai isolé, sans toucher aux données actuelles. Si ce contrôle n'a pas pu être réalisé, conservez le profil actuel et demandez de l'aide.
+4. Quittez complètement THÉRÈSE. En développement, arrêtez le frontend et le backend dans leurs terminaux avec `Ctrl + C`.
+5. Déplacez le dossier de données à la corbeille avec le gestionnaire de fichiers de votre système :
+   - **macOS** : dans le Finder, utilisez **Aller > Aller au dossier** pour ouvrir votre dossier personnel, affichez les fichiers cachés avec `Cmd + Maj + .`, puis placez `.therese` à la corbeille.
+   - **Windows** : dans l'Explorateur, ouvrez `%USERPROFILE%`, affichez les éléments masqués si nécessaire, puis déplacez le dossier `.therese` dans la Corbeille. Si Windows propose une suppression définitive, annulez.
+   - **Linux** : dans votre gestionnaire de fichiers, affichez les fichiers cachés de votre dossier personnel et déplacez `.therese` à la corbeille. Si ce déplacement n'est pas proposé, arrêtez-vous.
+6. Relancez THÉRÈSE. Un nouveau dossier de données est créé. Gardez l'ancien dossier dans la corbeille et la sauvegarde privée tant que le nouveau profil n'a pas été vérifié.
 
-# Réinstaller les dépendances
-make clean-all
-make install
-```
+Ces chemins sont ceux du profil par défaut. Si le dossier de données a été personnalisé, identifiez ce dossier avant toute copie ou tout déplacement.
+
+Le déplacement du dossier ne retire pas la clé maîtresse éventuellement enregistrée dans le trousseau du système, notamment le Trousseau d'accès macOS ou le Gestionnaire d'informations d'identification Windows. La remise à zéro ne garantit donc pas le renouvellement de cette clé. Conservez les entrées du trousseau pour préserver les possibilités de restauration.
 
 ---
 
