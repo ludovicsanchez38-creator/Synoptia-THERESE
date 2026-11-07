@@ -11,6 +11,7 @@ La 4.0 est une version majeure : elle ne rompt que le protocole disque de
 filelock ; ces gardes rejouent les usages réels des trois dépendances.
 """
 import errno
+import sys
 import threading
 import tomllib
 import warnings
@@ -57,6 +58,11 @@ def test_verrou_de_huggingface_hub_reste_exclusif(tmp_path):
         assert verrou.is_locked
 
 
+# flock et fcntl n'existent que sous POSIX ; sous Windows, filelock verrouille
+# avec msvcrt et ce repli n'a pas lieu d'être (Tests Windows, run 42355341794).
+# Une marque de plateforme plutôt qu'importorskip : sous Linux et macOS, un
+# fcntl absent ferait échouer le test au lieu de le sauter en silence.
+@pytest.mark.skipif(sys.platform == 'win32', reason='flock et fcntl sont propres à POSIX')
 def test_sans_flock_huggingface_hub_obtient_un_verrou_souple(tmp_path, monkeypatch):
     """Système de fichiers sans flock : la 3.x levait une erreur que
     huggingface-hub rattrapait ; la 4.x bascule d'elle-même vers SoftFileLock."""
