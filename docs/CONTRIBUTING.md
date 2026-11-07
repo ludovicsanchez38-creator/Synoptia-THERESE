@@ -163,7 +163,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
 - **Tout le texte en français** avec accents corrects
 - Commentaires, docstrings, messages de commit, documentation : en français
 - "Generer" → "Générer", "Etape" → "Étape", "metier" → "métier"
-- Pas de tirets longs (-) - uniquement tirets courts (-) ou parenthèses
+- Pas de tirets cadratins : utilisez le tiret court (-) ou des parenthèses.
 
 ## Workflow de développement
 
@@ -248,7 +248,7 @@ git push origin feature/nom-de-la-feature
 
 ### Modifier le schéma
 
-1. Modifier le modèle SQLModel dans `app/models/entities.py`
+1. Modifier le modèle SQLModel dans `src/backend/app/models/entities.py`
 2. Créer une migration : `make db-revision msg="Description"`
 3. Appliquer la migration : `make db-migrate`
 4. Tester sur une base neuve
@@ -285,4 +285,4 @@ git push origin feature/nom-de-la-feature
 - **Porteur du projet** : Ludovic "Ludo" Sanchez
 - **Email** : ludo@synoptia.fr
 - **Site** : synoptia.fr
-- **Marque** : Synoptia
+- **Marque** : Synoptïa

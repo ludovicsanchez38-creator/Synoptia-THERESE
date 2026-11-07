@@ -1,6 +1,6 @@
 # THÉRÈSE v2 - Guide d'installation (développeurs)
 
-> Guide pour installer THÉRÈSE v2 depuis les sources. Si tu es testeur alpha, télécharge plutôt le .dmg ou .exe depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
+> Guide pour installer THÉRÈSE v2 depuis les sources. Si tu es testeur alpha, télécharge plutôt le .dmg, le .exe ou le .deb depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
 
 ---
 
@@ -41,7 +41,6 @@ Avant de commencer, vérifiez que votre environnement remplit les conditions sui
 | Node.js | 20+ | `brew install node` |
 | UV | dernière version | `brew install uv` (ou `pip install uv`) |
 | Rust | stable | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
-| Docker | dernière version | [Docker Desktop pour Mac](https://www.docker.com/products/docker-desktop/) |
 
 #### Windows
 
@@ -51,7 +50,6 @@ Avant de commencer, vérifiez que votre environnement remplit les conditions sui
 | Node.js | 20+ | `winget install OpenJS.NodeJS.LTS` |
 | UV | dernière version | `pip install uv` (ou `irm https://astral.sh/uv/install.ps1 \| iex`) |
 | Rust | stable | [rustup-init.exe](https://rustup.rs) (+ Visual Studio Build Tools C++) |
-| Docker | dernière version | [Docker Desktop pour Windows](https://www.docker.com/products/docker-desktop/) |
 
 ### Vérification rapide
 
@@ -60,13 +58,11 @@ python3 --version    # Python 3.11+  (Windows : python --version)
 node --version       # v20+
 uv --version         # uv 0.x+
 rustc --version      # rustc 1.x+
-docker --version     # Docker 2x+
 ```
 
-### Services externes
+### Mémoire vectorielle embarquée
 
-- **Docker** (obligatoire) - nécessaire pour faire tourner Qdrant
-- **Qdrant** (base de données vectorielle) - lancé via Docker (voir section Lancement)
+Le backend initialise Qdrant en mode embarqué. L'index est stocké dans `~/.therese/qdrant` par défaut.
 
 ---
 
@@ -117,18 +113,18 @@ cd ../..
 
 ### Assistant de configuration
 
-Au premier lancement de THERESE, un **assistant de configuration en 6 étapes** vous guide automatiquement :
+Au premier lancement de THÉRÈSE, un **assistant de configuration en 6 étapes** vous guide automatiquement :
 
-1. **Bienvenue** - Présentation de THERESE
+1. **Bienvenue** - Présentation de THÉRÈSE
 2. **Profil** - Votre nom, entreprise, rôle (optionnel : import depuis un fichier CLAUDE.md)
 3. **LLM** - Choix du fournisseur IA et saisie de la clé API
-4. **Sécurité** - Avertissements sur les connexions cloud (acknowledgement requis)
+4. **Sécurité** - Avertissements sur les connexions cloud (confirmation explicite requise si un service cloud est activé)
 5. **Dossier de travail** - Sélection du répertoire par défaut pour vos fichiers
 6. **Terminé** - Récapitulatif de la configuration
 
-### Clé API LLM (obligatoire)
+### Clé API LLM (sauf Ollama en local)
 
-Vous devez disposer d'au moins une clé API pour un fournisseur LLM. **Anthropic est recommandé**.
+Une clé API est nécessaire pour un fournisseur distant ; Ollama en local n’en demande pas. **Anthropic est recommandé**.
 
 | Fournisseur | Où obtenir la clé | Préfixe de la clé |
 |-------------|-------------------|-------------------|
@@ -147,39 +143,31 @@ Vous devez disposer d'au moins une clé API pour un fournisseur LLM. **Anthropic
 | Génération d'images | OpenAI (GPT Image 1.5) | [platform.openai.com](https://platform.openai.com) |
 | Génération d'images | Google (Nano Banana Pro) | [aistudio.google.com](https://aistudio.google.com) |
 
-> Les clés optionnelles peuvent être ajoutées plus tard depuis **Settings > LLM**.
+> Les clés optionnelles peuvent être ajoutées plus tard depuis **Paramètres > Services et connecteurs**.
 
 ---
 
 ## 4. Lancement
 
-THERESE nécessite **3 processus** lancés simultanément dans des terminaux séparés.
+THÉRÈSE se lance avec **2 processus**, dans deux terminaux ouverts à la racine du dépôt. Le backend initialise lui-même Qdrant en mode embarqué.
 
-### Terminal 1 - Qdrant (base vectorielle)
-
-```bash
-docker run -p 6333:6333 qdrant/qdrant
-```
-
-> Qdrant stocke les embeddings pour la mémoire sémantique (contacts, projets, fichiers). Il doit tourner en permanence pendant l'utilisation de THERESE.
-
-### Terminal 2 - Backend (API FastAPI)
+### Terminal 1 - Backend (API FastAPI)
 
 ```bash
 cd src/backend
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 17293
 ```
 
-> Le backend démarre sur `http://127.0.0.1:8000`. Le flag `--reload` active le rechargement automatique en cas de modification du code.
+> Le backend démarre sur `http://127.0.0.1:17293`. Le flag `--reload` active le rechargement automatique en cas de modification du code.
 
-### Terminal 3 - Frontend (application Tauri)
+### Terminal 2 - Frontend (application Tauri)
 
 ```bash
 cd src/frontend
 npm run tauri dev
 ```
 
-> L'application de bureau THERESE s'ouvre automatiquement. Le frontend Vite tourne sur `http://localhost:1420` et Tauri encapsule l'interface dans une fenêtre native.
+> L'application de bureau THÉRÈSE s'ouvre automatiquement. Le frontend Vite tourne sur `http://localhost:1420` et Tauri encapsule l'interface dans une fenêtre native.
 
 ### Mode web uniquement (sans Tauri)
 
@@ -194,7 +182,7 @@ npm run dev
 
 ### Raccourci Makefile
 
-Depuis la racine du projet, la commande suivante lance le backend et Tauri simultanément (nécessite que Qdrant soit déjà démarré) :
+Depuis la racine du projet, la commande suivante lance le backend et Tauri simultanément. Le backend initialise Qdrant en mode embarqué :
 
 ```bash
 make dev
@@ -216,7 +204,7 @@ Autres commandes utiles :
 Pour générer l'application macOS distribuable :
 
 ```bash
-make build
+make build-release
 ```
 
 Ou manuellement :
@@ -245,7 +233,7 @@ Vous y trouverez :
 Pour générer l'application Windows distribuable :
 
 ```bash
-make build
+make build-release
 ```
 
 Le bundle généré se trouve dans :
@@ -264,25 +252,25 @@ Vous y trouverez :
 
 ## 6. Dépannage
 
-### Port 8000 déjà utilisé
+### Port 17293 déjà utilisé
 
 Si le backend refuse de démarrer avec une erreur de type "Address already in use" :
 
 ```bash
-# Identifier le processus qui utilise le port 8000
-lsof -i :8000
+# Identifier le processus qui utilise le port 17293
+lsof -i :17293
 
 # Arrêter le processus (remplacer PID par le numéro affiché)
 kill PID
 ```
 
-### Port 8000 déjà utilisé (Windows)
+### Port 17293 déjà utilisé (Windows)
 
 Si le backend refuse de démarrer sur Windows avec une erreur "Address already in use" :
 
 ```bash
-# Identifier le processus qui utilise le port 8000
-netstat -ano | findstr :8000
+# Identifier le processus qui utilise le port 17293
+netstat -ano | findstr :17293
 
 # Arrêter le processus (remplacer XXXX par le PID affiché)
 taskkill /PID XXXX /F
@@ -296,41 +284,30 @@ Si Windows Defender ou un autre antivirus bloque THÉRÈSE :
 2. Dans **Exclusions**, ajoutez le dossier du projet (ex. `C:\Users\...\Synoptia-THERESE`)
 3. Relancez l'application
 
-### Qdrant non accessible
+### Qdrant embarqué indisponible
 
-Si THERESE signale que Qdrant n'est pas joignable :
+1. Consultez `http://127.0.0.1:17293/health`. Si `services.qdrant` vaut `true`, Qdrant est disponible ; `false` signale une indisponibilité. Si `status` vaut `recovery`, le démarrage des données a échoué et la réponse ne contient pas `services` ; conservez les données et demandez de l'aide.
+2. Vérifiez l'espace disque disponible et les droits d'écriture de votre compte sur le dossier de l'index, `~/.therese/qdrant` par défaut. Conservez les fichiers existants.
+3. Fermez les autres instances de THÉRÈSE avant de relancer le backend. Si le problème persiste, conservez l'index et demandez de l'aide avec le message d'erreur expurgé de toute donnée personnelle ou secrète.
 
-1. Vérifiez que Docker est lancé :
-   ```bash
-   docker ps
-   ```
-2. Si aucun conteneur Qdrant n'apparaît, relancez-le :
-   ```bash
-   docker run -p 6333:6333 qdrant/qdrant
-   ```
-3. Vérifiez que le port 6333 est accessible :
-   ```bash
-   curl http://localhost:6333/healthz
-   ```
-
-> THERESE fonctionne en **mode dégradé** si Qdrant est indisponible : le chat reste utilisable, mais la mémoire sémantique (recherche de contacts, projets, fichiers) est désactivée.
+> THÉRÈSE fonctionne en **mode dégradé** si Qdrant est indisponible : le chat reste utilisable, mais la mémoire sémantique (recherche de contacts, projets, fichiers) est désactivée.
 
 ### Erreur "No API key"
 
-Si THERESE affiche une erreur liée à la clé API :
+Si THÉRÈSE affiche une erreur liée à la clé API :
 
-1. Ouvrez **Settings** (roue dentée en haut à droite, ou `Cmd + ,` / `Ctrl + ,`)
-2. Allez dans l'onglet **LLM**
+1. Ouvrez **Paramètres** (roue dentée en haut à droite, ou `Cmd + ,` / `Ctrl + ,`)
+2. Allez dans l'onglet **Service d'IA**
 3. Sélectionnez votre fournisseur et saisissez votre clé API
 4. Vérifiez que le préfixe de la clé est correct (voir tableau section 3)
 
 ### Le frontend ne se connecte pas au backend
 
-1. Vérifiez que le backend tourne bien sur le port 8000 :
+1. Vérifiez que le backend tourne bien sur le port 17293 :
    ```bash
-   curl http://127.0.0.1:8000/api/health
+   curl http://127.0.0.1:17293/health
    ```
-2. Si la réponse est `{"status": "ok"}`, le backend fonctionne. Le problème vient peut-être d'un blocage CORS ou d'un pare-feu local.
+2. Si la réponse contient `"status": "healthy"` (ou `"degraded"` quand Qdrant ou la base manquent), le backend fonctionne. Le problème vient peut-être d'un blocage CORS ou d'un pare-feu local.
 
 ### Erreur de compilation Tauri / Rust
 
@@ -354,18 +331,23 @@ Pour relancer l'assistant de configuration (utile pour les tests) :
 make reset-onboarding
 ```
 
-### Réinitialiser complètement THERESE
+### Réinitialiser complètement THÉRÈSE
 
-Pour supprimer toutes les données locales et repartir de zéro :
+Pour repartir avec un dossier de données vide, conservez d'abord une sauvegarde vérifiée.
 
-```bash
-# Supprimer les données utilisateur
-mv ~/.therese ~/.Trash/
+1. Dans **Paramètres > Sécurité et confidentialité**, section **Export et sauvegardes**, saisissez une phrase secrète d'au moins 12 caractères dans le champ prévu, puis cliquez sur **Créer une sauvegarde**. Conservez cette phrase dans votre gestionnaire de mots de passe. L'export JSON ne remplace pas cette sauvegarde complète.
+2. Copiez l'archive `.tar.gz.enc` créée dans `~/.therese/backups` et son fichier de métadonnées `.json` dans un dossier privé situé hors de `~/.therese`. Sous Windows, le dossier par défaut est `%USERPROFILE%\.therese\backups`. Gardez cette copie hors des dépôts Git et des espaces partagés.
+3. Dans les métadonnées de cette sauvegarde, vérifiez uniquement que `encrypted` vaut `true` et que la liste `included` contient `.encryption_key`. N'ouvrez pas le fichier de clé et n'en affichez jamais le contenu. Cet inventaire déclare les fichiers inclus ; il ne prouve pas qu'une restauration réussira. Avant de poursuivre, faites vérifier une restauration de la copie dans un profil d'essai isolé, sans toucher aux données actuelles. Si ce contrôle n'a pas pu être réalisé, conservez le profil actuel et demandez de l'aide.
+4. Quittez complètement THÉRÈSE. En développement, arrêtez le frontend et le backend dans leurs terminaux avec `Ctrl + C`.
+5. Déplacez le dossier de données à la corbeille avec le gestionnaire de fichiers de votre système :
+   - **macOS** : dans le Finder, utilisez **Aller > Départ** pour ouvrir votre dossier personnel, affichez les fichiers cachés avec `Cmd + Maj + .`, puis placez `.therese` à la corbeille.
+   - **Windows** : dans l'Explorateur, ouvrez `%USERPROFILE%`, affichez les éléments masqués si nécessaire, puis déplacez le dossier `.therese` dans la Corbeille. Si Windows propose une suppression définitive, annulez.
+   - **Linux** : dans votre gestionnaire de fichiers, affichez les fichiers cachés de votre dossier personnel et déplacez `.therese` à la corbeille. Si ce déplacement n'est pas proposé, arrêtez-vous.
+6. Relancez THÉRÈSE. Un nouveau dossier de données est créé. Gardez l'ancien dossier dans la corbeille et la sauvegarde privée tant que le nouveau profil n'a pas été vérifié.
 
-# Réinstaller les dépendances
-make clean-all
-make install
-```
+Ces chemins sont ceux du profil par défaut. Si le dossier de données a été personnalisé, identifiez ce dossier avant toute copie ou tout déplacement.
+
+Le déplacement du dossier ne retire pas la clé maîtresse éventuellement enregistrée dans le trousseau du système, notamment le Trousseau d'accès macOS ou le Gestionnaire d'informations d'identification Windows. La remise à zéro ne garantit donc pas le renouvellement de cette clé. Conservez les entrées du trousseau pour préserver les possibilités de restauration.
 
 ---
 
