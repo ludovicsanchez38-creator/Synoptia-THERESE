@@ -14,6 +14,60 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import system_libraries as system
 
 ROOT = Path(__file__).resolve().parents[1]
+TAURI = 'src/frontend/src-tauri'
+# tauri-bundler 2.8.1 (tauri-cli 2.10.1, crates/tauri-bundler/src/bundle.rs) écrit
+# le type de paquet dans le binaire principal en remplaçant la PREMIÈRE occurrence
+# de ce jeton, empaquette, puis restaure dans target/release la copie d'avant
+# (« Restore unsigned and unpatched binary »). Le paquet contient donc le binaire
+# patché, target/release l'original : relevé sur les paquets 0.82 publiés.
+BUNDLE_TOKEN = b'__TAURI_BUNDLE_TYPE_VAR_UNK'
+BUNDLE_TYPES = {'deb': b'__TAURI_BUNDLE_TYPE_VAR_DEB', 'appimage': b'__TAURI_BUNDLE_TYPE_VAR_APP',
+                'msi': b'__TAURI_BUNDLE_TYPE_VAR_MSI', 'nsis': b'__TAURI_BUNDLE_TYPE_VAR_NSS'}
+MAIN_NAMES = {'Linux': ('therese', 'THERESE'), 'Windows': ('therese.exe',)}
+
+
+def engine_name(platform):
+    """Nom du moteur dans l'installeur : Tauri retire le suffixe de cible des externalBin
+    (settings.rs, copy_binaries ; msi et nsis idem) : backend-aarch64-apple-darwin
+    devient Contents/MacOS/backend, backend-x86_64-pc-windows-msvc.exe devient backend.exe."""
+    config = json.loads((ROOT / TAURI / 'tauri.conf.json').read_text(encoding='utf-8'))
+    names = [Path(p).name for p in config['bundle']['externalBin']]
+    if len(names) != 1:
+        raise ValueError('Un unique moteur externalBin est attendu')
+    return names[0] + ('.exe' if platform == 'Windows' else '')
+
+
+def built_digests(root, platform, package):
+    """Empreintes admises pour le binaire principal de CE build une fois empaqueté :
+    l'original de target/release, ou le même avec le seul jeton de son paquet."""
+    digests = set()
+    for name in MAIN_NAMES[platform]:
+        binary = root / TAURI / 'target/release' / name
+        if not binary.is_file():
+            continue
+        raw = binary.read_bytes()
+        digests.add(system.sha(raw))
+        index = raw.find(BUNDLE_TOKEN)
+        if index >= 0:
+            digests.add(system.sha(raw[:index] + BUNDLE_TYPES[package] + raw[index + len(BUNDLE_TOKEN):]))
+    return digests
+
+
+def authenticode_signed(raw):
+    """Vrai si l'en-tête PE déclare une table de certificats (répertoire de sécurité)."""
+    if len(raw) < 0x40 or raw[:2] != b'MZ':
+        raise ValueError('En-tête PE illisible')
+    header = int.from_bytes(raw[0x3c:0x40], 'little')
+    optional = header + 24
+    if raw[header:header + 4] != b'PE\0\0' or len(raw) < optional + 2:
+        raise ValueError('En-tête PE illisible')
+    magic = int.from_bytes(raw[optional:optional + 2], 'little')
+    if magic not in (0x10b, 0x20b):
+        raise ValueError('En-tête PE illisible')
+    security = optional + (112 if magic == 0x20b else 96) + 4 * 8
+    if len(raw) < security + 8:
+        raise ValueError('En-tête PE illisible')
+    return int.from_bytes(raw[security + 4:security + 8], 'little') != 0
 
 
 def check_directory(directory, expected):
@@ -73,7 +127,7 @@ def scan_tar(archive):
     return {n: h for n, (h, is_native) in files.items() if is_native}, notices, inventories
 
 
-def verify_linux_files(actual, manifest, root=ROOT):
+def verify_linux_files(actual, manifest, root=ROOT, package='deb'):
     expected = manifest['files']
     embedded = {name.split('/backend-libs/', 1)[1]: digest for name, digest in actual.items()
                 if '/backend-libs/' in name}
@@ -87,22 +141,31 @@ def verify_linux_files(actual, manifest, root=ROOT):
     catalog = system.load_catalog(root)
     for record in expected.values():
         system.cpython_components.verify_record(record, 'Linux', catalog['cpython'])
-    # Le seul binaire applicatif autorisé vient du compilateur de ce build.
-    target = root / 'src/frontend/src-tauri/target/release'
-    own = {system.file_sha(p) for p in (target / 'therese', target / 'THERESE') if p.is_file()}
-    result = {}
+    # Le seul binaire applicatif autorisé vient du compilateur de ce build, à sa place.
+    own = built_digests(root, 'Linux', package)
+    result, refusals = {}, []
     for name, digest in actual.items():
         if '/backend-libs/' in name:
             result[name] = expected[name.split('/backend-libs/', 1)[1]]
-        elif digest in own and Path(name).name in ('therese', 'THERESE'):
+        elif (digest in own and posixpath.dirname(name) == 'usr/bin'
+              and posixpath.basename(name) in MAIN_NAMES['Linux']):
             result[name] = {'sha256': digest, 'origin': 'THERESE/Cargo.lock', 'license': 'licence du dépôt'}
         else:
             row = next((r for r in catalog['libraries'] if r['sha256'] == digest), None)
             if row is None:
-                raise ValueError('Bibliothèque ajoutée par l’empaqueteur hors inventaire : ' + name)
+                refusals.append('Bibliothèque ajoutée par l’empaqueteur hors inventaire : '
+                                + name + ' (SHA-256 ' + digest + ')')
+                continue
             path = Path('/') / row.get('binary_member', '')
-            record = system.match_system(path, digest, catalog, 'Linux')
+            try:
+                record = system.match_system(path, digest, catalog, 'Linux')
+            except ValueError as exc:
+                refusals.append(str(exc) + ' (' + name + ')')
+                continue
             result[name] = {'sha256': digest, **record}
+    # Tout relever avant d'échouer : un seul passage donne la liste complète.
+    if refusals:
+        raise ValueError('\n'.join(refusals))
     return result
 
 
@@ -138,36 +201,69 @@ def verify_deb(artifact, manifest, root=ROOT):
     if process.wait():
         raise ValueError('Extraction Debian en échec')
     check_resources(notices, inventories, root)
-    records = verify_linux_files(actual, manifest, root)
+    records = verify_linux_files(actual, manifest, root, 'deb')
     proof(artifact, records, root)
 
 
-def verify_directory(folder, manifest, platform, root=ROOT):
+def is_engine(path, platform, name):
+    """Le moteur est à la place où Tauri le dépose, sous son nom sans suffixe de cible."""
+    if platform == 'macOS':
+        parents = path.parents
+        return (path.name == name and len(parents) >= 3 and parents[0].name == 'MacOS'
+                and parents[1].name == 'Contents' and parents[2].suffix == '.app')
+    # Windows : à côté de l'exécutable principal (racine du NSIS, dossier d'installation du MSI).
+    return (path.name.lower() == name.lower()
+            and any((path.parent / n).is_file() for n in MAIN_NAMES['Windows']))
+
+
+def verify_directory(folder, manifest, platform, root=ROOT, package=None):
     check_resources([p.read_bytes() for p in folder.rglob('THIRD_PARTY_LICENSES')],
                     [p.read_bytes() for p in folder.rglob('system-libraries.json')], root)
     if platform == 'Linux':
-        return verify_linux_files(system.scan_tree(folder), manifest, root)
-    engines = [p for p in folder.rglob('backend-*') if p.is_file() and p.suffix != '.sig']
+        return verify_linux_files(system.scan_tree(folder), manifest, root, package or 'appimage')
+    name = engine_name(platform)
+    files = sorted(p for p in folder.rglob('*') if p.is_file())
+    engines = [p for p in files if is_engine(p, platform, name)]
     if not engines:
-        raise ValueError('Moteur onefile absent de l’installeur')
-    records = {}
-    for engine in engines:
-        actual = system.onefile(engine)
-        system.verify_files(actual, manifest['files'])
-        for name, record in manifest['files'].items():
-            records[engine.relative_to(folder).as_posix() + '!' + name] = record
+        raise ValueError('Moteur onefile absent de l’installeur : ' + name)
+    if len(engines) > 1:
+        raise ValueError('Plusieurs moteurs onefile dans l’installeur : '
+                         + ', '.join(p.relative_to(folder).as_posix() for p in engines))
+    engine = engines[0]
+    actual = system.onefile(engine)
+    system.verify_files(actual, manifest['files'])
+    records = {engine.relative_to(folder).as_posix() + '!' + n: r for n, r in manifest['files'].items()}
+    own = built_digests(root, platform, package) if platform == 'Windows' else set()
+    refusals = []
     # Les DLL/dylib en dehors du moteur sont également fermées par défaut.
-    for path in folder.rglob('*'):
-        if not path.is_file() or path in engines:
+    for path in files:
+        if path == engine:
             continue
-        # L'exécutable Tauri est contrôlé par la garde de signature de plateforme.
         relative = path.relative_to(folder).as_posix()
-        if ((platform == 'macOS' and relative.endswith(('/Contents/MacOS/therese', '/Contents/MacOS/THERESE')))
-                or (platform == 'Windows' and path.name.lower() == 'therese.exe')):
-            continue
         with path.open('rb') as f:
-            if system.native(f.read(4)):
-                raise ValueError('Binaire externe au moteur sans inventaire : ' + relative)
+            if not system.native(f.read(4)):
+                continue
+        # macOS : l'exécutable Tauri est re-signé par le bundler ; codesign --verify
+        # --deep --strict le contrôle dans l'étape suivante du workflow.
+        if platform == 'macOS' and relative.endswith(('/Contents/MacOS/therese', '/Contents/MacOS/THERESE')):
+            continue
+        if platform == 'Windows' and path.name.lower() in MAIN_NAMES['Windows']:
+            raw = path.read_bytes()
+            digest = system.sha(raw)
+            if digest in own:
+                records[relative] = {'sha256': digest, 'origin': 'THERESE/Cargo.lock', 'license': 'licence du dépôt'}
+                continue
+            # Signé Authenticode : relève de la garde de signature (verify_windows_signing.ps1).
+            if authenticode_signed(raw):
+                continue
+            refusals.append('Exécutable principal non signé et différent de ce build : '
+                            + relative + ' (SHA-256 ' + digest + ')')
+            continue
+        refusals.append('Binaire externe au moteur sans inventaire : ' + relative
+                        + ' (SHA-256 ' + system.file_sha(path) + ')')
+    # Tout relever avant d'échouer : un seul passage donne la liste complète.
+    if refusals:
+        raise ValueError('\n'.join(refusals))
     return records
 
 
@@ -193,7 +289,7 @@ def main():
                 raise ValueError('Offset AppImage invalide')
             folder = destination / f'appimage-{index}'
             command(['unsquashfs', '-o', offset, '-d', str(folder), str(artifact)])
-            proof(artifact, verify_directory(folder, manifest, 'Linux'))
+            proof(artifact, verify_directory(folder, manifest, 'Linux', package='appimage'))
         print(f'AppImage : {len(images)} produite(s) et contrôlée(s).')
     elif args.platform == 'Windows':
         for pattern, name in [('msi/*.msi', 'msi'), ('nsis/*.exe', 'nsis')]:
@@ -206,7 +302,7 @@ def main():
                 command(['msiexec', '/a', str(matches[0]), '/qn', 'TARGETDIR=' + str(folder)])
             else:
                 command(['7z', 'x', '-y', str(matches[0]), '-o' + str(folder)])
-            proof(matches[0], verify_directory(folder, manifest, 'Windows'))
+            proof(matches[0], verify_directory(folder, manifest, 'Windows', package=name))
     else:
         archives, images = list(bundle.glob('macos/*.app.tar.gz')), list(bundle.glob('dmg/*.dmg'))
         if len(archives) != 1 or len(images) != 1:

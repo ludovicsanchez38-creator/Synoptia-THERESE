@@ -435,7 +435,17 @@ jobs:
           exclude-interactive-browser-credential: true
           files-folder: ${{ github.workspace }}/src/frontend/src-tauri/target/release/bundle
       - name: Vérifier les licences dans les installeurs
-        run: python scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"
+        shell: bash
+        # macOS et Windows ouvrent le moteur onefile avec PyInstaller, présent
+        # seulement dans .venv ; sur Linux, .venv est purgé avant Rust.
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/python.exe scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            .venv/bin/python scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"
+          else
+            python scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"
+          fi
 
       - name: Vérifier Authenticode
         if: runner.os == 'Windows' && steps.windows-signing.outputs.enabled == 'true'

@@ -145,6 +145,18 @@ class PipelineTests(unittest.TestCase):
         self.assertIn('system_libraries.py assemble-sources', source_runs)
         self.assertIn('THERESE-sources-systeme-linux.tar.gz', source_runs)
 
+    def test_installer_verifier_runs_where_pyinstaller_is_installed(self):
+        # Run 42355341201 : le moteur onefile ne s'ouvre qu'avec PyInstaller,
+        # installé dans .venv par uv ; le Python de setup-python ne l'a pas.
+        steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
+        step = next(s for s in steps if s.get('name') == 'Vérifier les licences dans les installeurs')
+        self.assertEqual(step.get('shell'), 'bash')
+        lines = [line.strip() for line in step['run'].splitlines()]
+        self.assertIn('.venv/Scripts/python.exe scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"', lines)
+        self.assertIn('.venv/bin/python scripts/verify_packaged_licenses.py --platform "${{ runner.os }}"', lines)
+        self.assertIn('elif [ "${{ runner.os }}" = "macOS" ]; then', lines)
+        self.assertIsNone(step.get('if'))
+
     def test_inventory_precedes_cleanup_and_final_verifier_keeps_python(self):
         steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
         inventory = next(i for i, s in enumerate(steps) if 'system_libraries.py inventory' in s.get('run', ''))
