@@ -11,6 +11,7 @@ import { useHealthCheck } from './hooks/useHealthCheck';
 import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
 import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility';
 import * as api from './services/api';
+import { AuthentificationNavigateurImpossible } from './services/api/core';
 import { Z_LAYER } from './styles/z-layers';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
@@ -43,6 +44,7 @@ function ApplicationBootstrap() {
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   // B-517 : un cloisonnement de profil impossible bloque le démarrage.
   const [erreurDeCloisonnement, setErreurDeCloisonnement] = useState<string | null>(null);
+  const [erreurDAuthentification, setErreurDAuthentification] = useState<string | null>(null);
 
   // Accessibilite : taille de police et contraste eleve
   const fontSize = useFontSize();
@@ -82,7 +84,12 @@ function ApplicationBootstrap() {
     if (!backendReady) return;
     void (async () => {
       const { controlerGenerationAuDemarrage } = await import('./lib/capacites/generation');
-      await controlerGenerationAuDemarrage();
+      try {
+        await controlerGenerationAuDemarrage();
+      } catch (err) {
+        // Le refus web est déjà présenté par le parcours principal de démarrage.
+        if (!(err instanceof AuthentificationNavigateurImpossible)) throw err;
+      }
     })();
   }, [backendReady]);
 
@@ -166,6 +173,10 @@ function ApplicationBootstrap() {
           setCheckingOnboarding(false);
           return;
         } catch (err) {
+          if (err instanceof AuthentificationNavigateurImpossible) {
+            setErreurDAuthentification(err.message);
+            return;
+          }
           console.warn(`Tentative ${attempt}/${maxRetries} échouée:`, err);
           if (attempt < maxRetries) {
             // Attendre un peu plus à chaque tentative
@@ -211,6 +222,20 @@ function ApplicationBootstrap() {
       <Suspense fallback={lazyFallback}>
         <SplashScreen onReady={handleBackendReady} />
       </Suspense>
+    );
+  }
+
+  if (erreurDAuthentification) {
+    return (
+      <div className="h-screen w-screen bg-bg flex items-center justify-center p-8">
+        <div role="alert" className="max-w-lg rounded-md border border-error/40 bg-[var(--color-error-tint)] p-6 text-center">
+          <h1 className="text-lg font-semibold text-error">Authentification impossible</h1>
+          <p className="mt-2 text-sm text-text">{erreurDAuthentification}</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-md border border-error px-3 py-2 text-sm font-semibold text-error">
+            Relancer
+          </button>
+        </div>
+      </div>
     );
   }
 

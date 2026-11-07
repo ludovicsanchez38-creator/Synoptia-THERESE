@@ -9,6 +9,7 @@ import asyncio
 import logging
 import os
 import secrets
+import tempfile
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
@@ -172,13 +173,18 @@ def _is_fatal_migration_error(exc: Exception) -> bool:
 
 
 def _ecrire_jeton_prive(token_path: FilePath, token: str) -> None:
-    """Créer le fichier privé avant d'y écrire le secret, y compris à la reprise."""
+    """Publier un fichier privé neuf pour couper aussi les anciens descripteurs."""
     token_path.parent.mkdir(parents=True, exist_ok=True)
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    with os.fdopen(os.open(token_path, flags, 0o600), "w", encoding="utf-8") as fichier:
-        # Réparer aussi les permissions d'un fichier laissé par un ancien lancement.
+    # Même système de fichiers pour un remplacement atomique, après fermeture
+    # du fichier (nécessaire sous Windows). Le dossier temporaire est privé.
+    with tempfile.TemporaryDirectory(dir=token_path.parent, prefix=".session_token-") as dossier:
+        preparation = FilePath(dossier) / "jeton"
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        with os.fdopen(os.open(preparation, flags, 0o600), "w", encoding="utf-8") as fichier:
+            os.chmod(preparation, 0o600)
+            fichier.write(token)
+        os.replace(preparation, token_path)
         os.chmod(token_path, 0o600)
-        fichier.write(token)
 
 
 @asynccontextmanager
