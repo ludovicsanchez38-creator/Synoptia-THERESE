@@ -11,6 +11,7 @@ import tarfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import nsis_installer as nsis
 import system_libraries as system
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -216,7 +217,37 @@ def is_engine(path, platform, name):
             and any((path.parent / n).is_file() for n in MAIN_NAMES['Windows']))
 
 
-def verify_directory(folder, manifest, platform, root=ROOT, package=None):
+def extract_nsis(path, folder):
+    """Ouvrir un exécutable NSIS avec 7-Zip, sans l'exécuter."""
+    folder.mkdir(parents=True, exist_ok=False)
+    command(['7z', 'x', '-y', str(path), '-o' + str(folder)])
+    return folder
+
+
+def verify_uninstaller(path, installer, catalog, folder):
+    """Désinstalleur reconstitué par 7-Zip : même stub que l'installeur, greffons inventoriés."""
+    raw = path.read_bytes()
+    with installer.open('rb') as f:
+        head = f.read(4 * 1024 * 1024)
+    records = {'uninstall.exe': nsis.verify_uninstaller(head, raw, catalog)}
+    refusals = []
+    inner = extract_nsis(path, folder.parent / (folder.name + '-uninstall'))
+    for item in sorted(p for p in inner.rglob('*') if p.is_file()):
+        relative = item.relative_to(inner).as_posix()
+        with item.open('rb') as f:
+            if not system.native(f.read(4)):
+                continue
+        digest = system.file_sha(item)
+        record = nsis.plugin(catalog, item.name, digest) if relative.startswith('$PLUGINSDIR/') else None
+        if record is None:
+            refusals.append('Binaire du désinstalleur sans inventaire : uninstall.exe!' + relative
+                            + ' (SHA-256 ' + digest + ')')
+        else:
+            records['uninstall.exe!' + relative] = record
+    return records, refusals
+
+
+def verify_directory(folder, manifest, platform, root=ROOT, package=None, installer=None):
     check_resources([p.read_bytes() for p in folder.rglob('THIRD_PARTY_LICENSES')],
                     [p.read_bytes() for p in folder.rglob('system-libraries.json')], root)
     if platform == 'Linux':
@@ -235,6 +266,19 @@ def verify_directory(folder, manifest, platform, root=ROOT, package=None):
     records = {engine.relative_to(folder).as_posix() + '!' + n: r for n, r in manifest['files'].items()}
     own = built_digests(root, platform, package) if platform == 'Windows' else set()
     refusals = []
+    # NSIS : greffons et désinstalleur de l'empaqueteur, inventoriés sur décision de
+    # Ludo (carte val-2026-11-07-28) ; le stub de l'installeur est prouvé aussi.
+    catalog = nsis.load_catalog(ROOT) if package == 'nsis' else None
+    uninstaller = None
+    if catalog is not None:
+        if installer is None:
+            raise ValueError('Installeur NSIS requis pour prouver son stub et son désinstalleur')
+        with installer.open('rb') as f:
+            head = f.read(4 * 1024 * 1024)
+        try:
+            records[installer.name + '!stub'] = nsis.verify_installer_stub(head, catalog)
+        except ValueError as exc:
+            refusals.append(str(exc) + ' : ' + installer.name)
     # Les DLL/dylib en dehors du moteur sont également fermées par défaut.
     for path in files:
         if path == engine:
@@ -259,8 +303,28 @@ def verify_directory(folder, manifest, platform, root=ROOT, package=None):
             refusals.append('Exécutable principal non signé et différent de ce build : '
                             + relative + ' (SHA-256 ' + digest + ')')
             continue
+        digest = system.file_sha(path)
+        if catalog is not None and relative.startswith('$PLUGINSDIR/') and relative.count('/') == 1:
+            record = nsis.plugin(catalog, path.name, digest)
+            if record is not None:
+                records[relative] = record
+                continue
+        if catalog is not None and relative == 'uninstall.exe':
+            uninstaller = path
+            try:
+                found, inner = verify_uninstaller(path, installer, catalog, folder)
+            except ValueError as exc:
+                refusals.append(str(exc) + ' : ' + relative)
+            else:
+                records.update(found)
+                refusals += inner
+            continue
         refusals.append('Binaire externe au moteur sans inventaire : ' + relative
-                        + ' (SHA-256 ' + system.file_sha(path) + ')')
+                        + ' (SHA-256 ' + digest + ')')
+    # makensis écrit toujours le désinstalleur ; s'il manque, 7-Zip ne l'a pas
+    # reconstitué et son contenu échapperait au contrôle.
+    if catalog is not None and uninstaller is None:
+        refusals.append('Désinstalleur NSIS absent de l’extraction (7-Zip 26 requis) : uninstall.exe')
     # Tout relever avant d'échouer : un seul passage donne la liste complète.
     if refusals:
         raise ValueError('\n'.join(refusals))
@@ -302,7 +366,7 @@ def main():
                 command(['msiexec', '/a', str(matches[0]), '/qn', 'TARGETDIR=' + str(folder)])
             else:
                 command(['7z', 'x', '-y', str(matches[0]), '-o' + str(folder)])
-            proof(matches[0], verify_directory(folder, manifest, 'Windows', package=name))
+            proof(matches[0], verify_directory(folder, manifest, 'Windows', package=name, installer=matches[0]))
     else:
         archives, images = list(bundle.glob('macos/*.app.tar.gz')), list(bundle.glob('dmg/*.dmg'))
         if len(archives) != 1 or len(images) != 1:

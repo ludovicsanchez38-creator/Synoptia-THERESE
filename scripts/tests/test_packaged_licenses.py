@@ -100,8 +100,18 @@ class InstallerLayoutTests(unittest.TestCase):
         def onefile(path):
             calls.append(path)
             return payload or self.engine_payload
-        with patch.object(self.m.system, 'onefile', onefile):
-            records = self.m.verify_directory(folder, self.manifest, platform, self.root, package)
+        if package != 'nsis':
+            with patch.object(self.m.system, 'onefile', onefile):
+                records = self.m.verify_directory(folder, self.manifest, platform, self.root, package)
+            return records, calls
+        # Stub et désinstalleur : prouvés dans test_nsis_installer.py ; ici, aucun greffon inventorié.
+        catalog = dict(self.m.nsis.load_catalog(ROOT), plugins=[])
+        installer = self.write(self.root / 'THERESE_0.83.0_x64-setup.exe', b'MZinstalleur')
+        with patch.object(self.m.system, 'onefile', onefile), \
+                patch.object(self.m.nsis, 'load_catalog', return_value=catalog), \
+                patch.object(self.m.nsis, 'verify_installer_stub', return_value={'origin': 'stub'}), \
+                patch.object(self.m, 'verify_uninstaller', return_value=({'uninstall.exe': {}}, [])):
+            records = self.m.verify_directory(folder, self.manifest, platform, self.root, package, installer)
         return records, calls
 
     # ---- macOS : THERESE.app/Contents/MacOS/backend (journal du run, étape Tauri) ----
@@ -161,6 +171,7 @@ class InstallerLayoutTests(unittest.TestCase):
         self.write(folder / 'therese.exe', main)
         self.write(folder / 'backend.exe', pe(b'onefile'))
         self.write(folder / '$PLUGINSDIR/modern-wizard.bmp', b'BMfixture')
+        self.write(folder / 'uninstall.exe', pe(b'desinstalleur'))
         self.resources(folder)
 
     def test_nsis_main_binary_is_this_build_with_its_nsis_marker(self):
@@ -172,7 +183,7 @@ class InstallerLayoutTests(unittest.TestCase):
         self.assertEqual(calls, [folder / 'backend.exe'])
         self.assertIn('therese.exe', records)
 
-    def test_nsis_plugins_are_refused_all_at_once_with_their_digest(self):
+    def test_uninventoried_nsis_plugins_are_refused_all_at_once_with_their_digest(self):
         original = self.build_windows()
         folder = self.root / 'nsis-plugins'
         self.nsis(folder, patched(original, b'NSS'))

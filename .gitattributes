@@ -27,6 +27,9 @@ licenses/system-macos/** text eol=lf
 licenses/cpython/** text eol=lf
 # Notices Windows amont reproduites à l'octet, CRLF compris (normalisées au rendu).
 licenses/system-windows/** -text
+# Notices NSIS amont reproduites à l'octet, CRLF compris (normalisées au rendu).
+licenses/installer-nsis/** -text
+licenses/nsis-installer.lock.json text eol=lf
 licenses/LISEZMOI-SOURCES.txt text eol=lf
 licenses/supplements/LGPL-2.0.txt text eol=lf
 

@@ -33,7 +33,7 @@ class CPythonComponentsTests(unittest.TestCase):
                  *{r['notice']['path'] for r in catalog['libraries'] + catalog['macos_libraries'] + catalog['windows_libraries']},
                  *{r['path'] for r in components.notice_files(catalog['cpython'])},
                  'scripts/system_libraries.py', 'scripts/cpython_components.py',
-                 'scripts/verify_packaged_licenses.py']
+                 'scripts/nsis_installer.py', 'scripts/verify_packaged_licenses.py']
         for name in names:
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)

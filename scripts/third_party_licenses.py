@@ -606,6 +606,9 @@ def main():
     import system_libraries
     if (root / system_libraries.CATALOG).exists():
         expected += '\n' + system_libraries.render_notices(root)
+    import nsis_installer
+    if (root / nsis_installer.CATALOG).exists():
+        expected += '\n' + nsis_installer.render_notices(root)
     if args.command == 'check':
         check_output(root / OUTPUT, expected)
     else:
