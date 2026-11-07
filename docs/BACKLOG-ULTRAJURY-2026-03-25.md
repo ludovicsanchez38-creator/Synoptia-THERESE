@@ -105,7 +105,7 @@
 **Criteres d'acceptation** :
 - [ ] Un onglet "Legal" ou "Mentions legales" est accessible dans les parametres (SettingsModal)
 - [ ] La politique de confidentialite detaille : donnees collectees, finalites, durees de retention, droits de l'utilisateur (acces, rectification, suppression, portabilite)
-- [ ] Les mentions legales identifient l'editeur (Synoptia SARL-U, SIRET 991 606 781 00010)
+- [ ] Les mentions legales identifient l'editeur (Synoptia SARL-U, SIRET 991 606 781 00011)
 - [ ] Le contenu est en francais avec accents corrects
 - [ ] Un lien "Confidentialite" est visible dans le footer ou la sidebar
 

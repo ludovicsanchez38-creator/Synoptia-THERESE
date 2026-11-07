@@ -82,7 +82,7 @@ Au premier lancement, un **assistant de configuration** te guide en 6 étapes :
 
 ### 1. Chat IA (multi-service IA)
 
-Le coeur de THÉRÈSE : une conversation fluide avec un LLM de ton choix.
+Le cœur de THÉRÈSE : une conversation fluide avec un LLM de ton choix.
 
 **Services IA (providers) supportés** :
 
@@ -529,7 +529,7 @@ Si possible, fais une capture d'écran de l'erreur (sur Mac : `Cmd+Shift+4`, sur
 R : Tout est local dans `~/.therese/` (base SQLite, embeddings Qdrant, images générées, backups).
 
 **Q : Mes conversations sont-elles envoyées quelque part ?**
-R : Uniquement au service IA (provider) que tu as choisi (Anthropic, OpenAI, etc.) pour obtenir les réponses. Si tu utilises Ollama, tout reste 100% local.
+R : Uniquement au service IA (provider) que tu as choisi (Anthropic, OpenAI, etc.) pour obtenir les réponses. Avec un modèle local (Ollama), le contenu de tes conversations ne part chez aucun fournisseur de modèle ; la recherche web, la messagerie, l'agenda et les modèles Ollama Cloud passent toujours par leurs services.
 
 **Q : Comment changer de service IA ?**
 R : Paramètres (icône engrenage) -> onglet LLM -> sélectionne un autre service et renseigne ton code d'accès (clé API).
