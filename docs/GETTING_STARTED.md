@@ -286,7 +286,7 @@ Si Windows Defender ou un autre antivirus bloque THÉRÈSE :
 
 ### Qdrant embarqué indisponible
 
-1. Consultez `http://127.0.0.1:17293/health` et vérifiez la valeur de `services.qdrant`.
+1. Consultez `http://127.0.0.1:17293/health`. Si `services.qdrant` vaut `true`, Qdrant est disponible ; `false` signale une indisponibilité. Si `status` vaut `recovery`, le démarrage des données a échoué et la réponse ne contient pas `services` ; conservez les données et demandez de l'aide.
 2. Vérifiez l'espace disque disponible et les droits d'écriture de votre compte sur le dossier de l'index, `~/.therese/qdrant` par défaut. Conservez les fichiers existants.
 3. Fermez les autres instances de THÉRÈSE avant de relancer le backend. Si le problème persiste, conservez l'index et demandez de l'aide avec le message d'erreur expurgé de toute donnée personnelle ou secrète.
 
