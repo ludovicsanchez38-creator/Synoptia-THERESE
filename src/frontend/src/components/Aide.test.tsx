@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 const pdf = vi.hoisted(() => ({ ouvrirGuide: vi.fn().mockResolvedValue(undefined) }));
-vi.mock('../lib/pdfLocaux', () => ({ ...pdf, GUIDE_VERSION: '0.82' }));
+vi.mock('../lib/pdfLocaux', () => ({ ...pdf, GUIDE_VERSION: '0.83' }));
 import { open } from '@tauri-apps/plugin-shell';
 import { Aide } from './Aide';
 import { LIEN_SECURITE } from './onboarding/SecurityStep';
@@ -9,7 +9,7 @@ beforeEach(() => vi.clearAllMocks());
 it('ouvre le guide embarqué et la page sécurité depuis l’aide', async () => {
   render(<Aide />);
   fireEvent.click(screen.getByRole('button', { name: 'Aide' }));
-  expect(screen.getByRole('dialog', { name: 'Aide' })).toHaveTextContent('0.82');
+  expect(screen.getByRole('dialog', { name: 'Aide' })).toHaveTextContent('0.83');
   fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le guide (PDF)' }));
   await waitFor(() => expect(pdf.ouvrirGuide).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole('link', { name: 'Lire la page sécurité' }));

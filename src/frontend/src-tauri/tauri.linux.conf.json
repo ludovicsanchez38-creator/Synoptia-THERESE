@@ -1,7 +1,7 @@
 {
   "bundle": {
     "resources": {
-      "resources/guide-therese-0.82.pdf": "resources/guide-therese-0.82.pdf",
+      "resources/guide-therese-0.83.pdf": "resources/guide-therese-0.83.pdf",
       "binaries/backend-libs/": "binaries/backend-libs/",
       "binaries/backend-libs/_internal/": "binaries/backend-libs/_internal/",
       "../../../THIRD_PARTY_LICENSES": "THIRD_PARTY_LICENSES",

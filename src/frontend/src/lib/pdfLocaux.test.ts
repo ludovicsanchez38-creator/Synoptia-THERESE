@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-const h = vi.hoisted(() => ({ openPath: vi.fn(), invoke: vi.fn(), resolveResource: vi.fn().mockResolvedValue('/bundle/resources/guide-therese-0.82.pdf') }));
+const h = vi.hoisted(() => ({ openPath: vi.fn(), invoke: vi.fn(), resolveResource: vi.fn().mockResolvedValue('/bundle/resources/guide-therese-0.83.pdf') }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openPath: h.openPath }));
 vi.mock('@tauri-apps/api/path', () => ({ resolveResource: h.resolveResource }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
@@ -9,7 +9,7 @@ import { ouvrirGuide, ouvrirPdfFacture, GUIDE_RESSOURCE } from './pdfLocaux';
 it('résout la ressource du bundle et l’ouvre avec le greffon de fichiers', async () => {
   await ouvrirGuide();
   expect(h.resolveResource).toHaveBeenCalledWith(GUIDE_RESSOURCE);
-  expect(h.openPath).toHaveBeenCalledWith('/bundle/resources/guide-therese-0.82.pdf');
+  expect(h.openPath).toHaveBeenCalledWith('/bundle/resources/guide-therese-0.83.pdf');
   const conf = JSON.parse(readFileSync('src-tauri/tauri.conf.json', 'utf8'));
   expect(Object.values(conf.bundle.resources)).toContain(GUIDE_RESSOURCE);
   const linux = JSON.parse(readFileSync('src-tauri/tauri.linux.conf.json', 'utf8'));

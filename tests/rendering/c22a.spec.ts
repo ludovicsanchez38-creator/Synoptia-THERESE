@@ -5,7 +5,7 @@ test('le guide utilise le chemin du bundle dans un vrai navigateur', async ({ pa
     (window as any).appelsPdf = [];
     (window as any).__TAURI_INTERNALS__ = { invoke: async (commande: string, args: unknown) => {
       (window as any).appelsPdf.push({ commande, args });
-      if (commande === 'plugin:path|resolve_directory') return '/bundle/resources/guide-therese-0.82.pdf';
+      if (commande === 'plugin:path|resolve_directory') return '/bundle/resources/guide-therese-0.83.pdf';
       return undefined;
     } };
   });
@@ -14,7 +14,7 @@ test('le guide utilise le chemin du bundle dans un vrai navigateur', async ({ pa
   await expect(page.getByRole('dialog', { name: 'Aide' })).toBeVisible();
   await page.getByRole('button', { name: 'Ouvrir le guide (PDF)' }).click();
   await expect.poll(() => page.evaluate(() => (window as any).appelsPdf.some((a: any) =>
-    a.commande === 'plugin:opener|open_path' && a.args.path === '/bundle/resources/guide-therese-0.82.pdf'))).toBe(true);
+    a.commande === 'plugin:opener|open_path' && a.args.path === '/bundle/resources/guide-therese-0.83.pdf'))).toBe(true);
 });
 
 for (const hauteur of [640, 800]) {
