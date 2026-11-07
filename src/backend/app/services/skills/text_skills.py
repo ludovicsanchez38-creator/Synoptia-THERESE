@@ -207,7 +207,7 @@ class ProposalSkill(MarkdownSkill):
             'offer': InputField(
                 type='select',
                 label='Offre Synoptïa',
-                options=['VOIR (149 EUR)', 'FORGER (490 EUR)', 'PROPULSER (2 490 EUR)', 'RAYONNER (2 990 EUR)', 'Sur mesure'],
+                options=['Audit gratuit (30 min)', 'FORGER (490 EUR)', 'PROPULSER (2 490 EUR)', 'RAYONNER (2 990 EUR)', 'Sur mesure'],
                 default='Sur mesure',
                 required=False,
                 help_text='Quelle offre proposer ?'
@@ -279,7 +279,7 @@ Tu es un expert en rédaction de propositions commerciales pour Synoptïa.
 - Anti-corporate (évite le jargon)
 
 **Offres Synoptïa (pour référence)** :
-- VOIR : 149 EUR HT - Audit flash (45 min)
+- Audit gratuit : 0 EUR - 30 min, porte d'entrée
 - FORGER : 490 EUR HT - Session one-shot outils IA (2h30)
 - PROPULSER : 2 490 EUR HT - Parcours 3 séances + vidéos async
 - RAYONNER : 2 990 EUR HT - Journée présentiel

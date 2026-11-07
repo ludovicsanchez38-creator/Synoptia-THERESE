@@ -28,7 +28,7 @@
 - **Email et Calendrier** - IMAP/Gmail, CalDAV/Google Calendar intégrés
 - **CRM et Facturation** - Local ou sync Google Sheets, PDF conforme, devises EUR/CHF/USD/GBP
 - **Board de Décision IA** - 5 conseillers virtuels pour t'aider à trancher
-- **18 skills intégrés** - Word, Excel, PowerPoint, emails pro, posts LinkedIn, propositions commerciales, analyses PDF/web, planification projets/semaine/objectifs
+- **20 skills intégrés** - Word, Excel, PowerPoint, emails pro, posts LinkedIn, propositions commerciales, analyses PDF/web, planification projets/semaine/objectifs
 - **Recherche web** - Brave Search, SearXNG (auto-hébergeable) ou DuckDuckGo
 - **Dictée vocale** - Parle, THÉRÈSE écrit
 - **Données locales et chiffrées** - Ton contexte reste sur ta machine, jamais envoyé à un serveur Synoptïa. Ta base de données est chiffrée au repos (SQLCipher, AES-256) et tes clés API sont chiffrées via le trousseau de ton système. Les réponses passent par le provider IA de ton choix.

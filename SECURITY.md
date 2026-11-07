@@ -24,7 +24,7 @@ THÉRÈSE est conçu "local-first". Vos données restent sur votre machine :
 
 ### Chiffrement des clés API
 
-Les clés API des fournisseurs LLM sont chiffrées avec **Fernet** (AES-128-CBC). La clé de chiffrement est stockée dans le Keychain macOS ou le Windows Credential Manager (via `keyring`), jamais sur le disque.
+Les clés API des fournisseurs LLM sont chiffrées avec **Fernet** (AES-128-CBC). La clé de chiffrement est stockée dans le Keychain macOS ou le Windows Credential Manager (via `keyring`), avec une copie de secours dans `~/.therese/.encryption_key` (permissions 600), incluse dans les sauvegardes.
 
 ### Chiffrement de la base au repos (US-014)
 
