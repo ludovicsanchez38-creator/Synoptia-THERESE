@@ -64,5 +64,19 @@ class SigningTests(unittest.TestCase):
         self.assertTrue(any('validate' in c for c in calls))
 
 
+class RecetteContractTests(unittest.TestCase):
+    def test_recette_expects_exactly_the_versioned_entitlements(self):
+        # Run 42360779924 : le micro ajouté à Entitlements.plist le 29/10 n'était
+        # pas dans le contrat de la recette, qui refusait la signature effective.
+        import plistlib
+        root = Path(__file__).resolve().parents[2]
+        spec = importlib.util.spec_from_file_location('recette', root / 'scripts/recette-macos.py')
+        recette = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(recette)
+        with (root / 'src/frontend/src-tauri/Entitlements.plist').open('rb') as f:
+            self.assertEqual(recette.DROITS_ATTENDUS, plistlib.load(f))
+        self.assertNotIn('com.apple.security.cs.allow-jit', recette.DROITS_ATTENDUS)
+        self.assertNotIn('com.apple.security.cs.allow-unsigned-executable-memory', recette.DROITS_ATTENDUS)
+
 if __name__ == '__main__':
     unittest.main()

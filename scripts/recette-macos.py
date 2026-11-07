@@ -27,6 +27,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import ProxyHandler, build_opener
 
+# Droits exacts du moteur et de l'interface signés (docs/SIGNATURE-ET-LICENCES.md) :
+# l'exception de validation des bibliothèques pour le moteur Python, et le micro
+# ajouté le 29/10/2026 (3fbd5cea). Tout autre droit fait échouer la recette ; un
+# test garde ce contrat identique à src/frontend/src-tauri/Entitlements.plist.
+DROITS_ATTENDUS = {
+    "com.apple.security.cs.disable-library-validation": True,
+    "com.apple.security.device.audio-input": True,
+}
+
 
 def sha256(path: Path) -> str:
     """Empreinte en flux du sidecar, potentiellement volumineux."""
@@ -230,10 +239,10 @@ def main() -> int:
             for metadata in receipt["signatures"]:
                 if (metadata["display_exit_code"] != 0 or metadata["entitlements_exit_code"] != 0
                         or not metadata["hardened_runtime"] or not metadata["ad_hoc"]
-                        or metadata["entitlements"] != {"com.apple.security.cs.disable-library-validation": True}):
+                        or metadata["entitlements"] != DROITS_ATTENDUS):
                     raise RuntimeError(f"signature effective hors contrat : {metadata['path']}")
             receipt["checks"] = ["listener possédé", "version exacte", "DB disponible", "Qdrant disponible",
-                                 "hardened runtime sidecar et GUI", "unique exception library-validation"]
+                                 "hardened runtime sidecar et GUI", "droits exacts : library-validation et micro"]
             receipt["status"] = "passed"
     except Exception as exc:
         receipt["error"] = f"{type(exc).__name__}: {exc}"
