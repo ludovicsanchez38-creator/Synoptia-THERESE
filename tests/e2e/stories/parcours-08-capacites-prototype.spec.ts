@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { BACKEND_URL } from './helpers/backend';
+import { authentifierAmorcageNavigateur, BACKEND_URL } from './helpers/backend';
 import { passerLaMiseEnRoute } from './helpers/surfaces';
 
 async function json(route: Route, body: unknown) {
@@ -206,6 +206,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
   test.beforeEach(async ({ page, request }) => {
     await passerLaMiseEnRoute(request);
     await installReadOnlyShell(page);
+    await authentifierAmorcageNavigateur(page);
     await page.goto('/?prototype=conversation-canvas&scenario=today');
     await expect(page.getByTestId('conversation-canvas-prototype')).toBeVisible();
   });

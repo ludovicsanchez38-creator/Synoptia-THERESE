@@ -112,14 +112,16 @@ export async function verifierPileJetable(base, expectedDataDir, fetcher = fetch
   if (preuveReseau.version !== 1 || preuveReseau.network_policy !== 'loopback-only' || preuveReseau.offline !== true) {
     throw new Error('Attestation du backend hors ligne invalide');
   }
-  // Cette route d'amorçage est exempte du middleware d'authentification et
-  // accepte un client local sans Origin. Le jeton ne sort pas de cette portée.
+  // F-2 : le compte du harnais doit connaître le fichier privé de l'instance.
+  const tokenPrive = readFileSync(join(attendu, '.session_token'), 'utf8').trim();
+  if (!tokenPrive) throw new Error('Jeton privé de la pile jetable absent');
   const amorcage = await fetcher(`${ORIGINE_BACKEND}/api/auth/token`, {
     method: 'GET', redirect: 'error', signal: AbortSignal.timeout(5000),
+    headers: { 'X-Therese-Token': tokenPrive },
   });
   if (!amorcage.ok) throw new Error(`Amorçage de la pile jetable indisponible : HTTP ${amorcage.status}`);
   const { token } = await amorcage.json();
-  if (typeof token !== 'string' || !token) throw new Error('Jeton de la pile jetable absent');
+  if (typeof token !== 'string' || token !== tokenPrive) throw new Error('Jeton de la pile jetable incohérent');
   const reponse = await fetcher(`${ORIGINE_BACKEND}/api/config/stats`, {
     method: 'GET', redirect: 'error', signal: AbortSignal.timeout(5000),
     headers: { 'X-Therese-Token': token },
@@ -557,6 +559,13 @@ async function principal() {
       for (const theme of args.themes) {
         const contexte = await navigateur.newContext({ viewport: { width: largeur, height: 900 }, colorScheme: theme, serviceWorkers: 'block', acceptDownloads: false });
         await installerGardeReseau(contexte, garde);
+        await contexte.route(`${ORIGINE_BACKEND}/api/auth/token`, async (route) => {
+          if (route.request().method() !== 'GET') return route.fallback();
+          await route.continue({ headers: {
+            ...route.request().headers(),
+            'X-Therese-Token': readFileSync(join(preuvePile.data_dir, '.session_token'), 'utf8').trim(),
+          } });
+        });
         // P-142 : l'écran quitté se rouvrirait ; chaque écran part de l'Accueil.
         await contexte.addInitScript(() => { try { sessionStorage.clear(); } catch { /* sans stockage */ } });
         // B-1648 : l'application ne lit pas prefers-color-scheme, elle lit son

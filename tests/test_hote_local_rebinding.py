@@ -71,7 +71,9 @@ def test_preflight_refuse_a_un_hote_etranger(sync_client):
 async def test_hotes_de_boucle_locale_acceptes(client, monkeypatch, hote):
     monkeypatch.setattr(app.state, "session_token", "tok-secret", raising=False)
 
-    resp = await client.get("/api/auth/token", headers={"Host": hote})
+    resp = await client.get(
+        "/api/auth/token", headers={"Host": hote, "X-Therese-Token": "tok-secret"}
+    )
 
     assert resp.status_code == 200
     assert resp.json()["token"] == "tok-secret"

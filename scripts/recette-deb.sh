@@ -83,7 +83,10 @@ ok "moteur prêt, version $version"
 if [ -n "$ATTENDUE" ] && [ "$version" != "$ATTENDUE" ]; then ko "version $version, attendue $ATTENDUE"; fi
 
 # 3. DOCX avec pied de page (profil d'export par défaut : « Généré par THÉRÈSE - Synoptïa »)
-JETON="$(curl -s "http://127.0.0.1:$PORT/api/auth/token" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("token",""))')"
+if ! JETON="$(cat "$DONNEES/.session_token")" || [ -z "$JETON" ]; then
+  ko "Jeton de session privé absent, vide ou illisible"
+  exit 1
+fi
 api() { curl -s -m 60 -H "X-Therese-Token: $JETON" -H "Content-Type: application/json" "$@"; }
 doc="$(api -X POST "http://127.0.0.1:$PORT/api/documents" -d '{"title":"Recette paquet","brief":"Contrôle du .deb"}' | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))')"
 sec="$(api -X POST "http://127.0.0.1:$PORT/api/documents/$doc/sections" -d '{"title":"Introduction","brief":"","order":10,"depth":0}' | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))')"

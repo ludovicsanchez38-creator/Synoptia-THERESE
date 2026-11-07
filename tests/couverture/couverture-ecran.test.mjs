@@ -46,6 +46,7 @@ test('la preuve de données jetables exige data_dir et db_path dans /private/tmp
   const dataDir = mkdtempSync('/private/tmp/therese-couverture-test-');
   const dbPath = join(dataDir, 'therese.db');
   writeFileSync(dbPath, 'jetable');
+  writeFileSync(join(dataDir, '.session_token'), 'jeton-jetable', { mode: 0o600 });
   t.after(() => renameSync(dataDir, join(homedir(), '.Trash', basename(dataDir))));
   let demandes = 0;
   const fetcher = async (url, options) => {
@@ -58,7 +59,7 @@ test('la preuve de données jetables exige data_dir et db_path dans /private/tmp
     }
     if (demandes === 2) {
       assert.equal(url, 'http://127.0.0.1:17393/api/auth/token');
-      assert.equal(options.headers, undefined, 'aucun Origin ni jeton à l’amorçage');
+      assert.deepEqual(options.headers, { 'X-Therese-Token': 'jeton-jetable' });
       return { ok: true, json: async () => ({ token: 'jeton-jetable' }) };
     }
     assert.equal(url, 'http://127.0.0.1:17393/api/config/stats');

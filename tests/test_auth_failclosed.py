@@ -83,7 +83,8 @@ async def test_le_jeton_de_session_reste_lisible_par_la_fenetre_tauri(client, mo
     monkeypatch.setattr(app.state, "session_token", "tok-secret", raising=False)
 
     resp = await client.get(
-        "/api/auth/token", headers={"Origin": "tauri://localhost"}
+        "/api/auth/token",
+        headers={"Origin": "tauri://localhost", "X-Therese-Token": "tok-secret"},
     )
 
     assert resp.status_code == 200, resp.text

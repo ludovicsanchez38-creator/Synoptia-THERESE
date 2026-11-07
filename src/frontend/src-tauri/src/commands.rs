@@ -33,6 +33,24 @@ pub fn get_backend_port(state: tauri::State<'_, crate::BackendPort>) -> u16 {
     *state.0.lock().unwrap()
 }
 
+/// Lit le jeton dans le fichier privé du compte courant, sans distribution HTTP.
+#[tauri::command]
+pub fn get_session_token() -> Result<String, String> {
+    let data_dir = match std::env::var_os("THERESE_DATA_DIR") {
+        Some(path) => std::path::PathBuf::from(path),
+        None => dirs::home_dir()
+            .ok_or_else(|| "Dossier personnel introuvable.".to_string())?
+            .join(".therese"),
+    };
+    let token = std::fs::read_to_string(data_dir.join(".session_token"))
+        .map_err(|_| "Jeton de session indisponible.".to_string())?;
+    let token = token.trim();
+    if token.is_empty() {
+        return Err("Jeton de session indisponible.".to_string());
+    }
+    Ok(token.to_string())
+}
+
 /// Relance le moteur local à la demande (bouton « Relancer le moteur local »).
 ///
 /// Revue 0.40 : après 3 relances automatiques épuisées, l'interface offre une

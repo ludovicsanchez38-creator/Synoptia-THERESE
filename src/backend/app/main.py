@@ -9,6 +9,7 @@ import asyncio
 import logging
 import os
 import secrets
+import tempfile
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
@@ -171,6 +172,21 @@ def _is_fatal_migration_error(exc: Exception) -> bool:
     return any(marker in msg for marker in fatal_markers)
 
 
+def _ecrire_jeton_prive(token_path: FilePath, token: str) -> None:
+    """Publier un fichier privé neuf pour couper aussi les anciens descripteurs."""
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    # Même système de fichiers pour un remplacement atomique, après fermeture
+    # du fichier (nécessaire sous Windows). Le dossier temporaire est privé.
+    with tempfile.TemporaryDirectory(dir=token_path.parent, prefix=".session_token-") as dossier:
+        preparation = FilePath(dossier) / "jeton"
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        with os.fdopen(os.open(preparation, flags, 0o600), "w", encoding="utf-8") as fichier:
+            os.chmod(preparation, 0o600)
+            fichier.write(token)
+        os.replace(preparation, token_path)
+        os.chmod(token_path, 0o600)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -207,9 +223,7 @@ async def lifespan(app: FastAPI):
         app.state.reprise_donnees = True
         token = secrets.token_urlsafe(32)
         token_path = FilePath(settings.data_dir) / ".session_token"
-        token_path.parent.mkdir(parents=True, exist_ok=True)
-        token_path.write_text(token)
-        os.chmod(token_path, 0o600)
+        _ecrire_jeton_prive(token_path, token)
         app.state.session_token = token
         try:
             yield
@@ -431,9 +445,7 @@ async def lifespan(app: FastAPI):
     # Revue 0.40.1 (F11) : le token suit THERESE_DATA_DIR - une instance de
     # test/E2E n'écrase plus le jeton du profil réel (~/.therese inchangé en prod).
     token_path = FilePath(settings.data_dir) / ".session_token"
-    token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_text(token)
-    os.chmod(str(token_path), 0o600)
+    _ecrire_jeton_prive(token_path, token)
     app.state.session_token = token
     logger.info(f"Session token generated and saved to {token_path}")
 
@@ -569,9 +581,9 @@ def _origine_refusee(request: Request) -> JSONResponse | None:
     (un POST simple part sans préflight, et le navigateur y met un Origin).
 
     Une requête SANS Origin n'est pas concernée : c'est le cas du TcpStream
-    brut de `lib.rs` et de tout appel non-navigateur. Le risque « processus
-    local » reste celui déjà noté en SEC-010, et il ne se ferme pas ici : le
-    jeton de session est lisible dans `.session_token` par le même utilisateur.
+    brut de `lib.rs` et de tout appel non-navigateur. Ce contrôle ne prouve
+    jamais l'identité de l'utilisateur système : le jeton reste nécessaire
+    pour les routes qui donnent accès aux données.
     """
     origin = request.headers.get("Origin")
     if origin and origin not in _cors_origins:
@@ -724,29 +736,25 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 
-# --- Auth token bootstrap endpoint (SEC-010) ---
-# SECURITY NOTE (SEC-010): This endpoint returns the session token in plaintext.
-# Risk level: LOW for desktop app (localhost only, CORS-restricted to Tauri origins).
-# The token is ephemeral (regenerated each launch) and the endpoint is not reachable
-# from external networks. If THERESE ever serves remote clients, this must be replaced
-# by a secure handshake (e.g. file-based token exchange or IPC channel).
-# B-165 : l'origine est désormais vérifiée PAR LA ROUTE. CORS seul ne refusait
-# rien côté serveur — il empêchait un script de lire la réponse, pas la réponse
-# de partir. Un appel sans Origin (curl, script local) obtient toujours le
-# jeton : ce processus peut de toute façon lire ~/.therese/.session_token.
+# F-2 : l'amorçage Tauri lit .session_token par IPC, sous le compte courant.
+# La route historique exige de connaître déjà ce secret : ni la boucle locale
+# ni un Origin autorisé ne distinguent deux comptes système du même poste.
 
 @app.get("/api/auth/token")
 async def get_auth_token(request: Request):
-    """Retourne le token de session.
-
-    Refuse toute origine de navigateur hors liste autorisée (B-165). Une
-    requête sans Origin passe : elle ne vient pas d'une page web.
-    """
+    """Retourne le jeton uniquement au client qui le connaît déjà."""
     refus = _origine_refusee(request)
     if refus is not None:
         logger.warning("Jeton de session refusé : origine de navigateur non autorisée")
         return refus
-    return {"token": getattr(request.app.state, "session_token", None)}
+    expected = getattr(request.app.state, "session_token", None)
+    token = request.headers.get("X-Therese-Token")
+    if not expected or not token or not secrets.compare_digest(token, expected):
+        return JSONResponse(
+            status_code=401,
+            content={"code": "UNAUTHORIZED", "message": "Token de session invalide ou manquant"},
+        )
+    return {"token": expected}
 
 
 # Mode maintenance des restaurations
