@@ -110,6 +110,14 @@ jobs:
   build:
     name: Build ${{ matrix.platform.name }}
     needs: [preflight, ci, e2e, sources-copyleft]
+    # Toutes les gates doivent réussir. Seule exception, à blanc : les sources
+    # copyleft (téléchargées chez les amonts, ffmpeg.org injoignable le
+    # 07/11/2026) ne bloquent pas la construction des installeurs, rien ne
+    # sortant de ce mode ; leur job tourne et rend quand même son verdict.
+    if: >-
+      ${{ !cancelled() && needs.preflight.result == 'success' && needs.ci.result == 'success'
+      && needs.e2e.result == 'success'
+      && (needs.sources-copyleft.result == 'success' || inputs.dry_run) }}
     strategy:
       fail-fast: false
       matrix:

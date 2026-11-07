@@ -180,6 +180,14 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn('dry_run', str(step.get('if', '')))
         tauri = next(s for s in jobs['build']['steps'] if 'tauri-apps/tauri-action@' in s.get('uses', ''))
         self.assertFalse({'tagName', 'releaseId'} & set(tauri['with']))
+        # Hors mode à blanc, chaque gate doit réussir avant le build.
+        condition = ' '.join(jobs['build']['if'].split())
+        self.assertEqual(set(jobs['build']['needs']), {'preflight', 'ci', 'e2e', 'sources-copyleft'})
+        self.assertTrue(condition.startswith('${{ !cancelled() && '))
+        for gate in ('preflight', 'ci', 'e2e'):
+            self.assertIn(f"&& needs.{gate}.result == 'success' &&", condition + ' &&')
+        self.assertIn("(needs.sources-copyleft.result == 'success' || inputs.dry_run) }}", condition)
+        self.assertEqual(condition.count('||'), 1)
 
     def test_inventory_precedes_cleanup_and_final_verifier_keeps_python(self):
         steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
