@@ -1,11 +1,11 @@
 import { expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 const h = vi.hoisted(() => ({ openPath: vi.fn(), invoke: vi.fn(), resolveResource: vi.fn().mockResolvedValue('/bundle/resources/guide-therese-0.83.pdf') }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openPath: h.openPath }));
 vi.mock('@tauri-apps/api/path', () => ({ resolveResource: h.resolveResource }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
 vi.mock('../services/api/core', () => ({ getSessionToken: () => 'jeton-factice', initializeAuth: vi.fn().mockResolvedValue(undefined) }));
-import { ouvrirGuide, ouvrirPdfFacture, GUIDE_RESSOURCE } from './pdfLocaux';
+import { ouvrirGuide, ouvrirPdfFacture, GUIDE_RESSOURCE, GUIDE_VERSION } from './pdfLocaux';
 it('résout la ressource du bundle et l’ouvre avec le greffon de fichiers', async () => {
   await ouvrirGuide();
   expect(h.resolveResource).toHaveBeenCalledWith(GUIDE_RESSOURCE);
@@ -17,6 +17,10 @@ it('résout la ressource du bundle et l’ouvre avec le greffon de fichiers', as
   const acl = JSON.parse(readFileSync('src-tauri/capabilities/default.json', 'utf8'));
   expect(acl.permissions.find((p: { identifier?: string }) => p.identifier === 'opener:allow-open-path').allow)
     .toEqual([{ path: '$RESOURCE/' + GUIDE_RESSOURCE }]);
+});
+it('le guide embarqué porte la version annoncée dans l’Aide, et le fichier existe', () => {
+  expect(GUIDE_RESSOURCE).toBe(`resources/guide-therese-${GUIDE_VERSION}.pdf`);
+  expect(existsSync(`src-tauri/${GUIDE_RESSOURCE}`)).toBe(true);
 });
 it('demande au moteur le seul PDF de cette facture, sans chemin fourni par l’écran', async () => {
   await ouvrirPdfFacture('inv-1');
