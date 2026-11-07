@@ -74,7 +74,7 @@ make dev-frontend &
 ### Server (THERESE Server)
 ```bash
 # 1. Tunnel SSH vers le VPS
-ssh -f -N -L 8880:127.0.0.1:80 ubuntu@51.178.16.63
+ssh -f -N -L 8880:<adresse-du-serveur>:80 ubuntu@<adresse-du-serveur>
 
 # 2. Ouvrir Chrome
 
