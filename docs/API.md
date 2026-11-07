@@ -2,7 +2,7 @@
 
 ## Informations générales
 
-- **Base URL** : `http://localhost:8000`
+- **Base URL** : `http://localhost:17293`
 - **Authentification** : Header `X-Therese-Token: {token}`
 - **Format** : JSON (`application/json`)
 - **Streaming** : SSE (`text/event-stream`) pour le chat et le board
@@ -31,8 +31,7 @@ Envoie un message et reçoit une réponse en streaming SSE.
 {
   "conversation_id": "uuid (optionnel, créé si absent)",
   "message": "Texte du message",
-  "files": ["chemin/fichier.txt"],
-  "model": "claude-sonnet-4-20250514 (optionnel)"
+  "file_paths": ["chemin/fichier.txt"]
 }
 ```
 
@@ -137,7 +136,11 @@ data: {"type": "status", "content": "done", "usage": {"input_tokens": 150, "outp
 
 **Réponse** : `201 Created` + contact complet
 
-#### GET `/api/memory/contacts/{id}` - Détail contact
+#### GET `/api/memory/contacts/{id}` - Détail contact (pour l'interface)
+
+#### GET `/api/memory/contacts/{id}/fiche` - Fiche contact pour un modèle
+
+Rend l'état enregistré, les traces datées et la consigne de lecture, distingués (voir MCP-THERESE.md). C'est cette route qui doit alimenter un modèle.
 
 #### PATCH `/api/memory/contacts/{id}` - Modifier un contact
 
@@ -297,7 +300,7 @@ inconnu : `404`.
 **Body POST `/api/config/llm`** :
 
 ```json
-{"provider": "anthropic", "model": "claude-sonnet-4-20250514"}
+{"provider": "anthropic", "model": "claude-sonnet-5-5"}
 ```
 
 ### Autres

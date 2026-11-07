@@ -76,7 +76,8 @@ opportunités lors d'un import CRM.
 En `stdio`, par le processus qui l'utilise :
 
 ```bash
-python -m app.services.mcp_therese_server
+cd src/backend
+uv run python -m app.services.mcp_therese_server
 ```
 
 Il parle au backend local en HTTP, avec le jeton de session de l'application

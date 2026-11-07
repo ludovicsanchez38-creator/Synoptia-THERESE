@@ -66,5 +66,5 @@ Conséquences à connaître :
 ## Limitations connues (alpha)
 
 - L'application n'est pas signée (macOS Gatekeeper, Windows SmartScreen)
-- Le backend écoute sur `127.0.0.1:8000` (localhost uniquement)
+- Le backend écoute sur `127.0.0.1:17293` (localhost uniquement)
 - Les communications avec les API LLM transitent par Internet (HTTPS)
