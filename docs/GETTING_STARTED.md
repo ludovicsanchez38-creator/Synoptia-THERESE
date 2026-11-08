@@ -171,16 +171,11 @@ npm run tauri dev
 
 > L'application de bureau THÉRÈSE s'ouvre automatiquement. Le frontend Vite tourne sur `http://localhost:1420` et Tauri encapsule l'interface dans une fenêtre native.
 
-### Mode web uniquement (sans Tauri)
+### Mode navigateur (sans Tauri)
 
-Si vous ne souhaitez pas compiler le wrapper Rust/Tauri, vous pouvez lancer le frontend en mode web :
+Dans la version 0.83, le lancement du frontend Vite seul ne permet pas d’utiliser THÉRÈSE dans un navigateur ordinaire. Sans le jeton privé de session, l’amorçage échoue et l’interface affiche **Authentification impossible**.
 
-```bash
-cd src/frontend
-npm run dev
-```
-
-> L'interface est alors accessible dans votre navigateur à l'adresse `http://localhost:1420`. Certaines fonctionnalités natives (fenêtres indépendantes, drag & drop fichiers Tauri, File Browser) ne seront pas disponibles dans ce mode.
+Utilisez le lancement de l’application Tauri décrit ci-dessus, qui récupère le jeton par son canal privé. Le démarrage complet depuis les sources n’a pas été essayé dans cette préparation.
 
 ### Raccourci Makefile
 
