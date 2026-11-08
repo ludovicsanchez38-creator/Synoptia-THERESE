@@ -102,7 +102,7 @@ Contrairement à Cowork - qui repart de zéro à chaque session - THÉRÈSE se s
 |                                     |                                     |
 +-------------------------------------+-------------------------------------+
                                       |
-                              HTTP + SSE (localhost:8000)
+                              HTTP + SSE (127.0.0.1:17293)
                                       |
 +-------------------------------------v-------------------------------------+
 |                      Python FastAPI Backend (Sidecar)                     |
@@ -260,66 +260,26 @@ Contrairement à Cowork - qui repart de zéro à chaque session - THÉRÈSE se s
 
 ## Installation
 
-### Prérequis
+Consultez le [guide d’installation depuis les sources](GETTING_STARTED.md) pour les prérequis et le lancement. Le démarrage complet n’a pas été essayé sur les systèmes visés dans cette préparation ; les procédures restent à vérifier dans un profil de développement isolé.
 
-- **Node.js** 20+
-- **Python** 3.11+ (via [UV](https://github.com/astral-sh/uv))
-- **Rust** (pour Tauri 2.0) - [rustup.rs](https://rustup.rs)
-- **Qdrant** (base de données vectorielle) - `docker run -p 6333:6333 qdrant/qdrant`
+### Backend et mémoire
 
-### Installation backend
+Le backend utilise Qdrant en mode embarqué. Aucun serveur Qdrant séparé ni conteneur Docker n’est requis. L’index se trouve dans `~/.therese/qdrant` avec le profil par défaut ; un dossier de données personnalisé peut modifier ce chemin.
 
-```bash
-# Cloner le projet
-git clone https://github.com/ludovicsanchez38-creator/therese-v2.git
-cd therese-v2
+### Construction de l’application
 
-# Installer les dépendances Python
-uv sync
+Le Makefile définit `make build-release` pour enchaîner la construction du backend embarqué, puis celle de l’application Tauri. `make build` ne lance que la construction Tauri. Cet enchaînement complet n’a pas été exécuté dans cette préparation ; aucune construction manuelle n’est présentée comme vérifiée.
 
-# Appliquer les migrations
-cd src/backend
-uv run alembic upgrade head
-```
+### Adresses prévues en développement
 
-### Installation frontend
-
-```bash
-# Installer les dépendances Node.js
-cd src/frontend
-npm install
-```
-
-### Lancement en développement
-
-```bash
-# Méthode 1 : Makefile (recommandé)
-make dev
-
-# Méthode 2 : Manuel (2 terminaux)
-
-# Terminal 1 - Backend
-cd src/backend
-uv run uvicorn app.main:app --reload --port 8000
-
-# Terminal 2 - Frontend Tauri
-cd src/frontend
-npm run tauri dev
-```
-
-### Build de production
-
-```bash
-make build
-```
-
-### URLs de développement
+Ces adresses proviennent de la configuration du dépôt. Elles n’attestent pas qu’une instance est démarrée.
 
 | Service | URL |
 |---------|-----|
-| Frontend Tauri | http://localhost:1420 |
-| Backend API | http://localhost:8000 |
-| Documentation API | http://localhost:8000/docs |
+| Interface Vite | http://localhost:1420 |
+| Backend API | http://127.0.0.1:17293 |
+| Santé du backend | http://127.0.0.1:17293/health |
+| Documentation API, si le mode debug est activé | http://127.0.0.1:17293/docs |
 
 ---
 
@@ -549,7 +509,8 @@ cd src/frontend && npm test
 | `make lint` | Vérifier le code (ruff + eslint) |
 | `make lint-fix` | Corriger le code automatiquement |
 | `make typecheck` | Vérification TypeScript |
-| `make build` | Build de production (Tauri .app) |
+| `make build` | Construction Tauri seule, sans construire le backend embarqué |
+| `make build-release` | Backend embarqué puis application Tauri, enchaînement non essayé ici |
 | `make clean` | Nettoyer les fichiers générés |
 | `make clean-all` | Nettoyage complet (node_modules, venv) |
 | `make reset-sandbox` | Reset environnement test E2E |

@@ -117,9 +117,9 @@ Au premier lancement de THÉRÈSE, un **assistant de configuration en 6 étapes*
 
 1. **Bienvenue** - Présentation de THÉRÈSE
 2. **Profil** - Votre nom, entreprise, rôle (optionnel : import depuis un fichier CLAUDE.md)
-3. **LLM** - Choix du fournisseur IA et saisie de la clé API
+3. **Service d’IA** : choix du fournisseur IA et saisie de la clé API
 4. **Sécurité** - Avertissements sur les connexions cloud (confirmation explicite requise si un service cloud est activé)
-5. **Dossier de travail** - Sélection du répertoire par défaut pour vos fichiers
+5. **Dossier** : sélection du répertoire par défaut pour vos fichiers
 6. **Terminé** - Récapitulatif de la configuration
 
 ### Clé API LLM (sauf Ollama en local)
@@ -151,6 +151,8 @@ Une clé API est nécessaire pour un fournisseur distant ; Ollama en local n’e
 
 THÉRÈSE se lance avec **2 processus**, dans deux terminaux ouverts à la racine du dépôt. Le backend initialise lui-même Qdrant en mode embarqué.
 
+Le démarrage complet depuis les sources n’a pas été essayé sur les systèmes visés dans cette préparation. Les commandes de cette section restent à vérifier dans un profil de développement isolé.
+
 ### Terminal 1 - Backend (API FastAPI)
 
 ```bash
@@ -169,16 +171,11 @@ npm run tauri dev
 
 > L'application de bureau THÉRÈSE s'ouvre automatiquement. Le frontend Vite tourne sur `http://localhost:1420` et Tauri encapsule l'interface dans une fenêtre native.
 
-### Mode web uniquement (sans Tauri)
+### Mode navigateur (sans Tauri)
 
-Si vous ne souhaitez pas compiler le wrapper Rust/Tauri, vous pouvez lancer le frontend en mode web :
+Dans la version 0.83, le lancement du frontend Vite seul ne permet pas d’utiliser THÉRÈSE dans un navigateur ordinaire. Sans le jeton privé de session, l’amorçage échoue et l’interface affiche **Authentification impossible**.
 
-```bash
-cd src/frontend
-npm run dev
-```
-
-> L'interface est alors accessible dans votre navigateur à l'adresse `http://localhost:5173`. Certaines fonctionnalités natives (fenêtres indépendantes, drag & drop fichiers Tauri, File Browser) ne seront pas disponibles dans ce mode.
+Utilisez le lancement de l’application Tauri décrit ci-dessus, qui récupère le jeton par son canal privé. Le démarrage complet depuis les sources n’a pas été essayé dans cette préparation.
 
 ### Raccourci Makefile
 
@@ -201,18 +198,15 @@ Autres commandes utiles :
 
 ## 5. Build de l'application
 
+La construction complète n’a pas été exécutée dans cette préparation, sur macOS comme sur Windows. Les commandes existantes ci-dessous correspondent aux cibles du Makefile ; leur résultat reste à vérifier sur le système visé avant distribution.
+
 Pour générer l'application macOS distribuable :
 
 ```bash
 make build-release
 ```
 
-Ou manuellement :
-
-```bash
-cd src/frontend
-npm run tauri build
-```
+Le Makefile fait précéder la construction Tauri par celle du backend embarqué avec `build-sidecar`. Une construction manuelle doit respecter cet ordre : `npm run tauri build` seul ne construit pas le backend. La construction manuelle n’a pas été essayée ; aucune recette manuelle n’est proposée ici.
 
 Le bundle généré se trouve dans :
 
@@ -224,7 +218,7 @@ Vous y trouverez :
 - Un fichier `.app` (application macOS)
 - Un fichier `.dmg` (image disque pour distribution)
 
-> **Note** : le build de production nécessite Rust et peut prendre plusieurs minutes lors de la première compilation. L'application n'est pas encore signée (pas de certificat Apple Developer), macOS affichera donc un avertissement de sécurité au premier lancement.
+> **Note** : aucun paquet macOS n’a été construit ni vérifié dans cette préparation. Avant de traiter une alerte de sécurité à l’installation, faites vérifier l’origine du paquet et le motif de l’alerte. Conservez la protection du système active si le contrôle ne permet pas de conclure.
 
 ---
 
@@ -246,7 +240,7 @@ Vous y trouverez :
 - Un fichier `.exe` (installeur Windows)
 - Un fichier `.msi` (installeur MSI pour déploiement)
 
-> **Note** : le code signing Windows n'est pas encore disponible. Au premier lancement, Windows SmartScreen affichera un avertissement "Application non reconnue". Cliquez sur **Informations complémentaires** puis **Exécuter quand même** pour continuer.
+> **Note** : aucun paquet Windows n’a été construit ni vérifié dans cette préparation. Si SmartScreen affiche une alerte, faites vérifier l’origine du paquet et le motif de l’alerte avant toute nouvelle tentative. Gardez la protection active et demandez de l’aide si le contrôle ne permet pas de conclure.
 
 ---
 
@@ -254,35 +248,65 @@ Vous y trouverez :
 
 ### Port 17293 déjà utilisé
 
-Si le backend refuse de démarrer avec une erreur de type "Address already in use" :
+Avant tout arrêt, vérifiez que le processus qui écoute sur le port appartient à l’ancienne instance de THÉRÈSE. Un nom comme `backend` ou le seul numéro du port ne suffit pas. Si l’identité reste incertaine, conservez le processus et demandez de l’aide.
+
+#### Linux : consigne essayée sur des processus factices
+
+L’essai a porté sur des exécutables factices, dans un dossier isolé, avec des ports éphémères sur la boucle locale. Aucune instance réelle de THÉRÈSE n’a été arrêtée. Les commandes ci-dessous utilisent le port prévu par l’application.
+
+1. Dans Bash, relevez le PID qui écoute. Aucun signal n’est envoyé par cette commande. En cas de plusieurs PID, examinez chaque processus séparément.
 
 ```bash
-# Identifier le processus qui utilise le port 17293
-lsof -i :17293
-
-# Arrêter le processus (remplacer PID par le numéro affiché)
-kill PID
+PORT=17293
+lsof -nP -a -iTCP:"$PORT" -sTCP:LISTEN
 ```
 
-### Port 17293 déjà utilisé (Windows)
-
-Si le backend refuse de démarrer sur Windows avec une erreur "Address already in use" :
+2. Saisissez un seul PID positif relevé à l’étape 1. Les commandes affichent le nom de la commande sans ses arguments et les chemins nécessaires à l’identification. N’affichez pas la ligne de commande complète ni les variables du processus, qui pourraient contenir un secret.
 
 ```bash
-# Identifier le processus qui utilise le port 17293
-netstat -ano | findstr :17293
-
-# Arrêter le processus (remplacer XXXX par le PID affiché)
-taskkill /PID XXXX /F
+read -r -p 'PID à examiner : ' PID
+if [[ "$PID" =~ ^[1-9][0-9]*$ ]] && (( PID > 1 )); then
+    ps -p "$PID" -o pid=,uid=,comm=,lstart=
+    readlink -e "/proc/$PID/exe"
+    readlink -e "/proc/$PID/cwd"
+else
+    printf '%s\n' 'PID invalide : arrêt de la procédure.'
+fi
 ```
 
-### Antivirus faux positif
+Le propriétaire doit être votre compte. Comparez le chemin de l’exécutable avec l’emplacement connu de votre installation THÉRÈSE ; vérifiez aussi que le nom de commande correspond au backend de cette installation. Notez le PID et son heure de démarrage pour repérer un remplacement du processus. Un dossier nommé THÉRÈSE ne prouve pas à lui seul l’origine d’un exécutable. Si une commande échoue, si le chemin est inattendu ou si seul un interpréteur Python apparaît, n’envoyez aucun signal. Pour un lancement depuis les sources, revenez au terminal où vous aviez lancé ce backend.
 
-Si Windows Defender ou un autre antivirus bloque THÉRÈSE :
+3. Une fois l’instance identifiée, enregistrez le travail accessible puis quittez THÉRÈSE normalement. Pour un lancement depuis les sources, utilisez `Ctrl + C` dans son terminal d’origine. Rejouez l’étape 1. Si le port est libre, la procédure est terminée.
 
-1. Ouvrez **Windows Defender** > **Protection contre les virus et menaces** > **Paramètres**
-2. Dans **Exclusions**, ajoutez le dossier du projet (ex. `C:\Users\...\Synoptia-THERESE`)
-3. Relancez l'application
+4. Si un backend résiduel écoute encore, rejouez les étapes 1 et 2. Confirmez à nouveau son identité et son heure de démarrage. Si le PID a changé ou si l’application relance le backend, arrêtez la procédure et demandez de l’aide. Si le même backend identifié reste présent après la fermeture normale, demandez son arrêt avec `SIGTERM` :
+
+```bash
+if [[ "$PID" =~ ^[1-9][0-9]*$ ]] && (( PID > 1 )); then
+    kill -TERM -- "$PID"
+fi
+```
+
+5. Laissez l’arrêt se terminer et vérifiez de nouveau le port. Si `SIGTERM` reste sans effet, rejouez les étapes 1 et 2 avant tout autre signal. Un arrêt forcé risque de perdre des écritures en cours. Réservez la commande suivante au même backend résiduel, dont l’identité et l’heure de démarrage sont toujours confirmées, après l’échec de l’arrêt normal puis de `SIGTERM` :
+
+```bash
+if [[ "$PID" =~ ^[1-9][0-9]*$ ]] && (( PID > 1 )); then
+    kill -KILL -- "$PID"
+fi
+```
+
+Ces commandes vérifient la forme du PID ; la comparaison de l’identité reste manuelle. Si le processus a disparu entre deux vérifications, ne renvoyez aucun signal à ce numéro. N’utilisez ni recherche globale par nom ni arrêt d’un groupe de processus. Rejouez l’étape 1 pour constater la libération du port avant de relancer THÉRÈSE.
+
+#### macOS et Windows : essais encore à réaliser
+
+Cette consigne Linux ne vaut pas recette pour macOS ou Windows. Sur ces systèmes, utilisez seulement la fermeture normale de l’instance que vous avez identifiée ; si le port reste occupé, demandez de l’aide. Aucun arrêt forcé n’a été essayé sur ces systèmes dans cette préparation.
+
+Sur macOS, il reste à essayer l’identification du processus et du chemin de l’application sur les versions retenues pour la 0.83, puis l’arrêt normal et le traitement ciblé d’un résidu factice. Sur Windows, il reste à essayer l’identification du propriétaire de l’écoute et du chemin de l’exécutable, puis la fermeture normale avant tout arrêt ciblé d’un résidu factice. Chaque essai devra vérifier qu’un autre logiciel occupant le port est conservé. Aucune commande d’arrêt macOS ou Windows n’est proposée avant ces essais.
+
+### Blocage par un antivirus
+
+Si Windows Defender ou un autre antivirus bloque THÉRÈSE, conservez l’alerte et laissez la protection active. N’ajoutez pas d’exclusion du dossier du projet.
+
+Avant une nouvelle tentative, faites vérifier l’origine du paquet et le motif du blocage. Pour demander de l’aide, indiquez le nom de la détection et la version de THÉRÈSE concernée, sans donnée personnelle ni secret. Aucune procédure de déblocage n’a été essayée sur Windows dans cette préparation.
 
 ### Qdrant embarqué indisponible
 
@@ -308,6 +332,7 @@ Si THÉRÈSE affiche une erreur liée à la clé API :
    curl http://127.0.0.1:17293/health
    ```
 2. Si la réponse contient `"status": "healthy"` (ou `"degraded"` quand Qdrant ou la base manquent), le backend fonctionne. Le problème vient peut-être d'un blocage CORS ou d'un pare-feu local.
+3. Si `status` vaut `recovery`, le démarrage des données a échoué. La réponse ne contient pas `services` et ne confirme pas que les données sont utilisables. Conservez le dossier de données et demandez de l’aide avant toute remise à zéro.
 
 ### Erreur de compilation Tauri / Rust
 
@@ -335,6 +360,10 @@ make reset-onboarding
 
 Pour repartir avec un dossier de données vide, conservez d'abord une sauvegarde vérifiée.
 
+Les gestes de corbeille décrits ci-dessous n’ont pas été essayés sur les systèmes visés dans cette préparation. La restauration d’essai isolée n’a pas été réalisée ; cette absence d’essai maintient l’arrêt prévu à l’étape 3.
+
+Avant l’étape 1, identifiez le dossier de données effectivement utilisé. Les chemins ci-dessous sont ceux du profil par défaut ; si le dossier a été personnalisé, utilisez le dossier identifié à leur place. Si vous ne pouvez pas confirmer son emplacement, arrêtez-vous. Si la base ou l’index sont stockés hors de ce dossier, demandez une procédure adaptée avant de poursuivre.
+
 1. Dans **Paramètres > Sécurité et confidentialité**, section **Export et sauvegardes**, saisissez une phrase secrète d'au moins 12 caractères dans le champ prévu, puis cliquez sur **Créer une sauvegarde**. Conservez cette phrase dans votre gestionnaire de mots de passe. L'export JSON ne remplace pas cette sauvegarde complète.
 2. Copiez l'archive `.tar.gz.enc` créée dans `~/.therese/backups` et son fichier de métadonnées `.json` dans un dossier privé situé hors de `~/.therese`. Sous Windows, le dossier par défaut est `%USERPROFILE%\.therese\backups`. Gardez cette copie hors des dépôts Git et des espaces partagés.
 3. Dans les métadonnées de cette sauvegarde, vérifiez uniquement que `encrypted` vaut `true` et que la liste `included` contient `.encryption_key`. N'ouvrez pas le fichier de clé et n'en affichez jamais le contenu. Cet inventaire déclare les fichiers inclus ; il ne prouve pas qu'une restauration réussira. Avant de poursuivre, faites vérifier une restauration de la copie dans un profil d'essai isolé, sans toucher aux données actuelles. Si ce contrôle n'a pas pu être réalisé, conservez le profil actuel et demandez de l'aide.
@@ -344,8 +373,6 @@ Pour repartir avec un dossier de données vide, conservez d'abord une sauvegarde
    - **Windows** : dans l'Explorateur, ouvrez `%USERPROFILE%`, affichez les éléments masqués si nécessaire, puis déplacez le dossier `.therese` dans la Corbeille. Si Windows propose une suppression définitive, annulez.
    - **Linux** : dans votre gestionnaire de fichiers, affichez les fichiers cachés de votre dossier personnel et déplacez `.therese` à la corbeille. Si ce déplacement n'est pas proposé, arrêtez-vous.
 6. Relancez THÉRÈSE. Un nouveau dossier de données est créé. Gardez l'ancien dossier dans la corbeille et la sauvegarde privée tant que le nouveau profil n'a pas été vérifié.
-
-Ces chemins sont ceux du profil par défaut. Si le dossier de données a été personnalisé, identifiez ce dossier avant toute copie ou tout déplacement.
 
 Le déplacement du dossier ne retire pas la clé maîtresse éventuellement enregistrée dans le trousseau du système, notamment le Trousseau d'accès macOS ou le Gestionnaire d'informations d'identification Windows. La remise à zéro ne garantit donc pas le renouvellement de cette clé. Conservez les entrées du trousseau pour préserver les possibilités de restauration.
 

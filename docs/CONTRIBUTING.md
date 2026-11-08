@@ -256,7 +256,7 @@ git push origin feature/nom-de-la-feature
 
 ## Règles impératives
 
-- **Jamais de rm** → `mv fichier ~/.Trash/`
+- **Fichiers à écarter** : utilisez la corbeille native du système après avoir vérifié le fichier visé et la possibilité de le récupérer. Le geste reste à essayer sur votre système. Si la corbeille est absente ou si une suppression définitive est proposée, arrêtez-vous. Pour les données de THÉRÈSE, suivez les précautions du [guide de remise à zéro](GETTING_STARTED.md#réinitialiser-complètement-thérèse), qui distingue les systèmes et exige une sauvegarde vérifiée avant tout déplacement.
 - **Jamais de tirets longs** → tirets courts (-) ou parenthèses
 - **Toujours les accents** en français
 - **Toujours tester** avant de considérer un fix comme terminé
