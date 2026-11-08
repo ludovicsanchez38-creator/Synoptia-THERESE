@@ -248,27 +248,59 @@ Vous y trouverez :
 
 ### Port 17293 déjà utilisé
 
-Si le backend refuse de démarrer avec une erreur de type "Address already in use" :
+Avant tout arrêt, vérifiez que le processus qui écoute sur le port appartient à l’ancienne instance de THÉRÈSE. Un nom comme `backend` ou le seul numéro du port ne suffit pas. Si l’identité reste incertaine, conservez le processus et demandez de l’aide.
+
+#### Linux : consigne essayée sur des processus factices
+
+L’essai a porté sur des exécutables factices, dans un dossier isolé, avec des ports éphémères sur la boucle locale. Aucune instance réelle de THÉRÈSE n’a été arrêtée. Les commandes ci-dessous utilisent le port prévu par l’application.
+
+1. Dans Bash, relevez le PID qui écoute. Aucun signal n’est envoyé par cette commande. En cas de plusieurs PID, examinez chaque processus séparément.
 
 ```bash
-# Identifier le processus qui utilise le port 17293
-lsof -i :17293
-
-# Arrêter le processus (remplacer PID par le numéro affiché)
-kill PID
+PORT=17293
+lsof -nP -a -iTCP:"$PORT" -sTCP:LISTEN
 ```
 
-### Port 17293 déjà utilisé (Windows)
-
-Si le backend refuse de démarrer sur Windows avec une erreur "Address already in use" :
+2. Saisissez un seul PID positif relevé à l’étape 1. Les commandes affichent le nom de la commande sans ses arguments et les chemins nécessaires à l’identification. N’affichez pas la ligne de commande complète ni les variables du processus, qui pourraient contenir un secret.
 
 ```bash
-# Identifier le processus qui utilise le port 17293
-netstat -ano | findstr :17293
-
-# Arrêter le processus (remplacer XXXX par le PID affiché)
-taskkill /PID XXXX /F
+read -r -p 'PID à examiner : ' PID
+if [[ "$PID" =~ ^[1-9][0-9]*$ ]] && (( PID > 1 )); then
+    ps -p "$PID" -o pid=,uid=,comm=,lstart=
+    readlink -e "/proc/$PID/exe"
+    readlink -e "/proc/$PID/cwd"
+else
+    printf '%s\n' 'PID invalide : arrêt de la procédure.'
+fi
 ```
+
+Le propriétaire doit être votre compte. Comparez le chemin de l’exécutable avec l’emplacement connu de votre installation THÉRÈSE ; vérifiez aussi que le nom de commande correspond au backend de cette installation. Notez le PID et son heure de démarrage pour repérer un remplacement du processus. Un dossier nommé THÉRÈSE ne prouve pas à lui seul l’origine d’un exécutable. Si une commande échoue, si le chemin est inattendu ou si seul un interpréteur Python apparaît, n’envoyez aucun signal. Pour un lancement depuis les sources, revenez au terminal où vous aviez lancé ce backend.
+
+3. Une fois l’instance identifiée, enregistrez le travail accessible puis quittez THÉRÈSE normalement. Pour un lancement depuis les sources, utilisez `Ctrl + C` dans son terminal d’origine. Rejouez l’étape 1. Si le port est libre, la procédure est terminée.
+
+4. Si un backend résiduel écoute encore, rejouez les étapes 1 et 2. Confirmez à nouveau son identité et son heure de démarrage. Si le PID a changé ou si l’application relance le backend, arrêtez la procédure et demandez de l’aide. Si le même backend identifié reste présent après la fermeture normale, demandez son arrêt avec `SIGTERM` :
+
+```bash
+if [[ "$PID" =~ ^[1-9][0-9]*$ ]] && (( PID > 1 )); then
+    kill -TERM -- "$PID"
+fi
+```
+
+5. Laissez l’arrêt se terminer et vérifiez de nouveau le port. Si `SIGTERM` reste sans effet, rejouez les étapes 1 et 2 avant tout autre signal. Un arrêt forcé risque de perdre des écritures en cours. Réservez la commande suivante au même backend résiduel, dont l’identité et l’heure de démarrage sont toujours confirmées, après l’échec de l’arrêt normal puis de `SIGTERM` :
+
+```bash
+if [[ "$PID" =~ ^[1-9][0-9]*$ ]] && (( PID > 1 )); then
+    kill -KILL -- "$PID"
+fi
+```
+
+Ces commandes vérifient la forme du PID ; la comparaison de l’identité reste manuelle. Si le processus a disparu entre deux vérifications, ne renvoyez aucun signal à ce numéro. N’utilisez ni recherche globale par nom ni arrêt d’un groupe de processus. Rejouez l’étape 1 pour constater la libération du port avant de relancer THÉRÈSE.
+
+#### macOS et Windows : essais encore à réaliser
+
+Cette consigne Linux ne vaut pas recette pour macOS ou Windows. Sur ces systèmes, utilisez seulement la fermeture normale de l’instance que vous avez identifiée ; si le port reste occupé, demandez de l’aide. Aucun arrêt forcé n’a été essayé sur ces systèmes dans cette préparation.
+
+Sur macOS, il reste à essayer l’identification du processus et du chemin de l’application sur les versions retenues pour la 0.83, puis l’arrêt normal et le traitement ciblé d’un résidu factice. Sur Windows, il reste à essayer l’identification du propriétaire de l’écoute et du chemin de l’exécutable, puis la fermeture normale avant tout arrêt ciblé d’un résidu factice. Chaque essai devra vérifier qu’un autre logiciel occupant le port est conservé. Aucune commande d’arrêt macOS ou Windows n’est proposée avant ces essais.
 
 ### Blocage par un antivirus
 
