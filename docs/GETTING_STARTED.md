@@ -333,6 +333,10 @@ make reset-onboarding
 
 Pour repartir avec un dossier de données vide, conservez d'abord une sauvegarde vérifiée.
 
+Les gestes de corbeille décrits ci-dessous n’ont pas été essayés sur les systèmes visés dans cette préparation. La restauration d’essai isolée n’a pas été réalisée ; cette absence d’essai maintient l’arrêt prévu à l’étape 3.
+
+Avant l’étape 1, identifiez le dossier de données effectivement utilisé. Les chemins ci-dessous sont ceux du profil par défaut ; si le dossier a été personnalisé, utilisez le dossier identifié à leur place. Si vous ne pouvez pas confirmer son emplacement, arrêtez-vous. Si la base ou l’index sont stockés hors de ce dossier, demandez une procédure adaptée avant de poursuivre.
+
 1. Dans **Paramètres > Sécurité et confidentialité**, section **Export et sauvegardes**, saisissez une phrase secrète d'au moins 12 caractères dans le champ prévu, puis cliquez sur **Créer une sauvegarde**. Conservez cette phrase dans votre gestionnaire de mots de passe. L'export JSON ne remplace pas cette sauvegarde complète.
 2. Copiez l'archive `.tar.gz.enc` créée dans `~/.therese/backups` et son fichier de métadonnées `.json` dans un dossier privé situé hors de `~/.therese`. Sous Windows, le dossier par défaut est `%USERPROFILE%\.therese\backups`. Gardez cette copie hors des dépôts Git et des espaces partagés.
 3. Dans les métadonnées de cette sauvegarde, vérifiez uniquement que `encrypted` vaut `true` et que la liste `included` contient `.encryption_key`. N'ouvrez pas le fichier de clé et n'en affichez jamais le contenu. Cet inventaire déclare les fichiers inclus ; il ne prouve pas qu'une restauration réussira. Avant de poursuivre, faites vérifier une restauration de la copie dans un profil d'essai isolé, sans toucher aux données actuelles. Si ce contrôle n'a pas pu être réalisé, conservez le profil actuel et demandez de l'aide.
@@ -342,8 +346,6 @@ Pour repartir avec un dossier de données vide, conservez d'abord une sauvegarde
    - **Windows** : dans l'Explorateur, ouvrez `%USERPROFILE%`, affichez les éléments masqués si nécessaire, puis déplacez le dossier `.therese` dans la Corbeille. Si Windows propose une suppression définitive, annulez.
    - **Linux** : dans votre gestionnaire de fichiers, affichez les fichiers cachés de votre dossier personnel et déplacez `.therese` à la corbeille. Si ce déplacement n'est pas proposé, arrêtez-vous.
 6. Relancez THÉRÈSE. Un nouveau dossier de données est créé. Gardez l'ancien dossier dans la corbeille et la sauvegarde privée tant que le nouveau profil n'a pas été vérifié.
-
-Ces chemins sont ceux du profil par défaut. Si le dossier de données a été personnalisé, identifiez ce dossier avant toute copie ou tout déplacement.
 
 Le déplacement du dossier ne retire pas la clé maîtresse éventuellement enregistrée dans le trousseau du système, notamment le Trousseau d'accès macOS ou le Gestionnaire d'informations d'identification Windows. La remise à zéro ne garantit donc pas le renouvellement de cette clé. Conservez les entrées du trousseau pour préserver les possibilités de restauration.
 
