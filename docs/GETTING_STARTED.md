@@ -117,9 +117,9 @@ Au premier lancement de THÉRÈSE, un **assistant de configuration en 6 étapes*
 
 1. **Bienvenue** - Présentation de THÉRÈSE
 2. **Profil** - Votre nom, entreprise, rôle (optionnel : import depuis un fichier CLAUDE.md)
-3. **LLM** - Choix du fournisseur IA et saisie de la clé API
+3. **Service d’IA** : choix du fournisseur IA et saisie de la clé API
 4. **Sécurité** - Avertissements sur les connexions cloud (confirmation explicite requise si un service cloud est activé)
-5. **Dossier de travail** - Sélection du répertoire par défaut pour vos fichiers
+5. **Dossier** : sélection du répertoire par défaut pour vos fichiers
 6. **Terminé** - Récapitulatif de la configuration
 
 ### Clé API LLM (sauf Ollama en local)
@@ -151,6 +151,8 @@ Une clé API est nécessaire pour un fournisseur distant ; Ollama en local n’e
 
 THÉRÈSE se lance avec **2 processus**, dans deux terminaux ouverts à la racine du dépôt. Le backend initialise lui-même Qdrant en mode embarqué.
 
+Le démarrage complet depuis les sources n’a pas été essayé sur les systèmes visés dans cette préparation. Les commandes de cette section restent à vérifier dans un profil de développement isolé.
+
 ### Terminal 1 - Backend (API FastAPI)
 
 ```bash
@@ -178,7 +180,7 @@ cd src/frontend
 npm run dev
 ```
 
-> L'interface est alors accessible dans votre navigateur à l'adresse `http://localhost:5173`. Certaines fonctionnalités natives (fenêtres indépendantes, drag & drop fichiers Tauri, File Browser) ne seront pas disponibles dans ce mode.
+> L'interface est alors accessible dans votre navigateur à l'adresse `http://localhost:1420`. Certaines fonctionnalités natives (fenêtres indépendantes, drag & drop fichiers Tauri, File Browser) ne seront pas disponibles dans ce mode.
 
 ### Raccourci Makefile
 
