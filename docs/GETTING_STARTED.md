@@ -201,18 +201,15 @@ Autres commandes utiles :
 
 ## 5. Build de l'application
 
+La construction complète n’a pas été exécutée dans cette préparation, sur macOS comme sur Windows. Les commandes existantes ci-dessous correspondent aux cibles du Makefile ; leur résultat reste à vérifier sur le système visé avant distribution.
+
 Pour générer l'application macOS distribuable :
 
 ```bash
 make build-release
 ```
 
-Ou manuellement :
-
-```bash
-cd src/frontend
-npm run tauri build
-```
+Le Makefile fait précéder la construction Tauri par celle du backend embarqué avec `build-sidecar`. Une construction manuelle doit respecter cet ordre : `npm run tauri build` seul ne construit pas le backend. La construction manuelle n’a pas été essayée ; aucune recette manuelle n’est proposée ici.
 
 Le bundle généré se trouve dans :
 
@@ -224,7 +221,7 @@ Vous y trouverez :
 - Un fichier `.app` (application macOS)
 - Un fichier `.dmg` (image disque pour distribution)
 
-> **Note** : le build de production nécessite Rust et peut prendre plusieurs minutes lors de la première compilation. L'application n'est pas encore signée (pas de certificat Apple Developer), macOS affichera donc un avertissement de sécurité au premier lancement.
+> **Note** : aucun paquet macOS n’a été construit ni vérifié dans cette préparation. Avant de traiter une alerte de sécurité à l’installation, faites vérifier l’origine du paquet et le motif de l’alerte. Conservez la protection du système active si le contrôle ne permet pas de conclure.
 
 ---
 
@@ -246,7 +243,7 @@ Vous y trouverez :
 - Un fichier `.exe` (installeur Windows)
 - Un fichier `.msi` (installeur MSI pour déploiement)
 
-> **Note** : le code signing Windows n'est pas encore disponible. Au premier lancement, Windows SmartScreen affichera un avertissement "Application non reconnue". Cliquez sur **Informations complémentaires** puis **Exécuter quand même** pour continuer.
+> **Note** : aucun paquet Windows n’a été construit ni vérifié dans cette préparation. Si SmartScreen affiche une alerte, faites vérifier l’origine du paquet et le motif de l’alerte avant toute nouvelle tentative. Gardez la protection active et demandez de l’aide si le contrôle ne permet pas de conclure.
 
 ---
 
