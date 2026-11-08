@@ -11,7 +11,7 @@ import contextlib
 import logging
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
@@ -522,6 +522,15 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
             "janvier", "février", "mars", "avril", "mai", "juin",
             "juillet", "août", "septembre", "octobre", "novembre", "décembre",
         ]
+        _JOURS_FR = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+
+        def date_fr(instant: datetime) -> str:
+            """Date civile avec son jour, sans dépendre de la locale système."""
+            return (
+                f"{_JOURS_FR[instant.weekday()]} {instant.day} "
+                f"{_MOIS_FR[instant.month - 1]} {instant.year}"
+            )
+
         # B-1528 : l'heure du POSTE, avec son décalage. En UTC, « dans une
         # heure » tombait deux heures trop tôt à Paris, et entre minuit et
         # 2 h la date du jour était celle de la veille.
@@ -529,9 +538,15 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         day = str(now.day)
         month_fr = _MOIS_FR[now.month - 1]
         decalage = now.strftime("%z")
+        demain = now + timedelta(days=1)
+        lundi_prochain = now + timedelta(days=7 - now.weekday())
         current_date = (
-            f"{day} {month_fr} {now.strftime('%Y, %H:%M')} "
-            f"(heure du poste, UTC{decalage[:3]}:{decalage[3:]})"
+            f"{date_fr(now)}, {now.strftime('%H:%M')} "
+            f"(heure du poste, UTC{decalage[:3]}:{decalage[3:]}). "
+            f"Date ISO : {now.date().isoformat()}.\n"
+            f"Demain : {date_fr(demain)} ({demain.date().isoformat()}).\n"
+            f"Lundi prochain : {lundi_prochain.date().isoformat()} ({date_fr(lundi_prochain)}).\n"
+            "Interprète les dates relatives à partir de ces repères du poste."
         )
         current_date_example = f"{day} {month_fr} {now.strftime('%Y')}"
 

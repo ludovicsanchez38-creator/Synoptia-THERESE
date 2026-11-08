@@ -1675,13 +1675,13 @@ async def _list_calendar_events(
                 )
             return f"Aucun evenement dans {periode}. N'invente AUCUN autre événement."
 
-        lines = [f"**{len(events)} evenement(s) dans {periode} :**\n", *avertissements]
+        lines = [f"**{len(events)} événement(s) dans {periode} :**\n", *avertissements]
         for event in events:
             if event.all_day:
-                date_str = event.start.strftime("%d/%m") if event.start else ""
-                time_str = "(journee)"
+                date_str = event.start.strftime("%d/%m/%Y") if event.start else ""
+                time_str = "(journée)"
             else:
-                date_str = event.start.strftime("%d/%m") if event.start else ""
+                date_str = event.start.strftime("%d/%m/%Y") if event.start else ""
                 time_str = event.start.strftime("%H:%M") if event.start else ""
                 if event.end:
                     time_str += f"-{event.end.strftime('%H:%M')}"
@@ -1690,7 +1690,7 @@ async def _list_calendar_events(
             attendees_str = f" ({len(event.attendees)} participants)" if event.attendees else ""
 
             lines.append(
-                f"- **{date_str} {time_str}** — {event.summary}{location_str}{attendees_str}"
+                f"- **{date_str} {time_str}** - {event.summary}{location_str}{attendees_str}"
             )
 
         # B-104 : titre, lieu et participants d'un evenement sont ecrits par un

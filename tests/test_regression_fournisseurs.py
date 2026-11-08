@@ -228,11 +228,15 @@ class TestPromptSystemeDuJour:
         profil = UserProfile(name="Jérôme") if avec_profil else None
         prompt = self._prompt(profil)
         assert "{current_date}" not in prompt and "{current_date_example}" not in prompt
-        assert f"## Date et heure actuelles\n{attendu_local}\n" in prompt, (
+        ligne_du_jour = prompt.split("## Date et heure actuelles\n", 1)[1].splitlines()[0]
+        assert attendu_local in ligne_du_jour, (
             "le modèle doit recevoir la date française et l'heure du poste "
             "avec son décalage exact, même si le jour UTC diffère"
         )
-        assert date_utc not in prompt
+        # Demain peut légitimement porter la date UTC : seule la ligne du jour
+        # doit décrire le poste. Le jour de semaine et l'ISO complètent cette ligne.
+        assert date_utc not in ligne_du_jour
+        assert locale.date().isoformat() in ligne_du_jour
         date_fr = attendu_local.split(",", 1)[0]
         if locale.day < 10:
             assert f"0{date_fr}" not in prompt, "le jour ne doit pas avoir de zéro initial"
