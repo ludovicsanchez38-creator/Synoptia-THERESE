@@ -308,6 +308,7 @@ Si THÉRÈSE affiche une erreur liée à la clé API :
    curl http://127.0.0.1:17293/health
    ```
 2. Si la réponse contient `"status": "healthy"` (ou `"degraded"` quand Qdrant ou la base manquent), le backend fonctionne. Le problème vient peut-être d'un blocage CORS ou d'un pare-feu local.
+3. Si `status` vaut `recovery`, le démarrage des données a échoué. La réponse ne contient pas `services` et ne confirme pas que les données sont utilisables. Conservez le dossier de données et demandez de l’aide avant toute remise à zéro.
 
 ### Erreur de compilation Tauri / Rust
 
