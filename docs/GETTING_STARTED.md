@@ -273,13 +273,11 @@ netstat -ano | findstr :17293
 taskkill /PID XXXX /F
 ```
 
-### Antivirus faux positif
+### Blocage par un antivirus
 
-Si Windows Defender ou un autre antivirus bloque THÉRÈSE :
+Si Windows Defender ou un autre antivirus bloque THÉRÈSE, conservez l’alerte et laissez la protection active. N’ajoutez pas d’exclusion du dossier du projet.
 
-1. Ouvrez **Windows Defender** > **Protection contre les virus et menaces** > **Paramètres**
-2. Dans **Exclusions**, ajoutez le dossier du projet (ex. `C:\Users\...\Synoptia-THERESE`)
-3. Relancez l'application
+Avant une nouvelle tentative, faites vérifier l’origine du paquet et le motif du blocage. Pour demander de l’aide, indiquez le nom de la détection et la version de THÉRÈSE concernée, sans donnée personnelle ni secret. Aucune procédure de déblocage n’a été essayée sur Windows dans cette préparation.
 
 ### Qdrant embarqué indisponible
 
