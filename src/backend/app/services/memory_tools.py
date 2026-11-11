@@ -10,10 +10,13 @@ import contextlib
 import json
 import logging
 import math
+import operator
+import re
 import unicodedata
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from difflib import SequenceMatcher
+from functools import reduce
 from pathlib import Path
 from typing import Any
 
@@ -188,8 +191,10 @@ SEARCH_FILES_TOOL = {
                     "type": "string",
                     "description": (
                         "Nom du fichier, meme partiel (les tirets, underscores "
-                        "et espaces sont equivalents). Omis : les fichiers les "
-                        "plus recemment indexes."
+                        "et espaces sont equivalents). Si aucun nom ne "
+                        "correspond, les mots sont rapproches des noms puis "
+                        "cherches dans le contenu indexe. Omis : les fichiers "
+                        "les plus recemment indexes."
                     ),
                 },
             },
@@ -1187,7 +1192,8 @@ async def execute_memory_tool(
         )
     elif tool_name == "search_files":
         return await execute_search_files(
-            arguments, session, scope, scope_id, conversation_id
+            arguments, session, scope, scope_id, conversation_id,
+            llm_config=llm_config, document_grants=document_grants,
         )
     elif tool_name == "read_contact":
         return await execute_read_contact(
@@ -1399,12 +1405,134 @@ async def _chemin_lisible(session: AsyncSession, fichier: FileMetadata) -> str:
     return str(fichier.name)
 
 
+def _echapper_ilike(motif: str) -> str:
+    return motif.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+# Mots trop communs pour désigner un fichier : ils ne rapprochent ni un nom ni
+# un contenu. Comparés une fois accents et casse repliés.
+_MOTS_VIDES_DE_RECHERCHE = frozenset({
+    "les", "des", "une", "aux", "dans", "pour", "sur", "sous", "avec", "sans",
+    "par", "que", "qui", "quoi", "est", "sont", "pas", "mon", "mes", "ton",
+    "tes", "son", "ses", "nos", "vos", "leur", "leurs", "cette", "ces", "the",
+    "and", "for", "fichier", "fichiers", "document", "documents", "doc", "docs",
+    "file", "files", "contenu", "nomme", "intitule", "appele",
+})
+_PLAFOND_MOTS_DE_RECHERCHE = 8
+# Les fichiers trouvés par leur contenu sont départagés en mémoire.
+_PLAFOND_RAPPROCHEMENT_CONTENU = 200
+
+
+def _mots_de_recherche(query: str) -> list[str]:
+    """Les mots utiles d'une demande, dans l'ordre, sans doublon."""
+    mots: list[str] = []
+    vus: set[str] = set()
+    for mot in re.split(r"[\W_]+", query):
+        cle = _cle_de_nom(mot)
+        if len(cle) < 3 or cle in _MOTS_VIDES_DE_RECHERCHE or cle in vus:
+            continue
+        vus.add(cle)
+        mots.append(mot)
+        if len(mots) >= _PLAFOND_MOTS_DE_RECHERCHE:
+            break
+    return mots
+
+
+async def _rapprocher_par_mots(
+    session: AsyncSession,
+    query: str,
+    scope: str | None,
+    scope_id: str | None,
+    conversation_id: str | None,
+    *,
+    llm_config: Any,
+    document_grants: list[str] | None,
+) -> tuple[list[FileMetadata], int, dict[str, str]]:
+    """Second passage du catalogue, quand aucun nom ne contient la demande entière.
+
+    D'abord les noms qui portent au moins un mot de la demande (le plus de mots
+    en tête), puis les fichiers dont le CONTENU indexé porte ces mots. La
+    cloison est celle du catalogue : chaque requête passe par
+    `_cloison_fichiers`, et l'index vectoriel n'est interrogé que sur les
+    identifiants qu'elle laisse voir.
+
+    Dire « ce fichier contient ce mot » parle déjà du contenu : le second temps
+    exige le même accord que `read_file` (B-1201). Aucun extrait n'est rendu,
+    la lecture reste le métier de `read_file` et de son enveloppe.
+    """
+    mots = _mots_de_recherche(query)
+    if not mots:
+        return [], 0, {}
+
+    def visibles(colonnes: Any) -> Any:
+        return _cloison_fichiers(
+            select(colonnes).where(FileMetadata.chunk_count > 0),
+            scope, scope_id, conversation_id,
+        )
+
+    cle = _cle_sql_du_nom()
+    presences = [
+        case((cle.ilike(f"%{_echapper_ilike(_cle_de_nom(mot))}%", escape="\\"), 1), else_=0)
+        for mot in mots
+    ]
+    mots_dans_le_nom = reduce(operator.add, presences)
+    par_nom = visibles(FileMetadata).where(mots_dans_le_nom > 0)
+    total_nom = int(await session.scalar(select(func.count()).select_from(par_nom.subquery())) or 0)
+    resultat = await session.execute(
+        par_nom.order_by(
+            mots_dans_le_nom.desc(), FileMetadata.indexed_at.desc().nullslast()
+        ).limit(_PLAFOND_CATALOGUE)
+    )
+    fichiers = list(resultat.scalars().all())
+    rapproches = {f.id: "nom" for f in fichiers}
+
+    from app.services.memory_card_context import documents_autorises
+
+    if not documents_autorises(llm_config, document_grants):
+        return fichiers, total_nom, rapproches
+
+    try:
+        consultables = set((await session.execute(visibles(FileMetadata.id))).scalars().all())
+        # L'expression entière compte en plus de ses mots : elle départage.
+        termes = [query, *mots] if len(mots) > 1 else mots
+        trouves = await get_qdrant_service().async_fichiers_contenant(termes, consultables)
+    except Exception:
+        # Un index en panne ne retire pas le catalogue : les noms répondent seuls.
+        logger.warning("Recherche dans le contenu indexé indisponible pour search_files", exc_info=True)
+        return fichiers, total_nom, rapproches
+
+    deja_par_nom = set((await session.execute(
+        visibles(FileMetadata.id).where(mots_dans_le_nom > 0)
+    )).scalars().all())
+    par_contenu = sorted(
+        (identifiant for identifiant in trouves if identifiant not in deja_par_nom),
+        key=lambda identifiant: (-trouves[identifiant], identifiant),
+    )
+    total = total_nom + len(par_contenu)
+    retenus = par_contenu[:_PLAFOND_RAPPROCHEMENT_CONTENU]
+    if retenus and len(fichiers) < _PLAFOND_CATALOGUE:
+        lignes = (await session.execute(
+            visibles(FileMetadata).where(FileMetadata.id.in_(retenus))
+        )).scalars().all()
+        lignes = sorted(
+            lignes,
+            key=lambda f: (-trouves[f.id], -(f.indexed_at.timestamp() if f.indexed_at else 0.0), f.id),
+        )
+        for fichier in lignes[: _PLAFOND_CATALOGUE - len(fichiers)]:
+            fichiers.append(fichier)
+            rapproches[fichier.id] = "contenu"
+    return fichiers, total, rapproches
+
+
 async def execute_search_files(
     arguments: dict[str, Any],
     session: AsyncSession,
     scope: str | None = None,
     scope_id: str | None = None,
     conversation_id: str | None = None,
+    *,
+    llm_config: Any = None,
+    document_grants: list[str] | None = None,
 ) -> str:
     """Le catalogue des fichiers indexés du périmètre courant."""
     query = (arguments.get("query") or "").strip()
@@ -1420,9 +1548,7 @@ async def execute_search_files(
     if query:
         # % et _ sont des jokers ILIKE : sans échappement, une requête « % »
         # rendrait le dossier entier (leçon de search_invoices).
-        motif = (
-            _cle_de_nom(query).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        )
+        motif = _echapper_ilike(_cle_de_nom(query))
         base = base.where(cle.ilike(f"%{motif}%", escape="\\"))
         rang = case(
             (cle == motif, 0),
@@ -1439,6 +1565,16 @@ async def execute_search_files(
     resultat = await session.execute(ordonnee.limit(_PLAFOND_CATALOGUE))
     fichiers = list(resultat.scalars().all())
 
+    # Le nom entier n'a rien donné : avant de répondre « rien », rapprocher la
+    # demande mot par mot des noms, puis du contenu indexé. Un modèle qui
+    # reçoit zéro pour un mot présent dans un fichier invente la suite.
+    rapproches: dict[str, str] = {}
+    if query and not fichiers:
+        fichiers, total, rapproches = await _rapprocher_par_mots(
+            session, query, scope, scope_id, conversation_id,
+            llm_config=llm_config, document_grants=document_grants,
+        )
+
     documents = [
         {
             "id": f.id,
@@ -1447,6 +1583,7 @@ async def execute_search_files(
             "extension": f.extension,
             "taille": f.size,
             "indexe_le": f.indexed_at.isoformat() if f.indexed_at else None,
+            **({"trouve_dans": rapproches[f.id]} if f.id in rapproches else {}),
         }
         for f in fichiers
     ]
@@ -1457,6 +1594,13 @@ async def execute_search_files(
         "affiches": len(documents),
         "documents": documents,
     }
+    if rapproches:
+        reponse["note"] = (
+            "Aucun nom de fichier ne contient la demande entière : cette liste "
+            "rapproche ses mots des noms de fichiers ('trouve_dans': 'nom') et "
+            "de leur contenu indexé ('trouve_dans': 'contenu'). Lis le fichier "
+            "avec read_file avant d'en dire quoi que ce soit."
+        )
 
     if scope == "global":
         # Ce que cette conversation ne peut PAS consulter : un compte, jamais

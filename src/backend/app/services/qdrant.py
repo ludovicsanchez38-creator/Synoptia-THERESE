@@ -8,6 +8,7 @@ import asyncio
 import logging
 import re
 import unicodedata
+from collections.abc import Collection, Sequence
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -49,6 +50,26 @@ def _projets_des_contacts() -> dict[str, list[str]]:
         for identifiant, projet_id in lignes:
             groupes.setdefault(str(projet_id), []).append(str(identifiant))
     return groupes
+
+
+def _replie(texte: str) -> str:
+    """Casse et accents repliés : un modèle écrit « econome » pour « économe »."""
+    decompose = unicodedata.normalize("NFKD", texte)
+    return "".join(c for c in decompose if not unicodedata.combining(c)).casefold()
+
+
+def _motif_de_terme(terme: str) -> "re.Pattern[str] | None":
+    """Le terme tel qu'il doit figurer dans un texte replié, frontières de mot gardées."""
+    mots = _replie(terme).split()
+    if not mots:
+        return None
+    # Une expression tient aussi quand le texte passe à la ligne entre deux mots.
+    corps = r"\s+".join(re.escape(mot) for mot in mots)
+    # Sans espaces (CJK), la sous-chaîne est le mot : même règle que la recherche littérale.
+    if any("\u3400" <= c <= "\u9fff" or "\u3040" <= c <= "\u30ff" or "\uac00" <= c <= "\ud7af"
+           for c in unicodedata.normalize("NFC", terme)):
+        return re.compile(corps)
+    return re.compile(r"(?<!\w)" + corps + r"(?!\w)")
 
 
 class QdrantService:
@@ -473,6 +494,48 @@ class QdrantService:
 
     async def async_rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
         return await asyncio.to_thread(self.rechercher_contenu_fichiers, query, limite)
+
+    def fichiers_contenant(
+        self, termes: Sequence[str], parmi: Collection[str] | None = None
+    ) -> dict[str, int]:
+        """Pour chaque fichier, combien des `termes` figurent dans son contenu indexé.
+
+        Sert au catalogue `search_files` quand aucun nom ne répond : sans
+        embeddings, en un seul parcours (B-1040), accents et casse repliés.
+        `parmi` borne la réponse aux fichiers que l'appelant peut consulter :
+        la cloison reste celle de la base relationnelle, pas celle du payload.
+        """
+        motifs = [motif for motif in map(_motif_de_terme, termes) if motif is not None]
+        if not motifs or (parmi is not None and not parmi):
+            return {}
+        total = self.client.get_collection(settings.qdrant_collection).points_count or 0
+        if not total:
+            return {}
+        points, _ = self.client.scroll(
+            collection_name=settings.qdrant_collection,
+            scroll_filter=Filter(must=[FieldCondition(key="type", match=MatchValue(value="file"))]),
+            limit=total, with_payload=["entity_id", "text"], with_vectors=False,
+        )
+        presents: dict[str, set[int]] = {}
+        for point in points:
+            contenu = point.payload or {}
+            identifiant = contenu.get("entity_id")
+            if not identifiant or (parmi is not None and identifiant not in parmi):
+                continue
+            deja = presents.get(identifiant, set())
+            if len(deja) == len(motifs):
+                continue
+            texte = _replie(contenu.get("text") or "")
+            nouveaux = {rang for rang, motif in enumerate(motifs)
+                        if rang not in deja and motif.search(texte)}
+            if nouveaux:
+                presents[identifiant] = deja | nouveaux
+        return {identifiant: len(rangs) for identifiant, rangs in presents.items()}
+
+    async def async_fichiers_contenant(
+        self, termes: Sequence[str], parmi: Collection[str] | None = None
+    ) -> dict[str, int]:
+        return await asyncio.to_thread(self.fichiers_contenant, termes, parmi)
 
     def points_sans_perimetre(
         self, limite: int = 10000
