@@ -51,6 +51,7 @@ import App from './App';
 import * as api from './services/api';
 import { synchroniserConsentements } from './lib/consentSync';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
+import { installLocalStorageStub } from './test/localStorage-stub';
 
 const synchro = vi.mocked(synchroniserConsentements);
 const statut = vi.mocked(api.getOnboardingStatus);
@@ -61,6 +62,7 @@ describe('Démarrage : la synchronisation des accords ne bloque jamais la mise e
 
   beforeEach(() => {
     vi.clearAllMocks();
+    installLocalStorageStub();
     vi.mocked(api.initializeAuth).mockResolvedValue(undefined);
     vi.mocked(api.getStats).mockResolvedValue({ data_dir: '/profils/test' } as Awaited<ReturnType<typeof api.getStats>>);
     isolation.mockReturnValue('unchanged');
@@ -71,6 +73,47 @@ describe('Démarrage : la synchronisation des accords ne bloque jamais la mise e
 
   afterEach(() => {
     avertissements.mockRestore();
+  });
+
+  it('R1-C1 : fait vérifier les anciennes identités avant le cloisonnement', async () => {
+    const ancien = '/profils/intermediaire/../A';
+    const autre = '/profils/B';
+    localStorage.setItem('therese:data-profile', ancien);
+    const cle = `therese-cloud-consent-pending:${encodeURIComponent(autre)}`;
+    localStorage.setItem(cle, '[]');
+    localStorage.setItem(`${cle}:revision`, '2');
+    vi.mocked(api.getStats).mockResolvedValue({
+      data_dir: ancien, data_profile: '/profils/A', data_profile_aliases: [ancien],
+    } as Awaited<ReturnType<typeof api.getStats>>);
+
+    render(<App />);
+    await screen.findByTestId('canevas-double');
+
+    expect(api.getStats).toHaveBeenCalledWith([ancien, autre]);
+    expect(isolation).toHaveBeenCalledWith(ancien, {
+      reload: expect.any(Function), canonicalDataDir: '/profils/A', verifiedAliases: [ancien],
+    });
+    expect(isolation.mock.invocationCallOrder[0]).toBeLessThan(synchro.mock.invocationCallOrder[0]);
+  });
+
+  it('R1-C1 : une identité locale illisible arrête le démarrage avant les statistiques', async () => {
+    const lire = vi.mocked(localStorage.getItem).getMockImplementation()!;
+    vi.mocked(localStorage.getItem).mockImplementation((key) => {
+      if (key === 'therese:data-profile') throw new Error('Stockage inaccessible');
+      return lire(key);
+    });
+    const erreurs = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      render(<App />);
+      expect(await screen.findByRole('heading', { name: 'Cloisonnement du profil impossible' })).toBeInTheDocument();
+      expect(api.getStats).not.toHaveBeenCalled();
+      expect(api.initializeAuth).toHaveBeenCalledTimes(1);
+      expect(synchro).not.toHaveBeenCalled();
+      expect(statut).not.toHaveBeenCalled();
+    } finally {
+      vi.mocked(localStorage.getItem).mockImplementation(lire);
+      erreurs.mockRestore();
+    }
   });
 
   it('accords synchronisés : la mise en route est vérifiée une fois et l’assistant s’ouvre si elle manque', async () => {

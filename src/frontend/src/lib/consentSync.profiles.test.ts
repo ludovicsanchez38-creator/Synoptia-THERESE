@@ -47,6 +47,113 @@ it('garde le retrait hors ligne dans A après A → B → A sans le transmettre 
   expect(hasCloudConsent('llm', 'openai')).toBe(false);
 });
 
+it.each(['/profils/A/', '/profils/intermediaire/../A'])('R1-C2 : reprend le retrait sous %s après A → B → A avant de relire les accords', async (ancien) => {
+  const options = { verifiedAliases: [ancien] };
+  const cle = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+  request.mockRejectedValue(new Error('Hors ligne'));
+  revokeCloudConsent('llm', 'openai');
+  await expect(flushConsentDecisions()).rejects.toThrow('Hors ligne');
+  const [retrait] = JSON.parse(localStorage.getItem(cle)!);
+  expect(isolateDataProfilePersistence('/profils/A', options)).toBe('unchanged');
+
+  let moteur = '/profils/B';
+  let accordA = true;
+  const decisions: unknown[] = [];
+  request.mockImplementation(async (_path, options) => {
+    if (options?.method === 'POST') {
+      const decision = JSON.parse(options.body);
+      expect(decision.data_profile).toBe(moteur);
+      decisions.push(decision);
+      if (moteur === '/profils/A') accordA = decision.granted;
+    }
+    return { grants: moteur === '/profils/A' && accordA
+      ? [{ purpose: 'llm', provider: 'openai', timestamp: '2026-10-01T00:00:00Z', textVersion: '3' }] : [] };
+  });
+  isolateDataProfilePersistence(moteur);
+  await synchroniserConsentements();
+  expect(decisions).toEqual([]);
+  expect(JSON.parse(localStorage.getItem(cle)!)).toEqual([retrait]);
+
+  moteur = '/profils/A';
+  isolateDataProfilePersistence(moteur, options);
+  await synchroniserConsentements();
+
+  expect(decisions).toEqual([{ ...retrait, data_profile: moteur }]);
+  expect(hasCloudConsent('llm', 'openai')).toBe(false);
+  await synchroniserConsentements();
+  expect(decisions).toHaveLength(1);
+});
+
+it('R1-C2 : fusionne les files équivalentes dans l’ordre sans doublon ni décision de B', async () => {
+  const key = (id: string) => `therese-cloud-consent-pending:${encodeURIComponent(id)}`;
+  const accord = { event_id: 'accord', purpose: 'llm', provider: 'openai', granted: true,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-01T00:00:00Z' };
+  const retrait = { ...accord, event_id: 'retrait', granted: false, occurred_at: '2026-10-02T00:00:00Z' };
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/B');
+  localStorage.setItem(key('/profils/A/'), JSON.stringify([accord, retrait]));
+  localStorage.setItem(key('/profils/A'), JSON.stringify([retrait]));
+  localStorage.setItem(key('/profils/B'), JSON.stringify([{ ...accord, event_id: 'autre-profil' }]));
+
+  isolateDataProfilePersistence('/profils/A');
+  await flushConsentDecisions();
+
+  expect(request.mock.calls.map(([, options]) => JSON.parse(options.body))).toEqual([
+    { ...accord, data_profile: '/profils/A' }, { ...retrait, data_profile: '/profils/A' },
+  ]);
+  expect(JSON.parse(localStorage.getItem(key('/profils/A/')) || '[]')).toEqual([]);
+  expect(JSON.parse(localStorage.getItem(key('/profils/B'))!)).toEqual([{ ...accord, event_id: 'autre-profil' }]);
+});
+
+it('R1-C2 : une relecture en vol ne réactive pas un accord après la fusion du retrait', async () => {
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A/');
+  request.mockRejectedValue(new Error('Hors ligne'));
+  revokeCloudConsent('llm', 'openai');
+  await expect(flushConsentDecisions()).rejects.toThrow('Hors ligne');
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A');
+  let terminer!: (value: unknown) => void;
+  request.mockReset();
+  request.mockImplementationOnce(() => new Promise(resolve => { terminer = resolve; }))
+    .mockResolvedValue({ grants: [] });
+  const synchro = synchroniserConsentements();
+  await vi.waitFor(() => expect(terminer).toBeDefined());
+
+  expect(isolateDataProfilePersistence('/profils/A')).toBe('unchanged');
+  await flushConsentDecisions();
+  terminer({ grants: [{ purpose: 'llm', provider: 'openai', timestamp: '2026-10-01T00:00:00Z', textVersion: '3' }] });
+  await synchro;
+
+  expect(request.mock.calls.map(([, options]) => options?.method ?? 'GET')).toEqual(['GET', 'POST', 'GET']);
+  expect(hasCloudConsent('llm', 'openai')).toBe(false);
+});
+
+it('R1-C2 : une écriture de destination refusée laisse le retrait et le cache intacts', async () => {
+  const source = `therese-cloud-consent-pending:${encodeURIComponent('/profils/A/')}`;
+  const destination = `therese-cloud-consent-pending:${encodeURIComponent('/profils/A')}`;
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A/');
+  request.mockRejectedValue(new Error('Hors ligne'));
+  revokeCloudConsent('llm', 'openai');
+  await expect(flushConsentDecisions()).rejects.toThrow('Hors ligne');
+  const retrait = localStorage.getItem(source);
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/B');
+  localStorage.setItem('therese-chat', 'cache B');
+  const ecrire = vi.mocked(localStorage.setItem).getMockImplementation()!;
+  vi.mocked(localStorage.setItem).mockImplementation((key, value) => {
+    if (key === destination) throw new Error('Stockage plein');
+    ecrire(key, value);
+  });
+  const reload = vi.fn();
+  try {
+    expect(() => isolateDataProfilePersistence('/profils/A', { reload })).toThrow('Stockage plein');
+    expect(localStorage.getItem(source)).toBe(retrait);
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe('/profils/B');
+    expect(localStorage.getItem('therese-chat')).toBe('cache B');
+    expect(reload).not.toHaveBeenCalled();
+  } finally {
+    vi.mocked(localStorage.setItem).mockImplementation(ecrire);
+  }
+});
+
 it('ne remplace pas le cache du nouveau profil avec une réponse tardive de l’ancien', async () => {
   localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A');
   let terminer!: (value: unknown) => void;

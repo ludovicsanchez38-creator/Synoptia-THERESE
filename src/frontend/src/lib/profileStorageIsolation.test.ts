@@ -116,4 +116,47 @@ describe('isolateDataProfilePersistence', () => {
     expect(localStorage.getItem('therese-chat')).toBeNull();
     expect(reload).toHaveBeenCalledOnce();
   });
+
+  it('R1-C1 : conserve le cache sous un ancien chemin avec .. vérifié par le moteur', () => {
+    const ancien = '/profils/intermediaire/../A';
+    const reload = vi.fn();
+    const options = { reload, verifiedAliases: [ancien] };
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+    localStorage.setItem('therese-chat', 'conversation à conserver');
+
+    expect(isolateDataProfilePersistence('/profils/A', options)).toBe('unchanged');
+    expect(localStorage.getItem('therese-chat')).toBe('conversation à conserver');
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(ancien);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('R1-C1 : sans preuve du moteur, .. ne suffit pas à fusionner deux profils', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/lien/../A');
+    localStorage.setItem('therese-chat', 'cache de l’autre dossier');
+    const options = { verifiedAliases: ['/profils/intermediaire/../A'] };
+
+    expect(isolateDataProfilePersistence('/profils/A', options)).toBe('switched');
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+  });
+
+  it('R1-C1 : un nouveau chemin avec .. garde le cache du dossier canonique', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A');
+    localStorage.setItem('therese-chat', 'conversation à conserver');
+    const options = { canonicalDataDir: '/profils/A', reload: vi.fn() };
+
+    expect(isolateDataProfilePersistence('/profils/intermediaire/../A', options)).toBe('unchanged');
+    expect(localStorage.getItem('therese-chat')).toBe('conversation à conserver');
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe('/profils/A');
+    expect(options.reload).not.toHaveBeenCalled();
+  });
+
+  it('R1-C1 : un profil historique lié conserve son cache sous son identité canonique', () => {
+    const options = { canonicalDataDir: '/profils/A', reload: vi.fn() };
+    localStorage.setItem('therese-chat', 'conversation historique');
+
+    expect(isolateDataProfilePersistence('/profils/.therese', options)).toBe('initialized');
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe('/profils/A');
+    expect(localStorage.getItem('therese-chat')).toBe('conversation historique');
+    expect(options.reload).not.toHaveBeenCalled();
+  });
 });
