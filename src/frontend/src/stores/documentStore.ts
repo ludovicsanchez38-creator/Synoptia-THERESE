@@ -219,7 +219,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       // B-1394 : une trame lancée avant un rechargement se génère encore côté
       // moteur ; sans la retrouver, l'écran disait « Aucune section » et
       // proposait de la relancer (409).
-      if (!document.sections_total && !get().outlineGeneration) void retrouverTrameEnCours(id);
+      if (!document.sections_total && !get().outlineGeneration) void retrouverTrameEnCours(id, token);
     } catch (e: any) {
       if (token !== openDocumentToken) return;
       set({ isLoading: false, error: e?.message || 'Impossible de charger le document.' });
@@ -392,6 +392,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   reorderSections: async (documentId, items) => {
+    const token = openDocumentToken;
     set({ error: null });
     try {
       const sections = await apiReorderSections(documentId, items);
@@ -400,10 +401,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         return { currentDocument: { ...s.currentDocument, sections } };
       });
     } catch (e) {
+      if (token !== openDocumentToken || get().currentDocument?.id !== documentId) return;
       if (e instanceof ReorderConflictError) {
         // Invariant anti-perte : le backend n'a RIEN écrit. On recharge la
         // trame réelle (resynchronisation) puis on affiche l'erreur causale.
-        await get().openDocument(documentId);
+        const rechargement = get().openDocument(documentId);
+        const tokenRechargement = openDocumentToken;
+        await rechargement;
+        if (tokenRechargement !== openDocumentToken || get().currentDocument?.id !== documentId) return;
         set({ error: e.message || 'Réorganisation incomplète - la trame a été rechargée.' });
       } else {
         const message = e instanceof Error ? e.message : 'Impossible de réorganiser la trame.';
@@ -612,7 +617,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
  * la suit comme si on venait de la lancer (état de travail, bouton d'arrêt),
  * jusqu'à sa fin ; le document ouvert est alors relu.
  */
-async function retrouverTrameEnCours(documentId: string): Promise<void> {
+async function retrouverTrameEnCours(documentId: string, token: number): Promise<void> {
   const store = useDocumentStore;
   let actifs;
   try {
@@ -620,6 +625,7 @@ async function retrouverTrameEnCours(documentId: string): Promise<void> {
   } catch {
     return;
   }
+  if (token !== openDocumentToken || store.getState().currentDocument?.id !== documentId) return;
   const trame = actifs.find(
     (t) => t.type === 'document_outline' && t.entity_id === documentId && (t.state === 'queued' || t.state === 'running'),
   );

@@ -263,7 +263,7 @@ export async function initiateCRMOAuth(): Promise<{
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La connexion au CRM n’a pas pu démarrer (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La connexion au CRM n’a pas pu démarrer (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -276,7 +276,7 @@ export async function handleCRMOAuthCallback(state: string, code: string): Promi
   const response = await apiFetch(`${API_BASE}/api/crm/sync/callback?${params}`);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La connexion au CRM n’a pas pu être finalisée (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La connexion au CRM n’a pas pu être finalisée (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -287,7 +287,7 @@ export async function syncCRM(): Promise<CRMSyncResponse> {
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La synchronisation du CRM a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La synchronisation du CRM a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }

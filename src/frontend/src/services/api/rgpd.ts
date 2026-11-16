@@ -53,7 +53,7 @@ export async function exportContactRGPD(contactId: string): Promise<RGPDExportRe
   const response = await apiFetch(`${API_BASE}/api/rgpd/export/${contactId}`);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `L’export des données personnelles a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `L’export des données personnelles a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -66,7 +66,7 @@ export async function anonymizeContact(contactId: string, reason: string): Promi
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `L’anonymisation du contact a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `L’anonymisation du contact a échoué (erreur ${response.status}).`);
   }
   const resultat = await response.json();
   notifyMemoryChange();
@@ -79,7 +79,7 @@ export async function renewContactConsent(contactId: string): Promise<RGPDRenewC
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `Le renouvellement du consentement a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `Le renouvellement du consentement a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -95,7 +95,7 @@ export async function updateContactRGPD(
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La mise à jour des informations de confidentialité a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La mise à jour des informations de confidentialité a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -104,7 +104,7 @@ export async function getRGPDStats(): Promise<RGPDStatsResponse> {
   const response = await apiFetch(`${API_BASE}/api/rgpd/stats`);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `Le chargement des statistiques de confidentialité a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `Le chargement des statistiques de confidentialité a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -115,7 +115,7 @@ export async function inferContactRGPD(contactId: string): Promise<RGPDInferResp
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La détermination de la base légale a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La détermination de la base légale a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -134,7 +134,7 @@ export async function getPurgeSettings(): Promise<PurgeSettingsResponse> {
   const response = await apiFetch(`${API_BASE}/api/rgpd/purge/settings`);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La lecture des réglages de suppression automatique a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La lecture des réglages de suppression automatique a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -149,7 +149,7 @@ export async function updatePurgeSettings(
   );
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `L’enregistrement des réglages de suppression automatique a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `L’enregistrement des réglages de suppression automatique a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -162,7 +162,7 @@ export async function togglePurgeExclude(
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `La modification de la protection du contact contre la suppression automatique a échoué (erreur ${response.status}).`);
+    throw new Error(error?.detail || error?.message || `La modification de la protection du contact contre la suppression automatique a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }

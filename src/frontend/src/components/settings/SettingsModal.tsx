@@ -126,9 +126,12 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   // fournisseur. Une ref et non un état : `handleSelectProvider` est asynchrone
   // et lirait une valeur périmée dans sa fermeture.
   const modelesParFournisseur = useRef<Partial<Record<api.LLMProvider, string>>>({});
+  const modelesDemandes = useRef<Partial<Record<api.LLMProvider, { choix: number; model: string }>>>({});
   const dernierChoixLLM = useRef(0);
+  const derniereLectureLLM = useRef(0);
   const enregistrementLLM = useRef<Promise<void>>(Promise.resolve());
   const configurationLLMEnregistree = useRef<{ provider: api.LLMProvider; model: string } | null>(null);
+  const effortLLMEnregistre = useRef<{ valeur: LLMEffort } | null>(null);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [corruptedKeys, setCorruptedKeys] = useState<string[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -282,6 +285,12 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
       return erreurs;
     }
 
+    // Une réouverture attend le POST déjà lancé. Un choix ou une sauvegarde
+    // survenus pendant les lectures rendent ensuite leur résultat IA périmé.
+    const choixAvantLecture = dernierChoixLLM.current;
+    const lecture = ++derniereLectureLLM.current;
+    await enregistrementLLM.current;
+    const configurationAvantLecture = configurationLLMEnregistree.current;
     const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
       loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [], sources: {} as Record<string, string> }),
       loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: modeleParDefaut('anthropic'), available_models: [] }),
@@ -332,10 +341,12 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         llmConfig.available_models || [],
       );
 
-      setSelectedProvider(loadedProvider);
-      setSelectedModel(resolvedModel);
-      modelesParFournisseur.current[loadedProvider] = resolvedModel;
-      configurationLLMEnregistree.current = { provider: loadedProvider, model: resolvedModel };
+      if (lecture === derniereLectureLLM.current && choixAvantLecture === dernierChoixLLM.current && configurationAvantLecture === configurationLLMEnregistree.current) {
+        setSelectedProvider(loadedProvider);
+        setSelectedModel(resolvedModel);
+        modelesParFournisseur.current[loadedProvider] = resolvedModel;
+        configurationLLMEnregistree.current = { provider: loadedProvider, model: resolvedModel };
+      }
       setStats(statsData);
       setProfile(profileData);
       setWorkingDir(workingDirData?.path || null);
@@ -551,11 +562,17 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
 
   /** B-1794 : ignorer les lectures dépassées et terminer les POST dans l'ordre. */
   async function enregistrerChoixLLM(
-    choix: number, provider: api.LLMProvider, model: string, effort?: LLMEffort,
+    choix: number, provider: api.LLMProvider, model: string,
+    options: { effort?: LLMEffort | (() => LLMEffort); baseUrl?: string; conserverOptions?: boolean } = {},
   ): Promise<boolean> {
     const enregistrement = enregistrementLLM.current.then(async () => {
-      if (choix !== dernierChoixLLM.current) return false;
-      await api.setLLMConfig(provider, model, effort);
+      // Une option explicitement demandée reste à enregistrer, même si un
+      // choix de modèle la suit. Tous les POST passent par cette même file.
+      if (choix !== dernierChoixLLM.current && !options.conserverOptions) return false;
+      const effort = typeof options.effort === 'function' ? options.effort() : options.effort;
+      if (options.baseUrl !== undefined) await api.setLLMConfig(provider, model, effort, options.baseUrl);
+      else await api.setLLMConfig(provider, model, effort);
+      if (effort !== undefined) effortLLMEnregistre.current = { valeur: effort };
       modelesParFournisseur.current[provider] = model;
       configurationLLMEnregistree.current = { provider, model };
       window.dispatchEvent(new Event('therese:llm-config-changed'));
@@ -602,7 +619,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     // qui y avait été enregistré, pas le premier du catalogue. Sans cette
     // mémoire, inspecter un fournisseur réécrivait la configuration active en
     // silence : mistral-medium-latest devenait mistral-large-latest au retour.
-    const dejaChoisi = modelesParFournisseur.current[provider];
+    const dejaChoisi = modelesDemandes.current[provider]?.model ?? modelesParFournisseur.current[provider];
     // Un modèle Ollama peut avoir disparu de la machine entre-temps ; les
     // catalogues cloud, eux, ne bougent pas d'un clic à l'autre.
     const toujoursPropose = provider !== 'ollama' || ollamaModels.includes(dejaChoisi ?? '');
@@ -624,18 +641,29 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         setError(err instanceof Error ? err.message : 'Le fournisseur IA n’a pas pu être enregistré.');
         setRetryOperation(() => () => void handleSelectProvider(provider));
       }
+    } else {
+      setOperationStatus(null);
+      setRetryOperation(null);
     }
   }
 
   async function handleSelectModel(modelId: string) {
     const choix = ++dernierChoixLLM.current;
+    const effortAvantLecture = effortLLMEnregistre.current;
+    // Un aller-retour entre fournisseurs conserve aussi le choix en cours.
+    // Il reste distinct du modèle confirmé, utilisé en cas de refus.
+    modelesDemandes.current[selectedProvider] = { choix, model: modelId };
     setError(null);
     setOperationStatus('Enregistrement du modèle IA…');
     setRetryOperation(null);
     try {
       const effort = (await api.getLLMConfig()).effort as LLMEffort | null;
-      const nouvelEffort = effort === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : effort ?? 'auto';
-      if (!await enregistrerChoixLLM(choix, selectedProvider, modelId, nouvelEffort)) return;
+      if (!await enregistrerChoixLLM(choix, selectedProvider, modelId, { effort: () => {
+        // Une option sauvée pendant le GET prévaut sur cette lecture ancienne.
+        const actuel = effortLLMEnregistre.current !== effortAvantLecture
+          ? effortLLMEnregistre.current?.valeur : effort;
+        return actuel === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : actuel ?? 'auto';
+      } })) return;
       setSelectedModel(modelId);
       setOperationStatus('Modèle IA enregistré.');
     } catch (err) {
@@ -643,6 +671,24 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
       setOperationStatus(null);
       setError(err instanceof Error ? err.message : 'Le modèle IA n’a pas pu être enregistré.');
       setRetryOperation(() => () => void handleSelectModel(modelId));
+    } finally {
+      if (modelesDemandes.current[selectedProvider]?.choix === choix) {
+        delete modelesDemandes.current[selectedProvider];
+      }
+    }
+  }
+
+  async function handleSaveLLMOptions(options: { effort?: LLMEffort; baseUrl?: string }): Promise<boolean> {
+    const model = modelesDemandes.current[selectedProvider]?.model ?? selectedModel;
+    if (!model) return false;
+    const choix = ++dernierChoixLLM.current;
+    try {
+      if (!await enregistrerChoixLLM(choix, selectedProvider, model, { ...options, conserverOptions: true })) return false;
+      setSelectedModel(model);
+      return true;
+    } catch (err) {
+      if (!await retablirConfigurationLLM(choix)) return false;
+      throw err;
     }
   }
 
@@ -827,6 +873,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
             setError={setError}
             onSelectProvider={handleSelectProvider}
             onSelectModel={handleSelectModel}
+            onSaveOptions={handleSaveLLMOptions}
             onSaveApiKey={handleSaveApiKey}
             onRetestOllama={retestOllama}
             retestingOllama={retestingOllama}

@@ -98,7 +98,6 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [relance, setRelance] = useState(0);
   const [relanceEnCours, setRelanceEnCours] = useState(false);
   const messageMoteur = useRef<string | null>(null);
-  const apiBaseReady = useRef(false);
   const fatalSidecarError = useRef(false);
   const erreursSidecar = useRef(0);
   const generationDerniereErreur = useRef<number | null>(null);
@@ -228,8 +227,9 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     const startTime = Date.now();
 
     async function poll() {
-      // Résoudre le port backend avant de commencer le polling
-      if (!apiBaseReady.current) {
+      while (!cancelled && !fatalSidecarError.current) {
+        // initApiBase mémorise une découverte réussie, mais libère son repli.
+        // Le sondage suivant (ou une relance) peut donc retrouver le sidecar.
         try {
           await initApiBase();
         } catch {
@@ -238,10 +238,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           }
           return;
         }
-        apiBaseReady.current = true;
-      }
-
-      while (!cancelled && !fatalSidecarError.current) {
+        if (cancelled || fatalSidecarError.current) return;
         const elapsed = Date.now() - startTime;
 
         // Timeout

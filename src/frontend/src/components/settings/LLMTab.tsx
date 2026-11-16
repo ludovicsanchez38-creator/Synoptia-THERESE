@@ -75,6 +75,8 @@ export const IMAGE_PROVIDERS: ImageProviderConfig[] = [
   },
 ];
 
+export type EnregistrerOptionsLLM = (options: { effort?: LLMEffort; baseUrl?: string }) => Promise<boolean>;
+
 export interface LLMTabProps {
   selectedProvider: api.LLMProvider;
   selectedModel: string;
@@ -99,6 +101,7 @@ export interface LLMTabProps {
   setError: (v: string | null) => void;
   onSelectProvider: (provider: api.LLMProvider) => void;
   onSelectModel: (modelId: string) => void;
+  onSaveOptions?: EnregistrerOptionsLLM;
   onSaveApiKey: () => void;
   // BUG-049 : re-tester la disponibilité Ollama à la demande
   onRetestOllama?: () => void;
@@ -124,6 +127,7 @@ export function LLMTab({
   setError,
   onSelectProvider,
   onSelectModel,
+  onSaveOptions,
   onSaveApiKey,
   onRetestOllama,
   retestingOllama = false,
@@ -174,7 +178,11 @@ export function LLMTab({
     setSavingBaseUrl(true);
     setError(null);
     try {
-      await api.setLLMConfig(selectedProvider, selectedModel, undefined, baseUrlInput.trim());
+      if (onSaveOptions) {
+        if (!await onSaveOptions({ baseUrl: baseUrlInput.trim() })) return;
+      } else {
+        await api.setLLMConfig(selectedProvider, selectedModel, undefined, baseUrlInput.trim());
+      }
       setBaseUrlSaved(true);
       setTimeout(() => setBaseUrlSaved(false), 3000);
     } catch (err) {
@@ -462,6 +470,7 @@ export function LLMTab({
           availableModels={availableModels}
           selectedModel={selectedModel}
           onSelectModel={onSelectModel}
+          onSaveOptions={onSaveOptions}
           selectedProvider={selectedProvider}
         />
       </Carte>
@@ -517,11 +526,13 @@ function ModelSelector({
   availableModels,
   selectedModel,
   onSelectModel,
+  onSaveOptions,
   selectedProvider,
 }: {
   availableModels: { id: string; name: string; badge?: string }[];
   selectedModel: string;
   onSelectModel: (modelId: string) => void;
+  onSaveOptions?: EnregistrerOptionsLLM;
   selectedProvider: string;
 }) {
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -645,6 +656,7 @@ function ModelSelector({
       <EffortSelector
         selectedProvider={selectedProvider}
         selectedModel={selectedModel}
+        onSaveOptions={onSaveOptions}
         classeRangee={rangee}
       />
     </>
@@ -668,10 +680,12 @@ const OPTION_XHIGH = {
 export function EffortSelector({
   selectedProvider,
   selectedModel,
+  onSaveOptions,
   classeRangee = 'grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 border-t border-border px-4',
 }: {
   selectedProvider: string;
   selectedModel: string;
+  onSaveOptions?: EnregistrerOptionsLLM;
   /** Lot 9 : la rangée de la carte du service, mot pour mot celle du modèle. */
   classeRangee?: string;
 }) {
@@ -706,11 +720,14 @@ export function EffortSelector({
     setStatus('Enregistrement de l’effort…');
     setFailedEffort(null);
     try {
-      await api.setLLMConfig(
-        selectedProvider as api.LLMProvider,
-        selectedModel,
-        value as LLMEffort
-      );
+      if (onSaveOptions) {
+        if (!await onSaveOptions({ effort: value as LLMEffort })) {
+          setStatus(null);
+          return;
+        }
+      } else {
+        await api.setLLMConfig(selectedProvider as api.LLMProvider, selectedModel, value as LLMEffort);
+      }
       setStatus('Effort de raisonnement enregistré.');
     } catch (err) {
       setEffort(previous);

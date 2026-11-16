@@ -1,6 +1,6 @@
 # Cycle 20 : lot front-reglages
 
-Travail limité à `gpt/c20-front-reglages`, base de cet arbre `12a383fb`, issue de l’intégration v0.83.0-alpha. Aucun commit, ajout à l’index, push, dépôt annexe ou bundle. Les modifications restent non commitées pour le rejeu et les commits de l’orchestrateur. Le commit historique `41a438a8` a uniquement été lu, puis son correctif de SettingsModal reporté dans cet arbre ; aucune branche main n’a été modifiée.
+Le bilan initial ci-dessous décrit le travail sur `gpt/c20-front-reglages`, base `12a383fb`, issue de l’intégration v0.83.0-alpha, avant les commits de l’orchestrateur. Pendant cette intervention initiale, aucun commit, ajout à l’index, push, dépôt annexe ou bundle n’a été effectué. Le commit historique `41a438a8` a uniquement été lu, puis son correctif de SettingsModal reporté dans cet arbre ; aucune branche main n’a été modifiée. L’état vérifié lors de la reprise figure dans « Remédiation de la relecture, passe 1 ».
 
 Les candidats ont été traités dans l’ordre demandé. Pour chacun des 14 confirmés, le test de comportement a été écrit et exécuté avant la correction, puis vérifié au vert. Les appels API, IPC et mises à jour sont doublés ; aucun fournisseur ni service en ligne n’a été appelé. Aucun backend n’a été démarré et aucun port applicatif réservé ni dossier de données personnel n’a été utilisé.
 
@@ -44,7 +44,7 @@ Aucun changement pour B-1846. Le même fichier reçoit uniquement le report de B
 
 - B-1805 : `App` → `PanelContainer.tsx:24-25,148` → `SettingsModal` → `LLMTab`, via `onSelectProvider` et `onSelectModel`. Le correctif ordonne les sauvegardes, ignore les lectures dépassées et restaure la dernière configuration enregistrée après refus. Six scénarios nouveaux, dont trois initialement rouges ; les trois tests B-225 restent verts.
 - B-1847 : `SplashScreen.tsx:193` appelle `initApiBase`. Seul le repli sans port résolu libère la promesse ; les appels concurrents partagent toujours une tentative et un port résolu reste mémorisé. Le paramètre URL valide reste prioritaire, conformément au contrat existant.
-- B-1848 et B-1849 : `DocumentsList.tsx` ouvre et supprime les documents ; `DocumentWorkspace.tsx` appelle la fermeture et suit la génération. La fermeture invalide les lectures. Une suppression confirmée invalide uniquement la lecture du document supprimé ; un refus laisse le document consultable. Fermer libère `isLoading`, sans annuler la génération détachée ni libérer à tort le chargement de la suivante.
+- B-1848 et B-1849 : `DocumentsList.tsx` ouvre les documents ; `DocumentWorkspace.tsx` appelle la fermeture et suit la génération. La fermeture invalide les lectures et libère `isLoading`, sans annuler la génération détachée ni libérer à tort le chargement de la suivante. La suppression est couverte uniquement au niveau du store : les tests vérifient l’invalidation après confirmation et le maintien du document après refus. Aucun appel de `deleteDocument` depuis un composant n’a été trouvé ; ces tests ne prouvent donc pas un parcours de suppression dans l’interface.
 - B-1959 à B-1965 : `SettingsModal` monte `LLMTab`, `ProfileTab` et `ToolsPanel`. Les tests rendent ces vrais composants et utilisent leurs contrôles. Le statut inactif possède un rôle et un nom accessibles. La suppression annonce le nom de la cible et transmet toujours son identifiant exact après confirmation.
 - B-1966 : `App.tsx:276` monte `UpdateBanner`. Le plugin local expose `downloadAndInstall` comme une promesse d’installation et ses événements comme `DownloadEvent`. Le bouton de redémarrage attend désormais la résolution de cette promesse, puis dit « Redémarrer pour appliquer » ; l’événement `Finished` seul ne suffit plus. Aucune mise à jour réelle n’a été lancée.
 - B-1967 : `CRMSyncPanel.tsx:125,249` utilise le client CRM. Les trois replis sont français, conservent le code HTTP et acceptent une réponse d’erreur non JSON. Les détails fournis par le moteur sont conservés. Le retour OAuth est testé au niveau du client exporté, sans prétendre ouvrir une connexion réelle.
@@ -110,3 +110,104 @@ L’aperçu graphique via Chromium a été tenté mais son lancement est refusé
 L’intégration dans main et les commits appartiennent à l’orchestrateur. Les tests nouveaux sont séparés par candidat ou portent un nom `B-xxxx` utilisable avec `-t`, afin de rejouer les rouges sur la base avant les correctifs. Les anciens tests modifiés pour les seuls libellés doivent accompagner les correctifs correspondants. Aucun changement du registre ni de `.app-loop/`.
 
 Pour les prochains lots, la séquence répétée de lancement ciblé, capture du rouge et lecture des rapports se prête à un petit script commun de contrôle ; sa création sort de ce lot.
+
+## Remédiation de la relecture, passe 1
+
+Reprise du 16 novembre 2026, limitée aux dix constats transmis. **Verdict : NO-GO, uniquement pour le constat 7 encore ouvert.** Les constats 1 à 6, 8 et 9 sont corrigés et testés ; le constat 10 est corrigé dans le bilan. Les résultats de la section « Portes finales » ci-dessus appartiennent à la livraison initiale ; les résultats de cette passe sont ceux donnés ci-dessous.
+
+### État Git et périmètre
+
+L’arbre était propre à l’entrée, mais il n’était pas rebasé : `HEAD=9edd2b88`, `c20/integration=e82f038a`. Le contrôle `git -c core.fsmonitor=false merge-base --is-ancestor c20/integration HEAD` retourne **1**, au début comme à la fin. Le répertoire Git réel indiqué par `git rev-parse --git-dir` est `/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE/.git/worktrees/gpt-c20-front-reglages`, hors de cet arbre et hors des racines autorisées en écriture. Le rebase relève donc de l’orchestrateur. Aucun essai d’écriture dans ces métadonnées, aucun rebase, commit, ajout à l’index, push, dépôt annexe ni bundle n’a été effectué.
+
+Les six tests cités dans le constat 7 restent absents de `HEAD` et présents dans l’intégration : `tests/test_b1824_comptage_generation.py`, `tests/test_b1825_mcp_echec_initialisation.py`, `tests/test_b1903_voix_locale_absente.py`, `tests/test_b1904_board_recherche_coupee.py`, `src/frontend/src/components/board/BoardPanel.rechercheCoupee.test.tsx` et `src/frontend/src/components/prototype/BoardRechercheCoupee.test.tsx`. Les écarts Board, voix et MCP n’ont pas été recopiés dans le diff de remédiation. Après rebase, l’orchestrateur devra rejouer les contrôles sur la base intégrée.
+
+Cette passe modifie six fichiers de production frontend, étend cinq fichiers de tests, ajoute deux fichiers de tests et met à jour ce bilan, soit quatorze fichiers. Aucun backend ni test Python n’est modifié. Aucun test existant n’a été supprimé, assoupli ou rendu facultatif. Toutes les modifications de cette passe restent non commitées ; HEAD et index sont inchangés.
+
+### Constats, corrections et preuves rouges
+
+Les chemins frontend sont relatifs à `src/frontend/src`. Les tests nouveaux portent les préfixes `R1-n :` ; pour les isoler, donner le fichier indiqué et `-t 'R1-n :'`. Les lignes d’échec ci-dessous sont copiées des sorties réelles, y compris leurs ellipses de troncature. Les rouges ont été exécutés avant les changements de production correspondants.
+
+| N° | Traitement et preuve actuelle | Test ajouté ou étendu | Rouge observé | Nouveaux cas verts |
+| --- | --- | --- | --- | ---: |
+| 1 | `SplashScreen.tsx:189` rappelle `initApiBase` avant chaque sonde. Le client mémorise une découverte réussie et libère son repli ; le splash n’a plus de drapeau qui confond les deux. | `components/SplashScreen.reprisePort.r1.test.tsx`, vrai écran et vrai client, sondage et bouton de relance, HTTP et IPC doublés | `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times` | 2 |
+| 2 | `SettingsModal.tsx:621,655` distingue les modèles demandés en cours des modèles confirmés. Un retour au fournisseur retrouve le choix en attente ; une ancienne fin ne supprime pas une demande plus récente. | `components/settings/SettingsModal.dernierChoix.b1805.test.tsx`, aller-retour pendant GET puis pendant POST | `AssertionError: expected [ 'mistral', 'mistral-medium-latest' ] to deeply equal [ 'mistral', 'mistral-small-2603' ]` | 2 |
+| 3 | `LLMTab` transmet l’effort et l’adresse Qwen à `SettingsModal.handleSaveLLMOptions` (`:681`), qui utilise la file commune. Une option explicitement demandée est conservée dans cette file. Le choix de modèle tient compte de l’effort confirmé pendant son GET et conserve la normalisation de `xhigh`. | `components/settings/SettingsModal.ecrituresLLM.r1.test.tsx`, options lentes puis modèle, modèle lent puis effort, refus et reprise des deux options | `AssertionError: expected 'mistral-medium-latest' to be 'mistral-medium-3-5' // Object.is equality` ; `AssertionError: expected 'qwen3.8-max' to be 'qwen3.7-plus' // Object.is equality` ; `AssertionError: expected 'auto' to be 'high' // Object.is equality` | 5 |
+| 4 | `SettingsModal.tsx:290-348` attend les écritures déjà engagées et contrôle le choix, la configuration confirmée et le numéro de lecture avant d’appliquer le résultat IA. | Même fichier `SettingsModal.ecrituresLLM.r1.test.tsx`, fermeture/réouverture avant et après le POST, restauration après refus suivant, deux relectures successives | `Error: expect(element).toHaveAttribute("aria-pressed", "true") // element.getAttribute("aria-pressed") === "true"` ; reçu : `aria-pressed="false"` | 3 |
+| 5 | `documentStore.ts:395-411` vérifie la session d’ouverture et le document actif avant la resynchronisation, puis à nouveau avant l’erreur causale. | `stores/documentStore.ouvertureAnnulee.b1848.test.ts`, fermeture, autre document, même document rouvert, avant le conflit et pendant la resynchronisation | `AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times` ; `AssertionError: expected 'Trame modifiée ailleurs.' to be null` | 6 |
+| 6 | `documentStore.ts:222,628` transmet le jeton d’ouverture à la recherche de trame et ignore sa réponse périmée. | `stores/documentStore.trameRetrouvee.b1394.test.ts`, fermeture, autre document, même document rouvert ; vérifie ensuite que la génération de B peut partir | `AssertionError: expected { documentId: 'doc-1', …(2) } to be null` | 3 |
+| 7 | Confirmé, non corrigé : intégration non ancêtre et métadonnées Git en lecture seule hors périmètre. Rebase à effectuer par l’orchestrateur, sans prétendre que la base est intégrée. | Contrôle Git d’ascendance, aucun test fonctionnel fabriqué | `git merge-base --is-ancestor c20/integration HEAD` : sortie **1** | Sans objet |
+| 8 | Les trois erreurs CRM et les neuf erreurs RGPD acceptent `detail`, puis `message`, puis le repli français, y compris avec un corps JSON nul. Format réel lu dans `src/backend/app/main.py:657-662` ; le 404 « Contact non trouvé » vient notamment de `routers/rgpd.py:70`. | `services/api/crm-extended.erreursFrancaises.b1967.test.ts` et `services/api/rgpd.erreursFrancaises.b1968.test.ts`, `{code, message}` et `null` pour chaque opération | `AssertionError: expected [Function] to throw error including 'Contact non trouvé' but got 'L’export des données personnelles a é…'` ; `AssertionError: expected [Function] to throw error including 'La connexion au CRM n’a pas pu démarr…' but got 'Cannot read properties of null (readi…'` | 24 |
+| 9 | `SettingsModal.tsx:644-646` efface statut et reprise d’opération lorsqu’un choix sans modèle ne lance aucune sauvegarde. La règle produit B-1846 reste à trancher ; cette passe ne la décide pas. | `components/settings/SettingsModal.ecrituresLLM.r1.test.tsx`, ancien POST qui réussit puis qui échoue | `AssertionError: expected <p role="status" …(1)></p> to be null` | 2 |
+| 10 | Le paragraphe B-1848/B-1849 ne revendique plus de suppression depuis `DocumentsList`. Les garanties de suppression sont limitées au store ; aucun parcours d’interface n’a été ajouté. | Contrôle documentaire ponctuel, reproduit ci-dessous ; aucun test fonctionnel supplémentaire | `AssertionError: Le bilan attribue à DocumentsList une suppression absente de ses appelants.` | 1 contrôle documentaire |
+
+**47 nouveaux cas frontend passent, dont 45 ont fourni un rouge.** Les deux cas supplémentaires du constat 3 protègent les refus et la réutilisation de la file. Les 36 cas CRM/RGPD antérieurs restent intacts, notamment les contrôles de `detail`, JSON vide et corps non JSON.
+
+La vérification du correctif 4 a révélé une régression de sa première version : la première relecture rendait la suivante périmée même sans écriture. Le troisième test R1-4 a échoué avec `Error: expect(element).toHaveValue(mistral-small-2603)`, valeur reçue `mistral-medium-latest`. Le numéro de lecture corrige ce cas ; les trois tests et leurs voisins sont verts. Le premier lancement du test 9 avait seulement une ambiguïté de sélecteur entre la carte Ollama et son bouton de retest ; le sélecteur a été limité au groupe des fournisseurs avant de reproduire le vrai rouge cité au tableau.
+
+Journaux des rouges : `/tmp/front-reglages-r1-N-rouge.log` pour N = 1, 2, 3, 4, 5, 6, 8, 9, 10 ; rouge supplémentaire du constat 4 : `/tmp/front-reglages-r1-4-relecture-rouge.log`. Les journaux verts correspondants portent `-vert.log`. Les deux refus ajoutés au constat 3 sont dans `/tmp/front-reglages-r1-3-refus.log`.
+
+Contrôle documentaire du constat 10, exécuté avant puis après correction depuis la racine de cet arbre (copie d’exécution : `/tmp/front-reglages-r1-10-controle.py`) :
+
+```python
+from pathlib import Path
+
+racine = Path.cwd()
+source = (racine / 'src/frontend/src/components/documents/DocumentsList.tsx').read_text()
+bilan = (racine / 'docs/qualite/c20-front-reglages.md').read_text()
+preuve = next(ligne for ligne in bilan.splitlines() if ligne.startswith('- B-1848 et B-1849 :'))
+assert 'deleteDocument' not in source, 'Les appelants ont changé : relire le parcours de suppression.'
+assert 'ouvre et supprime' not in preuve, 'Le bilan attribue à DocumentsList une suppression absente de ses appelants.'
+assert 'uniquement au niveau du store' in preuve, 'La limite de la preuve de suppression doit être explicite.'
+```
+
+### Appelants et tests voisins
+
+- Démarrage : `App.tsx:219-223` monte le splash ; `initApiBase` reste partagé et mémorise le port découvert. Tests du splash, reprise des données, erreur fatale et singleton : **45/45**.
+- Configuration IA : `PanelContainer.tsx:148` garde `SettingsModal` monté avec `isOpen`. `LLMTab` et `EffortSelector` n’ont pas d’autre parent de production. La voie des options est raccordée au parent ; leurs tests isolés conservent leur API autonome. Après le constat 2 : **40/40** ; après le constat 3 : **58/58**, plus **2/2** pour les refus ; après le dernier ajustement du constat 4 : **57/57** ; après le constat 9 : **51/51**. Ces groupes se recouvrent et ne sont pas additionnés.
+- Documents : `DocumentWorkspace.tsx:234` transmet la réorganisation depuis `OutlineTree.tsx:130`. Les fermetures passent par `DocumentWorkspace.tsx:87,96` ; les ouvertures passent notamment par `DocumentsList.tsx:171,222`. Après le constat 5 : **86/86** ; après le constat 6 : **32/32**, avec le suivi normal de trame et la génération détachée conservés.
+- Erreurs : `CRMSyncPanel.tsx:125,249`, les actions RGPD de `MemoryPanel` et les réglages de purge de `PrivacyTab` continuent de recevoir des exceptions avec leur motif. Clients et interfaces voisines : **72/72**. Aucun OAuth réel ni appel fournisseur.
+
+### Portes ciblées de cette passe
+
+**Frontend : 365 passés, 0 échoué, 0 ignoré, 50 fichiers passés sur 50, sortie 0.** Rapport `/tmp/front-reglages-r1-frontend.json` lu : tous les fichiers et toutes les assertions sont verts, dont les 47 nouveaux cas. Journal `/tmp/front-reglages-r1-frontend.log` ; sélection résolue `/tmp/front-reglages-r1-frontend-fichiers.txt`. Aucune suite complète n’a été lancée.
+
+Sélection exacte et commande reproductible depuis `src/frontend` (la commande exécutée a passé cette liste résolue comme arguments à `npx`) :
+
+```sh
+npx --no-install vitest run \
+  src/components/SplashScreen*.test.tsx \
+  src/components/settings/SettingsModal*.test.* \
+  src/components/settings/LLMTab*.test.tsx \
+  src/stores/documentStore*.test.ts \
+  src/components/documents/DocumentWorkspace*.test.tsx \
+  src/components/documents/OutlineTree*.test.tsx \
+  src/services/api/core.reprisePort.b1847.test.ts \
+  src/services/api/core.portEtSingleton.test.ts \
+  src/services/api/crm-extended.erreursFrancaises.b1967.test.ts \
+  src/services/api/rgpd.erreursFrancaises.b1968.test.ts \
+  src/components/settings/PrivacyTab.test.tsx \
+  src/components/settings/PrivacyTab.purgeIndisponible.b1209.test.tsx \
+  src/components/memory/MemoryPanel.rgpd.b1929.test.tsx \
+  --maxWorkers=3 --no-cache --configLoader runner \
+  --reporter=default --reporter=json \
+  --outputFile.json=/tmp/front-reglages-r1-frontend.json
+```
+
+`--no-install` évite tout téléchargement ; `--configLoader runner --no-cache` conserve la configuration Vitest en évitant les écritures dans le `node_modules` partagé en lecture seule. Aucun délai de test n’a été augmenté.
+
+**Backend voisin : 66 passés, 0 échec, 0 erreur, 0 ignoré, sortie 0.** XML `/tmp/front-reglages-r1.xml` lu : 66 éléments `testcase`, aucune balise `failure`, `error` ou `skipped`. Aucun rouge connu n’a été soustrait. Données jetables, client HTTP en processus et dépendances externes doublées. Commande depuis la racine :
+
+```sh
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-reglages-r1-data.XXXXXX)" \
+OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest tests/test_routers_rgpd.py tests/test_routers_crm_full.py \
+  -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/front-reglages-r1.xml
+```
+
+- TypeScript : `npx --no-install tsc --noEmit`, **sortie 0, 0 diagnostic**, `/tmp/front-reglages-r1-tsc.log` lu et vide.
+- ESLint : `npm run lint`, **sortie 0, 0 erreur, 27 avertissements**, `/tmp/front-reglages-r1-lint.log` lu. Aucun correctif de lint hors périmètre.
+- Ruff : `.venv/bin/python -m ruff check --no-fix src/backend tests`, **sortie 0**, `All checks passed!`, `/tmp/front-reglages-r1-ruff.log` lu.
+- Contrôle documentaire 10 : **sortie 0**, `/tmp/front-reglages-r1-10-vert.log` lu.
+- `git diff --check` : **sortie 0** ; index vide, HEAD inchangé. Le contrôle d’ascendance reste rouge et maintient le NO-GO.
+
+Aucun serveur applicatif, port réservé, fournisseur LLM ou service réseau n’a été utilisé. Les accès HTTP/IPC frontend sont doublés ; certains tests antérieurs contiennent les ports historiques dans leurs chaînes, sans connexion réelle. Aucun accès au dossier de données personnel ni à `.app-loop/`. Les vérifications d’interface portent sur le DOM des vrais composants ; aucune recette native Tauri ni validation graphique nouvelle n’est revendiquée.
