@@ -113,14 +113,6 @@ class EntityExtractor:
         if len(user_message.strip()) < 10:
             return ExtractionResult(contacts=[], projects=[])
 
-        skip_patterns = [
-            "qui suis-je", "aide moi", "aide-moi", "comment faire",
-            "qu'est-ce que", "peux-tu", "pourrais-tu",
-        ]
-        message_lower = user_message.lower()
-        if any(pattern in message_lower for pattern in skip_patterns):
-            return ExtractionResult(contacts=[], projects=[])
-
         try:
             # B-1139 : le service de la conversation quand l'appelant le donne.
             llm = llm or self._get_llm()

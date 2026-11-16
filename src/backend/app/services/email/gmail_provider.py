@@ -269,6 +269,12 @@ class GmailProvider(EmailProvider):
 
         from app.services.http_client import get_http_client
 
+        message = await self._service.get_message(message_id, format="full")
+        pieces = self._extract_attachments(message.get("payload", {}), message_id)
+        piece = next((item for item in pieces if item.attachment_id == attachment_id), None)
+        if piece is None:
+            raise ValueError("Pièce jointe introuvable dans ce message.")
+
         url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}/attachments/{attachment_id}"
         headers = {"Authorization": f"Bearer {self._access_token}"}
 
@@ -280,8 +286,8 @@ class GmailProvider(EmailProvider):
         content = base64.urlsafe_b64decode(data.get("data", ""))
 
         return EmailAttachmentDTO(
-            filename="attachment",  # We don't have filename here
-            content_type="application/octet-stream",
+            filename=piece.filename,
+            content_type=piece.content_type,
             size=len(content),
             content=content,
             attachment_id=attachment_id,

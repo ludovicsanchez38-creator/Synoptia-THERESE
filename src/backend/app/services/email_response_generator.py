@@ -102,7 +102,19 @@ def build_email_system_prompt(
         "detailed": "Réponse détaillée et complète (2-3 paragraphes).",
     }
 
-    return f"""Tu es l'assistant email de {user_name}, {user_role} chez {user_company}.
+    if user_name:
+        identite = f"de {user_name}"
+        if user_role:
+            identite += f", {user_role}"
+        if user_company:
+            identite += f" chez {user_company}"
+        introduction = f"Tu es l'assistant email {identite}."
+        signature = f"Signe toujours avec le nom de {user_name} (pas \"Assistant IA\")"
+    else:
+        introduction = "Tu es un assistant de rédaction d'emails."
+        signature = "N'invente pas le nom ni l'organisation de l'expéditeur et ne signe pas à leur place."
+
+    return f"""{introduction}
 
 Tu rédiges des réponses professionnelles et pertinentes aux emails reçus.
 
@@ -110,7 +122,7 @@ Tu rédiges des réponses professionnelles et pertinentes aux emails reçus.
 {length_instructions.get(length, length_instructions['medium'])}
 
 Règles importantes :
-- Signe toujours avec le nom de {user_name} (pas "Assistant IA")
+- {signature}
 - Réponds directement aux questions posées
 - Sois concret et actionnable
 - Propose des créneaux/dates si pertinent
@@ -162,9 +174,9 @@ class EmailResponseGenerator:
 
             profile = await get_user_profile(session)
 
-        user_name = (profile.name if profile else None) or 'Ludo'
-        user_company = (profile.company if profile else None) or 'Synoptïa'
-        user_role = (profile.role if profile else None) or 'Consultant IA'
+        user_name = (profile.name if profile else None) or ''
+        user_company = (profile.company if profile else None) or ''
+        user_role = (profile.role if profile else None) or ''
 
         # Prompt système (US-003 : sans consigne de dissimulation IA)
         system_prompt = build_email_system_prompt(
@@ -224,7 +236,7 @@ Rédige une réponse appropriée en français."""
                 )
 
             # S'assurer qu'il y a une signature
-            if f'{user_name}' not in response_text:
+            if user_name and user_name not in response_text:
                 response_text += f"\n\nCordialement,\n{user_name}"
 
             from app.services.marquage_ia import TexteIA, provenance_service

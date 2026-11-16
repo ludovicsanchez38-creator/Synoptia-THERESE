@@ -77,8 +77,13 @@ def charger_images_jointes(
             valide = validate_file_path(str(chemin), None)
             taille = valide.stat().st_size
             if taille > TAILLE_MAX_IMAGE:
+                # Arrondir au centième supérieur pour qu'un dépassement d'un
+                # seul octet reste visible, sans prétendre à une valeur exacte.
+                unite = 1024 * 1024
+                centiemes = (taille * 100 + unite - 1) // unite
+                taille_lisible = f"{centiemes // 100},{centiemes % 100:02d}"
                 ecartees.append(AvisTailleFichier(
-                    f"{chemin.name} ({taille // (1024 * 1024)} Mo, limite "
+                    f"{chemin.name} (environ {taille_lisible} Mo, limite "
                     f"{TAILLE_MAX_IMAGE // (1024 * 1024)} Mo)"
                 ))
                 continue
