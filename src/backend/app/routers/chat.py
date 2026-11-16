@@ -3207,6 +3207,7 @@ async def _do_stream_response(
         context.system_prompt += BLOC_PIECES_JOINTES
 
     full_content = ""
+    plages_limites_recherche: list[tuple[int, int]] = []
     # Tour 11 : le texte produit par le modèle seul, matière des compétences
     # de génération (ni avis, ni confirmations de directives, ni annonce de coupe).
     contenu_modele = ""
@@ -3328,9 +3329,13 @@ async def _do_stream_response(
                             try:
                                 event_data = json.loads(continued_event[6:].strip())
                                 if event_data.get("type") == "text":
-                                    full_content += event_data.get("content", "")
-                                    if not event_data.get("annonce_arret"):
-                                        contenu_modele += event_data.get("content", "")
+                                    contenu = event_data.get("content", "")
+                                    debut = len(full_content)
+                                    full_content += contenu
+                                    if event_data.get("limite_recherche"):
+                                        plages_limites_recherche.append((debut, len(full_content)))
+                                    elif not event_data.get("annonce_arret"):
+                                        contenu_modele += contenu
                                 elif event_data.get("type") == "error" and echec_suite.get("refus"):
                                     # B-1119 : sauver le texte avant le terminal, qui
                                     # fait cesser la lecture du client. Aucun repli
@@ -3465,14 +3470,23 @@ async def _do_stream_response(
     # jamais produire de texte -> réponse vide et muette côté utilisateur
     # (« aucune réaction »). Filet : si aucun texte n'a été généré mais que des
     # outils ont tourné, on remonte leur résultat réel plutôt qu'une bulle vide.
-    if not full_content.strip():
-        fallback = _fallback_from_tool_outcomes(tool_outcomes)
+    contenu_sans_limites = full_content
+    for debut, fin in reversed(plages_limites_recherche):
+        contenu_sans_limites = contenu_sans_limites[:debut] + contenu_sans_limites[fin:]
+    if not contenu_sans_limites.strip():
+        # Un avertissement seul ne doit pas cacher le résultat utile d'un
+        # autre outil si le modèle n'a finalement produit aucun texte.
+        resultats_repli = [
+            outcome for outcome in tool_outcomes
+            if not _recherche_partielle_sans_documents(outcome[0], outcome[1])
+        ] if plages_limites_recherche else tool_outcomes
+        fallback = _fallback_from_tool_outcomes(resultats_repli)
         if fallback:
             logger.info(
                 "Réponse vide après %d outil(s) : repli sur le résultat réel (BUG-124)",
                 len(tool_outcomes),
             )
-            full_content = fallback
+            full_content += fallback
             fallback_chunk = StreamChunk(
                 type="text", content=fallback, conversation_id=conversation_id
             )
@@ -3743,7 +3757,8 @@ def _message_recherche_vide(nom: str, resultat: str) -> str | None:
             return None
         if (isinstance(valeur, dict) and valeur.get("found") is False
                 and valeur.get("total") == 0 and valeur.get("documents") == []
-                and not valeur.get("error")):
+                and not valeur.get("error") and "hors_perimetre" not in valeur
+                and "contenu_non_consulte" not in valeur):
             return "Je n'ai trouvé aucun fichier pour cette recherche."
     elif nom == "search_emails" and resultat.startswith("Aucun email trouve pour la recherche "):
         return "Je n'ai trouvé aucun e-mail pour cette recherche."
@@ -3752,6 +3767,37 @@ def _message_recherche_vide(nom: str, resultat: str) -> str | None:
     elif nom == "web_search" and resultat.startswith("Aucun résultat trouvé pour: "):
         return "Je n'ai trouvé aucun résultat pour cette recherche sur le web."
     return None
+
+
+def _messages_recherche_partielle(nom: str, resultat: str) -> list[str]:
+    """Signale les limites certaines sans masquer les autres résultats du tour."""
+    if nom != "search_files":
+        return []
+    try:
+        valeur = json.loads(resultat)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(valeur, dict) or valeur.get("error"):
+        return []
+    messages = []
+    if valeur.get("hors_perimetre"):
+        messages.append(
+            "Des fichiers indexés existent dans des dossiers hors périmètre de cette conversation. "
+            "Pour les consulter, rattache la conversation à un dossier avec le sélecteur en haut du chat."
+        )
+    if valeur.get("contenu_non_consulte"):
+        messages.append(
+            "Le contenu des fichiers n'a pas été consulté : l'accord « documents » est absent "
+            "ou n'a pas pu être vérifié pour ce service."
+        )
+    return messages
+
+
+def _recherche_partielle_sans_documents(nom: str, resultat: str) -> bool:
+    if not _messages_recherche_partielle(nom, resultat):
+        return False
+    valeur = json.loads(resultat)
+    return valeur.get("found") is False and valeur.get("documents") == []
 
 
 async def _execute_tools_and_continue(
@@ -4244,22 +4290,34 @@ async def _execute_tools_and_continue(
         logger.info("Annulation demandée : pas de nouveau tour après les outils")
         return
 
-    # Un modèle faible peut inventer le contenu d'un fichier absent. Lorsque
-    # l'outil confirme un résultat vide, répondre directement sans lui confier
-    # la formulation. Les autres résultats restent dans le détail des outils.
+    # Un modèle faible peut inventer le contenu d'un fichier absent. Répondre
+    # directement seulement si TOUS les outils confirment une recherche vide.
     recherches_vides = [
         message for nom, resultat, erreur in exec_records if not erreur
         if (message := _message_recherche_vide(nom, resultat)) is not None
     ]
-    if recherches_vides:
+    if recherches_vides and len(recherches_vides) == len(exec_records):
         texte = "\n".join(dict.fromkeys(recherches_vides))
-        if len(exec_records) > len(recherches_vides):
-            texte += " Les autres résultats sont disponibles dans le détail des outils."
         yield "data: " + json.dumps(
             StreamChunk(type="text", content=texte, conversation_id=conversation_id).model_dump(),
             ensure_ascii=False,
         ) + "\n\n"
         return
+
+    # Une recherche partielle doit être expliquée, mais ne doit pas empêcher
+    # le modèle de rédiger à partir de tous les résultats de ce tour.
+    limites = [
+        message for nom, resultat, erreur in exec_records if not erreur
+        for message in _messages_recherche_partielle(nom, resultat)
+    ]
+    if limites:
+        yield "data: " + json.dumps(
+            StreamChunk(
+                type="text", content="\n".join(dict.fromkeys(limites)) + "\n\n",
+                conversation_id=conversation_id,
+            ).model_dump() | {"limite_recherche": True},
+            ensure_ascii=False,
+        ) + "\n\n"
 
     # Le résultat et les tours rejoués peuvent franchir un palier que le
     # premier contrôle, antérieur à l'outil, ne voyait pas.

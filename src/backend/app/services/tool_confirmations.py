@@ -13,6 +13,7 @@ conséquence : l'action n'a tout simplement pas eu lieu (fail-safe).
 """
 import json
 import re
+import unicodedata
 import uuid
 from copy import deepcopy
 from typing import Any
@@ -266,6 +267,30 @@ def canoniser_pour_connecteur(
     return deepcopy(canonises)
 
 
+def _affirme_une_creation(texte: str) -> bool:
+    """Repère une affirmation de création, sans confondre une négation explicite."""
+    texte = "".join(
+        caractere for caractere in unicodedata.normalize("NFD", texte)
+        if unicodedata.category(caractere) != "Mn"
+    )
+    affirmation = re.compile(
+        r"\b(?:cree(?:e|s|es)?|ajoute(?:e|s|es)?|enregistre(?:e|s|es)?|"
+        r"(?:creation|enregistrement)\b.{0,80}?\b(?:reussi(?:e|s|es)?|"
+        r"effectue(?:e|s|es)?|confirme(?:e|s|es)?))\b",
+        re.IGNORECASE,
+    )
+    negation = re.compile(r"\b(?:pas|non|jamais|rien|aucun(?:e)?)\b|n['’]", re.IGNORECASE)
+    for proposition in re.split(r"[.,;:!?\n]|\bmais\b", texte, flags=re.IGNORECASE):
+        for mention in affirmation.finditer(proposition):
+            avant = proposition[:mention.start()]
+            if (mention.group().lower().startswith("enregistre")
+                    and re.search(r"\bdeja\s*$", avant, re.IGNORECASE)):
+                continue
+            if not negation.search(proposition[:mention.end()]):
+                return True
+    return False
+
+
 def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
     """La confirmation alimente la bulle et l'aperçu, pas le modèle."""
     try:
@@ -286,14 +311,13 @@ def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
                 return "Cet élément existe déjà. Ces informations n'ont pas été enregistrées : " + ", ".join(ignores) + "."
             return "Cet élément existe déjà. Aucune nouvelle création n'est confirmée."
         if not succes or donnees.get("error"):
-            # Ne pas reprendre un message libre qui pourrait lui-même affirmer
-            # une création contredite ou non confirmée par le statut.
-            if isinstance(donnees, dict) and donnees.get("success") is False:
-                message = donnees.get("message")
-                if isinstance(message, str) and re.fullmatch(
-                    r"(?:Le contact|Le projet|La tâche|Le devis) existe déjà[.!]?", message.strip()
-                ):
-                    return message
+            # Conserver la cause lisible, sauf si elle annonce une création
+            # que le statut ne confirme pas.
+            if isinstance(donnees, dict):
+                for cle in ("error", "message"):
+                    message = donnees.get(cle)
+                    if isinstance(message, str) and message.strip() and not _affirme_une_creation(message):
+                        return message
             return "La création n'est pas confirmée. Vérifie dans l'application avant de réessayer."
     if isinstance(donnees, dict):
         message = donnees.get("message")
