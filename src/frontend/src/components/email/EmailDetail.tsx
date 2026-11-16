@@ -336,6 +336,11 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
               À : {message.to_emails.join(', ')}
             </div>
           )}
+          {!!message.cc_emails?.length && (
+            <div className="text-xs text-text-muted pl-13">
+              Cc : {message.cc_emails.join(', ')}
+            </div>
+          )}
           {!!message.reply_to_emails?.length && <p className="text-xs text-text-muted">Adresse de réponse : {message.reply_to_emails.join(', ')}</p>}
           {bodyError && message.reply_to_emails == null && <p role="alert" className="text-xs text-warning">Impossible de vérifier l’adresse de réponse. Rouvre ce message une fois la connexion rétablie.</p>}
         </div>
