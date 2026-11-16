@@ -928,8 +928,8 @@ class TestP0RGPD_FantomeVectoriel:
         fake.async_delete_by_entity = AsyncMock(side_effect=RuntimeError("qdrant down"))
         monkeypatch.setattr(qmod, "get_qdrant_service", lambda: fake)
 
-        # Ne doit pas lever, et retourne 0
-        assert await purge_contact_vector("contact-xyz") == 0
+        # Ne doit pas lever ; une panne est distincte de zéro vecteur supprimé.
+        assert await purge_contact_vector("contact-xyz") is None
     @pytest.mark.asyncio
     async def test_anonymize_endpoint_purge_le_vecteur(self, client, monkeypatch):
         """POST /api/rgpd/anonymize/{id} déclenche la purge du vecteur Qdrant."""
