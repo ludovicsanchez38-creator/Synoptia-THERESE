@@ -499,10 +499,8 @@ class MCPService:
                     decrypted_env[key] = value
             env.update(decrypted_env)
 
-            # La configuration du serveur ne choisit jamais l'exécutable lancé.
-            resolved_cmd = resolve_mcp_command(server.command, enriched_path)
-            if not resolved_cmd:
-                raise FileNotFoundError(server.command)
+            # Build command - résoudre le chemin complet avec le PATH enrichi
+            resolved_cmd = resolve_mcp_command(server.command, env.get("PATH")) or server.command
             cmd = [resolved_cmd] + server.args
 
             # Start process with stdio transport
@@ -742,17 +740,17 @@ class MCPService:
         self._pending_timestamps[request_id] = time.time()  # Sprint 2 - PERF-2.14
         self._pending_deadlines[request_id] = time.time() + timeout + 5.0  # B-350
 
-        # Send request
-        request_line = json.dumps(request) + "\n"
-        process.stdin.write(request_line.encode())
-        await process.stdin.drain()
-
         # B-1473 : attendre la réponse OU la fin du processus. Un serveur mort
         # avant de répondre (paquet npm introuvable) faisait attendre le délai
         # entier, 90 s pour `initialize`, puis disait « Request timeout » sans
         # la cause.
-        fin_du_processus = asyncio.ensure_future(process.wait())
+        fin_du_processus = None
         try:
+            # Même un pipe fermé pendant l'envoi doit libérer la requête.
+            request_line = json.dumps(request) + "\n"
+            process.stdin.write(request_line.encode())
+            await process.stdin.drain()
+            fin_du_processus = asyncio.ensure_future(process.wait())
             await asyncio.wait(
                 {future, fin_du_processus}, timeout=timeout, return_when=asyncio.FIRST_COMPLETED,
             )
@@ -765,7 +763,7 @@ class MCPService:
                 raise RuntimeError(self._cause_de_l_arret(server_id, method, process.returncode))
             raise RuntimeError(f"Request timeout: {method}")
         finally:
-            if not fin_du_processus.done():
+            if fin_du_processus is not None and not fin_du_processus.done():
                 fin_du_processus.cancel()
             self._pending_requests.pop(request_id, None)
             self._pending_timestamps.pop(request_id, None)  # Sprint 2 - PERF-2.14

@@ -618,6 +618,8 @@ function BoardRunView({
         </div>
       )}
 
+      {run.webSearchMessage && <p role="status" className="text-sm text-text-muted">{run.webSearchMessage}</p>}
+
       {(run.synthesis || enCours) && <CarteSynthese synthesis={run.synthesis} />}
 
       <div className={GRILLE_AVIS}>{advisorOrder.map((role) => {

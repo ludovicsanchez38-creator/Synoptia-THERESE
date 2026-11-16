@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -37,10 +38,19 @@ DEFAULT_WHISPER_MODEL = "base"
 DEFAULT_PIPER_VOICE = "fr_FR-siwis-medium"
 PIPER_TTS_RAM_MB = 512
 
-INSTALL_HINT = (
-    "Installe la voix locale en option : `pip install 'therese-backend[voice-local]'`. "
-    "Les modèles se téléchargent au premier usage."
-)
+def message_voix_locale_absente() -> str:
+    """Indication partagée par le statut, les routes et les services vocaux."""
+    if getattr(sys, "frozen", False):
+        return (
+            "Voix locale non installée. Dans l'application installée, les bibliothèques "
+            "ne peuvent pas être ajoutées manuellement. Vérifie que ta version de "
+            "THÉRÈSE inclut la voix locale."
+        )
+    return (
+        "Voix locale non installée. Depuis les sources, installe l'option : "
+        "`pip install 'therese-backend[voice-local]'`. "
+        "Les modèles se téléchargent au premier usage."
+    )
 
 
 def stt_available() -> bool:
@@ -232,7 +242,7 @@ def voice_local_status() -> dict[str, object]:
         # Prêt à l'emploi = libs embarquées ET au moins un modèle sur disque
         "ready": stt_ok and active is not None,
         "setup": get_setup_state(),
-        "install_hint": INSTALL_HINT,
+        "install_hint": message_voix_locale_absente(),
     }
 
 
@@ -245,9 +255,7 @@ def transcribe_local(audio_path: str, model_size: str | None = None, language: s
     Lève RuntimeError si la dépendance optionnelle n'est pas installée.
     """
     if not stt_available():
-        raise ErreurPourEcran(
-            "STT local indisponible : faster-whisper non installé. " + INSTALL_HINT
-        )
+        raise ErreurPourEcran(message_voix_locale_absente())
 
     from faster_whisper import WhisperModel  # import paresseux (dépendance optionnelle)
 
@@ -271,7 +279,7 @@ def synthesize_local(text: str, out_path: str, voice: str = DEFAULT_PIPER_VOICE)
     Lève RuntimeError si la dépendance ou la voix n'est pas disponible.
     """
     if not tts_available():
-        raise ErreurPourEcran("TTS local indisponible : Piper non installé. " + INSTALL_HINT)
+        raise ErreurPourEcran(message_voix_locale_absente())
 
     # B-105 : `voice` vient de la requête. Liste blanche AVANT toute
     # construction de chemin et avant le chargement du moteur.

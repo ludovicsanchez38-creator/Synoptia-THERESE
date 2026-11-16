@@ -196,9 +196,9 @@ async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict
 
     from app.services.voice_local import (
         DEFAULT_WHISPER_MODEL,
-        INSTALL_HINT,
         get_setup_state,
         mark_setup_starting,
+        message_voix_locale_absente,
         run_voice_setup,
         stt_available,
     )
@@ -206,7 +206,7 @@ async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict
     if not stt_available():
         raise HTTPException(
             status_code=503,
-            detail=f"Voix locale non installée. {INSTALL_HINT}",
+            detail=message_voix_locale_absente(),
         )
     if get_setup_state().get("state") == "running":
         raise HTTPException(status_code=409, detail="Un téléchargement est déjà en cours.")
@@ -234,6 +234,7 @@ async def transcribe_audio_local(
     from app.services.voice_local import (
         active_whisper_model,
         get_setup_state,
+        message_voix_locale_absente,
         stt_available,
         transcribe_local,
     )
@@ -248,9 +249,7 @@ async def transcribe_audio_local(
         )
 
     if not stt_available():
-        from app.services.voice_local import INSTALL_HINT
-
-        raise HTTPException(status_code=503, detail=f"Voix locale non installée. {INSTALL_HINT}")
+        raise HTTPException(status_code=503, detail=message_voix_locale_absente())
 
     # Le modèle réellement téléchargé (l'utilisateur a pu choisir tiny/small
     # au setup) - pas le défaut de config, qui peut ne pas être sur disque.
@@ -331,12 +330,15 @@ async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
 
     Nécessite le groupe optionnel `voice-local` + la voix téléchargée (sinon 503).
     """
-    from app.services.voice_local import DEFAULT_PIPER_VOICE, synthesize_local, tts_available
+    from app.services.voice_local import (
+        DEFAULT_PIPER_VOICE,
+        message_voix_locale_absente,
+        synthesize_local,
+        tts_available,
+    )
 
     if not tts_available():
-        from app.services.voice_local import INSTALL_HINT
-
-        raise HTTPException(status_code=503, detail=f"Voix locale non installée. {INSTALL_HINT}")
+        raise HTTPException(status_code=503, detail=message_voix_locale_absente())
 
     text = (payload.text or "").strip()
     if not text:

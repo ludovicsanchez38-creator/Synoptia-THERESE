@@ -39,6 +39,7 @@ export interface BoardRunState {
   mode: BoardMode;
   phase: string;
   isSearchingWeb: boolean;
+  webSearchMessage?: string | null;
   advisors: Record<string, PrototypeAdvisorState>;
   synthesis: BoardSynthesis | null;
   decisionId: string | null;
@@ -47,7 +48,7 @@ export interface BoardRunState {
 
 const idleRun: BoardRunState = {
   status: 'idle', question: '', context: '', mode: 'cloud', phase: '',
-  isSearchingWeb: false, advisors: {}, synthesis: null, decisionId: null, error: null,
+  isSearchingWeb: false, webSearchMessage: null, advisors: {}, synthesis: null, decisionId: null, error: null,
 };
 
 export function usePrototypeBoardData(enabled = true) {
@@ -152,9 +153,9 @@ export function usePrototypeBoardData(enabled = true) {
           setRun((current) => ({ ...current, status: 'cancelled', phase: 'Délibération annulée', error: null }));
           break;
         } else if (chunk.type === 'web_search_start') {
-          setRun((current) => ({ ...current, isSearchingWeb: true, phase: 'Recherche web en cours' }));
+          setRun((current) => ({ ...current, isSearchingWeb: true, webSearchMessage: null, phase: 'Recherche web en cours' }));
         } else if (chunk.type === 'web_search_done') {
-          setRun((current) => ({ ...current, isSearchingWeb: false, phase: 'Consultation des conseillers' }));
+          setRun((current) => ({ ...current, isSearchingWeb: false, webSearchMessage: chunk.content || null, phase: 'Consultation des conseillers' }));
         } else if (chunk.type === 'advisor_start' && chunk.role) {
           setRun((current) => ({
             ...current,

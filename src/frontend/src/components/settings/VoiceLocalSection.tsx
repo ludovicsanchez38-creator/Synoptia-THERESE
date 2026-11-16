@@ -119,8 +119,7 @@ export function VoiceLocalSection() {
 
       {!status.stt_available ? (
         <p className="text-xs text-text-muted">
-          La voix locale n'est pas embarquée dans cette version de THÉRÈSE.
-          Mets l'application à jour pour en profiter.
+          {status.install_hint || 'Voix locale indisponible.'}
         </p>
       ) : status.setup.state === 'running' ? (
         <div className="flex items-center gap-2 text-sm text-text-muted">

@@ -102,6 +102,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [isSearchingWeb, setIsSearchingWeb] = useState(false);
+  const [webSearchMessage, setWebSearchMessage] = useState<string | null>(null);
   const [advisorStates, setAdvisorStates] = useState<Map<AdvisorRole, AdvisorState>>(new Map());
   const [synthesis, setSynthesis] = useState<BoardSynthesis | null>(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
@@ -191,6 +192,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
   const resetDeliberation = useCallback(() => {
     setIsSearchingWeb(false);
+    setWebSearchMessage(null);
     setAdvisorStates(new Map());
     setSynthesis(null);
     setIsSynthesizing(false);
@@ -323,10 +325,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
           case 'web_search_start':
             setIsSearchingWeb(true);
+            setWebSearchMessage(null);
             break;
 
           case 'web_search_done':
             setIsSearchingWeb(false);
+            setWebSearchMessage(chunk.content || null);
             break;
 
           case 'advisor_start':
@@ -738,6 +742,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}
+                      webSearchMessage={webSearchMessage}
                       isSovereign={mode === 'sovereign'}
                       advisorStates={advisorStates}
                       synthesis={synthesis}

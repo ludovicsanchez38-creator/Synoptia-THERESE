@@ -29,6 +29,7 @@ interface AdvisorState {
 interface DeliberationViewProps {
   question: string;
   isSearchingWeb?: boolean;
+  webSearchMessage?: string | null;
   isSovereign?: boolean;
   advisorStates: Map<AdvisorRole, AdvisorState>;
   synthesis: BoardSynthesis | null;
@@ -42,6 +43,7 @@ interface DeliberationViewProps {
 export function DeliberationView({
   question,
   isSearchingWeb = false,
+  webSearchMessage = null,
   isSovereign = false,
   advisorStates,
   synthesis,
@@ -94,6 +96,8 @@ export function DeliberationView({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {webSearchMessage && <p role="status" className="text-sm text-text-muted">{webSearchMessage}</p>}
 
       {/* Sovereign mode banner */}
       {isSovereign && !isComplete && (

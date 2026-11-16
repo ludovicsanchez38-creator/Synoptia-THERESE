@@ -49,6 +49,7 @@ export interface VoiceLocalSetupState {
 
 export interface VoiceLocalStatus {
   stt_available: boolean;
+  install_hint?: string;
   tts_available: boolean;
   ready: boolean;
   whisper_models: Record<string, { size_mb: number; ram_mb: number; label: string }>;
