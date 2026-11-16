@@ -23,6 +23,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.models.database import get_session_context
 from app.models.entities import FileMetadata
@@ -42,7 +43,11 @@ from app.services.project_sync import calculer_diff, scanner_racine
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, SessionTransaction
+from sqlalchemy.util.concurrency import await_only
 from sqlmodel import select
+
+if TYPE_CHECKING:
+    from app.services.qdrant import QdrantService
 
 logger = logging.getLogger(__name__)
 
@@ -216,11 +221,24 @@ async def retirer_racine(project_id: str, session: AsyncSession | None = None) -
             # Un flush ferme une sous-transaction : seule la fin de la
             # transaction métier libère les projets (y compris sur close).
             if transaction.parent is None:
-                for verrou in verrous.values():
-                    verrou.release()
-                verrous.clear()
+                try:
+                    # Le commit a déjà vidé ces copies. Sur rollback ou close,
+                    # les restituer AVANT de rendre les verrous de synchronisation.
+                    # L'événement tourne dans le greenlet d'AsyncSession : son
+                    # pont attend l'async, dont le travail Qdrant sort en thread.
+                    for qdrant, fragments in _session.info.pop("retrait_racines_index", []):
+                        await_only(qdrant.async_restituer_fragments(fragments))
+                finally:
+                    for verrou in verrous.values():
+                        verrou.release()
+                    verrous.clear()
+
+        def confirmer_retraits(_session: Session) -> None:
+            if not _session.in_nested_transaction():
+                _session.info.pop("retrait_racines_index", None)
 
         event.listen(session.sync_session, "after_transaction_end", liberer_verrous)
+        event.listen(session.sync_session, "after_commit", confirmer_retraits)
     verrous = session.info[cle_verrous]
     if project_id not in verrous:
         verrou = _verrou(project_id)
@@ -241,6 +259,16 @@ async def retirer_racine(project_id: str, session: AsyncSession | None = None) -
         root.detachee = True
         root.generation += 1
         await _invalider_generation(session, project_id)
+
+
+async def preparer_suppression_projet(
+    project_id: str, file_ids: list[str], session: AsyncSession, qdrant: "QdrantService",
+) -> None:
+    """Garde la racine et une copie de l'index jusqu'au résultat du commit SQL."""
+    await retirer_racine(project_id, session)
+    fragments = await qdrant.async_copier_fragments_projet(project_id, file_ids)
+    if fragments:
+        session.info.setdefault("retrait_racines_index", []).append((qdrant, fragments))
 
 
 async def _invalider_generation(session: AsyncSession, project_id: str) -> None:

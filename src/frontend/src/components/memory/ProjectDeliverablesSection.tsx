@@ -4,7 +4,7 @@
  * client »). Même création que la vue des livrables (P-048), statut « À
  * faire » ; en lecture seule (démo), la liste seule.
  */
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { Package } from 'lucide-react';
 
 import { createDeliverable, listDeliverables, type DeliverableResponse } from '../../services/api/crm-extended';
@@ -27,6 +27,7 @@ export function ProjectDeliverablesSection({
   lectureSeule?: boolean;
   masquer?: (texte: string) => string;
 }) {
+  const [projetAffiche, setProjetAffiche] = useState(projectId);
   const [livrables, setLivrables] = useState<DeliverableResponse[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [erreurLecture, setErreurLecture] = useState(false);
@@ -36,17 +37,25 @@ export function ProjectDeliverablesSection({
   const [enCours, setEnCours] = useState(false);
   const versionEcritures = useRef(0);
   const generationProjet = useRef(0);
+  const projetCourant = useRef<string | null>(projectId);
 
-  useEffect(() => {
-    versionEcritures.current = 0;
+  // Réinitialiser pendant le rendu : aucun DOM de B ne doit exposer l'état
+  // de A, même avant les effets (relecture diff-2, constat 3).
+  if (projetAffiche !== projectId) {
+    setProjetAffiche(projectId);
     setLivrables(null);
     setErreur(null);
     setErreurLecture(false);
     setTitre('');
     setEnCours(false);
+  }
+
+  useLayoutEffect(() => {
+    projetCourant.current = projectId;
+    versionEcritures.current = 0;
     // B-1877 / B-1878 : une réponse appartient à cette ouverture, même si
     // l'utilisateur revient ensuite au même projet (A → B → A).
-    return () => { generationProjet.current += 1; };
+    return () => { generationProjet.current += 1; projetCourant.current = null; };
   }, [projectId]);
 
   useEffect(() => {
@@ -81,7 +90,12 @@ export function ProjectDeliverablesSection({
     setErreur(null);
     try {
       const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: 'a_faire' });
-      if (generation !== generationProjet.current) return;
+      if (generation !== generationProjet.current) {
+        // Au retour dans A, relire l'état enregistré sans injecter une ancienne
+        // réponse ni toucher à la saisie ou à la création de cette ouverture.
+        if (projetCourant.current === projectId) setRelecture((valeur) => valeur + 1);
+        return;
+      }
       versionEcritures.current += 1;
       // Une lecture arrivée avant cette réponse peut déjà contenir l'ajout.
       setLivrables((courants) => ((courants ?? []).some((livrable) => livrable.id === cree.id)

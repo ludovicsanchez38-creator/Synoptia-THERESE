@@ -390,7 +390,7 @@ async def _nettoyer_et_supprimer_projet(
     que cette fonction exécute (et qu'elle rend dans son rapport).
     """
     from app.models.entities import CalendarEvent, Deliverable, Document, Task
-    from app.services.project_sync_service import retirer_racine
+    from app.services.project_sync_service import preparer_suppression_projet
 
     project_id = project.id
     files = (
@@ -398,6 +398,9 @@ async def _nettoyer_et_supprimer_projet(
     ).scalars().all()
 
     qdrant = get_qdrant_service()
+    # Le verrou et la copie précèdent toute suppression vectorielle : un échec
+    # SQL restitue l'index avant de permettre une nouvelle synchronisation.
+    await preparer_suppression_projet(project_id, [file.id for file in files], session, qdrant)
     # Un fragment dont la ligne SQLite a déjà disparu n'est pas énumérable
     # ci-dessus. La purge du périmètre ferme ce résidu avant que le dossier ne
     # disparaisse ; l'échec remonte et laisse toute la base intacte.
@@ -405,10 +408,6 @@ async def _nettoyer_et_supprimer_projet(
     for file in files:
         await qdrant.async_delete_by_entity(file.id)
     await qdrant.async_delete_by_entity(project_id)
-
-    # B-1875 : la racine et le dossier partagent le commit ou le rollback.
-    # Le verrou de synchronisation reste tenu jusqu'à la fin de la transaction.
-    await retirer_racine(project_id, session)
 
     for file in files:
         await session.delete(file)
@@ -1185,14 +1184,13 @@ async def delete_contact(
         raise HTTPException(status_code=404, detail="Contact not found")
 
     if cascade:
-        # Ces transactions dédiées doivent précéder toute mutation métier,
-        # même avec plusieurs dossiers, fiches ou tâches à effacer/détacher.
+        # Les racines et la cascade partagent aussi leur rollback (B-1875).
         from app.services.project_sync_service import retirer_racine
         projets_a_detacher = (await session.execute(
             select(Project).where(Project.contact_id == contact_id)
         )).scalars().all()
         for projet in projets_a_detacher:
-            await retirer_racine(projet.id)
+            await retirer_racine(projet.id, session)
 
     cascade_deleted: dict[str, int] = {}
     from app.services.memory_cards import effacer_liees

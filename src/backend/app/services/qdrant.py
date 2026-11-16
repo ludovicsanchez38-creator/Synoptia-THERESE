@@ -653,6 +653,40 @@ class QdrantService:
             )
         return total
 
+    def copier_fragments_projet(self, project_id: str, file_ids: Sequence[str]) -> list[PointStruct]:
+        """Copie exacte des points qui vont disparaître, sans réencoder leur texte."""
+        filtre = Filter(should=[
+            Filter(must=[
+                FieldCondition(key="scope", match=MatchValue(value="project")),
+                FieldCondition(key="scope_id", match=MatchValue(value=project_id)),
+            ]),
+            FieldCondition(key="entity_id", match=MatchAny(any=[project_id, *file_ids])),
+        ])
+        fragments: list[PointStruct] = []
+        offset = None
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=settings.qdrant_collection, scroll_filter=filtre,
+                limit=1000, offset=offset, with_payload=True, with_vectors=True,
+            )
+            fragments.extend(PointStruct(id=p.id, payload=p.payload, vector=p.vector) for p in points)
+            if offset is None:
+                return fragments
+
+    def restituer_fragments(self, fragments: Sequence[PointStruct]) -> None:
+        """Rétablit les mêmes identifiants, payloads et vecteurs après rollback."""
+        for debut in range(0, len(fragments), 1000):
+            self.client.upsert(
+                collection_name=settings.qdrant_collection,
+                points=list(fragments[debut:debut + 1000]), wait=True,
+            )
+
+    async def async_copier_fragments_projet(self, project_id: str, file_ids: Sequence[str]) -> list[PointStruct]:
+        return await asyncio.to_thread(self.copier_fragments_projet, project_id, file_ids)
+
+    async def async_restituer_fragments(self, fragments: Sequence[PointStruct]) -> None:
+        await asyncio.to_thread(self.restituer_fragments, fragments)
+
     def delete_by_entity(self, entity_id: str) -> int:
         """
         Delete all memories for an entity.

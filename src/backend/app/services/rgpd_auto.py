@@ -15,7 +15,7 @@ from typing import Any
 
 from app.models.database import get_session_context
 from app.models.entities import Activity, Contact, Notification
-from app.services.rgpd_identite import anonymiser_la_personne, detacher_les_dossiers_synchronises
+from app.services.rgpd_identite import anonymiser_la_personne
 from sqlalchemy import func
 from sqlmodel import or_, select
 
@@ -194,16 +194,22 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                         session, contact.id, _debut_de_l_episode(ref_date, expiration, retention_months)
                     )
                     if premier_preavis is not None and premier_preavis <= now - timedelta(days=PREAVIS_JOURS):
+                        # Une notification d'un épisode antérieur ne couvre pas
+                        # celui-ci. Décider avant de détacher le moindre dossier.
+                        existing = await session.execute(
+                            select(Notification).where(
+                                Notification.source == "rgpd_purge_done",
+                                Notification.action_url == f"/crm/contacts/{contact.id}",
+                                Notification.created_at >= _debut_de_l_episode(ref_date, expiration, retention_months),
+                            )
+                        )
+                        if existing.scalars().first():
+                            continue
                         contacts_to_purge.append(contact)
                     else:
                         contacts_to_warn.append(contact)
                 elif ref_date < warning_threshold:
                     contacts_to_warn.append(contact)
-
-            # B-1685 : les préavis écrivent dans la session ; les dossiers
-            # synchronisés des fiches à anonymiser se détachent avant.
-            for contact in contacts_to_purge:
-                await detacher_les_dossiers_synchronises(session, contact.id)
 
             # Notifications d'avertissement (30 jours avant)
             for contact in contacts_to_warn:
@@ -254,16 +260,6 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
             anonymized_ids: list[str] = []
             dossiers_a_purger: list[str] = []
             for contact in contacts_to_purge:
-                # Vérifier qu'on n'a pas déjà notifié l'anonymisation
-                existing = await session.execute(
-                    select(Notification).where(
-                        Notification.source == "rgpd_purge_done",
-                        Notification.action_url == f"/crm/contacts/{contact.id}",
-                    )
-                )
-                if existing.scalars().first():
-                    continue
-
                 # B-880, B-1438 puis B-1651 : le même traitement que la route
                 # manuelle (tâches, brouillons, prestations, activités, dossiers
                 # et e-mails compris), décision de Ludo du 26/09.

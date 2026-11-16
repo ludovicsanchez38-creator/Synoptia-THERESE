@@ -130,3 +130,96 @@ npm run lint
 ```
 
 Les répétitions rouge/vert de ce lot peuvent être regroupées dans une commande de l'orchestrateur reprenant ces listes ; aucune automatisation persistante n'a été ajoutée ici.
+
+## Remédiation de la relecture, passe 1
+
+Les six constats sont confirmés et corrigés dans cet arbre. L'arbre était propre au départ. Cette passe ne fait ni `git add`, ni commit, ni push : l'orchestrateur dispose des tests et des correctifs non commités pour son rejeu contradictoire. Aucun appel réseau, fournisseur LLM ou lancement de serveur ; les données des tests sont jetables. Les preuves d'exécution sont sous `/tmp`.
+
+Chaque régression ci-dessous a été lancée seule, avant son correctif de production. Les sélections Vitest `-t` ignorent les autres cas du fichier uniquement pendant le rouge. Aucun test existant n'a perdu d'assertion.
+
+### Rouges constatés et corrections
+
+Les tests backend ajoutés vivent dans `tests/test_c20_diff2_relecture.py`.
+
+| Constat | Test lancé avant correction | Ligne d'échec recopiée | Correction |
+| --- | --- | --- | --- |
+| 1, P1 | `test_cascade_refusee_conserve_les_racines_et_les_plans` : deux dossiers, panne de l'index | `AssertionError: la cascade refusée a détaché une racine` | Le premier détachement de `delete_contact` reçoit désormais la session métier. Le contact, les deux projets, leurs racines, générations, plans et références survivent au refus. |
+| 2, P1 | `test_purge_ne_detache_que_les_contacts_de_l_episode_a_traiter`, cas `courant` et `ancien` | `AssertionError: un contact ignoré a perdu sa racine` ; `AssertionError: une ancienne notification bloque le nouvel épisode` | Suppression du pré-détachement de toute la campagne. Le contrôle `rgpd_purge_done` utilise le début de l'épisode déjà défini pour les préavis, avant de sélectionner les personnes à anonymiser. Le détachement reste dans `anonymiser_la_personne`. |
+| 3, P1 | `ProjectDeliverablesSection.changementProjet.b1877.test.tsx`, `le premier DOM de B ne contient ni les livrables ni la saisie de A` | `AssertionError: le premier DOM de B montre encore A: expected { projet: 'B', livrableA: true, …(1) } to deeply equal { projet: 'B', livrableA: false, …(1) }` | L'état porte le projet auquel il appartient et se réinitialise pendant le rendu. Un observateur dans le `useLayoutEffect` parent ne voit plus le livrable ni la saisie de A dans le DOM de B. |
+| 4, P1 | `test_un_rollback_restitue_les_fragments_et_un_plan_fidele`, cinq cas initiaux : manuel, automatique, projet, cascade, fermeture | `AssertionError: le rollback SQL a perdu les fragments de recherche` | Copie paginée des points concernés avant tout effacement, avec identifiants, payloads et vecteurs. Le rollback ou la fermeture restitue ces points avant de libérer les verrous ; un commit réussi abandonne la copie. |
+| 5, P1 | `ProjectDeliverablesSection.changementProjet.b1877.test.tsx`, sélection `une création ancienne`, trois cas | `Error: expect(received).toBeInTheDocument()` ; diagnostic : `Received has value: null` | Si une création d'une ancienne ouverture réussit après le retour dans le même projet, elle déclenche une nouvelle lecture. La réponse ancienne ne modifie ni la nouvelle saisie, ni l'état d'une création plus récente. |
+| 6, P2 | `ExplicationDuScore.cible.b2003.test.tsx`, trois tailles, rouge sur `small` | `AssertionError: hauteur de la cible en pixels: expected 31.5 to be greater than or equal to 36` | Ajout des minima CSS de 36 px sur les deux dimensions. Le test applique les vraies préférences de police et convertit les rem avec la taille de la racine, puis prend en compte les minima. |
+
+Les XML rouges sont `/tmp/diff-2-r1-c1-rouge.xml` à `/tmp/diff-2-r1-c6-rouge.xml` : respectivement **1, 2, 1, 5, 3 et 1 échecs**, sans erreur de collecte. Pour les reproduire sur la production sans correctifs, sélectionner les noms ci-dessus avec `pytest fichier::test` ou `vitest fichier -t 'nom du test'`.
+
+### Appelants et risques de régression vérifiés
+
+Après chaque correctif, les appelants ont été relus et les voisins lancés. La cascade et la suppression directe passent par `_nettoyer_et_supprimer_projet` ; les anonymisations manuelle et automatique passent par `anonymiser_la_personne`, puis ce même nettoyage. Le détachement autonome de la route de synchronisation garde son contrat. La campagne reste appelée par le démarrage et la tâche quotidienne. Côté interface, `ProjectModal` monte toujours la section des livrables, et les deux montages de l'aide au score restent dans `PipelineView` et `CRMPanel`.
+
+Pour le constat 4, les nouveaux tests utilisent le vrai moteur Qdrant en mémoire avec des vecteurs fixes, sans encodeur. Ils relisent SQLite après l'échec, comparent exactement les points restitués et construisent le plan suivant : le fichier n'est « inchangé » que parce que ses fragments sont à nouveau présents. Trois cas complémentaires couvrent une panne après effacement partiel, un commit réussi et un rollback de deux dossiers. Ce dernier restitue **1 003 points**, dont une copie dépassant la page de 1 000 points, conserve le voisin et refuse un nouveau plan pendant la restitution. Le commit réussi ne ressuscite aucun point à la fermeture de la session.
+
+La restitution est attendue dans l'événement de fin de transaction d'`AsyncSession`, via son pont greenlet `await_only`. Le travail Qdrant reste dans un thread ; les verrous sont rendus ensuite, même si la restitution lève. Les copies sont en mémoire et couvrent le rollback et la fermeture de session, pas un arrêt brutal du processus au milieu de l'effacement.
+
+Les simulacres Qdrant de `tests/conftest.py`, `tests/test_routers_memory.py` et `tests/test_r5_10_rgpd.py` ont seulement reçu la méthode de copie retournant une liste vide. Leurs assertions sont conservées. Les nouvelles vérifications de restitution exercent les vraies méthodes sur le moteur en mémoire.
+
+Pour les livrables, les lectures lentes et les créations concurrentes restent couvertes. Le test historique A/B/A conserve son assertion : aucune ancienne réponse n'est directement injectée. Les nouveaux cas font retourner l'ajout enregistré par la relecture et vérifient qu'il apparaît une seule fois, que la saisie reste intacte et que le nouvel ajout reste en cours. Les erreurs tardives de A ne contaminent toujours pas B. Pour la cible d'aide, la vérification repose sur le DOM et les CSS Tailwind compilés avec les préférences 14, 16 et 18 px ; aucune recette graphique dans un navigateur n'est revendiquée.
+
+Les voisins immédiatement après correction passent : 38 tests backend pour le constat 1, 15 pour le constat 2, 37 tests frontend pour le constat 3, 73 tests backend pour le constat 4 avant ses compléments, 40 tests frontend pour le constat 5 et 15 pour le constat 6. Les 11 cas du nouveau fichier backend passent également après ajout des compléments. Ces exécutions se recouvrent ; elles ne sont pas additionnées au total final.
+
+### Portes de cette passe
+
+Exécutées le 16 novembre 2026. Les comptes sont lus dans les XML. Aucune suite complète lancée, aucun des rouges connus exclus n'a été sélectionné.
+
+| Porte | Périmètre | Résultat vérifié | Preuve |
+| --- | --- | --- | --- |
+| Pytest | 24 fichiers ciblés | **152 passés, 0 échec, 0 erreur, 0 ignoré** | `/tmp/diff-2-r1.xml`, sortie 0 |
+| Vitest | 7 fichiers, 3 workers maximum | **55 passés, 0 échec, 0 erreur, 0 ignoré** | `/tmp/diff-2-r1-vitest.xml`, sortie 0 |
+| Ruff | `src/backend tests`, sans correction automatique | `All checks passed!`, sortie 0 | Commande ci-dessous |
+| TypeScript | `tsc --noEmit` | Sortie 0, aucun diagnostic | Commande ci-dessous |
+| ESLint | `npm run lint` | Sortie 0, 0 erreur, 27 avertissements dans des fichiers non modifiés | `/tmp/diff-2-r1-eslint.log` |
+| Diff | `git diff --check` | Sortie 0 | Arbre de travail |
+
+Total final : **207 tests passés**. Les avertissements React `act(...)` des voisins `ExplicationDuScore.p152.test.tsx` et `PipelineView.clavier.test.tsx` restent présents. Aucun correctif de lint extérieur aux constats.
+
+### Commandes de rejeu
+
+Depuis la racine de cet arbre :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  tests/test_c20_diff2_relecture.py tests/test_b1875_anonymisation_transactionnelle.py \
+  tests/test_b1685_anonymiser_un_dossier_synchronise.py \
+  tests/test_project_sync_service.py tests/test_project_sync_idempotence.py \
+  tests/test_project_sync_api.py tests/test_project_sync_boucle.py \
+  tests/test_retrait_complet_qdrant.py tests/test_retrait_index_service.py \
+  tests/test_routers_memory.py tests/test_routers_rgpd.py tests/test_rgpd_erasure.py \
+  tests/test_rgpd_purge_commit_echoue_c9.py tests/test_rgpd_purge_notifications_multiples_c9.py \
+  tests/test_b1641_purge_rgpd_preavis_obligatoire.py \
+  tests/test_b1651_purge_auto_alignee_sur_la_manuelle.py \
+  tests/test_b1667_purge_respecte_le_consentement_renouvele.py \
+  tests/test_b1670_preavis_d_un_episode_passe.py \
+  tests/test_p148_trois_chemins_de_suppression.py tests/test_p148_ensemble_du_projet.py \
+  tests/test_memory_purge_disque_du_dossier.py tests/test_b1178_cascade_contact_purge_le_depot.py \
+  tests/test_b1503_suppression_projet_rend_ses_contacts.py tests/test_r5_10_rgpd.py \
+  -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-2-r1.xml
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m ruff check --no-fix --no-cache src/backend tests
+git diff --check
+```
+
+Depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx --no-install vitest run \
+  src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx \
+  src/components/memory/ProjectDeliverablesSection.p153.test.tsx \
+  src/components/memory/ProjectModal.livrables.p153.test.tsx \
+  src/components/crm/ExplicationDuScore.cible.b2003.test.tsx \
+  src/components/crm/ExplicationDuScore.p152.test.tsx \
+  src/components/crm/PipelineView.da.test.tsx src/components/crm/PipelineView.clavier.test.tsx \
+  --maxWorkers=3 --no-cache --configLoader=runner \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-2-r1-vitest.xml
+npm_config_offline=true npx --no-install tsc --noEmit
+npm_config_offline=true npm run lint
+```
+
+Le chargement `runner` et l'absence de cache évitent toute écriture dans les dépendances partagées. Ces listes peuvent être reprises dans la commande de validation de l'orchestrateur ; aucune automatisation persistante n'est ajoutée dans cette passe.

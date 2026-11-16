@@ -50,7 +50,7 @@ export function ExplicationDuScore({ contactId }: { contactId?: string }) {
         // ou Espace lanceraient un glisser (même garde que « Ouvrir la fiche »).
         onClick={(e) => { e.stopPropagation(); setOuverte((v) => !v); }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
-        className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-sm text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-grid h-9 w-9 min-h-[36px] min-w-[36px] shrink-0 place-items-center rounded-sm text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <HelpCircle className="h-4 w-4" aria-hidden />
       </button>
