@@ -209,12 +209,31 @@ class InstallerLayoutTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'différent de ce build'):
                     self.verify(folder, 'Windows', 'nsis')
 
-    def test_signed_windows_main_binary_is_left_to_the_signature_gate(self):
-        self.build_windows()
+    def test_signed_windows_main_binary_still_matches_this_build(self):
+        original = self.build_windows()
         folder = self.root / 'signed'
-        self.nsis(folder, pe(b'signed elsewhere', signed=True))
+        main = bytearray(patched(original, b'NSS'))
+        main.extend(b'\0' * (-len(main) % 8))
+        offset = len(main)
+        optional = 0x80 + 24
+        main[optional + 64:optional + 68] = (1234).to_bytes(4, 'little')
+        security = optional + 112 + 32
+        main[security:security + 8] = offset.to_bytes(4, 'little') + (16).to_bytes(4, 'little')
+        main.extend(b'certificat-test!')
+        self.nsis(folder, bytes(main))
         records, _ = self.verify(folder, 'Windows', 'nsis')
-        self.assertNotIn('therese.exe', records)
+        self.assertIn('therese.exe', records)
+
+        main[0x200] ^= 1
+        self.write(folder / 'therese.exe', bytes(main))
+        with self.assertRaisesRegex(ValueError, 'différent de ce build'):
+            self.verify(folder, 'Windows', 'nsis')
+
+        unsigned = patched(original, b'NSS')
+        self.assertNotEqual(len(unsigned) % 8, 0)
+        self.write(folder / 'therese.exe', unsigned + b'\0')
+        with self.assertRaisesRegex(ValueError, 'différent de ce build'):
+            self.verify(folder, 'Windows', 'nsis')
 
     def test_msi_admin_image_layout(self):
         original = self.build_windows()
