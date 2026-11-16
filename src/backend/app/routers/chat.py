@@ -2549,6 +2549,7 @@ async def _stream_response(
     # explicitement le générateur pour propager l'interruption au producteur.
     from app.services.error_handler import ErreurPourEcran
 
+    morceaux_relayes: list[str] = []
     producteur = _do_stream_response(
         conversation_id, user_message, session, history,
         skill_id=skill_id, file_paths=file_paths,
@@ -2568,6 +2569,7 @@ async def _stream_response(
         historique_documents_averes=historique_documents_averes,
         rfc_sources_absentes=rfc_sources_absentes,
         avis=avis,
+        morceaux_relayes=morceaux_relayes,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2634,6 +2636,14 @@ async def _stream_response(
                     etat_generation["erreur"] = json.loads(
                         chunk.removeprefix("data: ").strip()
                     ).get("content", "")[:500]
+            # Le producteur accumule avant son yield. Seuls les morceaux que
+            # ce wrapper relaie peuvent être conservés en cas d'arrêt.
+            try:
+                evenement = json.loads(chunk.removeprefix("data: ").strip())
+                if isinstance(evenement, dict) and evenement.get("type") == "text":
+                    morceaux_relayes.append(evenement.get("content") or "")
+            except (ValueError, TypeError):
+                pass
             yield chunk
     except ErreurPourEcran as sortie:
         etat_generation["etat"] = EtatTacheTraitement.FAILED
@@ -2858,6 +2868,7 @@ async def _do_stream_response(
     historique_documents_averes: bool = True,
     rfc_sources_absentes: list[str] | None = None,
     avis: list[str] | None = None,
+    morceaux_relayes: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -3216,6 +3227,12 @@ async def _do_stream_response(
         context.system_prompt += BLOC_PIECES_JOINTES
 
     full_content = ""
+
+    def _texte_partiel() -> str:
+        # Les appels directs au producteur n'ont pas de wrapper et conservent
+        # leur comportement : chaque yield y est remis au consommateur.
+        return full_content if morceaux_relayes is None else "".join(morceaux_relayes)
+
     plages_limites_recherche: list[tuple[int, int]] = []
     # Tour 11 : le texte produit par le modèle seul, matière des compétences
     # de génération (ni avis, ni confirmations de directives, ni annonce de coupe).
@@ -3233,7 +3250,7 @@ async def _do_stream_response(
             yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
         except (GeneratorExit, asyncio.CancelledError):
             await _persister_message_partiel(
-                conversation_id, full_content, llm_service, marque_reponse(context)
+                conversation_id, _texte_partiel(), llm_service, marque_reponse(context)
             )
             raise
     tool_calls_collected: list[ToolCall] = []
@@ -3441,7 +3458,7 @@ async def _do_stream_response(
         # (fournisseur bloqué, revue jalon F4) - la garde d'écriture plus bas
         # n'est jamais atteinte. Le texte déjà produit survit ici ; aucun
         # effet (skill, outil) n'est lancé.
-        await _persister_message_partiel(conversation_id, full_content, llm_service, marque_reponse(context))
+        await _persister_message_partiel(conversation_id, _texte_partiel(), llm_service, marque_reponse(context))
         raise
     except Exception as e:
         from app.services.memory_card_context import AccordFichesRequis
@@ -3491,7 +3508,7 @@ async def _do_stream_response(
             try:
                 yield f"data: {json.dumps(StreamChunk(type='text', content=mention, conversation_id=conversation_id).model_dump())}\n\n"
             except (GeneratorExit, asyncio.CancelledError):
-                await _persister_message_partiel(conversation_id, full_content, llm_service, marque_reponse(context))
+                await _persister_message_partiel(conversation_id, _texte_partiel(), llm_service, marque_reponse(context))
                 raise
 
     # BUG-124 : un modèle faible peut enchaîner des outils (ex. read_emails) sans
@@ -3574,7 +3591,7 @@ async def _do_stream_response(
             "Annulation demandée : réponse partielle conservée, aucun effet produit"
         )
         await _persister_message_partiel(
-            conversation_id, full_content, llm_service, marque_reponse(context)
+            conversation_id, _texte_partiel(), llm_service, marque_reponse(context)
         )
         return
 
@@ -3739,16 +3756,55 @@ def _normaliser_demande_agenda(message: str) -> str:
     )
 
 
+def _date_numerique_agenda(texte: str) -> bool:
+    """Accepte les dates possibles sans confondre un numéro de point avec une date."""
+    from datetime import date
+
+    motif = re.compile(
+        r"(?<![\w./-])(?:(?P<iso_annee>\d{4})-(?P<iso_mois>\d{1,2})-"
+        r"(?P<iso_jour>\d{1,2})|(?P<jour>\d{1,2})(?P<sep>[/.-])"
+        r"(?P<mois>\d{1,2})(?:(?P=sep)(?P<annee>\d{4}|\d{2}))?)"
+        r"(?!\d|[./-]\d)"
+    )
+    for resultat in motif.finditer(texte):
+        parties = resultat.groupdict()
+        if parties["sep"] == "." and not parties["annee"]:
+            # « point 1.2 » est un numéro ; « le 1.2 » est une date.
+            if not re.search(r"\b(?:le|du|au)\s*$", texte[:resultat.start()]):
+                continue
+        annee = int(parties["iso_annee"] or parties["annee"] or 2000)
+        if annee < 100:
+            annee += 2000
+        try:
+            date(annee, int(parties["iso_mois"] or parties["mois"]),
+                 int(parties["iso_jour"] or parties["jour"]))
+            return True
+        except ValueError:
+            continue
+    return False
+
+
 def _demande_lecture_agenda(message: str) -> bool:
     """Reconnaît seulement les formes explicites et datées du tour courant."""
     texte = _normaliser_demande_agenda(message).replace("’", "'")
     if re.search(
-        r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*|"
-        r"branch\w*|configur\w*|synchronis\w*|connect\w*|install\w*|"
+        r"\b(?:branch\w*|configur\w*|synchronis\w*|connect\w*|install\w*|"
         r"utilis\w*|fonctionn\w*|ajout\w*|cree\w*|modifi\w*|deplac\w*|"
         r"annul\w*|supprim\w*|planifi\w*|organis\w*|envoi\w*|envoy\w*)\b", texte,
     ):
         return False
+    if re.search(r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*)\b", texte):
+        # Une demande de rédaction seule reste exclue. Une lecture explicite
+        # suivie ou précédée d'une rédaction reste une demande de lecture.
+        lecture = re.search(
+            r"\b(?:lis|consulte|regarde|verifie|affiche|montre|liste|"
+            r"(?:peux|pourrais|veux)[- ]tu\s+(?:lire|consulter|regarder|verifier|"
+            r"afficher|montrer|lister))(?:-moi)?\b[^.!?;\n]*\b"
+            r"(?:mon\s+agenda|mon\s+planning|mes\s+rendez[ -]?vous)\b",
+            texte,
+        )
+        if not lecture:
+            return False
     demande = re.search(
         r"\b(?:mes\s+rendez[ -]?vous|mon\s+agenda|mon\s+planning|"
         r"qu'est[ -]ce\s+que\s+j'ai\s+de\s+prevu|suis[ -]je\s+disponible)\b", texte,
@@ -3757,18 +3813,23 @@ def _demande_lecture_agenda(message: str) -> bool:
         r"\b(?:aujourd.hui|demain|apres.demain|lundi|mardi|mercredi|jeudi|"
         r"vendredi|samedi|dimanche|semaine|mois|annee|matin|apres.midi|soir|"
         r"janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|"
-        r"novembre|decembre|(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)|"
-        r"\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?)\b", texte,
+        r"novembre|decembre|(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d))\b", texte,
     )
-    return bool(demande and repere)
+    return bool(demande and (repere or _date_numerique_agenda(texte)))
 
 
 def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
     """Une réserve uniquement pour une liste horaire et une demande explicite."""
     if not _demande_lecture_agenda(message):
         return ""
-    horaire = re.compile(r"\b(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)\b", re.IGNORECASE)
-    if sum(bool(horaire.search(ligne)) for ligne in reponse.splitlines()) < 2:
+    heure = r"(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)\b"
+    horaire = re.compile(
+        rf"(?:\b(?:a|vers|des)\s+{heure}|"
+        rf"^\s*(?:[-*•]|\d+[.)])?\s*(?:\*\*|__)?{heure}"
+        r"(?:\*\*|__)?\s*[:–—-]\s*\S)",
+    )
+    if sum(bool(horaire.search(_normaliser_demande_agenda(ligne)))
+           for ligne in reponse.splitlines()) < 2:
         return ""
     return "\n\nJe n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 
