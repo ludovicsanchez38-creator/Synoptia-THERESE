@@ -22,7 +22,7 @@ describe('R1-2 : SemVer et versions illisibles', () => {
     ['0.83.0-alpha.10+build.1', 'v0.83.0-alpha.2+build.1', false],
     ['0.83.0-alpha.2+build.9', 'v0.83.0-alpha.10+build.1', true],
     ['0.83.0-alpha.2+build.9', 'v0.83.0-alpha.2+autre', false],
-    ['0.83.0+build.9', 'v0.83.0+autre', false],
+    ['0.83.0-beta+build.9', 'v0.83.0-beta+autre', false],
     ['0.83.0-alpha.2', 'v0.83.0-alpha.beta', true],
     ['0.83.0-alpha.beta', 'v0.83.0-alpha.2', false],
     ['0.83.0-alpha.9007199254740992', 'v0.83.0-alpha.9007199254740993', true],

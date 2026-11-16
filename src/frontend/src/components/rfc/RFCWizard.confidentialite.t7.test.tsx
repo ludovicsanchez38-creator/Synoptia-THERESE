@@ -47,6 +47,7 @@ describe('Tour 7 : reprise après un premier échange raté', () => {
     envoyer('Ajoute une variable pour le nom du client.');
     await screen.findByText('Réponse ordinaire 2');
     expect(vi.mocked(streamMessage).mock.calls[2][0].rfc_source_ids).toEqual(['message-1']);
+    await waitFor(() => expect(screen.getByRole('button', {name: /Passer à Faire/})).toBeEnabled());
     fireEvent.click(screen.getByRole('button', {name: /Passer à Faire/}));
     await waitFor(() => expect(screen.queryByPlaceholderText('Décris ta commande idéale...')).toBeNull());
     await waitFor(() => expect(streamMessage).toHaveBeenCalledTimes(4));
@@ -58,6 +59,7 @@ describe('Tour 7 : reprise après un premier échange raté', () => {
     render(<RFCWizard onClose={vi.fn()} />);
     envoyer('Je veux une commande de relance client.');
     await screen.findByText('Réponse ordinaire 1');
+    await waitFor(() => expect(screen.getByRole('button', {name: /Passer à Faire/})).toBeEnabled());
     fireEvent.click(screen.getByRole('button', {name: /Passer à Faire/}));
     await screen.findByText('Réponse ordinaire 2');
     vi.mocked(streamMessage).mockImplementationOnce(async function* () { yield {type: 'text', content: 'Réponse coupée'}; } as never);

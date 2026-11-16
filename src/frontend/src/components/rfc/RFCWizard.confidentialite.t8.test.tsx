@@ -53,6 +53,7 @@ describe('Tour 8 : mini-chat RFC', () => {
     envoyer('Ajoute la date.');
     await screen.findByText('Réponse ordinaire 4');
     expect(vi.mocked(streamMessage).mock.calls[3][0].rfc_source_ids).toEqual(['message-2', 'message-3']);
+    await waitFor(() => expect(screen.getByRole('button', {name: /Passer à Faire/})).toBeEnabled());
     fireEvent.click(screen.getByRole('button', {name: /Passer à Faire/}));
     await waitFor(() => expect(streamMessage).toHaveBeenCalledTimes(5));
     expect(vi.mocked(streamMessage).mock.calls[4][0].rfc_source_ids).toEqual(['message-2', 'message-3', 'message-4']);
@@ -64,6 +65,7 @@ describe('Tour 8 : mini-chat RFC', () => {
     render(<RFCWizard onClose={vi.fn()} />);
     envoyer('Je veux une commande de relance client.');
     await screen.findByText('Réponse ordinaire 1');
+    await waitFor(() => expect(screen.getByRole('button', {name: /Passer à Faire/})).toBeEnabled());
     fireEvent.click(screen.getByRole('button', {name: /Passer à Faire/}));
     await screen.findByText('Réponse ordinaire 2');
     await waitFor(() => expect(screen.getByRole('button', {name: 'Capturer'})).toBeEnabled());

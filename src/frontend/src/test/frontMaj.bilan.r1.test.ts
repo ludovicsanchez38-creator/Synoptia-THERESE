@@ -27,4 +27,22 @@ describe('Remédiation documentaire du lot front-maj', () => {
     }
     expect(historique.split('\n').filter((l) => l.startsWith('| B-')).join('\n')).not.toContain('non commité');
   });
+
+  it('R2-5 : décrit la passe 1 commitée et réserve l’état non commité à la passe 2', () => {
+    const texte = bilan();
+    const passe1 = texte.split('## Remédiation de la relecture, passe 1')[1]
+      ?.split('## Remédiation de la relecture, passe 2')[0];
+    const etatPasse1 = passe1?.split('### Décisions et correctifs')[0];
+    expect(etatPasse1).toContain('6ab9f8cf');
+    expect(etatPasse1).toContain('7c94e52a');
+    expect(etatPasse1).toContain('commitée');
+    expect(etatPasse1).not.toContain('restent non commités');
+    expect(passe1).not.toContain('cette passe non commitée');
+    const introduction = texte.split('## Verdicts et preuves')[0];
+    expect(introduction).toContain('7c94e52a');
+    expect(introduction).toContain('« Remédiation de la relecture, passe 2 »');
+    const passe2 = texte.split('## Remédiation de la relecture, passe 2')[1];
+    expect(passe2).toContain('7c94e52a');
+    expect(passe2).toContain('non commités');
+  });
 });

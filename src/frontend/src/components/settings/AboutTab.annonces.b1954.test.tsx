@@ -42,10 +42,11 @@ describe('B-1954 : tous les états de vérification sont annoncés', () => {
   });
 
   it('continue d’annoncer que la version est à jour', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reponse('v0.83.0')));
+    useBackendStore.setState({ version: '0.83.0-alpha.1' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reponse('v0.83.0-alpha.1')));
     render(<AboutTab />);
     verifier();
-    await screen.findByText('THÉRÈSE est à jour (v0.83.0)');
-    expect(screen.getByRole('status')).toHaveTextContent('THÉRÈSE est à jour (v0.83.0)');
+    await screen.findByText('THÉRÈSE est à jour (v0.83.0-alpha.1)');
+    expect(screen.getByRole('status')).toHaveTextContent('THÉRÈSE est à jour (v0.83.0-alpha.1)');
   });
 });

@@ -5,6 +5,7 @@ vi.mock('../../services/api', () => ({
   checkHealth: vi.fn().mockResolvedValue({ version: '0.83.0', status: 'healthy' }),
 }));
 import { useBackendStore } from '../../hooks/useBackend';
+import { checkHealth } from '../../services/api';
 import { AboutTab } from './AboutTab';
 
 describe('R1-1 : identité incomplète de la livraison installée', () => {
@@ -17,9 +18,18 @@ describe('R1-1 : identité incomplète de la livraison installée', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('ne conclut pas à jour avec le numéro sans suffixe renvoyé par le moteur', async () => {
+  it.each([
+    ['0.83.0', 'v0.83.0-alpha.2'],
+    ['0.83.0', 'v0.83.0'],
+    ['0.83.0+build.9', 'v0.83.0+autre'],
+  ])('ne conclut pas à jour avec %s face à %s sans identité exacte', async (version, tag) => {
+    vi.mocked(checkHealth).mockResolvedValueOnce({ version, status: 'healthy' });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => [{ tag_name: tag, assets: [] }],
+    } as Response);
     render(<AboutTab />);
-    await screen.findByText('0.83.0');
+    await screen.findByText(version);
     fireEvent.click(screen.getByRole('button', { name: 'Vérifier les mises à jour' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/version exacte de la livraison installée/);
     expect(screen.queryByText(/THÉRÈSE est à jour|Nouvelle version disponible/)).not.toBeInTheDocument();

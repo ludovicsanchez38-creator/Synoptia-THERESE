@@ -41,7 +41,9 @@ describe('R1-5 : réessayer la lecture de la version', () => {
     verifier();
     try {
       expect(screen.getByRole('button', { name: 'Vérification...' })).toBeDisabled();
-      expect(screen.getByRole('alert')).toHaveTextContent(/version installée/);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).not.toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Lecture de la version installée en cours...');
       expect(checkHealth).toHaveBeenCalledTimes(1);
       expect(fetch).not.toHaveBeenCalled();
     } finally {
@@ -49,6 +51,33 @@ describe('R1-5 : réessayer la lecture de la version', () => {
     }
     await screen.findByText('Nouvelle version disponible : v0.83.0-alpha.2');
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('R2-3 : annonce la lecture dès le montage puis réserve l’alerte à son échec', async () => {
+    let echouer!: (raison: Error) => void;
+    vi.mocked(checkHealth).mockReturnValue(new Promise((_resolve, reject) => { echouer = reject; }));
+    render(<AboutTab />);
+    try {
+      expect(screen.getByRole('status')).toHaveTextContent('Lecture de la version installée en cours...');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).not.toBeInTheDocument();
+      expect(fetch).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => echouer(new Error('Moteur indisponible')));
+    }
+    expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de lire la version installée');
+    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).not.toHaveTextContent(/en cours/);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('R2-3 : une réponse du moteur sans version devient une erreur après la lecture', async () => {
+    vi.mocked(checkHealth).mockResolvedValue({ ...moteur, version: '' });
+    render(<AboutTab />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de lire la version installée');
+    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).not.toHaveTextContent(/en cours/);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('un deuxième échec garde le lien manuel et permet une troisième lecture', async () => {

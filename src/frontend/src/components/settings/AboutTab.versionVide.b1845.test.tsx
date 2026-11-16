@@ -35,7 +35,10 @@ describe('B-1845 : une version inconnue n’est pas 0.0.0', () => {
     checkHealth.mockImplementation(() => new Promise(() => {}));
     render(<AboutTab />);
     fireEvent.click(screen.getByRole('button', { name: /Vérifier les mises à jour/ }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/version installée/);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Lecture de la version installée en cours...');
+    expect(screen.getByRole('button', { name: 'Vérification...' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Nouvelle version disponible/)).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });

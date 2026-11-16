@@ -42,7 +42,7 @@ describe('R1-7 : les régions live précèdent leur contenu', () => {
     const style = document.createElement('style');
     style.textContent = String.raw`.empty\:hidden:empty { display: none; }`;
     document.head.appendChild(style);
-    useBackendStore.setState({ version: '0.83.0' });
+    useBackendStore.setState({ version: '0.83.0-alpha.1' });
     let terminer!: (value: unknown) => void;
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise((resolve) => { terminer = resolve; })));
     try {
@@ -53,7 +53,7 @@ describe('R1-7 : les régions live précèdent leur contenu', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Vérifier les mises à jour' }));
       expect(screen.getByRole('status')).toBe(region);
       expect(region).toHaveTextContent(/Vérification.*en cours/);
-      await act(async () => terminer({ ok: true, json: async () => [{ tag_name: 'v0.83.0', assets: [] }] }));
+      await act(async () => terminer({ ok: true, json: async () => [{ tag_name: 'v0.83.0-alpha.1', assets: [] }] }));
       expect(screen.getByRole('status')).toBe(region);
       expect(region).toHaveTextContent('THÉRÈSE est à jour');
     } finally {

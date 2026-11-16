@@ -51,7 +51,7 @@ describe('B-1952 : l’aide décrit la condition réelle du passage à Faire', (
     envoyer();
     await screen.findByText(/Réponse non conservée/);
     const suite = screen.getByRole('button', { name: /Passer à Faire/ });
-    expect(suite).toHaveAccessibleDescription(/réponse complète.*Renvoie ton message/);
+    await waitFor(() => expect(suite).toHaveAccessibleDescription(/réponse complète.*Renvoie ton message/));
     fireEvent.click(suite);
     expect(await screen.findByRole('alert')).toHaveTextContent('Aucune réponse complète');
   });
