@@ -45,6 +45,23 @@ Le fichier compagnon `.pdf.therese.json`, créé avec les permissions `0600`, co
 
 **Porte ciblée finale : 295 réussis, 0 échoué, 0 ignoré**, résultats lus dans `/tmp/factures-backend-r1.xml`. Ruff sur `src/backend tests` : **0 erreur**. Les données de test sont jetables et une garde interdit les connexions réseau ainsi que les chemins exclus. La suite complète n'a pas été lancée et aucun changement n'a été commité.
 
+## Remédiation de la relecture, passe 2
+
+Chaque constat a d'abord été reproduit par un test lancé seul ; les lignes ci-dessous sont recopiées de ses résultats avant correction.
+
+1. **Collision entre profils.** `tests/test_b1861_pdf_emis.py::test_brouillons_historiques_isoles_preservent_archive_partagee` : `E   AssertionError: Archive émise modifiée par un brouillon`. Chaque aperçu reçoit un nom propre à l'identifiant et au numéro de la pièce ainsi qu'à sa génération, et sa publication ne remplace aucun fichier. L'ouverture retrouve l'aperçu de la pièce ; sa suppression ne cible pas l'archive d'un autre profil. Le test vérifie deux brouillons de même numéro, la régénération, la suppression d'un devis et l'intégrité du PDF et du compagnon émis.
+2. **Compagnon interrompu.** `tests/test_b1861_pdf_emis.py::test_preuve_intermittente_ne_bloque_pas_la_reprise_du_pdf` : `E   assert 409 == 200`. Le PDF et son compagnon sont préparés et vérifiés avant la publication. Si l'interruption survient entre la publication du PDF et celle du compagnon, une génération ou une ouverture ultérieure finalise la paire seulement si le PDF publié est le même fichier que le PDF provisoire vérifié. La reprise couvre l'archive et ses éditions ; une preuve altérée ou un fichier étranger est refusé, même si ses octets sont identiques.
+
+La vérification des appelants a fait apparaître trois régressions introduites pendant cette passe, chacune reproduite isolément avant sa correction :
+
+- `test_changement_du_pdf_pendant_la_finalisation_ne_la_certifie_pas[deplacement]` : `E   assert 500 == 409`. Un PDF déplacé ou remplacé pendant la finalisation ne laisse pas de compagnon publié pour un autre fichier.
+- `test_ouverture_retrouve_le_dernier_apercu_sur_un_disque_aux_dates_identiques` : `E   AssertionError: assert '/tmp/pytest-...fffffffff.pdf' == '/tmp/pytest-...000000000.pdf'`. L'ordre des générations est porté par les noms des aperçus et ne dépend pas de la précision des dates du système de fichiers.
+- `tests/test_facture_pdf_ouverture.py::test_apercu_remplace_par_un_lien_apres_la_recherche_ne_sort_pas_du_dossier` : `E   Failed: DID NOT RAISE <class 'fastapi.exceptions.HTTPException'>`. L'ouverture revalide le chemin après la recherche pour refuser un lien sortant substitué entre-temps.
+
+Les aperçus successifs sont conservés jusqu'à la suppression de leur pièce. Pour une pièce historique portant déjà son numéro définitif, les aperçus correspondants doivent être déplacés avant émission. Les anciens aperçus enregistrés sous le seul numéro ne sont plus résolus comme aperçus : il faut les régénérer ; les fichiers existants sont conservés. Les fichiers provisoires `.therese-publication-*` permettent une reprise après interruption et doivent rester avec le PDF tant que celle-ci n'a pas abouti ; un arrêt brutal avant publication peut laisser des fichiers provisoires orphelins. Comme en passe 1, la publication nécessite un système de fichiers acceptant les liens physiques.
+
+Après le premier correctif, **75 tests voisins ont réussi** ; après le second, **84**. La porte ciblée finale compte **183 réussis, 0 échec, 0 erreur, 0 ignoré**, chiffres lus dans `/tmp/factures-backend-r2.xml`. Ruff sur `src/backend tests` : **0 erreur**. Une garde locale interdit les connexions et les chemins exclus ; un tube anonyme remplace le réveil par socketpair que ce bac à sable refuse. La suite complète et les portes frontend n'ont pas été lancées. Les changements restent non commités.
+
 ## Portes
 
 - **Backend, porte finale : 6 556 réussis, 14 échoués, 62 ignorés, 0 erreur de collecte**, sur 6 632 cas, XML `/tmp/factures-backend-pytest.xml`. La commande demandée a été exécutée avec une garde locale pour interdire les connexions et opérations hors périmètre. Onze cas ont été ignorés par cette garde : ils créent un dépôt Git, exécutent un ensemble contenant de telles créations, ou touchent le dossier personnel. Les 51 autres ignorés le sont par la suite elle-même. Il s'agit donc d'une porte partielle et non verte.

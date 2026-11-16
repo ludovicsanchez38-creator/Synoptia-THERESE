@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -415,6 +416,27 @@ def _preuve_pdf(chemin: Path) -> Path:
     return chemin.with_name(f"{chemin.name}.therese.json")
 
 
+def _prefixe_apercu_pdf(invoice_id: str, numero: str) -> str:
+    identite = json.dumps([invoice_id, numero], ensure_ascii=False).encode("utf-8")
+    return f"APERCU-{hashlib.sha256(identite).hexdigest()}-"
+
+
+def _apercus_pdf(dossier: str, invoice_id: str, numero: str) -> list[Path]:
+    prefixe = _prefixe_apercu_pdf(invoice_id, numero)
+    return [
+        chemin for chemin in Path(dossier).glob(f"{prefixe}*.pdf")
+        if not chemin.is_symlink() and chemin.is_file()
+        and not _preuve_pdf(chemin).exists() and not _preuve_pdf(chemin).is_symlink()
+    ]
+
+
+def _dernier_apercu_pdf(dossier: str, invoice_id: str, numero: str) -> Path | None:
+    apercus = _apercus_pdf(dossier, invoice_id, numero)
+    if not apercus:
+        return None
+    return chemin_pdf_a_ouvrir(dossier, max(apercus, key=lambda chemin: chemin.name).stem)
+
+
 def _empreinte_donnees_pdf(invoice: Invoice, donnees: dict) -> str:
     contenu = {
         "invoice_id": invoice.id,
@@ -500,22 +522,114 @@ def _verifier_edition_pdf(chemin: Path, invoice: Invoice, archive: dict, statut:
         raise HTTPException(409, "L'origine de cette édition PDF ne peut pas être vérifiée.")
 
 
+def _prefixe_publication_pdf(invoice: Invoice, chemin: Path) -> str:
+    identite = json.dumps([invoice.id, chemin.name], ensure_ascii=False).encode("utf-8")
+    return f".therese-publication-{hashlib.sha256(identite).hexdigest()}-"
+
+
+def _nettoyer_publication_pdf(provisoire: Path) -> None:
+    for fichier in (_preuve_pdf(provisoire), provisoire):
+        try:
+            fichier.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("Impossible de retirer un fichier provisoire de publication PDF")
+
+
+def _meme_fichier(premier: Path, second: Path) -> bool:
+    try:
+        return os.path.samefile(premier, second)
+    except OSError:
+        return False
+
+
+def _lier_preuve_pdf(provisoire: Path, chemin: Path) -> None:
+    """Ne finalise que le PDF publié depuis ce fichier provisoire précis."""
+    if not _meme_fichier(provisoire, chemin):
+        raise HTTPException(409, "Le PDF a changé pendant sa publication.")
+    preuve_provisoire = _preuve_pdf(provisoire)
+    preuve = _preuve_pdf(chemin)
+
+    def verifier_apres_lien() -> None:
+        if not _meme_fichier(provisoire, chemin):
+            if _meme_fichier(preuve_provisoire, preuve):
+                preuve.unlink()
+            raise HTTPException(409, "Le PDF a changé pendant sa publication.")
+
+    try:
+        os.link(preuve_provisoire, preuve)
+    except BaseException:
+        verifier_apres_lien()
+        raise
+    verifier_apres_lien()
+
+
+def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Path], object]) -> None:
+    preuve = _preuve_pdf(chemin)
+    if preuve.exists() or preuve.is_symlink():
+        return
+    prefixe = _prefixe_publication_pdf(invoice, chemin)
+    for provisoire in chemin.parent.glob(f"{prefixe}*.pdf"):
+        if provisoire.is_symlink():
+            continue
+        try:
+            identique = os.path.samefile(provisoire, chemin)
+        except OSError:
+            continue
+        if not identique:
+            continue
+        verifier(provisoire)
+        try:
+            _lier_preuve_pdf(provisoire, chemin)
+        except FileExistsError:
+            # Une autre reprise a publié le compagnon ; l'appelant le vérifie.
+            return
+        _nettoyer_publication_pdf(provisoire)
+        return
+
+
+def _publier_pdf_atteste(
+    output_dir: str, invoice: Invoice, details: dict, numero: str, *,
+    donnees: dict, contact: dict, profil: dict, currency: str,
+    verifier: Callable[[Path], object], empreinte_archive: str | None = None,
+) -> str:
+    generateur = InvoicePDFGenerator(output_dir=output_dir)
+    chemin = Path(output_dir).expanduser().resolve() / f"{numero}.pdf"
+    numero_provisoire = f"{_prefixe_publication_pdf(invoice, chemin)}{uuid.uuid4().hex}"
+    provisoire = Path(generateur.generate_invoice_pdf(
+        invoice_data=donnees, contact_data=contact, user_profile=profil, currency=currency,
+        conserver_existant=True, numero_fichier=numero_provisoire, empreinte_archive=empreinte_archive,
+    ))
+    try:
+        _enregistrer_preuve_pdf(provisoire, invoice, details)
+        verifier(provisoire)
+        os.link(provisoire, chemin)
+        _lier_preuve_pdf(provisoire, chemin)
+    except BaseException:
+        try:
+            publie = os.path.samefile(provisoire, chemin)
+        except OSError:
+            publie = False
+        if not publie:
+            _nettoyer_publication_pdf(provisoire)
+        raise
+    _nettoyer_publication_pdf(provisoire)
+    return str(chemin)
+
+
 def _generer_edition_pdf(output_dir: str, invoice: Invoice, archive: dict, statut: str, numero: str) -> str:
     try:
         donnees = dict(archive["invoice_data"])
         donnees["status"] = statut
-        chemin = InvoicePDFGenerator(output_dir=output_dir).generate_invoice_pdf(
-            invoice_data=donnees,
-            contact_data=archive["contact_data"],
-            user_profile=archive["user_profile"],
+        return _publier_pdf_atteste(
+            output_dir, invoice, {"statut": statut, "archive_sha256": archive["sha256"]}, numero,
+            donnees=donnees,
+            contact=archive["contact_data"],
+            profil=archive["user_profile"],
             currency=archive["currency"],
-            conserver_existant=True,
-            numero_fichier=numero,
+            verifier=lambda chemin: _verifier_edition_pdf(chemin, invoice, archive, statut),
         )
-        _enregistrer_preuve_pdf(Path(chemin), invoice, {
-            "statut": statut, "archive_sha256": archive["sha256"],
-        })
-        return chemin
+    except HTTPException:
+        raise
     except (KeyError, TypeError) as exc:
         raise HTTPException(409, "Les informations de l'archive PDF sont incomplètes.") from exc
     except FileExistsError as exc:
@@ -531,7 +645,8 @@ async def _verifier_absence_pdf_avant_emission(session: AsyncSession, invoice: I
     try:
         chemin_pdf_a_ouvrir(dossier, invoice.invoice_number)
     except FileNotFoundError:
-        return
+        if not _apercus_pdf(dossier, invoice.id, invoice.invoice_number):
+            return
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
     raise HTTPException(
@@ -1174,10 +1289,11 @@ async def delete_invoice(
 
     invoice_number = invoice.invoice_number
 
-    # Supprimer le PDF si existant
+    # Ne supprimer que les aperçus de cette pièce, jamais une archive au même numéro.
     output_dir = await _get_invoice_output_dir(session)
     pdf_generator = InvoicePDFGenerator(output_dir=output_dir)
-    pdf_generator.delete_invoice_pdf(invoice_number)
+    for apercu in _apercus_pdf(output_dir, invoice.id, invoice_number):
+        pdf_generator.delete_invoice_pdf(apercu.stem)
 
     # Supprimer la facture (cascade sur lignes)
     await session.delete(invoice)
@@ -1439,9 +1555,12 @@ async def generate_invoice_pdf(
         except FileNotFoundError:
             if _preuve_pdf(Path(output_dir) / f"{invoice.invoice_number}.pdf").exists():
                 raise HTTPException(409, "Le PDF archivé est introuvable. Consulte ton archive d'origine.")
+            if _apercus_pdf(output_dir, invoice.id, invoice.invoice_number):
+                raise HTTPException(409, "L'origine de ce PDF ne peut pas être vérifiée. Consulte ton archive d'origine.")
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
         else:
+            _reprendre_preuve_pdf(existant, invoice, lambda chemin: _verifier_archive_pdf(chemin, invoice))
             archive = _verifier_archive_pdf(existant, invoice)
             statut = statut_effectif_facture(invoice.status, invoice.document_type, invoice.due_date)
             numero = _numero_pdf_pour_statut(invoice, archive, statut)
@@ -1454,6 +1573,9 @@ async def generate_invoice_pdf(
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
             else:
+                _reprendre_preuve_pdf(
+                    edition, invoice, lambda chemin: _verifier_edition_pdf(chemin, invoice, archive, statut),
+                )
                 _verifier_edition_pdf(edition, invoice, archive, statut)
             return {"pdf_path": str(edition), "invoice_number": invoice.invoice_number}
 
@@ -1560,17 +1682,23 @@ async def generate_invoice_pdf(
             "user_profile": user_profile_data,
             "currency": invoice.currency,
         } if _facture_emise(invoice) else None
-        pdf_generator = InvoicePDFGenerator(output_dir=output_dir)
-        pdf_path = pdf_generator.generate_invoice_pdf(
-            invoice_data=invoice_data,
-            contact_data=contact_data,
-            user_profile=user_profile_data,
-            currency=invoice.currency,
-            conserver_existant=_facture_emise(invoice),
-            empreinte_archive=_empreinte_donnees_pdf(invoice, details_archive) if details_archive else None,
-        )
         if details_archive:
-            _enregistrer_preuve_pdf(Path(pdf_path), invoice, details_archive)
+            pdf_path = _publier_pdf_atteste(
+                output_dir, invoice, details_archive, invoice.invoice_number,
+                donnees=invoice_data, contact=contact_data, profil=user_profile_data, currency=invoice.currency,
+                verifier=lambda chemin: _verifier_archive_pdf(chemin, invoice),
+                empreinte_archive=_empreinte_donnees_pdf(invoice, details_archive),
+            )
+        else:
+            pdf_path = InvoicePDFGenerator(output_dir=output_dir).generate_invoice_pdf(
+                invoice_data=invoice_data, contact_data=contact_data, user_profile=user_profile_data,
+                currency=invoice.currency, conserver_existant=True,
+                numero_fichier=(
+                    f"{_prefixe_apercu_pdf(invoice.id, invoice.invoice_number)}{time.time_ns():020d}-{uuid.uuid4().hex}"
+                ),
+            )
+    except HTTPException:
+        raise
     except FileExistsError as e:
         raise HTTPException(409, "Un fichier existe déjà : conserve-le et consulte ton archive d'origine.") from e
     except Exception as e:
@@ -1596,13 +1724,22 @@ async def pdf_pour_ouverture(invoice_id: str, session: AsyncSession = Depends(ge
     facture = await _get_invoice_with_lines(session, invoice_id)
     if not facture:
         raise HTTPException(404, "Facture introuvable.")
+    output_dir = await _get_invoice_output_dir(session)
     try:
-        chemin = chemin_pdf_a_ouvrir(await _get_invoice_output_dir(session), facture.invoice_number)
+        if _facture_emise(facture):
+            chemin = chemin_pdf_a_ouvrir(output_dir, facture.invoice_number)
+        else:
+            chemin = _dernier_apercu_pdf(output_dir, invoice_id, facture.invoice_number)
+            if chemin is None:
+                raise FileNotFoundError("Génère le PDF de cette facture avant de l’ouvrir.")
     except FileNotFoundError as exc:
+        if _facture_emise(facture) and _apercus_pdf(output_dir, invoice_id, facture.invoice_number):
+            raise HTTPException(409, "L'origine de ce PDF ne peut pas être vérifiée. Consulte ton archive d'origine.") from exc
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     if _facture_emise(facture):
+        _reprendre_preuve_pdf(chemin, facture, lambda candidat: _verifier_archive_pdf(candidat, facture))
         archive = _verifier_archive_pdf(chemin, facture)
         statut = statut_effectif_facture(facture.status, facture.document_type, facture.due_date)
         numero = _numero_pdf_pour_statut(facture, archive, statut)
@@ -1613,6 +1750,9 @@ async def pdf_pour_ouverture(invoice_id: str, session: AsyncSession = Depends(ge
                 raise HTTPException(404, str(exc)) from exc
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
+            _reprendre_preuve_pdf(
+                chemin, facture, lambda candidat: _verifier_edition_pdf(candidat, facture, archive, statut),
+            )
             _verifier_edition_pdf(chemin, facture, archive, statut)
     return {"pdf_path": str(chemin)}
 
