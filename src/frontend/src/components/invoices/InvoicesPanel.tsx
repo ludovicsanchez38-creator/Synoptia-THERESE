@@ -40,7 +40,7 @@ const OPTIONS_TYPE = [
   { id: 'avoir', label: 'Avoirs' },
 ] as const;
 
-const SQUELETTES = ['w-24', 'w-[60%]', 'w-20', 'w-20', 'w-16', 'w-16', 'w-12'] as const;
+const SQUELETTES = ['w-24', 'w-[60%]', 'w-20', 'w-16', 'w-16', 'w-12'] as const;
 
 /**
  * B-1387 (Nathalie, Zoé, cycle 13) : à 125 % ou à 800 px, le tableau débordait
@@ -403,7 +403,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             <div
               key={rang}
               aria-hidden
-              className="grid grid-cols-7 gap-3 px-4 py-3 border-t border-border"
+              className="grid grid-cols-6 gap-3 px-4 py-3 border-t border-border"
             >
               {SQUELETTES.map((largeur, piste) => (
                 <Squelette key={piste} largeur={largeur} />
