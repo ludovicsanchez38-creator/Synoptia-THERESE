@@ -151,3 +151,63 @@ async def test_export_conserve_le_texte_entre_une_url_et_une_adresse_mail(
     assert reponse.status_code == 200
     agenda = next(c for c in reponse.json()["calendars"] if c["id"] == "cal-texte")
     assert agenda["description"] == description
+
+
+# Relecture 4 du lot (17/11/2026) : le masquage prenait le port d'une URL pour
+# le début d'un identifiant dès qu'une adresse e-mail suivait sur la ligne, et
+# retraitait comme un texte le JSON déjà sérialisé d'une préférence.
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_conserve_un_port_suivi_d_une_adresse_mail(client, db_session, route):
+    description = "Voir https://agenda.invalid:443 puis contacter : personne@example.invalid"
+    preference = '{"url":"https://agenda.invalid:443","email":"personne@example.invalid"}'
+    db_session.add(Calendar(id="cal-port", summary="Agenda", description=description))
+    db_session.add(Preference(key="annuaire_config", category="general", value=preference))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    export = reponse.json()
+    agenda = next(c for c in export["calendars"] if c["id"] == "cal-port")
+    assert agenda["description"] == description
+    valeur = json.loads(next(p["value"] for p in export["preferences"] if p["key"] == "annuaire_config"))
+    assert valeur == {"url": "https://agenda.invalid:443", "email": "personne@example.invalid"}
+
+
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        # Rien à masquer : la valeur sort telle quelle.
+        ("https://agenda.invalid:443/dav", "https://agenda.invalid:443/dav"),
+        ("Voir https://agenda.invalid:443 puis écrire à a@b.invalid", "Voir https://agenda.invalid:443 puis écrire à a@b.invalid"),
+        ("https://[::1]:8443/dav puis a@b.invalid", "https://[::1]:8443/dav puis a@b.invalid"),
+        ("Site https://site.invalid, contact a@b.invalid", "Site https://site.invalid, contact a@b.invalid"),
+        ("écrire à a@b.invalid", "écrire à a@b.invalid"),
+        (
+            '{"url":"https://agenda.invalid:443","email":"personne@example.invalid"}',
+            '{"url":"https://agenda.invalid:443","email":"personne@example.invalid"}',
+        ),
+        # Identifiants : tout ce qui précède le dernier @ de l'autorité part.
+        ("https://temoin:FAUX-secret@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ("https://temoin@agenda.invalid:8443/dav", "https://agenda.invalid:8443/dav"),
+        ("https://temoin:12345'ret@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ('Adresse : "https://temoin:FAUX"sec@agenda.invalid/dav"', 'Adresse : "https://agenda.invalid/dav"'),
+        ("Voir https://temoin:FAUX sec@agenda.invalid/dav.", "Voir https://agenda.invalid/dav."),
+        # Une URL passée en paramètre d'une autre est lue elle aussi.
+        (
+            "https://a.invalid/?suite=https://temoin:FAUX-secret@b.invalid/x",
+            "https://a.invalid/?suite=https://b.invalid/x",
+        ),
+    ],
+)
+def test_masquage_des_urls_table_de_cas(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
+
+
+def test_masquage_d_un_json_serialise_garde_ses_autres_champs():
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export('{"url":"https://temoin:FAUX-secret@agenda.invalid/dav","email":"p@e.invalid"}')
+    assert json.loads(sortie) == {"url": "https://agenda.invalid/dav", "email": "p@e.invalid"}
