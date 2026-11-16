@@ -19,9 +19,9 @@ export function effortConserveAvecOutils(modele: string): boolean {
   return EFFORT_CONSERVE_AVEC_OUTILS.has(modele.toLowerCase());
 }
 
-/** Fiches gpt-6.1-sol et gpt-6.1-terra : xhigh est un palier à part, entre
- * élevé et maximal. */
-const EFFORT_XHIGH_PROPOSE = new Set(['gpt-6.1-sol', 'gpt-6.1-terra']);
+/** Contrat du catalogue backend : xhigh est un palier à part pour Sol,
+ * Terra et Astra, entre élevé et maximal. */
+const EFFORT_XHIGH_PROPOSE = new Set(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra']);
 
 export function effortXhighPropose(modele: string): boolean {
   return EFFORT_XHIGH_PROPOSE.has(modele.trim().toLowerCase());

@@ -20,6 +20,10 @@ export function libelleStatutPiece(statut: string, type: string): string {
   const feminin = type === 'facture';
   const accords: Record<string, string> = {
     sent: feminin ? 'Envoyée' : 'Envoyé',
+    accepted: feminin ? 'Acceptée' : 'Accepté',
+    refused: feminin ? 'Refusée' : 'Refusé',
+    expired: feminin ? 'Expirée' : 'Expiré',
+    converted: feminin ? 'Convertie' : 'Converti',
     paid: type === 'avoir' ? 'Remboursé' : feminin ? 'Payée' : 'Payé',
     cancelled: feminin ? 'Annulée' : 'Annulé',
   };

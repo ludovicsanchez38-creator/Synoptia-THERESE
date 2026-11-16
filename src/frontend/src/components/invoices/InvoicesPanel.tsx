@@ -27,7 +27,7 @@ import { EtatVide } from '../ui/EtatVide';
 import { Etiquette } from '../ui/Etiquette';
 import { Segments } from '../ui/Segments';
 import { Squelette } from '../ui/Squelette';
-import { STATUS_CONFIG } from './statutsFacture';
+import { libelleStatutPiece } from './statutsFacture';
 import { cellulesStatut, compteurPieces, libelleAccessiblePiece, numeroAffiche, sousLignePiece } from './presentationFacture';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
@@ -142,7 +142,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       // liste et son drapeau tombent d'un seul geste : rien ne peut plus
       // décrire des données qui ne sont plus là.
       setInvoices([], false);
-      setLoadError('Impossible de charger les factures pour le moment.');
+      setLoadError('Impossible de charger les devis, factures et avoirs pour le moment.');
     } finally {
       setIsLoading(false);
     }
@@ -387,7 +387,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           valeur={filters.status ?? 'all'}
           options={statutsProposesPour(filters.document_type).map((status) => ({
             id: status,
-            label: status === 'all' ? 'Toutes' : STATUS_CONFIG[status].label,
+            label: status === 'all' ? 'Toutes' : libelleStatutPiece(status, filters.document_type ?? 'facture'),
           }))}
           onChange={(id) => setFilters({ ...filters, status: id as typeof filters.status })}
         />

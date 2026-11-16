@@ -5,7 +5,7 @@
 import type { Invoice } from '../../services/api';
 import { montantAvecDevise } from '../../lib/devise';
 import type { TonEtiquette } from '../ui/Etiquette';
-import { STATUS_CONFIG } from './statutsFacture';
+import { libelleStatutPiece, STATUS_CONFIG } from './statutsFacture';
 
 /** B-1615 : le jeton PROV- reste en base, l'écran ne le montre pas. */
 export const MENTION_NUMERO_PROVISOIRE = "Brouillon, numéro à l'émission";
@@ -172,13 +172,8 @@ export function cellulesStatut(invoice: Invoice): {
   const avoir = invoice.document_type === 'avoir';
   if (invoice.status === 'paid') {
     const date = invoice.payment_date ? dateListe(invoice.payment_date) : null;
-    const texte = avoir
-      ? date
-        ? `Payé le ${date}`
-        : 'Payé'
-      : date
-        ? `Payée le ${date}`
-        : 'Payée';
+    const statut = libelleStatutPiece('paid', invoice.document_type);
+    const texte = date ? `${statut} le ${date}` : statut;
     // B-1388 : le moteur ne garde aucune date d'envoi ; une facture payée a
     // pu ne jamais partir (devis converti puis payé). B-1449 : « Émise le »
     // passait pour un état d'envoi ; la colonne dit que l'envoi n'est pas
@@ -214,7 +209,7 @@ export function cellulesStatut(invoice: Invoice): {
   // sur le libellé réel du statut, en ton neutre. B-1388 : ni un envoi.
   return {
     envoi: { ton: 'neutre', texte: 'Envoi non tracé', sous: emis },
-    paiement: { ton: 'neutre', texte: STATUS_CONFIG[invoice.status].label },
+    paiement: { ton: 'neutre', texte: libelleStatutPiece(invoice.status, invoice.document_type) },
     echeance: { texte: due },
   };
 }
