@@ -30,6 +30,15 @@ beforeEach(() => {
 });
 
 describe('Textes des connecteurs, cycle 20', () => {
+  it('R2-10 : un connecteur starting annonce son démarrage en cours', async () => {
+    vi.mocked(api.listMCPServers).mockResolvedValue([{ ...serveur, status: 'starting' }]);
+    render(<ToolsPanel onError={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Presets' }));
+    expect(screen.getByRole('img', { name: 'Installé : démarrage en cours' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /Installé mais inactif/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Horloge est installé' })).toBeDisabled();
+  });
+
   it.each(['stopped', 'error'] as const)('B-1965 : le connecteur %s porte un état inactif accessible', async (status) => {
     vi.mocked(api.listMCPServers).mockResolvedValue([{ ...serveur, status }]);
     render(<ToolsPanel onError={vi.fn()} />);

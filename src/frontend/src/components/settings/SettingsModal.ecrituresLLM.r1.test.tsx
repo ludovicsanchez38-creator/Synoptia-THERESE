@@ -3,6 +3,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { SettingsModal } from './SettingsModal';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 import * as api from '../../services/api';
+import { ChatInput } from '../chat/ChatInput';
+import { useStatusStore } from '../../stores/statusStore';
 
 vi.mock('../../services/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../services/api')>()),
@@ -77,6 +79,40 @@ it.each(['effort', 'adresse'])('R1-3 : une sauvegarde lente de %s ne rétablit p
   }
 });
 
+it('R2-2 : le sélecteur du chat attend le POST des réglages fermés', async () => {
+  enregistree.available_models = ['mistral-medium-latest', 'mistral-small-2603', 'mistral-large-latest'];
+  useStatusStore.setState({ connectionState: 'connected' });
+  const vue = (isOpen: boolean) => <>
+    <ChatInput />
+    <SettingsModal isOpen={isOpen} requestedTab="ai" onClose={vi.fn()} />
+  </>;
+  const { rerender } = render(vue(true));
+  await waitFor(() => expect(screen.getByLabelText('Modèle')).toHaveValue(enregistree.model));
+  const enregistrer = vi.mocked(api.setLLMConfig).getMockImplementation()!;
+  let terminer!: () => void;
+  let actifs = 0;
+  let maximumActifs = 0;
+  vi.mocked(api.setLLMConfig).mockImplementation(async (...args) => {
+    maximumActifs = Math.max(maximumActifs, ++actifs);
+    if (vi.mocked(api.setLLMConfig).mock.calls.length === 1) await new Promise<void>(resolve => { terminer = resolve; });
+    const resultat = await enregistrer(...args);
+    actifs--;
+    return resultat;
+  });
+  fireEvent.change(screen.getByLabelText('Modèle'), { target: { value: 'mistral-small-2603' } });
+  await waitFor(() => expect(terminer).toBeTypeOf('function'));
+  rerender(vue(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Modèle de conversation' }));
+  fireEvent.change(screen.getByRole('listbox', { name: 'Choisir le modèle' }), { target: { value: 'mistral-large-latest' } });
+  await act(async () => {});
+  await act(async () => { terminer(); });
+
+  expect(enregistree.model).toBe('mistral-large-latest');
+  expect(maximumActifs).toBe(1);
+  expect(api.setLLMConfig).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole('button', { name: 'Modèle de conversation' })).toHaveTextContent('Mistral Large');
+});
+
 it('R1-3 : régler l’effort pendant le choix d’un modèle conserve ce modèle', async () => {
   await ouvrir();
   const enregistrer = vi.mocked(api.setLLMConfig).getMockImplementation()!;
@@ -93,6 +129,54 @@ it('R1-3 : régler l’effort pendant le choix d’un modèle conserve ce modèl
   expect(enregistree.model).toBe('mistral-small-2603');
   expect(enregistree.effort).toBe('high');
   expect(screen.getByLabelText('Modèle')).toHaveValue('mistral-small-2603');
+});
+
+it('R2-4 : l’option normalise xhigh quand elle reprend un modèle en attente de lecture', async () => {
+  enregistree = { ...enregistree, provider: 'openai', model: 'gpt-6.1-sol' };
+  await ouvrir();
+  const avant = { ...enregistree };
+  let terminer!: () => void;
+  vi.mocked(api.getLLMConfig).mockImplementationOnce(() => new Promise(resolve => { terminer = () => resolve(avant); }));
+  fireEvent.change(screen.getByLabelText('Modèle'), { target: { value: 'gpt-5.6-luna' } });
+  expect(screen.getByLabelText('Modèle')).toHaveValue('gpt-6.1-sol');
+  fireEvent.change(screen.getByLabelText('Effort de raisonnement'), { target: { value: 'xhigh' } });
+  await waitFor(() => expect(api.setLLMConfig).toHaveBeenCalled());
+  await act(async () => { terminer(); });
+
+  expect(enregistree.model).toBe('gpt-5.6-luna');
+  expect(enregistree.effort).toBe('auto');
+  expect(screen.getByLabelText('Modèle')).toHaveValue('gpt-5.6-luna');
+  expect(screen.getByLabelText('Effort de raisonnement')).toHaveValue('auto');
+  expect(screen.queryByRole('option', { name: /Très élevé/ })).toBeNull();
+  expect(api.setLLMConfig).toHaveBeenCalledTimes(1);
+});
+
+it.each(['réussite', 'refus'])('R2-9 : la sauvegarde d’adresse clôt le statut du modèle repris après %s', async (issue) => {
+  enregistree = { ...enregistree, provider: 'qwen', model: 'qwen3.8-max', base_url: 'https://exemple.invalid/v1' };
+  await ouvrir();
+  await waitFor(() => expect(screen.getByLabelText('Adresse de ton espace de travail')).toHaveValue(enregistree.base_url));
+  const avant = { ...enregistree };
+  let terminer!: () => void;
+  vi.mocked(api.getLLMConfig).mockImplementationOnce(() => new Promise(resolve => { terminer = () => resolve(avant); }));
+  if (issue === 'refus') vi.mocked(api.setLLMConfig).mockRejectedValueOnce(new Error('Adresse refusée'));
+  const select = screen.getByLabelText('Modèle') as HTMLSelectElement;
+  const suivant = Array.from(select.options).find(opt => opt.value !== enregistree.model)!.value;
+  fireEvent.change(select, { target: { value: suivant } });
+  expect(screen.getByText('Enregistrement du modèle IA…')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Enregistrer l’adresse' }));
+  await waitFor(() => expect(api.setLLMConfig).toHaveBeenCalledTimes(1));
+  await act(async () => { terminer(); });
+
+  expect(screen.queryByText('Enregistrement du modèle IA…')).toBeNull();
+  if (issue === 'réussite') {
+    expect(enregistree.model).toBe(suivant);
+    expect(screen.getByLabelText('Modèle')).toHaveValue(suivant);
+    expect(screen.getByText('Modèle IA enregistré.')).toBeInTheDocument();
+  } else {
+    expect(enregistree.model).toBe(avant.model);
+    expect(screen.getByRole('alert')).toHaveTextContent('Adresse refusée');
+    expect(screen.queryByText('Modèle IA enregistré.')).toBeNull();
+  }
 });
 
 it.each(['effort', 'adresse'])('R1-3 : le refus de %s laisse son erreur lisible et la file réutilisable', async (option) => {
@@ -117,6 +201,31 @@ it.each(['effort', 'adresse'])('R1-3 : le refus de %s laisse son erreur lisible 
     await waitFor(() => expect(enregistree.base_url).toBe('https://exemple.invalid/v1'));
   }
   expect(screen.queryByRole('alert')).toBeNull();
+});
+
+it.each(['effort', 'adresse'])('R2-3 : le refus concurrent de %s reste annoncé après le succès du modèle', async (option) => {
+  enregistree = { ...enregistree, provider: 'qwen', model: 'qwen3.8-max' };
+  await ouvrir();
+  let refuser!: (erreur: Error) => void;
+  vi.mocked(api.setLLMConfig).mockImplementationOnce(() => new Promise((_resolve, reject) => { refuser = reject; }));
+  if (option === 'adresse') {
+    fireEvent.change(screen.getByLabelText('Adresse de ton espace de travail'), { target: { value: 'https://exemple.invalid/v1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer l’adresse' }));
+  } else {
+    fireEvent.change(screen.getByLabelText('Effort de raisonnement'), { target: { value: 'high' } });
+  }
+  await waitFor(() => expect(refuser).toBeTypeOf('function'));
+  const select = screen.getByLabelText('Modèle') as HTMLSelectElement;
+  const suivant = Array.from(select.options).find(opt => opt.value !== enregistree.model)!.value;
+  fireEvent.change(select, { target: { value: suivant } });
+  await act(async () => {});
+  await act(async () => { refuser(new Error('Option concurrente refusée')); });
+
+  expect(enregistree.model).toBe(suivant);
+  expect(enregistree.base_url).toBeUndefined();
+  expect(enregistree.effort).toBe('auto');
+  expect(screen.getByRole('alert')).toHaveTextContent('Option concurrente refusée');
+  expect(screen.getByLabelText('Modèle')).toHaveValue(suivant);
 });
 
 it.each(['avant', 'après'])('R1-4 : la réouverture, terminée %s le POST, garde le fournisseur enregistré', async (ordre) => {

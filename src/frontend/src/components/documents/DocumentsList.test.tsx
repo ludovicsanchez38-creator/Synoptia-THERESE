@@ -39,7 +39,7 @@ vi.mock('../../stores/documentStore', () => {
     error: null,
     createModalRequested: false,
     loadDocuments: vi.fn(),
-    openDocument: vi.fn(),
+    openDocument: vi.fn().mockResolvedValue(true),
     createDocument: vi.fn(),
     generateOutline: vi.fn().mockResolvedValue(undefined),
     clearError: vi.fn(),
@@ -331,6 +331,7 @@ describe('DocumentsList', () => {
       const openDocument = vi.fn().mockImplementation(async () => {
         await new Promise((r) => setTimeout(r, 10));
         ordre.push('open');
+        return true;
       });
       const generateOutline = vi.fn().mockImplementation(async () => {
         ordre.push('outline');

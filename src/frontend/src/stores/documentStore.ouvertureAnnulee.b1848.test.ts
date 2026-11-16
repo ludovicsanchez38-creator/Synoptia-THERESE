@@ -87,6 +87,46 @@ async function quitter(action: string) {
   if (action !== 'fermeture') await useDocumentStore.getState().openDocument(action === 'autre document' ? 'b' : 'a');
 }
 
+it('R2-7 : une relecture du même document conserve le conflit et resynchronise la trame', async () => {
+  vi.mocked(api.getDocument).mockImplementation(async id => document(id));
+  await useDocumentStore.getState().openDocument('a');
+  let refuser!: (erreur: Error) => void;
+  vi.mocked(api.reorderSections).mockImplementationOnce(() => new Promise((_resolve, reject) => { refuser = reject; }));
+  const reorganisation = useDocumentStore.getState().reorderSections('a', []);
+  await useDocumentStore.getState().openDocument('a');
+  const synchronise = { ...document('a'), title: 'Trame resynchronisée' };
+  vi.mocked(api.getDocument).mockResolvedValueOnce(synchronise);
+  refuser(conflit());
+  await reorganisation;
+
+  expect(useDocumentStore.getState().error).toBe('Trame modifiée ailleurs.');
+  expect(api.getDocument).toHaveBeenCalledTimes(3);
+  expect(useDocumentStore.getState().currentDocument).toEqual(synchronise);
+});
+
+it('R2-8 : une réorganisation réussie après réouverture ne remplace pas la trame relue', async () => {
+  vi.mocked(api.getDocument).mockImplementation(async id => document(id));
+  await useDocumentStore.getState().openDocument('a');
+  let terminer!: (sections: DocumentDetail['sections']) => void;
+  vi.mocked(api.reorderSections).mockImplementationOnce(() => new Promise(resolve => { terminer = resolve; }));
+  const reorganisation = useDocumentStore.getState().reorderSections('a', []);
+  useDocumentStore.getState().closeDocument();
+  const section: DocumentDetail['sections'][number] = {
+    id: 'recente', document_id: 'a', title: 'Section relue', brief: '', order: 1, depth: 0,
+    content: 'Texte frais', summary: '', status: 'brouillon', orphan: false, created_at: '', updated_at: '',
+  };
+  vi.mocked(api.getDocument).mockResolvedValueOnce({ ...document('a'), sections: [section] });
+  await useDocumentStore.getState().openDocument('a');
+  const relu = useDocumentStore.getState().currentDocument;
+  terminer([{ ...section, id: 'ancienne', content: 'Ancien instantané' }]);
+  await reorganisation;
+
+  expect(useDocumentStore.getState().currentDocument?.sections).toEqual([section]);
+  expect(useDocumentStore.getState().currentDocument).toBe(relu);
+  expect(api.getDocument).toHaveBeenCalledTimes(2);
+  expect(useDocumentStore.getState().error).toBeNull();
+});
+
 it.each(['fermeture', 'autre document', 'réouverture du même document'])('R1-5 : ignore un conflit tardif après %s', async (action) => {
   vi.mocked(api.getDocument).mockImplementation(async id => document(id));
   await useDocumentStore.getState().openDocument('a');
