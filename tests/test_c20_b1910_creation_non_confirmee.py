@@ -66,3 +66,119 @@ async def test_contact_existant_signale_les_champs_non_enregistres(client, monke
     })
     assert "notes" in reponse.json()["result"]
     assert "pas été enregistrées" in reponse.json()["result"]
+
+
+@pytest.mark.asyncio
+async def test_erreur_de_validation_du_contact_est_affichee(client):
+    identifiant = register_pending("create_contact", {
+        "first_name": "Test", "email": "adresse-invalide",
+        "_provenance_documents": "sans_document",
+    })
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert "L'adresse e-mail n'a pas la forme attendue" in reponse.json()["result"]
+    assert "Rien n'a été enregistré" in reponse.json()["result"]
+
+
+@pytest.mark.asyncio
+async def test_motif_d_interruption_de_creation_est_affiche(client, monkeypatch):
+    from app.routers import chat
+
+    motif = "Création du contact interrompue avant écriture : l'utilisateur a arrêté la génération."
+    brut = json.dumps({"success": False, "message": motif})
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=brut))
+    identifiant = register_pending("create_contact", {"_provenance_documents": "sans_document"})
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert reponse.json()["result"] == motif
+
+
+@pytest.mark.asyncio
+async def test_erreur_qui_affirme_une_creation_reste_masquee(client, monkeypatch):
+    from app.routers import chat
+
+    brut = json.dumps({"success": False, "error": "Contact créé."})
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=brut))
+    identifiant = register_pending("create_contact", {"_provenance_documents": "sans_document"})
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert "Contact créé" not in reponse.json()["result"]
+    assert "n'est pas confirmée" in reponse.json()["result"]
+
+
+@pytest.mark.asyncio
+async def test_negation_puis_affirmation_de_creation_reste_masquee(client, monkeypatch):
+    from app.routers import chat
+
+    brut = json.dumps({"success": False, "message": (
+        "La création n'a pas été confirmée mais le contact a été créé."
+    )})
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=brut))
+    identifiant = register_pending("create_contact", {"_provenance_documents": "sans_document"})
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert "le contact a été créé" not in reponse.json()["result"]
+
+
+@pytest.mark.asyncio
+async def test_cause_evoquant_une_adresse_deja_enregistree_est_preservee(client, monkeypatch):
+    from app.routers import chat
+
+    cause = "Cet e-mail est déjà enregistré pour un contact."
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=json.dumps({"error": cause})))
+    identifiant = register_pending("create_contact", {"_provenance_documents": "sans_document"})
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert reponse.json()["result"] == cause
+
+
+@pytest.mark.asyncio
+async def test_creation_dite_effectuee_malgre_l_echec_reste_masquee(client, monkeypatch):
+    from app.routers import chat
+
+    brut = json.dumps({"success": False, "message": "La création du contact a été effectuée."})
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=brut))
+    identifiant = register_pending("create_contact", {"_provenance_documents": "sans_document"})
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert "a été effectuée" not in reponse.json()["result"]
+
+
+@pytest.mark.asyncio
+async def test_affirmation_sans_accents_malgre_l_echec_reste_masquee(client, monkeypatch):
+    from app.routers import chat
+
+    brut = json.dumps({"success": False, "error": "Contact cree avec succes."})
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=brut))
+    identifiant = register_pending("create_contact", {"_provenance_documents": "sans_document"})
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert "Contact cree" not in reponse.json()["result"]
