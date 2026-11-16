@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type RefObject } from 'react';
-import { contactDisplayName } from '../prototype/prototypeReadModels';
+import { contactDisplayName, contactInitials } from '../prototype/prototypeReadModels';
 import { X, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -971,7 +971,7 @@ function ContactsList({
         return (
           <Ligne
             key={contact.id}
-            puce={getInitials(contact.first_name, contact.last_name)}
+            puce={contactInitials(contact)}
             titre={titre}
             detail={detail}
             onClick={() => onSelect(contact)}
@@ -1107,9 +1107,3 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   );
 }
 
-// Helper functions
-function getInitials(firstName?: string | null, lastName?: string | null): string {
-  const first = firstName?.charAt(0)?.toUpperCase() || '';
-  const last = lastName?.charAt(0)?.toUpperCase() || '';
-  return first + last || '?';
-}
