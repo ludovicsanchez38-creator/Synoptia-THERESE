@@ -165,9 +165,18 @@ def empreinte_action(tool_name: str, arguments: dict[str, Any]) -> str | None:
     None = fail-open : l'appelant DOIT émettre la carte. On ne devine pas
     l'identité d'un envoi dont on ne comprend pas les arguments.
     """
-    if _base_tool_name(tool_name) != "send_email":
-        # Les autres outils sensibles n'ont pas d'identité normalisée à ce jour :
-        # comportement inchangé, une carte par appel.
+    if tool_name != "send_email":
+        # Un connecteur MCP homonyme n'a pas le même contrat que l'outil natif.
+        # Faute d'identité connue, garder une carte par appel.
+        return None
+
+    connus = {
+        "to", "cc", "subject", "is_html", *_ALIAS_CORPS,
+        "_compte_ecran", "_confirmation_destination", "_ai_provenance", "_provenance_documents",
+    }
+    if arguments.keys() - connus:
+        # Une copie cachée, une pièce jointe ou tout autre champ inconnu peut
+        # changer l'envoi : ne jamais fusionner quand on ne sait pas l'évaluer.
         return None
 
     destinataires = _normaliser_adresses(arguments.get("to"))
@@ -182,24 +191,37 @@ def empreinte_action(tool_name: str, arguments: dict[str, Any]) -> str | None:
     if objet is not None and not isinstance(objet, str):
         return None
 
+    html = arguments.get("is_html", False)
+    if not isinstance(html, bool):
+        return None
+
     corps: str | None = None
     for cle in _ALIAS_CORPS:
         valeur = arguments.get(cle)
         if isinstance(valeur, str):
+            if corps is not None and corps != valeur:
+                return None
             corps = valeur
-            break
-        if valeur is not None:
+        elif valeur is not None:
             return None
 
-    return "|".join(
-        (
-            "send_email",
-            destinataires,
-            copies,
-            (objet or "").strip(),
-            (corps or "").strip(),
-        )
-    )
+    provenance = arguments.get("_ai_provenance")
+    if provenance is not None:
+        if not isinstance(provenance, dict):
+            return None
+        # La date est générée à chaque appel du modèle, pas choisie pour l'envoi.
+        provenance = {cle: valeur for cle, valeur in provenance.items() if cle != "date"}
+
+    try:
+        # Une structure JSON évite les collisions dues aux séparateurs dans
+        # l'objet ou le corps ; ce dernier n'est pas tronqué par l'envoi.
+        return json.dumps([
+            tool_name, destinataires, copies, (objet or "").strip(), corps or "", html,
+            arguments.get("_compte_ecran"), arguments.get("_confirmation_destination"),
+            provenance, arguments.get("_provenance_documents"),
+        ], sort_keys=True, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return None
 
 
 def canoniser_arguments(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:

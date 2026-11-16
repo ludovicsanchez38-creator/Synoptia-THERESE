@@ -437,13 +437,8 @@ async def test_destinataire_absent_emet_quand_meme_la_carte(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_meme_envoi_par_loutil_natif_et_par_mcp_une_seule_carte(monkeypatch):
-    """Le même envoi proposé deux fois sous deux noms reste un seul envoi.
-
-    Quand un serveur MCP expose lui aussi un send_email, le modèle voit deux
-    outils d'envoi et peut appeler les deux dans le tour. L'empreinte raisonne
-    sur le nom de base, pas sur le nom préfixé.
-    """
+async def test_outils_natif_et_mcp_gardent_deux_cartes(monkeypatch):
+    """Un connecteur homonyme peut envoyer depuis un autre compte ou service."""
     async def _jamais(*args, **kwargs):  # pragma: no cover
         raise AssertionError("send_email exécuté sans confirmation")
 
@@ -461,7 +456,7 @@ async def test_meme_envoi_par_loutil_natif_et_par_mcp_une_seule_carte(monkeypatc
             _FakeLLM(), None, ContextWindow(messages=[]), "", appels, _offerts(appels), "conv1", 3, session=MagicMock()
         )
     ]
-    assert len(_cartes(_parse_chunks(raw))) == 1
+    assert len(_cartes(_parse_chunks(raw))) == 2
 
 
 @pytest.mark.asyncio

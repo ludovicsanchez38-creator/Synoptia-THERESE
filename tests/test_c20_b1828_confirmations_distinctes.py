@@ -1,8 +1,8 @@
 """Deux envois différents doivent toujours recevoir deux confirmations."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from app.routers import chat
