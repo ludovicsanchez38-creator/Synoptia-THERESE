@@ -817,6 +817,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                     setContactId(e.target.value);
                     setClientAddress(contacts.find((c) => c.id === e.target.value)?.address || '');
                     setClientBillingAddress('');
+                    // B-1865 : la facture d'origine appartient au client choisi.
+                    setFactureOrigineId('');
                   }}
                   disabled={pieceEmise}
                   required
