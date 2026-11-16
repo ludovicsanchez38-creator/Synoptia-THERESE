@@ -526,6 +526,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                       }}
                       disabled={isIndexing}
                       title={indexed ? "Réindexer ce fichier" : "Indexer ce fichier"}
+                      aria-label={indexed ? "Réindexer ce fichier" : "Indexer ce fichier"}
                     >
                       {isIndexing ? (
                         <Spinner taille="ligne" />
