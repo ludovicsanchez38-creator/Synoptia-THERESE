@@ -14,6 +14,7 @@ import * as api from './services/api';
 import { AuthentificationNavigateurImpossible } from './services/api/core';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
+import { storedDataProfiles } from './lib/consentSync';
 import { EcranDeChargement } from './components/EcranDeChargement';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
@@ -124,6 +125,10 @@ function ApplicationBootstrap() {
     if (!backendReady) return;
 
     async function initAndCheckOnboarding() {
+      function arreterPourCloisonnement(err: unknown) {
+        console.error('Cloisonnement du profil impossible :', err);
+        setErreurDeCloisonnement('Le dossier de données de ce profil n’a pas pu être identifié ou isolé.');
+      }
       // Retry loop : le backend peut mettre un instant à démarrer
       const maxRetries = 5;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -135,7 +140,14 @@ function ApplicationBootstrap() {
           // lancements, meme quand THERESE_DATA_DIR change. Identifier le
           // profil backend avant de monter l'interface ; si le dossier a
           // change, purger les caches metier puis recharger des stores vierges.
-          const stats = await api.getStats();
+          let profiles: string[];
+          try {
+            profiles = storedDataProfiles();
+          } catch (err) {
+            arreterPourCloisonnement(err);
+            return;
+          }
+          const stats = await api.getStats(profiles);
           // B-517 : cette exception est déterministe (dossier de données vide ou
           // illisible), un nouvel essai identique ne la résout pas, et démarrer
           // sans cloison mélangerait les données de deux profils. On s'arrête.
@@ -143,12 +155,11 @@ function ApplicationBootstrap() {
           try {
             isolation = isolateDataProfilePersistence(stats.data_dir, {
               reload: () => window.location.reload(),
+              canonicalDataDir: stats.data_profile,
+              verifiedAliases: stats.data_profile_aliases,
             });
           } catch (err) {
-            console.error('Cloisonnement du profil impossible :', err);
-            setErreurDeCloisonnement(
-              'Le dossier de données de ce profil n’a pas pu être identifié ou isolé.'
-            );
+            arreterPourCloisonnement(err);
             return;
           }
           if (isolation === 'switched') return;

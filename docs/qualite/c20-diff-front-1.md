@@ -150,3 +150,77 @@ Les cinq candidats confirmés ajoutent **19 cas de test**, tous observés rouges
 Garde ajoutée pendant la relecture de B-1868 : `profileStorageIsolation.test.ts::B-1868 : une racine de lecteur reste distincte du chemin relatif au lecteur`. La première version du correctif assimilait `C:/` à `C:`. Le test a donné `AssertionError: expected 'unchanged' to be 'switched' // Object.is equality`, recopié ici avant ajustement (`/tmp/diff-front-1-B-1868-garde-racine-rouge.log`). Ce vingtième cas protège le correctif ; il porte sur une régression de la première correction et n'est pas compté parmi les 19 rouges initiaux.
 
 Les changements sont laissés non commités dans l'arbre. Aucun `git add`, commit, push, dépôt annexe ou bundle n'a été tenté.
+
+## Remédiation de la relecture, passe 1
+
+Reprise sur `5f70dd49`, arbre initialement propre. Les deux constats P1 sont confirmés. Les informations ci-dessus décrivent la passe initiale ; les preuves et limites de cette remédiation figurent ici.
+
+### Rouges isolés avant correction
+
+- **Constat 1, moteur** : `tests/test_c20_identite_profil.py::test_r1_c1_stats_identifient_le_dossier_reel`, lancé seul. `AssertionError: Le moteur doit annoncer le dossier canonique`. XML `/tmp/diff-front-1-r1-c1-rouge.xml` lu : 1 échec, aucune erreur.
+- **Constat 1, cache** : `profileStorageIsolation.test.ts::R1-C1 : conserve le cache sous un ancien chemin avec .. vérifié par le moteur`, lancé seul. `AssertionError: expected 'switched' to be 'unchanged' // Object.is equality`. XML `/tmp/diff-front-1-r1-c1-front-rouge.xml` lu : 1 échec, 11 ignorés par le filtre, aucune erreur.
+- **Constat 2, retrait** : `consentSync.profiles.test.ts::R1-C2 : reprend le retrait sous A/ après A → B → A avant de relire les accords`, lancé seul. `AssertionError: expected [] to deeply equal [ { …(8) } ]`. XML `/tmp/diff-front-1-r1-c2-rouge.xml` lu : 1 échec, 5 ignorés par le filtre, aucune erreur. Le retrait n'est pas transmis au retour dans A.
+- **Constat 1, branchement** : `App.demarrageAccords.test.tsx::R1-C1 : fait vérifier les anciennes identités avant le cloisonnement`, lancé seul : `AssertionError: expected "vi.fn()" to be called with arguments: [ [ …(2) ] ]` ; reçu `[]`.
+- **Constat 1, transport simulé** : `core.profil.test.ts::R1-C1 : transmet les chemins à vérifier sans les normaliser dans une URL`, lancé seul : `AssertionError: expected [] to deeply equal [ '/profils/intermediaire/../A', …(1) ]`.
+- **Constat 2, garde sur plusieurs files** : `consentSync.profiles.test.ts::R1-C2 : fusionne les files équivalentes dans l’ordre sans doublon ni décision de B`, lancé seul : `AssertionError: expected [ { event_id: 'accord', …(6) } ] to deeply equal []`. La copie de l'accord restait dans l'ancienne file après acquittement et risquait de revenir.
+
+### Correctifs et contrôles voisins
+
+Le constat 1 fait annoncer par `/api/config/stats` l'identité `data_profile`, résolue sur disque, en conservant le chemin configuré `data_dir`. La même route vérifie les identités anciennes du marqueur et des files locales ; le frontend conserve son cache uniquement si le moteur confirme l'équivalence, ou si la différence se limite aux barres finales déjà reconnues. Un chemin traversant un lien symbolique vers un autre dossier et un intermédiaire inexistant ne sont pas acceptés comme alias. Le marqueur courant reste stable pour les opérations en vol.
+
+Après ce premier correctif, relecture des appelants : démarrage `App`, statistiques des réglages, dossier affiché à la mise en route, purge et gardes de profil de l'Atelier. Tests voisins : **9 tests backend réussis** (identité et accords moteur), **54 tests frontend réussis** sur 10 fichiers. Le test du constat 2, encore rouge à cette étape, est seul exclu par le filtre. XML lus : `/tmp/diff-front-1-r1-c1-voisins.xml` et `/tmp/diff-front-1-r1-c1-voisins-front.xml`.
+
+Le constat 2 réunit les files des identités équivalentes dans celle du profil actif avant toute purge ou synchronisation. Les événements gardent leur identifiant et leur date, sont dédoublonnés et remis dans l'ordre chronologique. La destination est écrite avant le retrait des anciennes clés et sa révision est incrémentée pour invalider une relecture antérieure. Les files des autres dossiers restent intactes. Le scénario d'aller-retour est étendu à un ancien chemin avec `..` confirmé par le moteur.
+
+Garde de migration ajoutée à la relecture du correctif : remplacer le chemin configuré par sa résolution perdait le suffixe historique `.therese` quand ce dossier était un lien. Le test backend isolé a donné `AssertionError: Le chemin configuré reste nécessaire à la migration historique` ; celui du frontend, `AssertionError: expected '/profils/.therese' to be '/profils/A' // Object.is equality`. Les deux champs sont donc distincts : le chemin configuré conserve la règle de migration existante, l'identité résolue sert au cloisonnement. XML : `/tmp/diff-front-1-r1-c1-historique-rouge.xml` et `/tmp/diff-front-1-r1-c1-historique-front-rouge.xml`.
+
+La lecture des identités locales est aussi couverte par l'arrêt de cloisonnement : son déplacement avant les statistiques ne doit pas transformer une panne déterministe du stockage en simple échec réseau réessayé. Le nouveau test `App.demarrageAccords.test.tsx::R1-C1 : une identité locale illisible arrête le démarrage avant les statistiques` a d'abord échoué seul avec `Unable to find role="heading" and name "Cloisonnement du profil impossible"` (`/tmp/diff-front-1-r1-c1-lecture-rouge.xml`, 1 échec). La collecte et l'isolation utilisent maintenant le même arrêt ; les erreurs réseau des statistiques gardent leur traitement existant.
+
+Après le correctif du constat 2, les appelants relus sont `queueConsentDecision`, `flushConsentDecisions`, `synchroniserConsentements`, `purgeLocalPersistence` et le démarrage. Les tests voisins couvrent aussi les gardes d'accord avant une requête métier et avant une mission de l'Atelier. Deux gardes supplémentaires vérifient qu'une réponse GET ancienne ne réactive pas un accord après la fusion et qu'un refus d'écriture de la destination conserve la file source, le marqueur et le cache. Ces gardes passent sans ajustement supplémentaire de production.
+
+### Portes finales de la passe 1
+
+**15 cas ajoutés** : 10 pour le constat 1 (3 backend, 7 frontend), 5 pour le constat 2. Aucun test préexistant supprimé, ignoré ou affaibli. Les nouvelles reproductions restent dans les tests pour le rejeu de l'orchestrateur sans les correctifs.
+
+| Porte | Périmètre | Passés | Échecs | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 2 fichiers, identité du profil et accords moteur | 10 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r1.xml` |
+| Vitest | 13 fichiers ciblés, 3 workers maximum | 83 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r1-vitest.xml` |
+| Ruff | `src/backend tests`, sans correction automatique | sans objet | 0 | 0 | sans objet | code 0 ; `All checks passed!` |
+| TypeScript | `tsc --noEmit` | sans objet | 0 | 0 | sans objet | code 0 |
+| ESLint | `npm run lint` | sans objet | 0 | 0 | sans objet | code 0 ; 27 avertissements existants ; `/tmp/diff-front-1-r1-eslint.log` |
+| Git | `git diff --check` | sans objet | 0 | 0 | sans objet | code 0 ; aucun changement indexé |
+
+Les XML finaux ont été lus avec `xml.etree.ElementTree`, en comptant les cas, échecs, erreurs et ignorés. Aucun rouge connu exclu des comptes finaux, aucun autre rouge restant. Ruff avait signalé l'ordre des imports (`I001`) dans le nouveau fichier `test_c20_identite_profil.py` ; seul cet import ajouté a été rectifié avant le rejeu vert.
+
+Commandes de rejeu depuis la racine de cet arbre, puis son dossier frontend :
+
+```sh
+THERESE_DATA_DIR=$(mktemp -d /tmp/diff-front-1-r1-XXXXXX) \
+  PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 \
+  .venv/bin/python -m pytest \
+  tests/test_c20_identite_profil.py tests/test_t4_consentement_moteur.py \
+  -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-front-1-r1.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+cd src/frontend
+npx --offline --no-install vitest run \
+  src/lib/profileStorageIsolation.test.ts \
+  src/lib/consentSync.profiles.test.ts \
+  src/lib/consentSync.test.ts \
+  src/lib/consentSync.demarrage.test.ts \
+  src/lib/consent.test.ts \
+  src/lib/purgeLocalData.test.ts \
+  src/lib/debouncedStorage.test.ts \
+  src/App.demarrageAccords.test.tsx \
+  src/OnboardingRafraichitLeProfil.test.tsx \
+  src/services/api/core.profil.test.ts \
+  src/services/api/core.test.ts \
+  src/services/api/core.accordNonEnregistre.test.ts \
+  src/components/atelier/AgentSession.profils.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r1-vitest.xml
+npx --offline --no-install tsc --noEmit
+npm run lint
+```
+
+Les options Vitest évitent toute écriture de cache dans les dépendances partagées ; `--offline --no-install` interdit le téléchargement. Les appels HTTP des scénarios sont simulés ou traités en mémoire par TestClient, les dossiers backend sont jetables sous `/tmp`, et les chemins frontend sont fictifs. Aucune suite complète, aucun service lancé, aucun accès réseau ni fournisseur LLM, aucun usage des ports interdits, du profil personnel ou de `.app-loop/`. Aucun `rm`, `git add`, commit, dépôt annexe ou bundle. Les 11 fichiers concernés restent non commités dans cet arbre, prêts pour le rejeu contradictoire.

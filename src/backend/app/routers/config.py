@@ -8,6 +8,7 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated, Any
 
 from app.config import settings
@@ -34,7 +35,7 @@ from app.services.http_client import get_http_client
 from app.services.preference_security import est_cle_secrete_de_preference
 from app.services.providers.base import LLMProvider
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
@@ -1008,6 +1009,7 @@ async def export_data(
 @router.get("/stats")
 async def get_stats(
     session: AsyncSession = Depends(get_session),
+    data_profiles: Annotated[list[str] | None, Query()] = None,
 ):
     """Get usage statistics."""
     from app.models.entities import Contact, Conversation, FileMetadata, Message, Project
@@ -1033,6 +1035,17 @@ async def get_stats(
     # Uptime
     uptime = (datetime.now(UTC) - _startup_time).total_seconds()
 
+    # R1-C1 : seul le moteur peut résoudre '..' après un lien symbolique.
+    # Les anciennes identités sont confirmées sur disque avant toute reprise.
+    data_dir = Path(settings.data_dir).resolve(strict=True)
+    aliases = []
+    for candidate in data_profiles or []:
+        try:
+            if candidate and Path(candidate).resolve(strict=True) == data_dir:
+                aliases.append(candidate)
+        except (OSError, RuntimeError, ValueError):
+            continue
+
     return {
         "entities": {
             "contacts": contacts_count,
@@ -1043,6 +1056,8 @@ async def get_stats(
         },
         "uptime_seconds": uptime,
         "data_dir": str(settings.data_dir),
+        "data_profile": str(data_dir),
+        "data_profile_aliases": aliases,
         "db_path": str(settings.db_path),
     }
 

@@ -6,7 +6,7 @@
  * conversations, evenements, comptes et brouillons du profil precedent.
  */
 import { purgeLocalPersistence } from './purgeLocalData';
-import { migrateConsentOutbox } from './consentSync';
+import { migrateConsentOutbox, reconcileConsentOutboxes, storedDataProfiles } from './consentSync';
 
 export const DATA_PROFILE_STORAGE_KEY = 'therese:data-profile';
 
@@ -27,22 +27,33 @@ export type DataProfileIsolationResult = 'unchanged' | 'initialized' | 'switched
 
 export function isolateDataProfilePersistence(
   dataDir: string,
-  options?: { reload?: () => void },
+  options?: { reload?: () => void; canonicalDataDir?: string; verifiedAliases?: string[] },
 ): DataProfileIsolationResult {
-  const normalizedDataDir = normalizeDataDir(dataDir);
+  const normalizedDataDir = normalizeDataDir(options?.canonicalDataDir ?? dataDir);
   if (!normalizedDataDir) {
     throw new Error('Le dossier de donnees backend est vide.');
   }
 
   const previousDataDir = localStorage.getItem(DATA_PROFILE_STORAGE_KEY);
-  migrateConsentOutbox(previousDataDir || (isDefaultDataDir(normalizedDataDir) ? normalizedDataDir : ''));
-  // Garder le marqueur existant : les accords en attente utilisent cette clé.
-  if (previousDataDir !== null && normalizeDataDir(previousDataDir) === normalizedDataDir) return 'unchanged';
+  // Le dossier historique peut être un lien : son chemin configuré garde la
+  // règle de migration, son identité canonique sert aux nouvelles écritures.
+  const historicalProfile = isDefaultDataDir(normalizeDataDir(dataDir));
+  migrateConsentOutbox(previousDataDir || (historicalProfile ? normalizedDataDir : ''));
+  const sameProfile = (id: string) => normalizeDataDir(id) === normalizedDataDir
+    || options?.verifiedAliases?.includes(id) === true;
+  const unchanged = previousDataDir !== null && sameProfile(previousDataDir);
+  // Garder le marqueur courant, mais reprendre aussi les files conservées
+  // sous une ancienne graphie lors d'un aller-retour par un autre profil.
+  reconcileConsentOutboxes(
+    unchanged ? previousDataDir : normalizedDataDir,
+    storedDataProfiles().filter(sameProfile),
+  );
+  if (unchanged) return 'unchanged';
 
   // Migration de l'installation historique : avant ce garde, le marqueur
   // n'existait pas. Les caches presents appartiennent au profil canonique
   // ~/.therese. On les conserve uniquement pour ce profil par defaut.
-  if (previousDataDir === null && isDefaultDataDir(normalizedDataDir)) {
+  if (previousDataDir === null && historicalProfile) {
     localStorage.setItem(DATA_PROFILE_STORAGE_KEY, normalizedDataDir);
     return 'initialized';
   }
