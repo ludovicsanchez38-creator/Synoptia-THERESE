@@ -25,11 +25,12 @@ import { Spinner } from '../ui/Spinner';
 
 const LIMITE_DOCUMENTS_ACCUEIL = 50;
 
-function libelleDocumentsCharges(n: number): string {
+function libelleDocumentsCharges(n: number, affiches: number): string {
+  const apercu = n > affiches ? `, ${affiches} affichés ici` : '';
   if (n >= LIMITE_DOCUMENTS_ACCUEIL) {
-    return `${n} documents chargés (total non mesuré)`;
+    return `${n} documents chargés (total non mesuré)${apercu}`;
   }
-  return `${n} document${n > 1 ? 's' : ''} enregistré${n > 1 ? 's' : ''}`;
+  return `${n} document${n > 1 ? 's' : ''} enregistré${n > 1 ? 's' : ''}${apercu}`;
 }
 
 type InvoiceSelection = string | 'new-devis' | null;
@@ -170,7 +171,7 @@ export function InvoiceWorkspaceCard({
           <div>
             <h2 id="invoice-workspace-title" className="text-base font-semibold text-text">Facturer un client</h2>
             <p className="text-xs text-text-muted">
-              {resource.status === 'ready' ? libelleDocumentsCharges(resource.data.invoices.length) : 'Lecture de tes devis et factures'}
+              {resource.status === 'ready' ? libelleDocumentsCharges(resource.data.invoices.length, invoices.length) : 'Lecture de tes devis et factures'}
             </p>
           </div>
         </div>
