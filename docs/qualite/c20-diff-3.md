@@ -294,3 +294,155 @@ npm run lint
 ```
 
 Les options `--configLoader runner --no-cache` évitent toute écriture dans le `node_modules` partagé. Les tests ont été lancés avec au plus trois workers, puis les autres portes successivement. Résultats relus : `/tmp/diff-3-r1-pytest.log`, `/tmp/diff-3-r1.xml`, `/tmp/diff-3-r1-ruff.log`, `/tmp/diff-3-r1-vitest.json`, `/tmp/diff-3-r1-vitest-reglages.json`, `/tmp/diff-3-r1-contexte-final.json`, `/tmp/diff-3-r1-tsc.log` et `/tmp/diff-3-r1-lint.log`.
+
+## Remédiation de la relecture, passe 2
+
+Intervention du 17 novembre 2026 dans le même arbre. HEAD initial : `ba465a0ab1dbda6169112e9282533f9d3bcb061f`, branche `gpt/c20-diff-3`. Les fichiers suivis étaient propres ; les liens locaux `.venv` et `src/frontend/node_modules` étaient déjà non suivis et n'ont pas été modifiés. Aucun commit, aucun ajout à l'index, aucun dépôt annexe ni bundle.
+
+### Constat 1, P1 : demandes conservées pendant les attentes
+
+Ajout de huit cas `R2.1` dans `src/frontend/src/components/chat/ChatInput.accordAttentes.c20r2.test.tsx`, lancés seuls avec `-t R2.1` avant correction : **8 échecs**. Ils suspendent `previewVariables` au premier envoi et après accord, les deux attentes de persistance pour le message et la recherche, puis le premier événement des deux flux. B contient volontairement le même texte qu'A : l'identité doit protéger à elle seule sa conversation et son brouillon.
+
+Lignes d'échec relevées :
+
+```text
+R2.1 : garde la conversation pendant previewVariables (premier envoi)
+Error: expect(element).not.toBeInTheDocument()
+R2.1 : garde la conversation pendant previewVariables (reprise après accord)
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+R2.1 : garde la conversation pendant 'attendrePersistance' / 'assurerConversationPersistee'
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+R2.1 : préserve B quand le premier événement arrive après la bascule (message)
+AssertionError: expected [ { role: 'user', …(3) }, …(1) ] to have a length of +0 but got 2
+R2.1 : préserve B quand le premier événement arrive après la bascule (recherche)
+Error: expect(element).toHaveValue(Demande fictive A)
+```
+
+Correction : le premier geste capture la demande, que la confirmation transmet explicitement à la reprise. L'identité et le composeur sont contrôlés après les attentes, avant le flux et avant son premier acquittement. La recherche conserve désormais aussi le brouillon jusqu'à cet acquittement. Un flux ou un échec tardif ne remplit pas la conversation devenue courante.
+
+Appelants relus : boutons, Entrée, reprise différée, file d'attente, chargement des agents, persistance du rattachement, reprise mémoire et gestion des erreurs du flux. Les cas nouveaux et voisins des constats 1 et 5 ont donné **73/73** après correction. Preuves : `/tmp/diff-3-r2-1-rouge.{log,json}`, `/tmp/diff-3-r2-1-5-vert.{log,json}`.
+
+### Constat 2, P1 : menu de commandes derrière l'accord
+
+Deux cas `R2.2` montent le vrai composeur, le vrai menu et le vrai dialogue, en message et en recherche. Quatre autres cas dans `SlashCommandsMenu.modale.c20r2.test.tsx` vérifient directement Tab, Entrée et les deux flèches, puis le retour du menu à un fonctionnement normal après fermeture de la modale. Exécution seule avec `-t R2.2` : **6 échecs** avant correction, tous avec cette ligne :
+
+```text
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+```
+
+Le menu est fermé avant chaque ouverture d'accord et désactivé tant que celui-ci existe. Son écouteur global laisse les touches aux modales et respecte les événements déjà consommés. Appelants relus : seul montage de production du menu dans `ChatInput`, gestion clavier du composeur et pile Échap. Nouveaux tests et voisins : **34/34**. Preuves : `/tmp/diff-3-r2-2-{rouge,vert}.{log,json}`.
+
+### Constat 3, P1 : pièces jointes, finalité et destination
+
+Huit cas `R2.3`, exécutés seuls avant correction : **8 échecs**. Le premier utilise le vrai hook de dépôt avec les événements Tauri simulés ; les autres couvrent le retrait et le remplacement de pièces, les deux changements de finalité issus des variables, et le changement de destination pendant les variables ou la persistance du message/de la recherche.
+
+```text
+R2.3 : le vrai dépôt Tauri ignore B.png pendant l’accord pour A.png
+AssertionError: expected [ 'A.png', 'B.png' ] to deeply equal [ 'A.png' ]
+R2.3 : retrait, remplacement, changement de finalité et de destination
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+```
+
+Correction : dépôt désactivé pendant la modale, avec garde supplémentaire du callback commun au sélecteur natif. La demande conserve les pièces et la destination initiales ; les reprises vérifient leur égalité, l'origine d'une demande mémoire et la finalité après résolution des variables. Les chemins envoyés viennent de cet instantané. Une demande invalidée est signalée sans effacer le brouillon.
+
+Appelants relus : dépôt Tauri, sélecteurs natif et navigateur, retrait et copie de fichiers, indexation, reprise documentaire/mémoire. Les huit cas et leurs voisins donnent **64/64**. La première mise au point du test avait effacé le double de `matchMedia` avec `resetAllMocks` ; `clearAllMocks` conserve ce double. Le rouge cité ci-dessus a été relancé après cette correction du banc de test. Preuves : `/tmp/diff-3-r2-3-{rouge,vert}.{log,json}`.
+
+### Constat 4, P1 : intégration absente et migrations
+
+Le constat est confirmé dans l'arbre reçu : `git log HEAD..c20/integration` contient encore `2dd3d2b1`, `9eb74c5d`, `fcf446a5`, `75498edd`. La référence d'intégration vaut `75498edd9d40b0aeb14f8c02787a56b4dea27a28`. L'annonce d'un rebase déjà effectué ne correspond donc pas à cet état.
+
+Les deux tests d'intégration `test_c20_b1888_transaction_activites.py` et `test_c20_b1889_notes_heritees.py` ont d'abord été rétablis seuls, puis exécutés sans leurs corrections : **2 échecs**, XML effectivement parsé.
+
+```text
+test_reconstruction_preserve_la_transaction_appelante
+AssertionError: La transaction de l’appelant a été validée.
+test_note_rattachee_preservee_si_evenement_sans_projet
+AssertionError: assert None == 'projet-existant'
+```
+
+Le contenu des quatre commits a été reporté par un patch de travail local, sans index, en conservant les corrections et les tests de diff-3. Les treize fichiers de tests absents sont rétablis, ainsi que les modifications de production et le bilan du lot migrations. Les deux régressions SQL citées sont corrigées par le contenu d'intégration : aucune reconstruction dans une transaction appelante et aucune migration de note tant que le rendez-vous n'a pas de projet. Les appelants de migration dans `database.py`, la provenance, les refus de mémoire, la vérification des clés, les dialogues de l'Atelier et des factures ont été relus. Premier contrôle des migrations et de leurs voisins : **203/203**, XML relu.
+
+**Limite d'historique : aucun rebase Git n'a été effectué.** Le répertoire Git de ce worktree est hors de l'arbre autorisé et protégé en écriture ; le rebase modifierait aussi les commits, alors que la consigne impose de laisser les changements non commités. Le contenu est réconcilié, mais l'orchestrateur doit encore remettre l'historique sur `c20/integration` avant de commiter. HEAD et l'index restent inchangés. La comparaison finale confirme 22 fichiers identiques à l'intégration et deux fichiers de l'Atelier conservant aussi les correctifs précédents de diff-3. Preuves : `/tmp/diff-3-r2-4-{rouge,vert}.{log,xml}`, `/tmp/diff-3-r2-integration.patch`.
+
+### Constat 5, P2 : adoption de l'identité serveur
+
+Trois cas `R2.5` ont d'abord échoué : adoption serveur avant confirmation du message et de la recherche, puis explication d'une vraie péremption. La relecture de `useConversationSync` a conduit à un quatrième test, lui aussi rouge avant son correctif, sur le rafraîchissement de la liste après adoption.
+
+```text
+R2.5 : conserve l’accord après adoption serveur (message / recherche)
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+R2.5 : explique pourquoi une demande devenue périmée ne part pas
+AssertionError: expected [] to deeply equal ArrayContaining{…}
+R2.5 : garde l’identité adoptée lors du rafraîchissement de la liste serveur
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+```
+
+`updateConversationId` conserve maintenant l'identité locale, et `setConversations` la préserve pendant la synchronisation. Les gardes utilisent cette identité stable ; les demandes réellement périmées affichent « Demande à confirmer à nouveau ». Appelants relus : adoption au premier événement, persistance de projet, synchronisation et remplacement de la liste. Le double du test existant `ChatInput.rattachement.test.tsx` appelle désormais la vraie méthode d'adoption, sans changer ses assertions. Aucun test existant n'a été affaibli. Les modifications de deux tests importées d'intégration sont conservées telles quelles.
+
+Preuves : `/tmp/diff-3-r2-5-rouge.{log,json}`, `/tmp/diff-3-r2-5-liste-rouge.{log,json}`, `/tmp/diff-3-r2-1-5-vert.{log,json}`. Les nouveaux fichiers frontend ajoutent **26 cas** au total : 8 pour le constat 1, 6 pour le constat 2, 8 pour le constat 3 et 4 pour le constat 5.
+
+La relecture finale a également renforcé les deux cas du premier acquittement du constat 1 : une bascule à cet instant préservait B, mais la garde d'identité court-circuitait encore la notification de péremption. Les deux cas ont échoué seuls sur `AssertionError: expected [] to deeply equal ArrayContaining{…}`, puis l'ordre des gardes a été corrigé, aussi pour une erreur reçue avant acquittement. Le rejeu des cas concernés et des voisins donne **48/48**. Aucun cas supplémentaire n'est compté. Preuves : `/tmp/diff-3-r2-5-acquittement-rouge.{log,json}` et `/tmp/diff-3-r2-acquittement-vert.{log,json}`.
+
+### Portes finales de la passe 2
+
+| Porte | Résultat |
+| --- | --- |
+| Pytest ciblé | **584/584 dans 22 fichiers**, 0 échec, 0 erreur, 0 ignoré ; XML parsé et relu ; lanceur adapté ci-dessous |
+| Vitest ciblé et voisins | **417/417 dans 112 fichiers**, 0 échec, 0 ignoré, au plus 3 workers |
+| Ruff | Sortie 0, `All checks passed!` |
+| TypeScript | Sortie 0 après restriction de la finalité du chat à `llm` ou `documents` |
+| ESLint | Sortie 0, **0 erreur, 27 avertissements existants** |
+| Diff et index | `git diff --check` sans défaut ; index vide, HEAD inchangé |
+
+TypeScript avait signalé `TS2322: Type 'CloudPurpose' is not assignable to type '"llm" | "documents" | undefined'` : la reprise mémoire pouvait désormais porter le type général des accords, qui comprend aussi la voix. Le type des demandes du chat est restreint aux deux finalités réellement transmises par cette API, sans assertion de type forcée. Les 26 cas du fichier d'attentes et de ses voisins mémoire ont été rejoués après cette correction et passent. Les décomptes de la porte ne cumulent pas ces relectures.
+
+La commande Pytest standard s'est bloquée à l'entrée du premier client asynchrone, après les 203 premiers cas, sans produire de XML. Elle a été interrompue. Une sonde indépendante de THÉRÈSE, réduite à `asyncio.run` et `asyncio.to_thread`, a reproduit le blocage de fermeture et ce diagnostic :
+
+```text
+DEBUG:asyncio:Fail to write a null byte into the self-pipe socket
+PermissionError: [Errno 1] Operation not permitted
+```
+
+Un `sitecustomize.py` uniquement sous `/tmp/diff-3-r2-polling` borne à **1 ms** l'attente de `selectors.EpollSelector.select`, pour reprendre les callbacks de threads malgré ce réveil interdit par le bac à sable. Aucun socket réseau n'est ajouté, aucune assertion ni fixture n'est remplacée. La sonde puis le premier test bloqué terminent avec ce lanceur ; le XML de ce diagnostic contient **1 test passé**. La porte complète ciblée a ensuite donné **584 tests passés en 557,098 secondes** avec ce même réglage temporaire. L'orchestrateur peut l'omettre sur une machine où le réveil asyncio fonctionne normalement.
+
+Commandes backend depuis la racine (22 fichiers ciblés) :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp/diff-3-r2-polling \
+  OLLAMA_BASE_URL=http://127.0.0.1:9 \
+  THERESE_DATA_DIR="$(mktemp -d /tmp/diff-3-r2-data.XXXXXX)" \
+  .venv/bin/python -m pytest \
+  tests/test_c20_b1888_transaction_activites.py tests/test_c20_b1889_notes_heritees.py \
+  tests/test_c20_b1890_activites_sans_contact.py tests/test_c20_b1891_reparation_transaction.py \
+  tests/test_c20_b1893_provenance_sans_marque.py tests/test_c20_b2009_motifs_ambigus.py \
+  tests/test_c20_b2010_limite_cle.py tests/test_c20_b2011_cle_sans_espace.py \
+  tests/test_activity_migration.py tests/test_b1153_migration_colonnes.py \
+  tests/test_b1153_rejeu_astra_v2.py tests/test_b1140_migration_sans_verrou.py \
+  tests/test_r5_6_journal.py tests/test_r5_9_notes.py tests/test_c19d_b1088_securite_memoire.py \
+  tests/test_r2_2_protection.py tests/test_t4_3_provenance_documents.py \
+  tests/test_t4_4_historique_documents.py tests/test_t4_5_provenance_differee.py \
+  tests/test_t4_7_provenance.py tests/test_b1348_verification_cle.py \
+  tests/test_t4_consentement_moteur.py \
+  -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-3-r2.xml
+RUFF_CACHE_DIR=/tmp/diff-3-r2-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Commandes frontend depuis `src/frontend` :
+
+```sh
+npm_config_offline=true VITE_THERESE_BACKEND_PORT=9 npx vitest run \
+  src/components/chat/ChatInput*.test.tsx src/components/chat/SlashCommandsMenu*.test.tsx \
+  src/components/shared/CloudConsentDialog*.test.tsx src/components/atelier/AgentSession*.test.tsx \
+  src/components/invoices/InvoiceForm*.test.tsx src/hooks/useDialogFocusTrap*.test.tsx \
+  src/hooks/useAutosave*.test.ts src/hooks/useConversationSync*.test.ts \
+  src/hooks/useConversationSync*.test.tsx src/stores/chatStore*.test.ts \
+  src/lib/rattachementConversation.test.ts src/lib/identiteConversation.test.ts \
+  --maxWorkers=3 --no-cache --configLoader runner \
+  --reporter=json --outputFile=/tmp/diff-3-r2-vitest.json
+npm_config_offline=true npx tsc --noEmit
+npm run lint
+```
+
+Aucun lancement de suite complète, aucun réseau ni fournisseur LLM, aucun serveur, aucun usage des ports interdits, de `~/.therese` ou de `.app-loop/`. Aucune commande `rm`. Les tests utilisent des doubles de services et des données temporaires sous `/tmp` ; les dépendances partagées restent en lecture seule. Les rouges connus cités dans la demande ne font pas partie de la sélection.
+
+**Échecs aux portes finales : aucun.** Résultats effectivement relus : `/tmp/diff-3-r2.xml`, `/tmp/diff-3-r2-pytest-final.log`, `/tmp/diff-3-r2-vitest.json`, `/tmp/diff-3-r2-types-vert.json`, `/tmp/diff-3-r2-acquittement-vert.json`, `/tmp/diff-3-r2-ruff.log`, `/tmp/diff-3-r2-tsc.log`, `/tmp/diff-3-r2-lint.log`. Les tentatives interrompues du lanceur standard ne sont pas comptées comme des portes réussies.
