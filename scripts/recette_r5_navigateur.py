@@ -1,5 +1,6 @@
 """Écran réel sur données fictives : aucune connexion ni serveur HTTP."""
 import json
+import mimetypes
 import os
 from pathlib import Path
 import sys
@@ -34,7 +35,8 @@ with sync_playwright() as p:
                 if not fichier.is_relative_to(DIST.resolve()) or not fichier.is_file():
                     route.abort()
                     return
-                content_type = {'.js': 'application/javascript', '.css': 'text/css', '.html': 'text/html'}.get(fichier.suffix, 'application/octet-stream')
+                content_type = {'.js': 'application/javascript', '.css': 'text/css', '.html': 'text/html'}.get(
+                    fichier.suffix.lower(), mimetypes.guess_type(fichier.name)[0] or 'application/octet-stream')
                 route.fulfill(body=fichier.read_bytes(), content_type=content_type)
             page.route('**/*', servir)
             page.goto('http://recette.test/')

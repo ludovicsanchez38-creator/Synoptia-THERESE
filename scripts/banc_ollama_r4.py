@@ -3,6 +3,8 @@
 Usage : python3 scripts/banc_ollama_r4.py avant|apres [--code CHEMIN]
 Le backend tourne dans un processus isolé ; HTTP ASGI sans port supplémentaire.
 Les compteurs proviennent des réponses NDJSON réelles, pas d'une estimation.
+Le serveur doit alimenter .recette-r4/serve.log pendant la passe : sans journal
+local lisible et continu, l'absence de troncature n'est pas prouvée et le verdict est rouge.
 """
 import argparse
 import hashlib
@@ -79,6 +81,13 @@ def mesurer(args):
 
     dossier = ROOT / '.recette-r4' / f'banc-{args.phase}'
     modele = (BANC / 'MODELE.txt').read_text().strip()
+    journal_serveur = BANC / 'serve.log'
+    position_journal = None
+    if journal_serveur.resolve().is_relative_to(ROOT):
+        try:
+            position_journal = journal_serveur.stat()
+        except OSError:
+            pass  # Sans journal exploitable, le verdict restera rouge.
     empreinte = hashlib.sha256()
     for fichier in sorted((code / 'src/backend/app').rglob('*.py')):
         if not fichier.resolve().is_relative_to(code):
@@ -169,14 +178,34 @@ def mesurer(args):
             resultat['tours'].append({'question': question, 'http': reponse.status_code,
                 'evenements': evenements, 'sse': reponse.text})
             (dossier / 'resultat-intermediaire.json').write_text(json.dumps(resultat, ensure_ascii=False, indent=2))
-    resultat['troncatures'] = []
-    resultat['journal_serveur_lu'] = False  # Aucun journal externe au worktree n'est lu.
+    resultat.update(lire_troncatures(journal_serveur, position_journal))
     resultat['charges_verifiees'] = [{
         'profil_entier': CONTEXTE.strip() in a['systeme'],
         'regle1': 'Règle 1 : Toujours répondre en français et tutoyer Camille.' in a['systeme'],
         'regle3': REGLE in a['systeme'], 'therese_md': TEMOIN in a['systeme'],
     } for a in resultat['appels']]
     raise SystemExit(enregistrer_verdict(resultat, dossier))
+
+
+def lire_troncatures(journal, position):
+    """Lire seulement cette passe, sans sortir du worktree ni ignorer une rotation."""
+    resultat = {'troncatures': [], 'journal_serveur_lu': False}
+    if position is None or not journal.resolve().is_relative_to(ROOT):
+        return resultat
+    try:
+        actuel = journal.stat()
+        if (actuel.st_dev, actuel.st_ino) != (position.st_dev, position.st_ino):
+            return resultat
+        if actuel.st_size < position.st_size:
+            return resultat
+        with journal.open('rb') as f:
+            f.seek(position.st_size)
+            lignes = f.read().decode(errors='replace').splitlines()
+    except OSError:
+        return resultat
+    resultat['troncatures'] = [ligne for ligne in lignes if 'truncat' in ligne.lower()]
+    resultat['journal_serveur_lu'] = True
+    return resultat
 
 
 def enregistrer_verdict(resultat, dossier):
@@ -188,7 +217,8 @@ def enregistrer_verdict(resultat, dossier):
                   if not re.search(r'\btruncated\s*=\s*0\b', ligne)]
     resultat['reponses'] = textes
     resultat['troncatures_effectives'] = effectives
-    resultat['vert'] = (bool(resultat['appels']) and not effectives
+    resultat['vert'] = (bool(resultat['appels']) and resultat.get('journal_serveur_lu') is True
+        and not effectives
         and all(isinstance(a.get('prompt_eval_count'), int) and a['prompt_eval_count'] > 0
                 for a in resultat['appels'])
         and all(all(v.values()) for v in resultat['charges_verifiees'])
