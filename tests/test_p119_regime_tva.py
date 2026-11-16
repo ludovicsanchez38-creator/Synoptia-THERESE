@@ -72,8 +72,10 @@ def test_une_ligne_taxee_ne_se_dit_jamais_exoneree(tmp_path):
     assert "TVA incluse" in texte
 
 
-def test_une_piece_non_assujettie_ecrit_la_mention_en_entier(tmp_path):
-    assert FRANCHISE in _texte_du_pdf(tmp_path, regime=None, tva_applicable=False)
+def test_une_piece_sans_regime_declare_ne_pretend_pas_etre_en_franchise(tmp_path):
+    texte = _texte_du_pdf(tmp_path, regime=None, tva_applicable=False)
+    assert "Aucune TVA facturée" in texte
+    assert "293 B" not in texte
 
 
 @pytest.mark.asyncio

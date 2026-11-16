@@ -24,7 +24,7 @@ import pytest
 async def _cree_contact(client) -> str:
     reponse = await client.post(
         "/api/memory/contacts",
-        json={"first_name": "Numero", "last_name": "Test", "email": "num@test.fr"},
+        json={"first_name": "Numero", "last_name": "Test", "email": "num@test.fr", "address": "Lyon"},
     )
     assert reponse.status_code == 200, reponse.text
     return reponse.json()["id"]

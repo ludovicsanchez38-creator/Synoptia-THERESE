@@ -389,7 +389,7 @@ class TestInvoicesCRUD:
 
         assert response.status_code == 200
         result = response.json()
-        assert "deleted" in result["message"].lower() or "successfully" in result["message"].lower()
+        assert result["message"] == "Pièce supprimée."
 
         # Verifier qu'elle n'existe plus
         get_response = await client.get(f"/api/invoices/{invoice['id']}")

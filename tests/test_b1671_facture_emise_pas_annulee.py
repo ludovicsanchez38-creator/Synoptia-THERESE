@@ -15,7 +15,7 @@ from httpx import AsyncClient
 async def _contact(client: AsyncClient) -> str:
     reponse = await client.post(
         "/api/memory/contacts",
-        json={"first_name": "Claire", "last_name": "Roux"},
+        json={"first_name": "Claire", "last_name": "Roux", "address": "Lyon"},
     )
     assert reponse.status_code == 200, reponse.text
     return reponse.json()["id"]

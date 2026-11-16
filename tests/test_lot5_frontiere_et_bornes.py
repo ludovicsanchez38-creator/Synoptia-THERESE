@@ -167,11 +167,14 @@ class TestB467LaVoixNeRecopiePasLeTechnique:
 
 class TestB468LePdfPorteLeStatutEffectif:
     @pytest.mark.asyncio
-    async def test_une_facture_envoyee_echue_est_en_retard_sur_le_pdf(self, client):
+    async def test_une_facture_envoyee_echue_est_en_retard_sur_le_pdf(self, client, monkeypatch, tmp_path):
         from datetime import UTC, datetime, timedelta
+        from unittest.mock import AsyncMock
 
+        from app.routers import invoices
         from pypdf import PdfReader
 
+        monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
         profil = await client.post(
             "/api/config/profile",
             json={"name": "Marie Exemple", "company": "Atelier Exemple", "address": "Manosque",

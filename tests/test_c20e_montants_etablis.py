@@ -2,11 +2,18 @@
 
 import re
 from decimal import ROUND_HALF_UP, Decimal
+from unittest.mock import AsyncMock
 
 import pytest
 from app.models import database as db
+from app.routers import invoices
 from app.routers.invoices import _get_invoice_with_lines
 from pypdf import PdfReader
+
+
+@pytest.fixture(autouse=True)
+def _isoler_pdf(monkeypatch, tmp_path):
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
 
 
 def lignes(nombre, prix, taux, description="Repas"):

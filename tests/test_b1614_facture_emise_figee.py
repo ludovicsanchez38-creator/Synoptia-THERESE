@@ -11,7 +11,7 @@ from httpx import AsyncClient
 
 
 async def _facture_envoyee(client: AsyncClient) -> str:
-    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard"})
+    contact = await client.post("/api/memory/contacts", json={"first_name": "Hélène", "last_name": "Ménard", "address": "Lyon"})
     piece = await client.post("/api/invoices/", json={
         "contact_id": contact.json()["id"], "document_type": "facture",
         "lines": [{"description": "Table en chêne", "quantity": 1, "unit_price_ht": 900.0, "tva_rate": 20.0}],

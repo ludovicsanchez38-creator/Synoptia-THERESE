@@ -172,7 +172,7 @@ def test_stamp_db_legacy(tmp_path):
     db = tmp_path / "legacy.db"
     _make_legacy_db(db)
     ensure_alembic_stamp(db)
-    assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+    assert _read_stamp(db) is None  # Le schéma minimal ne prouve pas la tête.
 
 
 def test_stamp_idempotent_et_ne_regresse_pas(tmp_path):
@@ -251,7 +251,10 @@ def test_stamp_sur_db_chiffree(tmp_path):
     from app.models.database import db_connect, ensure_db_encrypted
 
     db = tmp_path / "therese.db"
-    _make_legacy_db(db)
+    _make_patched_tracked_db(db)
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("DROP TABLE alembic_version")
+        conn.commit()
     ensure_db_encrypted(db)
 
     ensure_alembic_stamp(db)

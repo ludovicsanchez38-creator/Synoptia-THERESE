@@ -2,12 +2,18 @@
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from app.models import database as db
 from app.models.entities import Invoice
 from app.routers import invoices
 from pypdf import PdfReader
+
+
+@pytest.fixture(autouse=True)
+def _isoler_pdf(monkeypatch, tmp_path):
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
 
 
 def figer(monkeypatch, instant):

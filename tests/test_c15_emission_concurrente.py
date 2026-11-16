@@ -37,7 +37,7 @@ def _instant_utc(valeur: str | None) -> datetime | None:
 )
 async def test_deux_emissions_concurrentes_conservent_un_numero_unique(
     client: Any, monkeypatch: pytest.MonkeyPatch,
-    mode: str, operations: tuple[str, str],
+    mode: str, operations: tuple[str, str], tmp_path: Path,
 ) -> None:
     # La fixture client initialise la base et son lifespan. Les requêtes
     # concurrentes ci-dessous empruntent réellement l'ASGI, sur cette base.
@@ -45,7 +45,7 @@ async def test_deux_emissions_concurrentes_conservent_un_numero_unique(
     async with AsyncClient(transport=transport, base_url="http://testserver") as http:
         contact = await http.post(
             "/api/memory/contacts",
-            json={"first_name": "Client", "last_name": "Concurrence jetable"},
+            json={"first_name": "Client", "last_name": "Concurrence jetable", "address": "Lyon"},
         )
         assert contact.status_code == 200, contact.text
         contact_id = contact.json()["id"]
@@ -167,7 +167,7 @@ async def test_deux_emissions_concurrentes_conservent_un_numero_unique(
             "relue": {"statut_http": relue.status_code, "corps": contenu(relue)},
             "suivante": {"statut_http": suivante_emise.status_code, "corps": contenu(suivante_emise)},
         }
-        preuves = Path(__file__).resolve().parents[1] / ".app-loop/cycles/15/reprise/lot-c"
+        preuves = tmp_path
         preuves.mkdir(parents=True, exist_ok=True)
         (preuves / f"concurrence-observation-{mode}.txt").write_text(
             json.dumps(observation, ensure_ascii=False, indent=2, default=str),
@@ -196,13 +196,13 @@ async def test_deux_emissions_concurrentes_conservent_un_numero_unique(
 
 @pytest.mark.asyncio
 async def test_deux_pieces_distinctes_emises_en_concurrence_suivent_la_serie(
-    client: Any,
+    client: Any, tmp_path: Path,
 ) -> None:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://testserver") as http:
         contact = await http.post(
             "/api/memory/contacts",
-            json={"first_name": "Client", "last_name": "Deux pièces jetables"},
+            json={"first_name": "Client", "last_name": "Deux pièces jetables", "address": "Lyon"},
         )
         assert contact.status_code == 200, contact.text
         corps = {
@@ -233,7 +233,7 @@ async def test_deux_pieces_distinctes_emises_en_concurrence_suivent_la_serie(
         )
         assert suivante_emise.status_code == 200, suivante_emise.text
         assert suivante_emise.json()["invoice_number"] == f"FACT-{annee}-003"
-        preuves = Path(__file__).resolve().parents[1] / ".app-loop/cycles/15/reprise/lot-c"
+        preuves = tmp_path
         preuves.mkdir(parents=True, exist_ok=True)
         (preuves / "concurrence-pieces-distinctes.txt").write_text(
             json.dumps({
@@ -245,13 +245,13 @@ async def test_deux_pieces_distinctes_emises_en_concurrence_suivent_la_serie(
 
 @pytest.mark.asyncio
 async def test_base_occupee_refuse_emission_sans_erreur_inattendue(
-    client: Any, monkeypatch: pytest.MonkeyPatch,
+    client: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://testserver") as http:
         contact = await http.post(
             "/api/memory/contacts",
-            json={"first_name": "Client", "last_name": "Base occupée jetable"},
+            json={"first_name": "Client", "last_name": "Base occupée jetable", "address": "Lyon"},
         )
         assert contact.status_code == 200, contact.text
         creation = await http.post("/api/invoices/", json={
@@ -295,7 +295,7 @@ async def test_base_occupee_refuse_emission_sans_erreur_inattendue(
             "reponse": {"statut_http": reponse.status_code, "corps": reponse.json()},
             "relue": {"statut_http": relue.status_code, "corps": relue.json()},
         }
-        preuves = Path(__file__).resolve().parents[1] / ".app-loop/cycles/15/reprise/lot-c"
+        preuves = tmp_path
         preuves.mkdir(parents=True, exist_ok=True)
         (preuves / "concurrence-base-occupee.txt").write_text(
             json.dumps(observation, ensure_ascii=False, indent=2, default=str),
