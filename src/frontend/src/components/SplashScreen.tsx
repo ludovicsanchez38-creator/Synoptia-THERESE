@@ -96,10 +96,12 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [moteurArrete, setMoteurArrete] = useState(false);
   const [reprise, setReprise] = useState(false);
   const [relance, setRelance] = useState(0);
+  const [relanceEnCours, setRelanceEnCours] = useState(false);
   const messageMoteur = useRef<string | null>(null);
   const apiBaseReady = useRef(false);
   const fatalSidecarError = useRef(false);
   const erreursSidecar = useRef(0);
+  const relanceEnCoursRef = useRef(false);
   const reducedMotion = prefersReducedMotion();
 
   // Charger la version de l'app (tauri.conf.json)
@@ -170,6 +172,9 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   }, []);
 
   const relancerMoteur = useCallback(async () => {
+    if (relanceEnCoursRef.current) return;
+    relanceEnCoursRef.current = true;
+    setRelanceEnCours(true);
     const erreursAvantRelance = erreursSidecar.current;
     setMoteurArrete(false);
     setReprise(false);
@@ -178,17 +183,19 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('restart_backend');
+      // Un échec émis pendant la commande concerne la nouvelle tentative.
+      if (erreursSidecar.current !== erreursAvantRelance) return;
+      setError(null);
+      setProgress(0);
+      fatalSidecarError.current = false;
+      setRelance((n) => n + 1);
     } catch {
       if (error) setError('Impossible de relancer le moteur. Essaie à nouveau.');
       else setMoteurArrete(true);
-      return;
+    } finally {
+      relanceEnCoursRef.current = false;
+      setRelanceEnCours(false);
     }
-    // Un échec émis pendant la commande concerne la nouvelle tentative.
-    if (erreursSidecar.current !== erreursAvantRelance) return;
-    setError(null);
-    setProgress(0);
-    fatalSidecarError.current = false;
-    setRelance((n) => n + 1);
   }, [error]);
 
   useEffect(() => {
@@ -290,7 +297,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
               </p>
             )}
           </div>
-          <Button className="mt-4" onClick={() => void relancerMoteur()}>
+          <Button className="mt-4" disabled={relanceEnCours} onClick={() => void relancerMoteur()}>
             Relancer le moteur local
           </Button>
         </div>
@@ -311,7 +318,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4">
             <p className="text-error text-sm">{error}</p>
           </div>
-          <Button className="mt-4" onClick={() => void relancerMoteur()}>
+          <Button className="mt-4" disabled={relanceEnCours} onClick={() => void relancerMoteur()}>
             Relancer le moteur local
           </Button>
         </div>

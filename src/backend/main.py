@@ -142,44 +142,45 @@ def _kill_zombie_backends():
         killed_any = False
         zombie_pids: list[int] = []
 
-        # Détecter les zombies backend.exe.
-        # wmic est supprimé sur Windows 11 25H2+ (oct 2025), donc on utilise
-        # tasklist en fallback. tasklist ne filtre pas par ligne de commande,
-        # mais backend.exe est spécifique à THÉRÈSE donc c'est acceptable.
+        # Rust a déjà effectué sa chasse avant de lancer le sidecar. Ici aussi,
+        # tasklist ne fournit que des candidats : CIM doit confirmer chacun.
         try:
             result = subprocess.run(
-                [
-                    "wmic", "process", "where",
-                    "name='backend.exe' and commandline like '%--host%127.0.0.1%'",
-                    "get", "processid", "/format:list",
-                ],
-                capture_output=True, text=True, timeout=5,
+                ["tasklist", "/FI", "IMAGENAME eq backend.exe", "/FO", "CSV", "/NH"],
+                capture_output=True, text=True, errors="replace", timeout=5,
                 stdin=subprocess.DEVNULL,
             )
-            for line in result.stdout.splitlines():
-                if line.startswith("ProcessId="):
-                    pid = int(line.split("=")[1].strip())
-                    if pid != current_pid and pid != parent_pid:
-                        zombie_pids.append(pid)
-        except FileNotFoundError:
-            # wmic absent (Windows 11 25H2+) → fallback tasklist
-            try:
-                result = subprocess.run(
-                    ["tasklist", "/FI", "IMAGENAME eq backend.exe", "/FO", "CSV", "/NH"],
-                    capture_output=True, text=True, timeout=5,
-                    stdin=subprocess.DEVNULL,
-                )
+            if result.returncode == 0:
                 for line in result.stdout.splitlines():
                     parts = line.strip().strip('"').split('","')
                     if len(parts) >= 2:
                         try:
                             pid = int(parts[1].strip('"'))
                             if pid != current_pid and pid != parent_pid:
-                                zombie_pids.append(pid)
-                        except (ValueError, IndexError):
+                                script = (
+                                    "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new(); "
+                                    "(Get-CimInstance -ClassName Win32_Process "
+                                    f"-Filter 'ProcessId = {pid}' -ErrorAction Stop).CommandLine"
+                                )
+                                details = subprocess.run(
+                                    ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+                                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                    timeout=5, stdin=subprocess.DEVNULL,
+                                )
+                                executable, separateur, reste = details.stdout.strip().partition(" --")
+                                nom = executable.strip().strip('"').replace("\\", "/").rsplit("/", 1)[-1]
+                                mots = ("--" + reste).split()
+                                options = list(zip(mots, mots[1:], strict=False))
+                                if (
+                                    details.returncode == 0
+                                    and separateur
+                                    and nom == "backend.exe"
+                                    and ("--host", "127.0.0.1") in options
+                                    and ("--port", "17293") in options
+                                ):
+                                    zombie_pids.append(pid)
+                        except (ValueError, IndexError, OSError, subprocess.SubprocessError):
                             continue
-            except Exception:
-                pass
         except Exception:
             pass
 

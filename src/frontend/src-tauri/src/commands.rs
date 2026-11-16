@@ -64,6 +64,8 @@ pub fn restart_backend(app: tauri::AppHandle) -> Result<(), String> {
         use tauri::Manager;
 
         let state = app.state::<crate::SidecarState>();
+        let _garde = state.verrou_relance.lock().unwrap();
+        state.generation_relance.fetch_add(1, Ordering::SeqCst);
         state.shutting_down.store(false, Ordering::SeqCst);
         state.restart_attempts.store(0, Ordering::SeqCst);
         // Un éventuel process suspendu (vivant mais muet) ne doit pas survivre

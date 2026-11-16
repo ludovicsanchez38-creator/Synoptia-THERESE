@@ -280,6 +280,11 @@ pub(crate) struct SidecarState {
     /// (Lu uniquement par le code sidecar, compilé en release.)
     #[cfg_attr(debug_assertions, allow(dead_code))]
     pub(crate) restart_attempts: std::sync::atomic::AtomicU32,
+    /// Invalide les anciennes relances et sérialise leurs lancements.
+    #[cfg_attr(debug_assertions, allow(dead_code))]
+    pub(crate) generation_relance: std::sync::atomic::AtomicU64,
+    #[cfg_attr(debug_assertions, allow(dead_code))]
+    pub(crate) verrou_relance: Mutex<()>,
 }
 
 /// Lance (ou relance) le sidecar backend - release uniquement.
@@ -380,6 +385,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                     // Stocker le child pour le kill propre à la fermeture
                     let state = app.state::<SidecarState>();
                     *state.child.lock().unwrap() = Some(child);
+                    let generation = state.generation_relance.load(std::sync::atomic::Ordering::SeqCst);
                     emit_sidecar_status(app, "running", 0);
 
                     // Logger stdout/stderr du sidecar + surveiller sa fin
@@ -400,6 +406,13 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                                     log_sidecar(&format!("[stderr] {}", text.trim()));
                                 }
                                 CommandEvent::Terminated(payload) => {
+                                    let state = handle.state::<SidecarState>();
+                                    let _garde = state.verrou_relance.lock().unwrap();
+                                    // Une terminaison de l'ancien moteur peut arriver
+                                    // après son remplacement par la relance manuelle.
+                                    if state.generation_relance.load(std::sync::atomic::Ordering::SeqCst) != generation {
+                                        break;
+                                    }
                                     let msg = format!(
                                         "Sidecar terminé (code: {:?}, signal: {:?})",
                                         payload.code, payload.signal
@@ -459,6 +472,7 @@ fn schedule_sidecar_retry(app: &tauri::AppHandle) {
     if state.shutting_down.load(Ordering::SeqCst) {
         return; // quit ou relance post-update : rien à faire
     }
+    let generation = state.generation_relance.load(Ordering::SeqCst);
     let attempt = state.restart_attempts.fetch_add(1, Ordering::SeqCst) + 1;
     if attempt > 3 {
         log_sidecar("Sidecar : 3 relances épuisées, abandon (bouton Relancer côté interface)");
@@ -473,7 +487,10 @@ fn schedule_sidecar_retry(app: &tauri::AppHandle) {
         std::thread::sleep(std::time::Duration::from_secs(delay_s));
         // L'app a pu se fermer pendant l'attente : re-vérifier avant de relancer.
         let state = handle.state::<SidecarState>();
-        if state.shutting_down.load(std::sync::atomic::Ordering::SeqCst) {
+        let _garde = state.verrou_relance.lock().unwrap();
+        if state.shutting_down.load(Ordering::SeqCst)
+            || state.generation_relance.load(Ordering::SeqCst) != generation
+        {
             return;
         }
         spawn_backend_sidecar(&handle);
@@ -563,6 +580,8 @@ pub fn run() {
             shutting_down: std::sync::atomic::AtomicBool::new(false),
             sidecar_termine: std::sync::atomic::AtomicBool::new(false),
             restart_attempts: std::sync::atomic::AtomicU32::new(0),
+            generation_relance: std::sync::atomic::AtomicU64::new(0),
+            verrou_relance: Mutex::new(()),
         })
         .manage(BackendPort(Mutex::new(BACKEND_PORT)))
         .setup(|app| {

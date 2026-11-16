@@ -22,6 +22,22 @@ Quand WMIC est absent, `tasklist` ne fournit que des candidats : leur ligne de c
 
 Le test de B-1912 vérifie également qu'une nouvelle erreur survenue pendant la relance reste affichée : avant le correctif complémentaire, il échouait avec `TestingLibraryElementError: Unable to find an accessible element with the role "alert"`.
 
+## Remédiation de la relecture, passe 1
+
+Les résultats ci-dessous concernent la remédiation ; les portes qui suivent décrivent l'état de la première passe.
+
+1. **Nettoyage Windows Python.** `tests/test_c20_windows_zombies.py::test_les_deux_nettoyages_epargnent_un_backend_tiers` a d'abord échoué avec `AssertionError: assert ['414'] == []` : le processus tiers épargné par Rust était arrêté par Python. Python utilise désormais `tasklist` pour les candidats et vérifie chaque ligne de commande par CIM, avec le port exact, avant `taskkill`. Les tests couvrent aussi un vrai moteur simulé, les PID courant et parent, un port préfixe, l'indisponibilité ou l'échec de CIM et la poursuite après un candidat en échec.
+2. **Ancienne relance automatique.** `tests/test_c20_relance_sidecar.py::test_ancienne_relance_automatique_ne_remplace_pas_la_reprise_manuelle` a d'abord échoué avec `AssertionError: assert ['2', '3'] == ['1', '2']`. Une génération invalide les anciens délais ; un verrou sérialise leur lancement avec la relance manuelle. Le test couvre aussi une terminaison tardive, une nouvelle relance automatique valable et une relance manuelle demandée pendant un lancement automatique déjà engagé.
+3. **Double clic sur la relance.** `SplashScreen.relanceDemarrage.b1912.test.tsx`, test « ignore un double clic », a d'abord échoué avec `Error: expect(element).toBeDisabled()`. Un verrou immédiat empêche les appels simultanés ; le bouton est désactivé pendant la commande et redevient utilisable après son échec.
+
+Vérifications de cette passe :
+
+- `tests/test_c20_windows_zombies.py`, `tests/test_c20_relance_sidecar.py` et tests voisins du démarrage et de la coque : **62 réussis, 0 échec, 0 erreur, 0 ignoré**, décomptés dans `/tmp/rust-windows-r1.xml`.
+- `ruff check --no-fix src/backend tests` : **0 erreur**.
+- Quatre fichiers Vitest autour de `SplashScreen` : **43 tests réussis, 0 échec** ; `npx tsc --noEmit` : **0 erreur** ; `npm run lint` : **0 erreur, 27 avertissements hors fichiers modifiés**.
+
+Les commandes Windows, processus et réponses réseau des scénarios sont simulés. Le harnais compile et exécute les blocs Rust concernés sur macOS, y compris la contrainte `Send` du traitement asynchrone ; il ne remplace ni une compilation Windows ni une recette sur cette plateforme. La suite complète n'a pas été relancée.
+
 ## Portes
 
 - Frontend, `npm run test -- --run --configLoader runner` : **967 fichiers, 4 107 tests réussis, 0 échec**. Le chargeur `runner` évite une écriture dans `node_modules`, qui est un lien vers le dépôt principal. La commande sans cette option échoue avant les tests avec `EPERM` sur `.vite-temp`.
