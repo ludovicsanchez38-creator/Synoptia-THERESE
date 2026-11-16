@@ -77,3 +77,21 @@ tests.test_b1191_commande_introuvable_nommee::test_temoin_commande_presente_s_ex
 ```
 
 Le bac d'exécution refuse `bind` sur une adresse locale avec `PermissionError`. Le test B-1153 de l'écriture autorisée a aussi été relancé sans le garde réseau ajouté pour cette recette : il échoue de la même façon, la sonde du confinement étant refusée. Les autres cas ne peuvent donc pas établir leurs assertions de confinement dans cet environnement. Ces dix rouges restent ouverts ; ils ne doivent pas être comptés comme une porte verte.
+
+## Remédiation de la relecture, passe 1
+
+Le constat est confirmé : lorsque l'extracteur rendait `None`, la synchronisation recevait une exception HTTP 422, consignait l'opération en échec et la réessayait à la reprise. Le cœur d'indexation émet maintenant `ExtractionImpossible` avant l'écriture vectorielle et sans appeler `_ecrire_et_consigner`. Les routes d'indexation et de dépôt traduisent ce signal en HTTP 422 ; la synchronisation le consigne `obsolete`, avec son motif. Les anciens vecteurs, les compteurs et la référence de la dernière version indexée restent en place. Les autres erreurs restent réessayables selon le contrat existant.
+
+Le test d'intégration ajouté a été exécuté seul avant le correctif. Sa ligne d'échec, relue dans `/tmp/backend-mail-r1-rouge.xml`, était :
+
+```text
+E       AssertionError: assert 'echec' == 'obsolete'
+```
+
+Les cinq nouveaux cas couvrent l'indexation initiale et la réindexation illisibles, l'absence d'écriture, la conservation des données précédentes, la poursuite des autres opérations, la reprise sans nouvel essai et la réponse 422 des deux routes. Le test B-1821 vérifie désormais le 422 par la route HTTP réelle, en conservant ses assertions sur les vecteurs et les métadonnées. Les appelants du cœur, du suivi HTTP, du dépôt et du chat ont été relus.
+
+La première passe des tests voisins a rendu 103 réussites et deux échecs dans les nouvelles assertions HTTP : elles cherchaient `detail`, alors que le gestionnaire d'erreurs de l'application renvoie `message`. Après correction de ces assertions et ajout du cas de premier fichier, la passe relue dans `/tmp/backend-mail-r1-voisins.xml` donne **106 réussites sur 106**.
+
+La porte backend demandée, relue dans `/tmp/backend-mail-r1.xml`, donne **6 627 cas : 6 561 réussites, 15 échecs, 0 erreur et 51 ignorés**. Les 15 échecs correspondent tous aux références fournies : huit cas B-1153, deux B-1191, quatre cas `test_refus_a_lecran_meme_sans_fiches` et le cas `test_securite_f2_recette_deb`. Aucun autre rouge n'a été relevé. La suite a été lancée avec un environnement jetable, une garde Python interdisant les opérations réseau et l'accès aux deux chemins protégés, et une redirection des preuves C15 vers `/tmp`.
+
+Ruff, sur `src/backend tests` avec `--no-fix`, est **réussi sans erreur**. Une première invocation avait été refusée avant analyse parce que la variable temporaire de désactivation du cache valait `1` ; elle a été relancée avec la valeur reconnue `true`. Les portes frontend ne s'appliquent pas : aucun fichier frontend modifié. Les changements restent non commités.

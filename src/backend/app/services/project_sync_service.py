@@ -571,6 +571,11 @@ async def _executer_operation(
             operation.id, EtatOperation.OBSOLETE, erreur=str(e)[:500]
         )
         return
+    except indexation.ExtractionImpossible as e:
+        await _consigner_operation(
+            operation.id, EtatOperation.OBSOLETE, erreur=str(e)[:500]
+        )
+        return
     except Exception as e:
         # HTTPException 404 = fichier disparu depuis le plan : obsolète aussi.
         from fastapi import HTTPException
