@@ -41,3 +41,12 @@ Aucune règle métier non documentée n'a été identifiée comme devant être t
 - Garde Node existante de couverture écran : **1 test passé, 0 échoué**.
 - Ruff : **0 erreur**. TypeScript `tsc --noEmit` : **0 erreur**. ESLint : **0 erreur, 27 avertissements** dans des fichiers source non modifiés ; sortie 0 avec le seuil existant.
 - Aucune suite complète, aucun lancement sur les ports interdits, aucun commit, aucun push et aucun accès à `.app-loop/`.
+
+## Remédiation de la relecture, passe 1
+
+- P2, banc Actions : l'attente du producteur et de son commit est limitée à cinq secondes. Un `finally` annule et attend les tâches créées par le scénario, y compris si leur nombre est inattendu. Les vérifications de l'état et du commit durable restent en place.
+- Contre-épreuve ajoutée dans `tests/test_b2033_charges.py`, lancée seule pour chaque variante avant le correctif :
+  - `producteur-bloque` : `E   AssertionError: le scénario n'a pas borné l'attente du producteur`
+  - `nombre-inattendu` : `E   AssertionError: des producteurs du scénario restent actifs`
+- Les appelants relus comprennent le scénario au commit retardé et l'enregistrement des tâches par `ActionRunner.run`. Les deux variantes ajoutées et les tests voisins passent : **59 tests, 0 échec, 0 erreur, 0 ignoré**, d'après `/tmp/bancs-r1.xml` relu. La garde hors réseau a compté **0 tentative de connexion**.
+- `ruff check --no-fix --no-cache src/backend tests` : **0 erreur**. Aucune suite complète ni modification frontend ; aucun commit ni push.
