@@ -39,7 +39,8 @@ describe('installation des mises à jour', () => {
     doubles.getBundleType.mockResolvedValue('appimage');
     doubles.check.mockResolvedValue({ available: true, version: '0.80.0', downloadAndInstall: doubles.downloadAndInstall });
     doubles.downloadAndInstall.mockResolvedValue(undefined);
-    doubles.invoke.mockResolvedValue(undefined);
+    // Le contrat natif fournit désormais la famille de la distribution (B-1801).
+    doubles.invoke.mockResolvedValue({ linux_debian: true });
     doubles.open.mockResolvedValue(undefined);
   });
 
@@ -121,7 +122,9 @@ describe('installation des mises à jour', () => {
     expect(screen.getByRole('link', { name: /télécharger/i })).toBeInTheDocument();
     expect(doubles.check).toHaveBeenCalledTimes(1);
     expect(doubles.downloadAndInstall).not.toHaveBeenCalled();
-    expect(doubles.invoke).not.toHaveBeenCalled();
+    // La lecture initiale de la distribution remplace l'ancien « aucun IPC ».
+    // L'arrêt du moteur reste interdit : l'unique appel est une lecture.
+    expect(doubles.invoke).toHaveBeenCalledExactlyOnceWith('get_system_info');
     expect(fetch).not.toHaveBeenCalled();
   });
 

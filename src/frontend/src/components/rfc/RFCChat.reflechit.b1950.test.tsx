@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../services/api', () => ({
   streamMessage: vi.fn(async function* () {
-    await new Promise(() => {});
+    yield await new Promise<never>(() => {});
   }),
 }));
 
