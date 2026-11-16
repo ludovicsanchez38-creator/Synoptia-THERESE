@@ -1759,6 +1759,17 @@ export function ConversationCanvasPrototype() {
     if (blockStreamingNavigation()) return;
     setScenario(next);
     fermerLeChat();
+    // B-1843 : depuis une vue, fermer l'écran sans vider le store laissait
+    // `activeView` sur l'ancienne vue. Un `setView` identique ne la rouvrait
+    // plus. Le parcours vit sur l'accueil (pas un retour d'historique) : on
+    // aligne la référence AVANT, sinon l'effet qui suit un `null` referme
+    // le canevas qu'on vient d'ouvrir.
+    if (embeddedView) {
+      panneauDOrigineRef.current = null;
+      derniereVueRef.current = null;
+      const navigation = useNavigationStore.getState();
+      if (navigation.activeView === embeddedView) navigation.retourAccueil();
+    }
     setEmbeddedView(null);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
