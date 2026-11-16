@@ -1,5 +1,7 @@
 """L'export annoncé complet doit inclure les données CRM enregistrées."""
 
+import json
+
 import pytest
 from app.models.entities import (
     Activity,
@@ -85,3 +87,67 @@ async def test_export_masque_identifiants_des_urls_et_configurations_de_connexio
     assert mot_de_passe not in reponse.text
     assert "hote.example/dav" in reponse.text
     assert "contact@example.invalid" in reponse.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+@pytest.mark.parametrize("caractere", ["'", '"', "<", ">", "\\", " "])
+async def test_export_masque_url_dont_le_mot_de_passe_contient_un_delimiteur(
+    client, db_session, route, caractere,
+):
+    utilisateur = "temoin"
+    mot_de_passe = f"FAUX-sec{caractere}ret"
+    url = f"https://{utilisateur}:{mot_de_passe}@agenda.invalid/dav"
+    db_session.add(Calendar(
+        id="cal-dav-caractere", summary="Agenda", provider="caldav",
+        caldav_url=url, remote_id=url,
+        description=f"Adresse : {url}",
+    ))
+    db_session.add(Preference(
+        key="proxy_config", category="general",
+        value=json.dumps({"serveurs": [{"url": url, "username": utilisateur}]}),
+    ))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    export = reponse.json()
+    agenda = next(c for c in export["calendars"] if c["id"] == "cal-dav-caractere")
+    proxy = json.loads(next(p["value"] for p in export["preferences"] if p["key"] == "proxy_config"))
+    valeurs = [agenda["caldav_url"], agenda["remote_id"], agenda["description"], proxy["serveurs"][0]["url"]]
+
+    def chaines(valeur):
+        if isinstance(valeur, dict):
+            for element in valeur.values():
+                yield from chaines(element)
+        elif isinstance(valeur, list):
+            for element in valeur:
+                yield from chaines(element)
+        elif isinstance(valeur, str):
+            yield valeur
+            try:
+                contenu = json.loads(valeur)
+            except (TypeError, ValueError):
+                return
+            if isinstance(contenu, (dict, list)):
+                yield from chaines(contenu)
+
+    assert all(utilisateur not in texte and mot_de_passe not in texte for texte in chaines(export))
+    assert all(utilisateur not in valeur and mot_de_passe not in valeur for valeur in valeurs)
+    assert all("agenda.invalid/dav" in valeur for valeur in valeurs)
+    assert proxy["serveurs"][0]["username"] == "[REDACTED]"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_conserve_le_texte_entre_une_url_et_une_adresse_mail(
+    client, db_session, route,
+):
+    description = "Voir https://agenda.invalid puis contacter : personne@example.invalid"
+    db_session.add(Calendar(id="cal-texte", summary="Agenda", description=description))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    agenda = next(c for c in reponse.json()["calendars"] if c["id"] == "cal-texte")
+    assert agenda["description"] == description

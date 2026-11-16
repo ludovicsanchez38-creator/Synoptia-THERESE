@@ -11,6 +11,7 @@ from app.routers import agents
 from app.services.agents.runtime import AgentEvent, AgentRuntime
 from fastapi import HTTPException
 from sqlmodel import select
+from starlette.requests import ClientDisconnect
 
 
 @pytest.mark.asyncio
@@ -127,6 +128,90 @@ async def test_deconnexion_asgi_pendant_envoi_du_fragment_interrompt_la_mission(
         tache = await session.get(AgentTask, evenements[0]["task_id"])
         assert tache.status == "cancelled"
         assert "interrompue" in tache.error.lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("version_asgi", ["2.3", "2.4"])
+async def test_deconnexion_avant_le_flux_libere_la_mission_et_autorise_un_nouveau_depart(
+    db_session, monkeypatch, version_asgi,
+):
+    monkeypatch.setattr(agents, "_get_source_path", lambda: None)
+    executions = []
+
+    async def execution_fictive(_runtime, _instruction):
+        executions.append(True)
+        yield AgentEvent(type="done", content="Terminé")
+
+    monkeypatch.setattr(AgentRuntime, "run", execution_fictive)
+    demande = SpawnAgentRequest(profile_id="writer", instruction="Mission", model="local:test")
+    reponse = await agents.spawn_agent(demande, db_session)
+    premiere = (await db_session.execute(select(AgentTask))).scalars().one()
+    identifiant = premiere.id
+    debut_envoi = asyncio.Event()
+
+    async def recevoir():
+        await debut_envoi.wait()
+        return {"type": "http.disconnect"}
+
+    async def envoyer(message):
+        if message["type"] == "http.response.start":
+            debut_envoi.set()
+            if version_asgi == "2.4":
+                raise OSError("déconnexion fictive")
+            await asyncio.Event().wait()
+
+    scope = {"type": "http", "asgi": {"spec_version": version_asgi}}
+    if version_asgi == "2.4":
+        with pytest.raises(ClientDisconnect):
+            await reponse(scope, recevoir, envoyer)
+    else:
+        await reponse(scope, recevoir, envoyer)
+
+    assert executions == []
+    async with get_session_context() as session:
+        nouvelle = await agents.spawn_agent(demande, session)
+        evenements = [json.loads(chunk[6:]) async for chunk in nouvelle.body_iterator]
+    assert evenements[-1]["type"] == "done"
+    async with get_session_context() as session:
+        interrompue = await session.get(AgentTask, identifiant)
+        assert interrompue.status == "cancelled"
+        assert "interrompue" in interrompue.error.lower()
+        assert identifiant not in agents._running_agent_tasks
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("type_evenement", "statut"), [("done", "done"), ("error", "error")])
+async def test_deconnexion_pendant_envoi_terminal_conserve_le_resultat(
+    db_session, monkeypatch, type_evenement, statut,
+):
+    monkeypatch.setattr(agents, "_get_source_path", lambda: None)
+
+    async def execution_fictive(_runtime, _instruction):
+        yield AgentEvent(type=type_evenement, content="Résultat fictif")
+
+    monkeypatch.setattr(AgentRuntime, "run", execution_fictive)
+    reponse = await agents.spawn_agent(
+        SpawnAgentRequest(profile_id="writer", instruction="Mission", model="local:test"), db_session,
+    )
+    envoye = asyncio.Event()
+    evenements = []
+
+    async def recevoir():
+        await envoye.wait()
+        return {"type": "http.disconnect"}
+
+    async def envoyer(message):
+        if message["type"] == "http.response.body" and message["body"]:
+            evenements.append(json.loads(message["body"][6:]))
+            envoye.set()
+            await asyncio.Event().wait()
+
+    await reponse({"type": "http", "asgi": {"spec_version": "2.3"}}, recevoir, envoyer)
+    async with get_session_context() as session:
+        tache = await session.get(AgentTask, evenements[0]["task_id"])
+        assert tache.status == statut
+        assert (tache.error is not None) is (type_evenement == "error")
+        assert tache.id not in agents._running_agent_tasks
 
 
 @pytest.mark.asyncio
