@@ -3734,6 +3734,26 @@ class _ResultatOutil(Protocol):
     def execution_time_ms(self) -> float: ...
 
 
+def _message_recherche_vide(nom: str, resultat: str) -> str | None:
+    """Reconnaît les réponses vides explicites des recherches natives."""
+    if nom == "search_files":
+        try:
+            valeur = json.loads(resultat)
+        except (ValueError, TypeError):
+            return None
+        if (isinstance(valeur, dict) and valeur.get("found") is False
+                and valeur.get("total") == 0 and valeur.get("documents") == []
+                and not valeur.get("error")):
+            return "Je n'ai trouvé aucun fichier pour cette recherche."
+    elif nom == "search_emails" and resultat.startswith("Aucun email trouve pour la recherche "):
+        return "Je n'ai trouvé aucun e-mail pour cette recherche."
+    elif nom == "search_invoices" and resultat.startswith("Aucune facture ni devis local ne correspond à "):
+        return "Je n'ai trouvé aucune facture ni aucun devis pour cette recherche."
+    elif nom == "web_search" and resultat.startswith("Aucun résultat trouvé pour: "):
+        return "Je n'ai trouvé aucun résultat pour cette recherche sur le web."
+    return None
+
+
 async def _execute_tools_and_continue(
     llm_service: LLMService,
     mcp_service,
@@ -4224,6 +4244,23 @@ async def _execute_tools_and_continue(
         logger.info("Annulation demandée : pas de nouveau tour après les outils")
         return
 
+    # Un modèle faible peut inventer le contenu d'un fichier absent. Lorsque
+    # l'outil confirme un résultat vide, répondre directement sans lui confier
+    # la formulation. Les autres résultats restent dans le détail des outils.
+    recherches_vides = [
+        message for nom, resultat, erreur in exec_records if not erreur
+        if (message := _message_recherche_vide(nom, resultat)) is not None
+    ]
+    if recherches_vides:
+        texte = "\n".join(dict.fromkeys(recherches_vides))
+        if len(exec_records) > len(recherches_vides):
+            texte += " Les autres résultats sont disponibles dans le détail des outils."
+        yield "data: " + json.dumps(
+            StreamChunk(type="text", content=texte, conversation_id=conversation_id).model_dump(),
+            ensure_ascii=False,
+        ) + "\n\n"
+        return
+
     # Le résultat et les tours rejoués peuvent franchir un palier que le
     # premier contrôle, antérieur à l'outil, ne voyait pas.
     verdict_suite = _controle_du_prompt(
@@ -4404,6 +4441,15 @@ async def _repondre_apres_recherche(
         messages = [LLMMessage(role="user", content=arguments.get("query", ""),
                               contient_documents=arguments.get('_provenance_documents') != 'sans_document')]
     context = llm.prepare_context(messages)
+    recherche_vide = _message_recherche_vide("web_search", resultat)
+    if recherche_vide:
+        if conversation_id:
+            fournisseur, modele = _attribution(llm)
+            await _ecrire_reponse(session, Message(
+                conversation_id=conversation_id, role="assistant", content=recherche_vide,
+                model=modele, provider=fournisseur,
+            ), marque_reponse(context))
+        return recherche_vide
     context.contient_documents = (
         arguments.get('_provenance_documents') != 'sans_document'
         or any(m.contient_documents or m.images for m in messages)
