@@ -11,23 +11,22 @@ import { migrateConsentOutbox, reconcileConsentOutboxes, storedDataProfiles } fr
 export const DATA_PROFILE_STORAGE_KEY = 'therese:data-profile';
 
 function normalizeDataDir(dataDir: string): string {
-  const trimmed = dataDir.trim();
   // Une barre finale ne change pas le dossier. Ne pas développer ~ ni
   // convertir les barres inverses : sous POSIX, ces noms peuvent être distincts.
   // C:/ est une racine de lecteur, C: un chemin relatif à ce lecteur.
-  if (/^[a-z]:\/+$/i.test(trimmed)) return `${trimmed.slice(0, 2)}/`;
-  return trimmed.replace(/\/+$/, '') || (trimmed ? '/' : '');
+  if (/^[a-z]:\/+$/i.test(dataDir)) return `${dataDir.slice(0, 2)}/`;
+  return dataDir.replace(/\/+$/, '') || (dataDir ? '/' : '');
 }
 
 function isDefaultDataDir(dataDir: string): boolean {
-  return /(^|[\\/])\.therese[\\/]?$/.test(dataDir.trim());
+  return /(^|[\\/])\.therese[\\/]?$/.test(dataDir);
 }
 
 export type DataProfileIsolationResult = 'unchanged' | 'initialized' | 'switched';
 
 export function isolateDataProfilePersistence(
   dataDir: string,
-  options?: { reload?: () => void; canonicalDataDir?: string; verifiedAliases?: string[] },
+  options?: { reload?: () => void; canonicalDataDir?: string; verifiedAliases?: string[]; profileIdentity?: string },
 ): DataProfileIsolationResult {
   const normalizedDataDir = normalizeDataDir(options?.canonicalDataDir ?? dataDir);
   if (!normalizedDataDir) {
@@ -35,17 +34,22 @@ export function isolateDataProfilePersistence(
   }
 
   const previousDataDir = localStorage.getItem(DATA_PROFILE_STORAGE_KEY);
+  // Le marqueur et la file portent désormais l'identité observée à leur
+  // création. Résoudre aujourd'hui un ancien chemin ne prouve pas sa cible hier.
+  const currentProfile = options?.profileIdentity ?? normalizedDataDir;
   // Le dossier historique peut être un lien : son chemin configuré garde la
   // règle de migration, son identité canonique sert aux nouvelles écritures.
-  const historicalProfile = isDefaultDataDir(normalizeDataDir(dataDir));
+  const historicalProfile = !options?.profileIdentity && isDefaultDataDir(normalizeDataDir(dataDir));
   migrateConsentOutbox(previousDataDir || (historicalProfile ? normalizedDataDir : ''));
-  const sameProfile = (id: string) => normalizeDataDir(id) === normalizedDataDir
-    || options?.verifiedAliases?.includes(id) === true;
+  const sameProfile = (id: string) => options?.profileIdentity
+    ? id === currentProfile
+    : normalizeDataDir(id) === normalizedDataDir
+      && (options?.verifiedAliases === undefined || options.verifiedAliases.includes(id));
   const unchanged = previousDataDir !== null && sameProfile(previousDataDir);
   // Garder le marqueur courant, mais reprendre aussi les files conservées
   // sous une ancienne graphie lors d'un aller-retour par un autre profil.
   reconcileConsentOutboxes(
-    unchanged ? previousDataDir : normalizedDataDir,
+    unchanged ? previousDataDir : currentProfile,
     storedDataProfiles().filter(sameProfile),
   );
   if (unchanged) return 'unchanged';
@@ -54,14 +58,14 @@ export function isolateDataProfilePersistence(
   // n'existait pas. Les caches presents appartiennent au profil canonique
   // ~/.therese. On les conserve uniquement pour ce profil par defaut.
   if (previousDataDir === null && historicalProfile) {
-    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, normalizedDataDir);
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, currentProfile);
     return 'initialized';
   }
 
   // Le helper desarme aussi les ecritures Zustand debouncées et purge le
   // sessionStorage. Sans cela, `pagehide` reecrirait therese-chat au reload.
   purgeLocalPersistence({ profileSwitch: true });
-  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, normalizedDataDir);
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, currentProfile);
   options?.reload?.();
   return 'switched';
 }

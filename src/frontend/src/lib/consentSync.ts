@@ -29,8 +29,7 @@ export function migrateConsentOutbox(id: string): void {
   if (!legacy || !id) return;
   const decisions: Decision[] = JSON.parse(legacy);
   const known = pending(id);
-  localStorage.setItem(outbox(id), JSON.stringify([
-    ...decisions.filter(d => !known.some(k => k.event_id === d.event_id)), ...known]));
+  localStorage.setItem(outbox(id), JSON.stringify(mergeConsentDecisions([decisions, known])));
   localStorage.removeItem(CONSENT_OUTBOX_PREFIX);
 }
 export const CONSENT_SAVE_ERROR = 'therese:cloud-consent-save-error';
@@ -48,17 +47,62 @@ function pending(id: string): Decision[] {
   return JSON.parse(localStorage.getItem(id ? outbox(id) : CONSENT_OUTBOX_PREFIX) || '[]');
 }
 
+function mergeConsentDecisions(queues: Decision[][]): Decision[] {
+  const decisions = new Map<string, Decision>();
+  const predecessors = new Map<string, Set<string>>();
+  for (const queue of queues) {
+    let previous: string | undefined;
+    for (const decision of queue) {
+      if (!decisions.has(decision.event_id)) {
+        decisions.set(decision.event_id, decision);
+        predecessors.set(decision.event_id, new Set());
+      }
+      if (previous && previous !== decision.event_id) predecessors.get(decision.event_id)!.add(previous);
+      previous = decision.event_id;
+    }
+  }
+  function precedes(a: string, b: string): boolean {
+    const todo = [...predecessors.get(b)!];
+    const seen = new Set<string>();
+    while (todo.length) {
+      const id = todo.pop()!;
+      if (id === a) return true;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      todo.push(...predecessors.get(id)!);
+    }
+    return false;
+  }
+  // Les dates murales ne prouvent aucun ordre. Les files et leurs événements
+  // communs le prouvent ; sinon, un retrait doit gagner sur un accord concurrent.
+  const prudence: [string, string][] = [];
+  for (const accord of decisions.values()) {
+    if (!accord.granted) continue;
+    for (const retrait of decisions.values()) {
+      if (!retrait.granted && retrait.purpose === accord.purpose
+        && retrait.provider.toLowerCase() === accord.provider.toLowerCase()
+        && !precedes(accord.event_id, retrait.event_id) && !precedes(retrait.event_id, accord.event_id)) {
+        prudence.push([accord.event_id, retrait.event_id]);
+      }
+    }
+  }
+  for (const [accord, retrait] of prudence) predecessors.get(retrait)!.add(accord);
+  const remaining = new Set(decisions.keys());
+  const merged: Decision[] = [];
+  while (remaining.size) {
+    const id = [...remaining].find(candidate => [...predecessors.get(candidate)!].every(p => !remaining.has(p)));
+    if (id === undefined) throw new Error('L’ordre des accords est ambigu. Les files ont été conservées sans envoi.');
+    merged.push(decisions.get(id)!);
+    remaining.delete(id);
+  }
+  return merged;
+}
+
 /** Réunit seulement les identités reconnues comme celles du profil actif. */
 export function reconcileConsentOutboxes(id: string, aliases: string[]): void {
   const sources = aliases.filter(alias => alias !== id && localStorage.getItem(outbox(alias)) !== null);
   if (!sources.length) return;
-  const decisions = new Map(pending(id).map(d => [d.event_id, d]));
-  for (const alias of sources) {
-    for (const decision of pending(alias)) {
-      if (!decisions.has(decision.event_id)) decisions.set(decision.event_id, decision);
-    }
-  }
-  const merged = [...decisions.values()].sort((a, b) => Date.parse(a.occurred_at) - Date.parse(b.occurred_at));
+  const merged = mergeConsentDecisions([pending(id), ...sources.map(pending)]);
   // Écrire la destination avant de retirer les sources : une panne du stockage
   // laisse des copies dédoublonnables, jamais un retrait perdu.
   localStorage.setItem(outbox(id), JSON.stringify(merged));

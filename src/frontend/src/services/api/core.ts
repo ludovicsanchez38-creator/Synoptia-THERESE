@@ -411,6 +411,7 @@ export interface Stats {
   uptime_seconds: number;
   data_dir: string;
   data_profile?: string;
+  data_profile_id?: string;
   data_profile_aliases?: string[];
   db_path: string;
 }

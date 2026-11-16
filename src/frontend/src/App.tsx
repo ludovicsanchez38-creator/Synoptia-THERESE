@@ -131,7 +131,9 @@ function ApplicationBootstrap() {
       }
       // Retry loop : le backend peut mettre un instant à démarrer
       const maxRetries = 5;
+      let profilIdentifie = false;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        profilIdentifie = false;
         try {
           // Récupérer le token de session
           await api.initializeAuth();
@@ -153,16 +155,19 @@ function ApplicationBootstrap() {
           // sans cloison mélangerait les données de deux profils. On s'arrête.
           let isolation: ReturnType<typeof isolateDataProfilePersistence>;
           try {
+            if (!stats.data_profile_id) throw new Error('Identité du dossier absente.');
             isolation = isolateDataProfilePersistence(stats.data_dir, {
               reload: () => window.location.reload(),
               canonicalDataDir: stats.data_profile,
               verifiedAliases: stats.data_profile_aliases,
+              profileIdentity: stats.data_profile_id,
             });
           } catch (err) {
             arreterPourCloisonnement(err);
             return;
           }
           if (isolation === 'switched') return;
+          profilIdentifie = true;
 
           // Correctifs 0.83 : une synchronisation des accords en échec ne bloque
           // jamais le démarrage. Le cache local reste tel quel (rien de perdu ni
@@ -193,6 +198,11 @@ function ApplicationBootstrap() {
             await new Promise(resolve => setTimeout(resolve, attempt * 500));
           }
         }
+      }
+
+      if (!profilIdentifie) {
+        arreterPourCloisonnement(new Error('Identité du profil indisponible après cinq tentatives.'));
+        return;
       }
 
       // Si toutes les tentatives echouent : NE PAS montrer l'onboarding

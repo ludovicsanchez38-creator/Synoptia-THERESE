@@ -1013,6 +1013,7 @@ async def get_stats(
 ):
     """Get usage statistics."""
     from app.models.entities import Contact, Conversation, FileMetadata, Message, Project
+    from app.services.identite_profil import identite_profil
     from sqlmodel import func
 
     # Count entities
@@ -1041,7 +1042,7 @@ async def get_stats(
     aliases = []
     for candidate in data_profiles or []:
         try:
-            if candidate and Path(candidate).resolve(strict=True) == data_dir:
+            if candidate and Path(candidate).samefile(data_dir):
                 aliases.append(candidate)
         except (OSError, RuntimeError, ValueError):
             continue
@@ -1057,6 +1058,7 @@ async def get_stats(
         "uptime_seconds": uptime,
         "data_dir": str(settings.data_dir),
         "data_profile": str(data_dir),
+        "data_profile_id": identite_profil(data_dir),
         "data_profile_aliases": aliases,
         "db_path": str(settings.db_path),
     }

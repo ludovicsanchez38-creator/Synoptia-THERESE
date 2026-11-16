@@ -224,3 +224,126 @@ npm run lint
 ```
 
 Les options Vitest évitent toute écriture de cache dans les dépendances partagées ; `--offline --no-install` interdit le téléchargement. Les appels HTTP des scénarios sont simulés ou traités en mémoire par TestClient, les dossiers backend sont jetables sous `/tmp`, et les chemins frontend sont fictifs. Aucune suite complète, aucun service lancé, aucun accès réseau ni fournisseur LLM, aucun usage des ports interdits, du profil personnel ou de `.app-loop/`. Aucun `rm`, `git add`, commit, dépôt annexe ou bundle. Les 11 fichiers concernés restent non commités dans cet arbre, prêts pour le rejeu contradictoire.
+
+## Remédiation de la relecture, passe 2
+
+### Rouges observés avant correction
+
+- **Constat 6** : test rétabli depuis l’intégration, `tests/test_c20_b1889_notes_heritees.py::test_note_rattachee_preservee_si_evenement_sans_projet`, lancé seul : `AssertionError: assert None == 'projet-existant'`. XML `/tmp/diff-front-1-r2-c6-rouge.xml` lu : 1 échec, 0 erreur.
+- **Constat 1** : `test_c20_identite_profil.py::test_r2_c1_casse_du_volume_et_identite_historique`, lancé seul : `AssertionError: La casse dépend du volume, pas de resolve()`. XML `/tmp/diff-front-1-r2-c1-rouge.xml` lu : 1 échec. Le test appelle la route avec une session SQL simulée ; une première tentative via TestClient a été interrompue pendant son initialisation, sans résultat de test.
+- **Constat 2** : `profileStorageIsolation.test.ts::R2-C2 : un ancien lien réorienté ne prouve pas à qui appartenaient le cache et les accords`, lancé seul : `AssertionError: expected 'unchanged' to be 'switched' // Object.is equality`. XML `/tmp/diff-front-1-r2-c2-rouge.xml` lu : 1 échec.
+- **Constat 3** : `profileStorageIsolation.test.ts::R2-C3 : les espaces du dossier canonique restent significatifs`, lancé seul : `AssertionError: expected 'unchanged' to be 'switched' // Object.is equality`. XML `/tmp/diff-front-1-r2-c3-rouge.xml` lu : 1 échec.
+- **Constat 4** : `consentSync.profiles.test.ts::R2-C4 : le recul de l’horloge ne renverse pas les décisions d’une ancienne file`, lancé seul : `AssertionError: expected [ 'retrait', 'accord' ] to deeply equal [ 'accord', 'retrait' ]`. XML `/tmp/diff-front-1-r2-c4-rouge.xml` lu : 1 échec.
+- **Constat 5** : test de démarrage existant renforcé, `App.demarrageAccords.test.tsx::R2-C5 : moteur injoignable cinq fois, le cloisonnement non établi arrête l’application`, lancé seul : `Unable to find role="heading" and name "Cloisonnement du profil impossible"`. XML `/tmp/diff-front-1-r2-c5-rouge.xml` lu : 1 échec ; le canevas était monté sans isolation.
+
+### Corrections, appelants et contrôles voisins
+
+1. **Sémantique du volume.** Les alias de `/api/config/stats` sont comparés par `Path.samefile`, donc par l’identité du dossier sur le volume, au lieu de comparer deux résolutions textuelles. La route expose aussi `data_profile_id`, composé du périphérique, de l’inode et de la date de naissance du dossier quand le système la fournit (notamment macOS). Les deux nouveaux tests couvrent une casse insensible simulée au niveau de `stat` et deux dossiers réellement distincts. La simulation permet le rejeu sur ce volume Linux sans supposer sa sensibilité à la casse. Le chemin canonique et le chemin configuré restent disponibles pour leurs consommateurs. Appelants relus : démarrage, statistiques des réglages, contrôle du profil des accords. Premier contrôle direct : 2 tests verts ; contrôle HTTP avec les voisins des accords : 13 tests verts.
+
+2. **Preuve historique du cache et des accords.** Au démarrage, `App` exige l’identité native annoncée par le moteur. Cette valeur devient le marqueur local et la clé de la file des accords ; elle est donc enregistrée avant de créer le cache. Une autre graphie du même dossier garde la même identité. Un lien réorienté change d’identité, déclenche la purge du cache et laisse intacte la file du dossier précédent. Le moteur vérifie cette même identité à chaque décision ou import ; les anciens clients utilisant un chemin restent contrôlés par `samefile`. Une identité native ancienne ne peut pas être validée par la nouvelle cible d’un lien. Les anciennes files identifiées uniquement par un chemin restent conservées à part : une équivalence constatée aujourd’hui ne prouve pas leur cible passée. Cela implique une purge conservatrice des anciens caches lors du premier passage à cette version, y compris si leur chemin ressemble au chemin courant. Aucune identité historique n’est inventée rétroactivement.
+
+   Les six nouveaux cas du constat 2 couvrent le lien sans preuve, l’identité enregistrée puis le lien réorienté, la graphie sans identité annoncée, deux files anciennes qui ne doivent pas être transmises, et le refus côté moteur après réorientation. Le parcours A → B → A conserve et retransmet uniquement le retrait de A avec son identité enregistrée. Appelants relus : `App`, `queueConsentDecision`, `flushConsentDecisions`, `synchroniserConsentements`, `purgeLocalPersistence`, les gardes de l’Atelier et les deux routes d’écriture des accords. Contrôle voisin après correction : 86 réussites, 3 cas des constats suivants exclus à cette étape ; aucun échec.
+
+3. **Espaces significatifs.** La normalisation ne supprime plus les espaces, y compris pour reconnaître le dossier historique. Sans identité native, une réponse d’alias explicite du moteur peut refuser une équivalence lexicale : les barres finales ne passent plus outre ce refus. Trois cas couvrent l’espace final du dossier canonique, les espaces autour du chemin et le refus du moteur. L’ancien cas B-1868 avec ` /tmp/profil-a/ ` a été déplacé tel quel dans un test exigeant désormais une purge ; il ne constituait pas une variante du même dossier. Les autres cas de barres finales et de racine de lecteur restent contrôlés. Appelants relus : entrée `data_dir`/`data_profile` du démarrage, migration historique et sélection des files. Contrôle voisin : 40 réussites, 2 cas du constat 4 encore exclus ; aucun échec.
+
+4. **Ordre des décisions.** La fusion utilise l’ordre de chaque file et les événements communs, sans trier les dates murales. Les identifiants et dates des événements sont conservés et dédoublonnés. Entre un accord et un retrait dont l’ordre n’est pas prouvé, le retrait est placé après l’accord. Si ces contraintes sont incompatibles, la fusion échoue avant toute écriture ou suppression de source. La même fusion s’applique à l’ancienne file globale. Quatre nouveaux cas contrôlent le recul de l’horloge, le retrait concurrent prioritaire, un réaccord explicitement postérieur dans une file et la conservation intacte de files contradictoires. Les tests existants gardent le dédoublonnage, la reprise après changement de profil, la panne d’écriture de destination et l’invalidation d’une relecture en vol. Appelants relus : migration, isolation, purge, vidage et synchronisation. Premier contrôle voisin : 68 tests verts ; les gardes supplémentaires sont comprises dans la porte frontend finale.
+
+5. **Démarrage sans identité.** L’épuisement des cinq tentatives n’ouvre plus le canevas si la dernière tentative n’a pas établi l’identité et effectué l’isolation. Il affiche l’arrêt de cloisonnement existant. Les erreurs passagères gardent leurs tentatives ; l’échec de la seule vérification de mise en route, après isolation, garde son repli existant. Le test de démarrage antérieur a été renforcé : arrêt visible, isolation non appelée, aucun canevas ni assistant. Trois nouveaux cas couvrent l’identité absente de la réponse, la récupération après un échec passager et le repli après isolation réussie. Appelants et états relus : initialisation de l’authentification, état de vérification, écran d’arrêt, synchronisation, assistant et montage du canevas. Contrôle voisin : 39 tests verts.
+
+6. **Contenu de l’intégration rétabli.** Le HEAD de départ est `d5dbaa0b`, tandis que l’intégration locale est `75498edd`. Les commits manquants sont `2dd3d2b1`, `9eb74c5d`, `fcf446a5` et `75498edd`. Après le rouge du rattachement, leur différence a été appliquée uniquement aux fichiers de travail, sans index. Les 24 fichiers concernés sont identiques octet pour octet à cette intégration : ses 13 fichiers de tests absents sont rétablis (20 cas : 11 backend et 9 frontend), ainsi que ses autres correctifs et son bilan. Le rattachement d’une note existante reste présent si le rendez-vous n’a pas encore de projet ; la note reste migrable lorsque ce projet devient connu. Les deux appelants SQL (bootstrap et Alembic) ont été relus, ainsi que les appelants des autres correctifs reportés (mémoire, provenance, vérification de clé, Atelier, formulaire et piège de focus). Premier contrôle : 170 tests backend verts ; les tests frontend rétablis et leurs voisins figurent dans la porte finale.
+
+   **L’historique Git n’a pas été rebasé.** Un rebasage réécrirait les commits et l’index, incompatibles avec l’interdiction explicite de commiter/indexer et les permissions de cette session. Le contenu manquant est prêt dans cet arbre, non commité ; l’orchestrateur conserve la maîtrise de l’historique. Cela corrige la divergence des fichiers constatée, sans prétendre qu’une fusion ordinaire aurait supprimé les commits d’intégration.
+
+### Tests conservés et contraintes de l’environnement
+
+Les constats 1 à 5 ajoutent **17 cas** (3 backend, 14 frontend) et renforcent deux cas préexistants (espaces et démarrage). Les anciens parcours de conservation du cache et de retour A → B → A utilisent maintenant une identité enregistrée, conformément au nouveau contrat ; les nouvelles reproductions couvrent explicitement le refus des anciennes graphies dépourvues de preuve. Les autres assertions de cache, de retrait, de transmission unique et d’absence d’envoi à B restent présentes. Aucun scénario existant n’a été supprimé ni ignoré à la porte finale.
+
+Le TestClient standard restait bloqué avant les assertions dans `anyio`/`asyncio`. Une sonde indépendante de THÉRÈSE (`call_soon_threadsafe` puis attente d’un événement) a reproduit l’absence de réveil inter-thread. Deux lancements ont été interrompus pendant ce diagnostic ; aucun résultat vert n’en est déduit. Pour les tests HTTP locaux, le module temporaire `/tmp/diff_front_1_r2_polling.py` ajoute un réveil périodique à `BaseEventLoop.run_forever` (2 ms lors de la porte finale), sans modifier les routes, fixtures, transports ni assertions. Il est chargé uniquement par `PYTHONPATH=/tmp PYTEST_PLUGINS=diff_front_1_r2_polling`. Le rejeu normal sur une machine dont les réveils de boucle fonctionnent n’en a pas besoin.
+
+Tous les dossiers de données sont jetables sous `/tmp` via `THERESE_DATA_DIR`. Les transports des tests concernés sont simulés ; aucun service ni fournisseur réel n’est lancé. Vitest emploie `--offline --no-install --configLoader runner --no-cache --maxWorkers=3`, sans écrire dans les dépendances partagées. Les liens `.venv` et `src/frontend/node_modules` étaient déjà non suivis au début et n’ont pas été modifiés. Aucun accès réseau, port interdit, profil personnel ou `.app-loop/`, aucun `rm`, `git add`, commit, dépôt annexe ni bundle. Les deux listes exactes de fichiers sont aussi conservées dans `/tmp/diff-front-1-r2-pytest-files.txt` et `/tmp/diff-front-1-r2-vitest-files.txt`.
+
+### Commandes ciblées de la passe 2
+
+Le lanceur temporaire de réveil est le seul ajout d’environnement local aux commandes ci-dessous ; aucun test n’est substitué. Le contrôle final du test de contrat (`-k r2` dans `test_c20_identite_profil.py`) donne aussi **3 réussites**, XML `/tmp/diff-front-1-r2-contrat.xml` lu, après retrait d’un import du nouveau module de production pour préserver la collecte sur la base sans correctifs. Ces trois cas sont déjà compris dans le périmètre backend final.
+
+```sh
+THERESE_DATA_DIR=$(mktemp -d /tmp/diff-front-1-r2-XXXXXX) \
+  PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 \
+  .venv/bin/python -m pytest \
+  tests/test_c20_identite_profil.py \
+  tests/test_t4_consentement_moteur.py \
+  tests/test_c20_b1888_transaction_activites.py \
+  tests/test_c20_b1889_notes_heritees.py \
+  tests/test_c20_b1890_activites_sans_contact.py \
+  tests/test_c20_b1891_reparation_transaction.py \
+  tests/test_c20_b1893_provenance_sans_marque.py \
+  tests/test_c20_b2009_motifs_ambigus.py \
+  tests/test_c20_b2010_limite_cle.py \
+  tests/test_c20_b2011_cle_sans_espace.py \
+  tests/test_activity_migration.py \
+  tests/test_alembic_stamp.py \
+  tests/test_b1348_verification_cle.py \
+  tests/test_c19d_b1088_securite_memoire.py \
+  tests/test_t4_5_provenance_differee.py \
+  -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-front-1-r2.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+cd src/frontend
+npx --offline --no-install vitest run \
+  src/App.demarrageAccords.test.tsx \
+  src/OnboardingRafraichitLeProfil.test.tsx \
+  src/lib/profileStorageIsolation.test.ts \
+  src/lib/consentSync.profiles.test.ts \
+  src/lib/consentSync.test.ts \
+  src/lib/consentSync.demarrage.test.ts \
+  src/lib/consent.test.ts \
+  src/lib/purgeLocalData.test.ts \
+  src/lib/debouncedStorage.test.ts \
+  src/services/api/core.profil.test.ts \
+  src/services/api/core.test.ts \
+  src/services/api/core.accordNonEnregistre.test.ts \
+  src/hooks/useDialogFocusTrap.horsTabulation.test.tsx \
+  src/hooks/useDialogFocusTrap.isolationRacine.test.tsx \
+  src/hooks/useDialogFocusTrap.test.tsx \
+  src/hooks/useDialogFocusTrap.autofocusHorsPiege.test.tsx \
+  src/hooks/useDialogFocusTrap.isolationTardive.test.tsx \
+  src/components/atelier/AgentSession.accordMoteur.test.tsx \
+  src/components/atelier/AgentSession.profilChange.b2012.test.tsx \
+  src/components/atelier/AgentSession.refusDestination.b2013.test.tsx \
+  src/components/atelier/AgentSession.refusHttp.b2013.test.tsx \
+  src/components/atelier/AgentSession.profils.test.tsx \
+  src/components/atelier/AgentSession.consentement.t4.test.tsx \
+  src/components/atelier/AgentSession.confirmation.test.tsx \
+  src/components/atelier/AgentSession.echapConfirmation.c9.test.tsx \
+  src/components/atelier/AgentSession.c9.test.tsx \
+  src/components/atelier/AgentSession.avatars.c9.test.tsx \
+  src/components/invoices/InvoiceForm.abandonPaiement.b2014.test.tsx \
+  src/components/invoices/InvoiceForm.focusAbandon.b2014.test.tsx \
+  src/components/invoices/InvoiceForm.pied.c19d.test.tsx \
+  src/components/invoices/InvoiceForm.abandonDeSaisie.b1392.test.tsx \
+  src/components/invoices/InvoiceForm.focusInitial.test.tsx \
+  src/components/invoices/InvoiceForm.focusEtLibelles.c12.test.tsx \
+  src/components/invoices/InvoiceForm.soumission.test.tsx \
+  src/components/invoices/InvoiceForm.datePaiement.p155.test.tsx \
+  src/components/invoices/InvoiceForm.actionsRapides.b1864.test.tsx \
+  src/components/invoices/InvoiceForm.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r2-vitest.xml
+npx --offline --no-install tsc --noEmit
+npm run lint
+```
+
+### Portes finales de la passe 2
+
+Les trois rapports XML ci-dessous ont été lus avec `xml.etree.ElementTree`, en comptant les cas, échecs, erreurs et ignorés. Aucun rouge connu n’est présent dans ce périmètre, aucun échec nouveau ni test ignoré. Les vérifications de Ruff, TypeScript et ESLint terminent avec le code 0 ; aucune correction de lint extérieure aux constats n’a été faite.
+
+| Porte | Périmètre | Réussis | Échecs | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 15 fichiers ciblés | 484 | 0 | 0 | 0 | `/tmp/diff-front-1-r2.xml`, code 0 |
+| Vitest | 37 fichiers ciblés, 3 workers | 219 | 0 | 0 | 0 | `/tmp/diff-front-1-r2-vitest.xml`, code 0 |
+| Pytest, contrôle du contrat | 3 cas déjà compris dans les 484 | 3 | 0 | 0 | 0 | `/tmp/diff-front-1-r2-contrat.xml`, code 0 |
+| Ruff | `src/backend tests`, `--no-fix`, relancé après la porte backend | sans objet | 0 | 0 | sans objet | `All checks passed!`, code 0 |
+| TypeScript | `tsc --noEmit` | sans objet | 0 | 0 | sans objet | `/tmp/diff-front-1-r2-tsc.log` vide, code 0 |
+| ESLint | `npm run lint` | sans objet | 0 | 0 | sans objet | 27 avertissements existants, seuil 27 ; `/tmp/diff-front-1-r2-eslint.log`, code 0 |
+| Git | `git diff --check` et index | sans objet | 0 | 0 | sans objet | aucune erreur d’espacement, index inchangé |
+
+Les correctifs, leurs tests et les fichiers d’intégration reportés sont laissés non commités dans cet arbre. Le HEAD reste `d5dbaa0b` et l’intégration locale contrôlée reste `75498edd`. La suite complète et le rejeu contradictoire sans correctifs restent à l’orchestrateur.

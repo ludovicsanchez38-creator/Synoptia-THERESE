@@ -50,9 +50,17 @@ def _verifier_profil(data_profile: str | None) -> None:
     from pathlib import Path
 
     from app.config import settings
+    from app.services.identite_profil import identite_profil
 
-    if data_profile is not None and (settings.data_dir is None
-            or Path(data_profile).resolve() != Path(settings.data_dir).resolve()):
+    if data_profile is None:
+        return
+    try:
+        dossier = Path(settings.data_dir)
+        meme_profil = (data_profile == identite_profil(dossier) if data_profile.startswith("directory:")
+                       else Path(data_profile).samefile(dossier))
+    except (OSError, RuntimeError, TypeError, ValueError):
+        meme_profil = False
+    if not meme_profil:
         raise HTTPException(409, "Le profil a changé. Reviens au profil concerné avant de réessayer.")
 
 
