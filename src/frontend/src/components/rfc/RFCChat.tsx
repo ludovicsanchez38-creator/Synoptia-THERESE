@@ -240,6 +240,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
               size="icon"
               className="h-9 w-9 flex-shrink-0 bg-error hover:bg-error/80"
               onClick={stopStreaming}
+              aria-label="Arrêter la réponse"
               title="Arrêter la réponse"
             >
               <Square className="w-4 h-4" />
