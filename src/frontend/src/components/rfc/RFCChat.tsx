@@ -27,6 +27,7 @@ interface RFCChatProps {
   initialMessage?: string;
   initialSourceIds?: string[];
   onConversationUpdate: (messages: RFCMessage[]) => void;
+  onStreamingChange?: (streaming: boolean) => void;
   /** Tour 8 : références que le moteur signale supprimées, à retirer partout. */
   onSourcesAbsentes?: (ids: string[]) => void;
 }
@@ -36,7 +37,7 @@ const MAX_RESPONSE_LENGTH = 8_000;
 /** Timeout global par requête en ms (BUG-097) */
 const STREAM_TIMEOUT_MS = 60_000;
 
-export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSourceIds, onConversationUpdate, onSourcesAbsentes }: RFCChatProps) {
+export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSourceIds, onConversationUpdate, onStreamingChange, onSourcesAbsentes }: RFCChatProps) {
   const [messages, setMessages] = useState<RFCMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -46,6 +47,11 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
   const abortRef = useRef<AbortController | null>(null);
 
   const nextId = () => `rfc-${++idCounter.current}`;
+
+  useEffect(() => {
+    onStreamingChange?.(isStreaming);
+    return () => onStreamingChange?.(false);
+  }, [isStreaming, onStreamingChange]);
 
   // Auto-scroll
   useEffect(() => {
@@ -182,6 +188,8 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
     }
   }, [input, isStreaming, messages, systemPrompt, initialSourceIds, onConversationUpdate, onSourcesAbsentes]);
 
+  const attenteReponse = isStreaming && messages[messages.length - 1]?.content === '';
+
   return (
     <div className="flex flex-col h-full">
       {/* Messages */}
@@ -207,12 +215,10 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
           ))}
         </AnimatePresence>
 
-        {isStreaming && messages[messages.length - 1]?.content === '' && (
-          <div role="status" aria-live="polite" className="flex items-center gap-2 text-text-muted text-sm">
-            <Spinner taille="bouton" />
-            THÉRÈSE réfléchit...
-          </div>
-        )}
+        <div role="status" aria-live="polite" aria-atomic="true"
+          className={attenteReponse ? 'flex items-center gap-2 text-text-muted text-sm' : 'sr-only'}>
+          {attenteReponse && <><Spinner taille="bouton" />THÉRÈSE réfléchit...</>}
+        </div>
       </div>
 
       {/* Input */}

@@ -48,7 +48,11 @@ Le bandeau contrôle aussi la distribution à l'exécution (B-1801) : le type
 Tauri `deb` ne suffit pas. `get_system_info` lit `ID` et `ID_LIKE` dans
 `/etc/os-release`, avec repli sur `/usr/lib/os-release`, et exige le mot
 `debian`. Les autres distributions et les lectures impossibles reçoivent un
-lien de téléchargement manuel. Ce contrôle est refait au clic, avant tout
+lien de téléchargement manuel. L'OS vient aussi de cette commande native,
+pas de `navigator.platform`. Un OS absent ou inconnu interdit l'installation
+automatique ; macOS exige `app` et Windows exige `nsis` ou `msi`.
+Le repli manuel précise que la disponibilité n'a pas pu être vérifiée,
+sans annoncer une nouvelle version. Ce contrôle est refait au clic, avant tout
 téléchargement ou arrêt du moteur. Le bilan du lot est dans
 [`qualite/c20-front-maj.md`](qualite/c20-front-maj.md).
 

@@ -64,11 +64,14 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   });
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [makeStreaming, setMakeStreaming] = useState(false);
+  const [reflectStreaming, setReflectStreaming] = useState(false);
 
   const { createCommand, updateCommand } = useCommandsStore();
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
   const reflectHasSource = sourcesVerifiees(reflectMessages).length > 0;
+  const captureEnAttente = makeMessages.length === 0 || makeStreaming || isGenerating;
 
   // Tour 8 : une réponse supprimée côté moteur est retirée des deux étapes.
   const retirerAbsentes = useCallback((ids: string[]) => {
@@ -88,6 +91,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   }, [reflectMessages]);
 
   const goToCapture = useCallback(async () => {
+    if (makeStreaming || isGenerating) return;
     const sources = sourcesVerifiees([...reflectMessages, ...makeMessages]);
     if (!sources.length) {
       // Rien de vérifié à reprendre : le formulaire local reste ouvert.
@@ -122,7 +126,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
       setIsGenerating(false);
     }
     setStep('capture');
-  }, [reflectMessages, makeMessages, captureData, retirerAbsentes]);
+  }, [reflectMessages, makeMessages, captureData, retirerAbsentes, makeStreaming, isGenerating]);
 
   const handleSave = useCallback(async (data: typeof captureData) => {
     const rfc_source_ids = sourcesVerifiees([...reflectMessages, ...makeMessages]);
@@ -219,6 +223,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                   systemPrompt={REFLECT_SYSTEM_PROMPT}
                   placeholder="Décris ta commande idéale..."
                   onConversationUpdate={setReflectMessages}
+                  onStreamingChange={setReflectStreaming}
                   onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
@@ -226,9 +231,11 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 {/* B-636 : un bouton désactivé sans explication. L'aide dit ce qui manque. */}
                 {!reflectHasSource ? (
                   <p id="rfc-aide-passer-a-faire" className="text-xs text-text-muted">
-                    {reflectMessages.length === 0
-                      ? 'Envoie d’abord ton brief à THÉRÈSE, puis attends une réponse complète avant de passer à Faire.'
-                      : 'Pour passer à Faire, il faut une réponse complète. Renvoie ton message.'}
+                    {reflectStreaming
+                      ? 'THÉRÈSE répond. Attends une réponse complète avant de passer à Faire.'
+                      : reflectMessages.length === 0
+                        ? 'Envoie d’abord ton brief à THÉRÈSE, puis attends une réponse complète avant de passer à Faire.'
+                        : 'Pour passer à Faire, il faut une réponse complète. Renvoie ton message.'}
                   </p>
                 ) : (
                   <span />
@@ -272,6 +279,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                         : undefined
                   }
                   onConversationUpdate={setMakeMessages}
+                  onStreamingChange={setMakeStreaming}
                   onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
@@ -282,7 +290,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                     Retour
                   </Button>
                 )}
-                {(makeMessages.length === 0 || isGenerating) && (
+                {captureEnAttente && (
                   <p id="rfc-aide-capturer" role="status" aria-live="polite" className="text-xs text-text-muted">
                     {isGenerating
                       ? 'THÉRÈSE prépare ta commande. Patiente un instant.'
@@ -292,8 +300,8 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 <Button
                   variant="primary"
                   onClick={goToCapture}
-                  disabled={makeMessages.length === 0 || isGenerating}
-                  aria-describedby={makeMessages.length === 0 || isGenerating ? 'rfc-aide-capturer' : undefined}
+                  disabled={captureEnAttente}
+                  aria-describedby={captureEnAttente ? 'rfc-aide-capturer' : undefined}
                   className="flex items-center gap-2 text-sm ml-auto shrink-0"
                 >
                   {isGenerating ? 'Génération...' : 'Capturer'}
