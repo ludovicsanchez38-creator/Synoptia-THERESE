@@ -95,6 +95,8 @@ export function EmailInboxCard({
             <p className="mt-2 text-sm font-semibold text-text">Boîte email indisponible</p>
             <p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
+              {/* Un seul « Ouvrir Email » : celui de l'en-tête. Même choix que
+                  l'agenda, deux contrôles au même nom ne disent pas lequel. */}
               <button
                 type="button"
                 onClick={onRetry}
@@ -103,7 +105,6 @@ export function EmailInboxCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <BoutonOuvrirLaVue vue="email" onOuvrir={onOpenClassic} />
             </div>
           </div>
         </EmailStateShell>
