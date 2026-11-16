@@ -411,7 +411,7 @@ describe('lot 9, garde 4 bis : une seule carte de service', () => {
 
     const statut = screen.getByRole('status');
     expect(statut).toHaveTextContent('Ollama ne répond pas');
-    expect(statut).toHaveTextContent('Démarrez Ollama pour utiliser des modèles locaux.');
+    expect(statut).toHaveTextContent('Démarre Ollama pour utiliser des modèles locaux.');
     expect(statut.className).toMatch(/text-warning/);
     expect(screen.queryByRole('alert')).toBeNull();
   });

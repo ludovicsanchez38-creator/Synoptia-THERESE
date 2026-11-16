@@ -23,7 +23,7 @@ it('ouvre le vrai éditeur du profil et de THERESE.md sans lecture de service di
   expect(api.getWebSearchStatus).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Voir THERESE.md' }));
   await waitFor(() => expect(screen.getByDisplayValue('Consignes fictives')).toBeVisible());
-  fireEvent.click(within(screen.getByRole('dialog', { name: 'Aperçu THERESE.md' })).getByRole('button', { name: 'Fermer' }));
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Modifier THERESE.md' })).getByRole('button', { name: 'Fermer' }));
   fireEvent.click(screen.getByRole('button', { name: 'Fermer les paramètres' }));
   await waitFor(() => expect(ouvrir).toHaveFocus());
 });
