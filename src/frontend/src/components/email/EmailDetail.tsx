@@ -283,7 +283,12 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           </Button>
 
           <div className="flex flex-wrap items-center gap-2 max-[840px]:basis-full">
-            <Button variant="ghost" size="sm" onClick={toggleStar}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleStar}
+              aria-label={message.is_starred ? 'Retirer l’étoile' : 'Marquer d’une étoile'}
+            >
               <Star
                 className={`w-4 h-4 ${message.is_starred ? 'fill-yellow-400 text-warning' : ''}`}
               />
