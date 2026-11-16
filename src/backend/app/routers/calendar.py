@@ -1208,6 +1208,12 @@ async def create_event(
         if calendar is not None:
             request.calendar_id = calendar.id
 
+    if calendar and calendar.provider not in ("local", "caldav", "google"):
+        raise HTTPException(
+            status_code=400,
+            detail="Ce fournisseur d’agenda n’est pas pris en charge.",
+        )
+
     if calendar and calendar.provider in ("local", "caldav"):
         return await _create_event_provider(calendar, request, session)
     else:

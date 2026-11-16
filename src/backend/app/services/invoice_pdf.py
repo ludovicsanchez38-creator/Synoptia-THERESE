@@ -113,7 +113,7 @@ def libelle_statut_pdf(statut: str, type_document: str) -> str:
     libelle = STATUTS_PDF.get(type_document, {}).get(cle)
     if libelle:
         return libelle
-    return cle.replace("_", " ").capitalize() or "Non renseigné"
+    return "Statut inconnu" if cle else "Non renseigné"
 
 
 def chemin_pdf_a_ouvrir(dossier: str, numero: str) -> Path:
