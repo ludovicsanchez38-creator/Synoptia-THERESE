@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { CloudConsentDialog } from './CloudConsentDialog';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 function Scenario({ onCancel, onConfirm, busy = false }: {
   onCancel: () => void;
@@ -64,4 +65,25 @@ it.each([false, true])('B-2020 : Échap annule sans envoi et rend le focus au d�
   expect(declencheur).toHaveFocus();
   expect(declencheur.closest('[inert]')).toBeNull();
   expect(declencheur.closest('[aria-hidden="true"]')).toBeNull();
+});
+
+it('R1.1 : bloque les raccourcis globaux tant que l’accord est ouvert', () => {
+  const naviguer = vi.fn();
+  renderHook(() => useKeyboardShortcuts({
+    onCommandPalette: naviguer, onNewConversation: naviguer, onShowShortcuts: naviguer,
+    onOpenSettings: naviguer, onToggleEmailPanel: naviguer, onOpenFile: naviguer,
+    onOpenKatiaNewTask: naviguer, onToggleAtelierPanel: naviguer,
+  }));
+  const { onCancel, onConfirm } = ouvrir();
+  const annuler = screen.getByRole('button', { name: 'Annuler' });
+  for (const [key, shiftKey] of [['k', false], ['n', false], ['/', false], [',', false],
+    ['e', false], ['o', false], ['k', true], ['a', true]] as const) {
+    fireEvent.keyDown(annuler, { key, shiftKey, ctrlKey: true, metaKey: true });
+  }
+  expect(naviguer).not.toHaveBeenCalled();
+  expect(onConfirm).not.toHaveBeenCalled();
+  fireEvent.keyDown(annuler, { key: 'Escape' });
+  expect(onCancel).toHaveBeenCalledTimes(1);
+  fireEvent.keyDown(document.activeElement!, { key: 'n', ctrlKey: true, metaKey: true });
+  expect(naviguer).toHaveBeenCalledTimes(1);
 });

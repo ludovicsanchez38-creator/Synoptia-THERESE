@@ -115,4 +115,31 @@ describe('Atelier : accord explicite acquitté avant la mission', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/mission.*pas.*démarr/i);
     expect(moteur.stream).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { geste: 'Échap', occupe: false }, { geste: 'Échap', occupe: true },
+    { geste: 'Annuler', occupe: false }, { geste: 'Annuler', occupe: true },
+  ])('R1.3 : $geste rend le focus au champ après démontage de la confirmation (occupé : $occupe)', async ({ geste, occupe }) => {
+    moteur.documents = false;
+    render(<AgentSession model="openai::modele-test" profileId="researcher" onBack={vi.fn()} />);
+    const champ = screen.getByRole('textbox', { name: 'Message à l’agent' });
+    await proposer();
+    expect(screen.queryByTestId('agent-profile-confirmation')).not.toBeInTheDocument();
+    expect(champ).toBeDisabled();
+    if (occupe) {
+      fireEvent.click(screen.getByRole('button', { name: 'Autoriser et envoyer' }));
+      await waitFor(() => expect(moteur.acquitter).toBeDefined());
+    }
+    const annuler = screen.getByRole('button', { name: 'Annuler' });
+    annuler.focus();
+    if (geste === 'Échap') fireEvent.keyDown(annuler, { key: 'Escape' });
+    else fireEvent.click(annuler);
+    if (occupe) await acquitter();
+    expect(screen.queryByTestId('agent-cloud-consent')).not.toBeInTheDocument();
+    expect(champ).toBeEnabled();
+    await waitFor(() => expect(champ).toHaveFocus());
+    expect(champ.closest('[inert]')).toBeNull();
+    expect(champ).toHaveValue('Analyse fictive');
+    expect(moteur.stream).not.toHaveBeenCalled();
+  });
 });
