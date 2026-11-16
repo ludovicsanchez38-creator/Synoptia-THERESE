@@ -33,6 +33,63 @@ describe('B-1877 / B-1878 : les réponses restent dans leur ouverture de projet'
     api.listDeliverables.mockResolvedValue([]);
   });
 
+  it.each(['succès', 'échec'])('une lecture de A terminée dans le layout de B reste ignorée (%s)', async (issue) => {
+    // Piloter la continuation permet de viser exactement la fenêtre entre
+    // les effets de layout et le nettoyage des effets passifs de React.
+    let resoudre!: (liste: DeliverableResponse[]) => void;
+    let rejeter!: () => void;
+    let terminer!: () => void;
+    const lectureA = {
+      then(suite: typeof resoudre) { resoudre = suite; return this; },
+      catch(suite: typeof rejeter) { rejeter = suite; return this; },
+      finally(suite: typeof terminer) { terminer = suite; return this; },
+    };
+    const lectureB = differe<DeliverableResponse[]>();
+    api.listDeliverables.mockReturnValueOnce(lectureA).mockReturnValueOnce(lectureB.promise);
+    function Ouverture({ projectId }: { projectId: string }) {
+      useLayoutEffect(() => {
+        if (projectId === 'B') {
+          if (issue === 'succès') resoudre([{ ...livrable('A'), title: 'Secret du projet A' }]);
+          else rejeter();
+          terminer();
+        }
+      }, [projectId]);
+      return <ProjectDeliverablesSection projectId={projectId} />;
+    }
+    const vue = render(<Ouverture projectId="A" />);
+    vue.rerender(<Ouverture projectId="B" />);
+
+    expect(screen.queryByText('Secret du projet A'), 'la lecture tardive de A apparaît dans B').not.toBeInTheDocument();
+    expect(screen.queryByRole('alert'), 'l’erreur de lecture de A apparaît dans B').not.toBeInTheDocument();
+    await act(async () => { lectureB.resolve([livrable('B')]); });
+    expect(screen.getByText('Livrable B')).toBeInTheDocument();
+  });
+
+  it.each(['lecture avant succès', 'succès avant lecture'])(
+    'une création terminée après fermeture actualise la nouvelle fenêtre (%s)', async (ordre) => {
+      const creation = differe<DeliverableResponse>();
+      const lectureRetour = differe<DeliverableResponse[]>();
+      api.createDeliverable.mockReturnValueOnce(creation.promise);
+      api.listDeliverables.mockResolvedValueOnce([]).mockReturnValueOnce(lectureRetour.promise);
+      const ancienne = render(<ProjectDeliverablesSection projectId="A" />);
+      await screen.findByText('Aucun livrable pour ce projet.');
+      ajouter('Livrable A');
+      ancienne.unmount();
+      render(<ProjectDeliverablesSection projectId="A" />);
+      fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Saisie de la nouvelle fenêtre' } });
+      if (ordre === 'lecture avant succès') await act(async () => { lectureRetour.resolve([]); });
+      api.listDeliverables.mockResolvedValue([livrable('A')]);
+
+      await act(async () => { creation.resolve(livrable('A')); });
+      if (ordre === 'succès avant lecture') await act(async () => { lectureRetour.resolve([]); });
+
+      expect(screen.queryByText('Livrable A'), 'la création réussie reste invisible après réouverture').toBeInTheDocument();
+      expect(screen.getAllByText('Livrable A')).toHaveLength(1);
+      expect(screen.queryByText('Aucun livrable pour ce projet.')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Nouveau livrable')).toHaveValue('Saisie de la nouvelle fenêtre');
+    },
+  );
+
   it('le premier DOM de B ne contient ni les livrables ni la saisie de A', async () => {
     const lectureB = differe<DeliverableResponse[]>();
     api.listDeliverables.mockResolvedValueOnce([livrable('A')]).mockReturnValueOnce(lectureB.promise);
