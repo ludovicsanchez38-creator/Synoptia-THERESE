@@ -1,6 +1,7 @@
 """B-1825 : un démarrage MCP inachevé ne laisse aucun processus vivant."""
 
 import asyncio
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -89,6 +90,60 @@ async def test_annulation_initialisation_arrete_aussi_processus_et_lecteurs(tmp_
         assert serveur.status == MCPServerStatus.ERROR
         assert serveur.id not in service._processes
         assert len(lecteurs) == 2 and all(lecteur.done() for lecteur in lecteurs)
+    finally:
+        if serveur.id in service._processes:
+            await service.stop_server(serveur.id)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("etape", ["write", "drain"])
+async def test_pipe_ferme_nettoie_la_requete_avant_un_nouveau_demarrage(tmp_path, monkeypatch, etape):
+    service = MCPService(config_path=tmp_path / "serveurs.json")
+    serveur = MCPServer(id="test", name="Témoin", command="python")
+    service.servers[serveur.id] = serveur
+    premiere_entree = SimpleNamespace(write=MagicMock(), drain=AsyncMock())
+    if etape == "write":
+        premiere_entree.write.side_effect = BrokenPipeError("pipe fermé")
+    else:
+        premiere_entree.drain.side_effect = BrokenPipeError("pipe fermé")
+
+    premiere_fin = asyncio.Event()
+    premier = SimpleNamespace(
+        pid=123, stdin=premiere_entree, stdout=None, stderr=None,
+        terminate=MagicMock(side_effect=premiere_fin.set), kill=MagicMock(),
+        wait=AsyncMock(side_effect=premiere_fin.wait),
+    )
+    seconde_fin = asyncio.Event()
+    messages = []
+
+    async def repondre():
+        demande = json.loads(messages[-1])
+        if "id" in demande:
+            await service._handle_server_message(serveur.id, {"id": demande["id"], "result": {}})
+
+    second = SimpleNamespace(
+        pid=124, stdin=SimpleNamespace(write=lambda message: messages.append(message), drain=repondre),
+        stdout=None, stderr=None, terminate=MagicMock(side_effect=seconde_fin.set),
+        kill=MagicMock(), wait=AsyncMock(side_effect=seconde_fin.wait),
+    )
+    monkeypatch.setattr(module, "validate_mcp_command", lambda *_: None)
+    monkeypatch.setattr(module, "resolve_mcp_command", lambda *_: "python")
+    monkeypatch.setattr(module.asyncio, "create_subprocess_exec", AsyncMock(side_effect=[premier, second]))
+
+    try:
+        assert await service.start_server(serveur.id) is False
+        assert serveur.status == MCPServerStatus.ERROR
+        premier.terminate.assert_called_once()
+        assert not service._processes
+        assert not service._pending_requests
+        assert not service._pending_timestamps
+        assert not service._pending_deadlines
+
+        assert await service.start_server(serveur.id) is True
+        assert serveur.status == MCPServerStatus.RUNNING
+        assert not service._pending_requests
+        assert not service._pending_timestamps
+        assert not service._pending_deadlines
     finally:
         if serveur.id in service._processes:
             await service.stop_server(serveur.id)

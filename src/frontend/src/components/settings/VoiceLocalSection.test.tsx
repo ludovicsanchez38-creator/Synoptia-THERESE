@@ -78,4 +78,16 @@ describe('BUG-129 - activation = intention explicite', () => {
     await waitFor(() => expect(mockedSetup).toHaveBeenCalled());
     expect(getVoiceLocalPreference()).toBeNull();
   });
+
+  it.each([
+    'Voix locale non installée. Application installée : vérifie la version de THÉRÈSE.',
+    "Voix locale non installée. Depuis les sources : pip install 'therese-backend[voice-local]'.",
+  ])('affiche le conseil du moteur quand la voix manque : %s', async (message) => {
+    mockedStatus.mockResolvedValue({ ...notReadyStatus(), stt_available: false, install_hint: message });
+
+    render(<VoiceLocalSection />);
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(mockedSetup).not.toHaveBeenCalled();
+  });
 });
