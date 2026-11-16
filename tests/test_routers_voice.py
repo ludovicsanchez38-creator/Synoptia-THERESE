@@ -166,7 +166,8 @@ class TestVoiceLocalSetup:
         with patch("app.services.voice_local.stt_available", return_value=False):
             response = await client.post("/api/voice/local/setup", json={})
         assert response.status_code == 503
-        assert "à jour" in response.json()["message"]
+        assert "Voix locale non installée" in response.json()["message"]
+        assert "pip install 'therese-backend[voice-local]'" in response.json()["message"]
 
     @pytest.mark.asyncio
     async def test_setup_refuse_double_lancement(self, client: AsyncClient):
