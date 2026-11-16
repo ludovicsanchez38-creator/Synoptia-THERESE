@@ -4,8 +4,14 @@ Aucun processus réel n'est interrogé ou arrêté : seul le bloc Rust est compi
 avec un remplacement local de std::process.
 """
 
+import os
 import subprocess
+import sys
+import time
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 RUST_LIB = Path(__file__).resolve().parents[1] / "src/frontend/src-tauri/src/lib.rs"
 
@@ -59,6 +65,9 @@ mod simulation {
                 pub fn stdin(self, _: Stdio) -> Self { self }
                 pub fn output(self) -> ::std::io::Result<Output> {
                     let scenario = ::std::env::args().nth(1).unwrap();
+                    if self.name == "wmic" && scenario == "wmic_absent" {
+                        return Err(::std::io::Error::new(::std::io::ErrorKind::NotFound, "WMIC absent"));
+                    }
                     let texte = match self.name.as_str() {
                         "wmic" if scenario == "wmic_vide" || scenario == "wmic_indisponible_moteur" => String::new(),
                         "wmic" => {
@@ -129,3 +138,82 @@ def test_b1836_seul_le_port_exact_designe_un_moteur(tmp_path: Path) -> None:
     assert _simuler_windows(tmp_path, "port_inexact") == []
     assert _simuler_windows(tmp_path, "port_exact") == ["4242"]
     assert _simuler_windows(tmp_path, "port_exact_utf16") == ["4242"]
+
+
+def _nettoyage_python_simule(monkeypatch, tmp_path: Path, scenario: str) -> list[str]:
+    """Lance la seconde étape sans interroger ni arrêter de vrai processus."""
+    import main as point_d_entree
+
+    arrets: list[str] = []
+
+    def faux_run(commande, **_kwargs):
+        if commande[0] == "wmic":
+            if scenario == "wmic_absent":
+                raise FileNotFoundError("WMIC simulé absent")
+            return SimpleNamespace(stdout="ProcessId=414\r\n", returncode=0)
+        if commande[0] == "tasklist":
+            pid = {
+                "moteur": "4242",
+                "pid_courant": str(os.getpid()),
+                "pid_parent": str(os.getppid()),
+            }.get(scenario, "414")
+            lignes = f'"backend.exe","{pid}","Console","1","42 K"\r\n'
+            if scenario == "cim_un_echoue":
+                lignes += '"backend.exe","4242","Console","1","42 K"\r\n'
+            return SimpleNamespace(
+                stdout=lignes, returncode=0
+            )
+        if commande[0] == "powershell":
+            if scenario == "cim_indisponible":
+                raise FileNotFoundError("CIM simulé indisponible")
+            if scenario == "cim_un_echoue" and "ProcessId = 414" in commande[-1]:
+                raise subprocess.TimeoutExpired(commande, 5)
+            port = {
+                "autre_port": "8000",
+                "port_prefixe": "172930",
+                "wmic_absent": "8000",
+            }.get(scenario, "17293")
+            return SimpleNamespace(
+                stdout=f'"C:\\Program Files\\THERESE\\backend.exe" --host 127.0.0.1 --port {port}',
+                returncode=1 if scenario == "cim_echec" else 0,
+            )
+        if commande[0] == "taskkill":
+            arrets.append(commande[-1])
+            return SimpleNamespace(stdout="", returncode=0)
+        raise AssertionError(f"Commande non simulée : {commande[0]}")
+
+    with monkeypatch.context() as contexte:
+        contexte.setenv("THERESE_DATA_DIR", str(tmp_path / "profil-jetable"))
+        contexte.setattr(sys, "platform", "win32")
+        contexte.setattr(subprocess, "run", faux_run)
+        contexte.setattr(time, "sleep", lambda _delai: None)
+        point_d_entree._kill_zombie_backends()
+    return arrets
+
+
+@pytest.mark.parametrize(
+    ("scenario_rust", "scenario_python"),
+    [("wmic_absent", "wmic_absent"), ("port_inexact", "autre_port")],
+)
+def test_les_deux_nettoyages_epargnent_un_backend_tiers(
+    tmp_path: Path, monkeypatch, scenario_rust: str, scenario_python: str
+) -> None:
+    assert _simuler_windows(tmp_path, scenario_rust) == []
+    assert _nettoyage_python_simule(monkeypatch, tmp_path, scenario_python) == []
+
+
+def test_le_nettoyage_python_identifie_un_moteur_restant(tmp_path: Path, monkeypatch) -> None:
+    assert _nettoyage_python_simule(monkeypatch, tmp_path, "moteur") == ["4242"]
+
+
+@pytest.mark.parametrize(
+    "scenario", ["pid_courant", "pid_parent", "port_prefixe", "cim_indisponible", "cim_echec"]
+)
+def test_le_nettoyage_python_epargne_les_pid_non_identifies(
+    tmp_path: Path, monkeypatch, scenario: str
+) -> None:
+    assert _nettoyage_python_simule(monkeypatch, tmp_path, scenario) == []
+
+
+def test_un_echec_cim_ne_masque_pas_le_candidat_suivant(tmp_path: Path, monkeypatch) -> None:
+    assert _nettoyage_python_simule(monkeypatch, tmp_path, "cim_un_echoue") == ["4242"]

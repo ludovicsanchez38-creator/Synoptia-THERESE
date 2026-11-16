@@ -80,6 +80,30 @@ describe('B-1912 : reprise après une erreur de démarrage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Impossible de relancer le moteur');
   });
 
+  it('ignore un double clic tant que la relance est en cours puis autorise un nouvel essai', async () => {
+    harness.initApiBase.mockRejectedValueOnce(new Error('IPC'));
+    let rejeter!: (raison: Error) => void;
+    harness.invoke.mockImplementationOnce(() => new Promise<void>((_resolve, reject) => { rejeter = reject; }));
+    render(<SplashScreen onReady={vi.fn()} />);
+    await screen.findByRole('alert');
+
+    const bouton = screen.getByRole('button', { name: 'Relancer le moteur local' });
+    act(() => {
+      fireEvent.click(bouton);
+      fireEvent.click(bouton);
+    });
+    await waitFor(() => expect(harness.invoke).toHaveBeenCalledTimes(1));
+    expect(bouton).toBeDisabled();
+    fireEvent.click(bouton);
+    await act(async () => { await Promise.resolve(); });
+    expect(harness.invoke).toHaveBeenCalledTimes(1);
+
+    await act(async () => { rejeter(new Error('relance impossible')); });
+    expect(bouton).toBeEnabled();
+    fireEvent.click(bouton);
+    await waitFor(() => expect(harness.invoke).toHaveBeenCalledTimes(2));
+  });
+
   it('conserve une nouvelle erreur reçue pendant la relance', async () => {
     harness.initApiBase.mockRejectedValueOnce(new Error('IPC'));
     let terminer!: () => void;
