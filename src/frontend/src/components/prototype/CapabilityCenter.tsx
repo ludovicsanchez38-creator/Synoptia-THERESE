@@ -340,6 +340,7 @@ export function CapabilityCenter({
   const isPresent = useIsPresent();
   useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
 
+  const rechercheActive = query.trim().length > 0;
   const visibleCapabilities = useMemo(() => {
     // P-114 / P-129 : accents et casse repliés des deux côtés (« echeance »
     // trouve « échéance »), et des mots-clés qui disent les mots des gens.
@@ -423,7 +424,7 @@ export function CapabilityCenter({
             })}
           </nav>
 
-          <div id="capability-results-panel" role="tabpanel" aria-labelledby={`capability-group-${selectedGroup}`} className="flex min-w-0 flex-1 flex-col">
+          <div id="capability-results-panel" role="tabpanel" aria-labelledby={rechercheActive ? undefined : `capability-group-${selectedGroup}`} aria-label={rechercheActive ? 'Résultats de la recherche' : undefined} className="flex min-w-0 flex-1 flex-col">
             <div className="border-b border-border px-4 py-3 sm:px-5 sm:py-4">
               <Input
                 data-dialog-autofocus
