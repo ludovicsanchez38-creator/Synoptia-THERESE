@@ -8,9 +8,9 @@ import asyncio
 import logging
 import re
 import unicodedata
-from collections.abc import Collection, Sequence
+from collections.abc import Awaitable, Collection, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 from uuid import uuid4
 
 from app.config import settings
@@ -31,6 +31,33 @@ from qdrant_client.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
+
+
+async def attendre_fin_operation(operation: Awaitable[_T]) -> _T:
+    """Diffère l'annulation jusqu'à la fin du travail, y compris en thread.
+
+    Annuler to_thread n'arrête pas son fil. Même plusieurs annulations ne
+    doivent pas permettre un rollback ou une libération de verrou avant lui.
+    """
+    tache = asyncio.ensure_future(operation)
+    annulation = None
+    while True:
+        try:
+            resultat = await asyncio.shield(tache)
+            break
+        except asyncio.CancelledError as erreur:
+            if tache.cancelled():
+                raise
+            annulation = erreur
+        except Exception:
+            if annulation is not None:
+                raise annulation
+            raise
+    if annulation is not None:
+        raise annulation
+    return resultat
 
 #: Types de souvenirs dont le périmètre est écrit dans le payload et reclassé
 #: au démarrage. Un payload de ces types sans périmètre est un vestige : il est
@@ -662,6 +689,13 @@ class QdrantService:
             ]),
             FieldCondition(key="entity_id", match=MatchAny(any=[project_id, *file_ids])),
         ])
+        return self._copier_fragments(filtre)
+
+    async def async_copier_fragments_entites(self, entity_ids: Sequence[str]) -> list[PointStruct]:
+        filtre = Filter(must=[FieldCondition(key="entity_id", match=MatchAny(any=list(entity_ids)))])
+        return await asyncio.to_thread(self._copier_fragments, filtre)
+
+    def _copier_fragments(self, filtre: Filter) -> list[PointStruct]:
         fragments: list[PointStruct] = []
         offset = None
         while True:
@@ -796,11 +830,11 @@ class QdrantService:
 
     async def async_delete_by_entity(self, entity_id: str) -> int:
         """Async wrapper for delete_by_entity."""
-        return await asyncio.to_thread(self.delete_by_entity, entity_id)
+        return await attendre_fin_operation(asyncio.to_thread(self.delete_by_entity, entity_id))
 
     async def async_delete_by_scope(self, scope: str, scope_id: str) -> int:
         """Async wrapper for delete_by_scope."""
-        return await asyncio.to_thread(self.delete_by_scope, scope, scope_id)
+        return await attendre_fin_operation(asyncio.to_thread(self.delete_by_scope, scope, scope_id))
 
     def close(self) -> None:
         """Close the Qdrant client."""
@@ -828,6 +862,9 @@ async def init_qdrant() -> None:
     service = get_qdrant_service()
     # Access client to trigger initialization
     _ = service.client
+    from app.services.project_sync_service import reprendre_restitutions_index
+
+    await reprendre_restitutions_index(service)
 
 
 async def close_qdrant() -> None:

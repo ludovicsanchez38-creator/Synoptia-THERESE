@@ -437,7 +437,8 @@ async def _nettoyer_et_supprimer_projet(
     # B-1503 : contacts et sous-dossiers rangés dans le dossier repassent au
     # périmètre général, comme les conversations. Cloisonnés sur un
     # identifiant mort, ils ne remontaient plus dans aucune conversation ; leur
-    # vecteur, effacé plus haut avec ceux du dossier, est recréé ici.
+    # vecteur est recréé après le commit : un rollback ne doit jamais
+    # publier dans le périmètre général une fiche qui reste privée en SQL.
     contacts_ranges = (
         await session.execute(select(Contact).where(clause_contacts_ranges(project_id)))
     ).scalars().all()
@@ -448,10 +449,9 @@ async def _nettoyer_et_supprimer_projet(
         element.scope = "global"
         element.scope_id = None
         session.add(element)
-    for fiche in contacts_ranges:
-        await _embed_contact(fiche)
-    for dossier in sous_dossiers:
-        await _embed_project(dossier)
+    publications = session.info.setdefault("retrait_racines_publications", set())
+    publications.update(("contact", fiche.id) for fiche in contacts_ranges)
+    publications.update(("project", dossier.id) for dossier in sous_dossiers)
 
     # B-179 : `Project.tasks` et `Project.deliverables` portent
     # `cascade_delete=True`. Ces deux familles disparaissent donc avec le
@@ -1238,8 +1238,12 @@ async def delete_contact(
             )
         )
         files = files_result.scalars().all()
+        from app.services.project_sync_service import preparer_suppression_fichiers_contact
+
+        qdrant = get_qdrant_service()
+        await preparer_suppression_fichiers_contact(contact_id, [file.id for file in files], session, qdrant)
         for file in files:
-            await _delete_embedding(file.id)
+            await qdrant.async_delete_by_entity(file.id)
             await session.delete(file)
         cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
 
