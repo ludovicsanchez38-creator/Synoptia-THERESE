@@ -53,9 +53,9 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           index={0}
           className="mx-auto mb-6 h-24 w-24 rounded-md border border-border/30"
         />
-        <h1 className="mb-3 text-3xl font-bold text-text sm:text-4xl">
+        <h2 className="mb-3 text-3xl font-bold text-text sm:text-4xl">
           Bienvenue sur THÉRÈSE
-        </h1>
+        </h2>
         <p className="text-text-muted text-lg max-w-md">
           Tes données sont stockées sur ton ordinateur. Tu choisis le service d’IA qui traite tes demandes.
         </p>

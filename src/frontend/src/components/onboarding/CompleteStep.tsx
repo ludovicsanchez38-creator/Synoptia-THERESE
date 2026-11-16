@@ -167,9 +167,9 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
         transition={{ delay: 0.3 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold text-text mb-3">
+        <h2 className="text-3xl font-bold text-text mb-3">
           {iaManquante ? 'Il reste une étape' : "C'est parti !"}
-        </h1>
+        </h2>
         <p className="text-text-muted text-lg max-w-md">
           {iaManquante
             ? "Pour que THÉRÈSE puisse te répondre, choisis un service d'IA : en ligne avec une clé, ou gratuit sur ton ordinateur. Voici où en est ta configuration."
