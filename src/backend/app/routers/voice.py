@@ -196,6 +196,7 @@ async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict
 
     from app.services.voice_local import (
         DEFAULT_WHISPER_MODEL,
+        INSTALL_HINT,
         get_setup_state,
         mark_setup_starting,
         run_voice_setup,
@@ -205,10 +206,7 @@ async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict
     if not stt_available():
         raise HTTPException(
             status_code=503,
-            detail=(
-                "La voix locale n'est pas embarquée dans cette version de THÉRÈSE. "
-                "Mets l'application à jour."
-            ),
+            detail=f"Voix locale non installée. {INSTALL_HINT}",
         )
     if get_setup_state().get("state") == "running":
         raise HTTPException(status_code=409, detail="Un téléchargement est déjà en cours.")

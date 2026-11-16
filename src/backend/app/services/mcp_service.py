@@ -499,8 +499,10 @@ class MCPService:
                     decrypted_env[key] = value
             env.update(decrypted_env)
 
-            # Build command - résoudre le chemin complet avec le PATH enrichi
-            resolved_cmd = resolve_mcp_command(server.command, env.get("PATH")) or server.command
+            # La configuration du serveur ne choisit jamais l'exécutable lancé.
+            resolved_cmd = resolve_mcp_command(server.command, enriched_path)
+            if not resolved_cmd:
+                raise FileNotFoundError(server.command)
             cmd = [resolved_cmd] + server.args
 
             # Start process with stdio transport
@@ -533,12 +535,19 @@ class MCPService:
 
             return True
 
-        except FileNotFoundError:
+        except asyncio.CancelledError:
+            await self.stop_server(server_id)
             server.status = MCPServerStatus.ERROR
-            server.error = f"Command not found: {server.command}"
+            server.error = "Le démarrage du serveur MCP a été interrompu."
+            raise
+        except FileNotFoundError:
+            await self.stop_server(server_id)
+            server.status = MCPServerStatus.ERROR
+            server.error = f"Commande introuvable : {server.command}"
             logger.error(f"Failed to start {server.name}: {server.error}")
             return False
         except Exception as e:
+            await self.stop_server(server_id)
             server.status = MCPServerStatus.ERROR
             server.error = str(e)
             logger.error(f"Failed to start {server.name}: {e}")
@@ -565,15 +574,17 @@ class MCPService:
             # Process already dead, that's fine
             pass
 
-        # Cancel reader tasks
-        if server_id in self._reader_tasks:
-            self._reader_tasks[server_id].cancel()
-            del self._reader_tasks[server_id]
-
-        # Cancel stderr reader task (Sprint 2 - PERF-2.8)
-        if server_id in self._stderr_reader_tasks:
-            self._stderr_reader_tasks[server_id].cancel()
-            del self._stderr_reader_tasks[server_id]
+        # Attendre la fin effective des lecteurs avant de rendre la main.
+        lecteurs = [
+            t for t in (
+                self._reader_tasks.pop(server_id, None),
+                self._stderr_reader_tasks.pop(server_id, None),
+            ) if t is not None
+        ]
+        for lecteur in lecteurs:
+            lecteur.cancel()
+        if lecteurs:
+            await asyncio.gather(*lecteurs, return_exceptions=True)
 
         del self._processes[server_id]
 

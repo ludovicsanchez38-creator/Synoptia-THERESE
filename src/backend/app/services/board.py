@@ -41,6 +41,11 @@ from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
+_RECHERCHE_WEB_COUPEE = (
+    "[Recherche web coupée par l'utilisateur : aucune source externe "
+    "n'a été consultée. Paramètres > Services pour la réactiver.]"
+)
+
 # ============================================================
 # Sonde de dérive du catalogue (lot A2, 0.48)
 #
@@ -341,10 +346,7 @@ class BoardService:
             # que le Board présente comme « aucun résultat ». L'utilisateur
             # croirait que le web n'a rien trouvé, alors qu'il l'a coupé.
             logger.info(f"Recherche web refusée pour le Board : {refus}")
-            return (
-                "[Recherche web coupée par l'utilisateur : aucune source externe "
-                "n'a été consultée. Paramètres > Services pour la réactiver.]"
-            )
+            return _RECHERCHE_WEB_COUPEE
         except Exception as e:
             logger.warning(f"Échec recherche web pour Board: {e}")
             return ""
@@ -496,9 +498,15 @@ class BoardService:
                 content="Recherche d'informations actualisées...",
             )
             web_search_results = await self._search_web_for_context(request.question)
+            if web_search_results == _RECHERCHE_WEB_COUPEE:
+                annonce_web = "Recherche web coupée. Tu peux la réactiver dans Paramètres > Services."
+            elif web_search_results:
+                annonce_web = f"{len(web_search_results)} caractères de contexte web"
+            else:
+                annonce_web = "Aucun résultat"
             yield BoardDeliberationChunk(
                 type="web_search_done",
-                content=f"{len(web_search_results)} caractères de contexte web" if web_search_results else "Aucun résultat",
+                content=annonce_web,
             )
 
         # --- Contexte commun ---

@@ -1265,7 +1265,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 message_fournisseur_pour_ecran(lisibles[0]) if lisibles else "Le modèle n'a produit aucune réponse."
             )
 
-        cb.record_success(provider_name)
+        # Le flux a déjà compté son issue, y compris après un texte partiel.
         return "".join(content_parts)
 
     async def close(self):
