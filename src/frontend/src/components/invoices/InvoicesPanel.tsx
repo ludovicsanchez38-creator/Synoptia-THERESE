@@ -18,6 +18,7 @@ import { libellesDeLaPiece } from './libellesPiece';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
@@ -229,6 +230,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     setEditingInvoice(null);
   }
 
+  // B-1866 : Fermer et le fond démontaient le panneau avant le formulaire,
+  // donc la question d'abandon, qui vit dans le formulaire, ne partait pas.
+  function demanderFermeturePanneau() {
+    if (showForm && sortieRetenueParUneSaisie()) return;
+    setIsInvoicePanelOpen(false);
+  }
+
   function handleInvoiceCreatedOrUpdated(invoice: Invoice) {
     // B-1067 : « Convertir en facture » renvoie une NOUVELLE pièce, d'un autre
     // identifiant ; la mise à jour par identifiant ne l'ajoutait pas et le devis
@@ -343,7 +351,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             size="icon"
             type="button"
             aria-label="Fermer"
-            onClick={() => setIsInvoicePanelOpen(false)}
+            onClick={demanderFermeturePanneau}
           >
             <X className="h-[18px] w-[18px]" />
           </Button>
@@ -706,7 +714,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     <AnimatePresence>
       <div
         className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center`}
-        onClick={() => setIsInvoicePanelOpen(false)}
+        onClick={demanderFermeturePanneau}
       >
         <motion.div
           initial={{ opacity: 0 }}
