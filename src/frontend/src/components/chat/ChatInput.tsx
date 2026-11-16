@@ -78,6 +78,8 @@ interface ChatInputProps {
 }
 
 interface PendingCloudConsent {
+  conversationId: string | null;
+  message: string;
   memoryOrigin?: string;
   action: 'message' | 'deep-research';
   // Revue Soso : la finalité fait partie de la demande. Un accord donné pour
@@ -681,6 +683,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     ) {
       setPendingCloudConsent({
         action: 'message',
+        conversationId: useChatStore.getState().currentConversationId,
+        message: trimmed,
         purpose: finaliteCloud,
         provider: destinationMessage,
         providerLabel: consentLabel || libelleDuFournisseur(destinationMessage),
@@ -898,6 +902,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             return fichiers;
           });
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
+            conversationId: chunk.conversation_id, message: trimmed,
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
             memoryOrigin: `${currentProvider}:${currentModel}`,
             dataCategories: [...responseDataCategories(),
@@ -1082,6 +1087,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     ) {
       setPendingCloudConsent({
         action: 'deep-research',
+        conversationId: useChatStore.getState().currentConversationId,
+        message: trimmed,
         purpose: 'llm',
         provider: destinationRecherche,
         providerLabel: consentLabel || libelleDuFournisseur(destinationRecherche),
@@ -1190,7 +1197,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   deepResearchRef.current = handleDeepResearch;
 
   const confirmCloudConsent = useCallback(() => {
-    if (!pendingCloudConsent || (pendingCloudConsent.memoryOrigin
+    // L'accord reste attaché à la demande affichée, même si une mise à jour
+    // change la conversation ou le brouillon avant l'envoi différé.
+    const demandeToujoursCourante = () => pendingCloudConsent
+      && pendingCloudConsent.conversationId === useChatStore.getState().currentConversationId
+      && pendingCloudConsent.message === textareaRef.current?.value.trim();
+    if (!pendingCloudConsent || !demandeToujoursCourante() || (pendingCloudConsent.memoryOrigin
       ? pendingCloudConsent.memoryOrigin !== `${currentProvider}:${currentModel}`
       : destinationAccord !== pendingCloudConsent.provider)) {
       setPendingCloudConsent(null);
@@ -1206,6 +1218,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     const action = pendingCloudConsent.action;
     setPendingCloudConsent(null);
     window.setTimeout(() => {
+      if (!demandeToujoursCourante()) return;
       if (action === 'message') void sendMessageRef.current();
       else void deepResearchRef.current();
     }, 0);

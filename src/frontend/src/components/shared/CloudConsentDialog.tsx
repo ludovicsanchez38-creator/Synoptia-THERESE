@@ -19,7 +19,7 @@ export function CloudConsentDialog({ title, dataCategories, onCancel, onConfirm,
   const ref = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(ref, { active: true, onEscape: onCancel, isolateBackground: true });
   return createPortal(
-    <div className={`fixed inset-0 ${Z_LAYER.MODAL} grid place-items-center bg-surface/90 p-4`}>
+    <div className={`fixed inset-0 ${Z_LAYER.CLOUD_CONSENT} grid place-items-center bg-surface/90 p-4`}>
       <div ref={ref} role="alertdialog" aria-modal="true" aria-label={title} className="max-h-full w-full max-w-lg overflow-y-auto rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid={testId}>
         <p className="font-semibold">{title}</p>
         <p className="mt-1">Données transmises : {dataCategories.filter(c => c !== MEMORY_CARDS_CATEGORY).join(', ')}.</p>

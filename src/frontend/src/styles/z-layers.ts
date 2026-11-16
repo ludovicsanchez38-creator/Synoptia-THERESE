@@ -21,6 +21,8 @@ export const Z_LAYER = {
   WIZARD: 'z-[70]',
   /** Command palette */
   COMMAND_PALETTE: 'z-[80]',
+  /** Accord reçu pendant une recherche : visible au-dessus de la palette. */
+  CLOUD_CONSENT: 'z-[85]',
   /** Toasts / notifications passives */
   TOAST: 'z-[90]',
   /** Onboarding uniquement */

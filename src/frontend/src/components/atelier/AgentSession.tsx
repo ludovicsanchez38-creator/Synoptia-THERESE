@@ -489,7 +489,9 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     setAccordEnAttente(null);
     setPendingInstruction(null);
     setAccordOccupe(false);
-    setErreurAccord("La mission n’a pas démarré. Donne ton accord pour lancer cet agent.");
+    setErreurAccord(erreur => erreur ?? "La mission n’a pas démarré. Donne ton accord pour lancer cet agent.");
+    // La première confirmation a disparu ; attendre la réactivation du champ.
+    requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
   useEffect(() => {
     if (accordEnAttente) return pushEscapeHandler(annulerAccord);

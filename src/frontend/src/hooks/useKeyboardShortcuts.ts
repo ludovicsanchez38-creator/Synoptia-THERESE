@@ -63,7 +63,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       // dialogue modal absorbe les raccourcis de navigation. Seuls les
       // réglages autorisent la palette au-dessus, pour conserver la saisie.
       // Une confirmation ou une autre modale garde la priorité.
-      const dialogues = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"]'));
+      const dialogues = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]'));
       const rechercheDepuisReglages = key === 'k' && !event.shiftKey
         && dialogues.every((dialogue) => dialogue.hasAttribute('data-allow-command-palette'));
       if (dialogues.length > 0 && !rechercheDepuisReglages) return;
