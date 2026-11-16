@@ -687,7 +687,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">
-                          Exporter toutes les données de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> au format JSON.
+                          Exporter toutes les données de <strong>{contactDisplayName(rgpdAction.contact)}</strong> au format JSON.
                         </p>
                         <div className="flex gap-2">
                           <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)} disabled={rgpdActionLoading}>
@@ -771,7 +771,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">
-                          Le consentement de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> sera prolongé de 3 ans à partir d'aujourd'hui.
+                          Le consentement de <strong>{contactDisplayName(rgpdAction.contact)}</strong> sera prolongé de 3 ans à partir d'aujourd'hui.
                         </p>
                         <div className="flex gap-2">
                           <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)} disabled={rgpdActionLoading}>
