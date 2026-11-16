@@ -726,7 +726,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         <motion.div
           role="dialog"
           aria-modal="true"
-          aria-label="Factures"
+          aria-label="Devis et factures"
           data-testid="invoices-panel"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
