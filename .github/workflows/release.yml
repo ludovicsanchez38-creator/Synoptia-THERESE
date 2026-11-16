@@ -30,7 +30,7 @@ env:
 
 jobs:
   preflight:
-    name: Vérifier la clé de signature updater
+    name: Vérifier les prérequis de signature
     runs-on: ubuntu-latest
     steps:
       - name: Le mode à blanc ne vise aucune release
@@ -42,6 +42,15 @@ jobs:
             a-blanc-*) echo "Mode à blanc : construction et vérification seules, aucune publication." ;;
             *) echo "::error::À blanc, le libellé doit commencer par a-blanc- (reçu : $TAG)"; exit 1 ;;
           esac
+      - name: Exiger la signature Windows avant toute publication
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        run: |
+          if [ "$WINDOWS_SIGNE" != "true" ]; then
+            echo "::error::Signature Windows inactive : secrets Microsoft absents ou incomplets, publication refusée"
+            exit 1
+          fi
+
       - name: Récupérer le tag pour contrôle
         if: ${{ inputs.dry_run != true }}
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
