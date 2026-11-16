@@ -164,8 +164,10 @@ function NewMissionForm({
     const status = workspace.status;
     if (!status.git_available) items.push('Git n’est pas disponible.');
     if (!status.repo_detected) items.push(status.repo_error || 'Le dépôt autorisé est introuvable.');
-    if (status.current_branch && status.current_branch !== 'main') items.push(`La branche active est ${status.current_branch}, main est requise.`);
+    if (!status.current_branch) items.push('La branche active est inconnue, main est requise.');
+    else if (status.current_branch !== 'main') items.push(`La branche active est ${status.current_branch}, main est requise.`);
     if (status.working_tree_clean === false) items.push('Le dépôt contient des changements non enregistrés.');
+    else if (status.working_tree_clean !== true) items.push('L’état du dépôt est inconnu.');
     if (status.active_tasks > 0) items.push('Une autre mission est déjà en cours.');
     if (!status.katia_ready || !status.zezette_ready) items.push('La configuration de Katia ou Zézette est incomplète.');
     return items;
