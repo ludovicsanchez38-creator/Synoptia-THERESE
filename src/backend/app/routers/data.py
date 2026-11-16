@@ -138,8 +138,7 @@ def _masquer_urls_export(valeur: Any) -> Any:
     if not isinstance(valeur, str):
         return valeur
 
-    def nettoyer(match: re.Match[str]) -> str:
-        url = match.group()
+    def nettoyer(url: str) -> str:
         try:
             morceaux = urlsplit(url)
             autorite = morceaux.netloc.rsplit("@", 1)[-1]
@@ -155,7 +154,43 @@ def _masquer_urls_export(valeur: Any) -> Any:
         except ValueError:
             return "[URL masquée]"
 
-    return re.sub(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]+", nettoyer, valeur)
+    # Chercher d'abord l'autorité entière : un caractère qui termine une URL
+    # dans un texte peut aussi être présent avant le @ d'un identifiant saisi.
+    debut_url = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
+    separateurs_texte = " \t\r\n\"'<>\\"
+    resultat = []
+    position = 0
+    while match := debut_url.search(valeur, position):
+        debut = match.start()
+        debut_autorite = match.end()
+        fin_autorite = debut_autorite
+        while fin_autorite < len(valeur) and valeur[fin_autorite] not in "/?#\r\n":
+            fin_autorite += 1
+        autorite = valeur[debut_autorite:fin_autorite]
+        arobase = autorite.rfind("@")
+        identifiants = autorite[:arobase] if arobase >= 0 else ""
+        premier_separateur = next(
+            (i for i, caractere in enumerate(identifiants) if caractere in separateurs_texte),
+            len(identifiants),
+        )
+        deux_points = identifiants.find(":")
+        # Un séparateur avant les deux-points peut être du texte suivi d'un
+        # e-mail ; un séparateur après eux peut appartenir au mot de passe.
+        if arobase >= 0 and not (
+            premier_separateur < len(identifiants)
+            and (deux_points < 0 or deux_points > premier_separateur)
+        ):
+            fin_hote = debut_autorite + arobase + 1
+        else:
+            fin_hote = debut_autorite
+        while fin_hote < len(valeur) and valeur[fin_hote] not in "/?#" + separateurs_texte:
+            fin_hote += 1
+        fin = fin_hote
+        while fin < len(valeur) and valeur[fin] not in separateurs_texte:
+            fin += 1
+        resultat.extend((valeur[position:debut], nettoyer(valeur[debut:fin])))
+        position = fin
+    return "".join(resultat) + valeur[position:]
 
 
 def _masquer_preferences_structurees(valeur: Any) -> Any:
@@ -184,7 +219,9 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
     try:
         structure = json.loads(pref.value)
         if isinstance(structure, (dict, list)):
-            return json.dumps(_masquer_preferences_structurees(structure), ensure_ascii=False)
+            return json.dumps(
+                _masquer_urls_export(_masquer_preferences_structurees(structure)), ensure_ascii=False
+            )
     except (TypeError, json.JSONDecodeError):
         pass
     return pref.value

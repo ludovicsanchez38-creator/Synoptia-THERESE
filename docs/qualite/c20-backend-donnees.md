@@ -264,3 +264,44 @@ les chemins protégés. Ces gardes ne prouvent pas qu'un appel natif pourrait ê
 intercepté. Le chargement Vitest `runner`, sans cache et avec trois workers,
 évite une écriture dans le `node_modules` partagé. Les dépendances étaient
 déjà présentes et npm a été exécuté hors ligne.
+
+## Remédiation de la relecture, passe 4
+
+La passe est limitée aux trois constats transmis par l'orchestrateur. Les
+tests des deux correctifs ont été exécutés isolément avant modification ; les
+tests existants n'ont pas été affaiblis.
+
+| Constat | Bilan | Test et rouge initial | Correctif et contrôle |
+| --- | --- | --- | --- |
+| B-1812, URL CalDAV | confirmé | `tests/test_c20_b1812_export_config.py::test_export_masque_url_dont_le_mot_de_passe_contient_un_delimiteur` : `E       assert False` pour l'apostrophe, avant correction. | L'autorité est analysée jusqu'à l'hôte avant de masquer les identifiants ; les préférences structurées sont traitées avant leur sérialisation JSON. Les deux exports couvrent apostrophe, guillemet, chevrons, barre oblique inverse et espace, ainsi qu'une URL dans un texte. |
+| B-1811, `/spawn` interrompu | confirmé | `tests/test_c20_b1811_spawn_mission.py::test_deconnexion_avant_le_flux_libere_la_mission_et_autorise_un_nouveau_depart` : `E           fastapi.exceptions.HTTPException: 409: Une mission Atelier est déjà en cours. Attends sa fin ou annule-la avant de lancer un agent.` | La réponse ASGI ferme le flux et finalise la mission même si le générateur n'a jamais démarré. La finalisation est partagée et idempotente. Les tests couvrent ASGI 2.3 et 2.4, puis une nouvelle mission ; ils vérifient aussi qu'une déconnexion pendant l'envoi d'un événement terminal conserve son résultat. |
+
+Le premier correctif de l'export tronquait une phrase contenant une URL puis
+une adresse mail. Le test `test_export_conserve_le_texte_entre_une_url_et_une_adresse_mail`
+l'a d'abord reproduit : `E       AssertionError: assert 'Voir https://example.invalid' == 'Voir https:/...ample.invalid'`.
+L'analyse a été resserrée et les deux routes passent ce test.
+
+### Résidu renvoyé au portail (nouvelle tentative d'anonymisation)
+
+Le test isolé `test_nouvelle_tentative_conserve_le_depot_non_purge` a reproduit
+le faux succès au second appel : `E       assert True is False`
+(`tests/test_c20_r4_residu_anonymisation.py:27`). La conservation durable des
+dépôts reste une décision du propriétaire du produit ; `rgpd.py` n'a pas été
+modifié. Le test rouge a été déplacé hors de l'arbre vers
+`/private/tmp/c20-r4-residu-anonymisation-87401.py` : la Corbeille demandée
+était hors des droits d'écriture de cette session.
+
+Le même diagnostic ASGI sur la mission d'écran `/api/agents/request` montre
+qu'elle reste `in_progress` après une déconnexion pendant `http.response.start` :
+`E           AssertionError: assert 'in_progress' == 'cancelled'`. Elle n'a pas
+été corrigée dans cette passe. Le test de diagnostic a été déplacé hors de
+l'arbre vers `/private/tmp/c20-r4-diagnostic-mission-ecran-87901.py`.
+
+La porte ciblée, rapport `/tmp/backend-donnees-r4.xml` lu, compte **109 cas :
+104 réussis, 0 échec, 0 erreur et 5 exclus**. Un test exige une vérification
+Git réelle et quatre nécessitent un dépôt Git annexe : ils n'ont pas été
+validés. Ruff sur `src/backend tests` : **0 erreur**. La recette utilise une
+base jetable et une garde Python contre les connexions réseau, les
+sous-processus et les chemins protégés ; elle ne prouve pas l'interception
+d'éventuels appels natifs. Aucune suite complète ni modification frontend n'a
+été lancée. Les changements restent non commités.

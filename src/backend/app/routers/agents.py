@@ -694,7 +694,36 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
     )
     await _save_task(session, task)
 
+    current_async_task: asyncio.Task[Any] | None = None
+    final_status = "cancelled"
+    final_error: str | None = "Mission interrompue : l'écran qui la suivait a été fermé ou rechargé."
+    terminal_recu = False
+    finalise = False
+
+    async def finaliser() -> None:
+        nonlocal finalise
+        if finalise:
+            return
+        with anyio.move_on_after(10, shield=True):
+            if _running_agent_tasks.get(task.id) is current_async_task:
+                _running_agent_tasks.pop(task.id, None)
+            _arrets_demandes.discard(task.id)
+            try:
+                from app.models.database import get_session_context
+
+                async with get_session_context() as update_session:
+                    db_task = await update_session.get(AgentTask, task.id)
+                    if db_task is not None:
+                        db_task.status = final_status
+                        db_task.error = final_error
+                        db_task.updated_at = datetime.now(UTC)
+                        await update_session.commit()
+                finalise = True
+            except Exception:
+                logger.exception("État de la mission de l'agent non consigné")
+
     async def event_stream():
+        nonlocal current_async_task, final_status, final_error, terminal_recu
         current_async_task = asyncio.current_task()
         if current_async_task is not None:
             _running_agent_tasks[task.id] = current_async_task
@@ -750,25 +779,25 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
             )
             yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
         finally:
-            with anyio.move_on_after(10, shield=True):
-                if _running_agent_tasks.get(task.id) is current_async_task:
-                    _running_agent_tasks.pop(task.id, None)
-                _arrets_demandes.discard(task.id)
-                try:
-                    from app.models.database import get_session_context
+            await finaliser()
 
-                    async with get_session_context() as update_session:
-                        db_task = await update_session.get(AgentTask, task.id)
-                        if db_task is not None:
-                            db_task.status = final_status
-                            db_task.error = final_error
-                            db_task.updated_at = datetime.now(UTC)
-                            await update_session.commit()
-                except Exception:
-                    logger.exception("État de la mission de l'agent non consigné")
+    flux = event_stream()
 
-    return StreamingResponse(
-        event_stream(),
+    class ReponseMission(StreamingResponse):
+        async def __call__(self, scope, receive, send):
+            try:
+                await super().__call__(scope, receive, send)
+            finally:
+                # La réponse peut être interrompue avant même la première
+                # itération : le finally du générateur ne tourne alors pas.
+                with anyio.move_on_after(10, shield=True):
+                    try:
+                        await flux.aclose()
+                    finally:
+                        await finaliser()
+
+    return ReponseMission(
+        flux,
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
