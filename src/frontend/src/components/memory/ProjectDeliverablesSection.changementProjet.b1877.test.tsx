@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useLayoutEffect } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeliverableResponse } from '../../services/api/crm-extended';
 import { ProjectDeliverablesSection } from './ProjectDeliverablesSection';
@@ -30,6 +31,32 @@ describe('B-1877 / B-1878 : les réponses restent dans leur ouverture de projet'
   beforeEach(() => {
     vi.resetAllMocks();
     api.listDeliverables.mockResolvedValue([]);
+  });
+
+  it('le premier DOM de B ne contient ni les livrables ni la saisie de A', async () => {
+    const lectureB = differe<DeliverableResponse[]>();
+    api.listDeliverables.mockResolvedValueOnce([livrable('A')]).mockReturnValueOnce(lectureB.promise);
+    const observations: { projet: string; livrableA: boolean; saisie: string }[] = [];
+    function Ouverture({ projectId }: { projectId: string }) {
+      useLayoutEffect(() => {
+        observations.push({
+          projet: projectId,
+          livrableA: screen.queryByText('Livrable A') !== null,
+          saisie: (screen.getByLabelText('Nouveau livrable') as HTMLInputElement).value,
+        });
+      }, [projectId]);
+      return <ProjectDeliverablesSection projectId={projectId} />;
+    }
+    const vue = render(<Ouverture projectId="A" />);
+    await screen.findByText('Livrable A');
+    fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Saisie de A' } });
+
+    vue.rerender(<Ouverture projectId="B" />);
+
+    expect(observations.find(({ projet }) => projet === 'B'), 'le premier DOM de B montre encore A')
+      .toEqual({ projet: 'B', livrableA: false, saisie: '' });
+    await act(async () => { lectureB.resolve([livrable('B')]); });
+    expect(screen.getByText('Livrable B')).toBeInTheDocument();
   });
 
   it.each(['création avant lecture', 'lecture avant création'])(
@@ -95,5 +122,58 @@ describe('B-1877 / B-1878 : les réponses restent dans leur ouverture de projet'
     await screen.findByText('Aucun livrable pour ce projet.');
     await act(async () => { creationA.resolve(livrable('A')); });
     expect(screen.queryByText('Livrable A')).not.toBeInTheDocument();
+  });
+
+  it.each(['lecture avant succès', 'succès avant lecture'])(
+    'une création ancienne de A déclenche une relecture fidèle au retour (%s)', async (ordre) => {
+      const creationA = differe<DeliverableResponse>();
+      const lectureRetour = differe<DeliverableResponse[]>();
+      api.createDeliverable.mockReturnValueOnce(creationA.promise);
+      api.listDeliverables.mockResolvedValueOnce([]).mockResolvedValueOnce([])
+        .mockReturnValueOnce(lectureRetour.promise);
+      const vue = render(<ProjectDeliverablesSection projectId="A" />);
+      await screen.findByText('Aucun livrable pour ce projet.');
+      ajouter('Livrable A');
+      vue.rerender(<ProjectDeliverablesSection projectId="B" />);
+      await screen.findByText('Aucun livrable pour ce projet.');
+      vue.rerender(<ProjectDeliverablesSection projectId="A" />);
+      fireEvent.change(screen.getByLabelText('Nouveau livrable'), { target: { value: 'Nouvelle saisie de A' } });
+      if (ordre === 'lecture avant succès') await act(async () => { lectureRetour.resolve([]); });
+
+      // Le serveur a enregistré l'ajout ; la nouvelle lecture le voit.
+      api.listDeliverables.mockResolvedValue([livrable('A')]);
+      await act(async () => { creationA.resolve(livrable('A')); });
+      if (ordre === 'succès avant lecture') await act(async () => { lectureRetour.resolve([]); });
+
+      expect(screen.queryByText('Livrable A'), 'la création réussie reste invisible après A/B/A').toBeInTheDocument();
+      expect(screen.queryByText('Aucun livrable pour ce projet.')).not.toBeInTheDocument();
+      expect(screen.getAllByText('Livrable A')).toHaveLength(1);
+      expect(screen.getByLabelText('Nouveau livrable')).toHaveValue('Nouvelle saisie de A');
+      expect(api.listDeliverables).toHaveBeenLastCalledWith({ project_id: 'A' });
+    },
+  );
+
+  it('une création ancienne de A laisse le nouvel ajout de A en cours', async () => {
+    const ancienne = differe<DeliverableResponse>();
+    const nouvelle = differe<DeliverableResponse>();
+    api.createDeliverable.mockReturnValueOnce(ancienne.promise).mockReturnValueOnce(nouvelle.promise);
+    const vue = render(<ProjectDeliverablesSection projectId="A" />);
+    await screen.findByText('Aucun livrable pour ce projet.');
+    ajouter('Livrable A');
+    vue.rerender(<ProjectDeliverablesSection projectId="B" />);
+    await screen.findByText('Aucun livrable pour ce projet.');
+    vue.rerender(<ProjectDeliverablesSection projectId="A" />);
+    await screen.findByText('Aucun livrable pour ce projet.');
+    ajouter('Nouvel ajout de A');
+    api.listDeliverables.mockResolvedValue([livrable('A')]);
+
+    await act(async () => { ancienne.resolve(livrable('A')); });
+
+    expect(screen.queryByText('Livrable A'), 'la création réussie reste invisible après A/B/A').toBeInTheDocument();
+    expect(screen.getByLabelText('Nouveau livrable')).toHaveValue('Nouvel ajout de A');
+    expect(screen.getByRole('button', { name: 'Ajouter le livrable' })).toBeDisabled();
+    await act(async () => { nouvelle.resolve({ ...livrable('A'), id: 'nouveau-A', title: 'Nouvel ajout de A' }); });
+    expect(screen.getAllByText('Livrable A')).toHaveLength(1);
+    expect(screen.getByText('Nouvel ajout de A')).toBeInTheDocument();
   });
 });

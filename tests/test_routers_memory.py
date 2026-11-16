@@ -310,6 +310,7 @@ class TestMemoryDeleteCascade:
                 {
                     "async_delete_by_entity": delete_vectors,
                     "async_delete_by_scope": delete_scope,
+                    "async_copier_fragments_projet": AsyncMock(return_value=[]),
                 },
             )(),
         )
@@ -355,6 +356,7 @@ class TestMemoryDeleteCascade:
                 {
                     "async_delete_by_entity": delete_vectors,
                     "async_delete_by_scope": delete_scope,
+                    "async_copier_fragments_projet": AsyncMock(return_value=[]),
                 },
             )(),
         )

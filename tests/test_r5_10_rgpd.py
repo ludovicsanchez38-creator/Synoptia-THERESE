@@ -35,7 +35,8 @@ async def test_cascade_deux_dossiers_synchronises_avec_fiches_et_notes(client, d
         rep = await client.post('/api/crm/meeting-notes', json={'calendar_event_id': event.id,
             'calendar_id': event.calendar_id, 'description': 'Note professionnelle'})
         assert rep.status_code == 200
-    qdrant = type('Qdrant', (), {'async_delete_by_entity': AsyncMock(), 'async_delete_by_scope': AsyncMock()})()
+    qdrant = type('Qdrant', (), {'async_delete_by_entity': AsyncMock(), 'async_delete_by_scope': AsyncMock(),
+                              'async_copier_fragments_projet': AsyncMock(return_value=[])})()
     monkeypatch.setattr('app.routers.memory.get_qdrant_service', lambda: qdrant)
     rep = await client.delete(f'/api/memory/contacts/{contact.id}?cascade=true')
     assert rep.status_code == 200, rep.text

@@ -89,6 +89,7 @@ _mock_qdrant.delete_by_entity.return_value = 0
 _mock_qdrant.delete_by_scope.return_value = 0
 _mock_qdrant.async_delete_by_entity = AsyncMock(return_value=0)
 _mock_qdrant.async_delete_by_scope = AsyncMock(return_value=0)
+_mock_qdrant.async_copier_fragments_projet = AsyncMock(return_value=[])
 _mock_qdrant._initialized = True
 _mock_qdrant.is_initialized.return_value = True
 _qdrant_module._qdrant_service = _mock_qdrant
