@@ -63,6 +63,39 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   // un défilement dans Paramètres. Volet facultatif, replié par défaut.
   const [factureAvecTherese, setFactureAvecTherese] = useState(false);
 
+  // B-1840 : l'assistant démonte l'étape dès qu'on la quitte. Sans relecture,
+  // le retour repart d'un formulaire vide et Continuer écrase la fiche.
+  useEffect(() => {
+    let vivant = true;
+    try {
+      const lecture = typeof api.getProfile === 'function' ? api.getProfile() : null;
+      if (lecture && typeof lecture.then === 'function') {
+        lecture.then((profil) => {
+          if (!vivant || !profil) return;
+          if (profil.address || profil.siret || profil.tva_intra) setFactureAvecTherese(true);
+          setProfileForm((prev) => {
+            if (Object.values(prev).some((valeur) => valeur.trim() !== '')) return prev;
+            return {
+              name: profil.name || '',
+              nickname: profil.nickname || '',
+              company: profil.company || '',
+              role: profil.role || '',
+              email: profil.email || '',
+              location: profil.location || '',
+              context: profil.context || '',
+              address: profil.address || '',
+              siret: profil.siret || '',
+              tva_intra: profil.tva_intra || '',
+            };
+          });
+        }).catch(() => undefined);
+      }
+    } catch {
+      /* fiche illisible : le formulaire reste saisissable à la main */
+    }
+    return () => { vivant = false; };
+  }, []);
+
   useEffect(() => () => {
     if (continueTimerRef.current) clearTimeout(continueTimerRef.current);
   }, []);
