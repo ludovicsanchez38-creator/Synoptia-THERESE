@@ -55,4 +55,36 @@ describe('B-1952 : l’aide décrit la condition réelle du passage à Faire', (
     fireEvent.click(suite);
     expect(await screen.findByRole('alert')).toHaveTextContent('Aucune réponse complète');
   });
+
+  it.each([false, true])('R1-8 : explique le flux en cours sans redemander le brief (renvoi=%s)', async (renvoi) => {
+    vi.mocked(streamMessage).mockReset();
+    if (renvoi) {
+      vi.mocked(streamMessage).mockImplementationOnce(async function* () {
+        yield { type: 'text', content: 'Réponse interrompue' };
+      });
+    }
+    let terminer!: () => void;
+    const attente = new Promise<void>((resolve) => { terminer = resolve; });
+    vi.mocked(streamMessage).mockImplementationOnce(async function* () {
+      await attente;
+      yield { type: 'text', content: 'Réponse complète' };
+      yield { type: 'done', content: '', message_id: 'source' };
+    });
+    render(<RFCWizard onClose={vi.fn()} />);
+    if (renvoi) {
+      envoyer();
+      await screen.findByText(/Réponse non conservée/);
+      await waitFor(() => expect(screen.getByRole('button', { name: /Passer à Faire/ })).toHaveAccessibleDescription(/Renvoie ton message/));
+    }
+    envoyer();
+    try {
+      const suite = screen.getByRole('button', { name: /Passer à Faire/ });
+      expect(suite).toHaveAccessibleDescription(/^THÉRÈSE répond/);
+      expect(suite).not.toHaveAccessibleDescription(/Envoie|Renvoie/);
+      expect(suite).toHaveAccessibleDescription(/réponse complète/);
+    } finally {
+      await act(async () => terminer());
+    }
+    expect(screen.getByRole('button', { name: /Passer à Faire/ })).not.toHaveAttribute('aria-describedby');
+  });
 });
