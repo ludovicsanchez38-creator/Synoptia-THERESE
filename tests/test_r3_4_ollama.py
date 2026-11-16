@@ -38,7 +38,8 @@ async def test_aucun_transport_si_le_systeme_ne_tient_pas():
 @pytest.mark.parametrize('memoire', [True, False])
 @pytest.mark.parametrize('stream', [True, False])
 async def test_refus_a_lecran_meme_sans_fiches(client, db_session, fournisseur, monkeypatch, memoire, stream):  # noqa: F811
-    monkeypatch.setattr(fournisseur[0], '_get_system_prompt_with_identity', lambda: 'Identité ' * 30000)
+    # Dépasse aussi la fenêtre de 128 000 jetons de la fixture, quelle que soit la RAM.
+    monkeypatch.setattr(fournisseur[0], '_get_system_prompt_with_identity', lambda: 'Identité ' * 60000)
     rep = await client.post('/api/chat/send', json={'message': 'Qui suis-je ?',
         'include_memory': memoire, 'stream': stream})
     assert rep.status_code == 200

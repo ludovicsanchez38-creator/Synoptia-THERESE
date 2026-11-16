@@ -2,6 +2,7 @@
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -22,8 +23,9 @@ def _jouer_amorcage(tmp_path, contenu_jeton):
     binaires.mkdir()
     appels = tmp_path / "appels.jsonl"
     faux_curl = binaires / "curl"
-    faux_curl.write_text(
-        f"#!{sys.executable}\n" + '''
+    faux_curl_python = binaires / "faux_curl.py"
+    faux_curl_python.write_text(
+        '''
 import json
 import os
 import sys
@@ -34,6 +36,10 @@ with Path(os.environ["APPELS_FACTICES"]).open("a", encoding="utf-8") as fichier:
 autorise = "X-Therese-Token: jeton-prive-factice" in sys.argv
 print(json.dumps({"id": "document-factice"} if autorise else {"code": "UNAUTHORIZED"}))
 ''',
+        encoding="utf-8",
+    )
+    faux_curl.write_text(
+        f'#!/bin/sh\nexec {shlex.quote(sys.executable)} {shlex.quote(str(faux_curl_python))} "$@"\n',
         encoding="utf-8",
     )
     faux_curl.chmod(0o700)

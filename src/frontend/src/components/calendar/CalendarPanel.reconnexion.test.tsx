@@ -66,19 +66,17 @@ describe('B-057 — la reconnexion exige un agenda Google réellement rendu', ()
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Reconnecter/ }));
     });
-    // `handleReauthorize` enchaîne un appel réseau puis un `import()` dynamique
-    // du plugin shell avant de poser l'intervalle : plusieurs tours de
-    // micro-tâches séparent le clic de l'armement du sondage.
-    for (let tour = 0; tour < 10; tour++) {
-      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
-    }
-    // Le bouton passe en « En attente... » : le sondage est bien armé.
+    // Le bouton change avant l'ouverture du navigateur : il ne prouve pas
+    // que l'intervalle est armé. Attendre un vrai premier sondage.
     expect(screen.getByText('En attente...')).toBeInTheDocument();
 
     // 1. Le fournisseur ne rend rien : rien n'est prouvé, le sondage continue.
     const apresClic = vi.mocked(api.listCalendars).mock.calls.length;
-    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
-    expect(vi.mocked(api.listCalendars).mock.calls.length).toBeGreaterThan(apresClic);
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(vi.mocked(api.listCalendars).mock.calls.length).toBeGreaterThan(apresClic);
+      }, { interval: 100, timeout: 10000 });
+    });
     expect(banniere()).not.toBeNull();
 
     // 2. Un agenda local répond : il n'apprend rien sur Google.

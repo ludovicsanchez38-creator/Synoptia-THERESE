@@ -147,11 +147,13 @@ class TestLeRunEstUnTraitement:
             "app.services.llm.get_llm_service", lambda: _faux_llm(),
         )
 
+        avant = set(ActionRunner._taches_de_fond)
         task = await ActionRunner.run("rapport-hebdo")
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status
-            == TaskStatus.COMPLETED
-        )
+        producteurs = set(ActionRunner._taches_de_fond) - avant
+        assert len(producteurs) == 1
+        # Le statut mémoire devient terminal avant le commit du traitement.
+        await asyncio.gather(*producteurs)
+        assert ActionRunner.get_task(task.task_id).status == TaskStatus.COMPLETED
 
         traitement = await _traitement_action(task.task_id)
         assert traitement is not None

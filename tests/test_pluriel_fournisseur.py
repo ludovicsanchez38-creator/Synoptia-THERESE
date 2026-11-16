@@ -23,16 +23,22 @@ async def test_apres_bascule_l_attribution_est_celle_du_repli(monkeypatch):
 
     monkeypatch.setattr(service, "_resolve_with_circuit_breaker", lambda: repli)
 
+    async def stream(*_a, **_k):
+        yield StreamEvent(type="text", content="ok")
+        yield StreamEvent(type="done")
+
+    fournisseur_factice = type("P", (), {})()
+    fournisseur_factice.stream = stream
+
     async def faux_ensure():
-        service._provider = type("P", (), {})()
-
-        async def stream(*_a, **_k):
-            yield StreamEvent(type="text", content="ok")
-            yield StreamEvent(type="done")
-
-        service._provider.stream = stream
+        service._provider = fournisseur_factice
 
     monkeypatch.setattr(service, "_ensure_provider", faux_ensure)
+
+    async def faux_fournisseur_pour(_config):
+        return fournisseur_factice
+
+    monkeypatch.setattr(service, "_provider_pour", faux_fournisseur_pour)
 
     from app.services.context import ContextWindow
     from app.services.providers.base import Message as LLMMessage
@@ -48,6 +54,9 @@ async def test_apres_bascule_l_attribution_est_celle_du_repli(monkeypatch):
     assert service.config.provider == LLMProvider.ANTHROPIC
     assert service.fournisseur_effectif == "openai"
     assert service.modele_effectif == "gpt-4.1"
+    from app.routers.chat import _attribution
+
+    assert _attribution(service) == ("openai", "gpt-4.1")
 
 
 def test_delete_api_key_invalide_cache_et_singleton():

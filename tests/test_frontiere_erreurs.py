@@ -941,6 +941,8 @@ class TestRevueSosoPasse2:
         d'un provider en message d'écran. La garantie « tous les providers sont
         sûrs » était fausse : OpenRouter et Ollama recopiaient encore le corps
         de la réponse (chemin local, identifiant, message sans limite)."""
+        from dataclasses import asdict
+
         import httpx
         from app.services.providers.base import LLMConfig, LLMProvider
         from app.services.providers.ollama import OllamaProvider
@@ -967,6 +969,15 @@ class TestRevueSosoPasse2:
 
             return FauxResponse()
 
+        def sans_detail(valeur):
+            if isinstance(valeur, str):
+                return SECRET not in valeur
+            if isinstance(valeur, dict):
+                return all(sans_detail(cle) and sans_detail(contenu) for cle, contenu in valeur.items())
+            if isinstance(valeur, (list, tuple)):
+                return all(sans_detail(element) for element in valeur)
+            return True
+
         # OpenRouter : erreur transmise DANS le flux SSE
         openrouter = OpenRouterProvider(
             LLMConfig(
@@ -982,9 +993,8 @@ class TestRevueSosoPasse2:
         events = [
             e async for e in openrouter.stream(None, [{"role": "user", "content": "x"}], None)
         ]
-        for event in events:
-            if event.type == "error":
-                assert SECRET not in (event.content or ""), event.content
+        assert any(event.type == "error" for event in events)
+        assert all(sans_detail(asdict(event)) for event in events)
 
         # Ollama : erreur transmise DANS le flux
         ollama = OllamaProvider(
@@ -998,6 +1008,5 @@ class TestRevueSosoPasse2:
         events = [
             e async for e in ollama.stream(None, [{"role": "user", "content": "x"}], None)
         ]
-        for event in events:
-            if event.type == "error":
-                assert SECRET not in (event.content or ""), event.content
+        assert any(event.type == "error" for event in events)
+        assert all(sans_detail(asdict(event)) for event in events)
