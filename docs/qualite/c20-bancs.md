@@ -50,3 +50,16 @@ Aucune règle métier non documentée n'a été identifiée comme devant être t
   - `nombre-inattendu` : `E   AssertionError: des producteurs du scénario restent actifs`
 - Les appelants relus comprennent le scénario au commit retardé et l'enregistrement des tâches par `ActionRunner.run`. Les deux variantes ajoutées et les tests voisins passent : **59 tests, 0 échec, 0 erreur, 0 ignoré**, d'après `/tmp/bancs-r1.xml` relu. La garde hors réseau a compté **0 tentative de connexion**.
 - `ruff check --no-fix --no-cache src/backend tests` : **0 erreur**. Aucune suite complète ni modification frontend ; aucun commit ni push.
+
+## Remédiation de la relecture, passe 2
+
+- P2 confirmé : le scénario Actions attend le producteur sans laisser `wait_for` suspendre son propre dépassement de délai. Il suit l'écriture terminale protégée et les fermetures protégées qu'elle lance, puis annule et attend les tâches du scénario avec un nettoyage borné ; une seconde annulation traite une première annulation retardée. Les tâches d'un autre traitement ne sont pas annulées.
+- Contre-épreuves lancées seules dans `tests/test_b2033_charges.py` avant leur correctif respectif, avec les véritables `ActionRunner._execute` et `TraitementHandle.terminer` et une écriture retenue :
+  - avant la correction, `pendant-commit` : `E           AssertionError: une écriture de clôture reste active` ;
+  - avant la correction, `avant-cloture` : `E           AssertionError: le scénario reste suspendu pendant la clôture` ;
+  - après la première correction, `annulation-retardee` : `E           AssertionError: une écriture de clôture reste active` ;
+  - après la deuxième correction, `fermeture-protegee` : `E               AssertionError: une fermeture protégée reste active`.
+- Les quatre variantes vérifient également qu'une clôture concurrente extérieure au scénario reste active. Les appelants relus comprennent `ActionRunner.run`, `_execute`, `TraitementHandle.terminer` et la fermeture de session de `get_session_context`.
+- Limite : si une coroutine ignore toutes les demandes d'annulation au-delà des délais de nettoyage, le scénario échoue explicitement mais Python ne permet pas de la terminer de force ; elle peut alors rester active. Les contre-épreuves couvrent une annulation retardée et une fermeture protégée imbriquée qui finissent par accepter l'annulation.
+- Porte backend ciblée et fichiers voisins : **72 tests passés, 0 échec, 0 erreur, 0 ignoré**, d'après `/tmp/bancs-r2.xml` relu ; **0 tentative de connexion** selon la garde hors réseau. Le bac refuse aussi l'envoi sur les sockets locales de réveil d'asyncio : un tube local temporaire a servi à réveiller la boucle du client de test, sans autoriser de connexion réseau.
+- `ruff check --no-fix src/backend tests` : **0 erreur**. Aucune suite complète, modification frontend, ni opération Git d'écriture.
