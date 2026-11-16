@@ -5,15 +5,22 @@ Le backend tourne dans un processus isolé ; HTTP ASGI sans port supplémentaire
 Les compteurs proviennent des réponses NDJSON réelles, pas d'une estimation.
 Le serveur doit alimenter .recette-r4/serve.log pendant la passe : sans journal
 local lisible et continu, l'absence de troncature n'est pas prouvée et le verdict est rouge.
+Chaque appel porte un identifiant de recette dans sa query HTTP. Le journal doit
+contenir son reçu GIN 200 et sa fin de génération « stop processing: ... truncated ».
+Une croissance du fichier sans ces preuves laisse le verdict rouge.
 """
 import argparse
 import hashlib
 import json
+import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 BANC = ROOT / '.recette-r4'  # MODELE.txt recopié du modèle fourni, sans changer le serveur.
@@ -82,12 +89,7 @@ def mesurer(args):
     dossier = ROOT / '.recette-r4' / f'banc-{args.phase}'
     modele = (BANC / 'MODELE.txt').read_text().strip()
     journal_serveur = BANC / 'serve.log'
-    position_journal = None
-    if journal_serveur.resolve().is_relative_to(ROOT):
-        try:
-            position_journal = journal_serveur.stat()
-        except OSError:
-            pass  # Sans journal exploitable, le verdict restera rouge.
+    position_journal = relever_journal(journal_serveur)
     empreinte = hashlib.sha256()
     for fichier in sorted((code / 'src/backend/app').rglob('*.py')):
         if not fichier.resolve().is_relative_to(code):
@@ -122,7 +124,7 @@ def mesurer(args):
     chat_router.execute_browser_action = outil_reseau_interdit
 
     # Instrumentation du vrai transport : requête et réponse restent inchangées,
-    # sauf think=false et température=0 communs aux deux passes pour le banc.
+    # sauf think=false, température=0 et identifiant HTTP de recette.
     flux_original = OllamaProvider._stream_request
     async def observer(self, base_url, model, body):
         assert base_url == ADRESSE
@@ -136,7 +138,8 @@ def mesurer(args):
         resultat['appels'].append(appel)
         with (dossier / f'payload-{len(resultat["appels"])}.json').open('w') as f:
             json.dump(body, f, ensure_ascii=False, indent=2)
-        async for event in flux_original(self, base_url, model, body):
+        async for event in observer_flux_journal(
+                flux_original, self, base_url, model, body, appel, journal_serveur):
             if event.type == 'done':
                 appel['prompt_eval_count'] = event.input_tokens
                 appel['eval_count'] = event.output_tokens
@@ -187,24 +190,124 @@ def mesurer(args):
     raise SystemExit(enregistrer_verdict(resultat, dossier))
 
 
-def lire_troncatures(journal, position):
+@contextmanager
+def ouvrir_journal(journal):
+    """Ancrer chaque composant au répertoire ouvert ; aucun lien n'est suivi."""
+    parties = journal.relative_to(ROOT).parts
+    if not parties or '..' in parties:
+        raise ValueError('Journal hors du worktree.')
+    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+    with ExitStack() as pile:
+        repertoire = os.open(ROOT, flags | os.O_DIRECTORY)
+        pile.callback(os.close, repertoire)
+        ancres = []
+        for nom in parties[:-1]:
+            parent = repertoire
+            repertoire = os.open(nom, flags | os.O_DIRECTORY, dir_fd=parent)
+            pile.callback(os.close, repertoire)
+            ancres.append((parent, nom, repertoire))
+        fd = os.open(parties[-1], flags, dir_fd=repertoire)
+        pile.callback(os.close, fd)
+        ancres.append((repertoire, parties[-1], fd))
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise OSError('Le journal doit être un fichier ordinaire.')
+        with os.fdopen(fd, 'rb', closefd=False) as f:
+            yield f
+        for parent, nom, enfant in ancres:
+            actuel = os.stat(nom, dir_fd=parent, follow_symlinks=False)
+            ouvert = os.fstat(enfant)
+            if (actuel.st_dev, actuel.st_ino, actuel.st_mode) != (
+                    ouvert.st_dev, ouvert.st_ino, ouvert.st_mode):
+                raise OSError('Journal remplacé pendant la lecture.')
+
+
+def etat_journal(position):
+    # atime peut changer à la simple lecture ; conserver mtime/ctime à la nanoseconde.
+    return (position.st_dev, position.st_ino, position.st_size,
+            position.st_mtime_ns, position.st_ctime_ns)
+
+
+def relever_journal(journal):
+    try:
+        with ouvrir_journal(journal) as f:
+            position = os.fstat(f.fileno())
+            empreinte = empreinte_prefixe(f, position.st_size)
+            if etat_journal(os.fstat(f.fileno())) == etat_journal(position):
+                return position, empreinte
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def empreinte_prefixe(f, taille):
+    """Une copie suivie d'une troncature peut garder inode et taille finale."""
+    empreinte = hashlib.sha256()
+    while taille:
+        bloc = f.read(min(taille, 65536))
+        if not bloc:
+            raise OSError('Journal raccourci pendant la lecture.')
+        empreinte.update(bloc)
+        taille -= len(bloc)
+    return empreinte.digest()
+
+
+async def observer_flux_journal(flux, fournisseur, base_url, modele, body, appel, journal):
+    """Rattacher les traces au véritable transport, sans changer le corps envoyé."""
+    position = relever_journal(journal)
+    identifiant = uuid4().hex
+    requete = '/api/chat?banc_r4=' + identifiant
+    envoyee = False
+
+    async def marquer(request):
+        nonlocal envoyee
+        if request.method == 'POST' and str(request.url) == base_url + '/api/chat':
+            request.url = request.url.copy_add_param('banc_r4', identifiant)
+            envoyee = True
+
+    hooks = fournisseur.client.event_hooks
+    precedents = hooks['request']
+    hooks['request'] = [*precedents, marquer]
+    appel['journal_serveur_lu'] = False
+    try:
+        async for event in flux(fournisseur, base_url, modele, body):
+            yield event
+    finally:
+        hooks['request'] = precedents
+        preuve = lire_troncatures(journal, position, requete=requete)
+        appel['journal_serveur_lu'] = envoyee and preuve['journal_serveur_lu']
+        appel['requete_journal'] = requete
+
+
+def lire_troncatures(journal, position, requete=None):
     """Lire seulement cette passe, sans sortir du worktree ni ignorer une rotation."""
     resultat = {'troncatures': [], 'journal_serveur_lu': False}
-    if position is None or not journal.resolve().is_relative_to(ROOT):
+    if position is None:
         return resultat
+    position, empreinte = position
     try:
-        actuel = journal.stat()
-        if (actuel.st_dev, actuel.st_ino) != (position.st_dev, position.st_ino):
-            return resultat
-        if actuel.st_size < position.st_size:
-            return resultat
-        with journal.open('rb') as f:
-            f.seek(position.st_size)
-            lignes = f.read().decode(errors='replace').splitlines()
-    except OSError:
+        with ouvrir_journal(journal) as f:
+            actuel = os.fstat(f.fileno())
+            if (actuel.st_dev, actuel.st_ino) != (position.st_dev, position.st_ino):
+                return resultat
+            if actuel.st_size <= position.st_size:
+                return resultat
+            if empreinte_prefixe(f, position.st_size) != empreinte:
+                return resultat
+            ajout = f.read(actuel.st_size - position.st_size)
+            if (len(ajout) != actuel.st_size - position.st_size
+                    or etat_journal(os.fstat(f.fileno())) != etat_journal(actuel)):
+                return resultat
+        lignes = ajout.decode(errors='replace').splitlines()
+    except (OSError, ValueError):
         return resultat
     resultat['troncatures'] = [ligne for ligne in lignes if 'truncat' in ligne.lower()]
-    resultat['journal_serveur_lu'] = True
+    resultat['journal_serveur_lu'] = bool(lignes)
+    if requete is not None:
+        recu = r'\[GIN\].*\|\s*200\s*\|[^|]*\|[^|]*\|\s*POST\s+"' + re.escape(requete) + r'"\s*'
+        resultat['journal_serveur_lu'] = (
+            sum(bool(re.fullmatch(recu, ligne)) for ligne in lignes) == 1
+            and sum(bool(re.search(r'\bstop processing:.*\btruncated\s*=\s*\d+\s*$', ligne))
+                    for ligne in lignes) == 1)
     return resultat
 
 
@@ -219,6 +322,7 @@ def enregistrer_verdict(resultat, dossier):
     resultat['troncatures_effectives'] = effectives
     resultat['vert'] = (bool(resultat['appels']) and resultat.get('journal_serveur_lu') is True
         and not effectives
+        and all(a.get('journal_serveur_lu') is True for a in resultat['appels'])
         and all(isinstance(a.get('prompt_eval_count'), int) and a['prompt_eval_count'] > 0
                 for a in resultat['appels'])
         and all(all(v.values()) for v in resultat['charges_verifiees'])

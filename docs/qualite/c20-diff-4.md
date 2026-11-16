@@ -124,3 +124,58 @@ Journaux des portes : `/tmp/diff-4-pytest.log`, `/tmp/diff-4-vitest.log`, `/tmp/
 Les modifications concernent uniquement des scripts de recette et leurs tests. Les simulations vérifient les codes de sortie, l'exploitation des journaux fictifs et les types MIME ; elles ne constituent ni un banc Ollama réel ni une inspection de captures navigateur. Aucun fournisseur, service en ligne, port réservé ou profil réel n'a été utilisé. `.app-loop/` n'a pas été consulté ni modifié. La suite complète n'a pas été lancée.
 
 Restent à décider : B-1897 et B-1898. Restent à effectuer par l'orchestrateur : rejeu de chaque nouveau test sur la base sans correctif, commits distincts en français et portes complètes sur les deux machines. Le bandeau de co-auteur demandé devra terminer chaque message de commit : `Co-Authored-By: Codex <noreply@openai.com>`.
+
+## Remédiation de la relecture, passe 1
+
+Les trois P1 de la relecture sont confirmés. Cette passe ne modifie que `scripts/banc_ollama_r4.py`, `tests/test_c20_b1885_banc_ollama.py` et la présente section. Les autres candidats et scripts du lot restent hors périmètre. Changements laissés non commités, sans `git add`, dépôt annexe ou bundle.
+
+### Rouges constatés avant chaque correctif
+
+Chaque test ci-dessous a été ajouté puis lancé **seul**, avant son correctif. Chaque XML contient exactement **1 test, 1 échec, 0 erreur, 0 ignoré**, code de sortie 1. Les lignes reproduites sont celles des messages d'échec lus dans ces XML.
+
+| Constat | Test dans `tests/test_c20_b1885_banc_ollama.py` | Ligne d'échec recopiée | XML |
+| --- | --- | --- | --- |
+| 1 : journal ancien sans nouvel octet | `test_journal_inchange_ne_valide_pas_la_passe` | `AssertionError: assert 0 == 1` | `/tmp/diff-4-r1-c1-rouge.xml` |
+| 2 : copie, troncature puis repousse sur le même inode | `test_journal_tronque_puis_regrossi_ne_prouve_pas_la_continuite` | `assert True is False` | `/tmp/diff-4-r1-c2-rouge.xml` |
+| 3 : substitution du fichier par un lien à l'ouverture | `test_journal_refuse_le_lien_substitue_a_l_ouverture[feuille]` | `AssertionError: assert ['Path.open'] == []` | `/tmp/diff-4-r1-c3-rouge.xml` |
+
+Le troisième test a ensuite été étendu au relevé initial et aux répertoires parents : son cas rouge initial se nomme désormais `[lecture-feuille]`. Ses fichiers « hors périmètre » sont exclusivement des fichiers fictifs dans les temporaires de cet arbre ; aucune donnée extérieure réelle n'est utilisée. Le helper de test `position_journal` permet de rejouer les trois reproductions sur l'ancien lecteur qui recevait un simple `stat()`.
+
+### Corrections et vérifications des appelants
+
+1. **Preuve propre à chaque appel.** Un fichier inchangé ne valide plus sa lecture. Le véritable transport reçoit un identifiant unique `banc_r4` dans l'URL, sans changement du corps JSON ; son hook précédent est conservé puis restauré, y compris après erreur. Entre les bornes de chaque appel, le lecteur exige un reçu GIN 200 portant cet identifiant et une fin de génération. Le verdict exige aussi la preuve de **chaque** appel : une croissance sans rapport, une trace d'un autre appel ou un ancien résultat sans cette preuve restent rouges. Le contrat de journal reconnu est décrit dans l'en-tête du script. Un serveur qui ne produit pas ces traces laisse le banc rouge ; sa configuration n'a pas été modifiée et aucune compatibilité réelle de journal n'est revendiquée ici.
+2. **Vérification du préfixe conservé.** Le relevé initial et les relevés par appel capturent l'empreinte SHA-256 de tout le contenu déjà présent, par blocs. Elle est comparée avant d'exploiter les nouveaux octets. Une copie suivie d'une troncature puis d'une repousse qui remplace ce préfixe est refusée même si l'inode reste identique et si la taille finale augmente. Les contrôles de taille, d'inode et de stabilité pendant la lecture restent actifs ; les dates de modification sont comparées à la nanoseconde, sans dépendre de la date d'accès. Les tests couvrent également une altération au milieu d'un préfixe de plusieurs blocs, ainsi qu'un journal initialement vide avec et sans ajout.
+3. **Ouverture ancrée dans le worktree.** Le relevé et la lecture ouvrent chaque composant depuis un descripteur de répertoire avec `O_NOFOLLOW`, puis vérifient avec `fstat` l'identité et la nature du fichier effectivement ouvert. Les entrées sont revérifiées après lecture. Les liens, y compris dans un parent remplacé pendant l'ouverture, sont refusés. Les fichiers non ordinaires sont refusés sans blocage ; les descripteurs sont fermés même en cas d'erreur de lecture. Le test de course vérifie l'absence d'ouverture du fichier fictif extérieur, pas seulement l'absence de ses lignes dans le résultat.
+
+Après chaque correctif, relecture des raccords `mesurer` → `observer` → `observer_flux_journal` → `lire_troncatures` → `enregistrer_verdict`, du véritable `_stream_request` et de ses consommateurs. `--evaluer` applique le même verdict conservateur aux résultats sauvegardés. `achever_recette_r4.py` propage toujours le code du banc. Aucun de ces appelants hors du script R4 n'a été modifié.
+
+Les assertions existantes sont conservées. Le résultat fictif du test de verdict inclut désormais une preuve par appel afin de continuer à isoler le drapeau global et les troncatures. Les tests de lecture prennent leur position via le nouveau relevé, sans relâcher leurs résultats attendus. **23 cas supplémentaires**, tous verts, couvrent les trois constats et les régressions de leurs correctifs.
+
+### Portes exécutées et XML lus
+
+Les contrôles intermédiaires ont lancé les trois fichiers de tests du lot et le voisin `test_ollama_erreur_http.py` après chaque correction : **45/45**, **49/49**, puis **51/51** réussites, sans erreur ni test ignoré. XML lus : `/tmp/diff-4-r1-c1-vert.xml`, `/tmp/diff-4-r1-c2-vert.xml`, `/tmp/diff-4-r1-c3-vert.xml`.
+
+Le rejeu final ajoute les tests de fermeture des ressources et le fichier voisin `test_r3_4_ollama.py`. Résultats nominatifs relus dans `/tmp/diff-4-r1.xml` :
+
+| Fichier | Réussis | Échoués | Erreurs / ignorés |
+| --- | ---: | ---: | ---: |
+| `test_c20_b1885_banc_ollama.py` | 33 | 0 | 0 / 0 |
+| `test_c20_b1883_finaliser_recette.py` | 4 | 0 | 0 / 0 |
+| `test_c20_b2008_mime_recette.py` | 13 | 0 | 0 / 0 |
+| `test_r3_4_ollama.py` | 6 | 4 connus | 0 / 0 |
+| `test_ollama_erreur_http.py` | 8 | 0 | 0 / 0 |
+| **Total** | **64** | **4 connus** | **0 / 0** |
+
+Code pytest final : **1**, exclusivement pour `tests.test_r3_4_ollama::test_refus_a_lecran_meme_sans_fiches[True-True]`, `[True-False]`, `[False-True]` et `[False-False]`, les quatre cas explicitement exclus par le mandat. **Aucun autre rouge** ; aucun de ces quatre cas n'a été modifié, ignoré ou marqué xfail.
+
+Pour les lancements répétés, un lanceur de validation local a été créé sous `.pytest_cache/diff-4-r1/`, dossier ignoré par Git. Il exécute le module pytest, interdit les connexions et les binds par un audit Python, désactive le bytecode et place les données ainsi que les temporaires de tests dans cet arbre. Commande finale réellement exécutée :
+
+```sh
+OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -B .pytest_cache/diff-4-r1/pytest_hors_reseau.py tests/test_c20_b1885_banc_ollama.py tests/test_c20_b1883_finaliser_recette.py tests/test_c20_b2008_mime_recette.py tests/test_r3_4_ollama.py tests/test_ollama_erreur_http.py -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-4-r1.xml
+.venv/bin/python -B -m ruff check --no-fix --no-cache src/backend tests
+git diff --check
+```
+
+Ruff : **code 0, aucun diagnostic**. `git diff --check` : **code 0**. Aucun frontend modifié, donc aucune porte frontend lancée. Aucune suite complète, aucun réseau, aucun moteur réel, aucun port réservé ni profil utilisateur ; `.app-loop/` n'a pas été consulté ou modifié. Les échanges HTTP des nouveaux tests passent exclusivement par `httpx.MockTransport`.
+
+**Verdict de remédiation ciblée : GO**, avec les quatre rouges connus ci-dessus. Les tests prouvent les refus et le parcours simulé ; ils ne constituent pas un banc Ollama réel. Le rejeu sans correctifs, les commits et les portes complètes restent à l'orchestrateur.
