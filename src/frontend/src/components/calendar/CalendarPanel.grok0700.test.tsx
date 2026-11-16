@@ -39,6 +39,7 @@ describe('Grok 0.70.0 P2 : un succès Google efface le message d’agendas deven
     for (let tour = 0; tour < 6; tour++) {
       await act(async () => { await Promise.resolve(); });
     }
-    expect(screen.queryByText(new RegExp(CAUSE.slice(0, 40)))).toBeNull();
+    expect(screen.queryByText(/L’API Google Calendar n’est pas activée/)).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

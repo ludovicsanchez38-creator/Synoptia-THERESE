@@ -34,7 +34,20 @@ def test_les_statuts_sont_traduits_et_accordes():
     assert libelle_statut_pdf("overdue", "facture") == "En retard"
     assert libelle_statut_pdf("sent", "devis") == "Envoyé"
     assert libelle_statut_pdf("accepted", "devis") == "Accepté"
-    assert libelle_statut_pdf("custom_status", "facture") == "Custom status"
+    assert libelle_statut_pdf("custom_status", "facture") == "Statut inconnu"
+
+
+def test_b1989_un_statut_inconnu_reste_en_francais_dans_le_pdf(tmp_path: Path):
+    chemin = InvoicePDFGenerator(output_dir=str(tmp_path)).generate_invoice_pdf(
+        invoice_data=donnees_facture(statut="custom_status"),
+        contact_data={"name": "Client de test"},
+        user_profile={"name": "Émetteur de test"},
+    )
+
+    texte = "\n".join(page.extract_text() or "" for page in PdfReader(chemin).pages)
+
+    assert "Statut inconnu" in texte
+    assert "Custom status" not in texte
 
 
 def test_le_texte_extrait_du_pdf_conserve_accents_et_statut_francais(tmp_path: Path):

@@ -179,6 +179,20 @@ describe('lot 8 (3) : le grand geste', () => {
 });
 
 describe('lot 8 (4) : un seul « Réessayer » à l’écran', () => {
+  it('B-1995 : le refus brut de Google est expliqué en français avec les données conservées', async () => {
+    api.listCalendars.mockRejectedValue(new Error(CAUSE_403));
+    api.listEvents.mockRejectedValue(new Error('réseau injoignable'));
+    await monter();
+
+    const bandeau = screen.getByRole('alert');
+    expect(bandeau).toHaveTextContent('L’API Google Calendar n’est pas activée.');
+    expect(bandeau).toHaveTextContent('Active-la dans ta console Google Cloud, puis relance la synchronisation.');
+    expect(bandeau).toHaveTextContent('Données conservées');
+    expect(bandeau).not.toHaveTextContent(CAUSE_403);
+    expect(screen.queryByRole('button', { name: /Reconnecter/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Réessayer' })).toBeEnabled();
+  });
+
   it('grille saine : aucun', async () => {
     const { container } = await monter();
     expect(container.querySelector('section[aria-labelledby="agenda-periode"]'), 'la grille est rendue').not.toBeNull();
@@ -202,7 +216,7 @@ describe('lot 8 (4) : un seul « Réessayer » à l’écran', () => {
     const bandeaux = [...container.querySelectorAll('[role="alert"]')];
     expect(bandeaux, 'un seul bandeau, jamais deux').toHaveLength(1);
     const fusionne = screen.getByTestId('calendar-stale-warning');
-    expect(fusionne.textContent, 'le titre porte le message 403').toContain(CAUSE_403.slice(0, 40));
+    expect(fusionne.textContent, 'le titre explique le refus en français').toContain('L’API Google Calendar n’est pas activée.');
     expect(fusionne.textContent, 'le corps dit que les données sont conservées').toMatch(/[Dd]onnées conservées/);
     expect(boutonsNommes(container, 'Réessayer')).toHaveLength(1);
   });

@@ -298,10 +298,8 @@ class TestRobustesseDeLAgenda:
                 "end_datetime": (debut + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S"),
             },
         )
-        # Refusé sans plantage : 400 et un message. (Observation B-039 : le
-        # message parle de Google faute de branche dédiée aux fournisseurs
-        # inconnus dans la création d'événement ; le routeur des calendriers
-        # dit « Provider inconnu ».)
+        # Refusé sans plantage : 400 et un message. B-1991 vérifie aussi
+        # que ce message explique le fournisseur inconnu sans désigner Google.
         assert reponse.status_code == 400, reponse.text
         assert reponse.json().get("message")
 

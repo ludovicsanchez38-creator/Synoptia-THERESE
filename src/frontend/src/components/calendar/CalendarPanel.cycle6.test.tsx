@@ -40,6 +40,6 @@ describe('#124 : l’explication d’un 403 Google survit au chargement des év�
     for (let tour = 0; tour < 6; tour++) {
       await act(async () => { await Promise.resolve(); });
     }
-    expect(screen.getByText(new RegExp(CAUSE.slice(0, 40)))).toBeInTheDocument();
+    expect(screen.getByText(/L’API Google Calendar n’est pas activée/)).toBeInTheDocument();
   });
 });
