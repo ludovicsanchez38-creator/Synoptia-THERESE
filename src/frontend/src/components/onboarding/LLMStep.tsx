@@ -286,6 +286,9 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   // si un modèle local capable d'agir tient en mémoire, et jamais contre un
   // choix de l'utilisateur.
   const ollamaEnTete = ollamaStatus?.available === true;
+  // B-1936 : la promesse « sur ta machine » ne tient pas pour le modèle
+  // choisi quand celui-ci est un Ollama Cloud (requêtes vers ollama.com).
+  const modeleOllamaEnLigne = selectedProvider === 'ollama' && estModeleOllamaCloud(selectedModel);
   const fournisseursAffiches = useMemo(
     () => (ollamaEnTete
       ? [...PROVIDERS.filter((p) => p.id === 'ollama'), ...PROVIDERS.filter((p) => p.id !== 'ollama')]
@@ -479,7 +482,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
                       {ollamaEnTete ? 'Recommandé en ligne' : 'Recommandé'}
                     </span>
                   )}
-                  {provider.id === 'ollama' && ollamaEnTete && (
+                  {provider.id === 'ollama' && ollamaEnTete && !modeleOllamaEnLigne && (
                     <span className="rounded-sm bg-[var(--color-success-tint)] px-2 py-0.5 text-sm font-medium text-success">
                       Tes données restent sur ta machine
                     </span>
