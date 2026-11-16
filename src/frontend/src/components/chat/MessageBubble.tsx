@@ -412,6 +412,7 @@ export const MessageBubble = memo(function MessageBubble({
           {/* Télécharger l'image (images uniquement) */}
           {isImage && !message.isStreaming && (
             <button
+              type="button"
               onClick={handleImageDownload}
               disabled={downloading}
               className={cn(
@@ -419,6 +420,7 @@ export const MessageBubble = memo(function MessageBubble({
                 'hover:bg-surface text-text-muted hover:text-accent-cyan-ink',
                 downloading && 'opacity-50'
               )}
+              aria-label="Enregistrer l'image"
               title="Enregistrer l'image"
             >
               <Download className={cn('w-4 h-4', downloading && 'animate-pulse')} />
@@ -426,11 +428,13 @@ export const MessageBubble = memo(function MessageBubble({
           )}
           {/* Copier le message / l'image */}
           <button
+            type="button"
             onClick={copyToClipboard}
             className={cn(
               'p-1.5 rounded-md transition-all',
               'hover:bg-surface text-text-muted hover:text-text'
             )}
+            aria-label={isImage ? "Copier l'image" : "Copier le message"}
             title={isImage ? "Copier l'image" : "Copier le message"}
           >
             {copied ? (
