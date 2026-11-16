@@ -206,7 +206,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             Je consens au transfert de mes données vers {providerLabel}
           </p>
           <p className="text-text-muted mt-1">
-            Données transmises : mes messages, le contexte utile et {TOOL_READ_DATA_CATEGORY}. J'accepte que mes messages et le contexte utile soient envoyés à {providerLabel}{' '}
+            Données transmises : mes messages, le contexte utile et {TOOL_READ_DATA_CATEGORY}. J'accepte que ces données soient envoyées à {providerLabel}{' '}
             pour traitement. Je comprends les risques et m'engage à ne pas partager de données sensibles
             (mots de passe, données clients, informations confidentielles).
           </p>
