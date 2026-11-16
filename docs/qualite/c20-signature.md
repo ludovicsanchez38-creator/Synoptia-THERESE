@@ -18,7 +18,7 @@ Les cas supplémentaires sont dans `scripts/tests/test_c20_signature_gardes.py` 
 
 - **B-1855** : hors mode à blanc, le tag est résolu jusqu'au commit et comparé au commit du déclenchement, celui des contrôles CI. Un tag introuvable est refusé avec « Tag demandé introuvable ou sans commit » ; un commit différent avec « Le commit du tag demandé diffère du commit validé par la CI : publication refusée ».
 - **B-1856** : juste avant de joindre les sources, la lecture du statut doit réussir et indiquer un brouillon. Sinon : « Impossible de vérifier le statut brouillon de la release : envoi des sources refusé » ou « La release doit être un brouillon : envoi des sources refusé ».
-- **B-1858** : une publication Windows réelle exige l'activation de la signature. Sinon : « Signature Windows inactive : secrets Microsoft absents ou incomplets, publication refusée ». Un lancement à blanc peut continuer sans signature et indique « Mode à blanc : signature Windows inactive, publication simulée. »
+- **B-1858** : une publication réelle exige l'activation de la signature Windows dès `preflight`, avant le dépôt des sources ou des installeurs. Sinon : « Signature Windows inactive : secrets Microsoft absents ou incomplets, publication refusée ». Le contrôle du job Windows reste en place. Un lancement à blanc peut continuer sans signature et indique « Mode à blanc : signature Windows inactive, publication simulée. »
 - **B-1881** : juste avant l'envoi des artefacts, y compris après une création de brouillon perdue dans une course, le statut est relu. Une release publiée est refusée avec « La release doit être un brouillon : publication refusée ». Une lecture échouée ou illisible est également bloquante.
 - **B-1882** : l'exécutable Mach-O de l'archive doit contenir une tranche ARM64, y compris pour une archive universelle. Sinon : « Archive macOS incompatible : architecture aarch64 absente » ou un message d'archive illisible. L'alias reprend les octets originaux sans re-signer le bundle ; sa preuve porte le nom et l'empreinte du fichier envoyé.
 - **B-1886** : un exécutable Windows étranger ou modifié est refusé avec « Exécutable principal différent de ce build ». Pour comparer un fichier signé à celui du build, seuls les champs PE et le bloc de certificat modifiés par Authenticode sont neutralisés ; la signature reste contrôlée séparément.
@@ -37,3 +37,25 @@ La porte Ruff demandée a d'abord signalé 23 écarts déjà présents à `HEAD`
 - Porte complète `scripts/tests` : **212 réussis, 5 échecs, 2 ignorés et 798 sous-tests réussis**. Deux échecs CPython indiquent `FileNotFoundError: ... 'readelf'`. Trois autres rencontrent `TypeError: expected string or bytes-like object, got 'NoneType'` dans `distribution_files`, car des métadonnées de distributions Python locales n'ont pas de nom ; cette fonction est inchangée depuis `HEAD`. Ces cinq cas sont hors des reproductions de signature. `dpkg-deb` est également absent : les deux tests qui le demandent explicitement sont ignorés, et le test CPython du paquet Debian n'a pas encore atteint son appel à cet outil. Aucun substitut ni téléchargement n'a été utilisé pour masquer ces limites.
 - Ruff sur `scripts tests` : **vert, zéro erreur**. Chargement YAML de `release.yml` : **vert**. `git diff --check` : **vert**.
 - Les tests CPython ont conservé leurs copies temporaires dans le dossier ignoré `.work-t2/round7`, qui occupe environ 983 Mo au contrôle final. Le périmètre d'écriture ne permet pas de les déplacer vers la Corbeille située hors de l'arbre de travail.
+
+## Remédiation de la relecture
+
+- **B-1858** : la garde ajoutée à `preflight` utilise `WINDOWS_SIGNE`, calculé à partir des six secrets Microsoft déjà requis. Elle est ignorée à blanc. `sources-copyleft` et `build` dépendent tous deux de la réussite de `preflight` ; la garde du job Windows reste présente. Avant correction, le test de structure a échoué avec la ligne suivante :
+
+  `E   AssertionError: La signature Windows n'est pas exigée dans preflight avant tout dépôt`
+
+- **B-1886** : le nouveau test construit une table de certificats fictive en suffixe, alignée sur huit octets, avec somme de contrôle et répertoire de sécurité réécrits. Il vérifie que le même build est accepté et qu'un binaire différent atteint bien la comparaison normalisée avant d'être refusé. Le cas passe sans modification du code de comparaison : la relecture a révélé une preuve manquante, sans défaut de ce code démontré.
+
+- **Portes de remédiation** : 214 tests et 802 sous-tests réussis, 2 tests ignorés. La commande complète retourne un échec à cause des 5 tests `CPythonComponentsTests` préexistants : 2 faute de `readelf`, 3 à cause de métadonnées Python sans nom. Le XML `/tmp/signature-r1.xml` ne contient aucun autre échec. Chargement YAML et `git diff --check` réussis.
+
+Les tests ont conservé leurs copies temporaires dans `.work-t2/round7`, qui totalise 3,1 Go au contrôle de cette remédiation. Aucun nettoyage n'a été effectué.
+
+## À vérifier sur un vrai build
+
+- B-1886 avec les secrets Microsoft présents : extraire `therese.exe` de l'installeur NSIS et de l'image MSI et vérifier qu'il est accepté par la comparaison normalisée ; un horodatage ou une seconde signature compris dans la taille déclarée passent ; un octet après la taille déclarée ou un alignement autre que 8 bloquerait la release.
+- `verify_windows_signing.ps1` ne relit pas la validité Authenticode de l'exécutable extrait de l'installeur.
+- Désinstalleur NSIS signé : vérifier que `nsis_installer.py` ne le refuse pas pour « octets ajoutés ».
+- B-1855 : `git rev-parse refs/tags/$TAG^{commit}` égale `GITHUB_SHA` sur une poussée de tag annoté et sur un lancement manuel (le checkout est en `fetch-depth: 0` sans `fetch-tags`).
+- B-1856 et B-1881 : première release absente, création en brouillon puis lecture `isDraft` à `true`.
+- B-1882 : l'archive réécrite par `sign_macos.py finish` contient bien `THERESE.app/Contents/MacOS/therese` sans préfixe `./`.
+- À blanc sur les trois systèmes, avec et sans secrets Microsoft.
