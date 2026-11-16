@@ -26,6 +26,8 @@ interface ReleaseInfo {
 
 type UpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'update-available' | 'error';
 
+const VERSION_INCONNUE = 'Impossible de lire la version installée. Réessaie dans un instant.';
+
 /** Nombre positif si la version distante est plus récente (SemVer, préversions comprises). */
 function compareVersions(current: string, latest: string): number {
   const decouper = (brut: string) => {
@@ -94,16 +96,29 @@ export function AboutTab() {
 
   // Fetch la version si elle n'est pas encore disponible (panels Tauri = contexte JS séparé)
   useEffect(() => {
-    if (!version) {
-      checkHealth()
-        .then((health) => {
-          useBackendStore.getState().setConnected(health);
-        })
-        .catch(() => {});
-    }
+    if (version) return undefined;
+    let annule = false;
+    checkHealth()
+      .then((health) => {
+        if (!annule) useBackendStore.getState().setConnected(health);
+      })
+      .catch(() => {
+        if (annule) return;
+        setErrorMsg(VERSION_INCONNUE);
+        setUpdateStatus('error');
+      });
+    return () => {
+      annule = true;
+    };
   }, [version]);
 
   async function checkForUpdates() {
+    const versionInstallee = version || useBackendStore.getState().version;
+    if (!versionInstallee) {
+      setErrorMsg(VERSION_INCONNUE);
+      setUpdateStatus('error');
+      return;
+    }
     setUpdateStatus('checking');
     setErrorMsg(null);
 
@@ -126,8 +141,7 @@ export function AboutTab() {
       const latest = releases[0];
       setLatestRelease(latest);
 
-      const currentVersion = version || '0.0.0';
-      if (compareVersions(currentVersion, latest.tag_name) > 0) {
+      if (compareVersions(versionInstallee, latest.tag_name) > 0) {
         setUpdateStatus('update-available');
       } else {
         setUpdateStatus('up-to-date');
