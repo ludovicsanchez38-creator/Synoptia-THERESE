@@ -450,13 +450,13 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
         )}
         {/* Markdown content - texte brut pendant le streaming pour éviter les sauts */}
-        <div className="prose prose-invert prose-sm max-w-none">
+        <div className="prose prose-sm max-w-none text-text">
           {message.isStreaming ? (
-            <div className="whitespace-pre-wrap break-words leading-relaxed">
+            <div className="whitespace-pre-wrap break-words leading-relaxed text-text">
               {message.content}
             </div>
           ) : isUser ? (
-            <div className="whitespace-pre-wrap break-words leading-relaxed">
+            <div className="whitespace-pre-wrap break-words leading-relaxed text-text">
               {message.content}
             </div>
           ) : (
@@ -486,7 +486,7 @@ export const MessageBubble = memo(function MessageBubble({
                 );
               },
               p({ children }) {
-                return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
+                return <p className="mb-3 last:mb-0 leading-relaxed text-text">{children}</p>;
               },
               ul({ children }) {
                 return <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>;
@@ -573,13 +573,13 @@ export const MessageBubble = memo(function MessageBubble({
                 );
               },
               h1({ children }) {
-                return <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
+                return <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0 text-text">{children}</h1>;
               },
               h2({ children }) {
-                return <h2 className="text-lg font-bold mb-2 mt-4 first:mt-0">{children}</h2>;
+                return <h2 className="text-lg font-bold mb-2 mt-4 first:mt-0 text-text">{children}</h2>;
               },
               h3({ children }) {
-                return <h3 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h3>;
+                return <h3 className="text-base font-bold mb-2 mt-3 first:mt-0 text-text">{children}</h3>;
               },
               blockquote({ children }) {
                 return (
@@ -608,14 +608,14 @@ export const MessageBubble = memo(function MessageBubble({
               },
               th({ children }) {
                 return (
-                  <th className="px-3 py-2 bg-surface text-left text-sm font-medium border-b border-border">
+                  <th className="px-3 py-2 bg-surface text-left text-sm font-medium border-b border-border text-text">
                     {children}
                   </th>
                 );
               },
               td({ children }) {
                 return (
-                  <td className="px-3 py-2 text-sm border-b border-border">
+                  <td className="px-3 py-2 text-sm border-b border-border text-text">
                     {children}
                   </td>
                 );
