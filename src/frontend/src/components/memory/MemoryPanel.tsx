@@ -476,7 +476,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   </Button>
                 </div>
               ) : (
-                <Button variant="ghost" size="icon" onClick={onClose}>
+                <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer les contacts">
                   <X className="w-5 h-5" />
                 </Button>
               )}
