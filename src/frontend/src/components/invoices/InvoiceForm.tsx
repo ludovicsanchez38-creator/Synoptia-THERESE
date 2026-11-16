@@ -242,6 +242,18 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     surfaceDuRegistre: true,
     fermerSiIntact: true,
   });
+  const continuerSaisieRef = useRef<HTMLButtonElement>(null);
+  const annulerRef = useRef<HTMLButtonElement>(null);
+  const questionAffichee = useRef(false);
+  useEffect(() => {
+    if (abandonDemande) {
+      questionAffichee.current = true;
+      continuerSaisieRef.current?.focus();
+    } else if (questionAffichee.current) {
+      questionAffichee.current = false;
+      annulerRef.current?.focus();
+    }
+  }, [abandonDemande]);
 
   // Le dialogue de conversion est une couche AU-DESSUS : la pile étant LIFO, il
   // se ferme le premier et laisse le formulaire ouvert.
@@ -497,6 +509,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (abandonDemande) return;
 
     // B-1677 : une pièce émise est figée (B-1614) ; seul son statut part,
     // ses lignes désactivées ne se valident plus (une ligne héritée à
@@ -1129,7 +1142,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           </p>
         )}
         <div className="px-6 py-4 border-t border-border flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-wrap items-center gap-2">
+          <div hidden={abandonDemande} style={abandonDemande ? { display: 'none' } : undefined} className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
               <div className="flex flex-wrap items-center gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
                 <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted whitespace-nowrap">{invoice.document_type === 'avoir' ? 'Remboursé le' : 'Payée le'}</label>
@@ -1175,12 +1188,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           {abandonDemande && (
             <div className="flex w-full basis-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
               <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
-              <Button variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
+              <Button ref={continuerSaisieRef} variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
               <Button variant="danger" size="md" type="button" onClick={abandonner}>Abandonner</Button>
             </div>
           )}
-          <div className="flex items-center gap-3 shrink-0 ml-auto whitespace-nowrap">
-            <Button variant="secondary" size="md" type="button" onClick={demanderFermeture}>
+          <div hidden={abandonDemande} style={abandonDemande ? { display: 'none' } : undefined} className="flex items-center gap-3 shrink-0 ml-auto whitespace-nowrap">
+            <Button ref={annulerRef} variant="secondary" size="md" type="button" onClick={demanderFermeture}>
               Annuler
             </Button>
             <Button variant="primary" size="md" type="submit" form={ID_FORMULAIRE} disabled={isSaving}>

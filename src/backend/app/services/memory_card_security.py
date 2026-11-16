@@ -165,5 +165,14 @@ def contient_sensible(valeur: Any) -> bool:
 
 
 def message_refus(valeur: Any) -> str | None:
+    if isinstance(valeur, dict):
+        return next((message for k, v in valeur.items() if (message := message_refus([k, v]))), None)
+    if isinstance(valeur, (list, tuple)):
+        return next((message for v in valeur if (message := message_refus(v))), None)
     motif = motif_sensible(valeur)
+    if isinstance(valeur, str):
+        texte = _normaliser(valeur)
+        if ((motif == 'une opinion politique' and re.search(r'\bpolitiques?\s+de\s+confidentialite\b', texte))
+                or (motif == 'une appartenance syndicale' and re.search(r'\bsyndics?\s+de\s+copropriete\b', texte))):
+            return f'{MESSAGE_REFUS} Vérifie son contenu.'
     return f'{MESSAGE_REFUS} Motif : {motif}.' if motif else None

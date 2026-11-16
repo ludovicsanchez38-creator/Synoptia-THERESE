@@ -53,7 +53,7 @@ def _schema_enrichi(conn: Any, colonnes: dict[str, Any]) -> str | None:
                     end = jetons[i + 4].end()
                 retraits.append((start, end))
     if (debut is None or fin is None or 'VIRTUAL TABLE' in sql[:debut].upper()
-            or (colonnes['contact_id'][3] and len(retraits) != 1)):
+            or (colonnes.get('contact_id') and colonnes['contact_id'][3] and len(retraits) != 1)):
         return None
     corps = sql[debut:fin]
     for start, end in reversed(retraits):
@@ -85,15 +85,19 @@ def migrer_activites(conn: Any) -> None:
     if conn.execute("SELECT 1 FROM sqlite_master WHERE type='trigger' AND tbl_name='activities'").fetchone():
         logger.warning('Migration des activités : réparations des liens non effectuées (déclencheur présent).')
         return
-    reconstruire = colonnes['contact_id'][3] or not {
+    contact = colonnes.get('contact_id')
+    reconstruire = contact is None or contact[3] or not {
         'project_id', 'conversation_id', 'execution_id', 'statut', 'remplace_id',
     } <= colonnes.keys()
     definition = 'CREATE TABLE activities_r5 (' + ', '.join(
         f'{nom} {ddl}' for nom, ddl in _COLONNES_RECONSTRUITES.items()) + ')'
     schema_enrichi = bool(colonnes.keys() - _COLONNES_RECONSTRUITES.keys())
+    if reconstruire and conn.in_transaction:
+        logger.warning('Migration des activités refusée : transaction en cours. Migration sautée, table conservée.')
+        return
     if reconstruire and schema_enrichi:
         enrichie = _schema_enrichi(conn, colonnes)
-        if enrichie is None or conn.in_transaction:
+        if enrichie is None:
             logger.warning('Migration des activités refusée : schéma enrichi non reconstructible '
                            'ou transaction en cours. Migration sautée, table conservée.')
             return
@@ -116,7 +120,9 @@ def migrer_activites(conn: Any) -> None:
         return
     # SQLite exige une reconstruction pour retirer NOT NULL. Aucune copie
     # hors SQLCipher ; les ids, annulations et notes CRM restent identiques.
-    conn.commit()
+    if conn.in_transaction:
+        logger.warning('Migration des activités refusée : transaction en cours. Migration sautée, table conservée.')
+        return
     foreign_keys = conn.execute('PRAGMA foreign_keys').fetchone()[0]
     conn.execute('PRAGMA foreign_keys=OFF')
     reparations = 0

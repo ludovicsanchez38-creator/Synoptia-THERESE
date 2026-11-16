@@ -10,7 +10,8 @@ LIER_NOTES = """UPDATE activities SET
  AND coalesce(json_extract(CASE WHEN json_valid(extra_data) THEN extra_data ELSE '{}' END, '$.meeting_note_v'), 0) != 1
  AND EXISTS (SELECT 1 FROM calendar_events e
    WHERE e.id = json_extract(CASE WHEN json_valid(activities.extra_data) THEN activities.extra_data ELSE '{}' END, '$.calendar_event_id')
-     AND e.calendar_id = json_extract(CASE WHEN json_valid(activities.extra_data) THEN activities.extra_data ELSE '{}' END, '$.calendar_id'))"""
+     AND e.calendar_id = json_extract(CASE WHEN json_valid(activities.extra_data) THEN activities.extra_data ELSE '{}' END, '$.calendar_id')
+     AND e.project_id IS NOT NULL)"""
 
 
 def lier_notes_heritees(conn: Any) -> None:
