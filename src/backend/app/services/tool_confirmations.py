@@ -269,22 +269,30 @@ def canoniser_pour_connecteur(
 
 def _affirme_une_creation(texte: str) -> bool:
     """Repère une affirmation de création, sans confondre une négation explicite."""
-    texte = "".join(
-        caractere for caractere in unicodedata.normalize("NFD", texte)
-        if unicodedata.category(caractere) != "Mn"
-    )
+    texte = unicodedata.normalize("NFC", texte)
     affirmation = re.compile(
-        r"\b(?:cree(?:e|s|es)?|ajoute(?:e|s|es)?|enregistre(?:e|s|es)?|"
-        r"(?:creation|enregistrement)\b.{0,80}?\b(?:reussi(?:e|s|es)?|"
-        r"effectue(?:e|s|es)?|confirme(?:e|s|es)?))\b",
+        r"\b(?:créé(?:e|s|es)?|ajouté(?:e|s|es)?|enregistré(?:e|s|es)?|"
+        r"cree(?:e|s|es)?|ajoute(?:e|s|es)?|enregistre(?:e|s|es)?|"
+        r"(?:cr[eé]ation|enregistrement)\b.{0,80}?\b(?:r[eé]ussi(?:e|s|es)?|"
+        r"effectu[eé](?:e|s|es)?|confirm[eé](?:e|s|es)?))\b",
         re.IGNORECASE,
     )
     negation = re.compile(r"\b(?:pas|non|jamais|rien|aucun(?:e)?)\b|n['’]", re.IGNORECASE)
     for proposition in re.split(r"[.,;:!?\n]|\bmais\b", texte, flags=re.IGNORECASE):
         for mention in affirmation.finditer(proposition):
             avant = proposition[:mention.start()]
-            if (mention.group().lower().startswith("enregistre")
-                    and re.search(r"\bdeja\s*$", avant, re.IGNORECASE)):
+            # Sans accent, « ajoute » peut être un impératif. En début de
+            # proposition, ce n'est pas une preuve d'écriture accomplie.
+            if mention.group().lower() in {"cree", "ajoute", "enregistre"} and not avant.strip():
+                continue
+            if re.search(
+                r"\b(?:peut|peuvent|doit|doivent|devra|devront|devrait|devraient|"
+                r"pourra|pourront|pourrait|pourraient|va|vont|sera|seront|serait|seraient)"
+                r"(?:\s+\w+){0,3}\s*$", avant, re.IGNORECASE,
+            ):
+                continue
+            if (mention.group().lower().startswith("enregistr")
+                    and re.search(r"\bd[eé]j[aà]\s*$", avant, re.IGNORECASE)):
                 continue
             if not negation.search(proposition[:mention.end()]):
                 return True

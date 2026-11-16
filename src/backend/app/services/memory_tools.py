@@ -1447,7 +1447,7 @@ async def _rapprocher_par_mots(
     *,
     llm_config: Any,
     document_grants: list[str] | None,
-) -> tuple[list[FileMetadata], int, dict[str, str], bool]:
+) -> tuple[list[FileMetadata], int, dict[str, str], str | None]:
     """Second passage du catalogue, quand aucun nom ne contient la demande entière.
 
     D'abord les noms qui portent au moins un mot de la demande (le plus de mots
@@ -1462,7 +1462,7 @@ async def _rapprocher_par_mots(
     """
     mots = _mots_de_recherche(query)
     if not mots:
-        return [], 0, {}, False
+        return [], 0, {}, None
 
     def visibles(colonnes: Any) -> Any:
         return _cloison_fichiers(
@@ -1489,7 +1489,10 @@ async def _rapprocher_par_mots(
     from app.services.memory_card_context import documents_autorises
 
     if not documents_autorises(llm_config, document_grants):
-        return fichiers, total_nom, rapproches, True
+        return fichiers, total_nom, rapproches, (
+            "Le contenu des fichiers n'a pas été consulté : l'accord « documents » est absent "
+            "ou n'a pas pu être vérifié pour ce service."
+        )
 
     try:
         consultables = set((await session.execute(visibles(FileMetadata.id))).scalars().all())
@@ -1499,7 +1502,9 @@ async def _rapprocher_par_mots(
     except Exception:
         # Un index en panne ne retire pas le catalogue : les noms répondent seuls.
         logger.warning("Recherche dans le contenu indexé indisponible pour search_files", exc_info=True)
-        return fichiers, total_nom, rapproches, False
+        return fichiers, total_nom, rapproches, (
+            "Le contenu des fichiers n'a pas pu être consulté : l'index de contenu est indisponible."
+        )
 
     deja_par_nom = set((await session.execute(
         visibles(FileMetadata.id).where(mots_dans_le_nom > 0)
@@ -1521,7 +1526,7 @@ async def _rapprocher_par_mots(
         for fichier in lignes[: _PLAFOND_CATALOGUE - len(fichiers)]:
             fichiers.append(fichier)
             rapproches[fichier.id] = "contenu"
-    return fichiers, total, rapproches, False
+    return fichiers, total, rapproches, None
 
 
 async def execute_search_files(
@@ -1569,7 +1574,7 @@ async def execute_search_files(
     # demande mot par mot des noms, puis du contenu indexé. Un modèle qui
     # reçoit zéro pour un mot présent dans un fichier invente la suite.
     rapproches: dict[str, str] = {}
-    contenu_non_consulte = False
+    contenu_non_consulte = None
     if query and not fichiers:
         fichiers, total, rapproches, contenu_non_consulte = await _rapprocher_par_mots(
             session, query, scope, scope_id, conversation_id,
@@ -1596,9 +1601,7 @@ async def execute_search_files(
         "documents": documents,
     }
     if contenu_non_consulte:
-        reponse["contenu_non_consulte"] = (
-            "Accord « documents » absent ou non vérifiable pour ce service."
-        )
+        reponse["contenu_non_consulte"] = contenu_non_consulte
     if rapproches:
         reponse["note"] = (
             "Aucun nom de fichier ne contient la demande entière : cette liste "
@@ -1607,7 +1610,7 @@ async def execute_search_files(
             "avec read_file avant d'en dire quoi que ce soit."
         )
 
-    if scope == "global":
+    if scope == "global" and not documents:
         # Ce que cette conversation ne peut PAS consulter : un compte, jamais
         # des noms — la mention décrit la cloison, elle ne la franchit pas.
         hors = await session.scalar(

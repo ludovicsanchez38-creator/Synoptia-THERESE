@@ -3477,8 +3477,7 @@ async def _do_stream_response(
         # Un avertissement seul ne doit pas cacher le résultat utile d'un
         # autre outil si le modèle n'a finalement produit aucun texte.
         resultats_repli = [
-            outcome for outcome in tool_outcomes
-            if not _recherche_partielle_sans_documents(outcome[0], outcome[1])
+            outcome for outcome in tool_outcomes if _resultat_exploitable(*outcome)
         ] if plages_limites_recherche else tool_outcomes
         fallback = _fallback_from_tool_outcomes(resultats_repli)
         if fallback:
@@ -3717,13 +3716,11 @@ def _fallback_from_tool_outcomes(
     qu'une bulle vide. None s'il n'y a eu aucun outil (l'appelant garde alors
     son comportement d'origine)."""
     for _name, result, is_error in reversed(tool_outcomes):
+        if not _resultat_exploitable(_name, result, is_error):
+            continue
         if _name == "upsert_memory_card" and not is_error:
             return "Fiche mémoire enregistrée. Tu peux la retrouver dans Mémoire."
-        if is_error:
-            continue
         text = (result or "").strip()
-        if not text or "en attente de confirmation" in text:
-            continue
         return (
             "Je n'ai pas réussi à rédiger une réponse, mais voici ce que j'ai "
             f"trouvé en consultant tes données :\n\n{text}"
@@ -3780,15 +3777,17 @@ def _messages_recherche_partielle(nom: str, resultat: str) -> list[str]:
     if not isinstance(valeur, dict) or valeur.get("error"):
         return []
     messages = []
-    if valeur.get("hors_perimetre"):
+    if (valeur.get("hors_perimetre") and valeur.get("found") is False
+            and valeur.get("documents") == []):
         messages.append(
             "Des fichiers indexés existent dans des dossiers hors périmètre de cette conversation. "
             "Pour les consulter, rattache la conversation à un dossier avec le sélecteur en haut du chat."
         )
-    if valeur.get("contenu_non_consulte"):
+    contenu_non_consulte = valeur.get("contenu_non_consulte")
+    if contenu_non_consulte:
         messages.append(
-            "Le contenu des fichiers n'a pas été consulté : l'accord « documents » est absent "
-            "ou n'a pas pu être vérifié pour ce service."
+            contenu_non_consulte if isinstance(contenu_non_consulte, str)
+            else "Le contenu des fichiers n'a pas pu être consulté."
         )
     return messages
 
@@ -3798,6 +3797,19 @@ def _recherche_partielle_sans_documents(nom: str, resultat: str) -> bool:
         return False
     valeur = json.loads(resultat)
     return valeur.get("found") is False and valeur.get("documents") == []
+
+
+def _resultat_exploitable(nom: str, resultat: str, erreur: bool) -> bool:
+    if erreur:
+        return False
+    if nom == "upsert_memory_card":
+        return True
+    texte = (resultat or "").strip()
+    return bool(
+        texte and "en attente de confirmation" not in texte
+        and _message_recherche_vide(nom, resultat) is None
+        and not _recherche_partielle_sans_documents(nom, resultat)
+    )
 
 
 async def _execute_tools_and_continue(
@@ -3840,6 +3852,9 @@ async def _execute_tools_and_continue(
     if remaining_iterations <= 0:
         logger.warning("Max tool iterations reached, stopping")
         return
+
+    if tool_outcomes is None:
+        tool_outcomes = []
 
     # Send status about tool execution
     tool_names = [tc.name for tc in tool_calls]
@@ -4266,8 +4281,8 @@ async def _execute_tools_and_continue(
 
     # BUG-124 : mémoriser les résultats d'outils pour l'appelant, comme filet si
     # le modèle enchaîne des outils sans jamais produire de texte final.
-    if tool_outcomes is not None:
-        tool_outcomes.extend(exec_records)
+    resultat_precedent_exploitable = any(_resultat_exploitable(*r) for r in tool_outcomes)
+    tool_outcomes.extend(exec_records)
 
     # Résumé DÉTERMINISTE de ce qui a réellement été créé (indépendant de la prose du LLM)
     recap = summarize_executions(exec_records)
@@ -4290,22 +4305,13 @@ async def _execute_tools_and_continue(
         logger.info("Annulation demandée : pas de nouveau tour après les outils")
         return
 
-    # Un modèle faible peut inventer le contenu d'un fichier absent. Répondre
-    # directement seulement si TOUS les outils confirment une recherche vide.
+    # Un modèle faible peut inventer le contenu d'un fichier absent.
     recherches_vides = [
         message for nom, resultat, erreur in exec_records if not erreur
         if (message := _message_recherche_vide(nom, resultat)) is not None
     ]
-    if recherches_vides and len(recherches_vides) == len(exec_records):
-        texte = "\n".join(dict.fromkeys(recherches_vides))
-        yield "data: " + json.dumps(
-            StreamChunk(type="text", content=texte, conversation_id=conversation_id).model_dump(),
-            ensure_ascii=False,
-        ) + "\n\n"
-        return
-
-    # Une recherche partielle doit être expliquée, mais ne doit pas empêcher
-    # le modèle de rédiger à partir de tous les résultats de ce tour.
+    # Une recherche partielle doit être expliquée sans masquer les résultats
+    # utiles, y compris ceux des tours précédents de la même réponse.
     limites = [
         message for nom, resultat, erreur in exec_records if not erreur
         for message in _messages_recherche_partielle(nom, resultat)
@@ -4318,6 +4324,15 @@ async def _execute_tools_and_continue(
             ).model_dump() | {"limite_recherche": True},
             ensure_ascii=False,
         ) + "\n\n"
+
+    if (recherches_vides or limites) and not any(_resultat_exploitable(*r) for r in exec_records):
+        if recherches_vides and not resultat_precedent_exploitable:
+            texte = "\n".join(dict.fromkeys(recherches_vides))
+            yield "data: " + json.dumps(
+                StreamChunk(type="text", content=texte, conversation_id=conversation_id).model_dump(),
+                ensure_ascii=False,
+            ) + "\n\n"
+        return
 
     # Le résultat et les tours rejoués peuvent franchir un palier que le
     # premier contrôle, antérieur à l'outil, ne voyait pas.

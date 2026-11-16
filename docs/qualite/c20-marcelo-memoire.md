@@ -82,3 +82,23 @@ FAILED tests/test_c20_b1910_creation_non_confirmee.py::test_affirmation_sans_acc
 Portes après correction : **109 tests passés**, aucun échec ni cas ignoré sur les six fichiers demandés ; `ruff check --no-fix src/backend tests` : **0 erreur**. Les données et la garde de test étaient dans un dossier temporaire ignoré de cet arbre. Une garde d'audit Python bloquait les événements de connexion et d'accès aux chemins interdits surveillés par Python ; l'activation supplémentaire de `sandbox-exec` a été refusée par le sandbox de la session. Les modèles étaient fictifs ; SQLite et Qdrant utilisés par les tests étaient isolés.
 
 Restent incertains : le comportement d'un modèle réel face aux résultats et aux avertissements n'a pas été évalué ; le filtrage des messages de création est fondé sur des formulations reconnues et ne peut pas interpréter toutes les phrases libres. Les formats arbitraires d'outils non natifs ne sont pas reconnus comme recherches vides. La suite complète et son rejeu sur les deux machines restent à la charge de l'orchestrateur. La section historique sur un dépôt Git annexe et un bundle décrit le lot précédent, pas l'état de cette remédiation.
+
+## Seconde remédiation
+
+- Une recherche partielle sans document ni autre résultat exploitable affiche sa limite et s'arrête sans rappeler le modèle, même si un autre outil a échoué. L'avertissement de périmètre n'est posé que si le périmètre courant n'a rendu aucun document. Un résultat utile laisse la continuation possible.
+- Une panne de l'index est distinguée d'un refus d'accord : la réponse précise que le contenu n'a pas pu être consulté, tout en conservant les éventuels résultats par nom.
+- Les recherches vides reconnues ne masquent plus un autre résultat dans le repli. Un résultat exploitable obtenu à un tour précédent empêche la phrase déterministe du tour vide suivant ; les tests vérifient la bulle et le message enregistré.
+- Le filtre des créations distingue les participes passés affirmatifs des instructions à l'impératif ou à l'infinitif et des formulations envisagées au futur. L'échec réel du brouillon sans ligne restitue « Ajoute au moins une ligne au brouillon. »
+
+Avant la première modification applicative, le rejeu ciblé comptait 12 échecs et un témoin passant sur 13 cas (`/private/tmp/marcelo-r2.Leym6j/rouge.xml`). Les lignes suivantes sont recopiées des échecs XML, dans l'ordre des quatre réserves :
+
+```text
+E       AssertionError: assert 'comité imaginaire' not in 'Des fichier... imaginaire.'
+E       AssertionError: assert 'La création ...de réessayer.' == 'Ajoute au mo...au brouillon.'
+E       assert ('Rapport Alpha' in "Je n'ai trouvé aucun fichier pour cette recherche.")
+E       KeyError: 'contenu_non_consulte'
+```
+
+Le cas de repli avec les e-mails et la recherche vide dans le même tour échouait aussi : seul le JSON de la recherche vide était affiché. Les contrôles supplémentaires de formulation ont été lancés avant leur correction ; les deux contrôles complémentaires sur le périmètre et le format booléen de la limite ont d'abord échoué sur la première version de la remédiation.
+
+Porte demandée : **124 tests passés, zéro échec, erreur ou cas ignoré**, d'après `/tmp/memoire-r2.xml` ; `ruff check --no-fix src/backend tests` : **0 erreur**. Les données et le profil de test sont jetables sous `/private/tmp`. Une garde Python interdisait les connexions, les écoutes et les chemins exclus ; pytest ignorait explicitement `.app-loop`. Deux sondes IPv6 et quatre tentatives vers le port 9, dont la découverte de la configuration Ollama, ont été interceptées avant ouverture de port, résolution DNS ou connexion. Aucun fournisseur réel n'a été contacté.
