@@ -248,3 +248,36 @@ def test_masquage_garde_le_separateur_devant_une_url_imbriquee(texte):
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(texte) == texte
+
+
+# Revue de sécurité du 17/11 : couper une URL là où une URL imbriquée commence
+# laissait sortir un paramètre de connexion placé après elle.
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        (
+            "https://a.invalid/?next=http://x.invalid&password=FAUX-secret",
+            "https://a.invalid/?next=http://x.invalid&password=[REDACTED]",
+        ),
+        (
+            "https://a.invalid/?r=https://b.invalid/&access_token=FAUX-secret&vue=mois",
+            "https://a.invalid/?r=https://b.invalid/&access_token=[REDACTED]&vue=mois",
+        ),
+        (
+            "https://a.invalid/?r=https://b.invalid/?access_token=FAUX-secret",
+            "https://a.invalid/?r=https://b.invalid/?access_token=[REDACTED]",
+        ),
+        ("https://a.invalid/retour#access_token=FAUX-secret&etat=1", "https://a.invalid/retour#access_token=[REDACTED]&etat=1"),
+        (
+            "https://temoin:FAUX-secret@a.invalid/?r=https://temoin:FAUX-secret@b.invalid/x&password=FAUX-secret",
+            "https://a.invalid/?r=https://b.invalid/x&password=[REDACTED]",
+        ),
+        # Ce qui n'est pas un secret sort à l'identique, casse comprise.
+        ("HTTPS://Agenda.invalid/Dav?Vue=Mois", "HTTPS://Agenda.invalid/Dav?Vue=Mois"),
+        ("Noter password=exemple dans le guide", "Noter password=exemple dans le guide"),
+    ],
+)
+def test_masquage_des_parametres_de_connexion_sur_toute_l_url(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
