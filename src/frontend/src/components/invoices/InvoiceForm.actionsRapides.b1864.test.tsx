@@ -145,7 +145,8 @@ describe('B-1864 : une action rapide emporte les retouches du brouillon', () => 
     fireEvent.change(await screen.findByLabelText('Description ligne 1'), { target: { value: ' ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Marquer comme payée' }));
     expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('Renseigne la description de cette ligne');
+    // La validation pose deux alertes (la ligne et le pied) : on vise le message de la ligne.
+    expect(screen.getByText(/Renseigne la description de cette ligne/)).toBeInTheDocument();
     expect(markInvoicePaidMock).not.toHaveBeenCalled();
     expect(updateInvoiceMock).not.toHaveBeenCalled();
   });
