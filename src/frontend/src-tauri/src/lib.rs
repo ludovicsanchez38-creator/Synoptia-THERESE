@@ -67,7 +67,10 @@ fn est_moteur_therese(args: &str) -> bool {
     }
     let mots: Vec<&str> = reste.split_whitespace().collect();
     let port = BACKEND_PORT.to_string();
-    mots.windows(2).any(|w| w[0] == "--host" && w[1] == "127.0.0.1")
+    // Seule la forme émise par le lanceur est sûre : une option répétée
+    // peut changer la valeur effective retenue par le backend.
+    mots.len() == 4
+        && mots.windows(2).any(|w| w[0] == "--host" && w[1] == "127.0.0.1")
         && mots.windows(2).any(|w| w[0] == "--port" && w[1] == port)
 }
 
@@ -296,6 +299,9 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
     use tauri_plugin_shell::ShellExt;
     use tauri_plugin_shell::process::CommandEvent;
 
+    let generation = app.state::<SidecarState>()
+        .generation_relance.load(std::sync::atomic::Ordering::SeqCst);
+
     // Tuer les anciens process backend zombies AVANT le lancement
     kill_zombie_backends();
 
@@ -385,8 +391,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                     // Stocker le child pour le kill propre à la fermeture
                     let state = app.state::<SidecarState>();
                     *state.child.lock().unwrap() = Some(child);
-                    let generation = state.generation_relance.load(std::sync::atomic::Ordering::SeqCst);
-                    emit_sidecar_status(app, "running", 0);
+                    emit_sidecar_status(app, "running", 0, generation);
 
                     // Logger stdout/stderr du sidecar + surveiller sa fin
                     // pour la relance contrôlée (revue 0.40)
@@ -438,7 +443,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                     eprintln!("[THÉRÈSE] {}", msg);
                     log_sidecar(&msg);
                     if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.emit("sidecar-error", &msg);
+                        let _ = window.emit("sidecar-error", serde_json::json!({ "message": msg, "generation": generation }));
                     }
                     // Revue 0.40.1 (F9) : l'échec de spawn entre dans le
                     // cycle de relance (sinon cul-de-sac muet).
@@ -451,7 +456,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
             eprintln!("[THÉRÈSE] {}", msg);
             log_sidecar(&msg);
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.emit("sidecar-error", &msg);
+                let _ = window.emit("sidecar-error", serde_json::json!({ "message": msg, "generation": generation }));
             }
             // Revue 0.40.1 (F9) : même cul-de-sac -> cycle de relance
             // (utile si le binaire apparaît après coup, sinon état failed).
@@ -476,12 +481,12 @@ fn schedule_sidecar_retry(app: &tauri::AppHandle) {
     let attempt = state.restart_attempts.fetch_add(1, Ordering::SeqCst) + 1;
     if attempt > 3 {
         log_sidecar("Sidecar : 3 relances épuisées, abandon (bouton Relancer côté interface)");
-        emit_sidecar_status(app, "failed", attempt - 1);
+        emit_sidecar_status(app, "failed", attempt - 1, generation);
         return;
     }
     let delay_s = [1u64, 3, 10][(attempt as usize) - 1];
     log_sidecar(&format!("Relance du sidecar dans {} s (tentative {}/3)", delay_s, attempt));
-    emit_sidecar_status(app, "restarting", attempt);
+    emit_sidecar_status(app, "restarting", attempt, generation);
     let handle = app.clone();
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(delay_s));
@@ -528,11 +533,11 @@ fn handle_sidecar_termination(
 
 /// Informe le frontend de l'état du moteur local (bandeau de statut).
 #[cfg(not(debug_assertions))]
-fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32) {
+fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32, generation: u64) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.emit(
             "sidecar-status",
-            serde_json::json!({ "state": status, "attempt": attempt }),
+            serde_json::json!({ "state": status, "attempt": attempt, "generation": generation }),
         );
     }
 }

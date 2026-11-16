@@ -38,6 +38,33 @@ Vérifications de cette passe :
 
 Les commandes Windows, processus et réponses réseau des scénarios sont simulés. Le harnais compile et exécute les blocs Rust concernés sur macOS, y compris la contrainte `Send` du traitement asynchrone ; il ne remplace ni une compilation Windows ni une recette sur cette plateforme. La suite complète n'a pas été relancée.
 
+## Remédiation de la relecture, passe 2
+
+Les deux constats sont confirmés. Les modifications restent non commitées pour permettre le rejeu des tests sans les correctifs.
+
+| Constat | Test isolé avant correction | Ligne d'échec observée | Correctif et couverture |
+| --- | --- | --- | --- |
+| 1. Options ambiguës | `tests/test_c20_windows_zombies.py::test_les_nettoyages_refusent_les_options_ambigues[rust_wmic-port_repete]` | `AssertionError: assert ['4242'] == []` | Les nettoyages Python et Rust n'acceptent que les deux couples d'arguments émis par le lanceur. Les ports et hôtes répétés, ainsi que les formes `--port=...` et `--por ...` supplémentaires, sont refusés pour WMIC, CIM et Python. |
+| 2. Ancienne erreur de relance | `SplashScreen.relanceDemarrage.b1912.test.tsx`, test « reprend après une erreur de l’ancienne génération reçue pendant la relance » | `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times` | La commande et les événements Rust portent leur génération. Le splash ignore les événements plus anciens tout en conservant les échecs de la nouvelle tentative, avant ou après le retour de la commande. |
+
+Le refus des options supplémentaires est volontairement prudent : même une option additionnelle bénigne empêche l'identification et donc l'arrêt automatique de ce processus. Le prédicat Rust est aussi appelé sur Unix ; les deux tests Rust existants B-1261 ont été exécutés avec le prédicat de production extrait. Le test de génération exécute les émetteurs, la commande et l'ordonnancement Rust de production dans un harnais de fenêtre et de sidecar simulés. Le double clic et les erreurs sans génération restent couverts par les tests préexistants.
+
+Pour rejouer les deux rouges isolément :
+
+```sh
+OLLAMA_BASE_URL=http://127.0.0.1:9 THERESE_DATA_DIR=/tmp/rust-windows-r2-profil-fictif PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest 'tests/test_c20_windows_zombies.py::test_les_nettoyages_refusent_les_options_ambigues[rust_wmic-port_repete]' -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/rust-windows-r2-rouge1.xml
+cd src/frontend
+VITE_THERESE_BACKEND_PORT=9 npm_config_offline=true npx --no-install vitest run src/components/SplashScreen.relanceDemarrage.b1912.test.tsx -t 'reprend après une erreur de l’ancienne génération' --configLoader runner --maxWorkers=1
+```
+
+Portes de cette passe, sans suite complète :
+
+- Pytest et harnais Rust : **46 réussis, 0 échec, 0 erreur, 0 ignoré**, après lecture de `/tmp/rust-windows-r2.xml` ; le compte inclut l'exécution des deux tests Rust B-1261 dans un cas pytest.
+- Ruff sur `src/backend tests` : **0 erreur**.
+- Frontend : **74 tests réussis dans 7 fichiers** autour du splash, de la reprise, du bandeau et de l'installation ; TypeScript : **0 erreur** ; ESLint : **0 erreur, 27 avertissements hors fichiers modifiés**.
+
+Les commandes Windows, les événements, le sidecar et les réponses aux sondes frontend étaient simulés. Les harnais Rust ont été compilés sur macOS : aucune compilation Windows ni recette sur cette plateforme n'a été effectuée.
+
 ## Portes
 
 - Frontend, `npm run test -- --run --configLoader runner` : **967 fichiers, 4 107 tests réussis, 0 échec**. Le chargeur `runner` évite une écriture dans `node_modules`, qui est un lien vers le dépôt principal. La commande sans cette option échoue avant les tests avec `EPERM` sur `.vite-temp`.

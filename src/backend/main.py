@@ -175,6 +175,9 @@ def _kill_zombie_backends():
                                     details.returncode == 0
                                     and separateur
                                     and nom == "backend.exe"
+                                    # Seule la forme émise par le lanceur est sûre :
+                                    # une option répétée peut changer la valeur effective.
+                                    and len(mots) == 4
                                     and ("--host", "127.0.0.1") in options
                                     and ("--port", "17293") in options
                                 ):
