@@ -43,6 +43,7 @@ from app.services.entity_extractor import (
 )
 from app.services.error_handler import message_pour_ecran
 from app.services.file_parser import (
+    ERREUR_TAILLE_FICHIER,
     AvisTailleFichier,
     ErreurTailleFichier,
     avis_sans_texte,
@@ -336,13 +337,14 @@ async def _get_file_context(
     # Validation securite du chemin (SEC-002)
     try:
         path = validate_file_path(file_path)
+        if not path.is_file():
+            return None, f"Ce n'est pas un fichier : {Path(file_path).name}"
     except PermissionError:
         return None, "Accès refusé : ce fichier ne peut pas être transmis."
     except FileNotFoundError:
         return None, f"Fichier non trouvé : {Path(file_path).name}"
-
-    if not path.is_file():
-        return None, f"Ce n'est pas un fichier : {file_path}"
+    except (OSError, RuntimeError, ValueError):
+        return None, f"Impossible de lire « {Path(file_path).name} ». Vérifie le fichier et réessaie."
 
     try:
         # Extract text content, hors boucle d'événements : joindre un gros
@@ -456,8 +458,8 @@ async def _get_file_context(
         # « Erreur lors de la lecture » mentait deux fois (au journal et
         # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
         raise
-    except ErreurTailleFichier as e:
-        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name} : {e}")
+    except ErreurTailleFichier:
+        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name} : {ERREUR_TAILLE_FICHIER}")
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
         return None, f"Impossible de lire « {path.name} ». Vérifie le fichier et réessaie."

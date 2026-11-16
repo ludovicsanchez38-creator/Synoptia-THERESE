@@ -698,13 +698,19 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
         current_async_task = asyncio.current_task()
         if current_async_task is not None:
             _running_agent_tasks[task.id] = current_async_task
-        final_status = "done"
-        final_error = None
+        final_status = "error"
+        final_error = "Mission interrompue avant réception d'un résultat final."
+        terminal_recu = False
         try:
             async for event in runtime.run(request.instruction):
                 if event.type == "error":
                     final_status = "error"
                     final_error = event.content
+                    terminal_recu = True
+                elif event.type == "done":
+                    final_status = "done"
+                    final_error = None
+                    terminal_recu = True
                 chunk = AgentStreamChunk(
                     type=event.type,
                     agent=profile["id"],
@@ -714,14 +720,23 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
                 )
                 data = chunk.model_dump(exclude_none=True)
                 yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                if terminal_recu:
+                    break
 
-        except asyncio.CancelledError:
-            final_status = "cancelled"
-            final_error = (
-                "Mission annulée par l'utilisateur."
-                if task.id in _arrets_demandes
-                else "Mission interrompue : l'écran qui la suivait a été fermé ou rechargé."
-            )
+            if not terminal_recu:
+                error_chunk = AgentStreamChunk(
+                    type="error", agent=profile["id"], content=final_error, task_id=task.id,
+                )
+                yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
+
+        except (asyncio.CancelledError, GeneratorExit):
+            if not terminal_recu:
+                final_status = "cancelled"
+                final_error = (
+                    "Mission annulée par l'utilisateur."
+                    if task.id in _arrets_demandes
+                    else "Mission interrompue : l'écran qui la suivait a été fermé ou rechargé."
+                )
             raise
         except Exception as e:
             logger.error(f"Erreur agent spawn {profile['id']}: {e}", exc_info=True)

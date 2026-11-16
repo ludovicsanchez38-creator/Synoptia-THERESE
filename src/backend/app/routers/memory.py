@@ -1271,8 +1271,10 @@ async def delete_contact(
 
     # B-1178 : comme delete_project (B-021), le dépôt disque des projets
     # supprimés en cascade part après le commit, jamais avant.
+    depots_restants = []
     for project_id in projets_supprimes:
-        await _purger_le_depot_du_dossier(project_id)
+        if not await _purger_le_depot_du_dossier(project_id):
+            depots_restants.append(project_id)
 
     # Remove from Qdrant
     await _delete_embedding(contact_id)
@@ -1289,7 +1291,13 @@ async def delete_contact(
     except Exception as e:
         logger.warning("Audit log failed after contact delete: %s", e)
 
-    return {"deleted": True, "id": contact_id, "cascade_deleted": cascade_deleted}
+    resultat = {"deleted": not depots_restants, "id": contact_id, "cascade_deleted": cascade_deleted}
+    if depots_restants:
+        resultat["message"] = (
+            "Le contact a été supprimé en base, mais des fichiers restent à vérifier ou à "
+            "supprimer dans les dépôts des dossiers : " + ", ".join(depots_restants) + "."
+        )
+    return resultat
 
 
 # ============================================================
@@ -1573,7 +1581,7 @@ async def delete_project(
     # B-021 : après le commit, jamais avant. Les lignes ont disparu pour de
     # bon ; le dépôt disque peut suivre sans risquer de promettre un contenu
     # introuvable si la transaction avait échoué.
-    await _purger_le_depot_du_dossier(project_id)
+    depot_purge = await _purger_le_depot_du_dossier(project_id)
 
     # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
     try:
@@ -1587,7 +1595,13 @@ async def delete_project(
     except Exception as e:
         logger.warning("Audit log failed after project delete: %s", e)
 
-    return {"deleted": True, "id": project_id, "cascade_deleted": cascade_deleted}
+    resultat = {"deleted": depot_purge, "id": project_id, "cascade_deleted": cascade_deleted}
+    if not depot_purge:
+        resultat["message"] = (
+            "Le projet a été supprimé en base, mais des fichiers restent à vérifier ou à "
+            f"supprimer dans le dépôt du dossier : {project_id}."
+        )
+    return resultat
 
 
 # R2 : activation du noyau avec sa garde et son écran.

@@ -370,7 +370,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     setDeleting(true);
     setDeleteError(null);
     try {
-      await api.deleteContactWithCascade(deleteConfirm.id, true);
+      const resultat = await api.deleteContactWithCascade(deleteConfirm.id, true);
+      if (resultat?.deleted === false) {
+        addNotification({ type: 'error', title: 'Suppression incomplète', message: resultat.message || 'Des fichiers restent à vérifier.', duration: 0 });
+      }
       retourSuppressionRef.current = origine?.isConnected && origine === deleteDialogRef.current
         && origine.contains(document.activeElement) ? origine : null;
       removeLocal(deleteConfirm.id);

@@ -195,3 +195,72 @@ variables lance un fils à environnement épuré, qui ne l’hérite pas. Son co
 examiné ne construit qu’un module virtuel en mémoire et ne contient pas d’appel
 réseau. Cette garde ne couvre pas les appels natifs. `npx --no-install` et le
 mode npm hors ligne ont empêché toute installation.
+
+## Remédiation de la relecture, passe 3
+
+Les six tests ont été exécutés isolément avant leur correctif. Les lignes
+ci-dessous sont celles observées dans leurs rapports XML rouges ; les numéros
+de ligne ont pu évoluer depuis l'ajout des autres cas. Les tests existants
+n'ont pas été affaiblis.
+
+1. **Identité CalDAV.** Le cache résout l'UID distant dans le calendrier
+   concerné ; sans calendrier explicite, une correspondance ambiguë est
+   refusée. Lecture, blocage, modification et suppression réutilisent l'UID de
+   la liste ; le blocage reste visible après resynchronisation et modification.
+   Test : `tests/test_c20_b1810_blocage_compte.py::test_parcours_caldav_depuis_la_liste_garde_le_blocage_et_le_bon_agenda`.
+   Rouge initial : `E   assert 404 == 200`. Un contrôle supplémentaire a d'abord
+   révélé `E   AssertionError: assert None == 'Attestation manquante'` après
+   modification ; il est désormais couvert aussi.
+2. **Compte d'agenda.** Modification et suppression contrôlent le compte avant
+   d'appeler le fournisseur. L'écran utilise le compte du calendrier choisi,
+   y compris quand un autre compte mail est sélectionné. Test :
+   `tests/test_c20_b1810_blocage_compte.py::test_compte_etranger_refuse_toutes_les_operations_avant_le_fournisseur`.
+   Rouge : `E   assert [404, 404, 200, 200] == [404, 404, 404, 404]`.
+   Les tests d'écran dans `EventForm.test.tsx`, `EventDetail.cycle6.test.tsx`
+   et `CalendarPanel.reconciliationAvantEvenements.test.tsx` ont également
+   échoué avant l'adaptation de leurs appels.
+3. **Chemins des pièces jointes.** Les erreurs ne transmettent que le nom du
+   fichier, sans reprendre une exception contenant un chemin. Le test
+   `tests/test_c20_b1900_avis_piece_absente.py::test_avis_de_fichier_ne_contient_aucun_chemin_absolu`
+   parcourt les messages produits et le contexte modèle, en flux et hors flux :
+   fichier lisible, fichier absent, dossier, liens, accès, contrôle de type,
+   lecture, taille et fichier vide. Rouge initial :
+   `E   assert (not "Ce n'est pas un fichier : /private/tmp/c20-r3-pytest-36240/test_avis_de_fichier_ne_contie2/dossier-personnel-fictif/piece.txt" or '/private/tm...r_ne_contie2' not in "Ce n'est pa...if/piece.txt"`.
+   Le cas d'un accès refusé au contrôle du type a également été vu rouge avant
+   d'être corrigé.
+4. **Suppressions partielles.** La suppression d'un projet ou d'un contact en
+   cascade rend `deleted: false` et nomme les dépôts restants si leur purge
+   échoue après le commit. Les trois écrans retirent la fiche déjà supprimée
+   en base et affichent durablement le message. Test backend :
+   `tests/test_c20_b1815_anonymisation_disque.py::test_suppression_signale_le_depot_restant_apres_commit`.
+   Rouge : `E   assert True is False`. Les tests des trois écrans et celui du
+   transport API `memory.suppressionPartielle.c20.test.ts` couvrent la suite.
+5. **Secrets dans l'export.** Les identifiants de connexion CalDAV et IMAP sont
+   exclus ; les identifiants intégrés aux URL et paramètres sensibles sont
+   masqués, y compris dans les préférences proxy structurées. Les deux routes
+   sont couvertes par
+   `tests/test_c20_b1812_export_config.py::test_export_masque_identifiants_des_urls_et_configurations_de_connexion`.
+   Rouge : `E   assert 'identifiant-fictif' not in '{"exported_...port\\"}"}]}'`. Ce masquage vise les
+   champs de connexion, préférences structurées et URL reconnues : un secret
+   inscrit librement dans un texte ne peut pas être identifié de façon fiable.
+6. **Mission interrompue.** Seul un événement terminal `done` consigne une fin
+   réussie. Une fermeture anticipée consigne une interruption ; un générateur
+   épuisé sans événement terminal émet une erreur. Test :
+   `tests/test_c20_b1811_spawn_mission.py::test_spawn_interrompu_n_est_pas_consigne_comme_termine`.
+   Rouge : `E   AssertionError: assert 'done' == 'cancelled'`. Une simulation
+   ASGI de déconnexion pendant l'envoi et la fermeture après `done` ou `error`
+   vérifient aussi les appelants.
+
+La porte demandée est **ciblée**, sans suite complète. Rapport
+`/tmp/backend-donnees-r3.xml` lu : **126 cas, 125 réussis, 0 échec, 0 erreur,
+1 exclu**. L'exclusion est `tests.test_agents_depot_autorise::test_spawn_laisse_passer_le_depot_autorise` : elle exige une vérification Git réelle interdite ici et ne constitue donc pas une validation.
+Ruff backend et tests : **0 erreur**. Frontend : **9 fichiers, 84 tests
+réussis**, TypeScript sans erreur, lint **0 erreur et 27 avertissements** sur
+des lignes préexistantes.
+
+La recette a utilisé une base jetable et les gardes Python et Node qui bloquent
+les connexions réseau ; la garde Python interdit aussi les sous-processus et
+les chemins protégés. Ces gardes ne prouvent pas qu'un appel natif pourrait être
+intercepté. Le chargement Vitest `runner`, sans cache et avec trois workers,
+évite une écriture dans le `node_modules` partagé. Les dépendances étaient
+déjà présentes et npm a été exécuté hors ligne.

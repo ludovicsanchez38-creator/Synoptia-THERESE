@@ -26,7 +26,7 @@ import { Spinner } from '../ui/Spinner';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 
 export function EventDetail() {
-  const { events, currentEventId, setCurrentEvent, setIsEventFormOpen, removeEvent } =
+  const { calendars, events, currentEventId, setCurrentEvent, setIsEventFormOpen, removeEvent } =
     useCalendarStore();
   const { currentAccountId } = useEmailStore();
 
@@ -56,7 +56,9 @@ export function EventDetail() {
     setDeleting(true);
 
     try {
-      await api.deleteEvent(event.id, event.calendar_id, currentAccountId || undefined);
+      const calendrier = calendars.find((cal) => cal.id === event.calendar_id);
+      const compteAgenda = calendrier ? calendrier.account_id || undefined : currentAccountId || undefined;
+      await api.deleteEvent(event.id, event.calendar_id, compteAgenda);
       removeEvent(event.id);
       setCurrentEvent(null);
     } catch (err) {

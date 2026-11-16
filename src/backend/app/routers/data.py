@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from tarfile import TarInfo
 from typing import Any, get_args
+from urllib.parse import unquote_plus, urlsplit, urlunsplit
 
 from app.config import settings
 from app.models.database import close_db, get_session
@@ -119,6 +120,55 @@ def _export_row(
 # ============================================================
 
 
+def _cle_de_connexion(cle: str) -> bool:
+    nom = cle.lower()
+    return (
+        est_cle_secrete_de_preference(nom)
+        or nom in {"user", "username", "login", "client_id"}
+        or nom.endswith(("_user", "_username", "_login", "_client_id"))
+    )
+
+
+def _masquer_urls_export(valeur: Any) -> Any:
+    """Retire les identifiants des URL, y compris dans les textes exportés."""
+    if isinstance(valeur, dict):
+        return {cle: _masquer_urls_export(element) for cle, element in valeur.items()}
+    if isinstance(valeur, list):
+        return [_masquer_urls_export(element) for element in valeur]
+    if not isinstance(valeur, str):
+        return valeur
+
+    def nettoyer(match: re.Match[str]) -> str:
+        url = match.group()
+        try:
+            morceaux = urlsplit(url)
+            autorite = morceaux.netloc.rsplit("@", 1)[-1]
+
+            def masquer_parametre(param: re.Match[str]) -> str:
+                nom = unquote_plus(param.group(2))
+                return param.group(1) + param.group(2) + "=[REDACTED]" if _cle_de_connexion(nom) else param.group()
+
+            motif = r"(^|[&;])([^=&#;]+)=([^&#;]*)"
+            query = re.sub(motif, masquer_parametre, morceaux.query)
+            fragment = re.sub(motif, masquer_parametre, morceaux.fragment)
+            return urlunsplit((morceaux.scheme, autorite, morceaux.path, query, fragment))
+        except ValueError:
+            return "[URL masquée]"
+
+    return re.sub(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]+", nettoyer, valeur)
+
+
+def _masquer_preferences_structurees(valeur: Any) -> Any:
+    if isinstance(valeur, dict):
+        return {
+            cle: "[REDACTED]" if _cle_de_connexion(cle) else _masquer_preferences_structurees(element)
+            for cle, element in valeur.items()
+        }
+    if isinstance(valeur, list):
+        return [_masquer_preferences_structurees(element) for element in valeur]
+    return valeur
+
+
 def _valeur_de_preference_exportable(pref: Preference) -> str:
     """La valeur d'une préférence, telle qu'elle peut sortir de l'export."""
     from app.services.user_profile import PROFILE_KEY
@@ -127,12 +177,17 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
     # OAuth du CRM (crm_sheets_access_token, refresh_token), le secret client
     # Google et les mots de passe de messagerie sortaient tels quels dans
     # l'export de portabilité, chiffrés ou non.
-    if est_cle_secrete_de_preference(pref.key):
+    if _cle_de_connexion(pref.key):
         return "[REDACTED]"
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
-    valeur: str = pref.value
-    return valeur
+    try:
+        structure = json.loads(pref.value)
+        if isinstance(structure, (dict, list)):
+            return json.dumps(_masquer_preferences_structurees(structure), ensure_ascii=False)
+    except (TypeError, json.JSONDecodeError):
+        pass
+    return pref.value
 
 
 def _profil_pour_export() -> dict[str, Any] | None:
@@ -334,6 +389,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                         "client_secret",
                         "access_token",
                         "refresh_token",
+                        "imap_username",
                         "imap_password",
                     },
                     json_fields=("scopes",),
@@ -350,7 +406,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             "email_labels": [_export_row(item) for item in email_labels],
             "email_follow_ups": [_export_row(item) for item in email_follow_ups],
             "calendars": [
-                _export_row(item, exclude={"caldav_password"}) for item in calendars
+                _export_row(item, exclude={"caldav_username", "caldav_password"}) for item in calendars
             ],
             "calendar_events": [
                 _export_row(item, json_fields=("attendees", "recurrence"))
@@ -432,7 +488,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             ],
         }
 
-        return export_data
+        return _masquer_urls_export(export_data)
     finally:
         session.close()
 
