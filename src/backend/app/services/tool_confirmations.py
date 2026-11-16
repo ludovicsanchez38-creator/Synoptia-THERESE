@@ -12,6 +12,7 @@ quelques secondes/minutes). Une confirmation perdue à un redémarrage est sans
 conséquence : l'action n'a tout simplement pas eu lieu (fail-safe).
 """
 import json
+import re
 import uuid
 from copy import deepcopy
 from typing import Any
@@ -271,6 +272,29 @@ def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
         donnees = json.loads(resultat)
     except (ValueError, TypeError):
         return resultat
+    confirmations = {
+        "create_contact": "Contact créé.",
+        "create_project": "Projet créé.",
+        "create_task": "Tâche créée.",
+        "create_invoice": "Brouillon créé dans Devis et factures.",
+    }
+    if nom in confirmations:
+        succes = isinstance(donnees, dict) and donnees.get("success") is True
+        if isinstance(donnees, dict) and donnees.get("already_existed") is True:
+            ignores = donnees.get("champs_ignores")
+            if isinstance(ignores, list) and ignores and all(isinstance(c, str) for c in ignores):
+                return "Cet élément existe déjà. Ces informations n'ont pas été enregistrées : " + ", ".join(ignores) + "."
+            return "Cet élément existe déjà. Aucune nouvelle création n'est confirmée."
+        if not succes or donnees.get("error"):
+            # Ne pas reprendre un message libre qui pourrait lui-même affirmer
+            # une création contredite ou non confirmée par le statut.
+            if isinstance(donnees, dict) and donnees.get("success") is False:
+                message = donnees.get("message")
+                if isinstance(message, str) and re.fullmatch(
+                    r"(?:Le contact|Le projet|La tâche|Le devis) existe déjà[.!]?", message.strip()
+                ):
+                    return message
+            return "La création n'est pas confirmée. Vérifie dans l'application avant de réessayer."
     if isinstance(donnees, dict):
         message = donnees.get("message")
         if isinstance(message, str) and message.strip():
@@ -280,12 +304,6 @@ def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
             return f"L'action n'a pas abouti : {erreur}"
         if donnees.get("success") is False:
             return "L'action n'a pas abouti. Vérifie les informations de la carte."
-    confirmations = {
-        "create_contact": "Contact créé.",
-        "create_project": "Projet créé.",
-        "create_task": "Tâche créée.",
-        "create_invoice": "Brouillon créé dans Devis et factures.",
-    }
     if nom in confirmations:
         return confirmations[nom]
 
