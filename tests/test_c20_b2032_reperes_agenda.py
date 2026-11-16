@@ -13,6 +13,116 @@ HORAIRES = "- 09h : Réunion fictive\n- 14h : Entretien fictif"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stream", [False, True], ids=["sans_flux", "flux"])
+@pytest.mark.parametrize(("contenu", "converti", "mention_attendue"), [
+    (
+        "- 09:00 Réunion client\n- 14:00 Entretien",
+        "- 09:00 Réunion client\n- 14:00 Entretien",
+        True,
+    ),
+    (
+        "- 09h Réunion client\n- 14h Entretien",
+        "- 09h Réunion client\n- 14h Entretien",
+        True,
+    ),
+    (
+        "- **09:00** Réunion client\n- **14:00** Entretien",
+        "- **09:00** Réunion client\n- **14:00** Entretien",
+        True,
+    ),
+    (
+        "| Heure | Rendez-vous |\n| --- | --- |\n"
+        "| 09:00 | Réunion client |\n| 14:00 | Entretien |",
+        "- Heure : 09:00 | Rendez-vous : Réunion client\n"
+        "- Heure : 14:00 | Rendez-vous : Entretien",
+        True,
+    ),
+    (
+        "| Rendez-vous | Horaire |\n| --- | --- |\n"
+        "| Réunion client | 9h |\n| Entretien | 14h |",
+        "- Rendez-vous : Réunion client | Horaire : 9h\n"
+        "- Rendez-vous : Entretien | Horaire : 14h",
+        True,
+    ),
+    (
+        "- 3h30 de préparation\n- 2h15 de trajet",
+        "- 3h30 de préparation\n- 2h15 de trajet",
+        False,
+    ),
+    (
+        "| Durée | Activité |\n| --- | --- |\n"
+        "| 3h | Préparation |\n| 2h | Trajet |",
+        "- Durée : 3h | Activité : Préparation\n"
+        "- Durée : 2h | Activité : Trajet",
+        False,
+    ),
+], ids=["heures_sans_separateur", "heures_h_sans_separateur", "heures_en_gras",
+        "tableau_heure_en_premier", "tableau_heure_en_second", "durees_avec_minutes",
+        "tableau_de_durees"])
+async def test_horaires_et_tableaux_sans_separateur_conservent_la_reserve(
+    client, db_session, fournisseur, contenu, converti, mention_attendue, stream  # noqa: F811
+):
+    class Modele:
+        async def stream(self, *args, **kwargs):
+            yield StreamEvent(type="text", content=contenu)
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    fournisseur[0]._provider = Modele()
+    reponse = await client.post("/api/chat/send", json={
+        "message": "Lis mon agenda de demain", "include_memory": False, "stream": stream,
+    })
+    attendu = (contenu if stream else converti) + ("\n\n" + MENTION if mention_attendue else "")
+    assert _texte(reponse, stream) == attendu
+    messages = (await db_session.execute(select(Message))).scalars().all()
+    assert [message.content for message in messages if message.role == "assistant"] == [attendu]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True], ids=["sans_flux", "flux"])
+@pytest.mark.parametrize(("demande", "mention_attendue"), [
+    ("Explique comment je consulte mon agenda demain", False),
+    ("Rédige un résumé de la liste de mes rendez-vous de demain", False),
+    ("Rédige une liste de mes rendez-vous demain", False),
+    ("Rédige une longue liste de mes rendez-vous de demain", False),
+    ("Explique comment, demain, je consulte mon agenda et rédige un mail", False),
+    ("Explique comment j'ai consulté mon agenda lundi", False),
+    ("Explique comment Marie consulte mon agenda demain", False),
+    ("Explique comment, demain, Marie consulte mon agenda", False),
+    ("Explique comment je consulte mon agenda demain, puis lis mon agenda demain", True),
+    ("Rédige une liste, puis consulte mon agenda demain", True),
+    ("Rédige un mail, puis liste mes rendez-vous de demain", True),
+    ("Rédige une note puis liste mes rendez-vous de demain", True),
+    ("Consulte mon agenda demain et explique comment je consulte mon agenda", True),
+    ("D'abord consulte mon agenda demain et rédige un mail", True),
+    ("Pour demain lis mon agenda puis rédige un mail", True),
+    ("Après avoir consulté mon agenda demain, rédige un mail", True),
+    ("Rédige un mail après avoir consulté mon agenda demain", True),
+    ("S'il te plaît consulte mon agenda demain et rédige un mail", True),
+], ids=["explication_je", "liste_nominale", "liste_a_rediger", "liste_avec_adjectif",
+        "explication_et_redaction", "explication_passee", "explication_tiers",
+        "explication_tiers_avec_incise", "explication_puis_lecture", "redaction_puis_lecture",
+        "redaction_puis_liste", "redaction_note_puis_liste", "lecture_puis_explication",
+        "lecture_d_abord", "lecture_apres_repere", "lecture_prealable", "lecture_avant_redaction",
+        "lecture_politesse"])
+async def test_explication_ou_redaction_seule_ne_demande_pas_la_lecture(
+    client, db_session, fournisseur, demande, mention_attendue, stream  # noqa: F811
+):
+    class Modele:
+        async def stream(self, *args, **kwargs):
+            yield StreamEvent(type="text", content=HORAIRES)
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    fournisseur[0]._provider = Modele()
+    reponse = await client.post("/api/chat/send", json={
+        "message": demande, "include_memory": False, "stream": stream,
+    })
+    attendu = HORAIRES + ("\n\n" + MENTION if mention_attendue else "")
+    assert _texte(reponse, stream) == attendu
+    messages = (await db_session.execute(select(Message))).scalars().all()
+    assert [message.content for message in messages if message.role == "assistant"] == [attendu]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True], ids=["sans_flux", "flux"])
 @pytest.mark.parametrize(("demande", "contenu", "mention_attendue"), [
     ("Mon agenda, point 1.2", HORAIRES, False),
     ("Mon agenda, point 2.10", HORAIRES, False),
