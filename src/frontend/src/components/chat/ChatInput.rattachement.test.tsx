@@ -90,12 +90,7 @@ describe('Envoyer juste après un rattachement de projet', () => {
 
     // Pendant l'attente, le rattachement persiste la conversation.
     rattachement.attendrePersistance.mockImplementation(async () => {
-      useChatStore.setState((etat) => ({
-        conversations: etat.conversations.map((c) =>
-          c.id === 'conv-locale' ? { ...c, id: 'conv-serveur', synced: true } : c
-        ),
-        currentConversationId: 'conv-serveur',
-      }));
+      useChatStore.getState().updateConversationId('conv-locale', 'conv-serveur');
     });
   });
 
