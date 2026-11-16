@@ -1610,7 +1610,7 @@ async def execute_search_files(
             "avec read_file avant d'en dire quoi que ce soit."
         )
 
-    if scope == "global" and not documents:
+    if scope == "global":
         # Ce que cette conversation ne peut PAS consulter : un compte, jamais
         # des noms — la mention décrit la cloison, elle ne la franchit pas.
         hors = await session.scalar(

@@ -17,6 +17,7 @@ from app.config import settings
 from app.services.embeddings import embed_text, embed_texts
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
+    Condition,
     Distance,
     FieldCondition,
     Filter,
@@ -480,7 +481,7 @@ class QdrantService:
         total = self.client.get_collection(settings.qdrant_collection).points_count or 0
         if not total:
             return []
-        perimetres: list[Filter | FieldCondition] = [
+        perimetres: list[Condition] = [
             FieldCondition(key="scope", match=MatchValue(value="global")),
         ]
         if scope == "project" and scope_id:

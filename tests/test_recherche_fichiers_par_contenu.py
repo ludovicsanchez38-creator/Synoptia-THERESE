@@ -191,14 +191,19 @@ async def test_un_index_en_panne_laisse_le_catalogue_repondre(db_session, monkey
 
 
 @pytest.mark.asyncio
-async def test_resultat_dans_le_perimetre_ne_signale_pas_un_autre_dossier(db_session, index):
+async def test_resultat_dans_le_perimetre_compte_l_autre_dossier_sans_le_nommer(db_session, index):
+    """Le contrat du catalogue tient (test_catalogue_fichiers) : ce que la
+    conversation ne peut pas consulter est toujours COMPTÉ, jamais nommé. C'est
+    le chat qui décide de l'annoncer, et seulement quand rien n'a été trouvé
+    (test_document_trouve_n_annonce_pas_de_hors_perimetre)."""
     identifiant = await _fichier(db_session, index, nom="irrigation.txt", textes=["Rapport."])
     await _fichier(db_session, index, nom="autre.txt", textes=["Autre."], scope="project", scope_id="p-a")
 
     resultat = await _chercher(db_session, "irrigation", scope="global")
 
     assert [document["id"] for document in resultat["documents"]] == [identifiant]
-    assert "hors_perimetre" not in resultat
+    assert resultat["hors_perimetre"] == 1
+    assert "autre.txt" not in str(resultat)
 
 
 @pytest.mark.asyncio
