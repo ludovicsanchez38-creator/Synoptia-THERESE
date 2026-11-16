@@ -48,6 +48,48 @@ Aucun candidat n'est classé `regle_a_trancher`.
 - Lint frontend, `npm run lint` : **0 erreur et 27 avertissements**, code 0.
   Aucun fichier frontend n'a été modifié dans ce lot.
 
+## Remédiation de la relecture, passe 1
+
+Les deux constats sont confirmés. Les tests ont été écrits avant les correctifs
+et exécutés isolément ; ils vérifient la réponse exacte et le message assistant
+enregistré, en flux et hors flux.
+
+- **P1 — horaires et tableaux.** Le test
+  `test_horaires_et_tableaux_sans_separateur_conservent_la_reserve` couvre les
+  horaires sans séparateur, en gras, les tableaux avec l'heure dans chacune des
+  deux colonnes, et les durées. Avant correction, le cas isolé sans flux a donné :
+  `E   AssertionError: assert '- 09:00 Réun...:00 Entretien' == '- 09:00 Réun...t pas de lui.'`
+  La détection accepte ces horaires et analyse les tableaux convertis en puces,
+  sans changer le texte du flux. La relecture du premier correctif a également
+  révélé un faux positif sur les tableaux de durées ; les deux variantes ont été
+  ajoutées avant de le corriger. Leur échec isolé comprenait :
+  `E   AssertionError: assert '- Durée : 3h...t pas de lui.' == '- Durée : 3h...vité : Trajet'`
+- **P2 — explication ou rédaction seule.** Le test
+  `test_explication_ou_redaction_seule_ne_demande_pas_la_lecture` couvre les
+  exemples de la relecture, d'autres emplois explicatifs et nominaux, et des
+  instructions qui associent lecture et rédaction. Avant correction, huit des
+  seize variantes alors présentes échouaient avec :
+  `E   AssertionError: assert '- 09h : Réun...t pas de lui.' == '- 09h : Réun...retien fictif'`
+  Le filtre distingue ces emplois des instructions de lecture et examine les
+  instructions suivantes. Un test ajouté après relecture préserve également une
+  lecture précédée de « Pour demain » ; il échouait avant son ajustement :
+  `E   AssertionError: assert '- 09h : Réun...retien fictif' == '- 09h : Réun...t pas de lui.'`
+
+Après chaque correctif, les deux appelants ont été relus et les tests voisins
+ont été lancés. Porte finale sur les neuf fichiers backend listés ci-dessus :
+**212 réussis, 0 échec, 0 erreur, 0 ignoré**, XML lu dans
+`/tmp/restes-chat-r1.xml`. Ruff `check --no-fix src/backend tests` : **0 erreur**.
+La première invocation de Ruff n'a pas démarré à cause de la valeur `1` de
+`RUFF_NO_CACHE` ; la relance avec `true` a réussi. Aucun fichier frontend modifié,
+aucune suite complète lancée.
+
+Les tests utilisent des fournisseurs et transports factices, une garde réseau
+et un répertoire de données temporaires sous `/tmp`. Le bac à sable refusant
+l'envoi sur les sockets Unix de réveil d'`asyncio`, une adaptation temporaire
+les remplace par des tuyaux anonymes pour les tests ; la garde continue de
+bloquer le réseau IP et les chemins interdits. Les liens non suivis `.venv` et
+`src/frontend/node_modules` étaient déjà présents au début et n'ont pas été modifiés.
+
 ## Limites
 
 La reconnaissance des demandes et des horaires reste fondée sur des motifs :

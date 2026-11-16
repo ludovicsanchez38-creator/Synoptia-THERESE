@@ -3794,16 +3794,38 @@ def _demande_lecture_agenda(message: str) -> bool:
     ):
         return False
     if re.search(r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*)\b", texte):
-        # Une demande de rédaction seule reste exclue. Une lecture explicite
-        # suivie ou précédée d'une rédaction reste une demande de lecture.
-        lecture = re.search(
-            r"\b(?:lis|consulte|regarde|verifie|affiche|montre|liste|"
+        # Reconnaître un ordre de lecture distinct, pas « je consulte » dans
+        # une explication ni le nom « la liste » dans une demande de rédaction.
+        lectures = re.finditer(
+            r"\b(?P<action>lis|consulte|regarde|verifie|affiche|montre|liste|"
             r"(?:peux|pourrais|veux)[- ]tu\s+(?:lire|consulter|regarder|verifier|"
-            r"afficher|montrer|lister))(?:-moi)?\b[^.!?;\n]*\b"
-            r"(?:mon\s+agenda|mon\s+planning|mes\s+rendez[ -]?vous)\b",
+            r"afficher|montrer|lister))(?:-moi)?\b",
             texte,
         )
-        if not lecture:
+        for lecture in lectures:
+            if not re.match(
+                r"[^.!?;\n]*\b(?:mon\s+agenda|mon\s+planning|mes\s+rendez[ -]?vous)\b",
+                texte[lecture.end():],
+            ):
+                continue
+            avant = texte[:lecture.start()]
+            proposition = re.split(r"[.!?;,\n]|\b(?:et|puis|ensuite)\b", avant)[-1]
+            if lecture.group("action") == "liste" and re.search(
+                r"\b(?:la|une|ma|ta|sa|cette|notre|votre|leur|les|des|ces)"
+                r"(?:\s+\w+){0,2}\s*$", proposition,
+            ):
+                continue
+            if re.search(
+                r"\b(?:je|tu|il|elle|on|nous|vous|ils|elles)"
+                r"(?:\s+(?:ai|as|a|avons|avez|ont|avais|avait|avaient))?\s*$|"
+                r"(?:^|\W)j'(?:ai|avais|aurai|aurais)\s*$", proposition,
+            ):
+                continue
+            if (re.search(r"\b(?:comment|pourquoi)\b[^.!?;\n]*$", avant)
+                    and not re.search(r"(?:,|\b(?:et|puis|ensuite)\b)\s*$", avant)):
+                continue
+            break
+        else:
             return False
     demande = re.search(
         r"\b(?:mes\s+rendez[ -]?vous|mon\s+agenda|mon\s+planning|"
@@ -3826,10 +3848,14 @@ def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
     horaire = re.compile(
         rf"(?:\b(?:a|vers|des)\s+{heure}|"
         rf"^\s*(?:[-*•]|\d+[.)])?\s*(?:\*\*|__)?{heure}"
-        r"(?:\*\*|__)?\s*[:–—-]\s*\S)",
+        r"(?:\*\*|__)?(?:\s*[:–—-]\s*\S|\s+(?!d(?:e|u|es)\b)\S|[,;|]\s*\S)|"
+        rf"(?:^\s*[-*•]|\|)(?!\s*duree\b)\s*[^|:\n]+:\s*"
+        rf"(?:\*\*|__)?{heure}(?:\*\*|__)?\s*(?:\||$))",
     )
+    # Analyser les mêmes colonnes en flux et hors flux, sans modifier le texte diffusé.
+    lignes = convert_markdown_tables_to_bullets(reponse).splitlines()
     if sum(bool(horaire.search(_normaliser_demande_agenda(ligne)))
-           for ligne in reponse.splitlines()) < 2:
+           for ligne in lignes) < 2:
         return ""
     return "\n\nJe n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 
