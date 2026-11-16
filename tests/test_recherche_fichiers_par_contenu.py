@@ -184,9 +184,21 @@ async def test_un_index_en_panne_laisse_le_catalogue_repondre(db_session, monkey
 
     absent = await _chercher(db_session, "irrigation")
     assert absent["found"] is False and absent["documents"] == []
+    assert "index" in absent["contenu_non_consulte"].lower()
     present = await _chercher(db_session, "ma veille hebdomadaire")
     assert [d["nom"] for d in present["documents"]] == ["veille.txt"]
     assert en_panne.async_fichiers_contenant.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_resultat_dans_le_perimetre_ne_signale_pas_un_autre_dossier(db_session, index):
+    identifiant = await _fichier(db_session, index, nom="irrigation.txt", textes=["Rapport."])
+    await _fichier(db_session, index, nom="autre.txt", textes=["Autre."], scope="project", scope_id="p-a")
+
+    resultat = await _chercher(db_session, "irrigation", scope="global")
+
+    assert [document["id"] for document in resultat["documents"]] == [identifiant]
+    assert "hors_perimetre" not in resultat
 
 
 @pytest.mark.asyncio

@@ -85,6 +85,37 @@ async def test_erreur_de_validation_du_contact_est_affichee(client):
 
 
 @pytest.mark.asyncio
+async def test_brouillon_sans_ligne_affiche_l_instruction_reelle(client):
+    identifiant = register_pending("create_invoice", {
+        "document_type": "facture", "lines": [], "_provenance_documents": "sans_document",
+    })
+
+    reponse = await client.post("/api/chat/confirm-tool", json={
+        "confirmation_id": identifiant, "approved": True,
+    })
+
+    assert reponse.status_code == 200
+    assert reponse.json()["result"] == "Ajoute au moins une ligne au brouillon."
+
+
+@pytest.mark.parametrize("message", [
+    "Ajouter une ligne au brouillon.",
+    "Ajoute au moins une ligne au brouillon.",
+    "Enregistre le brouillon après validation.",
+    "Crée un brouillon avant de continuer.",
+    "La ligne doit être ajoutée.",
+    "La ligne peut être enregistrée.",
+    "Le brouillon sera créé après validation.",
+])
+def test_instruction_de_creation_n_est_pas_une_affirmation(message):
+    from app.services.tool_confirmations import resultat_pour_l_ecran
+
+    assert resultat_pour_l_ecran("create_invoice", json.dumps({
+        "success": False, "message": message,
+    })) == message
+
+
+@pytest.mark.asyncio
 async def test_motif_d_interruption_de_creation_est_affiche(client, monkeypatch):
     from app.routers import chat
 
