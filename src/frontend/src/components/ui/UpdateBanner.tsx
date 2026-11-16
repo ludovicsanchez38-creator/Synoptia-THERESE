@@ -27,7 +27,13 @@ async function installationAutomatiqueAutorisee(): Promise<boolean> {
     // Un .deb extrait à la main ne doit pas tomber dans install_appimage.
     const { getBundleType } = await import('@tauri-apps/api/app');
     const type = await getBundleType();
-    if (/linux/i.test(navigator.platform)) return type === 'deb';
+    if (/linux/i.test(navigator.platform)) {
+      if (type !== 'deb') return false;
+      // B-1801 : le paquet peut avoir été extrait ou repaqueté hors Debian.
+      const { invoke } = await import('@tauri-apps/api/core');
+      const systeme = await invoke<{ linux_debian?: boolean }>('get_system_info');
+      return systeme?.linux_debian === true;
+    }
     return ['deb', 'app', 'nsis', 'msi'].includes(type);
   } catch {
     // Type inconnu ou API indisponible : proposer l'installation manuelle.

@@ -68,6 +68,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   const { createCommand, updateCommand } = useCommandsStore();
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
+  const reflectHasSource = sourcesVerifiees(reflectMessages).length > 0;
 
   // Tour 8 : une réponse supprimée côté moteur est retirée des deux étapes.
   const retirerAbsentes = useCallback((ids: string[]) => {
@@ -160,7 +161,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
     >
       {/* Header avec stepper */}
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer l’assistant de commande" className="h-8 w-8">
           <ArrowLeft className="w-4 h-4" />
         </Button>
 
@@ -223,9 +224,11 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
               </div>
               <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
                 {/* B-636 : un bouton désactivé sans explication. L'aide dit ce qui manque. */}
-                {reflectMessages.length === 0 ? (
+                {!reflectHasSource ? (
                   <p id="rfc-aide-passer-a-faire" className="text-xs text-text-muted">
-                    Envoie d’abord ton brief à THÉRÈSE : « Passer à Faire » s’active dès le premier message.
+                    {reflectMessages.length === 0
+                      ? 'Envoie d’abord ton brief à THÉRÈSE, puis attends une réponse complète avant de passer à Faire.'
+                      : 'Pour passer à Faire, il faut une réponse complète. Renvoie ton message.'}
                   </p>
                 ) : (
                   <span />
@@ -234,7 +237,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                   variant="primary"
                   onClick={goToMake}
                   disabled={reflectMessages.length === 0}
-                  aria-describedby={reflectMessages.length === 0 ? 'rfc-aide-passer-a-faire' : undefined}
+                  aria-describedby={!reflectHasSource ? 'rfc-aide-passer-a-faire' : undefined}
                   className="flex items-center gap-2 text-sm shrink-0"
                 >
                   Passer à Faire
@@ -272,18 +275,26 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                   onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
-              <div className="px-4 py-3 border-t border-border flex justify-between">
+              <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
                 {!editCommand && (
                   <Button variant="ghost" onClick={() => setStep('reflect')} className="text-sm">
                     <ArrowLeft className="w-4 h-4 mr-1" />
                     Retour
                   </Button>
                 )}
+                {(makeMessages.length === 0 || isGenerating) && (
+                  <p id="rfc-aide-capturer" role="status" aria-live="polite" className="text-xs text-text-muted">
+                    {isGenerating
+                      ? 'THÉRÈSE prépare ta commande. Patiente un instant.'
+                      : 'Attends la fin de la réponse de THÉRÈSE avant de capturer ta commande.'}
+                  </p>
+                )}
                 <Button
                   variant="primary"
                   onClick={goToCapture}
                   disabled={makeMessages.length === 0 || isGenerating}
-                  className="flex items-center gap-2 text-sm ml-auto"
+                  aria-describedby={makeMessages.length === 0 || isGenerating ? 'rfc-aide-capturer' : undefined}
+                  className="flex items-center gap-2 text-sm ml-auto shrink-0"
                 >
                   {isGenerating ? 'Génération...' : 'Capturer'}
                   <ArrowRight className="w-4 h-4" />

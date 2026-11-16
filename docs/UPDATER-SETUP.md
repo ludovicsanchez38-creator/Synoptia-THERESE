@@ -44,6 +44,14 @@ canal de mise à jour cassé.
 
 ## Contrôle du manifeste Linux (B-1111)
 
+Le bandeau contrôle aussi la distribution à l'exécution (B-1801) : le type
+Tauri `deb` ne suffit pas. `get_system_info` lit `ID` et `ID_LIKE` dans
+`/etc/os-release`, avec repli sur `/usr/lib/os-release`, et exige le mot
+`debian`. Les autres distributions et les lectures impossibles reçoivent un
+lien de téléchargement manuel. Ce contrôle est refait au clic, avant tout
+téléchargement ou arrêt du moteur. Le bilan du lot est dans
+[`qualite/c20-front-maj.md`](qualite/c20-front-maj.md).
+
 La matrice Tauri ne publie plus elle-même `latest.json`. Le job final attend
 les trois builds, conserve les signatures et publie uniquement le manifeste
 validé par `scripts/nettoyer_latest_json.py`. Le `.deb` n'a que la cible

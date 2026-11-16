@@ -4,6 +4,9 @@
 
 use serde::Serialize;
 
+#[path = "linux_distribution.rs"]
+mod linux_distribution;
+
 /// Simple greeting command for testing
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -16,6 +19,7 @@ pub struct SystemInfo {
     pub os: String,
     pub arch: String,
     pub version: String,
+    pub linux_debian: bool,
 }
 
 #[tauri::command]
@@ -24,6 +28,7 @@ pub fn get_system_info() -> SystemInfo {
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
+        linux_debian: cfg!(target_os = "linux") && linux_distribution::est_debian(),
     }
 }
 

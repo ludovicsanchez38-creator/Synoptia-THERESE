@@ -259,17 +259,20 @@ export function AboutTab() {
             )}
           </Button>
 
-          {/* Résultat : à jour */}
-          {updateStatus === 'up-to-date' && (
-            <div role="status" className="flex items-center gap-2 text-sm text-success bg-[var(--color-success-tint)] rounded-md px-3 py-2">
-              <CheckCircle className="w-4 h-4" />
-              THÉRÈSE est à jour (v{version})
-            </div>
-          )}
+          {/* Région persistante : annonce l'attente puis son résultat. */}
+          <div role="status" aria-live="polite" aria-atomic="true" className="empty:hidden">
+            {updateStatus === 'checking' && (
+              <p className="sr-only">Vérification des mises à jour en cours...</p>
+            )}
+            {updateStatus === 'up-to-date' && (
+              <div className="flex items-center gap-2 text-sm text-success bg-[var(--color-success-tint)] rounded-md px-3 py-2">
+                <CheckCircle className="w-4 h-4" />
+                THÉRÈSE est à jour (v{version})
+              </div>
+            )}
 
-          {/* Résultat : mise à jour disponible */}
-          {updateStatus === 'update-available' && latestRelease && (
-            <div className="space-y-3">
+            {/* Résultat : mise à jour disponible */}
+            {updateStatus === 'update-available' && latestRelease && (
               <div className="rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
                 <p className="mb-1 text-sm font-medium text-accent">
                   Nouvelle version disponible : {latestRelease.tag_name}
@@ -281,7 +284,11 @@ export function AboutTab() {
                   )}
                 </p>
               </div>
+            )}
+          </div>
 
+          {updateStatus === 'update-available' && latestRelease && (
+            <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs text-text-muted bg-bg/50 rounded-md px-3 py-2">
                 <Info className="w-3.5 h-3.5 shrink-0" />
                 Tes données sont conservées lors de la mise à jour (dossier ~/.therese/).

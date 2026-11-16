@@ -208,7 +208,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
         </AnimatePresence>
 
         {isStreaming && messages[messages.length - 1]?.content === '' && (
-          <div className="flex items-center gap-2 text-text-muted text-sm">
+          <div role="status" aria-live="polite" className="flex items-center gap-2 text-text-muted text-sm">
             <Spinner taille="bouton" />
             THÉRÈSE réfléchit...
           </div>
