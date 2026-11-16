@@ -770,7 +770,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           onKeyDown={handleKeyDown}
           placeholder={
             needsInitialPrompt
-              ? `Decris ta tache pour ${profile?.name || "l'agent"}...`
+              ? `Décris ta tâche pour ${profile?.name || "l'agent"}...`
               : "Message de suivi..."
           }
           disabled={isStreaming || profilIntrouvable || accordOccupe || !!accordEnAttente}
