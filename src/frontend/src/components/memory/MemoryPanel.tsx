@@ -1079,13 +1079,6 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   const isExpiringSoon = dateExpiration && new Date(dateExpiration) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const isExpired = dateExpiration && new Date(dateExpiration) < new Date();
 
-  const badgeLabels: Record<string, string> = {
-    consentement: 'C',
-    contrat: 'CT',
-    interet_legitime: 'IL',
-    obligation_legale: 'OL',
-  };
-
   const fullLabels: Record<string, string> = {
     consentement: 'Consentement',
     contrat: 'Contrat',
@@ -1106,7 +1099,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   return (
     <span title={title}>
       <Etiquette ton={ton}>
-        {badgeLabels[baseLegale] || baseLegale?.charAt(0).toUpperCase()}
+        {fullLabels[baseLegale] || baseLegale}
         {isExpired && '!'}
         {isExpiringSoon && !isExpired && <AlertTriangle className="ml-0.5 inline h-3 w-3" aria-hidden="true" />}
       </Etiquette>
