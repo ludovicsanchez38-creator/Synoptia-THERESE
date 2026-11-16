@@ -150,9 +150,15 @@ class TestLeRunEstUnTraitement:
         avant = set(ActionRunner._taches_de_fond)
         task = await ActionRunner.run("rapport-hebdo")
         producteurs = set(ActionRunner._taches_de_fond) - avant
-        assert len(producteurs) == 1
-        # Le statut mémoire devient terminal avant le commit du traitement.
-        await asyncio.gather(*producteurs)
+        try:
+            assert len(producteurs) == 1
+            # Le statut mémoire devient terminal avant le commit du traitement.
+            await asyncio.wait_for(asyncio.gather(*producteurs), timeout=5)
+        finally:
+            for producteur in producteurs:
+                if not producteur.done():
+                    producteur.cancel()
+            await asyncio.gather(*producteurs, return_exceptions=True)
         assert ActionRunner.get_task(task.task_id).status == TaskStatus.COMPLETED
 
         traitement = await _traitement_action(task.task_id)
