@@ -400,7 +400,9 @@ export function CapabilityCenter({
                   // l'attribut suit la même règle que la mise en avant visuelle.
                   aria-selected={selected}
                   aria-controls="capability-results-panel"
-                  tabIndex={selectedGroup === group.id ? 0 : -1}
+                  // B-1938 : l’onglet dans l’ordre de tabulation est le sélectionné.
+                  // Pendant une recherche aucun ne l’est (B-857), donc aucun ne reste à 0.
+                  tabIndex={selected ? 0 : -1}
                   onKeyDown={(event) => handleRovingFocus(
                     event,
                     '[role="tab"]',
