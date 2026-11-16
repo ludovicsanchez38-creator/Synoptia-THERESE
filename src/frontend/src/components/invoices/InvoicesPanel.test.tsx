@@ -145,7 +145,7 @@ describe('InvoicesPanel suppression', () => {
     mockListInvoices.mockRejectedValue(new Error('backend down'));
     render(<InvoicesPanel standalone />);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Impossible de charger les factures/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Impossible de charger les devis, factures et avoirs/i);
     expect(screen.queryByText('Aucun devis ni facture')).toBeNull();
   });
 

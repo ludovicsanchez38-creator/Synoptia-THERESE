@@ -86,4 +86,34 @@ describe('isolateDataProfilePersistence', () => {
     expect(localStorage.getItem('therese-chat')).toBe('cache-a');
     expect(reload).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['/Users/exemple/.therese', '/Users/exemple/.therese/'],
+    ['/Users/exemple/.therese/', '/Users/exemple/.therese'],
+    ['/tmp/profil-a', ' /tmp/profil-a/ '],
+    ['/tmp/profil-a/', '/tmp/profil-a'],
+    ['/', '///'],
+  ])('B-1868 conserve le cache du même dossier : %s puis %s', (ancien, courant) => {
+    const reload = vi.fn();
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+    localStorage.setItem('therese-chat', 'conversation à conserver');
+
+    expect(isolateDataProfilePersistence(courant, { reload })).toBe('unchanged');
+
+    expect(localStorage.getItem('therese-chat')).toBe('conversation à conserver');
+    // Les accords en attente restent rattachés à cette identité persistée.
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(ancien);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('B-1868 : une racine de lecteur reste distincte du chemin relatif au lecteur', () => {
+    const reload = vi.fn();
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, 'C:/');
+    localStorage.setItem('therese-chat', 'cache de la racine');
+
+    expect(isolateDataProfilePersistence('C:', { reload })).toBe('switched');
+
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    expect(reload).toHaveBeenCalledOnce();
+  });
 });

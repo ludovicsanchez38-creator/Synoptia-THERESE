@@ -214,7 +214,8 @@ describe('Lot 5 DA : trois colonnes de statut', () => {
     expect(within(avoirSent).queryByText('Impayée')).toBeNull();
 
     const avoirPaid = rows[2];
-    expect(avoirPaid.textContent ?? '').toMatch(/Payé le/);
+    // B-1992 : le formulaire nomme déjà ce statut « Remboursé » pour un avoir.
+    expect(avoirPaid.textContent ?? '').toMatch(/Remboursé le/);
     expect(avoirPaid).not.toHaveTextContent('Payée');
 
     const avoirOverdue = rows[3];
@@ -224,6 +225,17 @@ describe('Lot 5 DA : trois colonnes de statut', () => {
 });
 
 describe('Lot 5 DA : compteur et dates', () => {
+  it.each([
+    ['2026-04-02T00:00:00Z', 'Remboursé le 02/04/2026'],
+    [null, 'Remboursé'],
+  ])('B-1992 : un avoir payé affiche son remboursement (%s)', async (payment_date, attendu) => {
+    poser([piece({ document_type: 'avoir', status: 'paid', payment_date })]);
+    render(<InvoicesPanel standalone />);
+    const ligne = await screen.findByTestId('invoice-item');
+    expect(within(ligne).getByText(attendu)).toBeInTheDocument();
+    expect(ligne).not.toHaveTextContent(/Payé/);
+  });
+
   it('accorde pièce / pièces, dont échues, et 100+ sans dont', async () => {
     poser([piece()]);
     const { unmount } = render(<InvoicesPanel standalone />);
@@ -295,6 +307,18 @@ describe('Lot 5 DA : compteur et dates', () => {
 });
 
 describe('Lot 5 DA : Segments Type et Statut', () => {
+  it.each([
+    ['devis', ['Envoyé', 'Accepté', 'Refusé', 'Expiré', 'Converti']],
+    ['avoir', ['Envoyé', 'Remboursé', 'Annulé']],
+  ] as const)('B-1993 : les filtres du type %s portent les libellés de ce type', async (document_type, libelles) => {
+    poser([]);
+    useInvoiceStore.setState({ filters: { status: 'all', document_type } });
+    render(<InvoicesPanel standalone />);
+    await waitFor(() => expect(mockListInvoices).toHaveBeenCalled());
+    const filtres = within(screen.getByRole('group', { name: 'Statut' }));
+    for (const name of libelles) expect(filtres.getByRole('button', { name })).toBeInTheDocument();
+  });
+
   it('Tout et Toutes sont pressés au départ ; Devis assainit comme aujourd’hui', async () => {
     mockListInvoices.mockResolvedValue([]);
     useInvoiceStore.setState({
@@ -330,6 +354,14 @@ describe('Lot 5 DA : Segments Type et Statut', () => {
 });
 
 describe('Lot 5 DA : états dans la Carte', () => {
+  it('B-1994 : une erreur de chargement nomme devis, factures et avoirs', async () => {
+    mockListInvoices.mockRejectedValue(new Error('HTTP 503'));
+    render(<InvoicesPanel standalone />);
+    const alerte = await screen.findByTestId('invoices-load-error');
+    expect(alerte).toHaveTextContent('Impossible de charger les devis, factures et avoirs pour le moment.');
+    expect(within(alerte).getByRole('button', { name: 'Réessayer' })).toBeEnabled();
+  });
+
   it('un seul Réessayer sur l’erreur ; squelettes 6 pistes ; trois vides distincts', async () => {
     mockListInvoices.mockReturnValue(new Promise(() => {}));
     const { unmount: unmountLoad } = render(<InvoicesPanel standalone />);
@@ -351,7 +383,7 @@ describe('Lot 5 DA : états dans la Carte', () => {
     mockListInvoices.mockRejectedValue(new Error('500'));
     const { unmount: unmountErr } = render(<InvoicesPanel standalone />);
     expect(await screen.findByTestId('invoices-load-error')).toHaveTextContent(
-      /Impossible de charger les factures/,
+      /Impossible de charger les devis, factures et avoirs/,
     );
     expect(screen.getByTestId('invoices-load-error').closest('section')).not.toBeNull();
     expect(screen.getAllByRole('button', { name: 'Réessayer' })).toHaveLength(1);
