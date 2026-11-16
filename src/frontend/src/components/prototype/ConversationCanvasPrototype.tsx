@@ -1648,7 +1648,9 @@ export function ConversationCanvasPrototype() {
     },
     onNewConversation: startConversation,
     onShowShortcuts: openShortcuts,
-    onToggleMemoryPanel: () => embeddedView === 'memory' ? setEmbeddedView(null) : openEmbeddedView('memory'),
+    // B-1842 : fermer par le même chemin que Retour et Échap. `setEmbeddedView(null)`
+    // seul démontait une saisie en cours et laissait `activeView` sur memory.
+    onToggleMemoryPanel: () => embeddedView === 'memory' ? collapseEmbeddedView() : openEmbeddedView('memory'),
     onToggleConversationSidebar: toggleConversationDrawer,
     onToggleBoardPanel: toggleBoardPanel,
     onToggleEmailPanel: () => openEmbeddedView('email'),
