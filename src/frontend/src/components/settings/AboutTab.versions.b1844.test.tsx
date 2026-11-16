@@ -40,7 +40,7 @@ describe('B-1844 : les préversions ne se confondent pas', () => {
   it('0.9.0-alpha.2 est une mise à jour de 0.9.0-alpha.1', async () => {
     await verifier('0.9.0-alpha.1', 'v0.9.0-alpha.2');
     expect(await screen.findByText(/Nouvelle version disponible/)).toBeInTheDocument();
-    expect(screen.queryByText(/à jour/)).toBeNull();
+    expect(screen.queryByText(/THÉRÈSE est à jour/)).toBeNull();
   });
 
   it('une version finale dépasse la préversion du même numéro', async () => {

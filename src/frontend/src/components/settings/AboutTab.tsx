@@ -26,14 +26,44 @@ interface ReleaseInfo {
 
 type UpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'update-available' | 'error';
 
+/** Nombre positif si la version distante est plus récente (SemVer, préversions comprises). */
 function compareVersions(current: string, latest: string): number {
-  // Nettoyer les préfixes (v, alpha, etc.)
-  const clean = (v: string) => v.replace(/^v/, '').replace(/-alpha.*$/, '');
-  const a = clean(current).split('.').map(Number);
-  const b = clean(latest).split('.').map(Number);
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const diff = (b[i] || 0) - (a[i] || 0);
-    if (diff !== 0) return diff;
+  const decouper = (brut: string) => {
+    const version = brut.trim().replace(/^v/i, '');
+    const tiret = version.indexOf('-');
+    const principal = tiret === -1 ? version : version.slice(0, tiret);
+    const pre = tiret === -1 ? null : version.slice(tiret + 1).split('.');
+    const coeur = principal.split('.').map((segment) => (/^\d+$/.test(segment) ? Number(segment) : Number.NaN));
+    return { coeur, pre };
+  };
+  const actuel = decouper(current);
+  const distant = decouper(latest);
+  const longueur = Math.max(actuel.coeur.length, distant.coeur.length);
+  for (let i = 0; i < longueur; i++) {
+    const gauche = actuel.coeur[i] ?? 0;
+    const droite = distant.coeur[i] ?? 0;
+    if (Number.isNaN(gauche) || Number.isNaN(droite)) return 0;
+    if (droite !== gauche) return droite - gauche;
+  }
+  if (!actuel.pre && !distant.pre) return 0;
+  // Une livraison sans préversion est plus récente que la préversion du même numéro.
+  if (!actuel.pre) return -1;
+  if (!distant.pre) return 1;
+  const identifiants = Math.max(actuel.pre.length, distant.pre.length);
+  for (let i = 0; i < identifiants; i++) {
+    const gauche = actuel.pre[i];
+    const droite = distant.pre[i];
+    if (gauche === undefined) return 1;
+    if (droite === undefined) return -1;
+    const gaucheNombre = /^\d+$/.test(gauche);
+    const droiteNombre = /^\d+$/.test(droite);
+    if (gaucheNombre && droiteNombre) {
+      const ecart = Number(droite) - Number(gauche);
+      if (ecart !== 0) return ecart;
+      continue;
+    }
+    if (gaucheNombre !== droiteNombre) return gaucheNombre ? 1 : -1;
+    if (gauche !== droite) return gauche < droite ? 1 : -1;
   }
   return 0;
 }
