@@ -38,7 +38,36 @@ def engine_name(platform):
     return names[0] + ('.exe' if platform == 'Windows' else '')
 
 
-def built_digests(root, platform, package):
+def unsigned_pe_digest(raw):
+    """Comparer les octets du PE en neutralisant uniquement les effets d'Authenticode."""
+    if len(raw) < 0x40 or raw[:2] != b'MZ':
+        return None
+    header = int.from_bytes(raw[0x3c:0x40], 'little')
+    optional = header + 24
+    if raw[header:header + 4] != b'PE\0\0' or len(raw) < optional + 2:
+        return None
+    magic = int.from_bytes(raw[optional:optional + 2], 'little')
+    if magic not in (0x10b, 0x20b):
+        return None
+    checksum = optional + 64
+    security = optional + (112 if magic == 0x20b else 96) + 4 * 8
+    if len(raw) < security + 8:
+        return None
+    offset = int.from_bytes(raw[security:security + 4], 'little')
+    size = int.from_bytes(raw[security + 4:security + 8], 'little')
+    if offset or size:
+        if not offset or not size or offset % 8 or offset < security + 8 or offset + size != len(raw):
+            return None
+        body = bytearray(raw[:offset])
+    else:
+        body = bytearray(raw)
+    body[checksum:checksum + 4] = b'\0' * 4
+    body[security:security + 8] = b'\0' * 8
+    body.extend(b'\0' * (-len(body) % 8))
+    return system.sha(body)
+
+
+def built_digests(root, platform, package, normalized=False):
     """Empreintes admises pour le binaire principal de CE build une fois empaqueté :
     l'original de target/release, ou le même avec le seul jeton de son paquet."""
     digests = set()
@@ -47,10 +76,14 @@ def built_digests(root, platform, package):
         if not binary.is_file():
             continue
         raw = binary.read_bytes()
-        digests.add(system.sha(raw))
+        variants = [raw]
         index = raw.find(BUNDLE_TOKEN)
         if index >= 0:
-            digests.add(system.sha(raw[:index] + BUNDLE_TYPES[package] + raw[index + len(BUNDLE_TOKEN):]))
+            variants.append(raw[:index] + BUNDLE_TYPES[package] + raw[index + len(BUNDLE_TOKEN):])
+        for variant in variants:
+            digest = unsigned_pe_digest(variant) if normalized else system.sha(variant)
+            if digest is not None:
+                digests.add(digest)
     return digests
 
 
@@ -294,13 +327,14 @@ def verify_directory(folder, manifest, platform, root=ROOT, package=None, instal
         if platform == 'Windows' and path.name.lower() in MAIN_NAMES['Windows']:
             raw = path.read_bytes()
             digest = system.sha(raw)
-            if digest in own:
+            normalized = unsigned_pe_digest(raw)
+            same_signed_build = (digest not in own and normalized is not None and authenticode_signed(raw) and
+                                 normalized in built_digests(root, platform, package, normalized=True))
+            if digest in own or same_signed_build:
                 records[relative] = {'sha256': digest, 'origin': 'THERESE/Cargo.lock', 'license': 'licence du dépôt'}
                 continue
-            # Signé Authenticode : relève de la garde de signature (verify_windows_signing.ps1).
-            if authenticode_signed(raw):
-                continue
-            refusals.append('Exécutable principal non signé et différent de ce build : '
+            # L'identité et la validité de la signature restent contrôlées séparément.
+            refusals.append('Exécutable principal différent de ce build : '
                             + relative + ' (SHA-256 ' + digest + ')')
             continue
         digest = system.file_sha(path)
