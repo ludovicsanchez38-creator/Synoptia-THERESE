@@ -129,6 +129,84 @@ def _cle_de_connexion(cle: str) -> bool:
     )
 
 
+_DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
+_FIN_AUTORITE = "/?#"
+_FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
+_PORTEE_DES_IDENTIFIANTS = 512
+
+
+def _nettoyer_url(url: str) -> str:
+    """Une URL sans identifiants ni valeur de paramètre de connexion."""
+    try:
+        morceaux = urlsplit(url)
+        autorite = morceaux.netloc.rsplit("@", 1)[-1]
+
+        def masquer_parametre(param: re.Match[str]) -> str:
+            nom = unquote_plus(param.group(2))
+            return param.group(1) + param.group(2) + "=[REDACTED]" if _cle_de_connexion(nom) else param.group()
+
+        motif = r"(^|[&;])([^=&#;]+)=([^&#;]*)"
+        query = re.sub(motif, masquer_parametre, morceaux.query)
+        fragment = re.sub(motif, masquer_parametre, morceaux.fragment)
+        return urlunsplit((morceaux.scheme, autorite, morceaux.path, query, fragment))
+    except ValueError:
+        return "[URL masquée]"
+
+
+def _port_plausible(autorite: str) -> bool:
+    """`hôte`, `hôte:443` ou une adresse IPv6 entre crochets ; `nom:secret` ne l'est pas."""
+    if autorite.startswith("["):
+        return True
+    _hote, deux_points, suite = autorite.partition(":")
+    return not deux_points or not suite or (suite.isascii() and suite.isdigit())
+
+
+def _debut_de_l_hote(texte: str, debut: int) -> int:
+    """Où commence l'hôte d'une URL dont l'autorité commence à `debut`.
+
+    Lecture de la RFC 3986 : l'autorité s'arrête au premier « / », « ? » ou
+    « # », et tout ce qui y précède le dernier « @ » est un identifiant, quels
+    que soient ses caractères (un mot de passe saisi tel quel peut porter une
+    apostrophe, un guillemet, un chevron). Une espace termine l'URL dans un
+    texte ; elle ne prolonge l'identifiant que si ce qui la précède ne peut pas
+    être un hôte suivi de son port (`nom:secret` coupé par une espace).
+    """
+    fin = debut
+    while fin < len(texte) and not texte[fin].isspace() and texte[fin] not in _FIN_AUTORITE:
+        fin += 1
+    arobase = texte.rfind("@", debut, fin)
+    if arobase >= 0:
+        return arobase + 1
+    fin_hote = debut
+    while fin_hote < fin and texte[fin_hote] not in _FIN_URL_DANS_UN_TEXTE:
+        fin_hote += 1
+    if _port_plausible(texte[debut:fin_hote]):
+        return debut
+    limite = min(len(texte), debut + _PORTEE_DES_IDENTIFIANTS)
+    fin_ligne = debut
+    while fin_ligne < limite and texte[fin_ligne] not in _FIN_AUTORITE + "\r\n":
+        fin_ligne += 1
+    arobase = texte.rfind("@", debut, fin_ligne)
+    return arobase + 1 if arobase >= 0 else debut
+
+
+def _masquer_urls_d_un_texte(valeur: str) -> str:
+    resultat = []
+    position = 0
+    while match := _DEBUT_URL.search(valeur, position):
+        hote = _debut_de_l_hote(valeur, match.end())
+        fin = hote
+        while fin < len(valeur) and not valeur[fin].isspace() and valeur[fin] not in _FIN_URL_DANS_UN_TEXTE:
+            fin += 1
+        propre = _nettoyer_url(match.group() + valeur[hote:fin])
+        # Une URL passée en paramètre d'une autre porte parfois ses propres identifiants.
+        if imbriquee := _DEBUT_URL.search(propre, len(match.group())):
+            propre = propre[: imbriquee.start()] + _masquer_urls_d_un_texte(propre[imbriquee.start() :])
+        resultat.extend((valeur[position : match.start()], propre))
+        position = fin
+    return "".join(resultat) + valeur[position:]
+
+
 def _masquer_urls_export(valeur: Any) -> Any:
     """Retire les identifiants des URL, y compris dans les textes exportés."""
     if isinstance(valeur, dict):
@@ -137,60 +215,18 @@ def _masquer_urls_export(valeur: Any) -> Any:
         return [_masquer_urls_export(element) for element in valeur]
     if not isinstance(valeur, str):
         return valeur
-
-    def nettoyer(url: str) -> str:
+    # Un JSON déjà sérialisé (la valeur d'une préférence) se masque champ par
+    # champ : lu comme un texte, ses guillemets collent une URL à l'adresse
+    # e-mail du champ suivant. Rien à masquer : la chaîne sort inchangée.
+    if valeur.lstrip().startswith(("{", "[")):
         try:
-            morceaux = urlsplit(url)
-            autorite = morceaux.netloc.rsplit("@", 1)[-1]
-
-            def masquer_parametre(param: re.Match[str]) -> str:
-                nom = unquote_plus(param.group(2))
-                return param.group(1) + param.group(2) + "=[REDACTED]" if _cle_de_connexion(nom) else param.group()
-
-            motif = r"(^|[&;])([^=&#;]+)=([^&#;]*)"
-            query = re.sub(motif, masquer_parametre, morceaux.query)
-            fragment = re.sub(motif, masquer_parametre, morceaux.fragment)
-            return urlunsplit((morceaux.scheme, autorite, morceaux.path, query, fragment))
-        except ValueError:
-            return "[URL masquée]"
-
-    # Chercher d'abord l'autorité entière : un caractère qui termine une URL
-    # dans un texte peut aussi être présent avant le @ d'un identifiant saisi.
-    debut_url = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
-    separateurs_texte = " \t\r\n\"'<>\\"
-    resultat = []
-    position = 0
-    while match := debut_url.search(valeur, position):
-        debut = match.start()
-        debut_autorite = match.end()
-        fin_autorite = debut_autorite
-        while fin_autorite < len(valeur) and valeur[fin_autorite] not in "/?#\r\n":
-            fin_autorite += 1
-        autorite = valeur[debut_autorite:fin_autorite]
-        arobase = autorite.rfind("@")
-        identifiants = autorite[:arobase] if arobase >= 0 else ""
-        premier_separateur = next(
-            (i for i, caractere in enumerate(identifiants) if caractere in separateurs_texte),
-            len(identifiants),
-        )
-        deux_points = identifiants.find(":")
-        # Un séparateur avant les deux-points peut être du texte suivi d'un
-        # e-mail ; un séparateur après eux peut appartenir au mot de passe.
-        if arobase >= 0 and not (
-            premier_separateur < len(identifiants)
-            and (deux_points < 0 or deux_points > premier_separateur)
-        ):
-            fin_hote = debut_autorite + arobase + 1
-        else:
-            fin_hote = debut_autorite
-        while fin_hote < len(valeur) and valeur[fin_hote] not in "/?#" + separateurs_texte:
-            fin_hote += 1
-        fin = fin_hote
-        while fin < len(valeur) and valeur[fin] not in separateurs_texte:
-            fin += 1
-        resultat.extend((valeur[position:debut], nettoyer(valeur[debut:fin])))
-        position = fin
-    return "".join(resultat) + valeur[position:]
+            structure = json.loads(valeur)
+        except (ValueError, RecursionError):
+            structure = None
+        if isinstance(structure, (dict, list)):
+            masquee = _masquer_urls_export(structure)
+            return valeur if masquee == structure else json.dumps(masquee, ensure_ascii=False)
+    return _masquer_urls_d_un_texte(valeur)
 
 
 def _masquer_preferences_structurees(valeur: Any) -> Any:

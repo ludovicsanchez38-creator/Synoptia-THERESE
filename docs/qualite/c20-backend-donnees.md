@@ -305,3 +305,41 @@ base jetable et une garde Python contre les connexions réseau, les
 sous-processus et les chemins protégés ; elle ne prouve pas l'interception
 d'éventuels appels natifs. Aucune suite complète ni modification frontend n'a
 été lancée. Les changements restent non commités.
+
+## Remédiation de la relecture, passe 5 (écrite par l'orchestrateur)
+
+Constat de la relecture 4 : le masquage des URL prenait un port (`:443`) pour
+le début d'un identifiant dès qu'une adresse e-mail suivait sur la même ligne,
+et relisait comme un texte le JSON déjà sérialisé d'une préférence. Deux
+passes de suite ayant échoué sur cette fonction, elle a été réécrite à la main
+plutôt que renvoyée une cinquième fois.
+
+Règles retenues (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
+
+1. Une chaîne qui est un JSON (objet ou liste) est masquée champ par champ et
+   sort inchangée s'il n'y a rien à masquer.
+2. Dans un texte, l'autorité d'une URL s'arrête au premier `/`, `?`, `#` ou à
+   la première espace ; tout ce qui y précède le dernier `@` est un
+   identifiant et part, quels que soient ses caractères (lecture de la
+   RFC 3986).
+3. Une espace ne prolonge l'identifiant que si ce qui la précède ne peut pas
+   être un hôte suivi de son port (`nom:secret` coupé par une espace) : on
+   cherche alors le `@` sur la même ligne, à 512 caractères au plus.
+4. Une URL passée en paramètre d'une autre est lue de la même façon.
+
+Tests : `tests/test_c20_b1812_export_config.py::test_export_conserve_un_port_suivi_d_une_adresse_mail`
+(deux routes), `::test_masquage_des_urls_table_de_cas` (douze cas),
+`::test_masquage_d_un_json_serialise_garde_ses_autres_champs`. Cinq rouges
+avant le correctif (commit `69c935c3`), 33 verts après ; 224 tests voisins de
+l'export verts ; ruff propre ; mypy du fichier inchangé (23).
+
+Limites connues, non couvertes :
+
+- un mot de passe saisi tel quel avec une espace ET qui commence par des
+  chiffres (`nom:12 34@hôte`) : la partie avant l'espace passe pour un port ;
+- un mot de passe contenant `/`, `?` ou `#` non encodés : aucune bibliothèque
+  ne lit une telle URL comme l'utilisateur l'entend ;
+- une URL encodée en pourcentage passée en paramètre d'une autre ;
+- la règle 2 lit `https://site.invalid;a@b.invalid` (sans espace) comme une
+  URL à identifiants, ce qu'elle est selon la RFC : le texte avant le `@`
+  part.
