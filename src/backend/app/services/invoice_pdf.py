@@ -10,8 +10,10 @@ avec la palette Synoptia (primary #2451FF, cyan #22D3EE, dark #0B1226).
 
 import logging
 import os
+import tempfile
 from datetime import datetime
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +60,21 @@ CURRENCY_SYMBOLS: dict[str, str] = {
     "USD": "$",
     "CAD": "CA$",
 }
+
+PENALITES_DEFAUT_EUR = (
+    "En cas de retard de paiement, pénalités au taux de refinancement "
+    "le plus récent de la Banque centrale européenne, majoré de 10 points "
+    "(art. L441-10 du Code de commerce)."
+)
+
+
+def mention_penalite_taux(taux: float) -> str:
+    """Formate un taux particulier déjà enregistré sur la pièce."""
+    valeur = f"{taux:.2f}".replace(".", ",")
+    return (
+        f"En cas de retard de paiement, une pénalité de {valeur} % annuel sera appliquée "
+        "(art. L441-10 du Code de commerce)."
+    )
 
 # Fallback par defaut (utilise uniquement si aucun dossier de travail configure)
 _DEFAULT_INVOICE_DIR = "~/.therese/invoices"
@@ -196,15 +213,15 @@ def _draw_footer(
     )
 
     # Texte du footer
-    canvas.setFont(theme.font_regular, 7)
-    canvas.setFillColor(HexColor("#9CA3AF"))
+    canvas.setFont(theme.font_regular, 8)
+    canvas.setFillColor(HexColor("#6B7280"))
     y = 18 * mm
     for line in footer_lines:
         canvas.drawCentredString(page_w / 2, y, line)
         y -= 9
 
     # Numero de page
-    canvas.setFont(theme.font_regular, 7)
+    canvas.setFont(theme.font_regular, 8)
     canvas.drawRightString(
         page_w - theme.margin_right * mm,
         8 * mm,
@@ -752,8 +769,10 @@ class InvoicePDFGenerator:
         # art. 242 nonies A, I, 12° et art. 261, 4, 4° a (formation).
         if (not tva_applicable or sans_tva) and regime_tva == "exoneration_formation":
             tva_mention = "Exonération de TVA, art. 261, 4, 4° a du code général des impôts."
-        elif not tva_applicable or (sans_tva and regime_tva == "franchise"):
+        elif (not tva_applicable or sans_tva) and regime_tva == "franchise":
             tva_mention = "TVA non applicable, art. 293 B du code général des impôts."
+        elif not tva_applicable:
+            tva_mention = "Aucune TVA facturée."
         elif sans_tva:
             tva_mention = "Aucune TVA facturée (taux de 0 % sur toutes les lignes)."
         else:
@@ -770,14 +789,18 @@ class InvoicePDFGenerator:
             ),
         )
 
+        donnees = invoice_data or {}
         if currency == "EUR":
             # B-1338 : « au taux légal » était sous le plancher de L441-10
             # (trois fois le taux d'intérêt légal) et l'escompte manquait
             # (L441-9). Taux supplétif de L441-10, sans chiffre qui vieillit.
+            taux_particulier = donnees.get("late_penalty_rate")
+            mention_penalite = (
+                mention_penalite_taux(taux_particulier)
+                if taux_particulier is not None else PENALITES_DEFAUT_EUR
+            )
             penalty_lines = (
-                "En cas de retard de paiement, pénalités au taux de refinancement "
-                "le plus récent de la Banque centrale européenne, majoré de 10 points "
-                "(art. L441-10 du Code de commerce).<br/>"
+                f"{mention_penalite}<br/>"
                 f"Indemnité forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>"
                 "Escompte pour paiement anticipé : néant.<br/>"
             )
@@ -791,7 +814,6 @@ class InvoicePDFGenerator:
         # échéance à 90 jours négociée à la conversion du devis. Les conditions
         # de la pièce, quand elle en porte, remplacent le texte par défaut ; les
         # mentions calculées à la conversion remplacent les pénalités génériques.
-        donnees = invoice_data or {}
         payment_terms = (donnees.get("payment_terms") or "").strip()
         payment_method = (donnees.get("payment_method") or "").strip()
         legal_mentions = (donnees.get("legal_mentions") or "").strip()
@@ -844,6 +866,8 @@ class InvoicePDFGenerator:
         contact_data: dict[str, Any],
         user_profile: dict[str, Any],
         currency: str = "EUR",
+        *,
+        conserver_existant: bool = False,
     ) -> str:
         """
         Genere une facture PDF avec le theme Synoptia.
@@ -880,8 +904,9 @@ class InvoicePDFGenerator:
         on_first, on_later = _make_header_footer(theme, footer_lines)
 
         # Document
+        contenu = BytesIO() if conserver_existant else None
         doc = SimpleDocTemplate(
-            str(filepath),
+            contenu if contenu is not None else str(filepath),
             pagesize=A4,
             rightMargin=theme.margin_right * mm,
             leftMargin=theme.margin_left * mm,
@@ -931,6 +956,17 @@ class InvoicePDFGenerator:
 
         # Build PDF
         doc.build(story, onFirstPage=on_first, onLaterPages=on_later)
+        if contenu is not None:
+            # Publication atomique sans remplacement, même si deux processus
+            # génèrent simultanément la même pièce émise.
+            with tempfile.NamedTemporaryFile(dir=self.output_dir) as provisoire:
+                provisoire.write(contenu.getvalue())
+                provisoire.flush()
+                try:
+                    os.link(provisoire.name, filepath)
+                except FileExistsError:
+                    pass
+            return str(chemin_pdf_a_ouvrir(str(self.output_dir), invoice_number))
 
         logger.info("Invoice PDF generated: %s", filepath)
         return str(filepath.absolute())

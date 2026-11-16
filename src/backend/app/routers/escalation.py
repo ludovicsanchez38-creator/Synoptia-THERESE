@@ -29,6 +29,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _avec_montants_usd(donnees: dict) -> dict:
+    """Expose l'unité et des noms exacts sans casser les anciennes clés."""
+    alias = {
+        "monthly_budget_eur": "monthly_budget_usd",
+        "budget_eur": "budget_usd",
+        "cost_eur": "cost_usd",
+    }
+    return {
+        **donnees,
+        **{nouveau: donnees[ancien] for ancien, nouveau in alias.items() if ancien in donnees},
+        "currency": "USD",
+    }
+
+
 # ============================================================
 # US-ESC-02: Cost Estimation
 # ============================================================
@@ -110,12 +124,12 @@ async def get_token_limits(
             # Update tracker with saved limits
             tracker = get_token_tracker()
             tracker.set_limits(limits)
-            return limits.to_dict()
+            return _avec_montants_usd(limits.to_dict())
         except (json.JSONDecodeError, TypeError):
             pass
 
     # Return default limits
-    return TokenLimits().to_dict()
+    return _avec_montants_usd(TokenLimits().to_dict())
 
 
 @router.post("/limits")
@@ -157,7 +171,7 @@ async def set_token_limits(
     tracker = get_token_tracker()
     tracker.set_limits(limits)
 
-    return limits.to_dict()
+    return _avec_montants_usd(limits.to_dict())
 
 
 @router.post("/check-limits")
@@ -190,14 +204,14 @@ async def check_limits(
 async def get_daily_usage():
     """Get today's token usage summary."""
     tracker = get_token_tracker()
-    return tracker.get_daily_usage()
+    return _avec_montants_usd(tracker.get_daily_usage())
 
 
 @router.get("/usage/monthly")
 async def get_monthly_usage():
     """Get this month's token usage summary."""
     tracker = get_token_tracker()
-    return tracker.get_monthly_usage()
+    return _avec_montants_usd(tracker.get_monthly_usage())
 
 
 @router.get("/usage/history")
@@ -311,9 +325,9 @@ async def get_escalation_status(
     tracker = get_token_tracker()
 
     return {
-        "daily_usage": tracker.get_daily_usage(),
-        "monthly_usage": tracker.get_monthly_usage(),
-        "limits": tracker.get_limits().to_dict(),
+        "daily_usage": _avec_montants_usd(tracker.get_daily_usage()),
+        "monthly_usage": _avec_montants_usd(tracker.get_monthly_usage()),
+        "limits": _avec_montants_usd(tracker.get_limits().to_dict()),
         "recent_history_count": len(tracker._usage_history),
         "currency": "USD",
     }
