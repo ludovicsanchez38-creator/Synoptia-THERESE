@@ -338,8 +338,8 @@ async def _get_file_context(
         path = validate_file_path(file_path)
     except PermissionError:
         return None, "Accès refusé : ce fichier ne peut pas être transmis."
-    except FileNotFoundError as e:
-        return None, str(e)
+    except FileNotFoundError:
+        return None, f"Fichier non trouvé : {Path(file_path).name}"
 
     if not path.is_file():
         return None, f"Ce n'est pas un fichier : {file_path}"

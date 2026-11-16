@@ -135,3 +135,63 @@ pour sa base volontairement non SQL et continue de vérifier l’ordre des étap
 Pour une prochaine campagne, une commande de recette réutilisable pourrait
 installer la garde, isoler les preuves et relever automatiquement chaque rouge
 et son vert. Elle n’a pas été ajoutée au projet pendant ce lot.
+
+## Remédiation de la relecture, passe 2
+
+- **Agenda CalDAV sans compte.** La lecture et le blocage acceptent les
+  calendriers locaux et CalDAV quand les deux comptes sont vides, y compris
+  lorsque le client envoie `account_id=`. Un compte étranger et un calendrier
+  Google sans compte restent refusés. Le test paramétré couvre les deux routes,
+  les comptes vides et les refus croisés ; un fournisseur CalDAV simulé vérifie
+  aussi la modification et la suppression sans compte. Rouges isolés observés
+  avant correction : `E   assert 404 == 200`, à la ligne 104 en lecture et à la
+  ligne 114 au blocage dans `tests/test_c20_b1810_blocage_compte.py`. Après
+  correction, 82 tests d’agenda et de séances réussis.
+  Limite distincte observée en relisant le parcours : une liste CalDAV renvoie
+  l’identifiant distant alors que sa copie en base porte une clé dérivée. Un
+  essai en mémoire avec fournisseur simulé renvoie encore 404 en lecture et au
+  blocage quand on transmet l’identifiant de la liste ; les tests de cloison
+  ci-dessus utilisent l’identifiant de la ligne en base. Ce décalage d’identité,
+  préexistant et distinct du contrôle de compte demandé, n’a pas été corrigé.
+- **Anonymisation incomplète.** L’écran lit `success` et affiche durablement le
+  `message` du moteur en cas de purge incomplète. Il recharge les contacts car
+  les données en base ont déjà été modifiées. Les tests couvrent dépôt restant,
+  index non purgé et succès complet, avec rendu réel de la notification. Rouge
+  isolé avant correction :
+  `AssertionError: expected [] to deeply equal ArrayContaining{…}` dans
+  `MemoryPanel.confirmations.c10.test.tsx` (deux cas). Vérification des autres
+  chemins : la purge automatique B-1815 enregistre une notification distincte
+  et compte les anonymisations incomplètes ; en B-1817, l’échec de réouverture
+  produit une erreur HTTP 503, propagée par `request` et affichée par
+  `PrivacyTab`. Un test d’écran vérifie ce dernier chemin. Les contrôles voisins
+  RGPD et restauration ont réussi : 23 tests backend, 54 tests frontend et le
+  test d’écran de restauration ajouté ensuite.
+- **Pièce absente.** L’avis porte uniquement le nom du fichier, dans les deux
+  modes du chat et dans le contexte transmis au modèle. Rouge isolé avant
+  correction, pour les deux modes :
+  `AssertionError: Le chemin du dossier est exposé à l'écran` dans
+  `tests/test_c20_b1900_avis_piece_absente.py:50`. Les nouveaux tests contrôlent
+  l’écran et le contexte du faux modèle ; 23 tests voisins ont réussi.
+
+Porte backend, rapport `/tmp/backend-donnees-r2.xml` lu : **6 644 cas,
+6 493 réussis, 11 échecs, 0 erreur et 140 exclus**. Les seuls échecs sont les
+7 cas connus de `tests.test_b1153_bac_a_sable_commandes` et les 4 cas connus de
+`tests.test_r3_4_ollama::test_refus_a_lecran_meme_sans_fiches` ; aucun autre
+rouge. Les exclusions comprennent 79 sous-processus interdits, 47 tests
+réservés à `RLIMIT_AS` sous Linux, 9 créations de dépôt Git et une vérification
+Git interdites, 2 générations d’image réelles, 1 construction de bundles et
+1 test réseau. Les tests exclus ne sont pas validés. La garde et le plugin de
+la campagne précédente ont été réutilisés pour bloquer les connexions et les
+sous-processus, interdire les chemins protégés et isoler les preuves.
+Ruff backend : **réussi, 0 erreur**.
+
+Porte frontend complète : **949 fichiers et 4 081 tests réussis**, puis
+TypeScript sans erreur et lint réussi avec **0 erreur et 27 avertissements**
+sur des lignes non modifiées. Les tests ont utilisé `--configLoader runner
+--no-cache --maxWorkers=3` : le `node_modules` de cet arbre est un lien vers un
+autre dossier, où le mode de chargement par défaut aurait voulu écrire. Une
+garde Node bloquait le réseau dans Vitest et ses workers ; le test Vite des
+variables lance un fils à environnement épuré, qui ne l’hérite pas. Son code
+examiné ne construit qu’un module virtuel en mémoire et ne contient pas d’appel
+réseau. Cette garde ne couvre pas les appels natifs. `npx --no-install` et le
+mode npm hors ligne ont empêché toute installation.

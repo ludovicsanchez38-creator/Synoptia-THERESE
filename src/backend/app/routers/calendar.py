@@ -1130,8 +1130,8 @@ async def get_event(
     calendrier = await session.get(Calendar, event.calendar_id)
     if (
         calendrier is None
-        or calendrier.account_id != account_id
-        or (not account_id and calendrier.provider != "local")
+        or (calendrier.account_id or None) != (account_id or None)
+        or (not account_id and calendrier.provider not in ("local", "caldav"))
     ):
         raise HTTPException(status_code=404, detail="Événement introuvable")
 
@@ -1180,8 +1180,8 @@ async def bloquer_un_evenement(
     calendrier = await session.get(Calendar, evenement.calendar_id)
     if (
         calendrier is None
-        or calendrier.account_id != account_id
-        or (not account_id and calendrier.provider != "local")
+        or (calendrier.account_id or None) != (account_id or None)
+        or (not account_id and calendrier.provider not in ("local", "caldav"))
     ):
         raise HTTPException(status_code=404, detail="Événement introuvable")
 

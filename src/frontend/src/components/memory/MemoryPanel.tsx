@@ -332,7 +332,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     }
     setRgpdActionLoading(true);
     try {
-      await api.anonymizeContact(contact.id, reason);
+      const result = await api.anonymizeContact(contact.id, reason);
+      if (!result.success) {
+        addNotification({ type: 'error', title: 'Anonymisation incomplète', message: result.message, duration: 0 });
+      }
       setRgpdAction(null);
       setAnonymizeReason('');
       await loadData(); // Reload to show anonymized contact
