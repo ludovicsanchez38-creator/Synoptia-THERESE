@@ -658,12 +658,14 @@ function DevisDraftForm({
                 <p className="mt-1">Destinataire : {confirmationSnapshot.recipient}</p>
                 <p>Montant TTC : {formatMoney(confirmationSnapshot.totalTtc, confirmationSnapshot.request.currency)}</p>
                 <p>Échéance : {formatDate(confirmationSnapshot.request.due_date)}</p>
-                <p className="mt-1 font-semibold">Cette action crée un document local. Elle ne génère aucun PDF et n’envoie rien.</p>
+                <p className="mt-1 font-semibold">{brouillonEnregistre
+                  ? 'Cette action met à jour le brouillon. Elle ne génère aucun PDF et n’envoie rien.'
+                  : 'Cette action crée un document local. Elle ne génère aucun PDF et n’envoie rien.'}</p>
               </div>
             </div>
             <div className="mt-3 flex justify-end gap-2">
               <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
-              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-sm font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
+              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-sm font-semibold text-success-ink disabled:opacity-60">{saving ? (brouillonEnregistre ? 'Mise à jour…' : 'Création…') : (brouillonEnregistre ? 'Confirmer la mise à jour' : 'Confirmer le brouillon')}</button>
             </div>
           </div>
         )}
