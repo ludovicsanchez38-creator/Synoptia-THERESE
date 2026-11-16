@@ -45,7 +45,7 @@ async def test_route_resout_le_pdf_depuis_la_facture_et_le_dossier_choisi(tmp_pa
     dossier.mkdir()
     fichier = dossier / 'FAC-001.pdf'
     fichier.write_bytes(b'%PDF-1.7\n')
-    facture = AsyncMock(return_value=SimpleNamespace(invoice_number='FAC-001'))
+    facture = AsyncMock(return_value=SimpleNamespace(invoice_number='FAC-001', document_type='devis'))
     monkeypatch.setattr(invoices, '_get_invoice_with_lines', facture)
     monkeypatch.setattr(invoices, '_get_invoice_output_dir', AsyncMock(return_value=str(dossier)))
     assert await invoices.pdf_pour_ouverture('inv-1', session=None) == {'pdf_path': str(fichier)}

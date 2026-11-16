@@ -5,8 +5,36 @@ from contextlib import closing
 
 import pytest
 from app.models.database import ALEMBIC_HEAD_REVISION, ensure_alembic_stamp
+from app.models.entities import Invoice
+from sqlalchemy import create_engine
+from sqlmodel import SQLModel
 
 from tests.test_alembic_stamp import _make_patched_tracked_db, _read_stamp
+
+
+@pytest.mark.parametrize("suivie", [True, False])
+@pytest.mark.parametrize("colonne", [
+    "tva_applicable", "service_date", "purchase_order", "payment_terms", "issue_date", "due_date", "total_ttc",
+])
+def test_factures_au_schema_incomplet_ne_peuvent_pas_etre_estampillees(tmp_path, suivie, colonne):
+    base = tmp_path / "factures-incompletes.db"
+    _make_patched_tracked_db(base)
+    with closing(sqlite3.connect(base)) as connexion:
+        connexion.execute("DROP TABLE invoices")
+        if not suivie:
+            connexion.execute("DROP TABLE alembic_version")
+        connexion.commit()
+    moteur = create_engine(f"sqlite:///{base}")
+    try:
+        Invoice.__table__.create(moteur)
+    finally:
+        moteur.dispose()
+    with closing(sqlite3.connect(base)) as connexion:
+        connexion.execute(f"ALTER TABLE invoices DROP COLUMN {colonne}")
+        connexion.commit()
+
+    ensure_alembic_stamp(base)
+    assert _read_stamp(base) == ("c3d4e5f6a7b8" if suivie else None)
 
 
 @pytest.mark.parametrize("suivie", [False, True])
@@ -24,10 +52,11 @@ def test_schema_incomplet_ne_saute_pas_les_migrations(tmp_path, suivie):
 
 def test_base_complete_sans_stamp_peut_etre_estampillee(tmp_path):
     base = tmp_path / "complete.db"
-    _make_patched_tracked_db(base)
-    with closing(sqlite3.connect(base)) as connexion:
-        connexion.execute("DROP TABLE alembic_version")
-        connexion.commit()
+    moteur = create_engine(f"sqlite:///{base}")
+    try:
+        SQLModel.metadata.create_all(moteur)
+    finally:
+        moteur.dispose()
     ensure_alembic_stamp(base)
     assert _read_stamp(base) == ALEMBIC_HEAD_REVISION
 
