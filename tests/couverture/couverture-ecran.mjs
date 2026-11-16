@@ -192,7 +192,14 @@ export function installerGardeReseau(contexte, garde, ecrituresEnCours = new Set
           garde.ecritures_simulees.requetes.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
         })();
         ecrituresEnCours.add(acquittement);
-        try { await acquittement; } finally { ecrituresEnCours.delete(acquittement); }
+        try {
+          await acquittement;
+        } catch {
+          garde.ecritures_simulees.echecs ??= [];
+          garde.ecritures_simulees.echecs.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
+        } finally {
+          ecrituresEnCours.delete(acquittement);
+        }
         return;
       }
       if (requeteAutorisee(requete.method(), requete.url())) return route.continue();

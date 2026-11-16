@@ -193,10 +193,11 @@ test('B-2029 : une interruption conserve les simulations et bloque la migration 
   });
 });
 
-test('B-2029 remédiation : une interruption conserve les acquittements concurrents', () => {
+function verifierAcquittementsConcurrents(ordre) {
   const fichier = fileURLToPath(new URL('./couverture-ecran.mjs', import.meta.url));
   const code = `
     import fs from 'node:fs';
+    import { EventEmitter } from 'node:events';
     import { syncBuiltinESMExports } from 'node:module';
     import { join } from 'node:path';
     import { pathToFileURL } from 'node:url';
@@ -222,7 +223,7 @@ test('B-2029 remédiation : une interruption conserve les acquittements concurre
       if (appelsFetch === 3) return { ok: true, json: async () => ({ data_dir: dataDir, db_path: join(dataDir, 'therese.db') }) };
       throw new Error('appel réseau imprévu');
     };
-    let routeHttp;
+    const evenements = new EventEmitter();
     let evaluationsBouton = 0;
     const acquittements = [];
     const etat = { url: 'http://127.0.0.1:1420/', dialogues: 0, focus: 'body', dom: 'initial', etats: '' };
@@ -242,9 +243,9 @@ test('B-2029 remédiation : une interruption conserve les acquittements concurre
       getAttribute: async () => null,
       focus: async () => {},
       click: async () => {
-        void routeHttp(route(${JSON.stringify(MIGRATION_CHAT)})).catch(() => {});
-        void routeHttp(route(${JSON.stringify(MIGRATION_CHAT)})).catch(() => {});
-        await routeHttp(route(${JSON.stringify(`${MIGRATION_CHAT}?test=1`)}));
+        evenements.emit('route', route(${JSON.stringify(MIGRATION_CHAT)}));
+        evenements.emit('route', route(${JSON.stringify(MIGRATION_CHAT)}));
+        evenements.emit('route', route(${JSON.stringify(`${MIGRATION_CHAT}?test=1`)}));
       },
     };
     const page = {
@@ -258,21 +259,26 @@ test('B-2029 remédiation : une interruption conserve les acquittements concurre
       getByRole: (role) => ({ count: async () => role === 'button' ? 1 : 0, nth: () => bouton }),
     };
     const contexte = {
-      route: async (motif, handler) => { if (motif === '**/*') routeHttp = handler; },
+      route: async (motif, handler) => { if (motif === '**/*') evenements.on('route', handler); },
       routeWebSocket: async () => {}, addInitScript: async () => {}, newPage: async () => page, close: async () => {},
     };
     chromium.launch = async () => ({
       newContext: async () => contexte,
       close: async () => {
-        setTimeout(() => {
-          acquittements[0].resolve();
-          acquittements[1].reject(new Error('acquittement interrompu'));
-        }, 20);
+        if (${JSON.stringify(ordre)} === 'simultane') {
+          setTimeout(() => {
+            acquittements[0].resolve();
+            acquittements[1].reject(new Error('acquittement interrompu'));
+          }, 20);
+        } else {
+          setTimeout(() => acquittements[0].resolve(), ${ordre === 'rejet' ? 40 : 20});
+          setTimeout(() => acquittements[1].reject(new Error('acquittement interrompu')), ${ordre === 'rejet' ? 20 : 40});
+        }
       },
     });
     const quitter = process.exit.bind(process);
     process.exit = (code) => {
-      process.stdout.write(JSON.stringify({
+      fs.writeSync(1, JSON.stringify({
         interruption: JSON.parse(fichiers.get(join(sortie, 'interruption.json'))),
         rapport: fichiers.has(join(sortie, 'rapport.json')),
       }));
@@ -283,19 +289,35 @@ test('B-2029 remédiation : une interruption conserve les acquittements concurre
       '--largeurs', '1440', '--themes', 'light', '--ecrans', 'accueil'];
     await import(pathToFileURL(fichier).href);
   `;
-  const resultat = spawnSync(process.execPath, ['--input-type=module', '-e', code, fichier], {
+  const resultat = spawnSync(process.execPath, ['--unhandled-rejections=strict', '--input-type=module', '-e', code, fichier], {
     encoding: 'utf8', timeout: 15000,
   });
   assert.equal(resultat.error, undefined);
   assert.equal(resultat.status, 1);
+  const detail = resultat.stderr.includes('acquittement interrompu') ? ' : rejet non intercepté' : '';
+  assert.notEqual(resultat.stdout, '', `le rapport d’interruption doit être écrit malgré le rejet${detail}`);
   const { interruption, rapport } = JSON.parse(resultat.stdout);
   assert.equal(rapport, false);
   assert.equal(interruption.ecran, 'accueil');
-  assert.match(interruption.cause, /Couverture interrompue/);
+  assert.equal(interruption.cause,
+    'Couverture interrompue sur accueil : requête, WebSocket, téléchargement ou fenêtre sortante bloqués');
   assert.deepEqual(interruption.garde.bloquees, [{ methode: 'POST', url: MIGRATION_CHAT }]);
   assert.deepEqual(interruption.garde.ecritures_simulees, {
     nombre: 1, requetes: [{ methode: 'POST', url: MIGRATION_CHAT }],
+    echecs: [{ methode: 'POST', url: MIGRATION_CHAT }],
   }, 'seul l’acquittement terminé doit figurer dans le rapport');
+}
+
+test('B-2029 remédiation : une interruption conserve les acquittements concurrents', () => {
+  verifierAcquittementsConcurrents('simultane');
+});
+
+test('B-2029 passe 2 : un rejet anticipé ne supprime pas le rapport d’interruption', () => {
+  verifierAcquittementsConcurrents('rejet');
+});
+
+test('B-2029 passe 2 : un succès anticipé reste dans le rapport malgré le rejet suivant', () => {
+  verifierAcquittementsConcurrents('succes');
 });
 
 test('B-2029 : les autres écritures bloquées interrompent aussi le parcours', (t) => {

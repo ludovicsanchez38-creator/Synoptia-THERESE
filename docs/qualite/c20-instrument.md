@@ -51,3 +51,26 @@ Portes de cette passe :
 - `b1102-snapshot-chromium.test.mjs` : **0 réussi, 2 échecs** au lancement de Chromium, avant les assertions. Les deux échecs se reproduisent avec les fichiers commités avant cette remédiation. La variante headless révèle un refus `bootstrap_check_in ... Permission denied` par l'environnement ; ces deux contrôles restent à rejouer sur une machine où Chromium démarre.
 
 La surcouche `sandbox-exec` a elle-même été refusée par l'environnement. Les tests de la garde et de la CLI utilisent des accès factices ; les tentatives Chromium ont été faites sans serveur ni navigation et n'ont pas atteint les assertions. Aucun parcours réel, fournisseur LLM ou service en ligne n'a été lancé. La suite complète n'a pas été lancée et les changements de cette passe restent non commités.
+
+## Remédiation de la relecture, passe 2
+
+Le constat P2 est confirmé : la promesse de l'acquittement était suivie, mais le gestionnaire de route propageait son rejet. Lorsqu'un autre acquittement restait en attente, ce rejet non intercepté pouvait terminer le processus avant l'écriture de `interruption.json`.
+
+Le test ajouté `B-2029 passe 2 : un rejet anticipé ne supprime pas le rapport d’interruption` utilise un émetteur d'événements et un processus configuré pour traiter strictement les rejets non interceptés. Il rejette un acquittement à 20 ms, termine l'autre à 40 ms et vérifie le rapport, sa cause initiale et les écritures réussies et échouées. Rouge observé sur ce test isolé avant le correctif :
+
+```text
+not ok 1 - B-2029 passe 2 : un rejet anticipé ne supprime pas le rapport d’interruption
+```
+
+L'assertion précisait : `le rapport d’interruption doit être écrit malgré le rejet : rejet non intercepté`. Le test existant conserve son scénario de terminaisons simultanées, sans interception factice des rejets ; un deuxième test ajouté couvre aussi le succès à 20 ms suivi du rejet à 40 ms.
+
+Le gestionnaire intercepte maintenant le rejet et ajoute la méthode et l'adresse expurgée à `garde.ecritures_simulees.echecs`. Il n'enregistre pas le texte brut de l'exception, susceptible de contenir des données sensibles. L'écriture échouée n'est pas comptée parmi les succès et la cause de l'interruption reste inchangée. Les appelants et la séquence d'attente avant rédaction ont été relus.
+
+Portes de cette passe :
+
+- Test de régression isolé après correction : **1 réussi, 0 échec**. Fichier `couverture-ecran.test.mjs` : **16 réussis, 0 échec, 12 ignorés** sur 28 ; les tests ignorés nécessitent un navigateur. Playwright provient du cache npm local et les répertoires temporaires, la corbeille factice et les captures des processus fils sont isolés sous `/tmp` pour cette machine Linux.
+- `tests/couverture/test_backend_offline.py` : **4 réussis, 15 échecs, 0 erreur, 0 ignoré** sur 19, d'après `/tmp/instrument-r2.xml`, lu après exécution. Ce sont des rouges hors de la liste de rouges connus : 5 témoins échouent à la création d'une socket IPv4 avec `EPERM` et 10 à `socketpair.sendall` avec `EPERM`. Ces refus se reproduisent sans filtre ajouté par les tests ; les fichiers Python concernés sont inchangés et n'importent pas l'instrument JavaScript. Ils restent à rejouer hors de ce bac à sable.
+- `b1102-snapshot-chromium.test.mjs` : **0 réussi, 2 échecs** avant les assertions ; Chromium et sa variante headless s'arrêtent au démarrage sur des opérations socket refusées par le bac à sable (`EPERM`). Ces contrôles restent à rejouer sur une machine capable de lancer Chromium.
+- `.venv/bin/python -m ruff check --no-fix src/backend tests` : **0 erreur**.
+
+Aucune suite complète, aucun service réseau ni fournisseur LLM n'a été lancé. Les modifications restent non commitées ; les liens `.venv` et `src/frontend/node_modules`, déjà non suivis au début de la passe, n'ont pas été modifiés.
