@@ -15,6 +15,7 @@ Contrats (design V2.1) :
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from contextvars import ContextVar, copy_context
 
 import pytest
 from app.models.processing import EtatTache, ProcessingTask
@@ -150,15 +151,64 @@ class TestLeRunEstUnTraitement:
         avant = set(ActionRunner._taches_de_fond)
         task = await ActionRunner.run("rapport-hebdo")
         producteurs = set(ActionRunner._taches_de_fond) - avant
-        try:
-            assert len(producteurs) == 1
-            # Le statut mémoire devient terminal avant le commit du traitement.
-            await asyncio.wait_for(asyncio.gather(*producteurs), timeout=5)
-        finally:
-            for producteur in producteurs:
-                if not producteur.done():
-                    producteur.cancel()
-            await asyncio.gather(*producteurs, return_exceptions=True)
+        clotures = set()
+        nettoyage = False
+        contexte_cloture = ContextVar("cloture_action_temoin", default=False)
+        shield = asyncio.shield
+
+        def suivre_shield(operation):
+            if contexte_cloture.get():
+                operation = asyncio.ensure_future(operation)
+                clotures.add(operation)
+            return shield(operation)
+
+        with monkeypatch.context() as suivi:
+            try:
+                handle = getattr(task, "_handle", None)
+                if handle is not None:
+                    ecrire = handle._ecrire_etat_terminal
+
+                    def suivre_ecriture(*args, **kwargs):
+                        contexte = copy_context()
+                        contexte.run(contexte_cloture.set, True)
+                        cloture = asyncio.create_task(
+                            ecrire(*args, **kwargs), context=contexte
+                        )
+                        clotures.add(cloture)
+                        # Le finally d'un producteur annulé peut lui-même
+                        # lancer une nouvelle écriture protégée.
+                        if nettoyage:
+                            cloture.cancel()
+                        return cloture
+
+                    # Une écriture peut à son tour protéger la fermeture de
+                    # sa session ; le contexte exclut les autres traitements.
+                    suivi.setattr(asyncio, "shield", suivre_shield)
+                    suivi.setattr(handle, "_ecrire_etat_terminal", suivre_ecriture)
+                assert len(producteurs) == 1
+                # Le statut mémoire devient terminal avant le commit durable.
+                _, en_cours = await asyncio.wait(producteurs, timeout=5)
+                if en_cours:
+                    raise TimeoutError("le producteur de l'action n'a pas terminé")
+                await asyncio.gather(*producteurs)
+            finally:
+                nettoyage = True
+                for tache in producteurs | clotures:
+                    if not tache.done():
+                        tache.cancel()
+                suivies = producteurs | clotures
+                if suivies:
+                    _, en_cours = await asyncio.wait(suivies, timeout=5)
+                    en_cours |= {tache for tache in clotures if not tache.done()}
+                    if en_cours:
+                        # Une coroutine peut temporiser sa première annulation.
+                        for tache in en_cours:
+                            tache.cancel()
+                        _, en_cours = await asyncio.wait(en_cours, timeout=1)
+                        en_cours |= {tache for tache in clotures if not tache.done()}
+                    if en_cours:
+                        raise AssertionError("le nettoyage de l'action n'a pas terminé")
+                    await asyncio.gather(*(producteurs | clotures), return_exceptions=True)
         assert ActionRunner.get_task(task.task_id).status == TaskStatus.COMPLETED
 
         traitement = await _traitement_action(task.task_id)
