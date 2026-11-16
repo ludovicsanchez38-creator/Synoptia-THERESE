@@ -90,7 +90,6 @@ describe('isolateDataProfilePersistence', () => {
   it.each([
     ['/Users/exemple/.therese', '/Users/exemple/.therese/'],
     ['/Users/exemple/.therese/', '/Users/exemple/.therese'],
-    ['/tmp/profil-a', ' /tmp/profil-a/ '],
     ['/tmp/profil-a/', '/tmp/profil-a'],
     ['/', '///'],
   ])('B-1868 conserve le cache du même dossier : %s puis %s', (ancien, courant) => {
@@ -117,16 +116,16 @@ describe('isolateDataProfilePersistence', () => {
     expect(reload).toHaveBeenCalledOnce();
   });
 
-  it('R1-C1 : conserve le cache sous un ancien chemin avec .. vérifié par le moteur', () => {
+  it('R1-C1 : conserve le cache du chemin avec .. dont l’identité a été enregistrée', () => {
     const ancien = '/profils/intermediaire/../A';
     const reload = vi.fn();
-    const options = { reload, verifiedAliases: [ancien] };
-    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+    const options = { reload, verifiedAliases: [ancien], profileIdentity: 'directory:1:1:0' };
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, options.profileIdentity);
     localStorage.setItem('therese-chat', 'conversation à conserver');
 
     expect(isolateDataProfilePersistence('/profils/A', options)).toBe('unchanged');
     expect(localStorage.getItem('therese-chat')).toBe('conversation à conserver');
-    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(ancien);
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(options.profileIdentity);
     expect(reload).not.toHaveBeenCalled();
   });
 
@@ -158,5 +157,79 @@ describe('isolateDataProfilePersistence', () => {
     expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe('/profils/A');
     expect(localStorage.getItem('therese-chat')).toBe('conversation historique');
     expect(options.reload).not.toHaveBeenCalled();
+  });
+
+  it('R2-C2 : un ancien lien réorienté ne prouve pas à qui appartenaient le cache et les accords', () => {
+    const ancien = '/profils/lien';
+    const file = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
+    const decisions = '[{"event_id":"accord-A","granted":true}]';
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+    localStorage.setItem('therese-chat', 'cache A');
+    localStorage.setItem(file, decisions);
+    const options = { canonicalDataDir: '/profils/B', verifiedAliases: [ancien],
+      profileIdentity: 'directory:1:2:0', reload: vi.fn() };
+
+    expect(isolateDataProfilePersistence('/profils/lien', options)).toBe('switched');
+
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    expect(localStorage.getItem(file)).toBe(decisions);
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(options.profileIdentity);
+    expect(options.reload).toHaveBeenCalledOnce();
+  });
+
+  it('R2-C2 : l’identité enregistrée conserve les graphies du même dossier puis sépare un lien réorienté', () => {
+    const identiteA = 'directory:1:1:0';
+    const identiteB = 'directory:1:2:0';
+    isolateDataProfilePersistence('/profils/lien', { canonicalDataDir: '/profils/A', profileIdentity: identiteA });
+    localStorage.setItem('therese-chat', 'cache A');
+    const file = `therese-cloud-consent-pending:${encodeURIComponent(identiteA)}`;
+    localStorage.setItem(file, '[{"event_id":"retrait-A","granted":false}]');
+    expect(isolateDataProfilePersistence('/PROFILS/a', { profileIdentity: identiteA })).toBe('unchanged');
+    expect(localStorage.getItem('therese-chat')).toBe('cache A');
+
+    expect(isolateDataProfilePersistence('/profils/lien', {
+      canonicalDataDir: '/profils/B', profileIdentity: identiteB, verifiedAliases: ['/profils/lien'],
+    })).toBe('switched');
+
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(identiteB);
+    expect(localStorage.getItem(file)).toContain('retrait-A');
+    expect(localStorage.getItem(`therese-cloud-consent-pending:${encodeURIComponent(identiteB)}`)).toBeNull();
+  });
+
+  it('R2-C2 : une ancienne graphie reste ambiguë même sans identité fournie par le moteur', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/lien');
+    localStorage.setItem('therese-chat', 'cache A');
+    expect(isolateDataProfilePersistence('/profils/B', { verifiedAliases: ['/profils/lien'] })).toBe('switched');
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+  });
+
+  it('R2-C3 : les espaces du dossier canonique restent significatifs', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A');
+    localStorage.setItem('therese-chat', 'cache A');
+    const options = { canonicalDataDir: '/profils/A ', verifiedAliases: [], reload: vi.fn() };
+
+    expect(isolateDataProfilePersistence('/profils/A ', options)).toBe('switched');
+
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe('/profils/A ');
+    expect(options.reload).toHaveBeenCalledOnce();
+  });
+
+  it('R2-C3 : les espaces autour d’un chemin ne sont pas une variante du même dossier', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/tmp/profil-a');
+    localStorage.setItem('therese-chat', 'cache A');
+    const reload = vi.fn();
+    expect(isolateDataProfilePersistence(' /tmp/profil-a/ ', { reload })).toBe('switched');
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe(' /tmp/profil-a/ ');
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('R2-C3 : une normalisation lexicale ne passe pas outre le refus du moteur', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A/');
+    localStorage.setItem('therese-chat', 'cache A');
+    expect(isolateDataProfilePersistence('/profils/A', { verifiedAliases: [] })).toBe('switched');
+    expect(localStorage.getItem('therese-chat')).toBeNull();
   });
 });

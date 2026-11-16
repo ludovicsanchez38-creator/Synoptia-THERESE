@@ -1,8 +1,12 @@
 """R1 : l'identité d'un profil vient du disque, pas d'une réduction de '..'."""
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from app.config import settings
+from app.routers.config import get_stats
+from app.routers.consents import _verifier_profil
+from fastapi import HTTPException
 
 
 async def test_r1_c1_stats_identifient_le_dossier_reel(client, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -53,3 +57,59 @@ async def test_r1_c1_ne_confond_pas_un_parent_de_lien_avec_le_parent_lexical(cli
 
     assert response.status_code == 200
     assert response.json()["data_profile_aliases"] == [vrai_alias]
+
+
+async def test_r2_c1_casse_du_volume_et_identite_historique(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    profil = tmp_path / "synoptia"
+    profil.mkdir()
+    variante = tmp_path / "SYNOPTIA"
+    variante.mkdir(exist_ok=True)
+    # Volume insensible à la casse simulé sous Linux : les deux graphies ont
+    # le même stat, même si resolve() conserve leurs écritures distinctes.
+    stat_original = Path.stat
+
+    def stat_du_volume(path, *args, **kwargs):
+        return stat_original(profil if path == variante else path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", stat_du_volume)
+    monkeypatch.setattr(settings, "data_dir", profil)
+    session = AsyncMock(execute=AsyncMock(return_value=MagicMock(scalar=lambda: 0)))
+    response = await get_stats(session=session, data_profiles=[str(variante)])
+    assert response["data_profile_aliases"] == [str(variante)], "La casse dépend du volume, pas de resolve()"
+    identite = response["data_profile_id"]
+    monkeypatch.setattr(settings, "data_dir", variante)
+    autre_graphie = await get_stats(session=session)
+    assert autre_graphie["data_profile_id"] == identite
+
+
+async def test_r2_c1_deux_dossiers_distincts_ne_partagent_pas_une_identite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    a, b = tmp_path / "A", tmp_path / "B"
+    a.mkdir()
+    b.mkdir()
+    monkeypatch.setattr(settings, "data_dir", a)
+    session = AsyncMock(execute=AsyncMock(return_value=MagicMock(scalar=lambda: 0)))
+    premiere = await get_stats(session=session, data_profiles=[str(b)])
+    monkeypatch.setattr(settings, "data_dir", b)
+    seconde = await get_stats(session=session)
+    assert premiere["data_profile_aliases"] == []
+    assert premiere["data_profile_id"] != seconde["data_profile_id"]
+
+
+async def test_r2_c2_un_lien_reoriente_ne_peut_recevoir_les_accords_de_sa_cible_ancienne(tmp_path, monkeypatch):
+    a, b, lien = tmp_path / "A", tmp_path / "B", tmp_path / "lien"
+    a.mkdir()
+    b.mkdir()
+    lien.symlink_to(a, target_is_directory=True)
+    monkeypatch.setattr(settings, "data_dir", lien)
+    session = AsyncMock(execute=AsyncMock(return_value=MagicMock(scalar=lambda: 0)))
+    ancienne_identite = (await get_stats(session=session))["data_profile_id"]
+    _verifier_profil(ancienne_identite)
+    # Le lien initial est conservé pour pouvoir constater son ancienne cible.
+    lien.rename(tmp_path / "ancien-lien")
+    lien.symlink_to(b, target_is_directory=True)
+
+    with pytest.raises(HTTPException) as erreur:
+        _verifier_profil(ancienne_identite)
+
+    assert erreur.value.status_code == 409
+    _verifier_profil((await get_stats(session=session))["data_profile_id"])

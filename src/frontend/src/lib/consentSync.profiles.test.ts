@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { installLocalStorageStub } from '../test/localStorage-stub';
 const request = vi.hoisted(() => vi.fn());
 vi.mock('../services/api/core', () => ({ request }));
-import { flushConsentDecisions, synchroniserConsentements } from './consentSync';
+import { flushConsentDecisions, reconcileConsentOutboxes, synchroniserConsentements } from './consentSync';
 import { grantCloudConsent, hasCloudConsent, revokeCloudConsent } from './consent';
 import { DATA_PROFILE_STORAGE_KEY, isolateDataProfilePersistence } from './profileStorageIsolation';
 import { purgeLocalPersistence } from './purgeLocalData';
@@ -48,16 +48,18 @@ it('garde le retrait hors ligne dans A après A → B → A sans le transmettre 
 });
 
 it.each(['/profils/A/', '/profils/intermediaire/../A'])('R1-C2 : reprend le retrait sous %s après A → B → A avant de relire les accords', async (ancien) => {
-  const options = { verifiedAliases: [ancien] };
-  const cle = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
-  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+  const identiteA = 'directory:1:1:0';
+  const identiteB = 'directory:1:2:0';
+  const options = { verifiedAliases: [ancien], profileIdentity: identiteA };
+  isolateDataProfilePersistence(ancien, options);
+  const cle = `therese-cloud-consent-pending:${encodeURIComponent(identiteA)}`;
   request.mockRejectedValue(new Error('Hors ligne'));
   revokeCloudConsent('llm', 'openai');
   await expect(flushConsentDecisions()).rejects.toThrow('Hors ligne');
   const [retrait] = JSON.parse(localStorage.getItem(cle)!);
   expect(isolateDataProfilePersistence('/profils/A', options)).toBe('unchanged');
 
-  let moteur = '/profils/B';
+  let moteur = identiteB;
   let accordA = true;
   const decisions: unknown[] = [];
   request.mockImplementation(async (_path, options) => {
@@ -65,18 +67,18 @@ it.each(['/profils/A/', '/profils/intermediaire/../A'])('R1-C2 : reprend le retr
       const decision = JSON.parse(options.body);
       expect(decision.data_profile).toBe(moteur);
       decisions.push(decision);
-      if (moteur === '/profils/A') accordA = decision.granted;
+      if (moteur === identiteA) accordA = decision.granted;
     }
-    return { grants: moteur === '/profils/A' && accordA
+    return { grants: moteur === identiteA && accordA
       ? [{ purpose: 'llm', provider: 'openai', timestamp: '2026-10-01T00:00:00Z', textVersion: '3' }] : [] };
   });
-  isolateDataProfilePersistence(moteur);
+  isolateDataProfilePersistence('/profils/B', { profileIdentity: moteur });
   await synchroniserConsentements();
   expect(decisions).toEqual([]);
   expect(JSON.parse(localStorage.getItem(cle)!)).toEqual([retrait]);
 
-  moteur = '/profils/A';
-  isolateDataProfilePersistence(moteur, options);
+  moteur = identiteA;
+  isolateDataProfilePersistence('/profils/A', options);
   await synchroniserConsentements();
 
   expect(decisions).toEqual([{ ...retrait, data_profile: moteur }]);
@@ -214,4 +216,93 @@ it('l’effacement ne laisse pas un accord en attente revenir après le retrait 
   const decisions = request.mock.calls.filter(([path]) => path === '/api/consents')
     .map(([, options]) => JSON.parse(options.body));
   expect(decisions.at(-1)).toMatchObject({ granted: false });
+});
+
+it('R2-C4 : le recul de l’horloge ne renverse pas les décisions d’une ancienne file', async () => {
+  const id = '/profils/A';
+  const ancien = `${id}/`;
+  const accord = { event_id: 'accord', purpose: 'llm', provider: 'openai', granted: true,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-02T00:00:00Z' };
+  const retrait = { ...accord, event_id: 'retrait', granted: false, occurred_at: '2026-10-01T00:00:00Z' };
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, id);
+  localStorage.setItem(`therese-cloud-consent-pending:${encodeURIComponent(ancien)}`, JSON.stringify([accord, retrait]));
+  let accorde = true;
+  request.mockImplementation(async (_path, options) => {
+    accorde = JSON.parse(options.body).granted;
+    return { grants: [] };
+  });
+
+  reconcileConsentOutboxes(id, [ancien]);
+  await flushConsentDecisions();
+
+  expect(request.mock.calls.map(([, options]) => JSON.parse(options.body).event_id)).toEqual(['accord', 'retrait']);
+  expect(accorde).toBe(false);
+});
+
+it('R2-C4 : entre files sans ordre prouvé, le retrait prime sur un accord daté plus tard', async () => {
+  const id = '/profils/A';
+  const ancien = `${id}/`;
+  const accord = { event_id: 'accord', purpose: 'llm', provider: 'openai', granted: true,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-02T00:00:00Z' };
+  const retrait = { ...accord, event_id: 'retrait', granted: false, occurred_at: '2026-10-01T00:00:00Z' };
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, id);
+  localStorage.setItem(`therese-cloud-consent-pending:${encodeURIComponent(id)}`, JSON.stringify([retrait]));
+  localStorage.setItem(`therese-cloud-consent-pending:${encodeURIComponent(ancien)}`, JSON.stringify([accord]));
+
+  reconcileConsentOutboxes(id, [ancien]);
+  await flushConsentDecisions();
+
+  expect(request.mock.calls.map(([, options]) => JSON.parse(options.body).event_id)).toEqual(['accord', 'retrait']);
+});
+
+it('R2-C4 : un nouvel accord après retrait dans la même file garde son ordre explicite', async () => {
+  const id = '/profils/A';
+  const ancien = `${id}/`;
+  const retrait = { event_id: 'retrait', purpose: 'llm', provider: 'openai', granted: false,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-02T00:00:00Z' };
+  const accord = { ...retrait, event_id: 'nouvel-accord', granted: true, occurred_at: '2026-10-01T00:00:00Z' };
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, id);
+  localStorage.setItem(`therese-cloud-consent-pending:${encodeURIComponent(ancien)}`, JSON.stringify([retrait, accord]));
+
+  reconcileConsentOutboxes(id, [ancien]);
+  await flushConsentDecisions();
+
+  expect(request.mock.calls.map(([, options]) => JSON.parse(options.body).event_id)).toEqual(['retrait', 'nouvel-accord']);
+});
+
+it('R2-C4 : des ordres contradictoires restent intacts sans aucune transmission', () => {
+  const id = '/profils/A';
+  const ancien = `${id}/`;
+  const accord = { event_id: 'accord', purpose: 'llm', provider: 'openai', granted: true,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-02T00:00:00Z' };
+  const retrait = { ...accord, event_id: 'retrait', granted: false };
+  const destination = `therese-cloud-consent-pending:${encodeURIComponent(id)}`;
+  const source = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, id);
+  localStorage.setItem(destination, JSON.stringify([accord, retrait]));
+  localStorage.setItem(source, JSON.stringify([retrait, accord]));
+
+  expect(() => reconcileConsentOutboxes(id, [ancien])).toThrow('L’ordre des accords est ambigu');
+
+  expect(localStorage.getItem(destination)).toBe(JSON.stringify([accord, retrait]));
+  expect(localStorage.getItem(source)).toBe(JSON.stringify([retrait, accord]));
+  expect(request).not.toHaveBeenCalled();
+});
+
+it.each(['/profils/A', '/profils/lien'])('R2-C2 : la file ancienne %s sans identité historique ne part pas dans le profil courant', async (ancien) => {
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+  localStorage.setItem('therese-chat', 'cache ancien');
+  const file = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
+  const accord = { event_id: 'accord-ancien', purpose: 'llm', provider: 'openai', granted: true,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-02T00:00:00Z' };
+  localStorage.setItem(file, JSON.stringify([accord]));
+
+  expect(isolateDataProfilePersistence('/profils/A', {
+    canonicalDataDir: '/profils/A', verifiedAliases: [ancien], profileIdentity: 'directory:1:1:0',
+  })).toBe('switched');
+  await synchroniserConsentements();
+
+  expect(localStorage.getItem('therese-chat')).toBeNull();
+  expect(localStorage.getItem(file)).toBe(JSON.stringify([accord]));
+  expect(request.mock.calls.map(([, options]) => options?.method ?? 'GET')).toEqual(['GET']);
 });

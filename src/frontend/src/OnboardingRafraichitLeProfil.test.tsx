@@ -49,7 +49,7 @@ vi.mock('./services/api', async (importOriginal) => {
   return {
     ...original,
     initializeAuth: vi.fn().mockResolvedValue(undefined),
-    getStats: vi.fn().mockResolvedValue({ data_dir: '/Users/test/.therese' }),
+    getStats: vi.fn().mockResolvedValue({ data_dir: '/Users/test/.therese', data_profile_id: 'directory:1:1:0' }),
     getOnboardingStatus: vi.fn().mockResolvedValue({ completed: false }),
   };
 });
