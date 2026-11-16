@@ -9,10 +9,10 @@ import { DialogShell } from './ui/DialogShell';
 export function Aide({ compact = false }: { compact?: boolean }) {
   const [visible, setVisible] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  async function ouvrir(action: () => Promise<unknown>) {
+  async function ouvrir(action: () => Promise<unknown>, messageErreur: string) {
     setErreur(null);
     try { await action(); }
-    catch { setErreur('L’ouverture a échoué. Vérifie qu’un lecteur PDF et un navigateur sont installés, puis réessaie.'); }
+    catch { setErreur(messageErreur); }
   }
   return <>
     <Button variant="ghost" size={compact ? 'icon' : 'sm'} aria-label="Aide" title="Aide" onClick={() => setVisible(true)}>
@@ -21,8 +21,8 @@ export function Aide({ compact = false }: { compact?: boolean }) {
     <DialogShell open={visible} onClose={() => setVisible(false)} ariaLabel="Aide" className="w-full max-w-lg rounded-md border border-border bg-surface p-6 space-y-4">
       <h2 className="text-xl font-semibold text-text">Aide</h2>
       <p className="text-text-muted">Le guide de THÉRÈSE {GUIDE_VERSION} est inclus dans l’application et reste disponible sans connexion.</p>
-      <Button onClick={() => void ouvrir(ouvrirGuide)}>Ouvrir le guide (PDF)</Button>
-      <p><a href={LIEN_SECURITE} className="text-accent-cyan-ink underline" onClick={(e) => { e.preventDefault(); void ouvrir(() => open(LIEN_SECURITE)); }}>Lire la page sécurité</a></p>
+      <Button onClick={() => void ouvrir(ouvrirGuide, 'L’ouverture du guide a échoué. Vérifie qu’un lecteur PDF est installé, puis réessaie.')}>Ouvrir le guide (PDF)</Button>
+      <p><a href={LIEN_SECURITE} className="text-accent-cyan-ink underline" onClick={(e) => { e.preventDefault(); void ouvrir(() => open(LIEN_SECURITE), 'L’ouverture de la page sécurité a échoué. Vérifie qu’un navigateur est installé, puis réessaie.'); }}>Lire la page sécurité</a></p>
       {erreur && <p role="alert" className="text-error">{erreur}</p>}
       <Button variant="ghost" onClick={() => setVisible(false)}>Fermer l’aide</Button>
     </DialogShell>
