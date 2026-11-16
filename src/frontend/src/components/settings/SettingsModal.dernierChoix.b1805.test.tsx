@@ -162,4 +162,26 @@ describe('B-1805 : dernier choix de modèle', () => {
     expect(screen.getByRole('button', { name: /Mistral AI/, pressed: true })).toBeInTheDocument();
     expect(screen.getByLabelText('Modèle')).toHaveValue('mistral-small-2603');
   });
+
+  it.each(['lecture', 'sauvegarde'])('R1-2 : revenir au fournisseur garde le modèle demandé pendant sa %s', async (etape) => {
+    const api = await import('../../services/api');
+    await ouvrirOngletIA();
+    const config = await api.getLLMConfig();
+    let terminer!: () => void;
+    const attente = new Promise<void>(resolve => { terminer = resolve; });
+    if (etape === 'lecture') {
+      vi.mocked(api.getLLMConfig).mockImplementationOnce(async () => { await attente; return config; });
+    } else {
+      vi.mocked(api.setLLMConfig).mockImplementationOnce(async () => { await attente; return config; });
+    }
+
+    fireEvent.change(screen.getByLabelText('Modèle'), { target: { value: 'mistral-small-2603' } });
+    if (etape === 'sauvegarde') await waitFor(() => expect(api.setLLMConfig).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: /GPT \(OpenAI\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Mistral AI/ }));
+    await act(async () => { terminer(); });
+
+    expect(vi.mocked(api.setLLMConfig).mock.calls.at(-1)?.slice(0, 2)).toEqual(['mistral', 'mistral-small-2603']);
+    expect(screen.getByLabelText('Modèle')).toHaveValue('mistral-small-2603');
+  });
 });

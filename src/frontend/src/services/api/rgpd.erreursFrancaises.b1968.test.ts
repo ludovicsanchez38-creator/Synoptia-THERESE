@@ -23,4 +23,16 @@ describe.each([
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Contact introuvable.' }), { status: 404 })));
     await expect(appeler()).rejects.toThrow('Contact introuvable.');
   });
+
+  it('R1-8 : conserve le message du handler HTTP du moteur', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'HTTP_ERROR', message: 'Contact non trouvé',
+    }), { status: 404 })));
+    await expect(appeler()).rejects.toThrow('Contact non trouvé');
+  });
+
+  it('R1-8 : un corps JSON nul garde le repli et son statut', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('null', { status: 503 })));
+    await expect(appeler()).rejects.toThrow(`${message} (erreur 503).`);
+  });
 });

@@ -7,6 +7,7 @@ vi.mock('../services/api/documents', async (original) => ({
   ...(await original<typeof import('../services/api/documents')>()),
   getDocument: vi.fn(),
   deleteDocument: vi.fn(),
+  reorderSections: vi.fn(),
 }));
 
 function document(id: string): DocumentDetail {
@@ -73,4 +74,48 @@ describe('B-1848 : invalider les ouvertures abandonnées', () => {
     expect(useDocumentStore.getState().currentDocument?.id).toBe('a');
     expect(useDocumentStore.getState().documents).toHaveLength(2);
   });
+});
+
+function conflit() {
+  return new api.ReorderConflictError({
+    code: 'SECTIONS_INCOMPLETE', message: 'Trame modifiée ailleurs.', missing_ids: ['s2'], unknown_ids: [],
+  });
+}
+
+async function quitter(action: string) {
+  useDocumentStore.getState().closeDocument();
+  if (action !== 'fermeture') await useDocumentStore.getState().openDocument(action === 'autre document' ? 'b' : 'a');
+}
+
+it.each(['fermeture', 'autre document', 'réouverture du même document'])('R1-5 : ignore un conflit tardif après %s', async (action) => {
+  vi.mocked(api.getDocument).mockImplementation(async id => document(id));
+  await useDocumentStore.getState().openDocument('a');
+  let refuser!: (erreur: Error) => void;
+  vi.mocked(api.reorderSections).mockImplementationOnce(() => new Promise((_resolve, reject) => { refuser = reject; }));
+  const reorganisation = useDocumentStore.getState().reorderSections('a', []);
+  await quitter(action);
+  const courant = useDocumentStore.getState().currentDocument;
+  const lectures = vi.mocked(api.getDocument).mock.calls.length;
+  refuser(conflit());
+  await reorganisation;
+
+  expect(api.getDocument).toHaveBeenCalledTimes(lectures);
+  expect(useDocumentStore.getState().currentDocument).toBe(courant);
+  expect(useDocumentStore.getState().error).toBeNull();
+});
+
+it.each(['fermeture', 'autre document', 'réouverture du même document'])('R1-5 : ignore l’erreur causale si %s pendant la resynchronisation', async (action) => {
+  vi.mocked(api.getDocument).mockImplementation(async id => document(id));
+  await useDocumentStore.getState().openDocument('a');
+  const lecture = lectureEnAttente();
+  vi.mocked(api.reorderSections).mockRejectedValueOnce(conflit());
+  const reorganisation = useDocumentStore.getState().reorderSections('a', []);
+  await vi.waitFor(() => expect(api.getDocument).toHaveBeenCalledTimes(2));
+  await quitter(action);
+  const courant = useDocumentStore.getState().currentDocument;
+  lecture.terminer(document('a'));
+  await reorganisation;
+
+  expect(useDocumentStore.getState().currentDocument).toBe(courant);
+  expect(useDocumentStore.getState().error).toBeNull();
 });

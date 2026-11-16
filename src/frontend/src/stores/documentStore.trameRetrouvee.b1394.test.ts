@@ -10,10 +10,11 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const api = vi.hoisted(() => ({ getDocument: vi.fn(), listerTraitements: vi.fn() }));
+const api = vi.hoisted(() => ({ getDocument: vi.fn(), listerTraitements: vi.fn(), generateOutline: vi.fn() }));
 vi.mock('../services/api/documents', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getDocument: api.getDocument,
+  generateOutline: api.generateOutline,
 }));
 vi.mock('../services/api/processingTasks', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -53,5 +54,28 @@ describe('documentStore - B-1394, une trame en cours est retrouvée à la réouv
     await useDocumentStore.getState().openDocument('doc-1');
     await vi.advanceTimersByTimeAsync(0);
     expect(useDocumentStore.getState().outlineGeneration).toBeNull();
+  });
+
+  it.each(['fermeture', 'autre document', 'réouverture du même document'])('R1-6 : une recherche tardive ne réinstalle pas le suivi après %s', async (action) => {
+    useDocumentStore.getState().closeDocument();
+    api.getDocument.mockReset().mockImplementation(async (id: string) => ({ ...vide, id }));
+    api.generateOutline.mockReset().mockResolvedValue([]);
+    let terminer!: (traitements: typeof enCours[]) => void;
+    api.listerTraitements.mockReset().mockResolvedValue([]).mockImplementationOnce(
+      () => new Promise(resolve => { terminer = resolve; }),
+    );
+    await useDocumentStore.getState().openDocument('doc-1');
+    expect(terminer).toBeTypeOf('function');
+    if (action !== 'autre document') useDocumentStore.getState().closeDocument();
+    if (action !== 'fermeture') await useDocumentStore.getState().openDocument(action === 'autre document' ? 'doc-2' : 'doc-1');
+    terminer([enCours]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(useDocumentStore.getState().outlineGeneration).toBeNull();
+    await useDocumentStore.getState().openDocument('doc-2');
+    await useDocumentStore.getState().generateOutline('doc-2');
+    expect(api.generateOutline).toHaveBeenCalledWith('doc-2', expect.any(String));
+    expect(useDocumentStore.getState().outlineNotice).toBeNull();
+    useDocumentStore.getState().closeDocument();
   });
 });
