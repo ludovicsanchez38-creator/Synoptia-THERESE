@@ -1047,7 +1047,7 @@ async def _resoudre_compte_email(
     comptes = list(result.scalars().all())
     if not comptes:
         return None, (
-            "Aucun compte email connecte. Configure ton email dans les parametres."
+            "Aucun compte e-mail connecté. Configure ton adresse e-mail dans les paramètres."
         )
     if len(comptes) > 1:
         adresses = ", ".join(compte.email for compte in comptes)
@@ -1149,7 +1149,7 @@ async def _provider_depuis_calendrier(
             cal.remote_id or cal.id,
             None,
         )
-    return None, None, f"Provider calendrier non supporte : {cal.provider}"
+    return None, None, f"Fournisseur de calendrier non pris en charge : {cal.provider}"
 
 
 async def _resoudre_calendrier(
@@ -1596,7 +1596,9 @@ async def _list_calendar_events(
     from datetime import datetime, timedelta, timezone
 
     from app.models.entities import Calendar
-    calendrier, _ = await _resoudre_calendrier(session, calendar_id=_id_agenda_demande(args=args))
+    calendrier, erreur_resolution = await _resoudre_calendrier(
+        session, calendar_id=_id_agenda_demande(args=args)
+    )
     if isinstance(calendrier, Calendar) and calendrier.provider != "local":
         if calendrier.sync_status == "error":
             return (
@@ -1615,20 +1617,16 @@ async def _list_calendar_events(
         session, calendar_id=_id_agenda_demande(args=args)
     )
     if error:
-        # Cycle 6 : plusieurs agendas sans sélection n'est pas « aucun agenda » ;
-        # l'ancien message dictait au modèle d'annoncer l'inverse de la réalité.
-        if error.startswith(_PLUSIEURS_AGENDAS):
-            return (
-                f"PLUSIEURS AGENDAS SANS SELECTION ({error}). "
-                "N'invente AUCUN evenement, date ni rendez-vous. Indique a l'utilisateur "
-                "que plusieurs agendas existent et qu'il doit en choisir un dans le panneau Agenda."
-            )
-        # QW2 : sans calendrier connecté, l'IA inventait des RDV. On renvoie une
-        # consigne directive pour qu'elle relaie l'absence au lieu de broder.
+        # Seul le cas où aucun agenda n'est configuré permet de parler
+        # d'absence de calendrier. Les autres erreurs gardent leur cause.
+        aucun_agenda = error.startswith(AUCUN_AGENDA) or (
+            erreur_resolution is not None and erreur_resolution.startswith(AUCUN_AGENDA)
+        )
+        introduction = "AUCUN CALENDRIER synchronisé. " if aucun_agenda else ""
         return (
-            f"Aucun calendrier synchronisé. AUCUN CALENDRIER CONNECTE ({error}). "
-            "N'invente AUCUN evenement, date ni rendez-vous. Indique a l'utilisateur "
-            "qu'aucun calendrier n'est connecte et propose d'en configurer un."
+            f"{introduction}{error} "
+            "N'invente AUCUN événement, date ni rendez-vous. "
+            "Indique cette raison à l'utilisateur."
         )
 
     try:
@@ -1665,32 +1663,41 @@ async def _list_calendar_events(
             **supplement,
         )
 
+        etat_sync = ""
+        if isinstance(calendrier, Calendar) and calendrier.provider != "local":
+            etat = {"idle": "au repos", "syncing": "en cours"}.get(
+                calendrier.sync_status, "indéterminé"
+            )
+            etat_sync = f"État enregistré de la synchronisation : {etat}."
+
         avertissements = provider.recurrence_warnings if isinstance(provider, LocalCalendarProvider) else []
         if not events and not avertissements:
             if isinstance(calendrier, Calendar) and calendrier.provider == "local":
                 return (
-                    f"Aucun evenement dans {periode} du calendrier local. "
+                    f"Aucun événement dans {periode} du calendrier local. "
                     "N'invente AUCUN événement, date ni rendez-vous. "
                     "Dis que cette période est vide. Les événements de ce calendrier sont enregistrés sur ce poste."
                 )
-            return f"Aucun evenement dans {periode}. N'invente AUCUN autre événement."
+            return f"Aucun événement dans {periode}. {etat_sync} N'invente AUCUN autre événement."
 
-        lines = [f"**{len(events)} evenement(s) dans {periode} :**\n", *avertissements]
+        lines = ([etat_sync] if etat_sync else []) + [
+            f"**{len(events)} événement(s) dans {periode} :**\n", *avertissements,
+        ]
         for event in events:
             if event.all_day:
-                date_str = event.start.strftime("%d/%m") if event.start else ""
-                time_str = "(journee)"
+                date_str = event.start.strftime("%d/%m/%Y") if event.start else ""
+                time_str = "(journée)"
             else:
-                date_str = event.start.strftime("%d/%m") if event.start else ""
+                date_str = event.start.strftime("%d/%m/%Y") if event.start else ""
                 time_str = event.start.strftime("%H:%M") if event.start else ""
                 if event.end:
                     time_str += f"-{event.end.strftime('%H:%M')}"
 
-            location_str = f" 📍 {event.location}" if event.location else ""
+            location_str = f" (lieu : {event.location})" if event.location else ""
             attendees_str = f" ({len(event.attendees)} participants)" if event.attendees else ""
 
             lines.append(
-                f"- **{date_str} {time_str}** — {event.summary}{location_str}{attendees_str}"
+                f"- **{date_str} {time_str}** - {event.summary}{location_str}{attendees_str}"
             )
 
         # B-104 : titre, lieu et participants d'un evenement sont ecrits par un
@@ -1715,14 +1722,11 @@ async def _list_calendar_events(
                 "La lecture du calendrier local est impossible. N'invente AUCUN événement, date ni rendez-vous. "
                 "Propose d'ouvrir Agenda et de réessayer la lecture locale."
             )
-        if isinstance(calendrier, Calendar) and calendrier.provider != "local":
-            calendrier.sync_status = "error"
-            calendrier.last_sync_error = "La dernière synchronisation a échoué. Ouvre Agenda et relance la synchronisation."
-            session.add(calendrier)
-            await session.commit()
-        return ("La dernière synchronisation a échoué : la lecture du calendrier est impossible. "
+        # Lire n'est pas synchroniser : ne pas modifier son état, ni valider
+        # les autres écritures que l'appelant garde dans sa session.
+        return ("La lecture de cet agenda est impossible. "
                 "N'invente AUCUN événement, date ni rendez-vous. "
-                "Dis que tu ne peux pas confirmer l'agenda et propose d'ouvrir Agenda pour relancer la synchronisation.")
+                "Dis que tu ne peux pas confirmer l'agenda et propose d'ouvrir Agenda pour réessayer.")
 
 
 def _heure_outil_agenda(texte: str, maintenant: datetime) -> datetime:

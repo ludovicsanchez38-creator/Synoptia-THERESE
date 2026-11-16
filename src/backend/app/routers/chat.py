@@ -11,6 +11,8 @@ import json
 import logging
 import re
 import time
+import unicodedata
+from contextvars import copy_context
 from copy import copy
 from pathlib import Path
 from typing import Any, AsyncGenerator, Protocol
@@ -2379,6 +2381,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
+    # Cette voie n'exécute pas d'outil : signaler seulement une liste suspecte.
+    mention_agenda = _mention_agenda_sans_lecture(llm_user_message, assistant_content)
     avis_reponse.extend(file_errors)
     avis_reponse.extend(getattr(context, "avis_systeme", None) or [])
     # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
@@ -2387,6 +2391,7 @@ async def send_message(
     # Confirmations des directives inline en tête de réponse (vérité d'exécution)
     if inline_preamble:
         assistant_content = inline_preamble + assistant_content
+    assistant_content += mention_agenda
 
     # BUG-027 : suivi des tokens sur le chemin non-stream (etait absent -> le
     # token tracker restait aveugle et tokens_in/out remontaient null).
@@ -2571,9 +2576,13 @@ async def _stream_response(
     # `RuntimeError: aclose(): asynchronous generator is already running`.
     prochain: asyncio.Future[str] | None = None
     surveillance: asyncio.Future[None] | None = None
+    # Chaque __anext__ tourne dans une nouvelle tâche pour surveiller l'arrêt.
+    # Partager le contexte du producteur conserve l'agenda et le compte choisis
+    # entre ses yields, sans les partager avec les autres conversations.
+    contexte_flux = copy_context()
     try:
         while True:
-            prochain = asyncio.ensure_future(producteur.__anext__())
+            prochain = asyncio.create_task(producteur.__anext__(), context=contexte_flux)
             surveillance = asyncio.ensure_future(
                 _attendre_annulation(contexte_execution, conversation_id)
             )
@@ -3220,7 +3229,13 @@ async def _do_stream_response(
         preamble_chunk = StreamChunk(
             type="text", content=preamble, conversation_id=conversation_id
         )
-        yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
+        try:
+            yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
+        except (GeneratorExit, asyncio.CancelledError):
+            await _persister_message_partiel(
+                conversation_id, full_content, llm_service, marque_reponse(context)
+            )
+            raise
     tool_calls_collected: list[ToolCall] = []
     # 0.48 : content brut du tour (mode reasoning Mistral), a rejouer tel quel
     assistant_brut_collected: list[Any] | None = None
@@ -3330,6 +3345,9 @@ async def _do_stream_response(
                                 event_data = json.loads(continued_event[6:].strip())
                                 if event_data.get("type") == "text":
                                     contenu = event_data.get("content", "")
+                                    if contenu and not first_token_recorded:
+                                        stream_metrics.record_first_token()
+                                        first_token_recorded = True
                                     debut = len(full_content)
                                     full_content += contenu
                                     if event_data.get("limite_recherche"):
@@ -3465,6 +3483,16 @@ async def _do_stream_response(
         except Exception as db_err:
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
+
+    if not any(nom == "list_calendar_events" for nom, _, _ in tool_outcomes):
+        mention = _mention_agenda_sans_lecture(user_message, contenu_modele)
+        if mention:
+            full_content += mention
+            try:
+                yield f"data: {json.dumps(StreamChunk(type='text', content=mention, conversation_id=conversation_id).model_dump())}\n\n"
+            except (GeneratorExit, asyncio.CancelledError):
+                await _persister_message_partiel(conversation_id, full_content, llm_service, marque_reponse(context))
+                raise
 
     # BUG-124 : un modèle faible peut enchaîner des outils (ex. read_emails) sans
     # jamais produire de texte -> réponse vide et muette côté utilisateur
@@ -3702,6 +3730,47 @@ def _skill_file_error_event(
         "skill_id": skill_id,
     }
     return f"data: {json.dumps(payload)}\n\n"
+
+
+def _normaliser_demande_agenda(message: str) -> str:
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", message.casefold())
+        if not unicodedata.combining(c)
+    )
+
+
+def _demande_lecture_agenda(message: str) -> bool:
+    """Reconnaît seulement les formes explicites et datées du tour courant."""
+    texte = _normaliser_demande_agenda(message).replace("’", "'")
+    if re.search(
+        r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*|"
+        r"branch\w*|configur\w*|synchronis\w*|connect\w*|install\w*|"
+        r"utilis\w*|fonctionn\w*|ajout\w*|cree\w*|modifi\w*|deplac\w*|"
+        r"annul\w*|supprim\w*|planifi\w*|organis\w*|envoi\w*|envoy\w*)\b", texte,
+    ):
+        return False
+    demande = re.search(
+        r"\b(?:mes\s+rendez[ -]?vous|mon\s+agenda|mon\s+planning|"
+        r"qu'est[ -]ce\s+que\s+j'ai\s+de\s+prevu|suis[ -]je\s+disponible)\b", texte,
+    )
+    repere = re.search(
+        r"\b(?:aujourd.hui|demain|apres.demain|lundi|mardi|mercredi|jeudi|"
+        r"vendredi|samedi|dimanche|semaine|mois|annee|matin|apres.midi|soir|"
+        r"janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|"
+        r"novembre|decembre|(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)|"
+        r"\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?)\b", texte,
+    )
+    return bool(demande and repere)
+
+
+def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
+    """Une réserve uniquement pour une liste horaire et une demande explicite."""
+    if not _demande_lecture_agenda(message):
+        return ""
+    horaire = re.compile(r"\b(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)\b", re.IGNORECASE)
+    if sum(bool(horaire.search(ligne)) for ligne in reponse.splitlines()) < 2:
+        return ""
+    return "\n\nJe n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 
 
 def _fallback_from_tool_outcomes(

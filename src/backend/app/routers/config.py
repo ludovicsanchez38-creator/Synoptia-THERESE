@@ -1218,10 +1218,9 @@ async def set_profile(
 @router.delete("/profile")
 async def delete_profile(session: AsyncSession = Depends(get_session)):
     """Delete user profile."""
-    from app.services.user_profile import delete_user_profile, set_cached_profile
+    from app.services.user_profile import delete_user_profile
 
     deleted = await delete_user_profile(session)
-    set_cached_profile(None)
 
     return {"deleted": deleted}
 
