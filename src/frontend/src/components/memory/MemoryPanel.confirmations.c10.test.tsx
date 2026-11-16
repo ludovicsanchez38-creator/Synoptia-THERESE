@@ -5,6 +5,7 @@ import type { Contact } from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { _clearEscapeHandlers, runTopEscapeHandler } from '../../lib/escapeStack';
+import { Notifications } from '../ui/Notifications';
 
 const api = vi.hoisted(() => ({
   listContacts: vi.fn(), deleteContactWithCascade: vi.fn(), anonymizeContact: vi.fn(),
@@ -71,7 +72,7 @@ describe('B-941 : confirmations Contacts et RGPD', () => {
     _clearEscapeHandlers();
     api.listContacts.mockResolvedValue([contact]);
     api.deleteContactWithCascade.mockResolvedValue({ deleted: true });
-    api.anonymizeContact.mockResolvedValue(undefined);
+    api.anonymizeContact.mockResolvedValue({ success: true, message: 'Contact anonymisé.', contact_id: contact.id });
     api.exportContactRGPD.mockResolvedValue({});
     api.renewContactConsent.mockResolvedValue({ new_expiration: '2029-09-22' });
     useContactsStore.setState({
@@ -217,6 +218,36 @@ describe('B-941 : confirmations Contacts et RGPD', () => {
     aucuneMutation();
     fireEvent.click(confirmer);
     await waitFor(() => expect(api.anonymizeContact).toHaveBeenCalledExactlyOnceWith('contact-c10', 'Demande du contact'));
+  });
+
+  it.each([
+    'Anonymisation incomplète : un dépôt reste à supprimer.',
+    'Anonymisation incomplète : la suppression de l’index de recherche a échoué.',
+  ])('signale durablement le résultat incomplet : %s', async (message) => {
+    api.anonymizeContact.mockResolvedValue({ success: false, message, contact_id: contact.id });
+    await ouvrirLaConfirmation(parcours[2]);
+    render(<Notifications />);
+    const dialogue = screen.getByRole('dialog', { name: 'Anonymisation RGPD' });
+    fireEvent.change(within(dialogue).getByRole('textbox'), { target: { value: 'Demande du contact' } });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Anonymiser' }));
+
+    await waitFor(() => expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'error', message, duration: 0 }),
+    ])));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    await waitFor(() => expect(dialogue).not.toBeInTheDocument());
+    expect(api.listContacts).toHaveBeenCalledTimes(2);
+  });
+
+  it('ne signale pas d’échec après une anonymisation complète', async () => {
+    await ouvrirLaConfirmation(parcours[2]);
+    const dialogue = screen.getByRole('dialog', { name: 'Anonymisation RGPD' });
+    fireEvent.change(within(dialogue).getByRole('textbox'), { target: { value: 'Demande du contact' } });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Anonymiser' }));
+
+    await waitFor(() => expect(dialogue).not.toBeInTheDocument());
+    expect(api.listContacts).toHaveBeenCalledTimes(2);
+    expect(useStatusStore.getState().notifications.filter((n) => n.type === 'error')).toHaveLength(0);
   });
 
   it.each([parcours[2], parcours[3]])('$action : retrouve le bouton RGPD après le rechargement réussi', async (cas) => {
