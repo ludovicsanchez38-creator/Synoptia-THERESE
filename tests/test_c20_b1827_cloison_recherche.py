@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from app.config import settings
-from app.models.entities import FileMetadata
+from app.models.entities import Conversation, FileMetadata
 from app.routers import memory
 from app.services.qdrant import QdrantService
 from qdrant_client import QdrantClient
@@ -90,3 +90,32 @@ async def test_route_recherche_dans_le_dossier_demande_sans_ouvrir_un_autre(
     })
     assert reponse.status_code == 200
     assert [r["id"] for r in reponse.json()["results"]] == [fichiers[0].id]
+
+
+@pytest.mark.asyncio
+async def test_route_refuse_un_vecteur_perime_et_une_conversation_d_un_autre_dossier(
+    client, db_session, monkeypatch, index
+):
+    conversation = Conversation(id="conv-b", project_id="b")
+    fichiers = [
+        FileMetadata(path="/b/ancien.txt", name="ancien.txt", extension=".txt", size=10,
+                     scope="project", scope_id="b"),
+        FileMetadata(path="/b/piece.txt", name="piece.txt", extension=".txt", size=10,
+                     scope="conversation", scope_id="conv-b"),
+    ]
+    db_session.add(conversation)
+    db_session.add_all(fichiers)
+    await db_session.commit()
+    index._client.upsert(settings.qdrant_collection, points=[
+        PointStruct(id=0, vector=[1.0], payload={"type": "file", "entity_id": fichiers[0].id,
+                    "text": "zéphyr privé", "scope": "global"}),
+        PointStruct(id=1, vector=[1.0], payload={"type": "file", "entity_id": fichiers[1].id,
+                    "text": "zéphyr privé", "scope": "conversation", "scope_id": "conv-b"}),
+    ])
+    monkeypatch.setattr(memory, "get_qdrant_service", lambda: index)
+    reponse = await client.post("/api/memory/search", json={
+        "query": "zéphyr", "entity_types": ["file"], "include_semantic": False,
+        "scope": "project", "scope_id": "a", "conversation_id": "conv-b",
+    })
+    assert reponse.status_code == 200
+    assert reponse.json()["results"] == []

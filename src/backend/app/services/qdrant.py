@@ -462,8 +462,11 @@ class QdrantService:
             for hit in results
         ]
 
-    def rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
-        """Retrouve un mot ou une expression littérale sans embeddings."""
+    def rechercher_contenu_fichiers(
+        self, query: str, limite: int = 200, *, scope: str | None = None,
+        scope_id: str | None = None, conversation_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Retrouve des fragments dans le périmètre demandé, fermé par défaut."""
         if not query.strip():
             return []
         requete = unicodedata.normalize("NFC", query.strip()).casefold()
@@ -477,9 +480,25 @@ class QdrantService:
         total = self.client.get_collection(settings.qdrant_collection).points_count or 0
         if not total:
             return []
+        perimetres: list[Filter | FieldCondition] = [
+            FieldCondition(key="scope", match=MatchValue(value="global")),
+        ]
+        if scope == "project" and scope_id:
+            perimetres.append(Filter(must=[
+                FieldCondition(key="scope", match=MatchValue(value="project")),
+                FieldCondition(key="scope_id", match=MatchValue(value=scope_id)),
+            ]))
+        if (scope == "global" or (scope == "project" and scope_id)) and conversation_id:
+            perimetres.append(Filter(must=[
+                FieldCondition(key="scope", match=MatchValue(value="conversation")),
+                FieldCondition(key="scope_id", match=MatchValue(value=conversation_id)),
+            ]))
         points, _ = self.client.scroll(
             collection_name=settings.qdrant_collection,
-            scroll_filter=Filter(must=[FieldCondition(key="type", match=MatchValue(value="file"))]),
+            scroll_filter=Filter(must=[
+                FieldCondition(key="type", match=MatchValue(value="file")),
+                Filter(should=perimetres),
+            ]),
             limit=total, with_payload=["entity_id", "text"], with_vectors=False,
         )
         for point in points:
@@ -492,8 +511,14 @@ class QdrantService:
                     break
         return list(trouves.values())
 
-    async def async_rechercher_contenu_fichiers(self, query: str, limite: int = 200) -> list[dict[str, Any]]:
-        return await asyncio.to_thread(self.rechercher_contenu_fichiers, query, limite)
+    async def async_rechercher_contenu_fichiers(
+        self, query: str, limite: int = 200, *, scope: str | None = None,
+        scope_id: str | None = None, conversation_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(
+            self.rechercher_contenu_fichiers, query, limite, scope=scope,
+            scope_id=scope_id, conversation_id=conversation_id,
+        )
 
     def fichiers_contenant(
         self, termes: Sequence[str], parmi: Collection[str] | None = None

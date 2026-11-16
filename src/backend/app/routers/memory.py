@@ -47,7 +47,7 @@ from app.services.projet_ensemble import (
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
@@ -508,6 +508,27 @@ async def search_memory(
 
     query_lower = request.query.lower()
 
+    # La base SQL fait autorité sur l'appartenance des fichiers, y compris si
+    # un ancien fragment vectoriel porte encore un périmètre périmé.
+    scope = request.scope or "global"
+    scope_id = request.scope_id if scope == "project" else None
+    conversation_id = None
+    if request.scope and request.conversation_id:
+        conversation = await session.get(Conversation, request.conversation_id)
+        if conversation and (
+            (scope == "project" and scope_id and conversation.project_id == scope_id)
+            or (scope == "global" and not conversation.project_id)
+        ):
+            conversation_id = conversation.id
+    fichiers_visibles = [FileMetadata.scope == "global"]
+    if scope == "project" and scope_id:
+        fichiers_visibles.append((FileMetadata.scope == "project") & (FileMetadata.scope_id == scope_id))
+    if conversation_id:
+        fichiers_visibles.append(
+            (FileMetadata.scope == "conversation") & (FileMetadata.scope_id == conversation_id)
+        )
+    cloison_fichiers = or_(*fichiers_visibles)
+
     # Map entity_types to Qdrant memory_types
     memory_types = None
     if request.entity_types:
@@ -523,6 +544,8 @@ async def search_memory(
             memory_types=memory_types,
             limit=request.limit * 2,  # Get more to merge with keyword results
             score_threshold=0.5,  # Lower threshold for semantic
+            **({"scope": scope, "scope_id": scope_id, "conversation_id": conversation_id}
+               if memory_types == ["file"] else {}),
         ) if request.include_semantic else []
 
         # Lot F : un SELECT par hit. On groupe par type, une requête chacun.
@@ -553,7 +576,9 @@ async def search_memory(
                         if hit.get("type") == "file" and hit.get("entity_id")]
         fichiers_par_id: dict[str, FileMetadata] = {}
         if ids_fichiers:
-            fichiers_semantiques = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(ids_fichiers)))
+            fichiers_semantiques = await session.execute(select(FileMetadata).where(
+                col(FileMetadata.id).in_(ids_fichiers), cloison_fichiers
+            ))
             fichiers_par_id = {f.id: f for f in fichiers_semantiques.scalars().all()}
 
         for hit in semantic_results:
@@ -673,12 +698,15 @@ async def search_memory(
     if not request.entity_types or "file" in request.entity_types:
         try:
             fragments = await get_qdrant_service().async_rechercher_contenu_fichiers(
-                request.query, PLAFOND_ILIKE_MEMOIRE
+                request.query, PLAFOND_ILIKE_MEMOIRE, scope=scope,
+                scope_id=scope_id, conversation_id=conversation_id,
             )
             ilike_tronque |= len(fragments) >= PLAFOND_ILIKE_MEMOIRE
             textes = {f["entity_id"]: f["text"] for f in fragments}
             if textes:
-                charge = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(textes)))
+                charge = await session.execute(select(FileMetadata).where(
+                    col(FileMetadata.id).in_(textes), cloison_fichiers
+                ))
                 for fichier in charge.scalars().all():
                     fichiers_exacts.add(fichier.id)
                     results_map[fichier.id] = MemorySearchResult(
@@ -691,7 +719,7 @@ async def search_memory(
 
         # Sans index, le nom reste consultable.
         fichiers_mot_cle = await session.execute(select(FileMetadata).where(
-            col(FileMetadata.name).ilike(f"%{request.query}%")
+            col(FileMetadata.name).ilike(f"%{request.query}%"), cloison_fichiers
         ).limit(PLAFOND_ILIKE_MEMOIRE))
         fichiers = list(fichiers_mot_cle.scalars().all())
         ilike_tronque |= len(fichiers) >= PLAFOND_ILIKE_MEMOIRE
