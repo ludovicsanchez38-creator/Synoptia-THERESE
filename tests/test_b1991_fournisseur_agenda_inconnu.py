@@ -52,6 +52,15 @@ async def collision_primary(client, db_session, monkeypatch):
                 "start": {"date": "2026-12-01"}, "end": {"date": "2026-12-02"},
                 "status": "confirmed",
             })
+        if requete.method == "GET" and requete.url.path in (
+            "/calendar/v3/calendars/primary/events",
+            f"/calendar/v3/calendars/{compte.email}/events",
+        ):
+            return httpx.Response(200, json={"items": [{
+                "id": "evenement-r1", "summary": "Rendez-vous de test",
+                "start": {"date": "2026-12-01"}, "end": {"date": "2026-12-02"},
+                "status": "confirmed",
+            }]})
         raise AssertionError(f"Appel inattendu : {requete.method} {requete.url.path}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(google_simule)) as transport:
@@ -89,6 +98,18 @@ async def test_relecture_r1_primary_implicite_resout_le_compte_sans_detourner_la
         ("GET", "/calendar/v3/calendars/primary"),
         ("POST", f"/calendar/v3/calendars/{compte.email}/events"),
     ]
+    for destination in ({}, {"calendar_id": "primary"}, {"calendar_id": compte.email}):
+        lecture = await client.get(
+            "/api/calendar/events", params={"account_id": compte.id, **destination},
+        )
+        assert lecture.status_code == 200, lecture.text
+        assert [evt["id"] for evt in lecture.json()] == ["evenement-r1"]
+        assert lecture.json()[0]["calendar_id"] == compte.email
+    assert len((await db_session.execute(select(CalendarEvent))).scalars().all()) == 1
+    await db_session.refresh(inconnu)
+    await db_session.refresh(voisin)
+    assert (inconnu.provider, inconnu.summary, inconnu.account_id) == ("inconnu", "Historique", compte.id)
+    assert (voisin.summary, voisin.account_id) == ("Voisin", "autre-r1")
 
 
 @pytest.mark.parametrize("avec_compte", [False, True])
@@ -99,7 +120,8 @@ async def test_relecture_r1_primary_explicite_inconnu_reste_refuse(
     reponse = await client.post(
         "/api/calendar/events", params={"account_id": compte.id} if avec_compte else {},
         json={
-            "calendar_id": "primary", "summary": "Rendez-vous de test",
+            "calendar_id": "primary", "calendar_id_is_stored": True,
+            "summary": "Rendez-vous de test",
             "start_date": "2026-12-01", "end_date": "2026-12-01",
         },
     )
@@ -108,6 +130,47 @@ async def test_relecture_r1_primary_explicite_inconnu_reste_refuse(
     assert reponse.json()["message"] == "Ce fournisseur d’agenda n’est pas pris en charge."
     assert appels == []
     assert (await db_session.execute(select(CalendarEvent))).scalars().all() == []
+
+
+async def test_relecture_r2_primary_explicite_google_cree_et_relit(
+    client, db_session, collision_primary,
+):
+    compte, inconnu, voisin, _ = collision_primary
+    creation = await client.post(
+        "/api/calendar/events", params={"account_id": compte.id},
+        json={
+            "calendar_id": "primary", "summary": "Rendez-vous de test",
+            "start_date": "2026-12-01", "end_date": "2026-12-01",
+        },
+    )
+    assert creation.status_code == 200, creation.text
+    assert creation.json()["calendar_id"] == compte.email
+    lecture = await client.get(
+        "/api/calendar/events", params={"account_id": compte.id, "calendar_id": "primary"},
+    )
+    assert lecture.status_code == 200, lecture.text
+    assert [evt["id"] for evt in lecture.json()] == [creation.json()["id"]]
+    assert lecture.json()[0]["calendar_id"] == compte.email
+    await db_session.refresh(inconnu)
+    await db_session.refresh(voisin)
+    assert (inconnu.provider, inconnu.summary, inconnu.account_id) == ("inconnu", "Historique", compte.id)
+    assert (voisin.summary, voisin.account_id) == ("Voisin", "autre-r1")
+
+
+async def test_relecture_r2_un_agenda_selectionne_absent_ne_devient_pas_un_alias(
+    client, collision_primary,
+):
+    compte, _, _, appels = collision_primary
+    reponse = await client.post(
+        "/api/calendar/events", params={"account_id": compte.id},
+        json={
+            "calendar_id": "agenda-absent", "calendar_id_is_stored": True,
+            "summary": "Rendez-vous de test",
+            "start_date": "2026-12-01", "end_date": "2026-12-01",
+        },
+    )
+    assert reponse.status_code == 404, reponse.text
+    assert appels == []
 
 
 @pytest.mark.parametrize("identifiant_distant", ["primary", "autre@example.test"])

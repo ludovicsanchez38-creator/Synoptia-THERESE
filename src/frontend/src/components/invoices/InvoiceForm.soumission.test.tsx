@@ -11,7 +11,7 @@
  * bloc défilant, à dessein) : le lien se fait donc par `id` + attribut `form`,
  * sans déplacer quoi que ce soit à l'écran.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
@@ -90,6 +90,35 @@ describe('B-011 : le bouton d’envoi appartient au formulaire', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     await waitFor(() => expect(createInvoiceMock).toHaveBeenCalledTimes(1));
+  });
+
+  it('bloque la création pendant l’abandon puis reprend la même saisie', async () => {
+    const enregistrer = vi.fn();
+    const fermer = vi.fn();
+    render(<InvoiceForm invoice={null} onClose={fermer} onSave={enregistrer} />);
+    await remplirLeFormulaire();
+    const annuler = screen.getByRole('button', { name: 'Annuler' });
+    fireEvent.click(annuler);
+
+    await act(async () => {
+      fireEvent.submit(screen.getByLabelText('Client *').closest('form')!);
+    });
+    expect(createInvoiceMock).not.toHaveBeenCalled();
+    expect(enregistrer).not.toHaveBeenCalled();
+    expect(fermer).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Créer' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuer la saisie' })).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer la saisie' }));
+    expect(annuler).toHaveFocus();
+    expect(screen.getByPlaceholderText('Description')).toHaveValue('Prestation');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer' }));
+    await waitFor(() => expect(createInvoiceMock).toHaveBeenCalledTimes(1));
+    expect(createInvoiceMock).toHaveBeenCalledWith(expect.objectContaining({
+      contact_id: 'contact-1',
+      lines: [expect.objectContaining({ description: 'Prestation', unit_price_ht: 100 })],
+    }));
+    expect(enregistrer).toHaveBeenCalledTimes(1);
   });
 
   it('les champs requis sont réellement évalués par le formulaire avant l’envoi', async () => {

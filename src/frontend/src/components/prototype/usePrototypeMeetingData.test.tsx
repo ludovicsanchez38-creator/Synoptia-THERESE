@@ -99,7 +99,23 @@ describe('usePrototypeMeetingData', () => {
         start_datetime: event.start_datetime || undefined, end_datetime: event.end_datetime || undefined,
       });
     });
-    expect(createEvent).toHaveBeenCalledWith(expect.objectContaining({ calendar_id: calendar.id }), undefined);
+    expect(createEvent).toHaveBeenCalledWith(expect.objectContaining({ calendar_id: calendar.id, calendar_id_is_stored: true }), undefined);
+  });
+
+  it('désigne la ligne sélectionnée même si son identifiant vaut primary', async () => {
+    vi.mocked(listCalendars).mockResolvedValue([{ ...calendar, id: 'primary', provider: 'inconnu', account_id: 'compte-fictif' }]);
+    const { result } = renderHook(() => usePrototypeMeetingData(true));
+    await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+    await act(async () => {
+      await result.current.createCalendarEvent({
+        calendar_id: 'primary', summary: 'Rendez-vous de test',
+        start_date: '2026-12-01', end_date: '2026-12-01',
+      });
+    });
+    expect(createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ calendar_id: 'primary', calendar_id_is_stored: true }),
+      'compte-fictif',
+    );
   });
 
   // BUG-143 : sans calendrier (lecture pure createDefault:false sur une base vierge),
