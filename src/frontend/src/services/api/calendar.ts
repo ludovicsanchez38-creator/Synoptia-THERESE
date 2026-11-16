@@ -37,6 +37,8 @@ export interface CalendarEvent {
 
 export interface CreateEventRequest {
   calendar_id?: string;
+  /** Désigne une ligne enregistrée, y compris si son identifiant est « primary ». */
+  calendar_id_is_stored?: boolean;
   summary: string;
   description?: string;
   location?: string;

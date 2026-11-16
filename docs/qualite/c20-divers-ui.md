@@ -404,3 +404,267 @@ Les options Vitest évitent toute écriture de configuration dans les dépendanc
 partagées. Aucun serveur applicatif, appel réseau ou fournisseur LLM, aucune suite
 complète, aucun accès à `~/.therese` ou `.app-loop/`. Les données sont jetables ;
 les seuls livrables sont les changements de cet arbre et les rapports sous `/tmp`.
+
+
+## Remédiation de la relecture, passe 2
+
+Reprise du 17 novembre 2026, dans le même arbre `gpt-c20-divers-ui`, depuis
+`41559324`. Les neuf défauts de code sont confirmés. Chaque reproduction ci-dessous
+a été écrite ou récupérée, puis exécutée seule avant le correctif correspondant.
+Les fichiers de tests voisins ont ensuite été exécutés, après relecture des
+appelants. Aucun test existant n'a été supprimé ou rendu moins exigeant.
+
+### État de l'intégration et portée du constat 3
+
+Contrairement à l'état annoncé dans la demande, `git rev-list --left-right --count
+HEAD...c20/integration` rendait **4 / 4** au début de cette passe. Le sommet
+initial de l'intégration était `75498edd`. Les seuls éléments non suivis au départ
+étaient les liens de dépendances `.venv` et `src/frontend/node_modules`.
+
+La consigne « NE COMMITE PAS, pas de git add » et l'accès en lecture seule aux
+métadonnées Git ont été respectés : **aucun rebase de l'historique n'a été effectué**.
+Les corrections et tests du lot migrations ont été repris dans les fichiers de
+travail, sans indexation. Une comparaison binaire des **24 fichiers** de
+`HEAD...75498edd` avec cette référence ne trouve aucune différence après reprise.
+Cela inclut les **treize fichiers de tests manquants** et le bilan
+`docs/qualite/c20-migrations.md`, conservé tel quel. Les correctifs antérieurs du
+lot divers-ui sont conservés.
+
+Pour conserver tout le lot demandé au constat 3, les tests B-1893 (provenance
+absente) et B-2011 (conseil correspondant au fournisseur) ont également été repris
+et exécutés au rouge avant leurs correctifs d'intégration. Il ne s'agit pas de
+nouveaux candidats. La branche `c20/integration` a avancé pendant le travail avec
+le lot rust-windows ; cette passe reste fondée sur sa référence initiale, sans
+importer ces modifications supplémentaires. L'orchestrateur devra traiter la
+position de la branche lors de l'intégration des changements non commités.
+
+### Reproductions avant correction
+
+Les noms de fichiers sont relatifs à la racine ; les chemins frontend commencent
+par `src/frontend/`. Les lignes d'échec sont recopiées des rapports, sans les
+adresses mémoire ni les piles d'appels.
+
+| Constat | Test ajouté, étendu ou récupéré | Ligne d'échec observée avant correction | Rapport du rouge |
+| --- | --- | --- | --- |
+| 1 | `tests/test_b1991_fournisseur_agenda_inconnu.py::test_relecture_r1_primary_implicite_resout_le_compte_sans_detourner_la_ligne`, étendu jusqu'aux trois relectures, avec et sans cache | `AssertionError: assert [] == ['evenement-r1']` ; 2 échecs | `/tmp/divers-ui-r2-c1-rouge-final.xml` |
+| 2 | Même fichier, `test_relecture_r2_primary_explicite_google_cree_et_relit` ; `test_relecture_r2_un_agenda_selectionne_absent_ne_devient_pas_un_alias` | `E       assert 400 == 200` ; `E       assert 500 == 404` ; un échec par lancement isolé | `/tmp/divers-ui-r2-c2-rouge.xml`, `/tmp/divers-ui-r2-c2-absent-rouge.xml` |
+| 3 | `tests/test_c20_b1889_notes_heritees.py::test_note_rattachee_preservee_si_evenement_sans_projet` | `AssertionError: assert None == 'projet-existant'` ; 1 échec | `/tmp/divers-ui-r2-c3-rouge.xml` |
+| 4 | `tests/test_c20_b1890_activites_sans_contact.py::test_migration_ajoute_contact_absent_sans_perte`, schémas standard et enrichi | `KeyError: 'contact_id'` ; 2 échecs | `/tmp/divers-ui-r2-c4-rouge.xml` |
+| 5 | `src/frontend/src/components/invoices/InvoiceForm.abandonPaiement.b2014.test.tsx` et `InvoiceForm.focusAbandon.b2014.test.tsx` | `Error: expect(element).not.toBeInTheDocument()` : « Marquer comme payée » reste présent ; `Error: expect(element).toHaveFocus()` pour Tab et Maj+Tab ; 3 échecs dans deux lancements isolés | `/tmp/divers-ui-r2-c5-paiement-rouge.json`, `/tmp/divers-ui-r2-c5-focus-rouge.json` |
+| 6 | `tests/test_c20_b2010_limite_cle.py::test_limite_ne_presente_pas_la_cle_comme_acceptee` | `AssertionError: assert 'acceptée' not in 'Clé accepté...de requêtes.'` ; 1 échec | `/tmp/divers-ui-r2-c6-rouge.xml` |
+| 7 | `src/frontend/src/components/atelier/AgentSession.refusHttp.b2013.test.tsx`, `AgentSession.refusDestination.b2013.test.tsx`, `AgentSession.profilChange.b2012.test.tsx`, et attente d'intégration de `AgentSession.accordMoteur.test.tsx` | `Error: expect(element).toHaveTextContent()` ; reçu : « La mission n’a pas démarré : tes accords ou la destination ne peuvent pas être vérifiés. Vérifie la connexion au moteur, puis réessaie. » ; 5 échecs et 6 succès dans quatre lancements isolés | `/tmp/divers-ui-r2-c7-http-rouge.json`, `-c7-destination-rouge.json`, `-c7-profil-rouge.json`, `-c7-accord-rouge.json` |
+| 8 | `tests/test_c20_b2009_motifs_ambigus.py::test_refus_ambigu_sans_attribution_inexacte`, deux expressions | `AssertionError: assert 'opinion politique' not in 'Cette donné...n politique.'` ; `AssertionError: assert 'appartenance syndicale' not in 'Cette donné...e syndicale.'` ; 2 échecs | `/tmp/divers-ui-r2-c8-rouge.xml` |
+| 9 | `tests/test_c20_b1888_transaction_activites.py::test_reconstruction_preserve_la_transaction_appelante` et `tests/test_c20_b1891_reparation_transaction.py::test_reparation_preserve_la_transaction_appelante` | `AssertionError: La transaction de l’appelant a été validée.` ; `AssertionError: La réparation a validé la transaction de l’appelant.` ; un échec par lancement isolé | `/tmp/divers-ui-r2-c9-reconstruction-rouge.xml`, `/tmp/divers-ui-r2-c9-reparation-rouge.xml` |
+
+Reproductions complémentaires, elles aussi exécutées seules avant correction :
+
+- Constat 2 : `EventForm.test.tsx::distingue une sélection inconnue nommée primary
+  de l’alias Google` et `usePrototypeMeetingData.test.tsx::désigne la ligne
+  sélectionnée même si son identifiant vaut primary` échouent chacun sur
+  `AssertionError: expected "vi.fn()" to be called with arguments:` ; le champ
+  attendu `calendar_id_is_stored: true` manque à l'appel réel. Rapports
+  `/tmp/divers-ui-r2-c2-form-rouge.json` et
+  `/tmp/divers-ui-r2-c2-hook-rouge.json`.
+- Constat 3, conservation de B-1893 : les deux cas de
+  `tests/test_c20_b1893_provenance_sans_marque.py` échouent sur
+  `AssertionError: assert 'sans_document' == 'documents'`.
+  Rapport `/tmp/divers-ui-r2-c3-provenance-rouge.xml`.
+- Constat 3, conservation de B-2011 :
+  `tests/test_c20_b2011_cle_sans_espace.py` échoue sur
+  `assert 'OpenAI' in "Ta clé Claude n'est rattachée à aucun espace de travail. Dans la Console Claude, crée une clé rattachée à un espace (par exemple « Default Workspace »)."`.
+  Rapport `/tmp/divers-ui-r2-c3-espace-rouge.xml`.
+- Constat 5 : `InvoiceForm.soumission.test.tsx::bloque la création pendant
+  l’abandon puis reprend la même saisie` échoue sur
+  `AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times`.
+  Une facture valide est déjà créée malgré la question d'abandon.
+  Rapport `/tmp/divers-ui-r2-c5-creation-rouge.json`.
+
+### Correctifs et vérification des appelants
+
+**1 et 2 — Agendas.** La lecture de l'alias en collision appelle le même résolveur
+Google que la création, dans le compte demandé, avant de comparer les identifiants
+d'événement. Le test de création initial vérifie maintenant la relecture sans
+`calendar_id`, avec `primary`, puis avec l'identifiant réel : un seul événement
+persiste, et les deux agendas préexistants gardent leur propriétaire et leur
+contenu. Le refus d'une collision avec un autre agenda réel est conservé.
+
+Le nouveau champ optionnel `calendar_id_is_stored` distingue la sélection d'une
+ligne SQL de l'alias historique. Sans cet indicateur, l'alias explicite reste
+compatible. Avec `true`, la ligne inconnue est refusée et une sélection disparue
+rend 404 avant tout appel distant. `EventForm` et `usePrototypeMeetingData`, les
+deux appelants de création de l'interface, transmettent cet indicateur. Le contrat
+TypeScript et le modèle Pydantic portent le même champ. L'ancien test de refus
+explicite précise désormais cette sélection ; toutes ses assertions de refus,
+d'absence d'appel fournisseur et d'absence d'événement sont conservées. Les
+attentes frontend existantes sont renforcées par la présence du nouvel indicateur.
+
+**3 — Notes et conservation de l'intégration.** La requête de rattachement exige
+un dossier non nul sur le rendez-vous. Elle conserve ainsi le dossier de la note
+et ne pose pas la marque définitive avant de pouvoir la rattacher. Le test vérifie
+également le rattachement lors d'un passage ultérieur. L'appel au démarrage dans
+`models/database.py` et les chemins de notes CRM ont été relus. Les deux autres
+correctifs du lot repris conservent une provenance documentaire prudente sans
+marque fiable et nomment le fournisseur réel dans le conseil de rattachement de
+clé. Leurs appelants dans `routers/chat.py` et `routers/config.py` ont été relus.
+
+**4 et 9 — Activités.** Les deux accès à `contact_id` tolèrent une colonne absente,
+y compris dans le DDL enrichi. La reconstruction et la réparation des liens sont
+différées lorsqu'une transaction appelante est ouverte ; aucun commit préalable
+ne la valide. Les tests contrôlent le rollback, le schéma, les données et les
+clés étrangères. L'appel au démarrage a été relu après les changements.
+Les fichiers SQLite/SQLCipher voisins couvrent également les colonnes calculées,
+index, contraintes, bases déjà migrées et réparations sans verrou inutile.
+
+**5 — Factures.** Les groupes d'actions sont masqués pendant la question d'abandon
+et `handleSubmit` refuse toute soumission. Le focus va vers « Continuer la saisie »
+puis revient à « Annuler » à la reprise. Le piège de focus ignore les descendants
+masqués, conformément au correctif d'intégration. Les tests couvrent la création,
+la mise à jour, le paiement, Tab, Maj+Tab et une reprise conservant les valeurs.
+Le test de disposition du pied reprend la saisie avant d'inspecter les actions :
+ses assertions de disposition sont intégralement conservées. Les gestionnaires
+de soumission, de fermeture et les deux usages du piège de focus ont été relus.
+
+**6 — Vérification de clé.** L'état `limite` reste distinct ; son message explique
+que la vérification est impossible pour le moment et propose de réessayer. Une
+réponse 429 ne suffit plus à annoncer une clé acceptée. La route qui compose la
+réponse affichée utilise bien cette fonction.
+
+**7 — Agents.** Les deux étapes de vérification affichent le motif métier des
+refus HTTP 4xx et d'`AccordNonEnregistre`, ainsi que le geste utile après changement
+de profil. Le conseil de connexion reste réservé aux erreurs de transport ou
+aux erreurs indéterminées. Les tests de transport continuent de passer et aucune
+mission n'est lancée après un refus. Les callbacks du dialogue et
+`getAgentConsent` ont été relus. L'attente du test `accordMoteur` est restaurée
+exactement comme dans l'intégration, sans retirer son contrôle d'absence de mission.
+
+**8 — Mémoire.** Le refus prudent reste actif pour les deux expressions ambiguës,
+mais le message n'attribue plus une opinion politique ou une appartenance syndicale.
+Le traitement couvre aussi les listes et dictionnaires utilisés par les appelants.
+Les écritures et validations de fiches dans `memory_cards.py` ont été relues ;
+les tests existants de protection et de non-divulgation restent exigés.
+
+### Conditions d'exécution des portes
+
+Aucun réseau, serveur applicatif, fournisseur LLM réel, accès à `~/.therese` ou
+`.app-loop/`, commande `rm`, dépôt annexe, bundle, `git add` ou commit. Les échanges
+Google et les transports utilisés par les tests sont simulés en mémoire. Toutes
+les bases sont jetables sous `/tmp`. Aucune suite complète n'a été lancée.
+
+Deux particularités du bac à sable ont demandé des auxiliaires **uniquement
+sous `/tmp/divers-ui-r2-harness`**, sans modifier les tests ni leur configuration :
+
+1. Même `aiosqlite.connect(':memory:')` suivi de `SELECT 1` reste bloqué dans le
+   sélecteur asyncio. La trace à cinq secondes montre le worker attendant le
+   prochain travail et la boucle attendant son réveil. Un `sitecustomize.py`
+   borne l'attente de `selectors.EpollSelector.select` à 1 ms ; le même essai
+   retourne alors `[(1,)]`. Les premiers lancements voisins bloqués ont été
+   interrompus et ne sont pas comptés comme des portes réussies. Une première
+   borne à 50 ms rendait les fixtures inutilement lentes ; elle a été remplacée
+   avant les exécutions retenues.
+2. `tests/conftest.py:425` appelle `os._exit` en fin de session, ce qui peut arrêter
+   pytest avant l'écriture JUnit. Le plugin temporaire `r2_reports` écrit le rapport
+   avant ce hook et expose les échecs. Il ne change aucun test, aucune assertion,
+   aucun statut et aucune fixture. Les rapports ont été lus après terminaison.
+
+Vitest utilise `npm_config_offline=true`, `--configLoader runner` et `--no-cache`
+pour employer les dépendances déjà présentes sans écrire dans leur répertoire
+partagé. Les fichiers de tests ne dépendent d'aucun auxiliaire sous `/tmp`.
+
+
+Commande backend de la porte groupée, exécutée depuis cet arbre :
+
+```sh
+PYTHONPATH=/tmp/divers-ui-r2-harness OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest \
+  tests/test_b1991_fournisseur_agenda_inconnu.py \
+  tests/test_routers_calendar.py \
+  tests/test_regression_facturation_agenda.py \
+  tests/test_frontiere_facturation_agenda.py \
+  tests/test_c22b_caldav_ecriture.py \
+  tests/test_calendar_allday_semantics.py \
+  tests/test_google_calendar_civil_time.py \
+  tests/test_calendar_jeton_de_version.py \
+  tests/test_calendar_rappel_par_defaut.py \
+  tests/test_c20_b1888_transaction_activites.py \
+  tests/test_c20_b1889_notes_heritees.py \
+  tests/test_c20_b1890_activites_sans_contact.py \
+  tests/test_c20_b1891_reparation_transaction.py \
+  tests/test_activity_migration.py \
+  tests/test_b1153_migration_colonnes.py \
+  tests/test_b1140_migration_sans_verrou.py \
+  tests/test_b1153_rejeu_astra_v2.py \
+  tests/test_r5_9_notes.py \
+  tests/test_r5_6_journal.py \
+  tests/test_migration_errors.py \
+  tests/test_c20_b2010_limite_cle.py \
+  tests/test_c20_b2011_cle_sans_espace.py \
+  tests/test_b1348_verification_cle.py \
+  tests/test_c20_b2009_motifs_ambigus.py \
+  tests/test_c19d_b1088_securite_memoire.py \
+  tests/test_r2_2_protection.py \
+  tests/test_c20_b1893_provenance_sans_marque.py \
+  tests/test_t4_4_historique_documents.py \
+  tests/test_t4_10_finitions.py \
+  -q -p no:cacheprovider -p r2_reports --timeout=120 \
+  --junitxml=/tmp/divers-ui-r2.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Après les tests voisins de chaque correctif frontend, commande finale dans
+`src/frontend`, limitée aux dix fichiers de tests ajoutés ou modifiés :
+
+```sh
+npm_config_offline=true npx vitest run \
+  src/components/atelier/AgentSession.accordMoteur.test.tsx \
+  src/components/atelier/AgentSession.profilChange.b2012.test.tsx \
+  src/components/atelier/AgentSession.refusDestination.b2013.test.tsx \
+  src/components/atelier/AgentSession.refusHttp.b2013.test.tsx \
+  src/components/invoices/InvoiceForm.abandonPaiement.b2014.test.tsx \
+  src/components/invoices/InvoiceForm.focusAbandon.b2014.test.tsx \
+  src/components/invoices/InvoiceForm.pied.c19d.test.tsx \
+  src/components/invoices/InvoiceForm.soumission.test.tsx \
+  src/components/calendar/EventForm.test.tsx \
+  src/components/prototype/usePrototypeMeetingData.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=json --outputFile=/tmp/divers-ui-r2-vitest.json && \
+npm_config_offline=true npx tsc --noEmit && npm run lint
+```
+
+Les trois passages voisins frontend ont porté sur `InvoiceForm` et
+`useDialogFocusTrap` (176 tests, 45 fichiers), `AgentSession` (32 tests,
+15 fichiers), puis `EventForm` et `usePrototypeMeetingData` (34 tests,
+7 fichiers), toujours avec trois workers maximum. Les 67 fichiers sont distincts :
+**242 tests voisins réussis**, dont les 44 tests rejoués dans la porte finale.
+Les rapports correspondants sont `/tmp/divers-ui-r2-c5-vert.json`,
+`/tmp/divers-ui-r2-c7-vert.json` et `/tmp/divers-ui-r2-c2-vert.json` ; ils ont été lus.
+
+
+### Résultats définitifs de la passe 2
+
+| Porte | Périmètre | Réussis | Échecs / erreurs | Ignorés |
+| --- | --- | ---: | ---: | ---: |
+| Pytest | 29 fichiers touchés ou voisins ; `/tmp/divers-ui-r2.xml` | 659 | 0 / 0 | 0 |
+| Vitest final | 10 fichiers de tests ajoutés ou modifiés ; `/tmp/divers-ui-r2-vitest.json` | 44 | 0 | 0 |
+| Vitest voisins supplémentaires | 57 fichiers distincts, hors des dix fichiers de la porte finale | 198 | 0 | 0 |
+| Ruff | `src/backend tests`, sans correction automatique, après la porte Pytest | contrôle réussi | 0 diagnostic | sans objet |
+| TypeScript | `npx tsc --noEmit` | contrôle réussi | 0 diagnostic | sans objet |
+| ESLint | `npm run lint` | contrôle réussi | 0 erreur, 27 avertissements | sans objet |
+
+Le XML final a été lu après le code de sortie 0 : 659 cas, zéro `failure`, zéro
+`error`, zéro `skipped`, durée 621,836 secondes. Les JSON frontend final et voisins
+ont également été lus. Les 27 avertissements ESLint concernent des fichiers
+non modifiés par cette passe ; aucun seuil ni règle n'a été assoupli. Aucun rouge
+connu n'a été exclu d'un résultat : les fichiers signalés dans la demande ne font
+pas partie du périmètre ciblé.
+
+Les retours au vert intermédiaires comprennent 66 tests voisins de lecture agenda,
+26 tests de création et de frontières agenda, 170 puis 172 tests des migrations
+d'activités, 309 tests des notes, messages de clé et protections mémoire, et
+53 tests pour la reprise complète de provenance et vérification de clé. Ces
+exécutions ne sont pas additionnées à la porte finale.
+
+`git diff --check` ne signale aucune erreur d'espacement. L'index est inchangé,
+`HEAD` reste `41559324` et les 24 fichiers du lot migrations restent identiques à
+`75498edd`. Les changements de cette passe sont tous non indexés et non commités.
+La reprise du contenu est terminée ; le rebase de l'historique reste à effectuer
+par l'orchestrateur, avec les droits Git nécessaires.

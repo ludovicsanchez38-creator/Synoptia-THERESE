@@ -801,6 +801,11 @@ async def list_events(
     """
     # Get calendar from DB to determine provider
     calendar = await session.get(Calendar, calendar_id)
+    if (calendar_id == "primary" and account_id and calendar
+            and calendar.provider not in ("local", "caldav", "google")):
+        # Même destination réelle qu'à la création malgré la ligne homonyme.
+        calendar = await _resoudre_primary_google(account_id, session)
+        calendar_id = calendar.id
     if calendar is None and calendar_id == "primary" and not account_id:
         calendar = await _agenda_principal_local(session)
 
@@ -1202,6 +1207,8 @@ async def create_event(
     """
     # Determine provider from calendar
     calendar = await session.get(Calendar, request.calendar_id)
+    if request.calendar_id_is_stored and calendar is None:
+        raise HTTPException(status_code=404, detail=f"Calendrier introuvable : {request.calendar_id}")
     # Cycle 6 : même repli qu'à la lecture et à la suppression (B-557).
     if calendar is None and request.calendar_id == "primary" and not account_id:
         calendar = await _agenda_principal_local(session)
@@ -1209,8 +1216,8 @@ async def create_event(
             request.calendar_id = calendar.id
 
     if calendar and calendar.provider not in ("local", "caldav", "google"):
-        if account_id and "calendar_id" not in request.model_fields_set:
-            # Un alias implicite ne sélectionne pas la ligne homonyme.
+        if account_id and request.calendar_id == "primary" and not request.calendar_id_is_stored:
+            # L'alias, implicite ou explicite, ne sélectionne pas la ligne homonyme.
             calendar = await _resoudre_primary_google(account_id, session)
             request.calendar_id = calendar.id
         else:
@@ -1235,7 +1242,7 @@ async def create_event(
 
 
 async def _resoudre_primary_google(account_id: str, session: AsyncSession) -> Calendar:
-    """Résout l'alias dans le compte demandé avant toute écriture d'événement."""
+    """Résout l'alias dans le compte demandé avant lecture ou écriture d'événement."""
     account = await session.get(EmailAccount, account_id)
     if account is None:
         raise HTTPException(status_code=404, detail="Account not found")
