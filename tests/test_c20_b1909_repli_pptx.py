@@ -25,3 +25,5 @@ async def test_repli_pptx_convertit_les_puces_markdown(tmp_path):
     assert "Le calcul 2 * 3 reste lisible." in textes
     assert any(run.text == "élément clé" and run.font.bold for p in paragraphes for run in p.runs)
     assert any(run.text == "priorité" and run.font.italic for p in paragraphes for run in p.runs)
+    assert any(run.text == "une source" and run.hyperlink.address == "https://exemple.fr"
+               for p in paragraphes for run in p.runs)
