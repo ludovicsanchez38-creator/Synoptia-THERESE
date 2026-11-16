@@ -219,7 +219,7 @@ export function DocumentsList() {
       generationLanceeRef.current.add(id);
       setWorkspaceOpenId(id);
       try {
-        await openDocument(id);
+        if (!await openDocument(id)) return;
         await generateOutline(id);
       } finally {
         // La garde ne sert qu'à empêcher DEUX générations pour la même création

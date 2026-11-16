@@ -25,6 +25,7 @@ import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
 import { effortXhighPropose } from '../../lib/effortOpenAI';
+import { ordonnerEnregistrementLLM } from '../../lib/enregistrementLLM';
 import { modeleParDefaut } from '../../lib/catalogueModeles';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
@@ -565,11 +566,14 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     choix: number, provider: api.LLMProvider, model: string,
     options: { effort?: LLMEffort | (() => LLMEffort); baseUrl?: string; conserverOptions?: boolean } = {},
   ): Promise<boolean> {
-    const enregistrement = enregistrementLLM.current.then(async () => {
+    const enregistrement = ordonnerEnregistrementLLM(async () => {
       // Une option explicitement demandée reste à enregistrer, même si un
       // choix de modèle la suit. Tous les POST passent par cette même file.
       if (choix !== dernierChoixLLM.current && !options.conserverOptions) return false;
-      const effort = typeof options.effort === 'function' ? options.effort() : options.effort;
+      const demande = typeof options.effort === 'function' ? options.effort() : options.effort;
+      // Une option peut reprendre le modèle dont la lecture est encore en
+      // attente : elle doit alors respecter les efforts de ce nouveau modèle.
+      const effort = demande === 'xhigh' && !effortXhighPropose(model) ? 'auto' : demande;
       if (options.baseUrl !== undefined) await api.setLLMConfig(provider, model, effort, options.baseUrl);
       else await api.setLLMConfig(provider, model, effort);
       if (effort !== undefined) effortLLMEnregistre.current = { valeur: effort };
@@ -662,7 +666,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         // Une option sauvée pendant le GET prévaut sur cette lecture ancienne.
         const actuel = effortLLMEnregistre.current !== effortAvantLecture
           ? effortLLMEnregistre.current?.valeur : effort;
-        return actuel === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : actuel ?? 'auto';
+        return actuel ?? 'auto';
       } })) return;
       setSelectedModel(modelId);
       setOperationStatus('Modèle IA enregistré.');
@@ -679,15 +683,19 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   }
 
   async function handleSaveLLMOptions(options: { effort?: LLMEffort; baseUrl?: string }): Promise<boolean> {
-    const model = modelesDemandes.current[selectedProvider]?.model ?? selectedModel;
+    const modeleEnAttente = modelesDemandes.current[selectedProvider];
+    const model = modeleEnAttente?.model ?? selectedModel;
     if (!model) return false;
     const choix = ++dernierChoixLLM.current;
     try {
       if (!await enregistrerChoixLLM(choix, selectedProvider, model, { ...options, conserverOptions: true })) return false;
       setSelectedModel(model);
+      if (modeleEnAttente) setOperationStatus('Modèle IA enregistré.');
       return true;
     } catch (err) {
-      if (!await retablirConfigurationLLM(choix)) return false;
+      // L'option demandée doit signaler son refus même si un modèle plus
+      // récent interdit de restaurer l'ancienne sélection.
+      if (await retablirConfigurationLLM(choix) && modeleEnAttente) setOperationStatus(null);
       throw err;
     }
   }

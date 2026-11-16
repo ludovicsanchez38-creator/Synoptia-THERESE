@@ -211,3 +211,89 @@ OLLAMA_BASE_URL=http://127.0.0.1:9 \
 - `git diff --check` : **sortie 0** ; index vide, HEAD inchangé. Le contrôle d’ascendance reste rouge et maintient le NO-GO.
 
 Aucun serveur applicatif, port réservé, fournisseur LLM ou service réseau n’a été utilisé. Les accès HTTP/IPC frontend sont doublés ; certains tests antérieurs contiennent les ports historiques dans leurs chaînes, sans connexion réelle. Aucun accès au dossier de données personnel ni à `.app-loop/`. Les vérifications d’interface portent sur le DOM des vrais composants ; aucune recette native Tauri ni validation graphique nouvelle n’est revendiquée.
+
+## Remédiation de la relecture, passe 2
+
+Intervention des 16–17 novembre 2026 dans ce seul arbre. HEAD est resté à `4ebf0da70440700dfd5b77f6670883baccb789d0`, l’intégration locale à `75498edd9d40b0aeb14f8c02787a56b4dea27a28`. Aucun commit, ajout à l’index, dépôt annexe, bundle, réseau, fournisseur LLM, serveur applicatif, port réservé ou dossier personnel utilisé. Les liens non suivis `.venv` et `src/frontend/node_modules` étaient présents au départ et sont conservés.
+
+### Constat 1 : contenu restauré, ascendance encore à corriger
+
+Le constat est confirmé : le point commun est `e82f038a`, et les quatre commits `2dd3d2b1`, `9eb74c5d`, `fcf446a5`, `75498edd` manquent à l’ascendance. Le profil du bac à sable accorde seulement la lecture de `.git` et interdit toute élévation : le rebase ne peut pas être exécuté ici. L’orchestrateur doit donc encore corriger l’ascendance ; le NO-GO sur ce point n’est pas déclaré levé.
+
+Le contenu des quatre commits a été reporté **sans index ni commit**, tests d’abord, puis sources après les reproductions rouges des migrations. Les **24 fichiers** concernés ont été comparés octet par octet à `c20/integration` : **0 divergence**. Cela restitue aussi les autres correctifs, tests et bilan de ce lot d’intégration (agents, facture, focus, provenance, refus mémoire et vérification des clés), sans modification supplémentaire de leur contenu. **11 cas backend et 9 cas frontend** sont ainsi récupérés. Les tests Board déjà présents n’ont pas été modifiés.
+
+### Preuves rouges et correctifs
+
+Chaque reproduction ci-dessous a été exécutée seule avant son correctif : fichier dédié ou filtre `-t R2-N` pour un fichier partagé. Les suites voisines ont ensuite été lancées après chaque correction. Les lignes sont recopiées des journaux réels ; celles du constat 1 viennent des XML, le hook `pytest_sessionfinish` existant interrompant le résumé terminal. Les chemins frontend sont relatifs à `src/frontend/src` ; les chemins Python sont relatifs à la racine.
+
+| Constat | Test ajouté ou rétabli | Ligne rouge observée | Correctif |
+| --- | --- | --- | --- |
+| 1 | `tests/test_c20_b1888_transaction_activites.py::test_reconstruction_preserve_la_transaction_appelante` ; `tests/test_c20_b1889_notes_heritees.py::test_note_rattachee_preservee_si_evenement_sans_projet` | `AssertionError: La transaction de l’appelant a été validée.` ; `AssertionError: assert None == 'projet-existant'` | Report exact de l’intégration : ne valide plus la transaction appelante ; conserve le rattachement d’une note tant que le rendez-vous n’a pas de projet. Ascendance non modifiée, limite ci-dessus. |
+| 2 | `components/settings/SettingsModal.ecrituresLLM.r1.test.tsx`, `R2-2` (1 cas) | `AssertionError: expected 'mistral-small-2603' to be 'mistral-large-latest' // Object.is equality` | File d’écriture commune à `SettingsModal` et `ChatInput`, conservée à la fermeture des réglages. Test avec les deux vrais composants, POST différé, dernier modèle enregistré et maximum d’un POST actif. |
+| 3 | Même fichier, `R2-3` (effort et adresse, 2 cas) | `TestingLibraryElementError: Unable to find an accessible element with the role "alert"` | Le refus d’une option remonte à son appelant même lorsque la restauration du modèle est devenue périmée. Le modèle plus récent reste enregistré, l’erreur de l’option reste lisible. |
+| 4 | Même fichier, `R2-4` (1 cas) | `AssertionError: expected 'xhigh' to be 'auto' // Object.is equality` | Normalisation déplacée dans le chemin commun d’écriture des réglages : une option reprenant `gpt-5.6-luna` pendant la lecture du choix remplace `xhigh` par `auto`. Teste aussi le sélecteur et l’absence de POST supplémentaire. |
+| 5 | `components/documents/DocumentsList.creationFermee.r2.test.tsx`, `R2-5` (lecture tardive réussie ou refusée, 2 cas) | `AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times` | `openDocument` renvoie un résultat explicite ; la création n’enchaîne la trame que si sa lecture a abouti. Parcours testé avec les vrais liste, modale, atelier et store : fermeture de A, ouverture de B, puis génération de B possible. |
+| 6 | `stores/documentStore.trameRetrouvee.b1394.test.ts`, `R2-6` (3 cas) | `AssertionError: expected [ 'doc-1', 'doc-2', 'doc-1' ] to deeply equal [ 'doc-1', 'doc-2' ]` | Le sondage contrôle la session après chaque attente et avant de recharger ; la navigation détache le suivi précédent. Couvre le sondage terminé avant/après la lecture de B et le maintien du suivi pendant une relecture interne de A. Le premier cas était rouge, les deux autres sont des contrôles complémentaires. |
+| 7 | `stores/documentStore.ouvertureAnnulee.b1848.test.ts`, `R2-7` (1 cas) | `AssertionError: expected null to be 'Trame modifiée ailleurs.' // Object.is equality` | Session de navigation distincte du numéro de lecture. Un rafraîchissement de A conserve le conflit et sa resynchronisation ; fermeture, suppression ou autre document périment l’ancienne opération. |
+| 8 | Même fichier, `R2-8` (1 cas) | `AssertionError: expected [ { id: 'ancienne', …(11) } ] to deeply equal [ { id: 'recente', …(11) } ]` | La réussite d’une réorganisation contrôle elle aussi la session. Test avec une section fraîchement relue et un ancien instantané distinct après fermeture/réouverture de A. |
+| 9 | `components/settings/SettingsModal.ecrituresLLM.r1.test.tsx`, `R2-9` (réussite et refus, 2 cas) | `AssertionError: expected <p role="status" …(1)></p> to be null` | L’option qui reprend un choix de modèle termine aussi son statut : reçu de succès ou fin de l’attente avec erreur. Teste une adresse Qwen déjà saisie et une lecture de modèle différée. |
+| 10 | `components/settings/ToolsPanel.textesFrancais.c20.test.tsx`, `R2-10` (1 cas) | `TestingLibraryElementError: Unable to find an accessible element with the role "img" and name "Installé : démarrage en cours"` | `starting` possède son annonce et son indicateur d’attente ; les cas `stopped`, `error` et `running` sont conservés. |
+
+**14 nouveaux cas frontend**, dont **12 rouges avant correction** et 2 contrôles complémentaires du constat 6. Journaux individuels : `/tmp/front-reglages-r2-N-rouge.log` et `/tmp/front-reglages-r2-N-vert.log`, N de 2 à 10. Pour le constat 1 : `/tmp/front-reglages-r2-1-rouge.xml` et `/tmp/front-reglages-r2-1-note-rouge.xml`, tous deux lus. Aucune assertion existante retirée ou relâchée. Dans `DocumentsList.test.tsx`, les deux doublures de lecture réussie renvoient maintenant `true`, conformément au nouveau contrat ; les contrôles de génération et d’ordre sont inchangés. Les adaptations de tests d’agents et de facture sont celles, exactes, de l’intégration.
+
+### Appelants relus et tests voisins
+
+- Écritures IA : appels de `SettingsModal` vers `LLMTab`, sauvegardes d’adresse et d’effort, sélecteur et bouton de reprise de `ChatInput`. Après les constats 2, 3, 4 et 9 : respectivement **22**, **21**, **51** et **34** cas voisins verts.
+- Documents : création dans `DocumentCreateModal`, enchaînement dans `DocumentsList`, retour/démontage et réorganisation dans `DocumentWorkspace`, relectures après rédaction et suivi de trame dans le store. Le constat 7 a été corrigé avant le 6 pour réutiliser la session de navigation dans le sondage. Après les constats 5, 7, 6 et 8 : respectivement **125**, **107**, **128** et **109** cas voisins verts.
+- Connecteurs : `SettingsModal` monte `ToolsPanel`, qui passe les serveurs relus à ses catégories de presets ; `Spinner` masque déjà son icône décorative. Après le constat 10 : **28** cas voisins verts dans 8 fichiers.
+- Intégration : appels des migrations dans `database.py`, consommateurs de la provenance, des refus de mémoire et de la vérification des clés, montage d’`AgentSession` et d’`InvoiceForm`, piège de focus. **193** cas frontend voisins verts avant le contrôle final ; contrôles backend inclus ci-dessous.
+
+Ces nombres intermédiaires se recouvrent : ils ne s’ajoutent pas aux comptes finaux.
+
+### Portes ciblées finales
+
+**Backend : 549 passés, 0 échec, 0 erreur, 0 ignoré, sortie 0.** `/tmp/front-reglages-r2.xml` lu : 549 éléments `testcase`, aucune balise `failure`, `error` ou `skipped`. Aucun rouge connu soustrait. Liste exacte exécutée :
+
+```sh
+OLLAMA_BASE_URL=http://127.0.0.1:9 PYTHONPATH=/tmp .venv/bin/python -m pytest \
+  tests/test_c20_b1888_transaction_activites.py tests/test_c20_b1889_notes_heritees.py \
+  tests/test_c20_b1890_activites_sans_contact.py tests/test_c20_b1891_reparation_transaction.py \
+  tests/test_c20_b1893_provenance_sans_marque.py tests/test_c20_b2009_motifs_ambigus.py \
+  tests/test_c20_b2010_limite_cle.py tests/test_c20_b2011_cle_sans_espace.py \
+  tests/test_activity_migration.py tests/test_b1153_migration_colonnes.py \
+  tests/test_b1153_rejeu_astra_v2.py tests/test_b1140_migration_sans_verrou.py \
+  tests/test_r5_6_journal.py tests/test_b1348_verification_cle.py \
+  tests/test_t4_7_provenance.py tests/test_t4_4_historique_documents.py \
+  tests/test_c19d_b1088_securite_memoire.py tests/test_r2_2_protection.py \
+  -q -p no:cacheprovider -p front_reglages_r2_ipc --timeout=120 \
+  --junitxml=/tmp/front-reglages-r2.xml
+```
+
+**Adaptation d’exécution, pas un correctif produit :** le lancement natif s’est bloqué après 203 cas, à l’entrée du `TestClient` de `test_confirmation_journalise_issue_avant_traduction[resultat0-echouee]`. Interrompu, il n’a produit aucun XML final et n’est pas compté comme vert. Le diagnostic isolé avec `--timeout-method=thread` a atteint 120 s dans `anyio.from_thread`/le sélecteur asyncio (`/tmp/front-reglages-r2-diagnostic.log`). Une écriture dans une paire de sockets locale est refusée par ce bac à sable : `PermissionError [Errno 1] Operation not permitted`.
+
+Le module temporaire `/tmp/front_reglages_r2_ipc.py`, chargé uniquement par la commande ci-dessus, remplace la paire de sockets de réveil interne d’asyncio par `os.pipe2(O_NONBLOCK | O_CLOEXEC)`. Les lectures, écritures, fermetures et l’enregistrement du lecteur utilisent les pipes ; aucune route, API, donnée, assertion, fixture ou règle de délai n’est remplacée. Le test isolé passe alors (XML `/tmp/front-reglages-r2-ipc.xml` lu), puis les mêmes 18 fichiers passent intégralement. Cette adaptation n’est pas ajoutée au dépôt. Sur une machine permettant le réveil asyncio normal, retirer `PYTHONPATH=/tmp` et `-p front_reglages_r2_ipc`. Journal final : `/tmp/front-reglages-r2-backend-pipe.log`.
+
+**Frontend : 587 passés, 0 échoué, 0 ignoré, 142 fichiers passés sur 142, sortie 0.** Rapport `/tmp/front-reglages-r2-frontend.json` lu, journal `/tmp/front-reglages-r2-frontend.log`. Depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx vitest run \
+  src/components/settings/SettingsModal*.test.* \
+  src/components/settings/LLMTab*.test.tsx src/components/settings/ToolsPanel*.test.tsx \
+  src/components/chat/ChatInput*.test.tsx \
+  src/components/documents/DocumentsList*.test.tsx \
+  src/components/documents/DocumentWorkspace*.test.tsx \
+  src/components/documents/DocumentCreateModal*.test.tsx \
+  src/stores/documentStore*.test.ts \
+  src/components/atelier/AgentSession.*.test.tsx \
+  src/components/invoices/InvoiceForm.*.test.tsx \
+  src/hooks/useDialogFocusTrap*.test.tsx src/lib/effortOpenAI*.test.ts \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=json --outputFile=/tmp/front-reglages-r2-frontend.json
+```
+
+Le mode npm hors ligne interdit le téléchargement. `runner` et `--no-cache` évitent les écritures dans les dépendances partagées en lecture seule ; la configuration et les délais Vitest du dépôt restent inchangés. Aucune suite complète lancée.
+
+- TypeScript : `npx tsc --noEmit`, **sortie 0, 0 diagnostic** ; `/tmp/front-reglages-r2-tsc.log` lu et vide.
+- ESLint : `npm run lint`, **sortie 0, 0 erreur, 27 avertissements** ; `/tmp/front-reglages-r2-lint.log` lu, aucun nettoyage hors périmètre.
+- Ruff : `.venv/bin/python -m ruff check --no-fix src/backend tests`, **sortie 0**, `All checks passed!` ; `/tmp/front-reglages-r2-ruff.log` lu.
+- `git diff --check` : **sortie 0**. Tous les changements de cette passe restent non indexés et non commités. L’ascendance reste à corriger par l’orchestrateur.

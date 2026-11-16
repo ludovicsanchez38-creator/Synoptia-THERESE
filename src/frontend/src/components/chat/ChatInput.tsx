@@ -50,6 +50,7 @@ import { cn } from '../../lib/utils';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { estModeleOllamaCloud, FOURNISSEUR_OLLAMA_CLOUD, fournisseurDAccord } from '../../lib/ollamaCloud';
 import { effortRetireParLesOutils } from '../../lib/effortOpenAI';
+import { ordonnerEnregistrementLLM } from '../../lib/enregistrementLLM';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
@@ -308,7 +309,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     if (!currentProvider || newModel === currentModel) return;
     setModelChangeError(null);
     try {
-      const cfg = await setLLMConfig(currentProvider, newModel);
+      const cfg = await ordonnerEnregistrementLLM(() => setLLMConfig(currentProvider, newModel));
       setCurrentModel(cfg.model);
       setConsentProvider(cfg.consent_provider);
       setConsentLabel(cfg.consent_label ?? null);

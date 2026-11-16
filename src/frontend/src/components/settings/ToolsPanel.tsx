@@ -109,6 +109,10 @@ function PresetCategory({
                   (s) => s.name === preset.name && s.status === 'running'
                 );
                 const isInstalled = servers.some((s) => s.name === preset.name);
+                const isStarting = servers.some((s) => s.name === preset.name && s.status === 'starting');
+                const statutInstalle = isStarting
+                  ? 'Installé : démarrage en cours'
+                  : 'Installé mais inactif : à démarrer depuis les connecteurs';
                 const isInstalling = installingPreset === preset.id;
                 // B-1193 : le risque se lit avant le clic qui installe et démarre.
                 const risqueSignale = (preset.risk_level === 'high' || preset.risk_level === 'medium') && Boolean(preset.risk_warning);
@@ -170,8 +174,10 @@ function PresetCategory({
                         {isInstalling && <Spinner taille="bouton" className="text-accent-cyan-ink" />}
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-success" />}
                         {!isInstalling && isInstalled && !runningServer && (
-                          <span role="img" aria-label="Installé mais inactif : à démarrer depuis les connecteurs" title="Installé mais inactif : à démarrer depuis les connecteurs">
-                            <AlertCircle aria-hidden="true" className="w-4 h-4 text-warning" />
+                          <span role="img" aria-label={statutInstalle} title={statutInstalle}>
+                            {isStarting
+                              ? <Spinner taille="bouton" aria-hidden="true" />
+                              : <AlertCircle aria-hidden="true" className="w-4 h-4 text-warning" />}
                           </span>
                         )}
                       </div>
