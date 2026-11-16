@@ -1,15 +1,17 @@
 # Cycle 20 : lot front-maj
 
 Arbre : `therese-c20-lots/gpt-c20-front-maj`, branche `gpt/c20-front-maj`.
-État remis à la relecture : HEAD `f1087358`, rebasé sur `c20/integration`,
-arbre propre, neuf commits du lot. Les tests et correctifs du tableau
-ci-dessous sont déjà commités. Références contrôlées dans cet arbre.
+État remis à la relecture après la passe 1 : HEAD `7c94e52a`,
+tests `6ab9f8cf` et correctifs `7c94e52a` commités par l'orchestrateur.
+Les tests et correctifs du tableau historique ci-dessous sont également
+déjà commités. `c20/integration` n'est pas un ancêtre de cet état ;
+le constat 4 de la passe 2 reste ouvert.
 
 La reprise historique partait du rouge B-1950, maintenant `90e29bad` après
 rebase. Aucun commit n'avait été créé pendant cette reprise ;
 l'orchestrateur a ensuite commité les tests (`b53869ce`) et correctifs
 (`f1087358`). Les comptes ci-dessous sont historiques. Seule la section
-« Remédiation de la relecture, passe 1 » décrit le travail actuel, laissé
+« Remédiation de la relecture, passe 2 » décrit le travail actuel, laissé
 non commité. Aucun service réel n'est utilisé pour ses tests.
 
 Les identifiants sont présentés dans l'ordre demandé. B-1950 a été terminé
@@ -178,12 +180,16 @@ ci-dessus et terminer chaque message par
 
 ## Remédiation de la relecture, passe 1
 
-Départ vérifié : `f1087358`, arbre propre, `c20/integration` ancêtre de HEAD.
-Les changements de cette passe restent non commités. Aucun ajout à l'index,
-commit, push, dépôt annexe ou bundle. Aucun réseau, fournisseur LLM, serveur
-ou application THÉRÈSE lancé. Aucun accès au profil réel, à `.app-loop/`
-ou aux ports interdits. Les API frontend sont doublées ; pytest utilise
-un répertoire de données jetable sous `/tmp` et les sondes sont désactivées.
+Départ historique : `f1087358`. Cette passe a ensuite été commitée par
+l'orchestrateur : `6ab9f8cf` pour les tests et `7c94e52a` pour les correctifs.
+C'est cet état qui a été remis à la relecture contradictoire suivante.
+La mention d'ascendance de `c20/integration` dans le précédent bilan ne
+décrit pas l'intégration locale courante ; voir le constat 4 de la passe 2.
+Pendant la passe 1, aucun ajout à l'index, commit, push, dépôt annexe ou
+bundle n'avait été effectué par l'agent. Aucun réseau, fournisseur LLM,
+serveur ou application THÉRÈSE lancé. Aucun accès au profil réel,
+à `.app-loop/` ou aux ports interdits. API frontend doublées et données
+pytest jetables sous `/tmp`, sondes désactivées.
 
 ### Décisions et correctifs
 
@@ -239,11 +245,11 @@ un répertoire de données jetable sous `/tmp` et les sondes sont désactivées.
    dans son DOM et retrouve le même bouton par son nom. Aucun défaut
    d'usage antérieur n'est revendiqué. Le rouge de remédiation est le
    test documentaire de qualification, pas ce test de caractérisation.
-10. **Bilan après rebase, confirmé.** L'état remis à la relecture et ses
-    commits sont séparés de cette passe non commitée. Les références
-    héritées ont été remplacées par celles de la branche actuelle.
-    Un test vérifie ce rattachement et l'absence de « non commité »
-    dans les lignes du tableau historique.
+10. **Bilan après rebase, historique.** Le bilan de passe 1 distinguait
+    l'état `f1087358` de la remédiation alors en cours. Celle-ci a depuis
+    été commitée dans `6ab9f8cf` et `7c94e52a`. Le test de cette passe ne
+    contrôlait que le tableau historique ; R2-5 vérifie aussi l'état de
+    la passe 1 et le rattachement du travail actuel à la passe 2.
 
 ### Rouges isolés, observés avant correction
 
@@ -342,3 +348,125 @@ mandat ne font pas partie de la sélection et ne sont pas comptés.
 portes ciblées sont vertes. La réserve concerne l'annonce effective par
 un lecteur d'écran natif, non mesurée. Aucune installation réelle ni
 publication n'est revendiquée. La hauteur B-1957 reste hors de cette passe.
+
+## Remédiation de la relecture, passe 2
+
+Départ réellement constaté : HEAD `7c94e52a`, branche `gpt/c20-front-maj`.
+Les changements de cette passe restent non commités, sans ajout à l'index.
+Les seuls éléments non suivis présents au départ sont les liens `.venv`
+et `src/frontend/node_modules`, conservés tels quels. L'intégration locale
+est `75498edd`, qui contient `e82f038a` mais n'est pas un ancêtre de HEAD.
+Aucun réseau, fournisseur LLM, serveur ni application réelle utilisés.
+
+### Constats et corrections
+
+1. **Identité installée : corrigé.** La garde de `AboutTab` refuse aussi
+   de conclure face à la version finale du même numéro quand le moteur
+   n'a fourni aucun suffixe. Les métadonnées de build ne lèvent pas cette
+   ambiguïté. `AboutTab.identite.r1.test.tsx` couvre la préversion numérotée,
+   la finale et la finale avec métadonnées. L'alias historique `X.Y.Z-alpha`
+   reste couvert par le test existant. Les tests des régions accessibles
+   utilisent maintenant une identité explicite ; leurs assertions sont
+   conservées. Le cas SemVer d'égalité des builds utilise une préversion
+   explicite, et l'ancien couple de finales avec builds reste testé dans
+   le fichier d'identité, avec le refus de conclure désormais requis.
+2. **Passage à Faire pendant un deuxième flux : corrigé.** Le bouton et
+   `goToMake` gardent la transition tant que `reflectStreaming` est vrai.
+   L'aide reste reliée au bouton pendant ce deuxième échange. Deux tests
+   avec le vrai mini-chat vérifient l'absence d'interruption au clic, puis
+   la reprise de deux sources après la fin normale ou de la première
+   seulement après un arrêt volontaire. Les tests voisins de provenance
+   attendent désormais le bouton actif avant le clic ; leurs assertions
+   sur les sources, les refus et les suppressions sont conservées.
+3. **Fausse erreur pendant la lecture : corrigé.** Un état de lecture
+   distinct annonce l'attente dès le montage et pendant la lecture partagée
+   avec le clic. L'erreur et le lien manuel apparaissent après rejet ou
+   réponse sans version. Les assertions incorrectes de `reessai.r1` et
+   `versionVide.b1845` sont remplacées par l'attente sans alerte ni lien,
+   sans retirer l'interdiction d'appeler les publications avant la version.
+   Deux nouveaux cas couvrent l'échec différé et la réponse vide au montage.
+4. **Intégration absente : confirmé, non corrigé dans cet arbre.** Le
+   contrôle d'ascendance échoue encore. `mcp_service.py:541` traite l'échec
+   sans arrêter le processus ; `board.py:501` annonce encore la longueur
+   du texte de refus comme un contexte web. Les six fichiers de tests
+   ajoutés jusqu'à `e82f038a` sont absents, conformément à la relecture.
+   La branche locale d'intégration contient en outre les commits migrations
+   jusqu'à `75498edd`. Rebaser créerait des commits et écrirait dans les
+   métadonnées Git hors de l'arbre autorisé, contrairement au mandat.
+   Le rebase reste donc à effectuer par l'orchestrateur ; aucun correctif
+   backend d'intégration n'est recopié ni revendiqué ici. La question de
+   traitement a été transmise pendant le travail.
+5. **Bilan périmé : corrigé.** L'introduction et l'état de la passe 1 citent
+   les commits `6ab9f8cf` et `7c94e52a`. Seule cette passe 2 est annoncée
+   non commitée. Le test documentaire vérifie désormais aussi l'état de
+   la passe 1, l'introduction et la présence de cette section.
+
+### Rouges isolés avant les correctifs
+
+Chaque sélection ci-dessous a été lancée seule avant sa correction.
+Les cas hors sélection ne sont pas des tests ignorés de la porte finale.
+
+| Constat | Test sélectionné | Ligne d'échec observée |
+| --- | --- | --- |
+| 1 | `AboutTab.identite.r1.test.tsx`, cas final `v0.83.0` | `TestingLibraryElementError: Unable to find role="alert"` |
+| 2 | `RFCWizard.flux.r1.test.tsx`, `R2-2.*complète` | `Error: expect(element).toBeDisabled()` |
+| 3 | `AboutTab.reessai.r1.test.tsx`, `partage la lecture` | `Error: expect(element).not.toBeInTheDocument()` |
+| 4 | `/tmp/test_front_maj_r2_integration.py::test_l_integration_courante_est_un_ancetre_du_lot` | `AssertionError: c20/integration n'est pas un ancêtre de HEAD` |
+| 5 | `frontMaj.bilan.r1.test.ts`, `R2-5` | ``AssertionError: expected '\n\nDépart vérifié : `f1087358`, arbr…' to contain '6ab9f8cf'`` |
+
+Le rouge 1 est relevé dans la sortie du lancement isolé. Les journaux des
+rouges 2 à 5 sont `/tmp/front-maj-r2-N-rouge.log`. Le contrôle local de Git
+est jetable, hors suite produit : `/tmp/front-maj-r2-integration.xml`, lu,
+**1 échec, 0 erreur, 0 ignoré**. Il reste rouge et n'est pas présenté comme
+une réussite. Pour le reproduire sans ce fichier temporaire :
+`git merge-base --is-ancestor c20/integration HEAD` (sortie observée : 1).
+
+### Appelants et tests voisins
+
+Relus après chaque correction : `SettingsModal → AboutTab → useBackendStore`
+et `checkHealth`, puis `HomeCommands → RFCWizard → RFCChat` et
+`sourcesVerifiees`, jusqu'aux transitions vers Faire et Capturer.
+Après R2-1 : **35 tests passés, 10 fichiers**. Après R2-2 : **37 tests passés,
+15 fichiers** ; après R2-3 : **37 tests passés, 10 fichiers**. Rapports
+`/tmp/front-maj-r2-{1,2,3}-vert.json`, lus.
+Le premier lancement voisin RFC avait signalé deux attentes manquantes
+dans les tests d'aide et de provenance ; les attentes portent maintenant
+sur les mêmes assertions finales ou ajoutent la vérification du bouton
+actif. Aucun test n'est désactivé.
+
+### Portes de cette passe
+
+| Porte | Résultat lu | Preuve |
+| --- | --- | --- |
+| Vitest ciblé, 3 workers au maximum | **115 passés, 0 échoué, 0 ignoré, 0 todo ; 28 fichiers passés**, sortie 0 | `/tmp/front-maj-r2-vitest.json` |
+| TypeScript | **0 erreur**, sortie 0 | `/tmp/front-maj-r2-tsc.log`, vide |
+| ESLint | **0 erreur, 27 avertissements**, sortie 0 | `/tmp/front-maj-r2-lint.log` |
+| Pytest voisin updater | **16 passés, 0 échec, 0 erreur, 0 ignoré**, sortie 0 | `/tmp/front-maj-r2.xml`, XML lu |
+| Ruff backend et tests | **0 diagnostic**, sortie 0 | `/tmp/front-maj-r2-ruff.log` : `All checks passed!` |
+| Précondition de rebase, contrôle local distinct | **1 échec**, sortie 1 | `/tmp/front-maj-r2-integration.xml`, XML lu ; constat 4 ouvert |
+
+Sept cas frontend ajoutés et plusieurs assertions existantes renforcées ou
+adaptées au contrat corrigé. Le premier contrôle documentaire a signalé
+l'absence du nom littéral `c20/integration` dans l'introduction ; le texte
+a été précisé sans changer l'assertion, puis la sélection finale est passée.
+Les comptes ne cumulent pas les rejeux. Aucune suite complète n'a été lancée,
+aucun rouge connu n'a été sélectionné ou retranché, aucun lint ailleurs corrigé.
+
+Commandes reproductibles :
+
+```sh
+# Depuis src/frontend ; outils installés, mode hors ligne, pas de cache partagé.
+npx --offline --no-install vitest run src/components/settings/AboutTab src/components/ui/UpdateBanner src/components/rfc src/components/home/HomeCommands.assistantCommande.test.tsx src/components/home/HomeCommands.panneauGuide.test.tsx src/components/home/HomeCommands.cycle6.test.tsx src/hooks/useBackend.c9.test.ts src/test/frontMaj.annonces.r1.test.tsx src/test/frontMaj.bilan.r1.test.ts --configLoader runner --maxWorkers=3 --no-cache --reporter=json --outputFile=/tmp/front-maj-r2-vitest.json
+npx --offline --no-install tsc --noEmit
+npm run lint
+
+# Depuis la racine ; données et cache jetables, sans bytecode partagé.
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-maj-r2-data.XXXXXX)" PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest tests/test_b1111_manifeste_updater.py -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/front-maj-r2.xml
+RUFF_CACHE_DIR=/tmp/front-maj-r2-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+git merge-base --is-ancestor c20/integration HEAD
+```
+
+**VERDICT : NO-GO tant que le constat 4 reste ouvert.** Les constats 1, 2,
+3 et 5 sont corrigés et leurs portes ciblées sont vertes. L'orchestrateur
+doit encore remettre ce lot sur l'intégration courante et rejouer les
+vérifications. Aucun commit ni ajout à l'index pendant cette passe.

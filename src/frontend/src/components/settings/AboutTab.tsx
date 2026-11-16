@@ -95,11 +95,16 @@ export function AboutTab() {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
   const [latestRelease, setLatestRelease] = useState<ReleaseInfo | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lectureVersionEnCours, setLectureVersionEnCours] = useState(false);
   const lectureVersion = useRef<ReturnType<typeof checkHealth> | null>(null);
   const lireVersion = useCallback(() => {
     // Le clic partage la lecture du montage ; une lecture terminée peut être retentée.
     if (!lectureVersion.current) {
-      lectureVersion.current = checkHealth().finally(() => { lectureVersion.current = null; });
+      setLectureVersionEnCours(true);
+      lectureVersion.current = checkHealth().finally(() => {
+        lectureVersion.current = null;
+        setLectureVersionEnCours(false);
+      });
     }
     return lectureVersion.current;
   }, []);
@@ -110,6 +115,7 @@ export function AboutTab() {
     let annule = false;
     lireVersion()
       .then((health) => {
+        if (!health.version) throw new Error(VERSION_INCONNUE);
         if (!annule) useBackendStore.getState().setConnected(health);
       })
       .catch(() => {
@@ -129,7 +135,6 @@ export function AboutTab() {
 
     try {
       if (!versionInstallee) {
-        setErrorMsg(VERSION_INCONNUE);
         const health = await lireVersion().catch(() => { throw new Error(VERSION_INCONNUE); });
         if (!health.version) throw new Error(VERSION_INCONNUE);
         useBackendStore.getState().setConnected(health);
@@ -159,10 +164,10 @@ export function AboutTab() {
         throw new Error('Impossible de vérifier les mises à jour : version installée ou publiée illisible.');
       }
       // Le moteur historique donne X.Y.Z pour la livraison X.Y.Z-alpha.
-      // Ce numéro ne situe pas une préversion numérotée du même cœur.
+      // Ce numéro ne situe ni une préversion numérotée ni la finale du même cœur.
       const numero = versionInstallee.trim().replace(/^v/i, '').split('+')[0];
       const tag = latest.tag_name.trim().replace(/^v/i, '').split('+')[0];
-      if (/^\d+\.\d+\.\d+$/.test(numero) && tag.startsWith(`${numero}-`) && tag !== `${numero}-alpha`) {
+      if (/^\d+\.\d+\.\d+$/.test(numero) && (tag === numero || (tag.startsWith(`${numero}-`) && tag !== `${numero}-alpha`))) {
         throw new Error('Impossible de vérifier la version exacte de la livraison installée. Consulte le téléchargement manuel.');
       }
 
@@ -287,7 +292,9 @@ export function AboutTab() {
           {/* Région persistante : annonce l'attente puis son résultat. */}
           <div role="status" aria-live="polite" aria-atomic="true"
             className={updateStatus === 'up-to-date' || updateStatus === 'update-available' ? undefined : 'sr-only'}>
-            {updateStatus === 'checking' && (
+            {lectureVersionEnCours ? (
+              <p className="sr-only">Lecture de la version installée en cours...</p>
+            ) : updateStatus === 'checking' && (
               <p className="sr-only">Vérification des mises à jour en cours...</p>
             )}
             {updateStatus === 'up-to-date' && (

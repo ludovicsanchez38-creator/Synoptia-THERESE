@@ -80,6 +80,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   }, []);
 
   const goToMake = useCallback(async () => {
+    if (reflectStreaming) return;
     // Tour 7 : une réponse refusée ou interrompue n'est simplement pas
     // reprise. Seule l'absence de toute réponse vérifiée arrête la suite.
     if (!sourcesVerifiees(reflectMessages).length) {
@@ -88,7 +89,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
     }
     setError('');
     setStep('make');
-  }, [reflectMessages]);
+  }, [reflectMessages, reflectStreaming]);
 
   const goToCapture = useCallback(async () => {
     if (makeStreaming || isGenerating) return;
@@ -229,7 +230,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
               </div>
               <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
                 {/* B-636 : un bouton désactivé sans explication. L'aide dit ce qui manque. */}
-                {!reflectHasSource ? (
+                {!reflectHasSource || reflectStreaming ? (
                   <p id="rfc-aide-passer-a-faire" className="text-xs text-text-muted">
                     {reflectStreaming
                       ? 'THÉRÈSE répond. Attends une réponse complète avant de passer à Faire.'
@@ -243,8 +244,8 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 <Button
                   variant="primary"
                   onClick={goToMake}
-                  disabled={reflectMessages.length === 0}
-                  aria-describedby={!reflectHasSource ? 'rfc-aide-passer-a-faire' : undefined}
+                  disabled={reflectMessages.length === 0 || reflectStreaming}
+                  aria-describedby={!reflectHasSource || reflectStreaming ? 'rfc-aide-passer-a-faire' : undefined}
                   className="flex items-center gap-2 text-sm shrink-0"
                 >
                   Passer à Faire
