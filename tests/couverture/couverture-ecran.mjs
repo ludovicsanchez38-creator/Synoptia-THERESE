@@ -155,6 +155,11 @@ export function requeteAutorisee(methode, adresse) {
     && !url.search;
 }
 
+// B-2029 : acquittement local uniquement, sans autoriser cette écriture réseau.
+export function requeteASimuler(methode, adresse) {
+  return methode === 'POST' && adresse === `${ORIGINE_BACKEND}/api/chat/cache-migration`;
+}
+
 function adresseSansSecrets(adresse) {
   try {
     const url = new URL(adresse);
@@ -176,9 +181,16 @@ export function gesteExclu(nom, { ecran, role, agentId } = {}) {
 }
 
 export function installerGardeReseau(contexte, garde) {
+  garde.ecritures_simulees ??= { nombre: 0, requetes: [] };
   return Promise.all([
-    contexte.route('**/*', (route) => {
+    contexte.route('**/*', async (route) => {
       const requete = route.request();
+      if (requeteASimuler(requete.method(), requete.url())) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+        garde.ecritures_simulees.nombre += 1;
+        garde.ecritures_simulees.requetes.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
+        return;
+      }
       if (requeteAutorisee(requete.method(), requete.url())) return route.continue();
       garde.bloquees.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
       try {
@@ -552,7 +564,10 @@ async function principal() {
   mkdirSync(args.sortie, { recursive: true });
   const navigateur = await chromium.launch();
   const combinaisons = [];
-  const garde = { bloquees: [], websockets_bloques: [], telechargements: [], popups: [], portReel: false };
+  const garde = {
+    bloquees: [], websockets_bloques: [], telechargements: [], popups: [], portReel: false,
+    ecritures_simulees: { nombre: 0, requetes: [] },
+  };
   let ecranEnCours = null;
   try {
     for (const largeur of args.largeurs) {
