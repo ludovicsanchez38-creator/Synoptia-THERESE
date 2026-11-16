@@ -299,7 +299,9 @@ export function useDialogFocusTrap(
       }
       if (e.key !== 'Tab') return;
 
-      const focusables = dialog!.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      // Les commandes masquées ne sont plus dans l'ordre de tabulation.
+      const focusables = Array.from(dialog!.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        .filter((element) => !element.closest('[hidden]'));
       if (focusables.length === 0) return;
 
       const first = focusables[0];

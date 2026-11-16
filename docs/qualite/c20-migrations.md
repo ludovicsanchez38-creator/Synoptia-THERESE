@@ -60,3 +60,26 @@ Une première exécution backend, interrompue avant les tests qui écrivent dans
 Les deux tests historiques qui écrivent leurs preuves sous `.app-loop` ont été lancés avec une redirection limitée à ces écritures vers `/tmp/c20-migrations-preuves` : leurs huit cas sont passés et aucun dossier `.app-loop` n'a été créé. La garde temporaire interdit aussi les connexions externes et les trois ports exclus. La commande Vitest brute avait d'abord échoué au démarrage avec `EPERM` sur son fichier temporaire dans `node_modules` ; aucun test n'avait alors été exécuté.
 
 Pour les prochains lots, une commande de rejeu de chaque nouveau test sur la base initiale pourrait automatiser cette vérification répétée avant les commits de l'orchestrateur.
+
+## Remédiation de la relecture, passe 1
+
+Les deux constats sont confirmés. Les changements restent non commités pour permettre le rejeu des tests sans les correctifs de production.
+
+| Constat | Test isolé avant correction | Rouge observé | Correction et vérification |
+| --- | --- | --- | --- |
+| 1. B-2013 | `src/components/atelier/AgentSession.refusHttp.b2013.test.tsx` | `Error: expect(element).toHaveTextContent()` dans les deux callbacks. Attendu : « Ce profil d’agent est introuvable. Reviens au catalogue. » ; reçu : le message demandant de vérifier la connexion au moteur. | Le vrai `getAgentConsent` et `request` reçoivent un HTTP 404 simulé. Les deux callbacks affichent désormais le refus métier HTTP 4xx ; une coupure conserve son message distinct. Les tests vérifient aussi l'absence de mission et les deux coupures. |
+| 2. B-2014 | `src/components/invoices/InvoiceForm.focusAbandon.b2014.test.tsx` | `Error: expect(element).toHaveFocus()` pour Tab et Maj+Tab. Le focus restait sur « Abandonner » dans un sens et visait le bouton masqué « Créer » dans l'autre. | Le piège clavier exclut les descendants d'un élément `hidden`. Les deux extrémités sont vérifiées dans le formulaire réel ; les tests voisins couvrent notamment la reprise de saisie et la conversion. |
+
+Les chemins des tests ci-dessus sont relatifs à `src/frontend`. Pour rejouer chaque rouge isolément depuis ce répertoire, lancer respectivement :
+
+```sh
+VITE_THERESE_BACKEND_PORT=9 npm_config_offline=true npx --no-install vitest run src/components/atelier/AgentSession.refusHttp.b2013.test.tsx --configLoader runner --maxWorkers=1
+VITE_THERESE_BACKEND_PORT=9 npm_config_offline=true npx --no-install vitest run src/components/invoices/InvoiceForm.focusAbandon.b2014.test.tsx --configLoader runner --maxWorkers=1
+```
+
+Portes de cette passe, sans suite complète :
+
+- Backend ciblé : **6 réussis, 0 échec, 0 erreur, 0 ignoré**, vérifiés dans `/tmp/migrations-r1.xml` : `tests/test_t4_3_accord_atelier.py` et les deux tests `test_mark_invoice_paid` et `test_mark_invoice_paid_default_date` de `tests/test_routers_invoices.py`.
+- Ruff sur `src/backend tests` : **0 erreur**.
+- Frontend : **207 tests réussis dans 60 fichiers** : tests `AgentSession`, `InvoiceForm` et `useDialogFocusTrap`. Les appels HTTP du test frontend sont simulés ; les connexions et écoutes réseau étaient interdites pendant les exécutions.
+- TypeScript : **0 erreur**. ESLint : **0 erreur, 27 avertissements**, dans des fichiers non modifiés.

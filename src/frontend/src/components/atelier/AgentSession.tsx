@@ -36,7 +36,7 @@ import { Alerte } from "../ui/Alerte";
 import { Etiquette } from "../ui/Etiquette";
 import { CloudConsentDialog } from "../shared/CloudConsentDialog";
 import { grantCloudConsent, responseDataCategories } from "../../lib/consent";
-import { AccordNonEnregistre, viderLesAccords } from "../../services/api/core";
+import { AccordNonEnregistre, ApiError, viderLesAccords } from "../../services/api/core";
 import { libelleDuFournisseur } from "../../lib/libellesFournisseurs";
 
 const DONNEES_AGENT = [...responseDataCategories(),
@@ -518,6 +518,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           ? 'La mission n’a pas démarré. Le profil a changé. Reviens au profil concerné avant de réessayer.'
           : erreur instanceof AccordNonEnregistre
           ? `La mission n’a pas démarré : ton accord n’a pas été enregistré par le moteur. ${erreur.message}`
+          : erreur instanceof ApiError && erreur.status >= 400 && erreur.status < 500
+          ? `La mission n’a pas démarré : ${erreur.message}`
           : "La mission n’a pas démarré : tes accords ou la destination ne peuvent pas être vérifiés. Vérifie la connexion au moteur, puis réessaie.",
       );
     } finally {
@@ -555,6 +557,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           ? 'La mission n’a pas démarré. Le profil a changé. Reviens au profil concerné avant de réessayer.'
           : erreur instanceof AccordNonEnregistre
           ? `La mission n’a pas démarré : ton accord n’a pas été enregistré par le moteur. ${erreur.message}`
+          : erreur instanceof ApiError && erreur.status >= 400 && erreur.status < 500
+          ? `La mission n’a pas démarré : ${erreur.message}`
           : "La mission n’a pas démarré : ton accord n’a pas pu être enregistré ou la destination a changé. Vérifie la connexion au moteur, puis réessaie.",
       );
     } finally {
