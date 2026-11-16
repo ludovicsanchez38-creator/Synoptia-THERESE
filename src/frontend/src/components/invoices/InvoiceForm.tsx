@@ -216,6 +216,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // (B-228) : le piège ne le traite pas.
   const dialogueRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogueRef, { active: true });
+  // B-1981 : la confirmation est dans le même dialogue. Sans piège propre,
+  // Tab depuis « Convertir » revient aux champs masqués par le voile.
+  const conversionRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(conversionRef, { active: showConvertDialog });
 
   // B-228 : la modale n'était inscrite NI dans la pile Échap NI dans le
   // panelStore. `consommeEchapUnifie` rendait donc false, la cascade de la coque
@@ -1195,6 +1199,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           >
             <div className="absolute inset-0 bg-black/60 rounded-md" />
             <div
+              ref={conversionRef}
               role="dialog"
               aria-modal="true"
               aria-label="Confirmer la conversion"
