@@ -66,7 +66,7 @@ describe('EmailCompose - confirmation 0.40', () => {
         subject: 'Point de suivi',
         body: 'Bonjour, voici le point demandé.',
         html: false,
-      });
+      }, expect.any(AbortSignal));
     });
   });
 

@@ -111,27 +111,42 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
       setSending(true);
       setError(null);
 
+      const abandon = new AbortController();
+      let delai: ReturnType<typeof setTimeout> | undefined;
       try {
-        // BUG-085 : timeout client (35s) pour ne pas bloquer le spinner
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 35000)
-        );
-
-        await Promise.race([
-          api.sendEmail(currentAccountId, email),
-          timeoutPromise,
-        ]);
+        // BUG-085 : 35 s pour ne pas bloquer le spinner. B-1838 : ce délai
+        // coupe l'appel, et il est désarmé si l'envoi finit avant.
+        await new Promise<void>((resolve, reject) => {
+          delai = setTimeout(() => {
+            abandon.abort();
+            reject(new Error('TIMEOUT'));
+          }, 35000);
+          void api.sendEmail(currentAccountId, email, abandon.signal).then(
+            () => {
+              if (delai !== undefined) clearTimeout(delai);
+              resolve();
+            },
+            (erreur: unknown) => {
+              if (delai !== undefined) clearTimeout(delai);
+              reject(erreur);
+            },
+          );
+        });
 
         clearDraft();
         setIsComposing(false);
       } catch (err) {
         console.error('Failed to send email:', err);
-        if (err instanceof Error && err.message === 'TIMEOUT') {
+        const delaiDepasse = err instanceof Error && (
+          err.message === 'TIMEOUT' || err.name === 'AbortError' || err.name === 'TimeoutError'
+        );
+        if (delaiDepasse) {
           setError("L'envoi a expiré. Vérifie ta connexion et la configuration email.");
         } else {
           setError(err instanceof Error ? err.message : "Échec de l'envoi");
         }
       } finally {
+        if (delai !== undefined) clearTimeout(delai);
         setSending(false);
       }
     });
