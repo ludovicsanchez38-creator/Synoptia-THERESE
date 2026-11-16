@@ -80,3 +80,27 @@ async def test_purge_automatique_signale_les_elements_restants(db_session, monke
     assert notification.type == "warning"
     assert "incomplète" in notification.title
     assert "recherche" in notification.message and "dossier-auto" in notification.message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cible", ["projet", "contact"])
+async def test_suppression_signale_le_depot_restant_apres_commit(
+    client, db_session, monkeypatch, cible,
+):
+    db_session.add(Contact(id="contact-partiel", first_name="Personne"))
+    db_session.add(Project(id="dossier-partiel", name="Dossier", contact_id="contact-partiel"))
+    await db_session.commit()
+    purge = AsyncMock(return_value=False)
+    monkeypatch.setattr(memory, "_purger_le_depot_du_dossier", purge)
+    url = (
+        "/api/memory/projects/dossier-partiel?cascade=true"
+        if cible == "projet" else "/api/memory/contacts/contact-partiel?cascade=true"
+    )
+    reponse = await client.delete(url)
+    assert reponse.status_code == 200
+    assert reponse.json()["deleted"] is False
+    assert "dossier-partiel" in reponse.json()["message"]
+    assert "fichier" in reponse.json()["message"].lower()
+    purge.assert_awaited_once_with("dossier-partiel")
+    db_session.expire_all()
+    assert await db_session.get(Project, "dossier-partiel") is None

@@ -183,6 +183,18 @@ describe('B-941 : confirmations Contacts et RGPD', () => {
     await waitFor(() => expect(api.deleteContactWithCascade).toHaveBeenCalledExactlyOnceWith('contact-c10', true));
   });
 
+  it('avertit durablement si un dépôt reste après suppression du contact', async () => {
+    const message = 'Le contact a été supprimé en base. Des fichiers du dossier restent sur disque.';
+    api.deleteContactWithCascade.mockResolvedValue({ deleted: false, message });
+    await ouvrirLaConfirmation(parcours[0]);
+    render(<Notifications />);
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+      expect.objectContaining({ message, duration: 0 }),
+    ]));
+  });
+
   it('reprend sur la recherche après suppression du dernier contact', async () => {
     await ouvrirLaConfirmation(parcours[0]);
     const dialogue = screen.getByRole('dialog', { name: 'Supprimer le contact ?' });

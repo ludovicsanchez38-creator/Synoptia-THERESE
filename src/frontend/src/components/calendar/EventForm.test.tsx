@@ -115,6 +115,20 @@ describe('EventForm - confirmation 0.40', () => {
       );
     });
   });
+
+  it.each(['local', 'caldav'])('utilise le compte de l’agenda %s même si un autre compte mail est sélectionné', async (provider) => {
+    seedCalendar(existingEvent, provider);
+    useCalendarStore.setState((state) => ({
+      calendars: state.calendars.map((cal) => ({ ...cal, account_id: null })),
+    }));
+    useEmailStore.setState({ currentAccountId: 'autre-compte' });
+    render(<PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer la modification' }));
+    await waitFor(() => expect(updateEventMock).toHaveBeenCalledWith(
+      'event-1', expect.anything(), 'calendar-1', undefined,
+    ));
+  });
 });
 
 // BUG-144 : un événement « toute la journée » limité à une seule date doit être

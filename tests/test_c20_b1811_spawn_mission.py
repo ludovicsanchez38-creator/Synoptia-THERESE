@@ -1,5 +1,8 @@
 """Un agent lancé dans l'Atelier occupe le verrou pendant sa mission."""
 
+import asyncio
+import json
+
 import pytest
 from app.models.database import get_session_context
 from app.models.entities_agents import AgentTask
@@ -62,3 +65,87 @@ async def test_spawn_libere_et_consigne_la_mission(client, monkeypatch, type_eve
         assert taches[0].status == statut
         assert taches[0].id not in agents._running_agent_tasks
         assert (taches[0].error is not None) is (type_evenement == "error")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interruption", ["fermeture", "sans_fin"])
+async def test_spawn_interrompu_n_est_pas_consigne_comme_termine(
+    db_session, monkeypatch, interruption,
+):
+    monkeypatch.setattr(agents, "_get_source_path", lambda: None)
+
+    async def execution_fictive(_runtime, _instruction):
+        yield AgentEvent(type="chunk", content="Début seulement")
+
+    monkeypatch.setattr(AgentRuntime, "run", execution_fictive)
+    demande = SpawnAgentRequest(profile_id="writer", instruction="Mission", model="local:test")
+    reponse = await agents.spawn_agent(demande, db_session)
+    flux = reponse.body_iterator
+    premier = json.loads((await anext(flux))[6:])
+    if interruption == "fermeture":
+        await flux.aclose()
+    else:
+        suite = [json.loads(chunk[6:]) async for chunk in flux]
+        assert suite and suite[-1]["type"] == "error"
+
+    async with get_session_context() as session:
+        tache = await session.get(AgentTask, premier["task_id"])
+        assert tache.status == ("cancelled" if interruption == "fermeture" else "error")
+        assert tache.error
+        assert tache.id not in agents._running_agent_tasks
+
+
+@pytest.mark.asyncio
+async def test_deconnexion_asgi_pendant_envoi_du_fragment_interrompt_la_mission(db_session, monkeypatch):
+    monkeypatch.setattr(agents, "_get_source_path", lambda: None)
+
+    async def execution_fictive(_runtime, _instruction):
+        yield AgentEvent(type="chunk", content="Début seulement")
+        yield AgentEvent(type="done", content="Fin")
+
+    monkeypatch.setattr(AgentRuntime, "run", execution_fictive)
+    reponse = await agents.spawn_agent(
+        SpawnAgentRequest(profile_id="writer", instruction="Mission", model="local:test"), db_session,
+    )
+    premier_envoye = asyncio.Event()
+    evenements = []
+
+    async def recevoir():
+        await premier_envoye.wait()
+        return {"type": "http.disconnect"}
+
+    async def envoyer(message):
+        if message["type"] == "http.response.body" and message["body"]:
+            evenements.append(json.loads(message["body"][6:]))
+            premier_envoye.set()
+            await asyncio.Event().wait()
+
+    await reponse({"type": "http", "asgi": {"spec_version": "2.3"}}, recevoir, envoyer)
+    await reponse.body_iterator.aclose()
+    assert [event["type"] for event in evenements] == ["chunk"]
+    async with get_session_context() as session:
+        tache = await session.get(AgentTask, evenements[0]["task_id"])
+        assert tache.status == "cancelled"
+        assert "interrompue" in tache.error.lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("type_evenement", "statut"), [("done", "done"), ("error", "error")])
+async def test_fermeture_apres_evenement_terminal_conserve_le_statut(
+    db_session, monkeypatch, type_evenement, statut,
+):
+    monkeypatch.setattr(agents, "_get_source_path", lambda: None)
+
+    async def execution_fictive(_runtime, _instruction):
+        yield AgentEvent(type=type_evenement, content="Résultat")
+
+    monkeypatch.setattr(AgentRuntime, "run", execution_fictive)
+    reponse = await agents.spawn_agent(
+        SpawnAgentRequest(profile_id="writer", instruction="Mission", model="local:test"), db_session,
+    )
+    flux = reponse.body_iterator
+    terminal = json.loads((await anext(flux))[6:])
+    await flux.aclose()
+    async with get_session_context() as session:
+        tache = await session.get(AgentTask, terminal["task_id"])
+        assert tache.status == statut

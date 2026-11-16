@@ -54,3 +54,34 @@ async def test_export_config_exclut_les_secrets_de_connexion(client, db_session)
     assert reponse.status_code == 200
     assert temoin not in reponse.text
     assert reponse.json()["preferences"][0]["value"] == "[REDACTED]"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_masque_identifiants_des_urls_et_configurations_de_connexion(
+    client, db_session, route,
+):
+    utilisateur = "identifiant-fictif"
+    mot_de_passe = "motdepasse-fictif"
+    url = f"https://{utilisateur}:{mot_de_passe}@hote.example/dav?vue=mois&password={mot_de_passe}"
+    db_session.add(Calendar(
+        id="cal-url", summary="Agenda", provider="caldav", caldav_url=url,
+        remote_id=url, caldav_username=utilisateur, caldav_password=mot_de_passe,
+    ))
+    db_session.add(EmailAccount(
+        id="compte-url", email="contact@example.invalid", imap_host=url,
+        smtp_host=url, imap_username=utilisateur, imap_password=mot_de_passe,
+    ))
+    db_session.add(Preference(
+        key="proxy_config", category="general",
+        value='{"url": "' + url + '", "username": "' + utilisateur
+        + '", "password": "' + mot_de_passe + '"}',
+    ))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    assert utilisateur not in reponse.text
+    assert mot_de_passe not in reponse.text
+    assert "hote.example/dav" in reponse.text
+    assert "contact@example.invalid" in reponse.text
