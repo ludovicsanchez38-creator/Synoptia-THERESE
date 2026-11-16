@@ -67,12 +67,6 @@ export function classifyCalendarError(
   if (isGoogleAuthError(msg)) {
     return { error: 'Connexion Google expirée.', needsReauth: true };
   }
-  if (msg.includes('Google Calendar API has not been used')) {
-    return {
-      error: 'L’API Google Calendar n’est pas activée. Active-la dans ta console Google Cloud, puis relance la synchronisation.',
-      needsReauth: false,
-    };
-  }
   if (msg.includes('Google Calendar')) {
     return { error: msg, needsReauth: false };
   }

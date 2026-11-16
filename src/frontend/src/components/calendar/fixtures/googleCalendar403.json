@@ -1,0 +1,7 @@
+{
+  "status": 403,
+  "body": {
+    "code": "HTTP_ERROR",
+    "message": "Google refuse l'accès au calendrier (403). Active l'API « Google Calendar » dans ta console Google Cloud (APIs et services > Bibliothèque > Google Calendar API > Activer), puis relance la synchronisation. Si le souci persiste, vérifie que l'accès au calendrier a bien été autorisé pour ce compte."
+  }
+}

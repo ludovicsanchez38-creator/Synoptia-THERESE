@@ -1209,10 +1209,15 @@ async def create_event(
             request.calendar_id = calendar.id
 
     if calendar and calendar.provider not in ("local", "caldav", "google"):
-        raise HTTPException(
-            status_code=400,
-            detail="Ce fournisseur d’agenda n’est pas pris en charge.",
-        )
+        if account_id and "calendar_id" not in request.model_fields_set:
+            # Un alias implicite ne sélectionne pas la ligne homonyme.
+            calendar = await _resoudre_primary_google(account_id, session)
+            request.calendar_id = calendar.id
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Ce fournisseur d’agenda n’est pas pris en charge.",
+            )
 
     if calendar and calendar.provider in ("local", "caldav"):
         return await _create_event_provider(calendar, request, session)
@@ -1227,6 +1232,36 @@ async def create_event(
                 detail=f"Calendrier introuvable : {request.calendar_id}",
             )
         return await _create_event_google(account_id, request, session)
+
+
+async def _resoudre_primary_google(account_id: str, session: AsyncSession) -> Calendar:
+    """Résout l'alias dans le compte demandé avant toute écriture d'événement."""
+    account = await session.get(EmailAccount, account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    access_token = await ensure_valid_access_token(account, session)
+    try:
+        data = await CalendarService(access_token).get_calendar("primary")
+    except Exception as exc:
+        _raise_if_google_403(exc)
+        raise HTTPException(status_code=500, detail=message_pour_ecran(exc)) from exc
+
+    calendar = await session.get(Calendar, data["id"])
+    if calendar is not None:
+        if calendar.provider != "google" or calendar.account_id != account_id:
+            raise HTTPException(
+                status_code=409,
+                detail="L’agenda Google principal entre en conflit avec un autre agenda enregistré.",
+            )
+    else:
+        calendar = Calendar(
+            id=data["id"], account_id=account_id, provider="google",
+            remote_id=data["id"], summary=data.get("summary", ""),
+            timezone=data.get("timeZone", "UTC"), primary=True,
+        )
+        # Le commit de l'événement enregistrera aussi sa destination réelle.
+        session.add(calendar)
+    return calendar
 
 
 async def _create_event_provider(
