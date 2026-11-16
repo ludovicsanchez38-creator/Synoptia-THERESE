@@ -330,6 +330,11 @@ Règles retenues (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    cherche alors le `@` sur la même ligne, à 512 caractères au plus.
 4. Une URL passée en paramètre d'une autre est lue de la même façon, par la
    même boucle et sans récursion (cinq mille niveaux testés).
+5. Les paramètres de connexion (`password=`, `access_token=`…) sont masqués
+   dans une seconde passe, sur toute l'étendue de l'URL après son premier `?`
+   ou `#` : un secret placé après une URL imbriquée part aussi. Le texte n'est
+   plus recomposé par `urlsplit` : hors identifiants et valeurs masquées, il
+   sort caractère pour caractère (casse du schéma, `?` final).
 
 Tests : `tests/test_c20_b1812_export_config.py::test_export_conserve_un_port_suivi_d_une_adresse_mail`
 (deux routes), `::test_masquage_des_urls_table_de_cas` (onze cas), les tests
@@ -338,7 +343,9 @@ Tests : `tests/test_c20_b1812_export_config.py::test_export_conserve_un_port_sui
 `::test_masquage_garde_le_separateur_devant_une_url_imbriquee`. Cinq rouges
 avant le premier correctif, puis trois (clés en double, clés, imbrication
 profonde, relevés par la revue de sécurité automatique du commit) avant le
-second ; 38 verts après ; 224 tests voisins de
+second, puis quatre (paramètre de connexion placé après une URL imbriquée,
+régression de ce second correctif, et casse du schéma) avant le troisième ;
+45 verts après ; 236 tests voisins de
 l'export verts ; ruff propre ; mypy du fichier inchangé (23).
 
 Limites connues, non couvertes :
@@ -348,6 +355,9 @@ Limites connues, non couvertes :
 - un mot de passe contenant `/`, `?` ou `#` non encodés : aucune bibliothèque
   ne lit une telle URL comme l'utilisateur l'entend ;
 - une URL encodée en pourcentage passée en paramètre d'une autre ;
+- la valeur d'un paramètre de connexion qui contient un guillemet, une
+  apostrophe, un chevron ou une barre oblique inverse : l'URL s'arrête là dans
+  un texte, la fin de la valeur reste ;
 - la règle 2 lit `https://site.invalid;a@b.invalid` (sans espace) comme une
   URL à identifiants, ce qu'elle est selon la RFC : le texte avant le `@`
   part.

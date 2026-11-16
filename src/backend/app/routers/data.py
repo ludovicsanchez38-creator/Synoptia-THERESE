@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from tarfile import TarInfo
 from typing import Any, get_args
-from urllib.parse import unquote_plus, urlsplit, urlunsplit
+from urllib.parse import unquote_plus
 
 from app.config import settings
 from app.models.database import close_db, get_session
@@ -130,27 +130,33 @@ def _cle_de_connexion(cle: str) -> bool:
 
 
 _DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
+_URL_DANS_UN_TEXTE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]*")
+_NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&#;?]+)=")
 _FIN_AUTORITE = "/?#"
 _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
 _PORTEE_DES_IDENTIFIANTS = 512
 
 
-def _nettoyer_url(url: str) -> str:
-    """Une URL sans identifiants ni valeur de paramètre de connexion."""
-    try:
-        morceaux = urlsplit(url)
-        autorite = morceaux.netloc.rsplit("@", 1)[-1]
+def _masquer_parametres_d_une_url(url: str) -> str:
+    """Remplace la valeur de chaque paramètre de connexion, sur toute l'étendue de l'URL.
 
-        def masquer_parametre(param: re.Match[str]) -> str:
-            nom = unquote_plus(param.group(2))
-            return param.group(1) + param.group(2) + "=[REDACTED]" if _cle_de_connexion(nom) else param.group()
-
-        motif = r"(^|[&;])([^=&#;]+)=([^&#;]*)"
-        query = re.sub(motif, masquer_parametre, morceaux.query)
-        fragment = re.sub(motif, masquer_parametre, morceaux.fragment)
-        return urlunsplit((morceaux.scheme, autorite, morceaux.path, query, fragment))
-    except ValueError:
-        return "[URL masquée]"
+    La lecture ne s'arrête pas à une URL passée en paramètre : `?suite=http://x&password=…`
+    et `?suite=http://x/?access_token=…` portent leur secret après elle.
+    """
+    depart = min((i for i in (url.find("?"), url.find("#")) if i >= 0), default=-1)
+    if depart < 0:
+        return url
+    morceaux = []
+    position = depart
+    for nom in _NOM_DE_PARAMETRE.finditer(url, depart):
+        if nom.start() < position or not _cle_de_connexion(unquote_plus(nom.group(1))):
+            continue
+        fin_valeur = nom.end()
+        while fin_valeur < len(url) and url[fin_valeur] not in "&#;":
+            fin_valeur += 1
+        morceaux.extend((url[position : nom.end()], "[REDACTED]"))
+        position = fin_valeur
+    return url[:depart] + "".join(morceaux) + url[position:]
 
 
 def _port_plausible(autorite: str) -> bool:
@@ -191,27 +197,17 @@ def _debut_de_l_hote(texte: str, debut: int) -> int:
 
 
 def _masquer_urls_d_un_texte(valeur: str) -> str:
-    resultat = []
+    """Deux passes, sans récursion : les identifiants de chaque URL, puis ses paramètres.
+
+    Le reste du texte, casse et ponctuation comprises, sort tel qu'il est entré.
+    """
+    morceaux = []
     position = 0
     while match := _DEBUT_URL.search(valeur, position):
-        hote = _debut_de_l_hote(valeur, match.end())
-        fin = hote
-        while fin < len(valeur) and not valeur[fin].isspace() and valeur[fin] not in _FIN_URL_DANS_UN_TEXTE:
-            fin += 1
-        # Une URL passée en paramètre d'une autre porte parfois ses propres
-        # identifiants : celle-ci s'arrête où l'autre commence, et la boucle
-        # la lira à son tour (sans récursion, quelle que soit la profondeur).
-        if imbriquee := _DEBUT_URL.search(valeur, hote, fin):
-            fin = imbriquee.start()
-        # urlunsplit retire un « ? » ou un « # » final resté sans contenu.
-        coupe = fin
-        while coupe > hote and valeur[coupe - 1] in "?#":
-            coupe -= 1
-        resultat.extend(
-            (valeur[position : match.start()], _nettoyer_url(match.group() + valeur[hote:coupe]), valeur[coupe:fin])
-        )
-        position = fin
-    return "".join(resultat) + valeur[position:]
+        morceaux.append(valeur[position : match.end()])
+        position = _debut_de_l_hote(valeur, match.end())
+    sans_identifiants = "".join(morceaux) + valeur[position:]
+    return _URL_DANS_UN_TEXTE.sub(lambda url: _masquer_parametres_d_une_url(url.group()), sans_identifiants)
 
 
 def _masquer_urls_export(valeur: Any) -> Any:
