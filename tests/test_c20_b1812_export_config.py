@@ -183,10 +183,6 @@ async def test_export_conserve_un_port_suivi_d_une_adresse_mail(client, db_sessi
         ("https://[::1]:8443/dav puis a@b.invalid", "https://[::1]:8443/dav puis a@b.invalid"),
         ("Site https://site.invalid, contact a@b.invalid", "Site https://site.invalid, contact a@b.invalid"),
         ("écrire à a@b.invalid", "écrire à a@b.invalid"),
-        (
-            '{"url":"https://agenda.invalid:443","email":"personne@example.invalid"}',
-            '{"url":"https://agenda.invalid:443","email":"personne@example.invalid"}',
-        ),
         # Identifiants : tout ce qui précède le dernier @ de l'autorité part.
         ("https://temoin:FAUX-secret@agenda.invalid/dav", "https://agenda.invalid/dav"),
         ("https://temoin@agenda.invalid:8443/dav", "https://agenda.invalid:8443/dav"),
@@ -211,3 +207,44 @@ def test_masquage_d_un_json_serialise_garde_ses_autres_champs():
 
     sortie = _masquer_urls_export('{"url":"https://temoin:FAUX-secret@agenda.invalid/dav","email":"p@e.invalid"}')
     assert json.loads(sortie) == {"url": "https://agenda.invalid/dav", "email": "p@e.invalid"}
+
+
+def test_masquage_d_un_json_sans_identifiant_garde_tous_ses_champs():
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export('{"url":"https://agenda.invalid:443","email":"personne@example.invalid"}')
+    assert json.loads(sortie) == {"url": "https://agenda.invalid:443", "email": "personne@example.invalid"}
+
+
+def test_masquage_d_un_json_a_cles_en_double_ne_rend_pas_la_chaine_d_origine():
+    """Le lecteur JSON ne garde que la dernière clé : comparer au résultat lu ne prouve rien sur le texte."""
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export(
+        '{"url":"https://temoin:FAUX-secret@agenda.invalid/dav","url":"https://agenda.invalid/dav"}'
+    )
+    assert "temoin" not in sortie and "FAUX-secret" not in sortie
+    assert json.loads(sortie) == {"url": "https://agenda.invalid/dav"}
+
+
+def test_masquage_des_cles_d_un_json():
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export({"https://temoin:FAUX-secret@agenda.invalid/dav": "agenda"})
+    assert sortie == {"https://agenda.invalid/dav": "agenda"}
+
+
+def test_masquage_d_urls_imbriquees_en_grand_nombre_sans_debordement():
+    from app.routers.data import _masquer_urls_export
+
+    entree = "https://a.invalid/?s=" * 5000 + "https://temoin:FAUX-secret@b.invalid/x"
+    sortie = _masquer_urls_export(entree)
+    assert "FAUX-secret" not in sortie and "temoin" not in sortie
+    assert sortie == "https://a.invalid/?s=" * 5000 + "https://b.invalid/x"
+
+
+@pytest.mark.parametrize("texte", ["https://a.invalid/?https://b.invalid/x", "https://a.invalid/#https://b.invalid/x"])
+def test_masquage_garde_le_separateur_devant_une_url_imbriquee(texte):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(texte) == texte
