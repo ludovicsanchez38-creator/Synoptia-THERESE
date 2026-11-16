@@ -406,10 +406,9 @@ async def _nettoyer_et_supprimer_projet(
         await qdrant.async_delete_by_entity(file.id)
     await qdrant.async_delete_by_entity(project_id)
 
-    # La racine vit dans une transaction dédiée avec ses propres verrous. Elle
-    # est détachée avant le commit métier pour qu'un dossier supprimé ne bloque
-    # jamais la réutilisation du même chemin après redémarrage.
-    await retirer_racine(project_id)
+    # B-1875 : la racine et le dossier partagent le commit ou le rollback.
+    # Le verrou de synchronisation reste tenu jusqu'à la fin de la transaction.
+    await retirer_racine(project_id, session)
 
     for file in files:
         await session.delete(file)
@@ -1246,8 +1245,7 @@ async def delete_contact(
             await session.delete(file)
         cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
 
-    # Après le détachement des racines (transaction dédiée), prendre le verrou
-    # d'écriture des traces. Le prendre avant bloquait cette transaction annexe.
+    # Les racines partagent maintenant la transaction métier (B-1875).
     # Les traces des dossiers supprimés sont déjà comptées par leur nettoyage.
     from app.services.action_journal import effacer_activites
     cascade_deleted['activities'] = cascade_deleted.get('activities', 0) + await effacer_activites(

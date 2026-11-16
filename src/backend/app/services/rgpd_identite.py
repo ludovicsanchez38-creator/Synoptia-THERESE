@@ -69,21 +69,18 @@ def exporter_la_fiche(contact: Contact) -> dict[str, Any]:
 
 
 async def detacher_les_dossiers_synchronises(session: Any, contact_id: str) -> None:
-    """B-1685 : détache la racine locale de chaque dossier de la personne.
+    """Détache les racines dans la transaction de l'anonymisation.
 
-    `retirer_racine` écrit sur sa propre session. Appelée après une écriture
-    de la session appelante, elle attendait un verrou que cette session tient
-    (« database is locked ») : l'anonymisation d'une personne dont un dossier
-    est synchronisé échouait, et avec elle toute la purge automatique du jour.
-    À appeler avant toute écriture de la session ; ensuite, la suppression du
-    dossier trouve la racine déjà détachée et n'écrit plus rien."""
+    B-1875 : un échec doit conserver les racines avec l'identité. Partager la
+    session évite aussi le verrou SQLite entre deux écrivains (B-1685).
+    """
     from app.models.entities import Project
     from app.services.project_sync_service import retirer_racine
     from sqlmodel import select
 
     projets = (await session.execute(select(Project.id).where(Project.contact_id == contact_id))).scalars().all()
     for projet_id in projets:
-        await retirer_racine(projet_id)
+        await retirer_racine(projet_id, session)
 
 
 async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: datetime) -> list[str]:

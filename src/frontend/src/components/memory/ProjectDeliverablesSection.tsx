@@ -35,11 +35,18 @@ export function ProjectDeliverablesSection({
   const [titre, setTitre] = useState('');
   const [enCours, setEnCours] = useState(false);
   const versionEcritures = useRef(0);
+  const generationProjet = useRef(0);
 
   useEffect(() => {
+    versionEcritures.current = 0;
     setLivrables(null);
     setErreur(null);
     setErreurLecture(false);
+    setTitre('');
+    setEnCours(false);
+    // B-1877 / B-1878 : une réponse appartient à cette ouverture, même si
+    // l'utilisateur revient ensuite au même projet (A → B → A).
+    return () => { generationProjet.current += 1; };
   }, [projectId]);
 
   useEffect(() => {
@@ -69,19 +76,22 @@ export function ProjectDeliverablesSection({
   async function ajouter(e: FormEvent) {
     e.preventDefault();
     if (!titre.trim() || enCours) return;
+    const generation = generationProjet.current;
     setEnCours(true);
     setErreur(null);
     try {
       const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: 'a_faire' });
+      if (generation !== generationProjet.current) return;
       versionEcritures.current += 1;
       // Une lecture arrivée avant cette réponse peut déjà contenir l'ajout.
       setLivrables((courants) => ((courants ?? []).some((livrable) => livrable.id === cree.id)
         ? courants : [...(courants ?? []), cree]));
       setTitre('');
     } catch (reason) {
+      if (generation !== generationProjet.current) return;
       setErreur(reason instanceof Error ? reason.message : 'Le livrable n’a pas pu être ajouté.');
     } finally {
-      setEnCours(false);
+      if (generation === generationProjet.current) setEnCours(false);
     }
   }
 

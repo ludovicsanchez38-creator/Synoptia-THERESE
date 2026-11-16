@@ -39,7 +39,9 @@ from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.processing import ProcessingTask
 from app.services import indexation, retrait_index, task_registry
 from app.services.project_sync import calculer_diff, scanner_racine
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, SessionTransaction
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
@@ -189,14 +191,47 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
         return actuelle
 
 
-async def retirer_racine(project_id: str) -> None:
-    """Délie la racine. Ne retire RIEN de l'index : ça, c'est un plan."""
-    async with _verrou_du_projet(project_id), _verrou_racines, \
-            get_session_context() as session:
+async def retirer_racine(project_id: str, session: AsyncSession | None = None) -> None:
+    """Délie la racine, dans la transaction appelante si elle est fournie.
+
+    B-1875 : l'anonymisation et la suppression d'un dossier doivent pouvoir
+    annuler aussi le détachement. Le verrou projet dure jusqu'au commit ou
+    rollback, pour qu'un apply ne relise pas l'ancienne génération entretemps.
+    Ne retire RIEN de l'index : ça, c'est un plan.
+    """
+    if session is None:
+        async with get_session_context() as session_propre:
+            await retirer_racine(project_id, session_propre)
+            await session_propre.commit()
+        return
+
+    if not session.in_transaction():
+        await session.begin()
+    cle_verrous = "retrait_racines_verrous"
+    if cle_verrous not in session.info:
+        verrous: dict[str, asyncio.Lock] = {}
+        session.info[cle_verrous] = verrous
+
+        def liberer_verrous(_session: Session, transaction: SessionTransaction) -> None:
+            # Un flush ferme une sous-transaction : seule la fin de la
+            # transaction métier libère les projets (y compris sur close).
+            if transaction.parent is None:
+                for verrou in verrous.values():
+                    verrou.release()
+                verrous.clear()
+
+        event.listen(session.sync_session, "after_transaction_end", liberer_verrous)
+    verrous = session.info[cle_verrous]
+    if project_id not in verrous:
+        verrou = _verrou(project_id)
+        if verrou.locked():
+            raise OperationRefusee("Une synchronisation est déjà en cours sur ce projet.")
+        await verrou.acquire()
+        verrous[project_id] = verrou
+
+    async with _verrou_racines:
         resultat = await session.execute(
-            select(ProjectSyncRoot).where(
-                ProjectSyncRoot.project_id == project_id
-            )
+            select(ProjectSyncRoot).where(ProjectSyncRoot.project_id == project_id)
         )
         root = resultat.scalar_one_or_none()
         if root is None or root.detachee:
@@ -206,7 +241,6 @@ async def retirer_racine(project_id: str) -> None:
         root.detachee = True
         root.generation += 1
         await _invalider_generation(session, project_id)
-        await session.commit()
 
 
 async def _invalider_generation(session: AsyncSession, project_id: str) -> None:
