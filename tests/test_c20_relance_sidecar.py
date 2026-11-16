@@ -59,7 +59,7 @@ mod std {
     }
 }
 fn log_sidecar(_: &str) {}
-fn emit_sidecar_status(_: &tauri::AppHandle, _: &str, _: u32) {}
+fn emit_sidecar_status(_: &tauri::AppHandle, _: &str, _: u32, _: u64) {}
 fn spawn_backend_sidecar(app: &tauri::AppHandle) {
     let blocage = BLOCAGE.lock().unwrap().take();
     if let Some((signaler, attendre)) = blocage {
@@ -85,7 +85,7 @@ async fn verifier_future_send(handle: tauri::AppHandle, generation: u64) {
 }
 fn exiger_send<T: Send>(_: T) {}
 __RELANCE_AUTO__
-fn restart_backend(app: tauri::AppHandle) -> Result<(), String> __RELANCE_MANUELLE__
+fn restart_backend(app: tauri::AppHandle) -> Result<u64, String> __RELANCE_MANUELLE__
 fn main() {
     let app = tauri::AppHandle(Arc::new(SidecarState {
         shutting_down: AtomicBool::new(false),
@@ -100,7 +100,7 @@ fn main() {
     exiger_send(verifier_future_send(app.clone(), 0));
     let ancienne_generation = app.0.generation_relance.load(Ordering::SeqCst);
     schedule_sidecar_retry(&app);
-    restart_backend(app.clone()).unwrap();
+    assert_eq!(restart_backend(app.clone()).unwrap(), 1);
     std::thread::expirer();
     println!("{}", app.0.lancements.load(Ordering::SeqCst));
     schedule_sidecar_retry(&app);
@@ -154,3 +154,179 @@ fn main() {
     lignes = [ligne for ligne in execution.stdout.splitlines() if not ligne.startswith("[THÉRÈSE]")]
     assert lignes[:2] == ["1", "2"]
     assert lignes[2:] == ["false 0", "true 1", "false"]
+
+
+def test_generations_des_evenements_et_de_la_commande(tmp_path: Path) -> None:
+    """Exécute les émetteurs Rust réels avec un sidecar et une fenêtre simulés."""
+    lib = (TAURI_SRC / "lib.rs").read_text(encoding="utf-8")
+    commandes = (TAURI_SRC / "commands.rs").read_text(encoding="utf-8")
+
+    def fonction(source: str, signature: str) -> str:
+        return signature + " " + _bloc(source, source.index(signature))
+
+    spawn = fonction(lib, "pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle)")
+    relance = fonction(lib, "fn schedule_sidecar_retry(app: &tauri::AppHandle)")
+    statut = fonction(
+        lib, "fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32, generation: u64)"
+    )
+    debut = commandes.index("pub fn restart_backend(")
+    manuel = _bloc(commandes, commandes.index("#[cfg(not(debug_assertions))]", debut))
+    harnais = r'''
+#![allow(dead_code, unused_imports)]
+use ::std::sync::{Arc, Mutex};
+use ::std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+
+#[derive(Debug, PartialEq)]
+enum Evenement { Erreur(String, u64), Statut(String, u32, u64) }
+#[macro_export]
+macro_rules! json {
+    ({ "message": $m:expr, "generation": $g:expr }) => { Evenement::Erreur($m.to_string(), $g) };
+    ({ "state": $s:expr, "attempt": $a:expr, "generation": $g:expr }) => { Evenement::Statut($s.to_string(), $a, $g) };
+}
+mod serde_json { pub use crate::json; }
+mod std {
+    pub mod sync { pub mod atomic { pub use ::std::sync::atomic::*; } }
+    pub mod time { pub use ::std::time::{Duration, Instant}; }
+    pub mod thread {
+        pub fn sleep(_: ::std::time::Duration) {}
+        pub fn spawn<F: FnOnce() + Send + 'static>(_: F) {}
+    }
+    pub mod fs { pub fn create_dir_all(_: &str) -> Result<(), ()> { Ok(()) } }
+    pub mod env {
+        pub fn current_exe() -> ::std::io::Result<::std::path::PathBuf> {
+            Err(::std::io::Error::new(::std::io::ErrorKind::NotFound, "simulé"))
+        }
+    }
+    pub mod process {
+        pub struct Command;
+        impl Command {
+            pub fn new(_: &str) -> Self { Self }
+            pub fn args<I, S>(&mut self, _: I) -> &mut Self
+            where I: IntoIterator<Item = S>, S: AsRef<str> { self }
+            pub fn output(&mut self) -> Result<(), ()> { Ok(()) }
+        }
+    }
+}
+mod dirs { pub fn home_dir() -> Option<::std::path::PathBuf> { None } }
+struct Child;
+impl Child {
+    fn pid(&self) -> u32 { 42 }
+    fn kill(self) -> Result<(), ()> { Ok(()) }
+}
+struct SidecarState {
+    child: Mutex<Option<Child>>,
+    shutting_down: AtomicBool,
+    sidecar_termine: AtomicBool,
+    restart_attempts: AtomicU32,
+    generation_relance: AtomicU64,
+    verrou_relance: Mutex<()>,
+}
+struct BackendPort(Mutex<u16>);
+struct Application { state: SidecarState, port: BackendPort, mode: AtomicU32, events: Mutex<Vec<Evenement>> }
+mod tauri {
+    use super::*;
+    pub trait Manager {}
+    #[derive(Clone)]
+    pub struct AppHandle(pub Arc<Application>);
+    impl Manager for AppHandle {}
+    pub trait Etat { fn get(app: &Application) -> &Self; }
+    impl Etat for SidecarState { fn get(app: &Application) -> &Self { &app.state } }
+    impl Etat for BackendPort { fn get(app: &Application) -> &Self { &app.port } }
+    impl AppHandle {
+        pub fn state<T: Etat>(&self) -> &T { T::get(&self.0) }
+        pub fn get_webview_window(&self, _: &str) -> Option<Window> { Some(Window(self.clone())) }
+    }
+    pub struct Window(AppHandle);
+    impl Window {
+        pub fn emit(&self, nom: &str, evenement: Evenement) -> Result<(), ()> {
+            match &evenement {
+                Evenement::Erreur(_, _) => assert_eq!(nom, "sidecar-error"),
+                Evenement::Statut(_, _, _) => assert_eq!(nom, "sidecar-status"),
+            }
+            self.0.0.events.lock().unwrap().push(evenement);
+            Ok(())
+        }
+    }
+    pub mod async_runtime {
+        pub fn spawn<F: ::std::future::Future<Output = ()> + Send + 'static>(_: F) {}
+    }
+}
+mod tauri_plugin_shell {
+    use super::*;
+    pub mod process {
+        pub struct Payload { pub code: Option<i32>, pub signal: Option<i32> }
+        pub enum CommandEvent { Stdout(Vec<u8>), Stderr(Vec<u8>), Terminated(Payload), Autre }
+        pub struct Receiver;
+        impl Receiver { pub async fn recv(&mut self) -> Option<CommandEvent> { None } }
+    }
+    pub trait ShellExt { fn shell(&self) -> Shell; }
+    impl ShellExt for tauri::AppHandle { fn shell(&self) -> Shell { Shell(self.clone()) } }
+    pub struct Shell(tauri::AppHandle);
+    impl Shell {
+        pub fn sidecar(&self, _: &str) -> Result<Command, &'static str> {
+            if self.0.0.mode.load(Ordering::SeqCst) == 1 { Err("introuvable") }
+            else { Ok(Command(self.0.clone())) }
+        }
+    }
+    pub struct Command(tauri::AppHandle);
+    impl Command {
+        pub fn args<I, S>(self, _: I) -> Self where I: IntoIterator<Item = S>, S: AsRef<str> { self }
+        pub fn env(self, _: &str, _: &str) -> Self { self }
+        pub fn spawn(self) -> Result<(process::Receiver, Child), &'static str> {
+            if self.0.0.mode.load(Ordering::SeqCst) == 2 { Err("spawn simulé") }
+            else { Ok((process::Receiver, Child)) }
+        }
+    }
+}
+const BACKEND_PORT: u16 = 17293;
+fn kill_zombie_backends() {}
+fn log_sidecar(_: &str) {}
+fn handle_sidecar_termination(_: &tauri::AppHandle, _: ::std::time::Instant, _: Option<i32>) {}
+__SPAWN__
+__RELANCE__
+__STATUT__
+fn restart_backend(app: tauri::AppHandle) -> Result<u64, String> __MANUEL__
+fn main() {
+    let app = tauri::AppHandle(Arc::new(Application {
+        state: SidecarState {
+            child: Mutex::new(None), shutting_down: AtomicBool::new(false),
+            sidecar_termine: AtomicBool::new(false), restart_attempts: AtomicU32::new(0),
+            generation_relance: AtomicU64::new(4), verrou_relance: Mutex::new(()),
+        },
+        port: BackendPort(Mutex::new(0)), mode: AtomicU32::new(1), events: Mutex::new(Vec::new()),
+    }));
+    spawn_backend_sidecar(&app);
+    app.0.mode.store(2, Ordering::SeqCst);
+    spawn_backend_sidecar(&app);
+    app.0.mode.store(3, Ordering::SeqCst);
+    assert_eq!(restart_backend(app.clone()).unwrap(), 5);
+    app.0.mode.store(2, Ordering::SeqCst);
+    assert_eq!(restart_backend(app.clone()).unwrap(), 6);
+    app.0.state.restart_attempts.store(3, Ordering::SeqCst);
+    schedule_sidecar_retry(&app);
+    assert_eq!(*app.0.events.lock().unwrap(), vec![
+        Evenement::Erreur("Binaire sidecar introuvable : introuvable".into(), 4),
+        Evenement::Statut("restarting".into(), 1, 4),
+        Evenement::Erreur("Erreur lancement sidecar : spawn simulé".into(), 4),
+        Evenement::Statut("restarting".into(), 2, 4),
+        Evenement::Statut("running".into(), 0, 5),
+        Evenement::Erreur("Erreur lancement sidecar : spawn simulé".into(), 6),
+        Evenement::Statut("restarting".into(), 1, 6),
+        Evenement::Statut("failed".into(), 3, 6),
+    ]);
+}
+'''
+    for marqueur, code in {
+        "__SPAWN__": spawn, "__RELANCE__": relance, "__STATUT__": statut, "__MANUEL__": manuel,
+    }.items():
+        harnais = harnais.replace(marqueur, code)
+    source = tmp_path / "evenements.rs"
+    binaire = tmp_path / "evenements"
+    source.write_text(harnais, encoding="utf-8")
+    compilation = subprocess.run(
+        ["rustc", "--edition=2021", "-o", str(binaire), str(source)],
+        capture_output=True, text=True, check=False, timeout=30,
+    )
+    assert compilation.returncode == 0, compilation.stderr
+    execution = subprocess.run([str(binaire)], capture_output=True, text=True, check=False, timeout=30)
+    assert execution.returncode == 0, execution.stderr

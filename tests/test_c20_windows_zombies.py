@@ -65,15 +65,23 @@ mod simulation {
                 pub fn stdin(self, _: Stdio) -> Self { self }
                 pub fn output(self) -> ::std::io::Result<Output> {
                     let scenario = ::std::env::args().nth(1).unwrap();
+                    let options = match scenario.strip_prefix("cim_").unwrap_or(&scenario) {
+                        "port_repete" => "--host 127.0.0.1 --port 17293 --port 17393",
+                        "host_repete" => "--host 127.0.0.1 --port 17293 --host 0.0.0.0",
+                        "port_egal" => "--host 127.0.0.1 --port 17293 --port=17393",
+                        "port_abrege" => "--host 127.0.0.1 --port 17293 --por 17393",
+                        _ => "",
+                    };
                     if self.name == "wmic" && scenario == "wmic_absent" {
                         return Err(::std::io::Error::new(::std::io::ErrorKind::NotFound, "WMIC absent"));
                     }
                     let texte = match self.name.as_str() {
-                        "wmic" if scenario == "wmic_vide" || scenario == "wmic_indisponible_moteur" => String::new(),
+                        "wmic" if scenario == "wmic_vide" || scenario == "wmic_indisponible_moteur" || scenario.starts_with("cim_") => String::new(),
                         "wmic" => {
                             let port = if scenario == "port_inexact" { "172930" } else { "17293" };
                             if self.args.iter().any(|arg| arg.split(',').any(|champ| champ.eq_ignore_ascii_case("commandline"))) {
-                                format!("CommandLine=\"C:\\Program Files\\THERESE\\backend.exe\" --host 127.0.0.1 --port {}\r\nProcessId=4242\r\n\r\n", port)
+                                let args = if options.is_empty() { format!("--host 127.0.0.1 --port {}", port) } else { options.to_string() };
+                                format!("CommandLine=\"C:\\Program Files\\THERESE\\backend.exe\" {}\r\nProcessId=4242\r\n\r\n", args)
                             } else {
                                 "ProcessId=4242\r\n".to_string()
                             }
@@ -84,7 +92,8 @@ mod simulation {
                         }
                         "powershell" => {
                             let port = if scenario == "wmic_indisponible_moteur" { "17293" } else { "8000" };
-                            format!("\"C:\\Program Files\\THERESE\\backend.exe\" --host 127.0.0.1 --port {}\r\n", port)
+                            let args = if options.is_empty() { format!("--host 127.0.0.1 --port {}", port) } else { options.to_string() };
+                            format!("\"C:\\Program Files\\THERESE\\backend.exe\" {}\r\n", args)
                         }
                         "taskkill" => {
                             ARRETS.lock().unwrap().push(self.args.last().unwrap().clone());
@@ -140,6 +149,24 @@ def test_b1836_seul_le_port_exact_designe_un_moteur(tmp_path: Path) -> None:
     assert _simuler_windows(tmp_path, "port_exact_utf16") == ["4242"]
 
 
+def test_predicat_rust_conserve_les_tests_existants(tmp_path: Path) -> None:
+    source = RUST_LIB.read_text(encoding="utf-8")
+    signature = "fn est_moteur_therese(args: &str) -> bool"
+    predicat = signature + " " + _bloc(source, source.index(signature))
+    tests = _bloc(source, source.index("mod tests_b1261"))
+    harnais = tmp_path / "predicat.rs"
+    binaire = tmp_path / "predicat"
+    harnais.write_text(f"const BACKEND_PORT: u16 = 17293;\n{predicat}\nmod tests_b1261 {tests}\n", encoding="utf-8")
+    compilation = subprocess.run(
+        ["rustc", "--edition=2021", "--test", "-o", str(binaire), str(harnais)],
+        capture_output=True, text=True, check=False, timeout=30,
+    )
+    assert compilation.returncode == 0, compilation.stderr
+    execution = subprocess.run([str(binaire)], capture_output=True, text=True, check=False, timeout=30)
+    assert execution.returncode == 0, execution.stdout + execution.stderr
+    assert "2 passed; 0 failed" in execution.stdout
+
+
 def _nettoyage_python_simule(monkeypatch, tmp_path: Path, scenario: str) -> list[str]:
     """Lance la seconde étape sans interroger ni arrêter de vrai processus."""
     import main as point_d_entree
@@ -173,8 +200,14 @@ def _nettoyage_python_simule(monkeypatch, tmp_path: Path, scenario: str) -> list
                 "port_prefixe": "172930",
                 "wmic_absent": "8000",
             }.get(scenario, "17293")
+            options = {
+                "port_repete": "--host 127.0.0.1 --port 17293 --port 17393",
+                "host_repete": "--host 127.0.0.1 --port 17293 --host 0.0.0.0",
+                "port_egal": "--host 127.0.0.1 --port 17293 --port=17393",
+                "port_abrege": "--host 127.0.0.1 --port 17293 --por 17393",
+            }.get(scenario, f"--host 127.0.0.1 --port {port}")
             return SimpleNamespace(
-                stdout=f'"C:\\Program Files\\THERESE\\backend.exe" --host 127.0.0.1 --port {port}',
+                stdout=f'"C:\\Program Files\\THERESE\\backend.exe" {options}',
                 returncode=1 if scenario == "cim_echec" else 0,
             )
         if commande[0] == "taskkill":
@@ -217,3 +250,15 @@ def test_le_nettoyage_python_epargne_les_pid_non_identifies(
 
 def test_un_echec_cim_ne_masque_pas_le_candidat_suivant(tmp_path: Path, monkeypatch) -> None:
     assert _nettoyage_python_simule(monkeypatch, tmp_path, "cim_un_echoue") == ["4242"]
+
+
+@pytest.mark.parametrize("scenario", ["port_repete", "host_repete", "port_egal", "port_abrege"])
+@pytest.mark.parametrize("nettoyage", ["rust_wmic", "rust_cim", "python"])
+def test_les_nettoyages_refusent_les_options_ambigues(
+    tmp_path: Path, monkeypatch, nettoyage: str, scenario: str
+) -> None:
+    if nettoyage == "python":
+        arrets = _nettoyage_python_simule(monkeypatch, tmp_path, scenario)
+    else:
+        arrets = _simuler_windows(tmp_path, f"cim_{scenario}" if nettoyage == "rust_cim" else scenario)
+    assert arrets == []
