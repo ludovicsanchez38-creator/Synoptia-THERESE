@@ -219,7 +219,7 @@ export function LLMTab({
    * Le statut d'un service local injoignable est fait de deux phrases : celle
    * du serveur (ou son repli) puis la consigne. Le design dit « suivi de »
    * sans nommer le joint : on ajoute un point à la première quand elle n'en a
-   * pas, plutôt que de coller « Ollama ne répond pas Démarrez Ollama… ».
+   * pas, plutôt que de coller « Ollama ne répond pas Démarre Ollama… ».
    */
   function phraseClose(texte: string): string {
     return /[.!?…]$/.test(texte.trim()) ? texte.trim() : `${texte.trim()}.`;
@@ -438,7 +438,7 @@ export function LLMTab({
               </p>
             ) : (
               <p role="status" className="flex-1 text-sm text-warning">
-                {phraseClose(ollamaStatus?.error || 'Ollama non disponible')} Démarrez Ollama pour utiliser des modèles locaux.
+                {phraseClose(ollamaStatus?.error || 'Ollama non disponible')} Démarre Ollama pour utiliser des modèles locaux.
               </p>
             )}
             {onRetestOllama && (
@@ -587,7 +587,7 @@ function ModelSelector({
             className="col-start-1 justify-self-start"
           >
             <Plus className="mr-1 h-[18px] w-[18px]" />
-            Custom
+            Modèle personnalisé
           </Button>
         )}
       </div>

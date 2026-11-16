@@ -119,7 +119,7 @@ export function ProfileTab({
             ref={mdDialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Aperçu THERESE.md"
+            aria-label="Modifier THERESE.md"
             className="w-full max-w-2xl mx-4 bg-surface border border-border rounded-md shadow-2xl flex flex-col max-h-[80vh]"
           >
             {/* Header */}
@@ -127,7 +127,7 @@ export function ProfileTab({
               <div>
                 <h3 className="font-medium text-text flex items-center gap-2">
                   <FileText className="w-4 h-4 text-accent-cyan-ink" />
-                  THERESE.md
+                  Modifier THERESE.md
                 </h3>
                 {mdPath && (
                   <p className="text-xs text-text-muted mt-0.5">{mdPath}</p>
@@ -135,7 +135,7 @@ export function ProfileTab({
               </div>
               <button
                 type="button"
-                aria-label="Fermer l’aperçu THERESE.md"
+                aria-label="Fermer l’éditeur THERESE.md"
                 onClick={closeMdModal}
                 className="p-1 rounded-md hover:bg-border/30 text-text-muted hover:text-text transition-colors"
               >

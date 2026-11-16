@@ -148,15 +148,12 @@ export function UpdateBanner() {
             ? Math.round((downloaded / contentLength) * 100)
             : 0;
           setState({ phase: 'downloading', version, progress });
-        } else if (event.event === 'Finished') {
-          setState({ phase: 'ready', version });
         }
       });
 
-      // Si on arrive ici sans event Finished (fallback)
-      setState((prev) =>
-        prev.phase === 'downloading' ? { phase: 'ready', version } : prev
-      );
+      // B-1966 : Finished termine le téléchargement. Seul le retour de
+      // downloadAndInstall confirme l'installation et autorise la relance.
+      setState({ phase: 'ready', version });
     } catch (err) {
       console.error('[UpdateBanner] Erreur installation:', err);
       
@@ -302,7 +299,7 @@ export function UpdateBanner() {
         <>
           <RefreshCw size={16} className="text-accent-cyan-ink shrink-0" />
           <span className="text-text">
-            Mise à jour <strong className="text-accent-cyan-ink">v{state.version}</strong> prête
+            Mise à jour <strong className="text-accent-cyan-ink">v{state.version}</strong> installée
           </span>
           <button
             onClick={() => handleRestart(state.version)}
@@ -320,7 +317,7 @@ export function UpdateBanner() {
               e.currentTarget.style.background = 'rgba(34, 211, 238, 0.2)';
             }}
           >
-            Redémarrer pour installer
+            Redémarrer pour appliquer
           </button>
         </>
       )}

@@ -159,6 +159,7 @@ let draftAbortController: AbortController | null = null;
  * pas une donnée affichable.
  */
 let openDocumentToken = 0;
+let openingDocumentId: string | null = null;
 
 /** B-1394 : intervalle du suivi d'une trame retrouvée après un rechargement. */
 const INTERVALLE_SUIVI_TRAME_MS = 3000;
@@ -209,6 +210,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // la récente, même si la garde d'affichage du composant masquerait le
     // mauvais contenu derrière un spinner persistant).
     const token = ++openDocumentToken;
+    openingDocumentId = id;
     set({ isLoading: true, error: null });
     try {
       const document = await apiGetDocument(id);
@@ -221,6 +223,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     } catch (e: any) {
       if (token !== openDocumentToken) return;
       set({ isLoading: false, error: e?.message || 'Impossible de charger le document.' });
+    } finally {
+      if (token === openDocumentToken) openingDocumentId = null;
     }
   },
 
@@ -241,6 +245,13 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     set({ error: null });
     try {
       await apiDeleteDocument(id);
+      // B-1848 : une suppression confirmée périme seulement la lecture
+      // du document supprimé, jamais celle d'un autre document.
+      if (openingDocumentId === id) {
+        ++openDocumentToken;
+        openingDocumentId = null;
+        set({ isLoading: false });
+      }
       set((s) => ({
         documents: s.documents.filter((d) => d.id !== id),
         currentDocument: s.currentDocument?.id === id ? null : s.currentDocument,
@@ -251,6 +262,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   closeDocument: () => {
+    ++openDocumentToken;
+    openingDocumentId = null;
     // Finding B : abandonner un stream en cours plutôt que le laisser tourner
     // dans le vide (isStreaming resterait bloqué à `true`, et un `done`
     // tardif rechargerait un document qu'on vient de quitter).
@@ -261,7 +274,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // génération : l'annuler jetait le travail en silence. Elle continue en
     // fond, arrêtable dans « Travaux », et la réouverture reprend le suivi
     // (B-1394).
-    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false, outlineGeneration: null });
+    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false, isLoading: false, outlineGeneration: null });
   },
 
   requestCreateModal: () => set({ createModalRequested: true }),

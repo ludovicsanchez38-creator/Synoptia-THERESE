@@ -83,6 +83,9 @@ export function initApiBase(): Promise<void> {
       // Fallback : port 17293 déjà défini dans API_BASE
     }
     console.log(`[API] Fallback port ${DEFAULT_BACKEND_PORT} (mode dev)`);
+    // B-1847 : un repli n'est pas une découverte réussie. Un prochain
+    // appel (notamment Réessayer au démarrage) doit pouvoir sonder le sidecar.
+    _initPromise = null;
   })();
   return _initPromise;
 }
@@ -172,7 +175,7 @@ export type ApiFetchOptions = RequestInit & {
  *
  * Dix appels qui prennent un 401 en même temps ne doivent déclencher qu'UN
  * rafraîchissement. Distinct de `_initPromise` (qui, lui, résout le port du
- * sidecar une fois pour toutes) : celui-ci se remet à zéro après chaque
+ * sidecar jusqu'à sa découverte) : celui-ci se remet à zéro après chaque
  * tentative, puisqu'il peut resservir à la relance suivante.
  */
 let _rafraichissementEnCours: Promise<string | null> | null = null;
