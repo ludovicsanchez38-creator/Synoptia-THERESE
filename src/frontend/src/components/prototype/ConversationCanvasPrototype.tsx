@@ -2064,9 +2064,11 @@ export function ConversationCanvasPrototype() {
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm text-text-muted md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
+          {/* B-1943 : `hidden` jusqu'à md retirait le nom de l'arbre. Le texte
+              se replie, le conteneur reste annonçable. */}
+          <div className="flex items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm text-text-muted md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
             <Briefcase className="h-3.5 w-3.5 text-accent" />
-            <b className="font-medium text-text">{workspaceName}</b>
+            <b className="max-md:sr-only font-medium text-text">{workspaceName}</b>
           </div>
 
           <div className="flex flex-1 items-center justify-end gap-1.5">
@@ -2079,10 +2081,12 @@ export function ConversationCanvasPrototype() {
                 // B-1401 : « Travaux » restait ouvert sous le Centre.
                 useProcessingTasksStore.getState().fermerPanneau();
               }}
-              className="mr-1 hidden h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-accent hover:bg-accent-tint sm:flex whitespace-nowrap shrink-0"
+              // B-1943 : `hidden sm:flex` retirait le bouton de l'arbre sous sm.
+              // Le mot se replie, le bouton reste, comme Rechercher (B-1403).
+              className="mr-1 flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-accent hover:bg-accent-tint sm:flex whitespace-nowrap shrink-0"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
-              Contrôle des données
+              <span className="max-sm:sr-only">Contrôle des données</span>
             </button>
             <button
               type="button"
