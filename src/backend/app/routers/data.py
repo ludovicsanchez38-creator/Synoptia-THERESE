@@ -195,8 +195,13 @@ def _assembler_export_rgpd() -> dict[str, Any]:
         conversations = conversations_result.scalars().all()
 
         # Messages
-        messages_result = session.execute(select(Message))
+        messages_result = session.execute(
+            select(Message).order_by(Message.created_at, Message.id)
+        )
         messages = messages_result.scalars().all()
+        messages_par_conversation: dict[str, list[Message]] = {}
+        for message in messages:
+            messages_par_conversation.setdefault(message.conversation_id, []).append(message)
 
         # Files
         files_result = session.execute(select(FileMetadata))
@@ -291,15 +296,10 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             ],
             "conversations": [
                 {
-                    "id": conv.id,
-                    "title": conv.title,
-                    "summary": conv.summary,
-                    "created_at": conv.created_at.isoformat(),
-                    "updated_at": conv.updated_at.isoformat(),
+                    **_export_row(conv),
                     "messages": [
                         _export_row(m, json_fields=("extra_data",))
-                        for m in messages
-                        if m.conversation_id == conv.id
+                        for m in messages_par_conversation.get(conv.id, [])
                     ],
                 }
                 for conv in conversations
@@ -449,7 +449,7 @@ async def export_all_data(
     Retourne un JSON complet avec :
     - Contacts et projets
     - Conversations et messages
-    - Fichiers indexes
+    - Métadonnées des fichiers indexés (pas leur contenu physique)
     - Preferences (sans les cles API)
     - Decisions du Board
     - Logs d'activite
@@ -1674,22 +1674,31 @@ def _ecarter_les_compagnons_de_la_base() -> None:
                 logger.warning("Compagnon %s de la base ni supprimé ni vidé", compagnon.name)
 
 
-async def _rouvrir_la_base_apres_restauration() -> None:
+async def _rouvrir_la_base_apres_restauration() -> bool:
     """B-1470 : rouvre la base si la restauration l'a fermée, puis invalide le
     service de modèles (sa configuration a pu être lue sans base)."""
     from app.models import database as base
     from app.services.encryption import invalidate_encryption_service
     from app.services.llm import invalidate_llm_service
 
-    if base.sync_engine is None:
-        # La restauration peut remettre une autre clé maîtresse. Le probe
-        # SQLCipher doit relire cette clé, et aussi celle d'un rollback.
-        invalidate_encryption_service()
-        try:
+    try:
+        if base.sync_engine is None or base.async_engine is None or base.AsyncSessionLocal is None:
+            # La restauration peut remettre une autre clé maîtresse. Le probe
+            # SQLCipher doit relire cette clé, et aussi celle d'un rollback.
+            invalidate_encryption_service()
+            await base.close_db()
             await base.init_db()
-        except Exception:
-            logger.exception("Réouverture de la base après restauration impossible")
-    invalidate_llm_service()
+        if base.sync_engine is None or base.async_engine is None or base.AsyncSessionLocal is None:
+            return False
+        # Un moteur créé mais incapable de servir une requête n'est pas prêt.
+        async with base.AsyncSessionLocal() as session:
+            await session.execute(select(1))
+        return True
+    except Exception:
+        logger.exception("Réouverture de la base après restauration impossible")
+        return False
+    finally:
+        invalidate_llm_service()
 
 @router.post("/restore/{backup_name}")
 async def restore_backup(
@@ -1883,7 +1892,14 @@ async def restore_backup(
                 _verify_restored_db()
             else:
                 shutil.copy2(legacy_db, settings.db_path)
-            await _rouvrir_la_base_apres_restauration()
+            if not await _rouvrir_la_base_apres_restauration():
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "La base restaurée n'a pas pu être rouverte. Les fichiers de "
+                        "l'état précédent vont être remis ; vérifie la base avant de reprendre."
+                    ),
+                )
             terminer_restauration()
         except HTTPException as exc:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
@@ -1939,7 +1955,7 @@ async def restore_backup(
                 safety_kept = _finalize_safety_archive(
                     backup_dir, current_backup_name, safety_archive, password, safety_included
                 )
-            await _rouvrir_la_base_apres_restauration()
+            reouverture_reussie = await _rouvrir_la_base_apres_restauration()
             # Réappliquer aussi après un retour arrière. En cas d'échec, le
             # journal durable continue de bloquer tous les accords cloud.
             from app.services.consentements import terminer_restauration
@@ -1959,6 +1975,15 @@ async def restore_backup(
             # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
             if decrypted_temp is not None:
                 decrypted_temp.unlink(missing_ok=True)
+
+    if not reouverture_reussie:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Les fichiers ont été restaurés, mais la base n'a pas pu être rouverte. "
+                "Redémarre THÉRÈSE et vérifie tes sauvegardes avant de reprendre."
+            ),
+        )
 
     # B-023 : la restauration a remplacé la table `preferences` ENTIÈRE, clés
     # API comprises, sans passer par POST/DELETE /api-key - les deux seules

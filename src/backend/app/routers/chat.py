@@ -43,7 +43,6 @@ from app.services.entity_extractor import (
 )
 from app.services.error_handler import message_pour_ecran
 from app.services.file_parser import (
-    AvisLectureFichier,
     AvisTailleFichier,
     ErreurTailleFichier,
     avis_sans_texte,
@@ -337,13 +336,13 @@ async def _get_file_context(
     # Validation securite du chemin (SEC-002)
     try:
         path = validate_file_path(file_path)
-    except PermissionError as e:
-        return None, str(e)
+    except PermissionError:
+        return None, "Accès refusé : ce fichier ne peut pas être transmis."
     except FileNotFoundError as e:
         return None, str(e)
 
     if not path.is_file():
-        return None, f"Ce n'est pas un fichier: {file_path}"
+        return None, f"Ce n'est pas un fichier : {file_path}"
 
     try:
         # Extract text content, hors boucle d'événements : joindre un gros
@@ -458,10 +457,10 @@ async def _get_file_context(
         # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
         raise
     except ErreurTailleFichier as e:
-        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name}: {e}")
+        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name} : {e}")
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
-        return None, f"Erreur lors de la lecture de {path.name}: {str(e)}"
+        return None, f"Impossible de lire « {path.name} ». Vérifie le fichier et réessaie."
 
 
 # ============================================================
@@ -2307,8 +2306,7 @@ async def send_message(
         else:
             memory_context = file_context_str
 
-    # Le rejet de taille est annoncé ; les autres erreurs gardent leur traitement.
-    file_errors = [erreur for erreur in file_errors if isinstance(erreur, (AvisTailleFichier, AvisLectureFichier))]
+    # Toute pièce non transmise doit être signalée à l'écran et au modèle.
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 
@@ -3101,8 +3099,7 @@ async def _do_stream_response(
         else:
             memory_context = file_context_str
 
-    # Le statut ci-dessus compte toutes les erreurs, l'avis vise la taille.
-    file_errors = [erreur for erreur in file_errors if isinstance(erreur, (AvisTailleFichier, AvisLectureFichier))]
+    # Le statut compte les erreurs ; les avis expliquent aussi lesquelles.
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 

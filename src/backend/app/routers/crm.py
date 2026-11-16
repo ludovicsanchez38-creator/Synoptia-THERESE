@@ -78,6 +78,11 @@ def _sanitize_row(row: dict) -> dict:
     return sanitized
 
 
+def _signaler_ligne_invalide(stats: dict, row: dict, onglet: str, ligne: int) -> None:
+    if any(value is not None and str(value).strip() for value in row.values()):
+        stats["errors"].append(f"{onglet}, ligne {ligne} : identifiant manquant ou valeur invalide.")
+
+
 router = APIRouter(tags=["crm"])
 
 
@@ -1498,7 +1503,7 @@ async def sync_crm(
             clients_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Clients")
             logger.info(f"Found {len(clients_data)} clients in Google Sheets")
 
-            for raw_row in clients_data:
+            for numero, raw_row in enumerate(clients_data, start=2):
                 try:
                     row = _sanitize_row(raw_row)
                     _, created = await upsert_contact(session, row, safe_get=True)
@@ -1507,7 +1512,7 @@ async def sync_crm(
                     else:
                         stats["contacts_updated"] += 1
                 except ValueError:
-                    continue  # ID manquant, on saute
+                    _signaler_ligne_invalide(stats, raw_row, "Clients", numero)
                 except Exception as e:
                     logger.error(f"Error syncing contact {row.get('ID', 'unknown')}: {e}")
                     stats["errors"].append(f"Contact {row.get('ID', 'unknown')}: {str(e)}")
@@ -1521,7 +1526,7 @@ async def sync_crm(
             projects_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Projects")
             logger.info(f"Found {len(projects_data)} projects in Google Sheets")
 
-            for raw_row in projects_data:
+            for numero, raw_row in enumerate(projects_data, start=2):
                 try:
                     row = _sanitize_row(raw_row)
                     _, created = await upsert_project(session, row, safe_get=True)
@@ -1530,7 +1535,7 @@ async def sync_crm(
                     else:
                         stats["projects_updated"] += 1
                 except ValueError:
-                    continue
+                    _signaler_ligne_invalide(stats, raw_row, "Projets", numero)
                 except Exception as e:
                     logger.error(f"Error syncing project {row.get('ID', 'unknown')}: {e}")
                     stats["errors"].append(f"Project {row.get('ID', 'unknown')}: {str(e)}")
@@ -1544,7 +1549,7 @@ async def sync_crm(
             tasks_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Tasks")
             logger.info(f"Found {len(tasks_data)} tasks in Google Sheets")
 
-            for raw_row in tasks_data:
+            for numero, raw_row in enumerate(tasks_data, start=2):
                 try:
                     row = _sanitize_row(raw_row)
                     _, created = await upsert_task(session, row, safe_get=True)
@@ -1553,7 +1558,7 @@ async def sync_crm(
                     else:
                         stats["tasks_updated"] += 1
                 except ValueError:
-                    continue
+                    _signaler_ligne_invalide(stats, raw_row, "Tâches", numero)
                 except Exception as e:
                     logger.error(f"Error syncing task {row.get('ID', 'unknown')}: {e}")
                     stats["errors"].append(f"Task {row.get('ID', 'unknown')}: {str(e)}")
@@ -1568,7 +1573,7 @@ async def sync_crm(
         try:
             deliverables_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Deliverables")
             logger.info(f"Found {len(deliverables_data)} deliverables in Google Sheets")
-            for raw_row in deliverables_data:
+            for numero, raw_row in enumerate(deliverables_data, start=2):
                 identifiant = raw_row.get("ID", "unknown") if isinstance(raw_row, dict) else "unknown"
                 try:
                     row = _sanitize_row(raw_row)
@@ -1578,7 +1583,7 @@ async def sync_crm(
                     else:
                         stats["deliverables_updated"] += 1
                 except ValueError:
-                    continue
+                    _signaler_ligne_invalide(stats, raw_row, "Livrables", numero)
                 except Exception as e:
                     logger.error(f"Error syncing deliverable {identifiant}: {e}")
                     stats["errors"].append(f"Deliverable {identifiant}: {str(e)}")
@@ -1637,7 +1642,7 @@ async def import_crm_data(
     # Import Clients
     if clients:
         logger.info(f"Importing {len(clients)} clients")
-        for raw_row in clients:
+        for numero, raw_row in enumerate(clients, start=1):
             try:
                 row = _sanitize_row(raw_row)
                 _, created = await upsert_contact(session, row, safe_get=True)
@@ -1646,7 +1651,7 @@ async def import_crm_data(
                 else:
                     stats["contacts_updated"] += 1
             except ValueError:
-                continue
+                _signaler_ligne_invalide(stats, raw_row, "Clients", numero)
             except Exception as e:
                 logger.error(f"Error importing contact {raw_row.get('ID', 'unknown')}: {e}")
                 stats["errors"].append(f"Contact {raw_row.get('ID', 'unknown')}: {str(e)}")
@@ -1654,7 +1659,7 @@ async def import_crm_data(
     # Import Projects
     if projects:
         logger.info(f"Importing {len(projects)} projects")
-        for raw_row in projects:
+        for numero, raw_row in enumerate(projects, start=1):
             try:
                 row = _sanitize_row(raw_row)
                 _, created = await upsert_project(session, row, safe_get=True)
@@ -1663,7 +1668,7 @@ async def import_crm_data(
                 else:
                     stats["projects_updated"] += 1
             except ValueError:
-                continue
+                _signaler_ligne_invalide(stats, raw_row, "Projets", numero)
             except Exception as e:
                 logger.error(f"Error importing project {raw_row.get('ID', 'unknown')}: {e}")
                 stats["errors"].append(f"Project {raw_row.get('ID', 'unknown')}: {str(e)}")
@@ -1671,7 +1676,7 @@ async def import_crm_data(
     # Import Deliverables
     if deliverables:
         logger.info(f"Importing {len(deliverables)} deliverables")
-        for raw_row in deliverables:
+        for numero, raw_row in enumerate(deliverables, start=1):
             try:
                 row = _sanitize_row(raw_row)
                 _, created = await upsert_deliverable_from_import(session, row, safe_get=True)
@@ -1680,7 +1685,7 @@ async def import_crm_data(
                 else:
                     stats["deliverables_updated"] += 1
             except ValueError:
-                continue
+                _signaler_ligne_invalide(stats, raw_row, "Livrables", numero)
             except Exception as e:
                 logger.error(f"Error importing deliverable {raw_row.get('ID', 'unknown')}: {e}")
                 stats["errors"].append(f"Deliverable {raw_row.get('ID', 'unknown')}: {str(e)}")
@@ -1688,7 +1693,7 @@ async def import_crm_data(
     # Import Tasks
     if tasks:
         logger.info(f"Importing {len(tasks)} tasks")
-        for raw_row in tasks:
+        for numero, raw_row in enumerate(tasks, start=1):
             try:
                 row = _sanitize_row(raw_row)
                 _, created = await upsert_task(session, row, safe_get=True)
@@ -1697,7 +1702,7 @@ async def import_crm_data(
                 else:
                     stats["tasks_updated"] += 1
             except ValueError:
-                continue
+                _signaler_ligne_invalide(stats, raw_row, "Tâches", numero)
             except Exception as e:
                 logger.error(f"Error importing task {raw_row.get('ID', 'unknown')}: {e}")
                 stats["errors"].append(f"Task {raw_row.get('ID', 'unknown')}: {str(e)}")
@@ -1711,7 +1716,11 @@ async def import_crm_data(
 
     return CRMSyncResponse(
         success=len(stats["errors"]) == 0,
-        message=f"Import termine: {total_synced} elements",
+        message=(
+            f"Import incomplet : {total_synced} élément(s) enregistré(s), "
+            f"{len(stats['errors'])} ligne(s) à vérifier."
+            if stats["errors"] else f"Import terminé : {total_synced} élément(s)."
+        ),
         stats=CRMSyncStatsResponse(**stats, total_synced=total_synced),
         sync_time=now,
     )

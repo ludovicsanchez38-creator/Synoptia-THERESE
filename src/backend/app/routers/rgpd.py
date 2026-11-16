@@ -219,14 +219,32 @@ async def anonymize_contact(
     # B-445 : après le commit, le dépôt disque de chaque dossier suit.
     from app.routers.memory import _purger_le_depot_du_dossier
 
+    depots_restants = []
     for dossier_id in dossiers_a_purger:
-        await _purger_le_depot_du_dossier(dossier_id)
+        if not await _purger_le_depot_du_dossier(dossier_id):
+            depots_restants.append(dossier_id)
 
     # Purge du fantôme vectoriel (P0-RGPD-1) : sans ça, la fiche [ANONYMISÉ]
     # remonte encore en recherche sémantique au même score (constat C4).
     from app.services.rgpd_auto import purge_contact_vector
 
     purged = await purge_contact_vector(contact_id)
+
+    if depots_restants or purged is None:
+        restes = []
+        if depots_restants:
+            restes.append(
+                "les dépôts des dossiers suivants restent à vérifier ou à supprimer : "
+                + ", ".join(depots_restants)
+            )
+        if purged is None:
+            restes.append("la suppression des données de recherche du contact a échoué")
+        return RGPDAnonymizeResponse(
+            success=False,
+            message="Anonymisation incomplète : les données en base ont été traitées, mais "
+            + " ; ".join(restes) + ".",
+            contact_id=contact_id,
+        )
 
     logger.info(
         f"RGPD anonymization for contact {contact_id}: {request.reason} "

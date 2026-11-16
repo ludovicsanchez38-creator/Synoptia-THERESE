@@ -1122,18 +1122,18 @@ async def get_event(
     """
     event = await session.get(CalendarEvent, event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=404, detail="Événement introuvable")
 
     if calendar_id != "primary" and event.calendar_id != calendar_id:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=404, detail="Événement introuvable")
 
     calendrier = await session.get(Calendar, event.calendar_id)
-    if calendrier is not None and calendrier.account_id != account_id:
-        raise HTTPException(status_code=404, detail="Event not found")
-    # Un événement dont la ligne de calendrier a disparu n'est rattachable à
-    # aucun compte : il n'y a rien à comparer. Le refuser condamnerait des
-    # données déjà en base sans rien cloisonner de plus - les deux croisements
-    # du défaut (calendrier voisin, compte étranger) sont fermés au-dessus.
+    if (
+        calendrier is None
+        or calendrier.account_id != account_id
+        or (not account_id and calendrier.provider != "local")
+    ):
+        raise HTTPException(status_code=404, detail="Événement introuvable")
 
     return CalendarEventResponse(
         id=event.id,
@@ -1164,6 +1164,7 @@ class BlocageDeSeance(BaseModel):
 async def bloquer_un_evenement(
     event_id: str,
     request: BlocageDeSeance,
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """Bloque un evenement, ou leve le blocage.
@@ -1175,6 +1176,13 @@ async def bloquer_un_evenement(
     """
     evenement = await session.get(CalendarEvent, event_id)
     if evenement is None:
+        raise HTTPException(status_code=404, detail="Événement introuvable")
+    calendrier = await session.get(Calendar, evenement.calendar_id)
+    if (
+        calendrier is None
+        or calendrier.account_id != account_id
+        or (not account_id and calendrier.provider != "local")
+    ):
         raise HTTPException(status_code=404, detail="Événement introuvable")
 
     motif = (request.blocage or "").strip()

@@ -321,7 +321,7 @@ async def _delete_embedding(entity_id: str) -> None:
         logger.warning(f"Failed to delete embedding {entity_id}: {e}")
 
 
-async def _purger_le_depot_du_dossier(project_id: str) -> None:
+async def _purger_le_depot_du_dossier(project_id: str) -> bool:
     """Retire du DISQUE le dépôt THÉRÈSE d'un dossier supprimé.
 
     B-021 : la suppression comptait ses fichiers (`cascade_deleted["files"]`)
@@ -336,10 +336,8 @@ async def _purger_le_depot_du_dossier(project_id: str) -> None:
     d'après un chemin que l'application a elle-même construit, jamais d'après
     un chemin qu'elle a seulement lu.
 
-    Best-effort et journalisé : la base est déjà commitée quand on arrive ici,
-    et une purge en échec ne doit pas transformer une suppression réussie en
-    erreur. L'inverse - effacer avant le commit - laisserait une ligne
-    promettant un contenu introuvable.
+    La base est déjà commitée quand on arrive ici. Le résultat indique si le
+    dépôt a bien disparu, pour permettre à l'appelant de signaler un reste.
     """
     import asyncio
     import shutil
@@ -358,22 +356,27 @@ async def _purger_le_depot_du_dossier(project_id: str) -> None:
                 "séparateur de chemin (%r)",
                 project_id,
             )
-            return
+            return False
         depot = (racine / project_id).resolve()
         if depot == racine or not depot.is_relative_to(racine):
             logger.warning(
                 "Purge disque refusée pour un identifiant de dossier suspect : %r",
                 project_id,
             )
-            return
+            return False
         if depot.exists():
             # Leçon D5 (27/08) : le travail DISQUE ne reste pas sur la boucle
             # d'événements. Un dépôt volumineux, ou une racine sur un volume
             # réseau qui se réveille, gèlerait toute l'application.
-            await asyncio.to_thread(shutil.rmtree, depot, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, depot)
+            if depot.exists():
+                logger.error("Le dépôt disque du dossier %s existe encore", project_id)
+                return False
             logger.info("Dépôt disque du dossier %s retiré : %s", project_id, depot)
+        return True
     except Exception:
         logger.exception("Purge disque du dossier %s en échec", project_id)
+        return False
 
 
 async def _nettoyer_et_supprimer_projet(

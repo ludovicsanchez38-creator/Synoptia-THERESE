@@ -8,7 +8,7 @@ import logging
 
 from app.models.database import get_session
 from app.models.entities import Notification
-from app.models.schemas import NotificationCountResponse, NotificationResponse
+from app.models.schemas import NotificationCountResponse, NotificationResponse, _iso_utc
 from app.services import notification_service
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,8 +28,8 @@ def _notification_to_response(notif: Notification) -> NotificationResponse:
         action_url=notif.action_url,
         action_label=notif.action_label,
         is_read=notif.is_read,
-        created_at=notif.created_at.isoformat() if notif.created_at else "",
-        read_at=notif.read_at.isoformat() if notif.read_at else None,
+        created_at=_iso_utc(notif.created_at) if notif.created_at else "",
+        read_at=_iso_utc(notif.read_at) if notif.read_at else None,
     )
 
 
