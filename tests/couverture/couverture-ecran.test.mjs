@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import test from 'node:test';
@@ -13,6 +13,205 @@ import {
 } from './couverture-ecran.mjs';
 
 const BASE = 'http://127.0.0.1:1420/?port=17393';
+const MIGRATION_CHAT = 'http://127.0.0.1:17393/api/chat/cache-migration';
+
+test('B-2029 : seule la migration exacte du chat est simulable', async () => {
+  const instrument = await import('./couverture-ecran.mjs');
+  assert.equal(typeof instrument.requeteASimuler, 'function');
+  const cas = [
+    ['POST', MIGRATION_CHAT, true],
+    ['GET', MIGRATION_CHAT, false],
+    ['PUT', MIGRATION_CHAT, false],
+    ['POST', `${MIGRATION_CHAT}?test=1`, false],
+    ['POST', `${MIGRATION_CHAT}?`, false],
+    ['POST', `${MIGRATION_CHAT}#section`, false],
+    ['POST', `${MIGRATION_CHAT}/`, false],
+    ['POST', 'http://127.0.0.1:17393/api/chat/autre', false],
+    ['POST', 'http://127.0.0.1:1420/api/chat/cache-migration', false],
+    ['POST', 'http://127.0.0.1:17293/api/chat/cache-migration', false],
+    ['POST', 'http://localhost:17393/api/chat/cache-migration', false],
+    ['POST', 'https://127.0.0.1:17393/api/chat/cache-migration', false],
+    ['POST', 'adresse invalide', false],
+  ];
+  for (const [methode, url, attendu] of cas) {
+    assert.equal(instrument.requeteASimuler(methode, url), attendu, `${methode} ${url}`);
+  }
+  assert.equal(requeteAutorisee('POST', MIGRATION_CHAT), false, 'la simulation ne donne pas accès au réseau');
+});
+
+test('B-2029 : la garde acquitte et compte la migration sans accès réseau', async () => {
+  let routeHttp;
+  const garde = {
+    bloquees: [], websockets_bloques: [], telechargements: [], popups: [], portReel: false,
+    ecritures_simulees: { nombre: 0, requetes: [] },
+  };
+  await installerGardeReseau({
+    route: async (_motif, handler) => { routeHttp = handler; },
+    routeWebSocket: async () => {},
+  }, garde);
+  const traiter = async (methode, url) => {
+    const operations = [];
+    await routeHttp({
+      request: () => ({ method: () => methode, url: () => url }),
+      continue: async () => { operations.push({ action: 'continue' }); },
+      abort: async (raison) => { operations.push({ action: 'abort', raison }); },
+      fulfill: async (options) => { operations.push({ action: 'fulfill', options }); },
+    });
+    return operations;
+  };
+
+  const reponse = [{ action: 'fulfill', options: {
+    status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }),
+  } }];
+  assert.deepEqual(await traiter('POST', MIGRATION_CHAT), reponse, 'la migration doit être acquittée localement');
+  assert.deepEqual(await traiter('POST', MIGRATION_CHAT), reponse);
+  assert.deepEqual(garde.ecritures_simulees, {
+    nombre: 2, requetes: [{ methode: 'POST', url: MIGRATION_CHAT }, { methode: 'POST', url: MIGRATION_CHAT }],
+  });
+  assert.deepEqual(garde.bloquees, []);
+  await installerGardeReseau({
+    route: async (_motif, handler) => { routeHttp = handler; },
+    routeWebSocket: async () => {},
+  }, garde);
+  assert.deepEqual(await traiter('POST', MIGRATION_CHAT), reponse);
+  assert.deepEqual(garde.ecritures_simulees, {
+    nombre: 3,
+    requetes: Array.from({ length: 3 }, () => ({ methode: 'POST', url: MIGRATION_CHAT })),
+  }, 'les écritures restent comptées entre les contextes');
+
+  const interdites = [
+    `${MIGRATION_CHAT}?test=1`,
+    `${MIGRATION_CHAT}?`,
+    'http://127.0.0.1:17393/api/chat/autre',
+    'http://127.0.0.1:1420/api/chat/cache-migration',
+    'http://127.0.0.1:17293/api/chat/cache-migration',
+  ];
+  for (const url of interdites) {
+    assert.deepEqual(await traiter('POST', url), [{ action: 'abort', raison: 'blockedbyclient' }], url);
+  }
+  assert.equal(garde.bloquees.length, interdites.length);
+  assert.deepEqual(garde.bloquees[0], { methode: 'POST', url: MIGRATION_CHAT });
+  assert.equal(garde.portReel, true);
+  assert.equal(garde.ecritures_simulees.nombre, 3);
+});
+
+// La CLI réelle est exercée avec un contexte et une page factices. Aucun
+// navigateur ni service n'est lancé ; le bouton déclenche les requêtes données.
+function parcoursFactice(t, requetes) {
+  const dossier = mkdtempSync('/private/tmp/therese-couverture-b2029-');
+  t.after(() => renameSync(dossier, join(homedir(), '.Trash', basename(dossier))));
+  const dbPath = join(dossier, 'therese.db');
+  const sortie = join(dossier, 'sortie');
+  writeFileSync(dbPath, 'jetable');
+  writeFileSync(join(dossier, '.session_token'), 'factice', { mode: 0o600 });
+  const fichier = fileURLToPath(new URL('./couverture-ecran.mjs', import.meta.url));
+  const code = `
+    import { chromium } from '@playwright/test';
+    import { pathToFileURL } from 'node:url';
+    const [fichier, dataDir, dbPath, sortie, liste] = process.argv.slice(1);
+    const requetes = JSON.parse(liste);
+    let numeroFetch = 0;
+    globalThis.fetch = async () => {
+      numeroFetch += 1;
+      if (numeroFetch === 1) return { ok: true, json: async () => ({ version: 1, network_policy: 'loopback-only', offline: true }) };
+      if (numeroFetch === 2) return { ok: true, json: async () => ({ token: 'factice' }) };
+      if (numeroFetch === 3) return { ok: true, json: async () => ({ data_dir: dataDir, db_path: dbPath }) };
+      throw new Error('appel réseau imprévu');
+    };
+    let routeHttp;
+    let evaluationsBouton = 0;
+    const etat = { url: 'http://127.0.0.1:1420/', dialogues: 0, focus: 'body', dom: 'initial', etats: '' };
+    const evaluations = ['light', [], { page: 0, rognes: [] }, etat, etat, etat, { ...etat, dom: 'modifié' }];
+    const bouton = {
+      isVisible: async () => true,
+      boundingBox: async () => ({ width: 100, height: 30 }),
+      isEnabled: async () => true,
+      evaluate: async () => ++evaluationsBouton === 1 ? { deja: false, natif: false, identites: {} } : null,
+      ariaSnapshot: async () => '- button "Nouvelle conversation"',
+      getAttribute: async () => null,
+      focus: async () => {},
+      click: async () => {
+        for (const url of requetes) await routeHttp({
+          request: () => ({ method: () => 'POST', url: () => url }),
+          continue: async () => { throw new Error('écriture transmise au réseau'); },
+          abort: async () => {},
+          fulfill: async () => {},
+        });
+      },
+    };
+    const page = {
+      on: () => {}, goto: async () => {}, waitForFunction: async () => {}, waitForTimeout: async () => {},
+      screenshot: async () => {},
+      evaluate: async () => {
+        if (!evaluations.length) throw new Error('évaluation inattendue dans la page factice');
+        return evaluations.shift();
+      },
+      locator: () => ({ count: async () => 0 }),
+      getByRole: (role) => ({ count: async () => role === 'button' ? 1 : 0, nth: () => bouton }),
+    };
+    const contexte = {
+      route: async (motif, handler) => { if (motif === '**/*') routeHttp = handler; },
+      routeWebSocket: async () => {}, addInitScript: async () => {}, newPage: async () => page, close: async () => {},
+    };
+    chromium.launch = async () => ({ newContext: async () => contexte, close: async () => {} });
+    process.argv = [process.execPath, fichier, '--expected-data-dir', dataDir, '--sortie', sortie,
+      '--largeurs', '1440', '--themes', 'light', '--ecrans', 'accueil'];
+    await import(pathToFileURL(fichier).href);
+  `;
+  const resultat = spawnSync(process.execPath,
+    ['--input-type=module', '-e', code, fichier, dossier, dbPath, sortie, JSON.stringify(requetes)],
+    { encoding: 'utf8' });
+  return { resultat, sortie };
+}
+
+test('B-2029 : le parcours avec la seule migration du chat écrit son rapport', (t) => {
+  const { resultat, sortie } = parcoursFactice(t, [MIGRATION_CHAT, MIGRATION_CHAT]);
+  if (resultat.status !== 0 && existsSync(join(sortie, 'interruption.json'))) {
+    const interruption = JSON.parse(readFileSync(join(sortie, 'interruption.json'), 'utf8'));
+    assert.deepEqual(interruption.garde.bloquees, [], 'le POST de migration ne doit pas interrompre le parcours');
+  }
+  assert.equal(resultat.status, 0, 'le parcours factice doit se terminer');
+  assert.equal(existsSync(join(sortie, 'interruption.json')), false);
+  const rapport = JSON.parse(readFileSync(join(sortie, 'rapport.json'), 'utf8'));
+  assert.deepEqual(rapport.ecrans, ['accueil']);
+  assert.equal(rapport.combinaisons[0].gestes, 1, 'le geste Nouvelle conversation a été exercé');
+  assert.deepEqual(rapport.garde.bloquees, []);
+  assert.deepEqual(rapport.garde.ecritures_simulees, {
+    nombre: 2, requetes: [{ methode: 'POST', url: MIGRATION_CHAT }, { methode: 'POST', url: MIGRATION_CHAT }],
+  });
+});
+
+test('B-2029 : une interruption conserve les simulations et bloque la migration avec paramètre', (t) => {
+  const { resultat, sortie } = parcoursFactice(t, [MIGRATION_CHAT, `${MIGRATION_CHAT}?test=1`]);
+  assert.equal(resultat.status, 1);
+  assert.equal(existsSync(join(sortie, 'rapport.json')), false);
+  const interruption = JSON.parse(readFileSync(join(sortie, 'interruption.json'), 'utf8'));
+  assert.equal(interruption.ecran, 'accueil');
+  assert.deepEqual(interruption.garde.bloquees, [{ methode: 'POST', url: MIGRATION_CHAT }]);
+  assert.deepEqual(interruption.garde.ecritures_simulees, {
+    nombre: 1, requetes: [{ methode: 'POST', url: MIGRATION_CHAT }],
+  });
+});
+
+test('B-2029 : les autres écritures bloquées interrompent aussi le parcours', (t) => {
+  const cas = [
+    ['http://127.0.0.1:17393/api/chat/autre', false],
+    ['http://127.0.0.1:1420/api/chat/cache-migration', false],
+    ['http://127.0.0.1:17293/api/chat/cache-migration', true],
+  ];
+  for (const [url, portReel] of cas) {
+    const { resultat, sortie } = parcoursFactice(t, [MIGRATION_CHAT, url]);
+    assert.equal(resultat.status, 1, url);
+    assert.equal(existsSync(join(sortie, 'rapport.json')), false, url);
+    const interruption = JSON.parse(readFileSync(join(sortie, 'interruption.json'), 'utf8'));
+    assert.equal(interruption.ecran, 'accueil');
+    assert.deepEqual(interruption.garde.bloquees, [{ methode: 'POST', url }]);
+    assert.equal(interruption.garde.portReel, portReel);
+    assert.deepEqual(interruption.garde.ecritures_simulees, {
+      nombre: 1, requetes: [{ methode: 'POST', url: MIGRATION_CHAT }],
+    });
+  }
+});
 
 test('la CLI refuse une base invalide avant même le lancement de Chromium', () => {
   const fichier = fileURLToPath(new URL('./couverture-ecran.mjs', import.meta.url));
