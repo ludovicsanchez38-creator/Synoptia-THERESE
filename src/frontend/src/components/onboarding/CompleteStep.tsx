@@ -121,9 +121,9 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
     {
       icon: FolderOpen,
       title: 'Dossier de travail',
-      value: summary.workingDir
-        ? summary.workingDir.split('/').slice(-2).join('/')
-        : 'Non configuré',
+      // B-1935 : le chemin entier, comme le modèle (B-243). Les deux derniers
+      // segments se répétaient au survol, à la place du chemin réel.
+      value: summary.workingDir || 'Non configuré',
       configured: !!summary.workingDir,
       unavailable: summaryUnavailable.includes('Dossier de travail'),
     },
@@ -155,8 +155,10 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
         transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
         className="mb-8"
       >
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-accent-tint">
-          <PartyPopper className="h-12 w-12 text-accent" />
+        <div className={`flex h-24 w-24 items-center justify-center rounded-full ${iaManquante ? 'bg-[var(--color-warning-tint)]' : 'bg-accent-tint'}`}>
+          {iaManquante
+            ? <AlertCircle className="h-12 w-12 text-warning" />
+            : <PartyPopper className="h-12 w-12 text-accent" />}
         </div>
       </motion.div>
 
