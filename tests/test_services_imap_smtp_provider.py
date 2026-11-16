@@ -167,7 +167,7 @@ class TestConnectionTimeoutMessage:
             patch("app.services.email.imap_smtp_provider.aiosmtplib.SMTP") as mock_smtp_cls,
         ):
             mock_smtp_cls.return_value.connect = AsyncMock(side_effect=asyncio.TimeoutError())
-            result = await provider.test_connection()
+            result = await provider.test_connection_details()
 
         assert result["smtp_ok"] is False
         assert "465" in result["message"]

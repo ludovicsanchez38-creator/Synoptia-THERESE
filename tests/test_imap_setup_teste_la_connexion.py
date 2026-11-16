@@ -25,7 +25,7 @@ async def test_une_connexion_qui_echoue_refuse_la_configuration(client, db_sessi
     async def _panne(self):
         return {"success": False, "imap_ok": False, "smtp_ok": True, "message": "IMAP : identifiants refusés par le serveur"}
 
-    monkeypatch.setattr(module.ImapSmtpProvider, "test_connection", _panne)
+    monkeypatch.setattr(module.ImapSmtpProvider, "test_connection_details", _panne)
 
     reponse = await client.post("/api/email/auth/imap-setup", json=CORPS)
     assert reponse.status_code == 400, reponse.text
@@ -46,7 +46,7 @@ async def test_une_connexion_qui_reussit_enregistre_le_compte(client):
 @pytest.mark.asyncio
 async def test_la_vraie_sonde_qui_reussit_enregistre_le_compte(client, monkeypatch):
     """Revue COCO 0.68.0 (P1) : la route lisait `verdict["ok"]` alors que la vraie
-    `test_connection()` répond `success` (+ `imap_ok`, `smtp_ok`). Tout compte
+    `test_connection_details()` répond `success` (+ `imap_ok`, `smtp_ok`). Tout compte
     IMAP valide sortait en 400 ; la fixture de test masquait le contrat."""
     from unittest.mock import AsyncMock, patch
 
