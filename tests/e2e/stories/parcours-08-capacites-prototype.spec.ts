@@ -13,6 +13,18 @@ async function json(route: Route, body: unknown) {
 async function installReadOnlyShell(page: Page) {
   await page.route(`${BACKEND_URL}/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
+    const methode = route.request().method();
+    // Ce calcul est pur : il ne touche ni à la base ni à un fournisseur.
+    if (methode === 'POST' && pathname === '/api/calc/roi') return route.continue();
+    // Tester la méthode avant les lectures bouchonnées, sinon un POST peut
+    // recevoir un succès factice sans être autorisé par le scénario.
+    if (methode !== 'GET') {
+      return route.fulfill({
+        status: 405,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'ECRITURE_REFUSEE', message: pathname }),
+      });
+    }
     // 02/09/2026 : `/api/auth/token` n'est PLUS bouchonne. Un faux jeton etait
     // sans consequence tant que le repli repondait a tout, mais depuis que les
     // lectures non prevues atteignent le vrai backend jetable, celui-ci les
@@ -57,12 +69,6 @@ async function installReadOnlyShell(page: Page) {
         },
       });
     }
-    if (pathname === '/api/calc/roi') {
-      return json(route, {
-        investment: 10000, gain: 15000, roi_percent: 50, profit: 5000,
-        interpretation: 'Très bon ROI de 50 %.',
-      });
-    }
     if (pathname === '/api/images/status') {
       return json(route, {
         openai_available: true, gemini_available: false, fal_available: false,
@@ -71,13 +77,6 @@ async function installReadOnlyShell(page: Page) {
     }
     if (pathname === '/api/images/list') {
       return json(route, { images: [], total: 0 });
-    }
-    if (pathname === '/api/images/generate') {
-      return json(route, {
-        id: 'image-generated', provider: 'gpt-image-2', file_name: 'visuel.png', file_size: 1200,
-        mime_type: 'image/png', created_at: '2026-07-14T10:00:00Z', prompt: 'Portrait éditorial de Thérèse',
-        download_url: '/api/images/download/image-generated',
-      });
     }
     if (pathname === '/api/follow-ups') {
       return json(route, [{
@@ -156,13 +155,6 @@ async function installReadOnlyShell(page: Page) {
     // fige », c'est « AUCUNE ECRITURE ne part ». On fige donc ce que les
     // scenarios controlent, on REFUSE bruyamment les ecritures, et on laisse
     // les lectures restantes atteindre le vrai backend jetable.
-    if (route.request().method() !== 'GET') {
-      return route.fulfill({
-        status: 405,
-        contentType: 'application/json',
-        body: JSON.stringify({ code: 'ECRITURE_REFUSEE', message: pathname }),
-      });
-    }
     return route.continue();
   });
 }
@@ -406,6 +398,9 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     const canvas = page.getByTestId('calculator-workspace-canvas');
     await expect(canvas).toBeVisible();
     await canvas.getByLabel('Investissement').fill('10000');
+    await canvas.getByLabel('Gain total').fill('12000');
+    await canvas.getByRole('button', { name: 'Calculer avec le moteur local' }).click();
+    await expect(canvas.getByTestId('calculator-result')).toContainText('20 %');
     await canvas.getByLabel('Gain total').fill('15000');
     await canvas.getByRole('button', { name: 'Calculer avec le moteur local' }).click();
     await expect(canvas.getByTestId('calculator-result')).toContainText('50 %');
@@ -433,6 +428,15 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     // « Impossible de contacter le serveur ». Seul ce test admet cette écriture,
     // et il vérifie ce que l'application envoie et dans quel ordre.
     const accords: Record<string, unknown>[] = [];
+    // Bouchon propre à ce scénario : aucune génération ne rejoint un service.
+    await page.route(`${BACKEND_URL}/api/images/generate`, async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      return json(route, {
+        id: 'image-generated', provider: 'gpt-image-2', file_name: 'visuel.png', file_size: 1200,
+        mime_type: 'image/png', created_at: '2026-07-14T10:00:00Z', prompt: 'Portrait éditorial de Thérèse',
+        download_url: '/api/images/download/image-generated',
+      });
+    });
     await page.route(`${BACKEND_URL}/api/consents`, async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
       const decision = route.request().postDataJSON() as Record<string, unknown>;
