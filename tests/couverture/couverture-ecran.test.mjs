@@ -193,6 +193,111 @@ test('B-2029 : une interruption conserve les simulations et bloque la migration 
   });
 });
 
+test('B-2029 remédiation : une interruption conserve les acquittements concurrents', () => {
+  const fichier = fileURLToPath(new URL('./couverture-ecran.mjs', import.meta.url));
+  const code = `
+    import fs from 'node:fs';
+    import { syncBuiltinESMExports } from 'node:module';
+    import { join } from 'node:path';
+    import { pathToFileURL } from 'node:url';
+    import { chromium } from '@playwright/test';
+
+    const fichier = process.argv[1];
+    const dataDir = '/private/tmp/donnees-factices';
+    const sortie = join(dataDir, 'sortie');
+    const fichiers = new Map();
+    const lire = fs.readFileSync;
+    fs.readFileSync = (chemin, ...options) => chemin === join(dataDir, '.session_token')
+      ? 'factice' : lire(chemin, ...options);
+    fs.realpathSync = (chemin) => chemin;
+    fs.mkdirSync = () => {};
+    fs.writeFileSync = (chemin, contenu) => fichiers.set(chemin, contenu);
+    syncBuiltinESMExports();
+
+    let appelsFetch = 0;
+    globalThis.fetch = async () => {
+      appelsFetch += 1;
+      if (appelsFetch === 1) return { ok: true, json: async () => ({ version: 1, network_policy: 'loopback-only', offline: true }) };
+      if (appelsFetch === 2) return { ok: true, json: async () => ({ token: 'factice' }) };
+      if (appelsFetch === 3) return { ok: true, json: async () => ({ data_dir: dataDir, db_path: join(dataDir, 'therese.db') }) };
+      throw new Error('appel réseau imprévu');
+    };
+    let routeHttp;
+    let evaluationsBouton = 0;
+    const acquittements = [];
+    const etat = { url: 'http://127.0.0.1:1420/', dialogues: 0, focus: 'body', dom: 'initial', etats: '' };
+    const evaluations = ['light', [], { page: 0, rognes: [] }, etat, etat, etat, { ...etat, dom: 'modifié' }];
+    const route = (url) => ({
+      request: () => ({ method: () => 'POST', url: () => url }),
+      continue: async () => { throw new Error('écriture transmise au réseau'); },
+      abort: async () => {},
+      fulfill: () => new Promise((resolve, reject) => { acquittements.push({ resolve, reject }); }),
+    });
+    const bouton = {
+      isVisible: async () => true,
+      boundingBox: async () => ({ width: 100, height: 30 }),
+      isEnabled: async () => true,
+      evaluate: async () => ++evaluationsBouton === 1 ? { deja: false, natif: false, identites: {} } : null,
+      ariaSnapshot: async () => '- button "Nouvelle conversation"',
+      getAttribute: async () => null,
+      focus: async () => {},
+      click: async () => {
+        void routeHttp(route(${JSON.stringify(MIGRATION_CHAT)})).catch(() => {});
+        void routeHttp(route(${JSON.stringify(MIGRATION_CHAT)})).catch(() => {});
+        await routeHttp(route(${JSON.stringify(`${MIGRATION_CHAT}?test=1`)}));
+      },
+    };
+    const page = {
+      on: () => {}, goto: async () => {}, waitForFunction: async () => {}, waitForTimeout: async () => {},
+      screenshot: async () => {},
+      evaluate: async () => {
+        if (!evaluations.length) throw new Error('évaluation inattendue dans la page factice');
+        return evaluations.shift();
+      },
+      locator: () => ({ count: async () => 0 }),
+      getByRole: (role) => ({ count: async () => role === 'button' ? 1 : 0, nth: () => bouton }),
+    };
+    const contexte = {
+      route: async (motif, handler) => { if (motif === '**/*') routeHttp = handler; },
+      routeWebSocket: async () => {}, addInitScript: async () => {}, newPage: async () => page, close: async () => {},
+    };
+    chromium.launch = async () => ({
+      newContext: async () => contexte,
+      close: async () => {
+        setTimeout(() => {
+          acquittements[0].resolve();
+          acquittements[1].reject(new Error('acquittement interrompu'));
+        }, 20);
+      },
+    });
+    const quitter = process.exit.bind(process);
+    process.exit = (code) => {
+      process.stdout.write(JSON.stringify({
+        interruption: JSON.parse(fichiers.get(join(sortie, 'interruption.json'))),
+        rapport: fichiers.has(join(sortie, 'rapport.json')),
+      }));
+      quitter(code);
+    };
+    console.error = () => {};
+    process.argv = [process.execPath, fichier, '--expected-data-dir', dataDir, '--sortie', sortie,
+      '--largeurs', '1440', '--themes', 'light', '--ecrans', 'accueil'];
+    await import(pathToFileURL(fichier).href);
+  `;
+  const resultat = spawnSync(process.execPath, ['--input-type=module', '-e', code, fichier], {
+    encoding: 'utf8', timeout: 15000,
+  });
+  assert.equal(resultat.error, undefined);
+  assert.equal(resultat.status, 1);
+  const { interruption, rapport } = JSON.parse(resultat.stdout);
+  assert.equal(rapport, false);
+  assert.equal(interruption.ecran, 'accueil');
+  assert.match(interruption.cause, /Couverture interrompue/);
+  assert.deepEqual(interruption.garde.bloquees, [{ methode: 'POST', url: MIGRATION_CHAT }]);
+  assert.deepEqual(interruption.garde.ecritures_simulees, {
+    nombre: 1, requetes: [{ methode: 'POST', url: MIGRATION_CHAT }],
+  }, 'seul l’acquittement terminé doit figurer dans le rapport');
+});
+
 test('B-2029 : les autres écritures bloquées interrompent aussi le parcours', (t) => {
   const cas = [
     ['http://127.0.0.1:17393/api/chat/autre', false],
