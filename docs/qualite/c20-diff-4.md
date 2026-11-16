@@ -179,3 +179,101 @@ git diff --check
 Ruff : **code 0, aucun diagnostic**. `git diff --check` : **code 0**. Aucun frontend modifié, donc aucune porte frontend lancée. Aucune suite complète, aucun réseau, aucun moteur réel, aucun port réservé ni profil utilisateur ; `.app-loop/` n'a pas été consulté ou modifié. Les échanges HTTP des nouveaux tests passent exclusivement par `httpx.MockTransport`.
 
 **Verdict de remédiation ciblée : GO**, avec les quatre rouges connus ci-dessus. Les tests prouvent les refus et le parcours simulé ; ils ne constituent pas un banc Ollama réel. Le rejeu sans correctifs, les commits et les portes complètes restent à l'orchestrateur.
+
+## Remédiation de la relecture, passe 2
+
+Cette section remplace les conclusions de la passe 1 sur la continuité et la corrélation du journal. Les huit constats sont confirmés dans l'arbre effectivement livré. Aucun commit, `git add`, rebase, dépôt annexe ou bundle n'a été effectué. Les changements restent dans cet arbre ; les rapports de validation sont sous `/tmp`.
+
+### Base réellement présente et récupération de l'intégration
+
+Au début de cette passe, `HEAD=34d3566c`, `c20/integration=75498edd` et leur ancêtre commun est `e82f038a`. `git merge-base --is-ancestor c20/integration HEAD` retourne **1** : l'état local n'est donc pas celui annoncé comme rebasé. Quatre commits d'intégration manquent : `2dd3d2b1`, `9eb74c5d`, `fcf446a5`, `75498edd`. Le diff à trois points ne contient que les sept fichiers propres au lot ; les absences du diff entre les deux arbres ne prouvent pas des suppressions commises par diff-4.
+
+Les permissions de cette session placent `.git` en lecture seule, et le mandat interdit les commits et l'indexation. Les contenus d'intégration ont donc été récupérés par lecture des objets Git, d'abord les tests, puis leurs correctifs, sans modifier l'historique. **24 fichiers sont identiques octet par octet à l'intégration initiale `75498edd`** : huit fichiers de production, treize fichiers de tests absents, deux fichiers de tests divergents et `docs/qualite/c20-migrations.md`. Cela rétablit également les protections associées aux tests manquants de provenance, de motifs sensibles et de sessions d'agent, sans inventer de nouvelle correction pour ces modules.
+
+Pendant les validations, la référence partagée `c20/integration` a avancé à `31e3f98d` avec six commits du lot rust-windows. Leurs fichiers sont distincts des 24 restaurations ; ils restent hors des constats confiés à diff-4. La comparaison de cette passe est donc épinglée à `75498edd`, et le rebase final devra prendre en compte l'intégration courante.
+
+Les treize fichiers restaurés restent non suivis dans l'index actuel, conformément au mandat. Un simple `git diff c20/integration` les affiche donc encore comme absents ; leur présence et leur contenu ont été vérifiés directement contre les objets de la référence. **L'ascendance Git reste divergente** : le rebase et les commits appartiennent encore à l'orchestrateur. Les liens `.venv` et `src/frontend/node_modules`, déjà non suivis à l'arrivée, sont conservés tels quels.
+
+### Rouges obtenus avant correction
+
+Chaque reproduction principale ci-dessous a été rétablie ou ajoutée puis exécutée seule avant son correctif. Les XML ont été lus : **un test exécuté, un échec, aucune erreur** pour chacun. Les lignes d'échec sont recopiées depuis ces rapports.
+
+| Constat | Test | Ligne d'échec | Rapport `/tmp/` |
+| --- | --- | --- | --- |
+| 1 | `test_fin_d_une_autre_tache_ne_valide_pas_le_recu` | `assert True is False` | `diff-4-r2-c1-rouge.xml` |
+| 2 | `test_rotation_copie_troncature_depuis_journal_vide` | `assert True is False` | `diff-4-r2-c2-rouge.xml` |
+| 3 | `test_lien_physique_refuse_avant_toute_lecture[releve]` | `assert [29] == []` | `diff-4-r2-c3-rouge.xml` |
+| 4 | `test_note_rattachee_preservee_si_evenement_sans_projet` | `AssertionError: assert None == 'projet-existant'` | `diff-4-r2-c4-rouge.xml` |
+| 5, colonne absente | `test_migration_ajoute_contact_absent_sans_perte[standard]` | `KeyError: 'contact_id'` | `diff-4-r2-c5-contact-rouge.xml` |
+| 5, reconstruction | `test_reconstruction_preserve_la_transaction_appelante` | `AssertionError: La transaction de l’appelant a été validée.` | `diff-4-r2-c5-transaction-rouge.xml` |
+| 5, réparation | `test_reparation_preserve_la_transaction_appelante` | `AssertionError: La réparation a validé la transaction de l’appelant.` | `diff-4-r2-c5-reparation-rouge.xml` |
+| 6 | `écarte le paiement pendant la question d’abandon et le rétablit ensuite` | `Error: expect(element).not.toBeInTheDocument()` | `diff-4-r2-c6-rouge.xml` |
+| 7 | `test_limite_ne_presente_pas_la_cle_comme_acceptee` | `AssertionError: assert 'acceptée' not in 'Clé accepté...de requêtes.'` | `diff-4-r2-c7-rouge.xml` |
+| 8 | `affiche le refus du moteur pendant la vérification de destination` | `Error: expect(element).toHaveTextContent()` | `diff-4-r2-c8-agent-rouge.xml` |
+
+Pour le constat 6, le bouton trouvé à tort est « Marquer comme payée ». Pour le constat 8, le message attendu est « Le profil a changé. Reviens au profil concerné avant de réessayer. » ; le message reçu demande de vérifier la connexion au moteur.
+
+Les dépendances récupérées pour le constat 8 ont aussi été reproduites avant restauration du code :
+
+| Test exécuté seul | Ligne d'échec | Rapport `/tmp/` |
+| --- | --- | --- |
+| `test_reponse_sans_information_documentaire_reste_prudente[attribut-absent]` | `AssertionError: assert 'sans_document' == 'documents'` | `diff-4-r2-c8-provenance-rouge.xml` |
+| `test_refus_ambigu_sans_attribution_inexacte`, cas politique de confidentialité | `AssertionError: assert 'opinion politique' not in 'Cette donné...n politique.'` | `diff-4-r2-c8-motifs-rouge.xml` |
+| `test_cle_sans_espace_ne_cite_pas_un_autre_fournisseur` | `assert 'OpenAI' in "Ta clé Claude n'est rattachée à aucun espace de travail. Dans la Console Claude, crée une clé rattachée à un espace (par exemple « Default Workspace »)."` | `diff-4-r2-c8-espace-rouge.xml` |
+
+Le rejeu complémentaire des trois autres fichiers AgentSession restaurés donne **4 échecs et 6 réussites** avant correction (`diff-4-r2-c8-autres-agents-rouge.xml`), dont l'attente remise dans le sens de l'intégration dans `AgentSession.accordMoteur.test.tsx`.
+
+La relecture de l'appelant `--evaluer` a également révélé qu'un ancien résultat pouvait conserver ses booléens de preuve. Avant correction, `test_reevaluation_refuse_les_anciennes_preuves_non_capturees` échoue seul avec `AssertionError: assert 0 == 1` (`diff-4-r2-c2-reevaluation-rouge.xml`).
+
+### Corrections, limites et appelants relus
+
+1. **Fin corrélée.** La ligne de fin doit contenir `request="/api/chat?banc_r4=<identifiant>"` et le diagnostic `stop processing: … truncated = N`. Le reçu GIN 200 et la fin doivent chacun apparaître exactement une fois pour cet identifiant. Une fin anonyme, ou celle d'une autre requête avec le bon reçu, est refusée. Le nouveau test couvre ces deux variantes, y compris avec la capture par tube.
+2. **Flux conservé.** `CaptureJournal` garde un descripteur du tube anonyme de sortie du serveur et accumule les octets en mémoire. Un thread draine le tube pendant le transport HTTP ; les relevés le drainent aussi pour éviter une dépendance à l'ordonnancement. Une rotation de copie ne peut effacer ces octets. Le lecteur de fichiers conserve ses usages diagnostiques, mais ne peut plus certifier un appel. Le test reproduit la copie-troncature depuis un fichier vide, avec changement de date ; un autre vérifie que l'alerte reste dans la capture quand sa copie sur disque est effacée. Les lignes incomplètes ne prouvent rien. `preuve_journal_v=2` empêche `--evaluer` de valider les anciens résultats non capturés.
+3. **Aucun chemin de fichier pour la preuve.** Le tube anonyme n'a pas de chemin réouvrable dans l'arbre et son descripteur reste détenu jusqu'à la fin de la mesure. Les fichiers ordinaires et FIFO nommés sont refusés comme source de capture. Le lecteur diagnostique existant contrôle `st_nlink == 1` avant toute empreinte et après lecture ; le test espion vérifie qu'aucun contenu du lien physique fictif n'est lu. Les tests antérieurs de liens symboliques, substitutions, rotations et fermeture des descripteurs restent présents.
+4. **Notes héritées.** Restauration exacte de `e.project_id IS NOT NULL`. La note conserve son dossier et n'est pas marquée migrée tant que le rendez-vous n'a pas de projet ; un rattachement ultérieur reste possible. Appelants relus : `apply_adhoc_migrations` et la migration Alembic `f2a3b4c5d6e7`.
+5. **Activités.** Restauration exacte des accès protégés à `contact_id` et du refus de reconstruction/réparation pendant une transaction appelante. Le `commit()` prématuré est retiré. Relecture du chemin de démarrage et des branches de schéma enrichi, de réparation et de restauration des clés étrangères.
+6. **Facture.** Restauration du masquage des actions, de la garde de soumission et du focus sur la question d'abandon. Récupération du filtrage des éléments masqués dans le piège de focus. Les deux assertions structurelles du pied sont conservées et vérifiées après « Continuer la saisie », conformément au test d'intégration. Relecture des gestionnaires de fermeture, soumission, paiement et conversion.
+7. **HTTP 429.** Le message dit que la clé ne peut pas être vérifiée pour l'instant et propose de réessayer. Il ne prétend plus qu'elle est acceptée. Relecture de l'appel `verifier_cle` puis `message_verification` dans la route de configuration.
+8. **Comparaison et tests d'intégration.** Les treize fichiers manquants et les deux tests divergents sont rétablis ; les corrections correspondantes sont identiques à l'intégration. Relecture des deux parcours d'accord d'AgentSession, de la persistance de provenance dans le chat et des appels à `message_refus` dans les fiches et le journal d'actions. Le présent bilan distingue la divergence de base des modifications propres au lot.
+
+La chaîne `lancer` → `mesurer` → `observer_flux_journal` → `lire_troncatures` → `enregistrer_verdict`, le transport Ollama et `achever_recette_r4.py` ont été relus. Le lanceur transmet le descripteur hérité avec `--journal-fd` et `pass_fds`. **Un banc réel exige désormais un lanceur fournissant directement le tube de sortie du serveur et une instrumentation serveur corrélant ses fins.** Un journal Ollama natif dépourvu de cet identifiant n'est pas une preuve suffisante. `achever_recette_r4.py`, qui ne fournit pas ce descripteur, échoue explicitement avant le fournisseur ; il ne peut pas produire un faux vert. Aucun serveur ni fournisseur n'a été lancé ou modifié pendant cette passe, et aucune compatibilité réelle de ces traces n'est revendiquée.
+
+**12 cas ajoutés** dans le test du banc, **20 cas restaurés** dans les treize fichiers d'intégration. Aucune assertion existante n'est supprimée. Les fixtures positives du banc portent maintenant la corrélation explicite et la version de preuve afin de continuer à tester le succès autorisé et les autres gardes indépendamment.
+
+### Portes ciblées et environnement de validation
+
+Les vérifications intermédiaires ont été relancées après les correctifs : banc et voisins **60/60**, puis **62 réussites et le nouveau rouge du constat 2**, puis **69/69** ; migrations d'activités et voisins **196/196** ; facture et focus **38/38** ; AgentSession **32/32**. Le premier rejeu des voisins de la facture a aussi signalé les deux tests de focus et les deux tests de pied à restaurer ensemble ; les quatre sont verts après récupération de l'intégration.
+
+Le bac à sable bloque le réveil inter-thread d'un simple portail AnyIO, même sans l'application ni le garde réseau. Plusieurs essais HTTP ont été interrompus ; un diagnostic a aussi produit une erreur de préparation `no such table: invoice_lines`. Une reprise sur une base neuve avec une attente système bornée a fait passer le test HTTP de migration des notes. Le lanceur **local et ignoré par Git** `.pytest_cache/diff-4-r2/sitecustomize.py` interdit `socket.connect` et `socket.bind`, et borne `selectors.DefaultSelector.select()` à 1 ms. Aucun transport ASGI, accès SQLCipher ou test n'est remplacé par ce lanceur. Les essais interrompus et le diagnostic en erreur ne sont pas comptés comme portes réussies.
+
+La porte finale utilise une nouvelle base dans `.pytest_cache/diff-4-r2/data-final`, le bytecode désactivé, `TMPDIR` dans cet arbre et `PYTHONPATH` pointant sur ce lanceur. Commande pytest :
+
+```sh
+OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest tests/test_c20_b1885_banc_ollama.py tests/test_c20_b1883_finaliser_recette.py tests/test_c20_b2008_mime_recette.py tests/test_r3_4_ollama.py tests/test_ollama_erreur_http.py tests/test_c20_b1888_transaction_activites.py tests/test_c20_b1889_notes_heritees.py tests/test_c20_b1890_activites_sans_contact.py tests/test_c20_b1891_reparation_transaction.py tests/test_activity_migration.py tests/test_b1153_migration_colonnes.py tests/test_b1140_migration_sans_verrou.py tests/test_b1153_rejeu_astra_v2.py tests/test_r5_9_notes.py tests/test_r5_6_journal.py tests/test_c20_b2010_limite_cle.py tests/test_b1348_verification_cle.py tests/test_c20_b1893_provenance_sans_marque.py tests/test_c20_b2009_motifs_ambigus.py tests/test_c20_b2011_cle_sans_espace.py tests/test_c19d_b1088_securite_memoire.py tests/test_t4_7_provenance.py -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-4-r2.xml
+.venv/bin/python -B -m ruff check --no-fix --no-cache src/backend tests
+```
+
+Depuis `src/frontend`, npm est forcé hors ligne et son cache reste dans cet arbre. `--configLoader=runner --no-cache` évite les écritures dans le `node_modules` partagé :
+
+```sh
+npx --no-install vitest run src/components/atelier/AgentSession src/components/invoices/InvoiceForm src/hooks/useDialogFocusTrap --maxWorkers=3 --configLoader=runner --no-cache --reporter=default --reporter=junit --outputFile=/tmp/diff-4-r2-vitest.xml
+npx --no-install tsc --noEmit
+npm run lint
+```
+
+Les deux XML finaux ont été lus, cas par cas, et leurs totaux vérifiés :
+
+| Porte | Réussis | Échecs / erreurs | Ignorés | Résultat |
+| --- | ---: | ---: | ---: | --- |
+| pytest ciblé, 22 fichiers | 606 | 4 connus / 0 | 0 | code 1 |
+| Vitest ciblé, 60 fichiers | 207 | 0 / 0 | 0 | code 0 |
+| Ruff, `src/backend tests` | sans objet | 0 diagnostic | sans objet | code 0 |
+| TypeScript, `tsc --noEmit` | sans objet | 0 diagnostic | sans objet | code 0 |
+| ESLint, `npm run lint` | sans objet | 0 erreur | sans objet | code 0 ; 27 avertissements existants |
+| Syntaxe du banc et `git diff --check` | sans objet | 0 | sans objet | code 0 |
+
+Les **610 cas pytest** se répartissent ainsi : trois fichiers du lot **62 réussites**, voisins Ollama **14 réussites et 4 échecs connus**, activités **196 réussites**, notes **12**, journal d'actions **22**, vérification des clés **22**, provenance **8**, sécurité des fiches **270**. Le fichier du banc compte **45 tests**, dont les **12 cas ajoutés** de cette passe.
+
+Les seuls échecs finaux sont `tests.test_r3_4_ollama::test_refus_a_lecran_meme_sans_fiches[True-True]`, `[True-False]`, `[False-True]` et `[False-False]`, explicitement exclus par le mandat. **Aucun autre rouge final** ; aucun de ces quatre cas n'a été modifié, ignoré ou marqué xfail. Les **20 cas des treize fichiers restaurés** passent également. Rapports : `/tmp/diff-4-r2.xml` et `/tmp/diff-4-r2-vitest.xml` ; journaux : `/tmp/diff-4-r2-pytest.log`, `/tmp/diff-4-r2-vitest.log`, `/tmp/diff-4-r2-ruff.log`, `/tmp/diff-4-r2-tsc.log`, `/tmp/diff-4-r2-eslint.log`.
+
+Aucune suite complète, aucun réseau, aucun fournisseur réel, aucun port réservé, aucun accès à `~/.therese` ou `.app-loop/`. Les simulations HTTP utilisent exclusivement les transports en mémoire. L'historique et l'index restent inchangés ; l'orchestrateur conserve le rejeu sans correctifs, le rebase effectif et les commits.

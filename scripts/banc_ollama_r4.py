@@ -3,10 +3,12 @@
 Usage : python3 scripts/banc_ollama_r4.py avant|apres [--code CHEMIN]
 Le backend tourne dans un processus isolé ; HTTP ASGI sans port supplémentaire.
 Les compteurs proviennent des réponses NDJSON réelles, pas d'une estimation.
-Le serveur doit alimenter .recette-r4/serve.log pendant la passe : sans journal
-local lisible et continu, l'absence de troncature n'est pas prouvée et le verdict est rouge.
+--journal-fd doit désigner la lecture exclusive du tube anonyme recevant directement
+stdout/stderr du serveur, transmis par son lanceur. La capture en mémoire conserve
+tous les octets ; un fichier susceptible de rotation ne peut pas prouver un appel.
 Chaque appel porte un identifiant de recette dans sa query HTTP. Le journal doit
-contenir son reçu GIN 200 et sa fin de génération « stop processing: ... truncated ».
+contenir son reçu GIN 200 et une fin « stop processing: ... truncated » préfixée
+par request="/api/chat?banc_r4=...". Sans cette corrélation côté serveur, verdict rouge.
 Une croissance du fichier sans ces preuves laisse le verdict rouge.
 """
 import argparse
@@ -18,6 +20,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from uuid import uuid4
@@ -35,6 +38,8 @@ MD = f'# Consignes fictives\nLe mot témoin de THERESE.md est {TEMOIN}.\n'
 
 
 def lancer(args):
+    if args.journal_fd is None:
+        raise ValueError('Preuve serveur requise : fournir le tube via --journal-fd.')
     code = Path(args.code).resolve() if args.code else ROOT
     if not code.is_relative_to(ROOT):
         raise ValueError('Le code doit rester dans le worktree.')
@@ -57,11 +62,19 @@ def lancer(args):
     }
     with (dossier / 'backend.log').open('w') as journal:
         return subprocess.call([str(ROOT / '.venv/bin/python'), str(Path(__file__).resolve()),
-            args.phase, '--enfant', '--code', str(code)], env=propre, cwd=code,
+            args.phase, '--enfant', '--code', str(code), '--journal-fd', str(args.journal_fd)],
+            pass_fds=(args.journal_fd,), env=propre, cwd=code,
             stdout=journal, stderr=subprocess.STDOUT)
 
 
 def mesurer(args):
+    if args.journal_fd is None:
+        raise ValueError('Preuve serveur requise : fournir le tube via --journal-fd.')
+    with CaptureJournal(args.journal_fd) as journal:
+        return mesurer_capture(args, journal)
+
+
+def mesurer_capture(args, journal_serveur):
     code = Path(args.code).resolve() if args.code else ROOT
     if not code.is_relative_to(ROOT):
         raise ValueError('Le code doit rester dans le worktree.')
@@ -88,7 +101,6 @@ def mesurer(args):
 
     dossier = ROOT / '.recette-r4' / f'banc-{args.phase}'
     modele = (BANC / 'MODELE.txt').read_text().strip()
-    journal_serveur = BANC / 'serve.log'
     position_journal = relever_journal(journal_serveur)
     empreinte = hashlib.sha256()
     for fichier in sorted((code / 'src/backend/app').rglob('*.py')):
@@ -98,7 +110,7 @@ def mesurer(args):
         empreinte.update(b'\0' + fichier.read_bytes())
     revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=code,
         capture_output=True, text=True, check=False)
-    resultat = {'empreinte_app': empreinte.hexdigest(),
+    resultat = {'empreinte_app': empreinte.hexdigest(), 'preuve_journal_v': 2,
         'revision_git': revision.stdout.strip() if revision.returncode == 0 else 'archive locale',
         'phase': args.phase, 'modele': modele, 'context_caracteres': len(CONTEXTE),
         'regle3_position': CONTEXTE.index('Règle 3 :'), 'appels': [], 'tours': []}
@@ -190,6 +202,66 @@ def mesurer(args):
     raise SystemExit(enregistrer_verdict(resultat, dossier))
 
 
+class CaptureJournal:
+    """Conserver le flux du serveur, sans chemin réouvrable ni octets effaçables.
+
+    Le lanceur conserve l'écriture pour le serveur et transmet exclusivement cette
+    extrémité de lecture au banc. Le thread évite de bloquer le serveur si le tube
+    se remplit pendant une réponse HTTP ; les relevés drainent aussi les octets
+    disponibles pour ne pas dépendre de l'ordonnancement du thread.
+    """
+
+    def __init__(self, fd):
+        info = os.fstat(fd)
+        lecture, ecriture = os.pipe()
+        try:
+            device_tube = os.fstat(lecture).st_dev
+        finally:
+            os.close(lecture)
+            os.close(ecriture)
+        # Linux compte un lien pour un tube anonyme ; son périphérique est
+        # celui de pipefs, distinct de celui d'un FIFO nommé dans le worktree.
+        if (not stat.S_ISFIFO(info.st_mode) or info.st_dev != device_tube
+                or info.st_nlink > 1):
+            raise ValueError('La capture exige un tube anonyme, sans lien physique.')
+        self.fd = os.dup(fd)
+        self.bloquant = os.get_blocking(self.fd)
+        os.set_blocking(self.fd, False)
+        self.octets = bytearray()
+        self.verrou = threading.Lock()
+        self.arret = threading.Event()
+        self.erreur = False
+        self.thread = threading.Thread(target=self._collecter, daemon=True)
+
+    def __enter__(self):
+        self.thread.start()
+        return self
+
+    def __exit__(self, *_args):
+        self.arret.set()
+        self.thread.join()
+        os.set_blocking(self.fd, self.bloquant)
+        os.close(self.fd)
+        self.erreur = True
+
+    def _collecter(self):
+        while not self.arret.wait(0.01):
+            self.lire()
+
+    def lire(self):
+        with self.verrou:
+            if self.erreur:
+                return None
+            try:
+                while bloc := os.read(self.fd, 65536):
+                    self.octets.extend(bloc)
+            except BlockingIOError:
+                pass
+            except OSError:
+                self.erreur = True
+            return None if self.erreur else bytes(self.octets)
+
+
 @contextmanager
 def ouvrir_journal(journal):
     """Ancrer chaque composant au répertoire ouvert ; aucun lien n'est suivi."""
@@ -209,13 +281,16 @@ def ouvrir_journal(journal):
         fd = os.open(parties[-1], flags, dir_fd=repertoire)
         pile.callback(os.close, fd)
         ancres.append((repertoire, parties[-1], fd))
-        if not stat.S_ISREG(os.fstat(fd).st_mode):
-            raise OSError('Le journal doit être un fichier ordinaire.')
+        ouvert = os.fstat(fd)
+        if not stat.S_ISREG(ouvert.st_mode) or ouvert.st_nlink != 1:
+            raise OSError('Le journal doit être un fichier ordinaire sans autre lien.')
         with os.fdopen(fd, 'rb', closefd=False) as f:
             yield f
         for parent, nom, enfant in ancres:
             actuel = os.stat(nom, dir_fd=parent, follow_symlinks=False)
             ouvert = os.fstat(enfant)
+            if enfant == fd and ouvert.st_nlink != 1:
+                raise OSError('Lien physique ajouté pendant la lecture.')
             if (actuel.st_dev, actuel.st_ino, actuel.st_mode) != (
                     ouvert.st_dev, ouvert.st_ino, ouvert.st_mode):
                 raise OSError('Journal remplacé pendant la lecture.')
@@ -228,6 +303,9 @@ def etat_journal(position):
 
 
 def relever_journal(journal):
+    if isinstance(journal, CaptureJournal):
+        contenu = journal.lire()
+        return None if contenu is None else (journal, len(contenu))
     try:
         with ouvrir_journal(journal) as f:
             position = os.fstat(f.fileno())
@@ -283,32 +361,49 @@ def lire_troncatures(journal, position, requete=None):
     resultat = {'troncatures': [], 'journal_serveur_lu': False}
     if position is None:
         return resultat
+    capture = isinstance(journal, CaptureJournal)
+    if capture:
+        origine, debut = position
+        contenu = journal.lire()
+        if origine is not journal or contenu is None:
+            return resultat
+        ajout = contenu[debut:]
+    else:
+        ajout = lire_ajout_fichier(journal, position)
+    if not ajout or not ajout.endswith(b'\n'):
+        return resultat
+    lignes = ajout.decode(errors='replace').splitlines()
+    resultat['troncatures'] = [ligne for ligne in lignes if 'truncat' in ligne.lower()]
+    resultat['journal_serveur_lu'] = bool(lignes)
+    if requete is not None:
+        recu = r'\[GIN\].*\|\s*200\s*\|[^|]*\|[^|]*\|\s*POST\s+"' + re.escape(requete) + r'"\s*'
+        fin = (r'(?:^|\s)request="' + re.escape(requete)
+               + r'"\s+.*\bstop processing:.*\btruncated\s*=\s*\d+\s*$')
+        resultat['journal_serveur_lu'] = (capture
+            and sum(bool(re.fullmatch(recu, ligne)) for ligne in lignes) == 1
+            and sum(bool(re.search(fin, ligne)) for ligne in lignes) == 1)
+    return resultat
+
+
+def lire_ajout_fichier(journal, position):
+    """Lecture diagnostique seulement : un fichier rotatif ne prouve aucun appel."""
     position, empreinte = position
     try:
         with ouvrir_journal(journal) as f:
             actuel = os.fstat(f.fileno())
             if (actuel.st_dev, actuel.st_ino) != (position.st_dev, position.st_ino):
-                return resultat
+                return None
             if actuel.st_size <= position.st_size:
-                return resultat
+                return None
             if empreinte_prefixe(f, position.st_size) != empreinte:
-                return resultat
+                return None
             ajout = f.read(actuel.st_size - position.st_size)
             if (len(ajout) != actuel.st_size - position.st_size
                     or etat_journal(os.fstat(f.fileno())) != etat_journal(actuel)):
-                return resultat
-        lignes = ajout.decode(errors='replace').splitlines()
+                return None
     except (OSError, ValueError):
-        return resultat
-    resultat['troncatures'] = [ligne for ligne in lignes if 'truncat' in ligne.lower()]
-    resultat['journal_serveur_lu'] = bool(lignes)
-    if requete is not None:
-        recu = r'\[GIN\].*\|\s*200\s*\|[^|]*\|[^|]*\|\s*POST\s+"' + re.escape(requete) + r'"\s*'
-        resultat['journal_serveur_lu'] = (
-            sum(bool(re.fullmatch(recu, ligne)) for ligne in lignes) == 1
-            and sum(bool(re.search(r'\bstop processing:.*\btruncated\s*=\s*\d+\s*$', ligne))
-                    for ligne in lignes) == 1)
-    return resultat
+        return None
+    return ajout
 
 
 def enregistrer_verdict(resultat, dossier):
@@ -320,7 +415,8 @@ def enregistrer_verdict(resultat, dossier):
                   if not re.search(r'\btruncated\s*=\s*0\b', ligne)]
     resultat['reponses'] = textes
     resultat['troncatures_effectives'] = effectives
-    resultat['vert'] = (bool(resultat['appels']) and resultat.get('journal_serveur_lu') is True
+    resultat['vert'] = (bool(resultat['appels']) and resultat.get('preuve_journal_v') == 2
+        and resultat.get('journal_serveur_lu') is True
         and not effectives
         and all(a.get('journal_serveur_lu') is True for a in resultat['appels'])
         and all(isinstance(a.get('prompt_eval_count'), int) and a['prompt_eval_count'] > 0
@@ -342,6 +438,7 @@ if __name__ == '__main__':
     parser.add_argument('phase', choices=['avant', 'apres'])
     parser.add_argument('--code')
     parser.add_argument('--enfant', action='store_true')
+    parser.add_argument('--journal-fd', type=int, help='Descripteur hérité du tube anonyme de sortie du serveur')
     parser.add_argument('--evaluer', action='store_true', help='Réévaluer les résultats sauvés sans requête réseau')
     arguments = parser.parse_args()
     if arguments.evaluer:
