@@ -99,6 +99,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const messageMoteur = useRef<string | null>(null);
   const apiBaseReady = useRef(false);
   const fatalSidecarError = useRef(false);
+  const erreursSidecar = useRef(0);
   const reducedMotion = prefersReducedMotion();
 
   // Charger la version de l'app (tauri.conf.json)
@@ -129,6 +130,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           // un autre effet ; ce ref partagé l'arrête et interdit un onReady
           // tardif si le health check déjà parti finit par répondre 200.
           fatalSidecarError.current = true;
+          erreursSidecar.current += 1;
           // Audit bêta 27/10 : la commande de secours n'existe que sous macOS.
           const secours = isMacPlatform()
             ? "\n\nDans le Terminal :\nxattr -cr /Applications/THERESE.app\npuis relance l'app."
@@ -144,6 +146,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           if (!charge || typeof charge !== 'object') return;
           if (charge.state === 'failed') {
             fatalSidecarError.current = true;
+            erreursSidecar.current += 1;
             setMoteurArrete(true);
           } else if (charge.state === 'restarting') {
             const tentative = typeof charge.attempt === 'number' && charge.attempt > 0
@@ -167,6 +170,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   }, []);
 
   const relancerMoteur = useCallback(async () => {
+    const erreursAvantRelance = erreursSidecar.current;
     setMoteurArrete(false);
     setReprise(false);
     messageMoteur.current = 'Le moteur local redémarre…';
@@ -175,12 +179,17 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('restart_backend');
     } catch {
-      setMoteurArrete(true);
+      if (error) setError('Impossible de relancer le moteur. Essaie à nouveau.');
+      else setMoteurArrete(true);
       return;
     }
+    // Un échec émis pendant la commande concerne la nouvelle tentative.
+    if (erreursSidecar.current !== erreursAvantRelance) return;
+    setError(null);
+    setProgress(0);
     fatalSidecarError.current = false;
     setRelance((n) => n + 1);
-  }, []);
+  }, [error]);
 
   useEffect(() => {
     let cancelled = false;
@@ -302,6 +311,9 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4">
             <p className="text-error text-sm">{error}</p>
           </div>
+          <Button className="mt-4" onClick={() => void relancerMoteur()}>
+            Relancer le moteur local
+          </Button>
         </div>
       </div>
     );

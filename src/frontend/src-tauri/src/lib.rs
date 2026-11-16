@@ -51,7 +51,7 @@ fn backend_ecoute_encore(port: u16) -> bool {
 /// nommé `backend` (ou `backend-<cible>`, `.exe` toléré), écoutant sur
 /// 127.0.0.1 et sur le port de THÉRÈSE. Le chemin de l'exécutable peut
 /// contenir des espaces : il s'arrête au premier argument « -- ».
-#[cfg(any(unix, test))]
+#[cfg(any(unix, windows, test))]
 #[cfg_attr(debug_assertions, allow(dead_code))]
 fn est_moteur_therese(args: &str) -> bool {
     let args = args.trim();
@@ -60,7 +60,7 @@ fn est_moteur_therese(args: &str) -> bool {
         None => return false,
     };
     // Découpage à la main : `Path` ne connaît pas `\\` hors de Windows.
-    let nom = executable.trim().rsplit(['/', '\\']).next().unwrap_or("");
+    let nom = executable.trim().trim_matches('"').rsplit(['/', '\\']).next().unwrap_or("");
     let nom = nom.strip_suffix(".exe").unwrap_or(nom);
     if nom != "backend" && !nom.starts_with("backend-") {
         return false;
@@ -132,28 +132,48 @@ fn kill_zombie_backends() {
         let current_pid = std::process::id();
         let mut found_pids: Vec<u32> = Vec::new();
 
-        // Méthode 1 : wmic (disponible sur Windows 10 et 11 < 25H2)
-        // wmic permet un filtre précis par ligne de commande
+        // wmic fournit les lignes de commande quand il est disponible.
+        // Le filtre WMI est approximatif : valider chaque résultat ensuite.
         let wmic_result = std::process::Command::new("wmic")
             .args([
                 "process", "where",
                 // B-1261 : le port de THÉRÈSE en plus de l'hôte.
                 "name='backend.exe' and commandline like '%--host%127.0.0.1%' and commandline like '%--port%17293%'",
-                "get", "processid", "/format:list",
+                "get", "CommandLine,ProcessId", "/format:list",
             ])
             .stdin(std::process::Stdio::null())
             .output();
 
         if let Ok(output) = &wmic_result {
             if output.status.success() {
-                let text = String::from_utf8_lossy(&output.stdout);
-                for line in text.lines() {
-                    if let Some(pid_str) = line.strip_prefix("ProcessId=") {
-                        if let Ok(pid) = pid_str.trim().parse::<u32>() {
-                            if pid != current_pid {
+                // WMIC peut émettre de l'UTF-16LE lorsque sa sortie est redirigée.
+                let text = if output.stdout.starts_with(&[0xff, 0xfe])
+                    || output.stdout.get(1) == Some(&0)
+                {
+                    let octets = output.stdout.strip_prefix(&[0xff, 0xfe]).unwrap_or(&output.stdout);
+                    let unites: Vec<u16> = octets.chunks_exact(2)
+                        .map(|paire| u16::from_le_bytes([paire[0], paire[1]]))
+                        .collect();
+                    String::from_utf16_lossy(&unites)
+                } else {
+                    String::from_utf8_lossy(&output.stdout).into_owned()
+                };
+                let mut command_line = None;
+                let mut process_id = None;
+                for line in text.lines().chain(Some("")) {
+                    let line = line.trim();
+                    if line.is_empty() {
+                        if let (Some(args), Some(pid)) = (command_line, process_id) {
+                            if pid != current_pid && est_moteur_therese(args) {
                                 found_pids.push(pid);
                             }
                         }
+                        command_line = None;
+                        process_id = None;
+                    } else if let Some(args) = line.strip_prefix("CommandLine=") {
+                        command_line = Some(args);
+                    } else if let Some(pid) = line.strip_prefix("ProcessId=") {
+                        process_id = pid.trim().parse::<u32>().ok();
                     }
                 }
                 if !found_pids.is_empty() {
@@ -162,31 +182,38 @@ fn kill_zombie_backends() {
             }
         }
 
-        // Méthode 2 : tasklist (fallback Windows 11 25H2+ où wmic est supprimé)
-        // tasklist ne filtre que par nom d'image, moins précis mais toujours disponible
+        // Sans WMIC, tasklist ne fournit que des candidats : ne jamais arrêter
+        // un PID sans avoir contrôlé sa ligne de commande avec CIM.
         if found_pids.is_empty() {
-            log_sidecar("wmic indisponible ou aucun résultat, fallback tasklist...");
             let tasklist_result = std::process::Command::new("tasklist")
                 .args(["/FI", "IMAGENAME eq backend.exe", "/FO", "CSV", "/NH"])
                 .stdin(std::process::Stdio::null())
                 .output();
 
             if let Ok(output) = tasklist_result {
-                let text = String::from_utf8_lossy(&output.stdout);
-                for line in text.lines() {
-                    // Format CSV : "backend.exe","12345","Console","1","45 000 K"
-                    let parts: Vec<&str> = line.split(',').collect();
-                    if parts.len() >= 2 {
-                        let pid_str = parts[1].trim().trim_matches('"');
-                        if let Ok(pid) = pid_str.parse::<u32>() {
-                            if pid != current_pid {
-                                found_pids.push(pid);
+                if output.status.success() {
+                    let text = String::from_utf8_lossy(&output.stdout);
+                    for line in text.lines() {
+                        let pid = line.split(',').nth(1)
+                            .and_then(|champ| champ.trim().trim_matches('"').parse::<u32>().ok());
+                        if let Some(pid) = pid.filter(|pid| *pid != current_pid) {
+                            let script = format!(
+                                "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new(); (Get-CimInstance -ClassName Win32_Process -Filter 'ProcessId = {}' -ErrorAction Stop).CommandLine",
+                                pid
+                            );
+                            let details = std::process::Command::new("powershell")
+                                .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+                                .stdin(std::process::Stdio::null())
+                                .output();
+                            if let Ok(details) = details {
+                                if details.status.success()
+                                    && est_moteur_therese(&String::from_utf8_lossy(&details.stdout))
+                                {
+                                    found_pids.push(pid);
+                                }
                             }
                         }
                     }
-                }
-                if !found_pids.is_empty() {
-                    log_sidecar(&format!("tasklist : {} zombie(s) détecté(s)", found_pids.len()));
                 }
             }
         }

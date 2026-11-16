@@ -12,7 +12,6 @@ import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore'
 import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility';
 import * as api from './services/api';
 import { AuthentificationNavigateurImpossible } from './services/api/core';
-import { Z_LAYER } from './styles/z-layers';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
 import { EcranDeChargement } from './components/EcranDeChargement';
@@ -278,7 +277,7 @@ function ApplicationBootstrap() {
         {/* Skip link accessibilite (visible uniquement au focus clavier) */}
         <a
           href="#main-content"
-          className={`sr-only focus:not-sr-only focus:absolute focus:${Z_LAYER.MODAL} focus:p-3 focus:bg-accent-fill focus:text-accent-ink focus:rounded-sm`}
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-accent-fill focus:text-accent-ink focus:rounded-sm"
         >
           Aller au contenu principal
         </a>
