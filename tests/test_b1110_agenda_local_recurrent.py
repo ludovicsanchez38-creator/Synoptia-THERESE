@@ -42,7 +42,7 @@ async def test_occurrence_creee_par_api_independante_du_courrier(client, db_sess
     })
     assert cree.status_code == 200, cree.text
     resultat = await _list_calendar_events(_periode(), db_session)
-    assert "26/10 10:00-11:00" in resultat, resultat
+    assert "26/10/2026 10:00-11:00" in resultat, resultat
     assert "Revue veille subventions" in resultat
     assert "19/10" not in resultat
     assert "02/11" not in resultat
@@ -188,9 +188,9 @@ async def test_dates_ics_creees_par_api_restent_lisibles(client, db_session, reg
         assert cree.status_code == 200, cree.text
     resultat = await _list_calendar_events(_periode(), db_session)
     assert "Rendez-vous indépendant" in resultat, resultat
-    assert "27/10 15:00-16:00" in resultat
+    assert "27/10/2026 15:00-16:00" in resultat
     for jour in range(26, 32):
-        assert (f"{jour}/10 (journee)" in resultat) == (jour in jours), resultat
+        assert (f"{jour}/10/2026 (journée)" in resultat) == (jour in jours), resultat
 
 
 @pytest.mark.asyncio
@@ -330,8 +330,8 @@ async def test_ancienne_serie_dense_signalee_et_rendez_vous_independant_rendu(cl
         cree = await client.post("/api/calendar/events", json={"calendar_id": "local", **evenement})
         assert cree.status_code == 200, cree.text
     resultat = await _list_calendar_events(_periode(), db_session)
-    assert "27/10 15:00-16:00" in resultat, resultat
+    assert "27/10/2026 15:00-16:00" in resultat, resultat
     assert "Rendez-vous indépendant" in resultat
     assert "Ancienne série dense" in resultat
     assert "limite de calcul" in resultat.lower()
-    assert "1 evenement(s)" in resultat
+    assert "1 événement(s)" in resultat

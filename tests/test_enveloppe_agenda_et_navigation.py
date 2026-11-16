@@ -74,7 +74,7 @@ class TestLAgendaArriveEnveloppe:
             )
 
         assert "[Source: agenda]" not in lu
-        assert "Aucun evenement" in lu
+        assert "Aucun événement" in lu
 
 
 class TestLaPageWebArriveEnveloppee:
