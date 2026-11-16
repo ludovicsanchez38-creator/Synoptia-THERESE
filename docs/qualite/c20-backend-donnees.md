@@ -316,8 +316,11 @@ plutôt que renvoyée une cinquième fois.
 
 Règles retenues (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
 
-1. Une chaîne qui est un JSON (objet ou liste) est masquée champ par champ et
-   sort inchangée s'il n'y a rien à masquer.
+1. Une chaîne qui est un JSON (objet ou liste) est masquée champ par champ,
+   clés comprises, et toujours réécrite depuis ce qui a été lu : sa mise en
+   forme (espaces) peut changer, ses données non. Elle n'est jamais rendue
+   telle quelle, parce qu'une clé en double cache sa première occurrence au
+   lecteur JSON.
 2. Dans un texte, l'autorité d'une URL s'arrête au premier `/`, `?`, `#` ou à
    la première espace ; tout ce qui y précède le dernier `@` est un
    identifiant et part, quels que soient ses caractères (lecture de la
@@ -325,12 +328,17 @@ Règles retenues (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
 3. Une espace ne prolonge l'identifiant que si ce qui la précède ne peut pas
    être un hôte suivi de son port (`nom:secret` coupé par une espace) : on
    cherche alors le `@` sur la même ligne, à 512 caractères au plus.
-4. Une URL passée en paramètre d'une autre est lue de la même façon.
+4. Une URL passée en paramètre d'une autre est lue de la même façon, par la
+   même boucle et sans récursion (cinq mille niveaux testés).
 
 Tests : `tests/test_c20_b1812_export_config.py::test_export_conserve_un_port_suivi_d_une_adresse_mail`
-(deux routes), `::test_masquage_des_urls_table_de_cas` (douze cas),
-`::test_masquage_d_un_json_serialise_garde_ses_autres_champs`. Cinq rouges
-avant le correctif (commit `69c935c3`), 33 verts après ; 224 tests voisins de
+(deux routes), `::test_masquage_des_urls_table_de_cas` (onze cas), les tests
+`::test_masquage_d_un_json_*`, `::test_masquage_des_cles_d_un_json`,
+`::test_masquage_d_urls_imbriquees_en_grand_nombre_sans_debordement` et
+`::test_masquage_garde_le_separateur_devant_une_url_imbriquee`. Cinq rouges
+avant le premier correctif, puis trois (clés en double, clés, imbrication
+profonde, relevés par la revue de sécurité automatique du commit) avant le
+second ; 38 verts après ; 224 tests voisins de
 l'export verts ; ruff propre ; mypy du fichier inchangé (23).
 
 Limites connues, non couvertes :

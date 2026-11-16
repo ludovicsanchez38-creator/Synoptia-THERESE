@@ -198,11 +198,18 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
         fin = hote
         while fin < len(valeur) and not valeur[fin].isspace() and valeur[fin] not in _FIN_URL_DANS_UN_TEXTE:
             fin += 1
-        propre = _nettoyer_url(match.group() + valeur[hote:fin])
-        # Une URL passée en paramètre d'une autre porte parfois ses propres identifiants.
-        if imbriquee := _DEBUT_URL.search(propre, len(match.group())):
-            propre = propre[: imbriquee.start()] + _masquer_urls_d_un_texte(propre[imbriquee.start() :])
-        resultat.extend((valeur[position : match.start()], propre))
+        # Une URL passée en paramètre d'une autre porte parfois ses propres
+        # identifiants : celle-ci s'arrête où l'autre commence, et la boucle
+        # la lira à son tour (sans récursion, quelle que soit la profondeur).
+        if imbriquee := _DEBUT_URL.search(valeur, hote, fin):
+            fin = imbriquee.start()
+        # urlunsplit retire un « ? » ou un « # » final resté sans contenu.
+        coupe = fin
+        while coupe > hote and valeur[coupe - 1] in "?#":
+            coupe -= 1
+        resultat.extend(
+            (valeur[position : match.start()], _nettoyer_url(match.group() + valeur[hote:coupe]), valeur[coupe:fin])
+        )
         position = fin
     return "".join(resultat) + valeur[position:]
 
@@ -210,22 +217,26 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
 def _masquer_urls_export(valeur: Any) -> Any:
     """Retire les identifiants des URL, y compris dans les textes exportés."""
     if isinstance(valeur, dict):
-        return {cle: _masquer_urls_export(element) for cle, element in valeur.items()}
+        return {
+            (_masquer_urls_d_un_texte(cle) if isinstance(cle, str) else cle): _masquer_urls_export(element)
+            for cle, element in valeur.items()
+        }
     if isinstance(valeur, list):
         return [_masquer_urls_export(element) for element in valeur]
     if not isinstance(valeur, str):
         return valeur
     # Un JSON déjà sérialisé (la valeur d'une préférence) se masque champ par
     # champ : lu comme un texte, ses guillemets collent une URL à l'adresse
-    # e-mail du champ suivant. Rien à masquer : la chaîne sort inchangée.
+    # e-mail du champ suivant. Il est toujours réécrit depuis ce qui a été lu
+    # et masqué, jamais rendu tel quel : le lecteur ne garde que la dernière
+    # occurrence d'une clé en double, la chaîne d'origine peut en cacher une autre.
     if valeur.lstrip().startswith(("{", "[")):
         try:
             structure = json.loads(valeur)
         except (ValueError, RecursionError):
             structure = None
         if isinstance(structure, (dict, list)):
-            masquee = _masquer_urls_export(structure)
-            return valeur if masquee == structure else json.dumps(masquee, ensure_ascii=False)
+            return json.dumps(_masquer_urls_export(structure), ensure_ascii=False)
     return _masquer_urls_d_un_texte(valeur)
 
 
