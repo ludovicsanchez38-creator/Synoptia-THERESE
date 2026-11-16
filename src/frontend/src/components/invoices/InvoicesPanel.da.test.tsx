@@ -330,7 +330,7 @@ describe('Lot 5 DA : Segments Type et Statut', () => {
 });
 
 describe('Lot 5 DA : états dans la Carte', () => {
-  it('un seul Réessayer sur l’erreur ; squelettes 7 pistes ; trois vides distincts', async () => {
+  it('un seul Réessayer sur l’erreur ; squelettes 6 pistes ; trois vides distincts', async () => {
     mockListInvoices.mockReturnValue(new Promise(() => {}));
     const { unmount: unmountLoad } = render(<InvoicesPanel standalone />);
     const status = await screen.findByRole('status');
@@ -341,8 +341,8 @@ describe('Lot 5 DA : états dans la Carte', () => {
     const rangees = carteLoad!.querySelectorAll('[aria-hidden].grid');
     expect(rangees.length).toBe(3);
     for (const rangee of rangees) {
-      expect(rangee.className).toMatch(/\bgrid-cols-7\b/);
-      expect(rangee.querySelectorAll('[aria-hidden]')).toHaveLength(7);
+      expect(rangee.className).toMatch(/\bgrid-cols-6\b/);
+      expect(rangee.querySelectorAll('[aria-hidden]')).toHaveLength(6);
     }
     expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull();
     unmountLoad();
