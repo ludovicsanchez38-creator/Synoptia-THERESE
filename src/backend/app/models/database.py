@@ -162,9 +162,6 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
             added.append(column_name)
 
     if invoice_count and needs_backfill:
-        where_clause = "1 = 1" if missing_columns else (
-            "client_name IS NULL OR TRIM(client_name) = ''"
-        )
         sources = {
             "client_name": """SELECT CASE
                 WHEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) != ''
@@ -176,24 +173,13 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
                 for champ in ("company", "email", "phone", "address")
             },
         }
-        affectations = []
-        for colonne, source in sources.items():
-            if colonne in missing_columns:
-                valeur = f"({source})"
-            else:
-                existant = "NULLIF(TRIM(client_name), '')" if colonne == "client_name" else colonne
-                valeur = (
-                    "CASE WHEN client_name IS NULL OR TRIM(client_name) = '' "
-                    f"THEN COALESCE({existant}, ({source})) ELSE {colonne} END"
-                )
-            affectations.append(f"{colonne} = {valeur}")
-        conn.execute(
-            f"""
-            UPDATE invoices
-            SET {', '.join(affectations)}
-            WHERE {where_clause}
-            """
-        )
+        # Une colonne déjà présente peut avoir un NULL historique intentionnel.
+        affectations = [
+            f"{colonne} = ({source})"
+            for colonne, source in sources.items() if colonne in missing_columns
+        ]
+        if affectations:
+            conn.execute(f"UPDATE invoices SET {', '.join(affectations)}")
         # B-266 : par ligne. Les pièces restées sans destinataire figé sont
         # celles dont la fiche CRM a disparu (ou n'a jamais porté de nom) ;
         # elles sont nommées, avec le geste qui les répare, et n'empêchent pas
@@ -879,7 +865,9 @@ def ensure_alembic_stamp(db_path) -> None:
                 for table in planning_tables
             )
             if (
-                "validite_jours" in inv_cols
+                "invoices" in _SQLModel.metadata.tables
+                and set(_SQLModel.metadata.tables["invoices"].columns.keys()) <= inv_cols
+                and "validite_jours" in inv_cols
                 # P-139 : colonne apportée par b8c9d0e1f2a3.
                 and "sent_at" in inv_cols
                 and {

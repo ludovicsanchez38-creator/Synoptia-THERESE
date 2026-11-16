@@ -868,6 +868,8 @@ class InvoicePDFGenerator:
         currency: str = "EUR",
         *,
         conserver_existant: bool = False,
+        numero_fichier: str | None = None,
+        empreinte_archive: str | None = None,
     ) -> str:
         """
         Genere une facture PDF avec le theme Synoptia.
@@ -885,7 +887,7 @@ class InvoicePDFGenerator:
         currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
         invoice_number = invoice_data["invoice_number"]
         # Le nom de fichier garde le jeton (unique). L'impression, non.
-        filename = f"{invoice_number}.pdf"
+        filename = f"{numero_fichier or invoice_number}.pdf"
         filepath = self.output_dir / filename
         numero_affiche = _numero_imprime(invoice_number)
         donnees_imprimees = {**invoice_data, "invoice_number": numero_affiche}
@@ -912,6 +914,7 @@ class InvoicePDFGenerator:
             leftMargin=theme.margin_left * mm,
             topMargin=(theme.margin_top + theme.header_height) * mm,
             bottomMargin=(theme.margin_bottom + 10) * mm,
+            subject=f"THERESE-ARCHIVE-SHA256:{empreinte_archive}" if empreinte_archive else None,
         )
 
         # Store document_type for use in conditions block
@@ -962,11 +965,8 @@ class InvoicePDFGenerator:
             with tempfile.NamedTemporaryFile(dir=self.output_dir) as provisoire:
                 provisoire.write(contenu.getvalue())
                 provisoire.flush()
-                try:
-                    os.link(provisoire.name, filepath)
-                except FileExistsError:
-                    pass
-            return str(chemin_pdf_a_ouvrir(str(self.output_dir), invoice_number))
+                os.link(provisoire.name, filepath)
+            return str(chemin_pdf_a_ouvrir(str(self.output_dir), numero_fichier or invoice_number))
 
         logger.info("Invoice PDF generated: %s", filepath)
         return str(filepath.absolute())
