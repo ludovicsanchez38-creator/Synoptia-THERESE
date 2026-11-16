@@ -42,6 +42,26 @@ jobs:
             a-blanc-*) echo "Mode à blanc : construction et vérification seules, aucune publication." ;;
             *) echo "::error::À blanc, le libellé doit commencer par a-blanc- (reçu : $TAG)"; exit 1 ;;
           esac
+      - name: Récupérer le tag pour contrôle
+        if: ${{ inputs.dry_run != true }}
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier le commit du tag demandé
+        if: ${{ inputs.dry_run != true }}
+        env:
+          TAG_A_VERIFIER: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          if ! commit_tag=$(git rev-parse --verify --quiet "refs/tags/${TAG_A_VERIFIER}^{commit}"); then
+            echo "::error::Tag demandé introuvable ou sans commit : ${TAG_A_VERIFIER}"
+            exit 1
+          fi
+          if [ "$commit_tag" != "$GITHUB_SHA" ]; then
+            echo "::error::Le commit du tag demandé diffère du commit validé par la CI : publication refusée"
+            exit 1
+          fi
+
       - name: La clé de signature updater est-elle présente ?
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -103,6 +123,14 @@ jobs:
           # (xattr, exclusion antivirus) quand l'installeur est signé (US-015).
           python scripts/release_notes.py --sortie .work-t2/sources-release-notes.md
           gh release create "$RELEASE_TAG" --draft --prerelease --title "THÉRÈSE $RELEASE_TAG" --notes-file .work-t2/sources-release-notes.md
+        fi
+        if ! statut_brouillon=$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft); then
+          echo "::error::Impossible de vérifier le statut brouillon de la release : envoi des sources refusé"
+          exit 1
+        fi
+        if [ "$statut_brouillon" != "true" ]; then
+          echo "::error::La release doit être un brouillon : envoi des sources refusé"
+          exit 1
         fi
         gh release upload "$RELEASE_TAG" .work-t2/THERESE-sources-copyleft.tar.gz .work-t2/THERESE-sources-systeme-linux.tar.gz --clobber
 
@@ -228,6 +256,19 @@ jobs:
           AZURE_CERTIFICATE_PROFILE: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
           SIGNATURE_OBLIGATOIRE: ${{ vars.SIGNATURE_OBLIGATOIRE }}
         run: python scripts/prepare_windows_signing.py
+
+      - name: Exiger la signature Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          if [ "${{ steps.windows-signing.outputs.enabled }}" != "true" ]; then
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "Mode à blanc : signature Windows inactive, publication simulée."
+            else
+              echo "::error::Signature Windows inactive : secrets Microsoft absents ou incomplets, publication refusée"
+              exit 1
+            fi
+          fi
 
       - name: Build sidecar (PyInstaller)
         shell: bash
