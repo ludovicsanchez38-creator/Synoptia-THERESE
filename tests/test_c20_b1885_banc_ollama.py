@@ -18,6 +18,7 @@ import pytest
 def test_verdict_exige_un_journal_lu(tmp_path, journal_lu, troncatures, attendu):
     banc = runpy.run_path(str(Path(__file__).resolve().parents[1] / "scripts/banc_ollama_r4.py"))
     resultat = {
+        "preuve_journal_v": 2,
         "appels": [{"prompt_eval_count": 100, "journal_serveur_lu": True}],
         "tours": [
             {"evenements": [{"type": "text", "content": "Camille"}]},
@@ -49,6 +50,28 @@ def position_journal(banc, journal):
     # Permet le rejeu du même scénario sur la base qui ne relevait que stat().
     relever = getattr(banc, "relever_journal", lambda fichier: fichier.stat())
     return relever(journal)
+
+
+@pytest.fixture
+def flux_journal(tmp_path, banc_local):
+    # Le repli permet de rejouer les tests comportementaux sur la base sans capture.
+    if not hasattr(banc_local, "CaptureJournal"):
+        journal = tmp_path / "serve.log"
+        journal.write_bytes(b"")
+
+        def ecrire(texte):
+            with journal.open("a") as f:
+                f.write(texte)
+
+        yield journal, ecrire
+        return
+    lecture, ecriture = os.pipe()
+    try:
+        with banc_local.CaptureJournal(lecture) as journal:
+            yield journal, lambda texte: os.write(ecriture, texte.encode())
+    finally:
+        os.close(ecriture)
+        os.close(lecture)
 
 
 def test_journal_ne_lit_que_la_passe_courante(tmp_path, banc_local):
@@ -88,6 +111,7 @@ def test_journal_inchange_ne_valide_pas_la_passe(tmp_path, banc_local):
     journal.write_text("ancienne passe : truncated = 0\n")
     position = position_journal(banc_local, journal)
     resultat = {
+        "preuve_journal_v": 2,
         "appels": [{"prompt_eval_count": 100, "journal_serveur_lu": True}],
         "tours": [
             {"evenements": [{"type": "text", "content": "Camille"}]},
@@ -107,12 +131,12 @@ def test_journal_inchange_ne_valide_pas_la_passe(tmp_path, banc_local):
 @pytest.mark.parametrize("trace", ["complete", "silence", "sans_rapport", "autre_appel",
                                   "sans_diagnostic", "sans_recu", "http_500"])
 @pytest.mark.asyncio
-async def test_journal_associe_au_transport_de_chaque_appel(tmp_path, banc_local, trace):
+async def test_journal_associe_au_transport_de_chaque_appel(banc_local, flux_journal, trace):
     from app.services.providers.base import LLMConfig, LLMProvider
     from app.services.providers.ollama import OllamaProvider
 
-    journal = tmp_path / "serve.log"
-    journal.write_text("ancienne passe : truncated = 0\n")
+    journal, ecrire = flux_journal
+    ecrire("ancienne passe : truncated = 0\n")
     body = {"model": "fictif", "messages": [{"role": "user", "content": "Bonjour"}],
             "options": {"num_ctx": 8192}, "stream": True}
     requetes = []
@@ -124,14 +148,13 @@ async def test_journal_associe_au_transport_de_chaque_appel(tmp_path, banc_local
         if trace == "autre_appel":
             chemin = "/api/chat?banc_r4=autre"
         statut = 500 if trace == "http_500" else 200
-        with journal.open("a") as f:
-            if trace == "sans_rapport":
-                f.write("vérification périodique du serveur\n")
-            elif trace != "silence":
-                if trace != "sans_diagnostic":
-                    f.write("slot release: id 0 | task 1 | stop processing: n_tokens = 100, truncated = 0\n")
-                if trace != "sans_recu":
-                    f.write(f'[GIN] date fictive | {statut} | 1s | 127.0.0.1 | POST "{chemin}"\n')
+        if trace == "sans_rapport":
+            ecrire("vérification périodique du serveur\n")
+        elif trace != "silence":
+            if trace != "sans_diagnostic":
+                ecrire(f'request="{chemin}" slot release: id 0 | task 1 | stop processing: n_tokens = 100, truncated = 0\n')
+            if trace != "sans_recu":
+                ecrire(f'[GIN] date fictive | {statut} | 1s | 127.0.0.1 | POST "{chemin}"\n')
         return httpx.Response(200, json={"message": {"content": "Camille"}, "done": True,
                                         "prompt_eval_count": 100, "eval_count": 1})
 
@@ -161,6 +184,7 @@ async def test_journal_associe_au_transport_de_chaque_appel(tmp_path, banc_local
 @pytest.mark.parametrize("preuve", [None, False])
 def test_verdict_refuse_un_appel_sans_preuve(tmp_path, banc_local, preuve):
     resultat = {
+        "preuve_journal_v": 2,
         "appels": [{"prompt_eval_count": 100, "journal_serveur_lu": True},
                    {"prompt_eval_count": 100}],
         "tours": [
@@ -218,6 +242,152 @@ def test_journal_initialement_vide(tmp_path, banc_local, ajout):
         "journal_serveur_lu": bool(ajout),
         "troncatures": ["truncated = 0"] if ajout else [],
     }
+
+
+@pytest.mark.parametrize("prefixe", ["", 'request="/api/chat?banc_r4=autre_appel" '])
+def test_fin_d_une_autre_tache_ne_valide_pas_le_recu(banc_local, flux_journal, prefixe):
+    journal, ecrire = flux_journal
+    position = position_journal(banc_local, journal)
+    requete = "/api/chat?banc_r4=appel_suivi"
+    ecrire(
+        prefixe + 'slot release: id 0 | task 99 | stop processing: n_tokens = 100, truncated = 0\n'
+        f'[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{requete}"\n'
+    )
+
+    assert banc_local.lire_troncatures(journal, position, requete)["journal_serveur_lu"] is False
+
+
+@pytest.mark.parametrize("etape", ["releve", "lecture"])
+def test_lien_physique_refuse_avant_toute_lecture(tmp_path, banc_local, monkeypatch, etape):
+    arbre = tmp_path / "arbre"
+    arbre.mkdir()
+    monkeypatch.setattr(banc_local, "ROOT", arbre)
+    exterieur = tmp_path / "exterieur-fictif.log"
+    exterieur.write_text("contenu exclusivement fictif\n")
+    journal = arbre / "serve.log"
+    journal.write_text("")
+    position = position_journal(banc_local, journal)
+    journal.rename(arbre / "archive.log")
+    journal.hardlink_to(exterieur)
+    lectures = []
+    empreinte = banc_local.empreinte_prefixe
+
+    def espion(f, taille):
+        lectures.append(taille)
+        return empreinte(f, taille)
+
+    monkeypatch.setattr(banc_local, "empreinte_prefixe", espion)
+    if etape == "releve":
+        resultat = banc_local.relever_journal(journal)
+        assert lectures == []
+        assert resultat is None
+    else:
+        resultat = banc_local.lire_troncatures(journal, position)
+        assert lectures == []
+        assert resultat == {"journal_serveur_lu": False, "troncatures": []}
+
+
+def test_rotation_copie_troncature_depuis_journal_vide(tmp_path, banc_local):
+    journal = tmp_path / "serve.log"
+    journal.write_bytes(b"")
+    position = position_journal(banc_local, journal)
+    avant = journal.stat()
+    with journal.open("a") as f:
+        f.write("truncating input prompt\n")
+    (tmp_path / "copie.log").write_bytes(journal.read_bytes())
+    journal.write_bytes(b"")
+    requete = "/api/chat?banc_r4=appel_suivi"
+    with journal.open("a") as f:
+        f.write(f'request="{requete}" slot release: id 0 | task 1 | stop processing: truncated = 0\n')
+        f.write(f'[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{requete}"\n')
+    os.utime(journal, ns=(avant.st_atime_ns, avant.st_mtime_ns + 1_000_000))
+    assert journal.stat().st_ino == avant.st_ino
+    assert journal.stat().st_mtime_ns != avant.st_mtime_ns
+
+    assert banc_local.lire_troncatures(journal, position, requete)["journal_serveur_lu"] is False
+
+
+def test_capture_conserve_alerte_malgre_rotation_de_la_copie(tmp_path, banc_local, flux_journal):
+    journal, ecrire = flux_journal
+    copie = tmp_path / "copie.log"
+    copie.write_text("")
+    position = position_journal(banc_local, journal)
+    alerte = "truncating input prompt\n"
+    ecrire(alerte)
+    copie.write_text(alerte)
+    copie.write_text("")
+    requete = "/api/chat?banc_r4=appel_suivi"
+    fin = (f'request="{requete}" slot release: id 0 | task 1 | stop processing: truncated = 0\n'
+           f'[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{requete}"\n')
+    ecrire(fin)
+    copie.write_text(fin)
+
+    preuve = banc_local.lire_troncatures(journal, position, requete)
+
+    assert preuve["journal_serveur_lu"] is True
+    assert preuve["troncatures"][0] == alerte.strip()
+    assert alerte.strip() not in copie.read_text()
+
+
+@pytest.mark.parametrize("nature", ["fichier", "lien_physique", "fifo_nomme"])
+def test_capture_refuse_les_descripteurs_reouvrables(tmp_path, banc_local, nature):
+    journal = tmp_path / "serve.log"
+    if nature == "fifo_nomme":
+        os.mkfifo(journal)
+    else:
+        journal.write_text("contenu fictif\n")
+        if nature == "lien_physique":
+            (tmp_path / "lien.log").hardlink_to(journal)
+    fd = os.open(journal, os.O_RDONLY | os.O_NONBLOCK)
+    try:
+        with pytest.raises(ValueError, match="tube anonyme"):
+            banc_local.CaptureJournal(fd)
+    finally:
+        os.close(fd)
+
+
+def test_capture_ferme_son_descripteur_et_restaure_le_mode(banc_local):
+    lecture, ecriture = os.pipe()
+    try:
+        with banc_local.CaptureJournal(lecture) as journal:
+            fd = journal.fd
+            assert not os.get_blocking(lecture)
+            os.write(ecriture, b"truncated = 0\n")
+            assert journal.lire() == b"truncated = 0\n"
+        assert not journal.thread.is_alive()
+        assert os.get_blocking(lecture)
+        with pytest.raises(OSError):
+            os.fstat(fd)
+        assert banc_local.relever_journal(journal) is None
+    finally:
+        os.close(lecture)
+        os.close(ecriture)
+
+
+def test_capture_ne_valide_pas_une_ligne_incomplete(banc_local, flux_journal):
+    journal, ecrire = flux_journal
+    position = position_journal(banc_local, journal)
+    requete = "/api/chat?banc_r4=appel_suivi"
+    ecrire(f'request="{requete}" stop processing: truncated = 0\n')
+    ecrire(f'[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{requete}"')
+    assert banc_local.lire_troncatures(journal, position, requete)["journal_serveur_lu"] is False
+
+
+def test_reevaluation_refuse_les_anciennes_preuves_non_capturees(tmp_path, banc_local):
+    resultat = {
+        "appels": [{"prompt_eval_count": 100, "journal_serveur_lu": True}],
+        "tours": [
+            {"evenements": [{"type": "text", "content": "Camille"}]},
+            {"evenements": [{"type": "tool_result", "content": "[list_calendar_events]"},
+                            {"type": "text", "content": "Ton agenda est vide."}]},
+        ],
+        "selection": [[], ["list_calendar_events"]],
+        "charges_verifiees": [{"profil_entier": True}],
+        "troncatures": [], "journal_serveur_lu": True,
+    }
+
+    assert banc_local.enregistrer_verdict(resultat, tmp_path) == 1
+    assert json.loads((tmp_path / "resultat.json").read_text())["vert"] is False
 
 
 @pytest.mark.parametrize("cible", ["feuille", "repertoire"])
