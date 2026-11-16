@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from app.services.invoice_pdf import InvoicePDFGenerator, libelle_statut_pdf
 from pypdf import PdfReader
 
@@ -34,7 +35,9 @@ def test_les_statuts_sont_traduits_et_accordes():
     assert libelle_statut_pdf("overdue", "facture") == "En retard"
     assert libelle_statut_pdf("sent", "devis") == "Envoyé"
     assert libelle_statut_pdf("accepted", "devis") == "Accepté"
-    assert libelle_statut_pdf("custom_status", "facture") == "Statut inconnu"
+    assert libelle_statut_pdf("custom_status", "facture") == "Statut inconnu : custom_status"
+    assert libelle_statut_pdf("  SENT  ", "facture") == "Envoyée"
+    assert libelle_statut_pdf("   ", "facture") == "Non renseigné"
 
 
 def test_b1989_un_statut_inconnu_reste_en_francais_dans_le_pdf(tmp_path: Path):
@@ -48,6 +51,30 @@ def test_b1989_un_statut_inconnu_reste_en_francais_dans_le_pdf(tmp_path: Path):
 
     assert "Statut inconnu" in texte
     assert "Custom status" not in texte
+
+
+@pytest.mark.parametrize(("statut", "type_document"), [
+    ("partiellement_paye", "facture"),
+    ("converted", "facture"),
+    ("refused", "avoir"),
+    ("accepted", "avoir"),
+    ("expired", "avoir"),
+    ("À vérifier <paiement> & reçu", "facture"),
+])
+def test_relecture_r1_le_pdf_conserve_le_statut_historique(
+    tmp_path: Path, statut: str, type_document: str,
+):
+    donnees = {**donnees_facture(statut), "document_type": type_document}
+    chemin = InvoicePDFGenerator(output_dir=str(tmp_path)).generate_invoice_pdf(
+        invoice_data=donnees,
+        contact_data={"name": "Client de test"},
+        user_profile={"name": "Émetteur de test"},
+    )
+
+    texte = "\n".join(page.extract_text() or "" for page in PdfReader(chemin).pages)
+
+    assert f"Statut inconnu : {statut}" in texte
+    assert donnees["status"] == statut
 
 
 def test_le_texte_extrait_du_pdf_conserve_accents_et_statut_francais(tmp_path: Path):

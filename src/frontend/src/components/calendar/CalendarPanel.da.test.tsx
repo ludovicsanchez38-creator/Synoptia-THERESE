@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
+import reponseGoogle403 from './fixtures/googleCalendar403.json';
 
 const api = vi.hoisted(() => ({
   getEmailAuthStatus: vi.fn(),
@@ -31,7 +32,7 @@ vi.mock('../../services/api', async () => {
 
 import { CalendarPanel } from './CalendarPanel';
 
-const CAUSE_403 = 'Google Calendar API has not been used in project 42 before or it is disabled.';
+const CAUSE_403 = reponseGoogle403.body.message;
 
 const AGENDA_LOCAL = {
   id: 'cal-1',
@@ -128,6 +129,7 @@ function boutonsNommes(racine: HTMLElement, nom: string): HTMLButtonElement[] {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(fetch).mockReset();
   api.getEmailAuthStatus.mockResolvedValue({ authenticated: false, accounts: [] });
   api.listCalendars.mockResolvedValue([AGENDA_LOCAL]);
   api.listEvents.mockResolvedValue([RENDEZ_VOUS]);
@@ -179,18 +181,72 @@ describe('lot 8 (3) : le grand geste', () => {
 });
 
 describe('lot 8 (4) : un seul « Réessayer » à l’écran', () => {
-  it('B-1995 : le refus brut de Google est expliqué en français avec les données conservées', async () => {
-    api.listCalendars.mockRejectedValue(new Error(CAUSE_403));
-    api.listEvents.mockRejectedValue(new Error('réseau injoignable'));
+  it('B-1995 requalifié : le 403 du routeur traverse le client HTTP avec les données conservées', async () => {
+    const clientHttp = await vi.importActual<typeof import('../../services/api/calendar')>('../../services/api/calendar');
+    api.listCalendars.mockImplementation(clientHttp.listCalendars);
+    api.listEvents.mockImplementation(clientHttp.listEvents);
+    useEmailStore.setState({
+      accounts: [{ id: 'compte-403', email: 'agenda@example.test', provider: 'gmail' }] as never,
+      currentAccountId: 'compte-403', needsReauth: true,
+    });
+    // Ce corps est vérifié contre les routes réelles par test_b1995_contrat_erreur_google.py.
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const chemin = new URL(String(url)).pathname;
+      if (chemin === '/api/calendar/calendars') {
+        return new Response(JSON.stringify(reponseGoogle403.body), { status: reponseGoogle403.status });
+      }
+      if (chemin === '/api/calendar/events') {
+        return new Response(JSON.stringify({ message: 'réseau injoignable' }), { status: 503 });
+      }
+      throw new Error(`Appel inattendu : ${chemin}`);
+    });
     await monter();
+    await waitFor(() => expect(screen.getByTestId('calendar-stale-warning')).toHaveTextContent('Données conservées'));
 
     const bandeau = screen.getByRole('alert');
-    expect(bandeau).toHaveTextContent('L’API Google Calendar n’est pas activée.');
-    expect(bandeau).toHaveTextContent('Active-la dans ta console Google Cloud, puis relance la synchronisation.');
+    expect(bandeau).toHaveTextContent(reponseGoogle403.body.message);
     expect(bandeau).toHaveTextContent('Données conservées');
-    expect(bandeau).not.toHaveTextContent(CAUSE_403);
+    expect(bandeau).not.toHaveTextContent('Google Calendar API has not been used');
     expect(screen.queryByRole('button', { name: /Reconnecter/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Réessayer' })).toBeEnabled();
+    expect(useCalendarStore.getState().events).toEqual([RENDEZ_VOUS]);
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/calendar/calendars?account_id=compte-403'), expect.anything());
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/calendar/events?calendar_id=cal-1'), expect.anything());
+  });
+
+  it.each(['evenements', 'synchronisation'] as const)('R1 : le 403 HTTP des %s garde le conseil serveur', async (operation) => {
+    const clientHttp = await vi.importActual<typeof import('../../services/api/calendar')>('../../services/api/calendar');
+    api.listCalendars.mockImplementation(clientHttp.listCalendars);
+    api.listEvents.mockImplementation(clientHttp.listEvents);
+    api.syncCalendar.mockImplementation(clientHttp.syncCalendar);
+    const agendaGoogle = { ...(AGENDA_LOCAL as object), provider: 'google', account_id: 'compte-403' } as never;
+    semer({ calendars: [agendaGoogle] });
+    useEmailStore.setState({
+      accounts: [{ id: 'compte-403', email: 'agenda@example.test', provider: 'gmail' }] as never,
+      currentAccountId: 'compte-403', needsReauth: false,
+    });
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const chemin = new URL(String(url)).pathname;
+      if (chemin === '/api/calendar/calendars') return new Response(JSON.stringify([agendaGoogle]));
+      if (chemin === '/api/calendar/events' && operation === 'synchronisation') {
+        return new Response(JSON.stringify([RENDEZ_VOUS]));
+      }
+      if (chemin === '/api/calendar/events' || chemin === '/api/calendar/sync') {
+        return new Response(JSON.stringify(reponseGoogle403.body), { status: reponseGoogle403.status });
+      }
+      throw new Error(`Appel inattendu : ${chemin}`);
+    });
+    await monter();
+    if (operation === 'synchronisation') {
+      await waitFor(() => expect(api.listEvents).toHaveBeenCalled());
+      fireEvent.click(screen.getByRole('button', { name: "Synchroniser l'agenda" }));
+    }
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(reponseGoogle403.body.message);
+    expect(screen.queryByRole('button', { name: /Reconnecter/ })).not.toBeInTheDocument();
+    expect(useCalendarStore.getState().events).toEqual([RENDEZ_VOUS]);
+    const route = operation === 'evenements' ? '/api/calendar/events?' : '/api/calendar/sync?';
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(route), expect.anything());
   });
 
   it('grille saine : aucun', async () => {
@@ -216,7 +272,7 @@ describe('lot 8 (4) : un seul « Réessayer » à l’écran', () => {
     const bandeaux = [...container.querySelectorAll('[role="alert"]')];
     expect(bandeaux, 'un seul bandeau, jamais deux').toHaveLength(1);
     const fusionne = screen.getByTestId('calendar-stale-warning');
-    expect(fusionne.textContent, 'le titre explique le refus en français').toContain('L’API Google Calendar n’est pas activée.');
+    expect(fusionne.textContent, 'le titre explique le refus en français').toContain(CAUSE_403);
     expect(fusionne.textContent, 'le corps dit que les données sont conservées').toMatch(/[Dd]onnées conservées/);
     expect(boutonsNommes(container, 'Réessayer')).toHaveLength(1);
   });
