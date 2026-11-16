@@ -411,7 +411,7 @@ function EventPreparation({
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Points à vérifier</div>
         <div className="space-y-2">
           {(checks.length > 0 ? checks : ['L’événement contient une date, un contexte et au moins un participant.']).map((item) => (
-            <div key={item} className="flex gap-2.5 rounded-md border border-border bg-surface px-3 py-2.5 text-xs leading-5 text-text"><CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${checks.length ? 'text-warning' : 'text-accent'}`} />{item}</div>
+            <div key={item} className="flex gap-2.5 rounded-md border border-border bg-surface px-3 py-2.5 text-xs leading-5 text-text">{checks.length ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />}{item}</div>
           ))}
         </div>
       </section>
