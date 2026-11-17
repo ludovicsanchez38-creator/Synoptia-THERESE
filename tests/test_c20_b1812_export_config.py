@@ -448,8 +448,8 @@ TEXTES_SANS_IDENTIFIANT = [
     # Une URL entre guillemets ou chevrons s'arrête au guillemet fermant.
     '<a href="/aller?u=https://site.invalid">contact@site.invalid</a>',
     '<a href="https://suivi.invalid/?u=https://site.invalid">contact@site.invalid</a>',
-    '<a href="https://exemple.invalid:port">a@b.invalid</a>',
-    "<https://exemple.invalid:port>a@b.invalid",
+    '<a href="https://exemple.invalid:port"> a@b.invalid</a>',
+    '"https://exemple.invalid:port" puis a@b.invalid',
     "{'url': 'https://hote.invalid:8443', 'mail': 'a@b.invalid'}",
     "Connexion : https://exemple.invalid:8080 (admin@exemple.invalid)",
 ]
@@ -518,3 +518,21 @@ def test_masquage_reste_rapide_sur_un_texte_tres_long(texte):
     depart = time.monotonic()
     assert _masquer_urls_export(texte) == texte
     assert time.monotonic() - depart < 5
+
+
+# Revue de sécurité du 17/11 sur la passe précédente.
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        # Un paramètre secret placé après un point-virgule est vu, et sa valeur part en entier.
+        ("https://site.invalid/?vue=mois;password=FAUX-secret", "https://site.invalid/?vue=mois;password=[REDACTED]"),
+        ("https://site.invalid/?a=1;token=FAUX;suite&vue=mois", "https://site.invalid/?a=1;token=[REDACTED]&vue=mois"),
+        # Un « nom:secret » reste un indice, même entre guillemets ou chevrons.
+        ('Adresse : "https://temoin:FAUX"sec@agenda.invalid/dav"', 'Adresse : "https://agenda.invalid/dav"'),
+        ("<https://temoin:FAUX>sec@agenda.invalid/dav>", "<https://agenda.invalid/dav>"),
+    ],
+)
+def test_masquage_parametre_apres_point_virgule_et_guillemet_dans_un_mot_de_passe(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
