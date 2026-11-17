@@ -306,52 +306,54 @@ sous-processus et les chemins protégés ; elle ne prouve pas l'interception
 d'éventuels appels natifs. Aucune suite complète ni modification frontend n'a
 été lancée. Les changements restent non commités.
 
-## Remédiation de la relecture, passe 5 (écrite par l'orchestrateur)
+## Remédiation des relectures 4 et 5 (écrite par l'orchestrateur)
 
-Constat de la relecture 4 : le masquage des URL prenait un port (`:443`) pour
-le début d'un identifiant dès qu'une adresse e-mail suivait sur la même ligne,
-et relisait comme un texte le JSON déjà sérialisé d'une préférence. Deux
-passes de suite ayant échoué sur cette fonction, elle a été réécrite à la main
-plutôt que renvoyée une cinquième fois.
+Constats : le masquage des URL prenait un port (`:443`) pour le début d'un
+identifiant dès qu'une adresse e-mail suivait sur la même ligne (relecture 4),
+puis encore quand une ponctuation suivait le port ; deux clés distinctes
+devenaient identiques une fois masquées et une entrée disparaissait ; un JSON
+réécrit perdait la précision de ses nombres (relecture 5). Entre les deux, la
+revue de sécurité automatique des commits a relevé une clé JSON en double
+rendue telle quelle, une récursion non bornée et un paramètre de connexion
+laissé en clair après une URL imbriquée. Deux passes de Codex ayant échoué sur
+cette fonction, elle a été réécrite à la main.
 
 Règles retenues (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
 
-1. Une chaîne qui est un JSON (objet ou liste) est masquée champ par champ,
-   clés comprises, et toujours réécrite depuis ce qui a été lu : sa mise en
-   forme (espaces) peut changer, ses données non. Elle n'est jamais rendue
-   telle quelle, parce qu'une clé en double cache sa première occurrence au
-   lecteur JSON.
+1. Une chaîne qui est un JSON (objet ou liste) est lue fidèlement : nombres
+   gardés en texte, paires dans l'ordre, clés en double conservées. Sans rien
+   à masquer elle ressort telle quelle, à l'octet près. Sinon elle est réécrite
+   depuis ce qui a été lu : seul l'espacement peut changer, les nombres
+   ressortent au caractère près. La valeur d'une préférence suit la même voie.
 2. Dans un texte, l'autorité d'une URL s'arrête au premier `/`, `?`, `#` ou à
    la première espace ; tout ce qui y précède le dernier `@` est un
    identifiant et part, quels que soient ses caractères (lecture de la
    RFC 3986).
-3. Une espace ne prolonge l'identifiant que si ce qui la précède ne peut pas
-   être un hôte suivi de son port (`nom:secret` coupé par une espace) : on
-   cherche alors le `@` sur la même ligne, à 512 caractères au plus.
+3. Une espace ne prolonge l'identifiant que dans un cas étroit : ce qui la
+   précède ne peut pas être un hôte suivi de son port (`nom:secret` ; un port
+   suivi d'une ponctuation reste un port), et le mot qui la suit porte
+   lui-même le `@`.
 4. Une URL passée en paramètre d'une autre est lue de la même façon, par la
    même boucle et sans récursion (cinq mille niveaux testés).
 5. Les paramètres de connexion (`password=`, `access_token=`…) sont masqués
    dans une seconde passe, sur toute l'étendue de l'URL après son premier `?`
-   ou `#` : un secret placé après une URL imbriquée part aussi. Le texte n'est
-   plus recomposé par `urlsplit` : hors identifiants et valeurs masquées, il
-   sort caractère pour caractère (casse du schéma, `?` final).
+   ou `#`. Hors identifiants et valeurs masquées, le texte sort caractère pour
+   caractère (casse du schéma, `?` final).
+6. Les clés sont masquées comme les valeurs. Deux clés distinctes qui se
+   confondent une fois masquées restent deux entrées : la seconde reçoit un
+   suffixe ` (2)`. Une clé que le masquage ne change pas garde son nom.
+7. Un JSON trop imbriqué pour être parcouru est masqué comme un texte.
 
-Tests : `tests/test_c20_b1812_export_config.py::test_export_conserve_un_port_suivi_d_une_adresse_mail`
-(deux routes), `::test_masquage_des_urls_table_de_cas` (onze cas), les tests
-`::test_masquage_d_un_json_*`, `::test_masquage_des_cles_d_un_json`,
-`::test_masquage_d_urls_imbriquees_en_grand_nombre_sans_debordement` et
-`::test_masquage_garde_le_separateur_devant_une_url_imbriquee`. Cinq rouges
-avant le premier correctif, puis trois (clés en double, clés, imbrication
-profonde, relevés par la revue de sécurité automatique du commit) avant le
-second, puis quatre (paramètre de connexion placé après une URL imbriquée,
-régression de ce second correctif, et casse du schéma) avant le troisième ;
-45 verts après ; 236 tests voisins de
-l'export verts ; ruff propre ; mypy du fichier inchangé (23).
+Tests : `tests/test_c20_b1812_export_config.py`, 71 tests dont 53 ajoutés par
+ces passes, sur les deux routes d'export pour chaque reproduction des
+relecteurs. Rouges constatés avant chaque correctif, dans l'ordre des commits :
+5, 3, 4, 21, puis 2. 262 tests voisins de l'export verts ; ruff propre ; mypy
+du fichier inchangé (23).
 
 Limites connues, non couvertes :
 
-- un mot de passe saisi tel quel avec une espace ET qui commence par des
-  chiffres (`nom:12 34@hôte`) : la partie avant l'espace passe pour un port ;
+- un mot de passe saisi tel quel avec PLUSIEURS espaces, ou avec une espace
+  et qui commence par des chiffres (`nom:12 34@hôte`) ;
 - un mot de passe contenant `/`, `?` ou `#` non encodés : aucune bibliothèque
   ne lit une telle URL comme l'utilisateur l'entend ;
 - une URL encodée en pourcentage passée en paramètre d'une autre ;
@@ -360,4 +362,9 @@ Limites connues, non couvertes :
   un texte, la fin de la valeur reste ;
 - la règle 2 lit `https://site.invalid;a@b.invalid` (sans espace) comme une
   URL à identifiants, ce qu'elle est selon la RFC : le texte avant le `@`
-  part.
+  part ;
+- la règle 3 lit `https://hôte:mot suite@domaine` comme un identifiant coupé
+  par une espace (`mot` n'étant pas un port) ;
+- les colonnes JSON que l'export décode avant de les masquer (`extra_data`…)
+  passent par le lecteur JSON ordinaire, antérieur à ce lot : leurs nombres
+  décimaux très longs y sont arrondis comme avant.

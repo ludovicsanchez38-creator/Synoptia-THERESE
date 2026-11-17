@@ -134,7 +134,7 @@ _URL_DANS_UN_TEXTE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]*")
 _NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&#;?]+)=")
 _FIN_AUTORITE = "/?#"
 _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
-_PORTEE_DES_IDENTIFIANTS = 512
+_PONCTUATION_FINALE = ",.;:!?)]}»"
 
 
 def _masquer_parametres_d_une_url(url: str) -> str:
@@ -160,11 +160,12 @@ def _masquer_parametres_d_une_url(url: str) -> str:
 
 
 def _port_plausible(autorite: str) -> bool:
-    """`hôte`, `hôte:443` ou une adresse IPv6 entre crochets ; `nom:secret` ne l'est pas."""
+    """`hôte`, `hôte:443`, `hôte:443,` ou une adresse IPv6 entre crochets ; `nom:secret` ne l'est pas."""
     if autorite.startswith("["):
         return True
     _hote, deux_points, suite = autorite.partition(":")
-    return not deux_points or not suite or (suite.isascii() and suite.isdigit())
+    port = suite.rstrip(_PONCTUATION_FINALE)
+    return not deux_points or not port or (port.isascii() and port.isdigit())
 
 
 def _debut_de_l_hote(texte: str, debut: int) -> int:
@@ -174,8 +175,9 @@ def _debut_de_l_hote(texte: str, debut: int) -> int:
     « # », et tout ce qui y précède le dernier « @ » est un identifiant, quels
     que soient ses caractères (un mot de passe saisi tel quel peut porter une
     apostrophe, un guillemet, un chevron). Une espace termine l'URL dans un
-    texte ; elle ne prolonge l'identifiant que si ce qui la précède ne peut pas
-    être un hôte suivi de son port (`nom:secret` coupé par une espace).
+    texte ; elle ne prolonge l'identifiant que dans un cas étroit : ce qui la
+    précède ne peut pas être un hôte suivi de son port (`nom:secret`), et le
+    mot qui la suit porte lui-même le « @ ».
     """
     fin = debut
     while fin < len(texte) and not texte[fin].isspace() and texte[fin] not in _FIN_AUTORITE:
@@ -186,13 +188,15 @@ def _debut_de_l_hote(texte: str, debut: int) -> int:
     fin_hote = debut
     while fin_hote < fin and texte[fin_hote] not in _FIN_URL_DANS_UN_TEXTE:
         fin_hote += 1
-    if _port_plausible(texte[debut:fin_hote]):
+    if _port_plausible(texte[debut:fin_hote]) or fin >= len(texte) or texte[fin] in _FIN_AUTORITE + "\r\n":
         return debut
-    limite = min(len(texte), debut + _PORTEE_DES_IDENTIFIANTS)
-    fin_ligne = debut
-    while fin_ligne < limite and texte[fin_ligne] not in _FIN_AUTORITE + "\r\n":
-        fin_ligne += 1
-    arobase = texte.rfind("@", debut, fin_ligne)
+    suite = fin
+    while suite < len(texte) and texte[suite].isspace() and texte[suite] not in "\r\n":
+        suite += 1
+    fin_suite = suite
+    while fin_suite < len(texte) and not texte[fin_suite].isspace() and texte[fin_suite] not in _FIN_AUTORITE:
+        fin_suite += 1
+    arobase = texte.rfind("@", suite, fin_suite)
     return arobase + 1 if arobase >= 0 else debut
 
 
@@ -210,33 +214,94 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
     return _URL_DANS_UN_TEXTE.sub(lambda url: _masquer_parametres_d_une_url(url.group()), sans_identifiants)
 
 
+class _NombreJson(str):
+    """Le texte exact d'un nombre JSON : il ressort caractère pour caractère."""
+
+
+class _ObjetJson(list[Any]):
+    """Les paires d'un objet JSON dans l'ordre du texte, clés en double comprises."""
+
+
+def _lire_json_fidelement(texte: str) -> Any:
+    return json.loads(
+        texte, object_pairs_hook=_ObjetJson, parse_float=_NombreJson, parse_int=_NombreJson, parse_constant=_NombreJson
+    )
+
+
+def _ecrire_json(noeud: Any) -> str:
+    if isinstance(noeud, _ObjetJson):
+        return "{" + ", ".join(f"{json.dumps(cle, ensure_ascii=False)}: {_ecrire_json(v)}" for cle, v in noeud) + "}"
+    if isinstance(noeud, list):
+        return "[" + ", ".join(_ecrire_json(element) for element in noeud) + "]"
+    if isinstance(noeud, _NombreJson):
+        return str(noeud)
+    return json.dumps(noeud, ensure_ascii=False)
+
+
+def _paires_aux_cles_masquees(paires: Any) -> list[tuple[Any, Any]]:
+    """Masque les clés sans jamais en confondre deux qui étaient distinctes.
+
+    Deux adresses qui ne diffèrent que par leurs identifiants deviennent la
+    même une fois masquées : la seconde reçoit un suffixe, aucune entrée ne
+    recouvre l'autre. Une clé que le masquage ne change pas garde son nom.
+    """
+    lues = [(cle, _masquer_urls_d_un_texte(cle) if isinstance(cle, str) else cle, valeur) for cle, valeur in paires]
+    prises = {masquee for cle, masquee, _valeur in lues if masquee == cle}
+    attribuees: dict[Any, Any] = {}
+    sortie = []
+    for cle, masquee, valeur in lues:
+        if masquee != cle:
+            if cle not in attribuees:
+                candidate, rang = masquee, 2
+                while candidate in prises:
+                    candidate, rang = f"{masquee} ({rang})", rang + 1
+                prises.add(candidate)
+                attribuees[cle] = candidate
+            masquee = attribuees[cle]
+        sortie.append((masquee, valeur))
+    return sortie
+
+
+def _masquer_json_lu(noeud: Any) -> Any:
+    if isinstance(noeud, _ObjetJson):
+        return _ObjetJson(_paires_aux_cles_masquees((cle, _masquer_json_lu(valeur)) for cle, valeur in noeud))
+    if isinstance(noeud, list):
+        return [_masquer_json_lu(element) for element in noeud]
+    if isinstance(noeud, _NombreJson) or not isinstance(noeud, str):
+        return noeud
+    return _masquer_urls_export(noeud)
+
+
 def _masquer_urls_export(valeur: Any) -> Any:
     """Retire les identifiants des URL, y compris dans les textes exportés."""
     if isinstance(valeur, dict):
-        return {
-            (_masquer_urls_d_un_texte(cle) if isinstance(cle, str) else cle): _masquer_urls_export(element)
-            for cle, element in valeur.items()
-        }
+        return dict(_paires_aux_cles_masquees((cle, _masquer_urls_export(element)) for cle, element in valeur.items()))
     if isinstance(valeur, list):
         return [_masquer_urls_export(element) for element in valeur]
     if not isinstance(valeur, str):
         return valeur
     # Un JSON déjà sérialisé (la valeur d'une préférence) se masque champ par
     # champ : lu comme un texte, ses guillemets collent une URL à l'adresse
-    # e-mail du champ suivant. Il est toujours réécrit depuis ce qui a été lu
-    # et masqué, jamais rendu tel quel : le lecteur ne garde que la dernière
-    # occurrence d'une clé en double, la chaîne d'origine peut en cacher une autre.
+    # e-mail du champ suivant. Il est lu fidèlement (nombres en texte, clés en
+    # double gardées) : sans rien à masquer il ressort tel quel, sinon il est
+    # réécrit depuis ce qui a été lu, nombres au caractère près.
     if valeur.lstrip().startswith(("{", "[")):
         try:
-            structure = json.loads(valeur)
+            structure = _lire_json_fidelement(valeur)
+            if isinstance(structure, list):
+                masquee = _masquer_json_lu(structure)
+                return valeur if masquee == structure else _ecrire_json(masquee)
         except (ValueError, RecursionError):
-            structure = None
-        if isinstance(structure, (dict, list)):
-            return json.dumps(_masquer_urls_export(structure), ensure_ascii=False)
+            pass
     return _masquer_urls_d_un_texte(valeur)
 
 
 def _masquer_preferences_structurees(valeur: Any) -> Any:
+    if isinstance(valeur, _ObjetJson):
+        return _ObjetJson(
+            (cle, "[REDACTED]" if _cle_de_connexion(cle) else _masquer_preferences_structurees(element))
+            for cle, element in valeur
+        )
     if isinstance(valeur, dict):
         return {
             cle: "[REDACTED]" if _cle_de_connexion(cle) else _masquer_preferences_structurees(element)
@@ -260,12 +325,11 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
     try:
-        structure = json.loads(pref.value)
-        if isinstance(structure, (dict, list)):
-            return json.dumps(
-                _masquer_urls_export(_masquer_preferences_structurees(structure)), ensure_ascii=False
-            )
-    except (TypeError, json.JSONDecodeError):
+        structure = _lire_json_fidelement(pref.value)
+        if isinstance(structure, list):  # un objet (ses paires) ou une liste
+            masquee = _masquer_json_lu(_masquer_preferences_structurees(structure))
+            return pref.value if masquee == structure else _ecrire_json(masquee)
+    except (TypeError, ValueError, RecursionError):
         pass
     return pref.value
 
