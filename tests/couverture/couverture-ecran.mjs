@@ -140,8 +140,8 @@ export async function verifierPileJetable(base, expectedDataDir, fetcher = fetch
   return { data_dir: dataDir, db_path: dbPath };
 }
 
-// La prévisualisation ne modifie rien. La migration du chat ne touche qu'à la
-// base jetable vérifiée avant la navigation, sans fournisseur ni effet externe.
+// Seule la prévisualisation sans écriture est transmise. La migration exacte
+// du chat est acquittée localement par requeteASimuler, ses variantes bloquées.
 export function requeteAutorisee(methode, adresse) {
   let url;
   try { url = new URL(adresse); } catch { return false; }
@@ -151,8 +151,7 @@ export function requeteAutorisee(methode, adresse) {
   if (ROUTES_GET_A_NE_PAS_EXERCER.has(url.pathname)) return false;
   if (['GET', 'HEAD', 'OPTIONS'].includes(methode)) return true;
   return url.origin === ORIGINE_BACKEND && methode === 'POST'
-    && ['/api/variables/preview', '/api/chat/cache-migration'].includes(url.pathname)
-    && !url.search;
+    && url.pathname === '/api/variables/preview' && !url.search;
 }
 
 // B-2029 : acquittement local uniquement, sans autoriser cette écriture réseau.

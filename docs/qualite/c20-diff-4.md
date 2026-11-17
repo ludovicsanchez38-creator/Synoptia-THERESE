@@ -1,5 +1,7 @@
 # Cycle 20, lot diff-4
 
+**État courant, passe 4 :** B-2029 corrigé ; B-1885 `regle_a_trancher`, **retiré du lot, reporté**, pour les constats 2, 3 et 4. La section « Remédiation de la relecture, passe 4 » fait foi. Les récits, comptes et demandes de réintégration/rebase des passes précédentes ci-dessous sont historiques.
+
 Arbre `gpt-c20-diff-4`, branche `gpt/c20-diff-4`, HEAD de départ et d'arrivée `4dfc79d1`. Trois candidats confirmés et corrigés, deux règles à trancher, cinq candidats rejetés. Vérifications locales sur le code présent dans cet arbre.
 
 La consigne particulière du bac à sable remplace les commits : aucun `git add`, commit, push, dépôt annexe ou bundle. Les trois scripts, leurs trois nouveaux fichiers de tests et ce rapport restent non commités. Aucun test existant n'a été modifié, affaibli ou supprimé.
@@ -11,7 +13,7 @@ La colonne « Rouge observé » remplace le commit rouge ; les messages viennent
 | Id | Verdict | Test (chemin::nom) | Rouge observé | Correctif |
 | --- | --- | --- | --- | --- |
 | B-1883 | `confirme` | `tests/test_c20_b1883_finaliser_recette.py::test_finalisation_conserve_echec_portes[1-0-1]` | `assert 0 == 1`, avec `SystemExit(0).code` | non commité |
-| B-1885 | `confirme` | `tests/test_c20_b1885_banc_ollama.py::test_verdict_exige_un_journal_lu[False-troncatures0-1]` | `AssertionError: assert 0 == 1` malgré `journal_serveur_lu: False` | non commité |
+| B-1885 | `regle_a_trancher` | Reproductions des constats 2, 3 et 4, exécutées puis retirées avec le candidat | Faux verts malgré fin étrangère retardée ou alerte consommée ; binaire du PATH appelant introuvable (preuves détaillées en passe 4) | retiré du lot, reporté |
 | B-1897 | `regle_a_trancher` | `src/frontend/src/lib/consentSync.profiles.test.ts::reprend la file historique avant de purger les caches de A` | Sans objet : attribution d'une décision nouvelle sans profil non définie | aucun changement |
 | B-1898 | `regle_a_trancher` | `tests/test_c19d_b1088_securite_memoire.py::test_faux_positifs_differes_et_contre_exemples_v5` | Sans objet : l'assouplissement est explicitement différé à un arbitrage | aucun changement |
 | B-2008 | `confirme` | `tests/test_c20_b2008_mime_recette.py::test_ressources_statiques_ont_un_type_mime[police.woff2-font/woff2]` | `Expected: fulfill(body=b'ressource fictive', content_type='font/woff2')` ; `Actual: fulfill(body=b'ressource fictive', content_type='application/octet-stream')` | non commité |
@@ -20,6 +22,8 @@ La colonne « Rouge observé » remplace le commit rouge ; les messages viennent
 | B-2025 | `rejete` | `tests/test_c22b_pdf_sans_texte.py::test_scan_avertit_le_chat` | Sans objet : JPEG est une solution alternative proposée | aucun changement |
 | B-2026 | `rejete` | `tests/test_r1_10_tutoiement.py::test_tutoiement_par_defaut_et_consigne_personnelle_conservee` | Sans objet : les deux registres ont des périmètres distincts | aucun changement |
 | B-2027 | `rejete` | `tests/test_c22b_identite_facture.py::test_piece_deja_emise_sans_adresse_ne_propose_pas_de_modifier_le_brouillon` | Sans objet : une pièce émise n'est plus un brouillon modifiable | aucun changement |
+
+B-1885 : **retiré du lot, reporté**. Preuve de la relecture : « Une fin de tâche étrangère peut valider l'appel suivi et produire un faux vert » ; « Un tube fourni par `--journal-fd` peut perdre une alerte tout en certifiant un verdict vert » ; « Le lanceur peut ne pas trouver un binaire Ollama pourtant installé et accessible à l'appelant ». Les trois reproductions isolées de la passe 4 confirment ces constats.
 
 ## Corrections et chemin d'exécution vérifié avant modification
 
@@ -368,3 +372,70 @@ Playwright était absent des dépendances Node de la racine. Les premières repr
 Les tests Node sélectionnés ne lancent ni navigateur ni requête réseau. La suite navigateur et les parcours CLI qui écrivent dans `/private/tmp` ou déplacent vers la corbeille personnelle ne sont pas lancés dans cette passe. Le voisin CLI qui refuse une URL invalide a d'abord échoué parce que les canaux internes de son sous-processus Node ne rendaient pas son diagnostic dans ce bac à sable. Le module temporaire `/tmp/diff4_node_stdio.mjs` redirige seulement stdout/stderr de `spawnSync` vers des fichiers sous `/tmp`, puis les restitue au test. Le vrai enfant Node et toutes les assertions restent exercés. Le rejeu des cinq tests avec `node --import /tmp/diff4_node_stdio.mjs --test-name-pattern='^(la CLI|la base|la garde|les gestes|B-1715)' tests/couverture/couverture-ecran.test.mjs` passe. Aucun test n'a été affaibli pour contourner ces limites.
 
 La chaîne Ollama est vérifiée avec des processus et réponses fictifs. Son usage réel demande le binaire local, la copie du modèle fourni dans `.recette-r4/models`, son nom dans `MODELE.txt` et le port de banc libre ; il n'a pas été exécuté pendant cette passe. Les portes ciblées sont vertes, mais **le constat 5 reste ouvert pour le rebase et la divergence de l'intégration arrivée en cours de travail** : ce rapport ne prononce pas de GO global.
+
+## Remédiation de la relecture, passe 4
+
+Cette passe part de l'arbre rebasé fourni par l'orchestrateur. Seuls les deltas du lot relatifs aux quatre constats et ce bilan sont modifiés. Les anciennes demandes de réintégration ou de rebase, ainsi que les fichiers d'autres lots remis par l'orchestrateur, sont écartés. Aucun fichier n'a été recopié depuis l'intégration ou un autre lot ; aucun rebase, commit, `git add`, dépôt annexe ou bundle.
+
+| Constat | Choix | Verdict du candidat | Traitement |
+| --- | --- | --- | --- |
+| 1, B-2029 | **(a)** | `confirme` | Simulation de l'URL exacte conservée ; les POST de migration sont exclus de `requeteAutorisee`, y compris la variante `?` vide. Test Python adapté à `fulfill` et étendu ; assertion Node du lot corrigée et étendue. |
+| 2, B-1885 | **(b)** | `regle_a_trancher` | Retrait complet du candidat après reproduction de la fin étrangère et des traces retardées. |
+| 3, B-1885 | **(b)** | `regle_a_trancher` | Retrait du même candidat après reproduction de l'alerte consommée par le lecteur initial du tube. |
+| 4, B-1885 | **(b)** | `regle_a_trancher` | Retrait du même candidat, lanceur compris, après reproduction du binaire accessible au seul PATH appelant. |
+
+Constats 2, 3 et 4 : **retiré du lot, reporté**. Les preuves sont les trois constats du relecteur reproduits ci-dessous. Le constat 2 exige de maîtriser l'accès au serveur ou de corréler réellement les fins natives à leurs requêtes. Ni `OLLAMA_NUM_PARALLEL=1` ni l'attente de la première paire fin/reçu ne prouvent cette propriété. Le constat 3 exige également une maîtrise exclusive du lecteur, que `os.dup` ne procure pas. Aucun correctif simple et prouvé de ces deux courses n'est retenu ; le candidat entier est retiré suivant la règle de cette passe. Le lanceur du constat 4 appartient à ce même candidat et est donc retiré aussi. Ces défauts restent reportés au cycle suivant.
+
+### Tests rouges écrits avant correction ou retrait
+
+Chaque test ci-dessous a été écrit ou étendu avant toute modification du code concerné, puis lancé **seul** avec `--timeout=120`. Chaque XML a été lu : **1 test, 1 échec, 0 erreur, 0 ignoré** par constat. Aucun fournisseur réel ni requête réseau dans ces reproductions.
+
+| Constat | Test isolé | Ligne d'échec recopiée | XML lu |
+| --- | --- | --- | --- |
+| 1 | `tests/test_b2029_couverture.py::test_garde_simule_la_migration_exacte_et_bloque_les_variantes` | `At index 1 diff: 'continue' != 'bloquee'` | `/tmp/diff-4-r4-c1-rouge.xml` |
+| 2 | `tests/test_c20_b1885_banc_ollama.py::test_fin_etrangere_avant_les_traces_retardees_ne_certifie_pas` | `AssertionError: Une fin étrangère et un reçu anticipé ont certifié le verdict` ; `assert 0 == 1` | `/tmp/diff-4-r4-c2-rouge.xml` |
+| 3 | `tests/test_c20_b1885_banc_ollama.py::test_tube_externe_avec_autre_lecteur_ne_certifie_pas` | `AssertionError: assert 0 == 1` | `/tmp/diff-4-r4-c3-rouge.xml` |
+| 4 | `tests/test_c20_b1885_banc_ollama.py::test_lanceur_resout_ollama_dans_le_path_de_l_appelant` | `AssertionError: Binaire du PATH appelant perdu après isolation` | `/tmp/diff-4-r4-c4-rouge.xml` |
+
+1. Le test B-2029 appelle le vrai gestionnaire enregistré par `installerGardeReseau` avec des routes en mémoire. Il vérifie la réponse `fulfill` exacte (200, JSON `{success: true}`), son comptage unique, puis huit refus, dont `?`, `?autre=1`, `#` et `/`. Avant correction, l'entrée `?` atteint `continue`. Après correction, ce test passe seul : `/tmp/diff-4-r4-c1-vert.xml`, **1 réussite**, XML lu.
+2. Le transport HTTP en mémoire émet la fin native étrangère `task 99, truncated = 0`, puis le reçu GIN de la requête suivie. Une tâche suspendue par `asyncio.Event` émet ensuite la vraie fin `task 77, truncated = 9` et le reçu étranger, après l'écriture du verdict. Le test constate la présence finale de `truncated = 9`, mais le verdict a déjà renvoyé **0** et enregistré le vert. L'ordonnancement est déterministe, sans dépendre d'un délai arbitraire.
+3. Le détenteur initial lit `truncating input prompt` dans le tube pendant que le collecteur est suspendu par son verrou. Le collecteur ne reçoit ensuite que la fin préfixée par l'identifiant de requête et le reçu GIN correspondant. L'alerte est absente de la capture et `enregistrer_verdict` renvoie pourtant **0**. Le tube et les deux lecteurs restent exclusivement dans le test.
+4. Un exécutable inerte est créé sous le répertoire temporaire `opt/homebrew/bin`, seul répertoire du PATH appelant. `shutil.which('ollama')` le trouve avant le lancement. La résolution avec le PATH réellement passé à `Popen` renvoie **None**. Le contrôle précède tout lancement et n'autorise que le faux exécutable du test ; aucun Ollama réel n'est démarré.
+
+Les trois nouveaux tests B-1885 et les anciens tests de ce candidat sont retirés ensemble, conformément au choix **(b)**. Ils ne sont pas présentés comme des tests verts et ne restent pas dans le lot. Aucun test de l'intégration n'est supprimé ou affaibli.
+
+### Changements retenus et appelants relus
+
+Pour le constat 1, le changement fonctionnel se limite à retirer la migration de la liste des POST transmis par `requeteAutorisee`. `requeteASimuler` et l'acquittement installé par `installerGardeReseau` restent ceux de l'intégration. Les deux tests B-2029 existants et leurs assertions sont conservés ; le test Python du lot exige désormais la simulation, et le test Node du lot refuse explicitement la transmission avec ou sans `?`. Relecture de `requeteASimuler` → `installerGardeReseau` → installation dans le parcours, puis des chemins `continue`, `abort`, comptage et attente des acquittements.
+
+Pour les constats 2 à 4, inversion du seul patch B-1885 avec `git diff c20/integration -- scripts/banc_ollama_r4.py tests/test_c20_b1885_banc_ollama.py | git apply --reverse`. Aucun fichier entier n'est récupéré depuis une autre référence. Le contrôle `git diff --exit-code c20/integration -- scripts/banc_ollama_r4.py tests/test_c20_b1885_banc_ollama.py` est vide et retourne **0** : le script est à l'état de l'intégration, et le fichier de tests propre à B-1885 est absent comme dans l'intégration. Relecture de `achever_recette_r4.py:70`, de `lancer` → `mesurer` → `enregistrer_verdict` et de `--evaluer` ; aucun appelant hors lot n'est modifié. Ce retrait ne revendique aucune résolution du défaut initial B-1885.
+
+### Portes ciblées et preuves lues
+
+| Porte | Réussis | Échecs / erreurs / ignorés | Preuve |
+| --- | ---: | ---: | --- |
+| pytest, cinq fichiers du lot et voisins | **32** | **0 / 0 / 0** | `/tmp/diff-4-r4.xml`, XML lu |
+| Node, garde et voisins sans navigateur | **10** | **0 / 0 / 0** | `/tmp/diff-4-r4-node.log`, TAP lu |
+| Ruff `src/backend tests` | sans objet | **0 diagnostic** | `/tmp/diff-4-r4-ruff.log`, code 0 |
+
+Répartition Python : B-2029 **1**, B-1806 **4**, R3-4 Ollama **10**, B-1883 **4**, B-2008 **13**. Aucun rouge connu à soustraire. Le premier rejeu Node après correction comptait six réussites ; le rejeu final à dix ajoute la CLI et les trois scénarios d'acquittements concurrents, sans additionner ces rejeux aux comptes distincts.
+
+```sh
+THERESE_DATA_DIR="$(mktemp -d /tmp/diff-4-r4-data-XXXXXX)" \
+PYTHONPATH=/tmp PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest \
+  tests/test_b2029_couverture.py tests/test_b1806_banc_ollama.py \
+  tests/test_r3_4_ollama.py tests/test_c20_b1883_finaliser_recette.py \
+  tests/test_c20_b2008_mime_recette.py \
+  -q -p no:cacheprovider -p diff4_ipc -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-4-r4.xml
+node --import /tmp/diff4_node_stdio.mjs \
+  --test-name-pattern='^(B-2029 : (seule la migration exacte|la garde acquitte)|B-2029 remédiation|B-2029 passe 2|la CLI|la base|la garde|les gestes|B-1715)' \
+  tests/couverture/couverture-ecran.test.mjs
+.venv/bin/python -m ruff check --no-fix src/backend tests
+git diff --check
+```
+
+Les deux adaptations temporaires de la passe 3 ont été relues et réutilisées : `/tmp/diff4_ipc.py` remplace seulement le réveil interne asyncio par un tube ; `/tmp/diff4_node_stdio.mjs` restitue stdout/stderr des vrais sous-processus Node depuis des fichiers temporaires. Elles ne modifient aucune assertion. Le plugin `tests.bancs_sans_reseau` indique **0 tentative de connexion** pour chaque session Python. Les cas Node retenus utilisent des doubles en mémoire ; les parcours qui ouvrent un navigateur ou manipulent `/private/tmp` et la corbeille personnelle ne sont pas exécutés.
+
+Aucun fichier sous `src/frontend` modifié : portes Vitest/TypeScript/ESLint non applicables à cette passe. Aucune suite complète, aucun réseau, aucun fournisseur réel, aucun accès aux ports réservés, à `~/.therese` ou à `.app-loop/`. Les liens non suivis `.venv` et `src/frontend/node_modules`, présents à l'arrivée, sont conservés. Les changements de cette passe restent non commités pour le rejeu et le commit de l'orchestrateur.
