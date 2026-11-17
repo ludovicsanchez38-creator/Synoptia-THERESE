@@ -3810,9 +3810,15 @@ def _demande_lecture_agenda(message: str) -> bool:
                 continue
             avant = texte[:lecture.start()]
             proposition = re.split(r"[.!?;,\n]|\b(?:et|puis|ensuite)\b", avant)[-1]
+            # Conserver « et » entre adjectifs sans masquer l'ordre qui le suit.
+            groupe_nominal = re.split(r"[.!?;,\n]|\b(?:puis|ensuite)\b", avant)[-1]
             if lecture.group("action") == "liste" and re.search(
                 r"\b(?:la|une|ma|ta|sa|cette|notre|votre|leur|les|des|ces)"
-                r"(?:\s+\w+){0,2}\s*$", proposition,
+                r"(?:\s+(?!et\b)\w+){0,2}"
+                r"(?:\s+et(?:\s+(?!(?:et|aujourd.hui|demain|apres(?:.demain)?|lundi|"
+                r"mardi|mercredi|jeudi|vendredi|samedi|dimanche|matin|soir|tard|"
+                r"maintenant|vite|aussi|alors|de|en|pour|tout|\w+ment)\b)(?!\d)\w+)"
+                r"{1,2}){0,2}\s*$", groupe_nominal,
             ):
                 continue
             if re.search(
@@ -3821,7 +3827,8 @@ def _demande_lecture_agenda(message: str) -> bool:
                 r"(?:^|\W)j'(?:ai|avais|aurai|aurais)\s*$", proposition,
             ):
                 continue
-            if (re.search(r"\b(?:comment|pourquoi)\b[^.!?;\n]*$", avant)
+            avant_explicatif = re.split(r"\b(?:puis|ensuite)\b", avant)[-1]
+            if (re.search(r"\b(?:comment|pourquoi)\b[^.!?;\n]*$", avant_explicatif)
                     and not re.search(r"(?:,|\b(?:et|puis|ensuite)\b)\s*$", avant)):
                 continue
             break
@@ -3849,13 +3856,17 @@ def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
         rf"(?:\b(?:a|vers|des)\s+{heure}|"
         rf"^\s*(?:[-*•]|\d+[.)])?\s*(?:\*\*|__)?{heure}"
         r"(?:\*\*|__)?(?:\s*[:–—-]\s*\S|\s+(?!d(?:e|u|es)\b)\S|[,;|]\s*\S)|"
-        rf"(?:^\s*[-*•]|\|)(?!\s*duree\b)\s*[^|:\n]+:\s*"
-        rf"(?:\*\*|__)?{heure}(?:\*\*|__)?\s*(?:\||$))",
+        rf"(?:^\s*[-*•]|\|)(?!\s*durees?\b)\s*[^|:\n]+:\s*"
+        rf"(?:\*\*|__)?{heure}(?:\s*[–—-]\s*{heure})?(?:\*\*|__)?\s*(?:\||$))",
     )
-    # Analyser les mêmes colonnes en flux et hors flux, sans modifier le texte diffusé.
+    # Normaliser les libellés Markdown seulement pour l'analyse, pas le texte diffusé.
     lignes = convert_markdown_tables_to_bullets(reponse).splitlines()
-    if sum(bool(horaire.search(_normaliser_demande_agenda(ligne)))
-           for ligne in lignes) < 2:
+    lignes_normalisees = (
+        re.sub(r"([*_]{1,3})([^*_|:\n]+?)\1(?=\s*:)", r"\2",
+               _normaliser_demande_agenda(ligne))
+        for ligne in lignes
+    )
+    if sum(bool(horaire.search(ligne)) for ligne in lignes_normalisees) < 2:
         return ""
     return "\n\nJe n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 

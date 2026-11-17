@@ -90,6 +90,51 @@ les remplace par des tuyaux anonymes pour les tests ; la garde continue de
 bloquer le réseau IP et les chemins interdits. Les liens non suivis `.venv` et
 `src/frontend/node_modules` étaient déjà présents au début et n'ont pas été modifiés.
 
+## Remédiation de la relecture, passe 2
+
+Les quatre constats sont confirmés. Les variantes ajoutées à
+`tests/test_c20_b2032_reperes_agenda.py` ont été lancées isolément avant chaque
+correctif. Elles comparent la réponse exacte et le message assistant enregistré,
+en flux et hors flux.
+
+- **1 — plages horaires après un libellé ou dans un tableau.** Les six variantes
+  isolées étaient rouges. Ligne d'échec :
+  `E   AssertionError: assert '- Réunion cl...: 14:00–15:00' == '- Réunion cl...t pas de lui.'`
+  La détection reconnaît une plage complète après le libellé, notamment dans
+  chacune des colonnes d'un tableau et avec les heures en gras.
+- **2 — lecture après une explication.** Quatre des huit variantes isolées
+  étaient rouges lorsque le repère temporel précédait le verbe. Ligne d'échec :
+  `E   AssertionError: assert '- 09h : Réun...retien fictif' == '- 09h : Réun...t pas de lui.'`
+  Le filtre explicatif examine la proposition après « puis » ou « ensuite » ;
+  les deux positions de « demain » et les explications seules restent testées.
+- **3 — tableaux de durées.** Huit des dix variantes isolées étaient rouges pour
+  les en-têtes en gras, au pluriel ou en italique. Ligne d'échec :
+  `E   AssertionError: assert '- **Durée** ...t pas de lui.' == '- **Durée** ...vité : Trajet'`
+  Les libellés sont normalisés pour la détection, sans modifier le texte affiché.
+  La relecture a aussi révélé une puce étoilée devant un libellé en gras : deux
+  de ses quatre variantes étaient rouges, avec la ligne
+  `E   AssertionError: assert '* **Durée** ...t pas de lui.' == '* **Durée** ...*Durée** : 2h'`.
+  La normalisation conserve désormais la puce ; un tableau mêlant durées et vrais
+  horaires et une puce horaire restent testés.
+- **4 — « liste » nominale avec adjectifs coordonnés.** Six des douze premières
+  variantes isolées étaient rouges. Ligne d'échec :
+  `E   AssertionError: assert '- 09h : Réun...t pas de lui.' == '- 09h : Réun...retien fictif'`
+  Le contrôle nominal conserve les adjectifs coordonnés. Une relecture a ajouté
+  des adjectifs intensifiés et une seconde coordination ; quatre des six variantes
+  correspondantes étaient rouges avant leur ajustement. Elle a également mis en
+  évidence une régression sur les ordres « et après », « et vite » et « et de
+  suite » : les six variantes étaient rouges avec la ligne
+  `E   AssertionError: assert '- 09h : Réun...retien fictif' == '- 09h : Réun...t pas de lui.'`.
+  Les ordres de lecture coordonnés à une rédaction sont conservés.
+
+Après chaque correctif, les appelants avec et sans flux ont été relus et les
+tests voisins ont été exécutés. Porte finale sur les neuf fichiers backend listés
+plus haut : **266 réussis, 0 échec, 0 erreur, 0 ignoré** ; le XML
+`/tmp/restes-chat-r2.xml` a été lu et ne contient aucun échec. Ruff
+`check --no-fix src/backend tests` : **0 erreur**. Aucun fichier frontend modifié
+et aucune suite complète lancée. Les mêmes garde réseau et adaptation temporaire
+du réveil `asyncio` que pour la passe 1 ont été utilisés.
+
 ## Limites
 
 La reconnaissance des demandes et des horaires reste fondée sur des motifs :
