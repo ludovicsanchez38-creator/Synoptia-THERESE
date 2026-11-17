@@ -133,6 +133,7 @@ _DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
 _URL_DANS_UN_TEXTE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]*")
 # Un nom de paramètre peut suivre un « ; » (ancien séparateur) ; la valeur d'un secret, elle, va jusqu'au « & » ou au « # ».
 _NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&;#?]+)=")
+_ENTITE_NUMERIQUE = re.compile(r"&#[xX]?[0-9a-fA-F]+;")
 _FIN_AUTORITE = "/?#"
 _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
 # Ce qui ne peut pas appartenir à un nom d'hôte et ferme une URL dans un texte.
@@ -155,7 +156,14 @@ def _masquer_parametres_d_une_url(url: str) -> str:
         if nom.start() < position or not _cle_de_connexion(unquote_plus(nom.group(1))):
             continue
         fin_valeur = nom.end()
-        while fin_valeur < len(url) and url[fin_valeur] not in "&#":
+        while fin_valeur < len(url) and url[fin_valeur] != "#":
+            if url[fin_valeur] == "&":
+                # Dans un attribut HTML, « &#45; » est un caractère de la valeur, pas un séparateur.
+                entite = _ENTITE_NUMERIQUE.match(url, fin_valeur)
+                if not entite:
+                    break
+                fin_valeur = entite.end()
+                continue
             fin_valeur += 1
         morceaux.extend((url[position : nom.end()], "[REDACTED]"))
         position = fin_valeur
@@ -180,7 +188,12 @@ def _guillemet_ouvrant(texte: str, schema: int, plancher: int) -> str:
     position = schema - 1
     while position >= plancher and not texte[position].isspace() and texte[position] not in _FIN_URL_DANS_UN_TEXTE:
         position -= 1
-    return texte[position] if position >= plancher and texte[position] in "\"'<" else ""
+    if position >= plancher and texte[position] in "\"'<":
+        return texte[position]
+    # Dans un attribut HTML, une espace peut séparer le guillemet ouvrant de l'URL (`href=" https://…"`).
+    while position >= plancher and texte[position].isspace() and texte[position] not in "\r\n":
+        position -= 1
+    return texte[position] if position >= plancher and texte[position] in "\"'" else ""
 
 
 def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> int:
@@ -234,6 +247,30 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
     return arobase + 1 if arobase >= 0 else debut
 
 
+def _fin_d_une_url_dans_un_texte(url: str) -> int:
+    """Où s'arrête vraiment une URL prise dans une phrase, un lien Markdown ou un tableau.
+
+    Un accent grave ou une barre verticale la ferment ; une parenthèse, un
+    crochet ou une accolade fermants la ferment s'ils n'ont pas été ouverts
+    dans l'URL (`[texte](https://…)`, mais pas `Page_(test)`) ; la ponctuation
+    finale d'une phrase n'en fait pas partie. Ce qui suit reste du texte.
+    """
+    fin = next((i for i, caractere in enumerate(url) if caractere in "`|"), len(url))
+    fermants = {")": "(", "]": "[", "}": "{"}
+    ouverts = dict.fromkeys(fermants.values(), 0)
+    for i, caractere in enumerate(url[:fin]):
+        if caractere in ouverts:
+            ouverts[caractere] += 1
+        elif caractere in fermants:
+            if not ouverts[fermants[caractere]]:
+                fin = i
+                break
+            ouverts[fermants[caractere]] -= 1
+    while fin and url[fin - 1] in ".,;:!?":
+        fin -= 1
+    return fin
+
+
 def _masquer_urls_d_un_texte(valeur: str) -> str:
     """Deux passes, sans récursion et en temps linéaire : les identifiants de chaque URL, puis ses paramètres.
 
@@ -253,7 +290,7 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
     # identifiant, virgule, guillemet ou parenthèse compris.
     nu = valeur.strip()
     debut_du_champ = len(valeur) - len(valeur.lstrip())
-    url_entiere = bool(nu) and not any(caractere.isspace() for caractere in nu)
+    url_entiere = bool(_DEBUT_URL.match(nu)) and not any(caractere.isspace() for caractere in nu)
     while match := _DEBUT_URL.search(valeur, position):
         nouveau_jeton = match.start() >= fin_du_jeton
         if nouveau_jeton:
@@ -281,7 +318,13 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
                 default=-1,
             )
     sans_identifiants = "".join(morceaux) + valeur[position:]
-    return _URL_DANS_UN_TEXTE.sub(lambda url: _masquer_parametres_d_une_url(url.group()), sans_identifiants)
+
+    def masquer_les_parametres(trouvee: re.Match[str]) -> str:
+        url = trouvee.group()
+        fin = len(url) if url_entiere else _fin_d_une_url_dans_un_texte(url)
+        return _masquer_parametres_d_une_url(url[:fin]) + url[fin:]
+
+    return _URL_DANS_UN_TEXTE.sub(masquer_les_parametres, sans_identifiants)
 
 
 class _NombreJson(str):
