@@ -300,9 +300,95 @@ it.each(['/profils/A', '/profils/lien'])('R2-C2 : la file ancienne %s sans ident
   expect(isolateDataProfilePersistence('/profils/A', {
     canonicalDataDir: '/profils/A', verifiedAliases: [ancien], profileIdentity: 'directory:1:1:0',
   })).toBe('switched');
-  await synchroniserConsentements();
+  await expect(synchroniserConsentements()).rejects.toThrow(/non identifié/);
 
   expect(localStorage.getItem('therese-chat')).toBeNull();
   expect(localStorage.getItem(file)).toBe(JSON.stringify([accord]));
-  expect(request.mock.calls.map(([, options]) => options?.method ?? 'GET')).toEqual(['GET']);
+  expect(request).not.toHaveBeenCalled();
+});
+
+it('R3-C2 : un retrait ancien bloque la réactivation au démarrage réel puis au rechargement', async () => {
+  const ancien = '/profils/A/';
+  const file = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+  request.mockRejectedValue(new Error('Hors ligne'));
+  revokeCloudConsent('llm', 'openai');
+  await expect(flushConsentDecisions()).rejects.toThrow('Hors ligne');
+  const retrait = localStorage.getItem(file);
+  request.mockClear();
+  request.mockResolvedValue({ grants: [
+    { purpose: 'llm', provider: 'openai', timestamp: '2026-10-01T00:00:00Z', textVersion: '3' },
+  ] });
+  const options = { canonicalDataDir: '/profils/A', verifiedAliases: [ancien],
+    profileIdentity: 'directory:1:1:0', reload: vi.fn() };
+
+  for (const attendu of ['switched', 'unchanged']) {
+    expect(isolateDataProfilePersistence('/profils/A', options)).toBe(attendu);
+    await expect(synchroniserConsentements()).rejects.toThrow(/non identifié/);
+    expect(hasCloudConsent('llm', 'openai')).toBe(false);
+    expect(localStorage.getItem(file)).toBe(retrait);
+    expect(request).not.toHaveBeenCalled();
+  }
+});
+
+it('R3-C2 : un retrait ambigu arrivé pendant un GET empêche aussi sa publication', async () => {
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, 'directory:1:1:0');
+  let terminer!: (value: unknown) => void;
+  request.mockImplementationOnce(() => new Promise(resolve => { terminer = resolve; }));
+  const synchro = synchroniserConsentements();
+  await vi.waitFor(() => expect(terminer).toBeDefined());
+  localStorage.setItem(`therese-cloud-consent-pending:${encodeURIComponent('/profils/A')}`, JSON.stringify([
+    { event_id: 'retrait-ancien', purpose: 'llm', provider: 'openai', granted: false,
+      text_version: '3', data_categories: [], occurred_at: '2026-10-01T00:00:00Z' },
+  ]));
+  terminer({ grants: [{ purpose: 'llm', provider: 'openai', timestamp: '2026-10-01T00:00:00Z', textVersion: '3' }] });
+  await expect(synchro).rejects.toThrow(/non identifié/);
+  expect(hasCloudConsent('llm', 'openai')).toBe(false);
+});
+
+it('R3-C3 : une file globale sans marqueur reste non identifiée après plusieurs démarrages', async () => {
+  const cle = 'therese-cloud-consent-pending';
+  const decisions = JSON.stringify([{ event_id: 'accord-de-A', purpose: 'llm', provider: 'openai', granted: true,
+    text_version: '3', data_categories: [], occurred_at: '2026-10-01T00:00:00Z' }]);
+  localStorage.setItem(cle, decisions);
+  const options = { canonicalDataDir: '/profils/B', verifiedAliases: [], profileIdentity: 'directory:1:2:0', reload: vi.fn() };
+  for (let demarrage = 0; demarrage < 3; demarrage += 1) {
+    isolateDataProfilePersistence('/profils/B', options);
+    await expect(synchroniserConsentements()).rejects.toThrow(/non identifié/);
+    expect(localStorage.getItem(cle)).toBe(decisions);
+    expect(localStorage.getItem(`${cle}:${encodeURIComponent(options.profileIdentity)}`)).toBeNull();
+    expect(request).not.toHaveBeenCalled();
+  }
+  purgeLocalPersistence({ profileSwitch: true });
+  isolateDataProfilePersistence('/profils/C', { ...options, profileIdentity: 'directory:1:3:0' });
+  await expect(synchroniserConsentements()).rejects.toThrow(/non identifié/);
+  expect(localStorage.getItem(cle)).toBe(decisions);
+  expect(request).not.toHaveBeenCalled();
+});
+
+it('R3-C4 : une ancienne identité sans nonce ne permet pas de réactiver un accord', async () => {
+  const ancien = 'directory:7:42:0';
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+  const cle = `therese-cloud-consent-pending:${encodeURIComponent(ancien)}`;
+  const retrait = JSON.stringify([{ event_id: 'retrait', purpose: 'llm', provider: 'openai', granted: false }]);
+  localStorage.setItem(cle, retrait);
+  isolateDataProfilePersistence('/profils/A', {
+    profileIdentity: 'directory:7:42:0123456789abcdef0123456789abcdef', canonicalDataDir: '/profils/A', verifiedAliases: [],
+  });
+  await expect(synchroniserConsentements()).rejects.toThrow(/non identifié/);
+  expect(localStorage.getItem(cle)).toBe(retrait);
+  expect(request).not.toHaveBeenCalled();
+});
+
+it('R3-C2 : une file ancienne illisible suspend les accords sans casser leur lecture', async () => {
+  localStorage.setItem(DATA_PROFILE_STORAGE_KEY, 'directory:1:1:0');
+  localStorage.setItem('therese-cloud-consent', JSON.stringify({ version: '2', grants: {
+    'llm:openai': { purpose: 'llm', provider: 'openai', timestamp: '2026-01-01', textVersion: '3' },
+  } }));
+  const cle = `therese-cloud-consent-pending:${encodeURIComponent('/profils/A')}`;
+  localStorage.setItem(cle, '{incomplet');
+  expect(hasCloudConsent('llm', 'openai')).toBe(false);
+  await expect(synchroniserConsentements()).rejects.toThrow(/non identifié/);
+  expect(localStorage.getItem(cle)).toBe('{incomplet');
+  expect(request).not.toHaveBeenCalled();
 });

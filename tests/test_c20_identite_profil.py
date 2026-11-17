@@ -1,11 +1,14 @@
 """R1 : l'identité d'un profil vient du disque, pas d'une réduction de '..'."""
 from pathlib import Path
+from stat import S_IFDIR
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from app.config import settings
 from app.routers.config import get_stats
 from app.routers.consents import _verifier_profil
+from app.services.identite_profil import identite_profil
 from fastapi import HTTPException
 
 
@@ -72,6 +75,15 @@ async def test_r2_c1_casse_du_volume_et_identite_historique(tmp_path: Path, monk
         return stat_original(profil if path == variante else path, *args, **kwargs)
 
     monkeypatch.setattr(Path, "stat", stat_du_volume)
+    # Les lectures et créations sur le volume simulé suivent aussi la casse.
+    open_original = Path.open
+
+    def open_du_volume(path, *args, **kwargs):
+        if path.parent == variante:
+            path = profil / path.name
+        return open_original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_du_volume)
     monkeypatch.setattr(settings, "data_dir", profil)
     session = AsyncMock(execute=AsyncMock(return_value=MagicMock(scalar=lambda: 0)))
     response = await get_stats(session=session, data_profiles=[str(variante)])
@@ -113,3 +125,46 @@ async def test_r2_c2_un_lien_reoriente_ne_peut_recevoir_les_accords_de_sa_cible_
 
     assert erreur.value.status_code == 409
     _verifier_profil((await get_stats(session=session))["data_profile_id"])
+
+
+def test_r3_c4_un_inode_reutilise_ne_reprend_pas_l_identite_du_dossier_precedent(tmp_path, monkeypatch):
+    dossier = tmp_path / "profil"
+    dossier.mkdir()
+    stat_original = Path.stat
+
+    def stat_linux(path, *args, **kwargs):
+        if path == dossier:
+            return SimpleNamespace(st_mode=S_IFDIR, st_dev=7, st_ino=42)
+        return stat_original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", stat_linux)
+    monkeypatch.setattr(settings, "data_dir", dossier)
+    premiere = identite_profil(dossier)
+    _verifier_profil(premiere)
+    (dossier / "donnee").write_text("modification du contenu", encoding="utf-8")
+    assert identite_profil(dossier) == premiere, "Une écriture ne change pas le profil"
+    dossier.rename(tmp_path / "ancien-profil")
+    dossier.mkdir()
+
+    assert identite_profil(dossier) != premiere, "Un inode réutilisé doit désigner un nouveau profil"
+    with pytest.raises(HTTPException) as erreur:
+        _verifier_profil(premiere)
+    assert erreur.value.status_code == 409
+
+
+def test_r3_c4_identite_durable_apres_relecture_et_par_un_lien(tmp_path):
+    dossier = tmp_path / "profil"
+    dossier.mkdir()
+    alias = tmp_path / "alias"
+    alias.symlink_to(dossier, target_is_directory=True)
+    premiere = identite_profil(dossier)
+    assert identite_profil(alias) == premiere
+    assert identite_profil(dossier) == premiere
+
+
+def test_r3_c4_un_marqueur_incomplet_est_refuse_sans_etre_remplace(tmp_path):
+    marqueur = tmp_path / ".therese-profile-id"
+    marqueur.write_text("", encoding="ascii")
+    with pytest.raises(ValueError):
+        identite_profil(tmp_path)
+    assert marqueur.read_text(encoding="ascii") == ""

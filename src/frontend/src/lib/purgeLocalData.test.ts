@@ -68,6 +68,12 @@ describe('purgeLocalPersistence (BUG-153)', () => {
     expect(localStorage.getItem('autre-app')).toBe('conservée');
   });
 
+  it('R3-C1 : l’effacement demandé par la personne inclut les données en attente', () => {
+    localStorage.setItem('therese:unassigned-profile-data', '[{"local":{"therese-chat":"ancien"}}]');
+    purgeLocalPersistence();
+    expect(localStorage.getItem('therese:unassigned-profile-data')).toBeNull();
+  });
+
   it('recharge la fenêtre quand demandé (stores vierges garantis)', () => {
     const reload = vi.fn();
 

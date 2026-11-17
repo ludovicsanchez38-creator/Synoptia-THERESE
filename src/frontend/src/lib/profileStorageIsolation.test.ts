@@ -232,4 +232,58 @@ describe('isolateDataProfilePersistence', () => {
     expect(isolateDataProfilePersistence('/profils/A', { verifiedAliases: [] })).toBe('switched');
     expect(localStorage.getItem('therese-chat')).toBeNull();
   });
+
+  it.each(['/profils/A', '/profils/lien', null])('R3-C1 : garde les données anciennes de %s en attente avec les options de App', (ancien) => {
+    if (ancien) localStorage.setItem(DATA_PROFILE_STORAGE_KEY, ancien);
+    const conversations = '{"state":{"conversations":[{"id":"locale-a"}]}}';
+    localStorage.setItem('therese-chat', conversations);
+    localStorage.setItem('therese-email-draft:1', 'brouillon local');
+    localStorage.setItem('crm-storage', 'clients locaux');
+    sessionStorage.setItem('therese:prompt-handoff', 'texte en attente');
+    const options = { canonicalDataDir: '/profils/A', verifiedAliases: ancien ? [ancien] : [],
+      profileIdentity: 'directory:1:1:0', reload: vi.fn() };
+
+    expect(isolateDataProfilePersistence('/profils/A', options)).toBe('switched');
+    const sauvegarde = localStorage.getItem('therese:unassigned-profile-data');
+    expect(sauvegarde, 'Les données anciennes doivent rester récupérables').not.toBeNull();
+    expect(JSON.parse(sauvegarde!)).toEqual([{
+      previousProfile: ancien,
+      local: { 'therese-chat': conversations, 'therese-email-draft:1': 'brouillon local', 'crm-storage': 'clients locaux' },
+      session: { 'therese:prompt-handoff': 'texte en attente' },
+    }]);
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    expect(localStorage.getItem('therese-email-draft:1')).toBeNull();
+    expect(sessionStorage.getItem('therese:prompt-handoff')).toBeNull();
+    expect(options.reload).toHaveBeenCalledOnce();
+    expect(isolateDataProfilePersistence('/profils/A', options)).toBe('unchanged');
+    isolateDataProfilePersistence('/profils/B', { ...options, profileIdentity: 'directory:1:2:0' });
+    expect(localStorage.getItem('therese:unassigned-profile-data')).toBe(sauvegarde);
+  });
+
+  it('R3-C1 : refuse la purge si la mise en attente ne peut pas être écrite', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, '/profils/A');
+    localStorage.setItem('therese-email-draft:1', 'brouillon local');
+    const ecrire = vi.mocked(localStorage.setItem).getMockImplementation()!;
+    vi.mocked(localStorage.setItem).mockImplementation((key, value) => {
+      if (key === 'therese:unassigned-profile-data') throw new Error('Stockage plein');
+      ecrire(key, value);
+    });
+    const reload = vi.fn();
+    expect(() => isolateDataProfilePersistence('/profils/A', {
+      canonicalDataDir: '/profils/A', verifiedAliases: ['/profils/A'], profileIdentity: 'directory:1:1:0', reload,
+    })).toThrow('Stockage plein');
+    expect(localStorage.getItem('therese-email-draft:1')).toBe('brouillon local');
+    expect(localStorage.getItem(DATA_PROFILE_STORAGE_KEY)).toBe('/profils/A');
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('R3-C4 : la transition depuis une identité fondée sur l’inode conserve aussi les données', () => {
+    localStorage.setItem(DATA_PROFILE_STORAGE_KEY, 'directory:7:42:0');
+    localStorage.setItem('therese-chat', 'conversation avant nonce');
+    isolateDataProfilePersistence('/profils/A', {
+      profileIdentity: 'directory:7:42:0123456789abcdef0123456789abcdef', canonicalDataDir: '/profils/A', verifiedAliases: [],
+    });
+    expect(localStorage.getItem('therese:unassigned-profile-data')).toContain('conversation avant nonce');
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+  });
 });
