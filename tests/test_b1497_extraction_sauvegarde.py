@@ -8,6 +8,7 @@ sauvegardes, dont l'archive de sécurité qui sert au retour arrière.
 """
 
 import io
+import os
 import tarfile
 
 import pytest
@@ -73,6 +74,125 @@ def test_une_sauvegarde_qui_contient_un_lien_se_restaure_quand_meme(tmp_path):
     assert (donnees / "therese.db").exists()
     assert (donnees / "outputs" / "devis.pdf").exists()
     assert not (donnees / "projects" / "raccourci").exists()
+
+
+def test_liens_physiques_etrangers_aux_publications_ne_sont_pas_restaures(tmp_path):
+    from app.routers.data import _safe_extractall
+
+    donnees = tmp_path / "donnees"
+    (donnees / "backups").mkdir(parents=True)
+    source = f"invoices/.therese-publication-{'a' * 64}-{'b' * 32}.pdf"
+    archive = tmp_path / "liens.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        for nom in (source, source + ".therese.json", "invoices/autre.pdf"):
+            info = tarfile.TarInfo(nom)
+            info.size = 3
+            tar.addfile(info, io.BytesIO(b"pdf"))
+        for nom, cible in (
+            ("invoices/sous-dossier/FACT.pdf", source),
+            ("outputs/FACT.pdf", source),
+            ("invoices/FACT-autre.pdf", "invoices/autre.pdf"),
+            ("invoices/FACT-exterieur.pdf", "../backups/protege"),
+        ):
+            info = tarfile.TarInfo(nom)
+            info.type = tarfile.LNKTYPE
+            info.linkname = cible
+            tar.addfile(info)
+    with tarfile.open(archive, "r:gz") as tar:
+        _safe_extractall(tar, donnees)
+    assert (donnees / source).read_bytes() == b"pdf"
+    assert not (donnees / "invoices/sous-dossier/FACT.pdf").exists()
+    assert not (donnees / "outputs/FACT.pdf").exists()
+    assert not (donnees / "invoices/FACT-autre.pdf").exists()
+    assert not (donnees / "invoices/FACT-exterieur.pdf").exists()
+    assert list((donnees / "backups").iterdir()) == []
+
+
+def test_restauration_apres_nettoyage_interrompu_du_compagnon_provisoire(tmp_path):
+    from app.routers.data import _safe_extractall
+
+    source = tmp_path / "source" / "invoices"
+    source.mkdir(parents=True)
+    provisoire = source / f".therese-publication-{'a' * 64}-{'b' * 32}.pdf"
+    provisoire.write_bytes(b"pdf publie")
+    publie = source / "FACT.pdf"
+    os.link(provisoire, publie)
+    (source / "FACT.pdf.therese.json").write_bytes(b"compagnon final")
+    archive = tmp_path / "nettoyage-interrompu.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(source, arcname="invoices")
+    destination = tmp_path / "restauree"
+    destination.mkdir()
+    with tarfile.open(archive, "r:gz") as tar:
+        assert tar.getmember("invoices/FACT.pdf").islnk()
+        _safe_extractall(tar, destination)
+
+    fichier = destination / "invoices" / "FACT.pdf"
+    assert fichier.exists(), "Le PDF publié a disparu pendant le nettoyage interrompu"
+    assert fichier.read_bytes() == b"pdf publie"
+    assert os.path.samefile(fichier, destination / "invoices" / provisoire.name)
+    assert (destination / "invoices" / "FACT.pdf.therese.json").read_bytes() == b"compagnon final"
+
+
+def test_restauration_reprend_si_pdf_et_compagnon_final_sont_deux_liens(tmp_path):
+    from types import SimpleNamespace
+
+    from app.routers import invoices
+    from app.routers.data import _safe_extractall
+
+    source = tmp_path / "source" / "invoices"
+    source.mkdir(parents=True)
+    piece = SimpleNamespace(id="piece-test")
+    publie = source / "FACT.pdf"
+    provisoire = source / f"{invoices._prefixe_publication_pdf(piece, publie)}{'a' * 32}.pdf"
+    provisoire.write_bytes(b"pdf publie")
+    invoices._preuve_pdf(provisoire).write_bytes(b"preuve provisoire")
+    os.link(provisoire, publie)
+    os.link(invoices._preuve_pdf(provisoire), invoices._preuve_pdf(publie))
+    archive = tmp_path / "publication-double.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(source, arcname="invoices")
+    destination = tmp_path / "restauree"
+    destination.mkdir()
+    with tarfile.open(archive, "r:gz") as tar:
+        assert tar.getmember("invoices/FACT.pdf").islnk()
+        assert tar.getmember("invoices/FACT.pdf.therese.json").islnk()
+        _safe_extractall(tar, destination)
+
+    fichier = destination / "invoices" / "FACT.pdf"
+
+    def verifier(candidat):
+        assert candidat.read_bytes() == b"pdf publie"
+        assert invoices._preuve_pdf(candidat).read_bytes() == b"preuve provisoire"
+
+    invoices._reprendre_preuve_pdf(fichier, piece, verifier)
+    assert invoices._preuve_pdf(fichier).read_bytes() == b"preuve provisoire"
+    assert not (destination / "invoices" / provisoire.name).exists()
+
+
+@pytest.mark.parametrize("incident", ["sans_compagnon", "source_dupliquee"])
+def test_lien_de_publication_sans_source_claire_est_ignore(tmp_path, incident):
+    from app.routers.data import _safe_extractall
+
+    donnees = tmp_path / "donnees"
+    donnees.mkdir()
+    source = f"invoices/.therese-publication-{'a' * 64}-{'b' * 32}.pdf"
+    archive = tmp_path / "publication.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        noms = [source]
+        if incident == "source_dupliquee":
+            noms.extend((source, source + ".therese.json"))
+        for nom in noms:
+            info = tarfile.TarInfo(nom)
+            info.size = 3
+            tar.addfile(info, io.BytesIO(b"pdf"))
+        info = tarfile.TarInfo("invoices/FACT.pdf")
+        info.type = tarfile.LNKTYPE
+        info.linkname = source
+        tar.addfile(info)
+    with tarfile.open(archive, "r:gz") as tar:
+        _safe_extractall(tar, donnees)
+    assert not (donnees / "invoices/FACT.pdf").exists()
 
 
 def test_une_entree_hors_de_la_sauvegarde_est_refusee(tmp_path):

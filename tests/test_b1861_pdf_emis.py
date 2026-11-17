@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from app.routers import invoices
@@ -201,6 +202,71 @@ async def test_interruption_apres_publication_du_pdf_est_reprise(
     assert reprise.json()["pdf_path"] == str(fichier)
     assert fichier.read_bytes() == contenu
     assert preuve.stat().st_mode & 0o777 == 0o600
+    texte = PdfReader(fichier).pages[0].extract_text()
+    assert "Camille Avant" in texte and "Camille Après" not in texte
+    assert ("Payée" if edition else "Envoyée") in texte
+    assert (await client.get(f"{chemin}/pdf")).status_code == 200
+    if edition:
+        assert original.read_bytes() == contenu_original
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("edition", [False, True])
+@pytest.mark.parametrize("voie", ["pdf", "pdf-ouverture"])
+async def test_restauration_reprend_la_publication_interrompue(client, monkeypatch, tmp_path, edition, voie):
+    from app.config import settings
+
+    dossier = Path(settings.data_dir) / "invoices" / f"{tmp_path.name}-{uuid4().hex}"
+    profil = UserProfile(name="Camille Avant", address="Paris", siret="12345678900010", legal_form="EI")
+    monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(dossier)))
+    contact = (await client.post("/api/memory/contacts", json={"first_name": "Alice", "address": "Lyon"})).json()
+    piece = (await client.post("/api/invoices/", json={
+        "contact_id": contact["id"],
+        "lines": [{"description": "Prestation", "quantity": 1, "unit_price_ht": 10}],
+    })).json()
+    chemin = f"/api/invoices/{piece['id']}"
+    emission = await client.put(chemin, json={"status": "sent"})
+    assert emission.status_code == 200, emission.text
+    numero = emission.json()["invoice_number"]
+    original = dossier / f"{numero}.pdf"
+    if edition:
+        assert (await client.get(f"{chemin}/pdf")).status_code == 200
+        contenu_original = original.read_bytes()
+        assert (await client.patch(f"{chemin}/mark-paid", json={})).status_code == 200
+
+    lien_reel = invoices.os.link
+
+    def interrompre_compagnon(source, destination, *args, **kwargs):
+        if str(destination).endswith(".pdf.therese.json"):
+            raise OSError("interruption de publication simulée")
+        return lien_reel(source, destination, *args, **kwargs)
+
+    with monkeypatch.context() as contexte:
+        contexte.setattr(invoices.os, "link", interrompre_compagnon)
+        assert (await client.get(f"{chemin}/pdf")).status_code == 500
+    fichier = next(dossier.glob(f"{numero}--etat-*.pdf")) if edition else original
+    contenu = fichier.read_bytes()
+    provisoire = next(dossier.glob(".therese-publication-*.pdf"))
+    assert invoices._meme_fichier(provisoire, fichier)
+    assert not invoices._preuve_pdf(fichier).exists()
+
+    passe = "Passphrase-test-publication"
+    sauvegarde = await client.post("/api/data/backup", json={"password": passe})
+    assert sauvegarde.status_code == 200, sauvegarde.text
+    profil.name = "Camille Après"
+    restauration = await client.post(
+        f"/api/data/restore/{sauvegarde.json()['backup_name']}?confirm=true", json={"password": passe},
+    )
+    assert restauration.status_code == 200, restauration.text
+    assert fichier.exists(), "Le PDF publié a disparu après restauration"
+    assert invoices._meme_fichier(provisoire, fichier)
+
+    reprise = await client.get(f"{chemin}/{voie}")
+    assert reprise.status_code == 200, reprise.text
+    assert reprise.json()["pdf_path"] == str(fichier)
+    assert fichier.read_bytes() == contenu
+    assert invoices._preuve_pdf(fichier).stat().st_mode & 0o777 == 0o600
     texte = PdfReader(fichier).pages[0].extract_text()
     assert "Camille Avant" in texte and "Camille Après" not in texte
     assert ("Payée" if edition else "Envoyée") in texte
@@ -507,6 +573,55 @@ async def test_pdf_emis_deja_genere_ne_change_pas_apres_modification_du_profil(
     assert second.json()["pdf_path"] == str(fichier)
     assert fichier.read_bytes() == original
     assert "Camille Avant" in PdfReader(fichier).pages[0].extract_text()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("voie", ["envoi", "paiement"])
+@pytest.mark.parametrize("type_compagnon", ["fichier", "lien_rompu"])
+async def test_compagnon_sans_pdf_bloque_la_premiere_emission(client, monkeypatch, tmp_path, voie, type_compagnon):
+    profil = UserProfile(name="Camille", address="Paris", siret="12345678900010", legal_form="EI")
+    monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
+    contact = (await client.post("/api/memory/contacts", json={"first_name": "Alice", "address": "Lyon"})).json()
+    piece = (await client.post("/api/invoices/", json={
+        "contact_id": contact["id"],
+        "lines": [{"description": "Prestation", "quantity": 1, "unit_price_ht": 10}],
+    })).json()
+    chemin = f"/api/invoices/{piece['id']}"
+    numero = f"FACT-{invoices._date_demission().year}-001"
+    compagnon = tmp_path / f"{numero}.pdf.therese.json"
+    if type_compagnon == "fichier":
+        compagnon.write_bytes(b"compagnon a conserver")
+    else:
+        compagnon.symlink_to(tmp_path / "cible-absente")
+
+    async def emettre():
+        if voie == "envoi":
+            return await client.put(chemin, json={"status": "sent"})
+        return await client.patch(f"{chemin}/mark-paid", json={})
+
+    refus = await emettre()
+    assert refus.status_code == 409, refus.text
+    assert "compagnon" in refus.text.lower() and "déplace" in refus.text.lower()
+    brouillon = (await client.get(chemin)).json()
+    assert brouillon["status"] == "draft"
+    assert brouillon["invoice_number"] == piece["invoice_number"]
+    if type_compagnon == "lien_rompu":
+        assert compagnon.is_symlink()
+    else:
+        assert compagnon.read_bytes() == b"compagnon a conserver"
+
+    conserve = compagnon.rename(tmp_path / "compagnon-conserve")
+    emission = await emettre()
+    assert emission.status_code == 200, emission.text
+    assert emission.json()["invoice_number"] == numero
+    pdf = await client.get(f"{chemin}/pdf")
+    assert pdf.status_code == 200, pdf.text
+    assert ("Payée" if voie == "paiement" else "Envoyée") in PdfReader(pdf.json()["pdf_path"]).pages[0].extract_text()
+    if type_compagnon == "lien_rompu":
+        assert conserve.is_symlink()
+    else:
+        assert conserve.read_bytes() == b"compagnon a conserver"
 
 
 @pytest.mark.asyncio
