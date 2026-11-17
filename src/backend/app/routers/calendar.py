@@ -780,6 +780,42 @@ async def _agenda_principal_local(session: AsyncSession) -> Calendar | None:
 # =============================================================================
 
 
+async def _resoudre_selection_agenda(
+    calendar_id: str, account_id: str | None,
+    calendar_id_is_stored: bool, session: AsyncSession,
+) -> tuple[Calendar | None, Calendar | None]:
+    """Même destination et même compte pour lire, modifier ou supprimer."""
+    calendar = await session.get(Calendar, calendar_id)
+    if calendar_id_is_stored and calendar is None:
+        raise HTTPException(status_code=404, detail=f"Calendrier introuvable : {calendar_id}")
+    primary_alias = None
+    if calendar and calendar.provider not in ("local", "caldav", "google"):
+        if calendar_id == "primary" and account_id and not calendar_id_is_stored:
+            primary_alias = calendar
+            calendar = await _resoudre_primary_google(account_id, session)
+        else:
+            raise HTTPException(status_code=400, detail="Ce fournisseur d’agenda n’est pas pris en charge.")
+    if (calendar and calendar.provider == "google" and account_id
+            and calendar.account_id != account_id):
+        raise HTTPException(status_code=404, detail=f"Calendrier introuvable : {calendar_id}")
+    return calendar, primary_alias
+
+
+def _reconcilier_cache_google(
+    event: CalendarEvent, calendar_id: str, account_id: str,
+    primary_alias: Calendar | None,
+) -> bool:
+    """Après confirmation Google, rattacher l'ancien alias du même compte."""
+    if event.calendar_id == calendar_id:
+        return True
+    if (primary_alias is not None and event.calendar_id == primary_alias.id
+            and primary_alias.account_id == account_id):
+        # Conserver le dossier et les autres métadonnées propres au cache.
+        event.calendar_id = calendar_id
+        return True
+    return False
+
+
 @router.get("/events")
 async def list_events(
     calendar_id: str = Query(default="primary"),
@@ -791,6 +827,7 @@ async def list_events(
     # plafond de 250 se contournait par un signe moins.
     max_results: int = Query(default=50, ge=1, le=250),
     session: AsyncSession = Depends(get_session),
+    calendar_id_is_stored: bool = False,
 ) -> list[CalendarEventResponse]:
     """
     Liste les evenements d'un calendrier (local, Google ou CalDAV).
@@ -800,11 +837,10 @@ async def list_events(
     - Pour CalDAV : pas besoin d'account_id (credentials dans le calendrier)
     """
     # Get calendar from DB to determine provider
-    calendar = await session.get(Calendar, calendar_id)
-    if (calendar_id == "primary" and account_id and calendar
-            and calendar.provider not in ("local", "caldav", "google")):
-        # Même destination réelle qu'à la création malgré la ligne homonyme.
-        calendar = await _resoudre_primary_google(account_id, session)
+    calendar, primary_alias = await _resoudre_selection_agenda(
+        calendar_id, account_id, calendar_id_is_stored, session,
+    )
+    if calendar is not None:
         calendar_id = calendar.id
     if calendar is None and calendar_id == "primary" and not account_id:
         calendar = await _agenda_principal_local(session)
@@ -826,7 +862,8 @@ async def list_events(
                 )
             raise HTTPException(status_code=400, detail="account_id requis pour Google Calendar")
         return await _list_events_google(
-            account_id, calendar_id, session, time_min, time_max, max_results
+            account_id, calendar_id, session, time_min, time_max, max_results,
+            primary_alias=primary_alias,
         )
 
 
@@ -970,6 +1007,7 @@ async def _list_events_google(
     time_min: str | None,
     time_max: str | None,
     max_results: int,
+    primary_alias: Calendar | None = None,
 ) -> list[CalendarEventResponse]:
     """List events via Google Calendar API (legacy flow)."""
     account = await session.get(EmailAccount, account_id)
@@ -1011,7 +1049,7 @@ async def _list_events_google(
             if existing_event:
                 # Finding 3 (30/08) : même id d'événement sur deux agendas
                 # Google. Le second sync écrasait le premier.
-                if existing_event.calendar_id != calendar_id:
+                if not _reconcilier_cache_google(existing_event, calendar_id, account_id, primary_alias):
                     continue
                 existing_event.summary = event_data.get("summary", "")
                 existing_event.description = event_data.get("description")
@@ -1117,6 +1155,7 @@ async def get_event(
     calendar_id: str = Query(default="primary"),
     account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
+    calendar_id_is_stored: bool = False,
 ) -> CalendarEventResponse:
     """Récupère un événement spécifique.
 
@@ -1125,11 +1164,16 @@ async def get_event(
     n'importe quel événement, y compris celui d'un autre compte connecté. La
     route voisine `GET /calendars/{id}` refusait déjà ce croisement.
     """
+    selection, _ = await _resoudre_selection_agenda(
+        calendar_id, account_id, calendar_id_is_stored, session,
+    )
+    if selection is not None:
+        calendar_id = selection.id
     event = await session.get(CalendarEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if calendar_id != "primary" and event.calendar_id != calendar_id:
+    if (selection is not None or calendar_id != "primary") and event.calendar_id != calendar_id:
         raise HTTPException(status_code=404, detail="Event not found")
 
     calendrier = await session.get(Calendar, event.calendar_id)
@@ -1438,12 +1482,17 @@ async def update_event(
     calendar_id: str = Query(default="primary"),
     account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
+    calendar_id_is_stored: bool = False,
 ) -> CalendarEventResponse:
     """Met a jour un evenement (local, Google ou CalDAV)."""
     if event_id.startswith('occurrence:'):
         raise HTTPException(422, "La modification d'une occurrence récurrente n'est pas encore proposée ici. Utilise l'agenda d'origine pour cette série.")
     # Check if calendar is local/CalDAV
-    calendar = await session.get(Calendar, calendar_id)
+    calendar, primary_alias = await _resoudre_selection_agenda(
+        calendar_id, account_id, calendar_id_is_stored, session,
+    )
+    if calendar is not None:
+        calendar_id = calendar.id
     # Cycle 6 : même repli qu'à la lecture et à la suppression (B-557).
     if calendar is None and calendar_id == "primary" and not account_id:
         calendar = await _agenda_principal_local(session)
@@ -1599,7 +1648,7 @@ async def update_event(
         )
 
         db_event = await session.get(CalendarEvent, event_id)
-        if db_event and db_event.calendar_id != calendar_id:
+        if db_event and not _reconcilier_cache_google(db_event, calendar_id, account_id, primary_alias):
             db_event = None
         if db_event:
             all_day_flag = "date" in event_data.get("start", {})
@@ -1715,12 +1764,17 @@ async def delete_event(
     calendar_id: str = Query(default="primary"),
     account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
+    calendar_id_is_stored: bool = False,
 ) -> dict:
     """Supprime un evenement (local, Google ou CalDAV)."""
     if event_id.startswith('occurrence:'):
         raise HTTPException(422, "La suppression d'une occurrence récurrente n'est pas encore proposée ici. Utilise l'agenda d'origine pour cette série.")
     # Check if calendar is local/CalDAV
-    calendar = await session.get(Calendar, calendar_id)
+    calendar, primary_alias = await _resoudre_selection_agenda(
+        calendar_id, account_id, calendar_id_is_stored, session,
+    )
+    if calendar is not None:
+        calendar_id = calendar.id
     if calendar is None and calendar_id == "primary" and not account_id:
         calendar = await _agenda_principal_local(session)
 
@@ -1764,7 +1818,7 @@ async def delete_event(
         await calendar_service.delete_event(calendar_id, event_id)
 
         db_event = await session.get(CalendarEvent, event_id)
-        if db_event and db_event.calendar_id == calendar_id:
+        if db_event and _reconcilier_cache_google(db_event, calendar_id, account_id, primary_alias):
             await session.delete(db_event)
             await session.commit()
 

@@ -668,3 +668,248 @@ exécutions ne sont pas additionnées à la porte finale.
 `75498edd`. Les changements de cette passe sont tous non indexés et non commités.
 La reprise du contenu est terminée ; le rebase de l'historique reste à effectuer
 par l'orchestrateur, avec les droits Git nécessaires.
+
+## Remédiation de la relecture, passe 3
+
+Reprise du 17 novembre 2026, dans le même arbre, sur `70cce49c`. Aucun fichier
+suivi n'était modifié ; les liens `.venv` et `src/frontend/node_modules` étaient
+déjà non suivis. Les quatre constats sont confirmés. Les correctifs et tests
+ci-dessous restent non indexés et non commités. **Le rebase de l'historique reste
+bloqué par les droits du bac à sable**, comme détaillé au constat 4.
+
+### 1. P1 : relire les événements historiques de l'alias
+
+Test ajouté puis lancé seul :
+`tests/test_c20_calendar_primary_relecture.py::test_r3_historique_primary_relu_sans_changer_de_dossier`.
+La fixture utilise SQLite en mémoire, les routes FastAPI et le vrai service
+Google avec un transport HTTP simulé. Elle précharge un événement sous `primary`
+avant toute résolution, puis le relit par alias et par identifiant réel.
+
+Rouge : **1 échec**, `/tmp/divers-ui-r3-c1-rouge.xml`, lu. Ligne exacte :
+
+```text
+AssertionError: assert [] == ['rendez-vous']
+```
+
+La réconciliation du cache ne rattache une ancienne ligne qu'après confirmation
+de cet événement par Google dans la destination résolue et concordance du compte
+de la ligne historique. Le dossier, les rappels et le motif de blocage restent
+intacts. Aucune migration globale des lignes `primary` n'est effectuée.
+Les trois cas de `test_r3_reconciliation_ne_deplace_pas_un_evenement_ambigu`
+protègent un autre compte, un compte absent et un autre agenda du même compte.
+
+Après correction, les 63 tests voisins initiaux et le cas de relecture passent.
+Les trois nouveaux cas d'isolation avaient une différence de représentation
+SQLite de `synced_at` (aware avant relecture, naïve après) : le cliché de référence
+est maintenant pris après `refresh`, en conservant la comparaison de tous les
+champs. Les quatre cas passent dans `/tmp/divers-ui-r3-c1-isolation-vert.xml`, lu.
+La porte finale rejoue les tests voisins et ces cas ensemble.
+
+### 2. P1 : distinguer la sélection SQL de l'alias sur toutes les opérations
+
+Test ajouté puis lancé seul, huit variantes :
+`tests/test_c20_calendar_primary_relecture.py::test_r3_selection_primary_inconnue_refusee_sur_toutes_les_operations`.
+Il exerce liste, lecture unitaire, modification et suppression, avec et sans
+compte, et impose un refus explicite avant tout appel Google et toute mutation
+du cache. Rouge : **8 échecs**, `/tmp/divers-ui-r3-c2-rouge.xml`, lu. Ligne exacte
+du cas liste avec compte :
+
+```text
+E       assert 200 == 400
+```
+
+Test frontend ajouté et lancé seul avant correction :
+`src/frontend/src/services/api/calendar.selection.test.ts`. Rouge : **4 échecs,
+1 succès**, `/tmp/divers-ui-r3-c2-front-rouge.json`, lu. Ligne exacte :
+
+```text
+AssertionError: expected null to be 'true' // Object.is equality
+```
+
+Les quatre appels frontend portent désormais `calendar_id_is_stored=true` quand
+ils désignent un agenda sélectionné. La liste sans sélection conserve l'alias
+historique. Les quatre routes vérifient cette distinction : fournisseur inconnu
+refusé en 400, sélection absente en 404. Les quatre cas de
+`test_r3_selection_absente_ne_devient_pas_google` couvrent aussi ce second refus.
+La sélection d'une ligne SQL appelée `primary` ne peut plus désigner en silence
+le calendrier principal Google. La création garde son contrat existant.
+
+Après correction : **114 tests backend réussis**, aucun échec, erreur ou ignoré
+dans `/tmp/divers-ui-r3-c2-vert.xml`, lu ; **178 tests frontend réussis** dans
+29 fichiers, aucun échec ni ignoré, dans `/tmp/divers-ui-r3-front-vert.json`, lu.
+Appelants relus : `CalendarPanel.loadEvents`, `EventForm`, `EventDetail`,
+`usePrototypeMeetingData`, ainsi que la synchronisation backend.
+
+### 3. P1 : modifier et supprimer la destination réelle et son cache
+
+Tests ajoutés puis lancés séparément avant correction :
+`test_r3_cycle_alias_google_met_a_jour_puis_supprime_le_cache` (alias omis et
+explicite) et `test_r3_suppression_par_alias_retire_la_ligne_du_cache`, dans le
+même fichier backend. Rouges : **2 échecs**, puis **1 échec**, rapports
+`/tmp/divers-ui-r3-c3-cycle-rouge.xml` et
+`/tmp/divers-ui-r3-c3-suppression-rouge.xml`, lus. Lignes exactes :
+
+```text
+AssertionError: assert 'Titre initial' == 'Titre modifié'
+AssertionError: assert [CalendarEven...5, 55, 1559))] == []
+```
+
+Lecture, modification et suppression partagent désormais la résolution de
+destination. Le contrôle du compte précède les opérations Google. Les tests
+exercent création, modification, lecture unitaire, suppression, disparition SQL
+et absence à la lecture suivante ; le dossier reste conservé pendant l'édition.
+`test_r3_destination_google_refuse_un_autre_compte` et
+`test_r3_lecture_par_alias_ne_designe_pas_un_agenda_voisin_du_meme_compte`
+ferment les croisements de compte et de calendrier : avant correction,
+**4 échecs et 1 succès**, `/tmp/divers-ui-r3-c3-frontieres-rouge.xml`, lu.
+
+La relecture du correctif a identifié le cas d'une mutation historique **avant**
+la première lecture : résoudre la destination sans réconcilier son cache aurait
+introduit une nouvelle régression. Les six variantes ajoutées de
+`test_r3_mutation_historique_sans_lecture_prealable` ont donné **2 échecs et
+4 succès** avant leur correctif, `/tmp/divers-ui-r3-c3-historique-rouge.xml`, lu :
+
+```text
+AssertionError: assert ('primary', '...e', 'dossier') == ('agenda@exam...é', 'dossier')
+AssertionError: assert [CalendarEven... 58, 145427))] == []
+```
+
+La même réconciliation prudente est maintenant appliquée après confirmation
+Google d'une modification ou d'une suppression. Un compte absent ou différent
+interdit toujours le déplacement de la ligne historique. Appelants relus :
+formulaire et détail d'événement, service Google, lecture du cache dans
+`dashboard.py`. Les tests voisins couvrent aussi les agendas locaux, CalDAV,
+les collisions d'identifiants, les dates et les conflits de version.
+
+### 4. P2 : reprendre B-2029 et réconcilier le contrat de migration
+
+L'intégration locale avait déjà avancé jusqu'à `0047eb5e`, après `c127023a` :
+six commits de chaque côté de la divergence. Test ajouté dans un nouveau fichier
+avant toute reprise :
+`tests/couverture/couverture-ecran.contrat-migration.test.mjs`, lancé seul.
+Rouge : **1 échec**, `/tmp/divers-ui-r3-c4-rouge.tap`, lu. Lignes d'échec :
+
+```text
+not ok 1 - passe 3 : la migration du chat est acquittée sans autorisation réseau
+    la migration doit être simulée, sans émission réseau
+    +   'réseau'
+```
+
+La commande `git rebase c20/integration` a été tentée dans cet arbre, sans
+contournement ni demande d'élévation. Elle n'a pas changé `HEAD` et a répondu :
+
+```text
+error: could not create temporary /data/boucle-therese-mac/Dev Synoptia/Synoptia-THERESE/.git/worktrees/gpt-c20-divers-ui/rebase-merge: Read-only file system
+```
+
+Les deux fichiers `tests/couverture/couverture-ecran.mjs` et
+`tests/couverture/couverture-ecran.test.mjs` ont donc été repris de l'intégration
+locale, avec B-2029 et tous ses tests de concurrence. Aucun autre fichier
+d'intégration n'a été recopié. Le rebase réel reste à faire par l'orchestrateur.
+
+Le test B-2029 de l'intégration confirme ensuite la contradiction : **1 échec et
+1 succès**, `/tmp/divers-ui-r3-c4-contrat-rouge.tap`, lu, avec :
+
+```text
+    la simulation ne donne pas accès au réseau
+    true !== false
+```
+
+Le contrat retenu est l'acquittement local du seul POST exact de migration,
+sans autorisation réseau. `requeteAutorisee` le refuse ; `requeteASimuler` et
+la garde assurent le succès local et le comptage. L'ancienne attente `true`
+devient `false`, avec le test d'acquittement conservé et le nouveau test de bout
+en bout de la garde : aucun cas ni contrôle existant n'a été retiré ou assoupli.
+Appelants relus : installation de la garde, suivi des acquittements, fermeture
+du navigateur et rapport d'interruption. Résultat : **17 succès, 0 échec,
+12 cas navigateur ignorés par leur garde existante**, dans les deux fichiers
+Node ; rapports `/tmp/divers-ui-r3-couverture.tap` et
+`/tmp/divers-ui-r3-c4-vert.tap`, lus. Aucun navigateur ni port applicatif ouvert.
+
+### Portes et conditions de rejeu
+
+Les nouveaux tests totalisent **30 cas backend, 5 cas frontend et 1 cas Node**,
+en plus des tests B-2029 repris de l'intégration. Aucune suite complète lancée,
+aucun réseau, fournisseur LLM, accès à `~/.therese` ou `.app-loop/`, ni commande
+`rm`, `git add` ou commit. Les appels Google, les routes et les navigations de
+l'instrument sont simulés ; les adresses de ports réservés dans les tests Node
+ne sont que des données comparées en mémoire.
+
+Commande backend finale, depuis cet arbre :
+
+```sh
+PYTHONPATH=/tmp/divers-ui-r2-harness OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest \
+  tests/test_c20_calendar_primary_relecture.py \
+  tests/test_b1991_fournisseur_agenda_inconnu.py \
+  tests/test_routers_calendar.py \
+  tests/test_regression_facturation_agenda.py \
+  tests/test_frontiere_facturation_agenda.py \
+  tests/test_c22b_caldav_ecriture.py \
+  tests/test_calendar_allday_semantics.py \
+  tests/test_google_calendar_civil_time.py \
+  tests/test_calendar_jeton_de_version.py \
+  tests/test_calendar_rappel_par_defaut.py \
+  tests/test_pluriel_agenda_google.py \
+  tests/test_agenda_portes_par_identifiant.py \
+  -q -p no:cacheprovider -p r2_reports --timeout=120 \
+  --junitxml=/tmp/divers-ui-r3.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Les deux auxiliaires de la passe 2 sont réutilisés : réveil du sélecteur asyncio
+et écriture du JUnit avant le `os._exit` du conftest. Les tests n'en dépendent pas
+hors de ce bac à sable. Le XML final a été lu après terminaison : **141 cas,
+0 failure, 0 error, 0 skipped**, durée 105,057 secondes, puis Ruff a été lancé.
+
+Commande frontend depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx vitest run \
+  src/services/api/calendar.selection.test.ts \
+  src/services/api/caldav.test.ts \
+  src/components/calendar \
+  src/components/prototype/usePrototypeMeetingData.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=json --outputFile=/tmp/divers-ui-r3-front-vert.json
+npm_config_offline=true npx tsc --noEmit
+npm run lint
+```
+
+La dépendance `@playwright/test` n'est pas installée dans cet arbre. Le premier
+lancement Node a échoué avant exécution et le premier TypeScript a signalé les
+types manquants dans les tests e2e importés. Aucun de ces diagnostics n'est
+présenté comme un rouge fonctionnel. Les exports et types réels de
+`playwright/test`, déjà disponibles dans le cache npm local, ont été raccordés
+sans installation ni téléchargement. Le lien temporaire `node_modules` ajouté
+à la racine pour TypeScript a ensuite été déplacé sous `/tmp` ; les deux liens
+de dépendances préexistants restent inchangés.
+
+Pour Node, `/tmp/divers-ui-r3-node-loader.mjs` raccorde cette même dépendance,
+transpose les chemins temporaires macOS vers `/tmp` et remplace les pipes
+interdits de `spawnSync` par des fichiers temporaires. Les codes de sortie,
+sorties enfant et assertions sont conservés. Le premier passage voisin avait
+quatre erreurs dues aux pipes `EPERM` ; le passage final avec ces auxiliaires
+les résout sans modification des tests. Commandes :
+
+```sh
+NODE_OPTIONS='--import=/tmp/divers-ui-r3-node-loader.mjs' \
+  node tests/couverture/couverture-ecran.test.mjs
+NODE_OPTIONS='--import=/tmp/divers-ui-r3-node-loader.mjs' \
+  node tests/couverture/couverture-ecran.contrat-migration.test.mjs
+```
+
+| Porte | Périmètre | Réussis | Échecs / erreurs | Ignorés |
+| --- | --- | ---: | ---: | ---: |
+| Pytest | 12 fichiers touchés ou voisins ; XML relu | 141 | 0 / 0 | 0 |
+| Vitest | 29 fichiers ; JSON relu | 178 | 0 | 0 |
+| Node | 2 fichiers couverture ; TAP lus | 17 | 0 | 12 |
+| Ruff | `src/backend tests`, sans correction automatique | réussi | 0 diagnostic | sans objet |
+| TypeScript | `npx tsc --noEmit` avec dépendance locale raccordée | réussi | 0 diagnostic | sans objet |
+| ESLint | `npm run lint` | réussi | 0 erreur, 27 avertissements | sans objet |
+
+Les avertissements ESLint concernent des fichiers non modifiés par cette passe.
+Aucun rouge connu de la demande ne figure dans ces fichiers ciblés. Le contenu
+B-2029 et son contrat sont corrigés ; **l'historique n'est pas rebasé** et ce point
+du constat 4 demeure à traiter par l'orchestrateur. `HEAD` reste `70cce49c` et
+l'index reste inchangé.

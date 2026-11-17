@@ -167,14 +167,15 @@ export async function deleteCalendar(calendarId: string, accountId: string): Pro
 // Events
 export async function listEvents(
   accountId: string | undefined,
-  calendarId: string = 'primary',
+  calendarId?: string,
   params?: {
     time_min?: string;
     time_max?: string;
     max_results?: number;
   }
 ): Promise<CalendarEvent[]> {
-  const queryParams = new URLSearchParams({ calendar_id: calendarId });
+  const queryParams = new URLSearchParams({ calendar_id: calendarId ?? 'primary' });
+  if (calendarId !== undefined) queryParams.set('calendar_id_is_stored', 'true');
   if (accountId) queryParams.set('account_id', accountId);
   if (params?.time_min) queryParams.set('time_min', params.time_min);
   if (params?.time_max) queryParams.set('time_max', params.time_max);
@@ -189,7 +190,7 @@ export async function listEvents(
 }
 
 export async function getEvent(eventId: string, calendarId: string, accountId: string): Promise<CalendarEvent> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}&account_id=${encodeURIComponent(accountId)}`);
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}&account_id=${encodeURIComponent(accountId)}&calendar_id_is_stored=true`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
@@ -213,7 +214,7 @@ export async function updateEvent(
   calendarId: string,
   accountId?: string
 ): Promise<CalendarEvent> {
-  const params = new URLSearchParams({ calendar_id: calendarId });
+  const params = new URLSearchParams({ calendar_id: calendarId, calendar_id_is_stored: 'true' });
   if (accountId) params.set('account_id', accountId);
   const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?${params}`, {
     method: 'PUT',
@@ -225,7 +226,7 @@ export async function updateEvent(
 }
 
 export async function deleteEvent(eventId: string, calendarId: string, accountId?: string): Promise<any> {
-  const params = new URLSearchParams({ calendar_id: calendarId });
+  const params = new URLSearchParams({ calendar_id: calendarId, calendar_id_is_stored: 'true' });
   if (accountId) params.set('account_id', accountId);
   const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?${params}`, {
     method: 'DELETE',
