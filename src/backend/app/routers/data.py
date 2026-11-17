@@ -324,13 +324,21 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
         return "[REDACTED]"
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
+    # Trop imbriquée pour être lue ou parcourue (RecursionError) : ne jamais
+    # la rendre telle quelle, elle peut porter un secret jamais atteint.
     try:
         structure = _lire_json_fidelement(pref.value)
-        if isinstance(structure, list):  # un objet (ses paires) ou une liste
+    except (TypeError, ValueError):
+        structure = None  # pas un JSON : la valeur est un texte simple
+    except RecursionError:
+        return "[REDACTED]"
+    if isinstance(structure, list):  # un objet (ses paires) ou une liste
+        try:
             masquee = _masquer_json_lu(_masquer_preferences_structurees(structure))
-            return pref.value if masquee == structure else _ecrire_json(masquee)
-    except (TypeError, ValueError, RecursionError):
-        pass
+        except RecursionError:
+            return "[REDACTED]"
+        if masquee != structure:
+            return _ecrire_json(masquee)
     return pref.value
 
 

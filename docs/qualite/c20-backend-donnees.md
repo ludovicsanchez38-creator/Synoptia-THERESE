@@ -342,18 +342,24 @@ Règles retenues (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
 6. Les clés sont masquées comme les valeurs. Deux clés distinctes qui se
    confondent une fois masquées restent deux entrées : la seconde reçoit un
    suffixe ` (2)`. Une clé que le masquage ne change pas garde son nom.
-7. Un JSON trop imbriqué pour être parcouru est masqué comme un texte.
+7. Un JSON trop imbriqué pour être parcouru est masqué comme un texte ; s'il
+   s'agit de la valeur d'une préférence, elle sort `[REDACTED]` en entier (un
+   secret rangé sous une clé de connexion n'aurait pas été atteint).
 
-Tests : `tests/test_c20_b1812_export_config.py`, 71 tests dont 53 ajoutés par
+Tests : `tests/test_c20_b1812_export_config.py`, 74 tests dont 56 ajoutés par
 ces passes, sur les deux routes d'export pour chaque reproduction des
 relecteurs. Rouges constatés avant chaque correctif, dans l'ordre des commits :
-5, 3, 4, 21, puis 2. 262 tests voisins de l'export verts ; ruff propre ; mypy
+5, 3, 4, 21, 2, puis 2. 265 tests voisins de l'export verts ; ruff propre ; mypy
 du fichier inchangé (23).
 
 Limites connues, non couvertes :
 
 - un mot de passe saisi tel quel avec PLUSIEURS espaces, ou avec une espace
-  et qui commence par des chiffres (`nom:12 34@hôte`) ;
+  et qui commence par des chiffres (`nom:12 34@hôte`). Choix assumé entre
+  deux risques opposés, relevés l'un par la relecture (un texte légitime
+  tronqué jusqu'à l'adresse e-mail suivante), l'autre par la revue de sécurité
+  (ce mot de passe laissé en clair) : les deux demandent une URL invalide, la
+  règle étroite garde le texte ;
 - un mot de passe contenant `/`, `?` ou `#` non encodés : aucune bibliothèque
   ne lit une telle URL comme l'utilisateur l'entend ;
 - une URL encodée en pourcentage passée en paramètre d'une autre ;
