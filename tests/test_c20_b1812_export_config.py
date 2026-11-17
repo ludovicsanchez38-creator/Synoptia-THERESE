@@ -187,7 +187,7 @@ async def test_export_conserve_un_port_suivi_d_une_adresse_mail(client, db_sessi
         ("https://temoin:FAUX-secret@agenda.invalid/dav", "https://agenda.invalid/dav"),
         ("https://temoin@agenda.invalid:8443/dav", "https://agenda.invalid:8443/dav"),
         ("https://temoin:12345'ret@agenda.invalid/dav", "https://agenda.invalid/dav"),
-        ('Adresse : "https://temoin:FAUX"sec@agenda.invalid/dav"', 'Adresse : "https://agenda.invalid/dav"'),
+        ("Adresse : 'https://temoin:FAUX\"sec@agenda.invalid/dav'", "Adresse : 'https://agenda.invalid/dav'"),
         ("Voir https://temoin:FAUX sec@agenda.invalid/dav.", "Voir https://agenda.invalid/dav."),
         # Une URL passée en paramètre d'une autre est lue elle aussi.
         (
@@ -445,6 +445,13 @@ TEXTES_SANS_IDENTIFIANT = [
     "https://site.invalid/?next=https://agenda.invalid&email=personne@example.invalid",
     "https://site.invalid/?a=1;next=https://agenda.invalid;email=personne@example.invalid",
     "https://site.invalid/#retour=https://agenda.invalid:443&mail=a@b.invalid",
+    # Une URL entre guillemets ou chevrons s'arrête au guillemet fermant.
+    '<a href="/aller?u=https://site.invalid">contact@site.invalid</a>',
+    '<a href="https://suivi.invalid/?u=https://site.invalid">contact@site.invalid</a>',
+    '<a href="https://exemple.invalid:port">a@b.invalid</a>',
+    "<https://exemple.invalid:port>a@b.invalid",
+    "{'url': 'https://hote.invalid:8443', 'mail': 'a@b.invalid'}",
+    "Connexion : https://exemple.invalid:8080 (admin@exemple.invalid)",
 ]
 
 
@@ -491,3 +498,23 @@ def test_masquage_des_identifiants_a_separateurs(entree, attendu):
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(entree) == attendu
+
+
+@pytest.mark.parametrize(
+    "texte",
+    [
+        "x" * 300_000 + "https://hote.invalid" * 20_000,
+        "https://a.invalid/?s=" * 20_000 + "https://hote.invalid/",
+        '"https://hote.invalid">a@b.invalid ' * 8_000,
+        "https://hote.invalid:" + "9" * 400_000,
+    ],
+)
+def test_masquage_reste_rapide_sur_un_texte_tres_long(texte):
+    """Le coût est linéaire : un export ne doit pas pouvoir être figé par un champ volumineux."""
+    import time
+
+    from app.routers.data import _masquer_urls_export
+
+    depart = time.monotonic()
+    assert _masquer_urls_export(texte) == texte
+    assert time.monotonic() - depart < 5
