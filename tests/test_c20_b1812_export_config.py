@@ -650,3 +650,29 @@ def test_masquage_d_un_attribut_html_colle_au_suivant(texte):
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(texte) == texte
+
+
+# Revue de sécurité du 17/11 : raccourcir l'URL à sa fin apparente ne doit
+# jamais laisser en clair un secret placé après.
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        (
+            "Voir https://portail.invalid/?token=ab)cd&password=FAUX-secret ici",
+            "Voir https://portail.invalid/?token=[REDACTED]&password=[REDACTED] ici",
+        ),
+        (
+            "[x](https://portail.invalid/?token=FICTIF&password=FAUX-secret)",
+            "[x](https://portail.invalid/?token=[REDACTED]&password=[REDACTED])",
+        ),
+        ("Voir https://portail.invalid/?password=FAUX]secret ici", "Voir https://portail.invalid/?password=[REDACTED] ici"),
+        ("Voir https://portail.invalid/?a=1)&password=FAUX-secret ici", "Voir https://portail.invalid/?a=1)&password=[REDACTED] ici"),
+        ("| https://portail.invalid/?token=FICTIF|a=b|", "| https://portail.invalid/?token=[REDACTED]|a=b|"),
+    ],
+)
+def test_masquage_ne_laisse_aucun_secret_apres_la_fin_apparente_d_une_url(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export(entree)
+    assert "FAUX" not in sortie and "FICTIF" not in sortie
+    assert sortie == attendu
