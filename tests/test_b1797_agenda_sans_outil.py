@@ -16,6 +16,59 @@ from tests.test_r2_3_outil import fournisseur  # noqa: F401
 MENTION = "Je n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 
 
+@pytest.mark.parametrize(("ram_gio", "plafond"), [
+    (4, 8192), (8, 16384), (16, 131072), (32, 131072), (None, 8192),
+], ids=["4-gio", "8-gio", "16-gio", "32-gio", "detection-indisponible"])
+def test_budget_sans_sysconf_utilise_la_ram_windows(monkeypatch, ram_gio, plafond):
+    from app.services import ollama_budget, system_resources
+    from app.services.providers.base import LLMConfig, LLMProvider
+
+    monkeypatch.delattr(ollama_budget.os, "sysconf", raising=False)
+    monkeypatch.setattr(system_resources.platform, "system", lambda: "Windows")
+
+    def lire_ram():
+        if ram_gio is None:
+            raise OSError("Détection Windows indisponible")
+        return ram_gio * system_resources.GIB
+
+    monkeypatch.setattr(system_resources, "_windows_total_ram_bytes", lire_ram)
+    assert ollama_budget.plafond_memoire() == plafond
+    config = LLMConfig(LLMProvider.OLLAMA, "factice", context_window=2048, max_tokens=256)
+    assert ollama_budget.fenetre_ollama(config) == 2048
+
+
+@pytest.mark.asyncio
+async def test_flux_agenda_sans_sysconf_sur_windows_avec_32_gio(
+    client, db_session, fournisseur, monkeypatch  # noqa: F811
+):
+    from app.services import ollama_budget, system_resources
+
+    monkeypatch.delattr(ollama_budget.os, "sysconf", raising=False)
+    monkeypatch.setattr(system_resources.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(system_resources, "_windows_total_ram_bytes", lambda: 32 * system_resources.GIB)
+    db_session.add(Calendar(id="agenda-windows", summary="Agenda", provider="local"))
+    await db_session.commit()
+
+    class Modele:
+        async def stream(self, _system, _messages, tools=None, **_kwargs):
+            assert "list_calendar_events" in {outil["function"]["name"] for outil in tools}
+            yield StreamEvent(type="text", content="Bonjour, ")
+            yield StreamEvent(type="text", content="je reviens vers toi.")
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    fournisseur[0]._provider = Modele()
+    reponse = await client.post("/api/chat/send", json={
+        "message": "Rédige un mail de relance", "calendar_id": "agenda-windows",
+        "include_memory": False, "stream": True,
+    })
+    evenements = _evenements(reponse)
+    assert not [e for e in evenements if e["type"] == "error"], evenements
+    assert [e["content"] for e in evenements if e["type"] == "text"] == [
+        "Bonjour, ", "je reviens vers toi.",
+    ]
+    assert evenements[-1]["type"] == "done"
+
+
 def _evenements(reponse):
     return [json.loads(ligne.removeprefix("data: ")) for ligne in reponse.text.splitlines()
             if ligne.startswith("data: ")]

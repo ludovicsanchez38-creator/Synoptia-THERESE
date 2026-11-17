@@ -54,7 +54,7 @@ process.stdout.write(JSON.stringify({
 }));
 """
     execution = subprocess.run(
-        ["node", "--experimental-loader", str(chargeur), "--input-type=module", "--eval", script],
+        ["node", "--experimental-loader", chargeur.resolve().as_uri(), "--input-type=module", "--eval", script],
         check=True,
         capture_output=True,
         text=True,

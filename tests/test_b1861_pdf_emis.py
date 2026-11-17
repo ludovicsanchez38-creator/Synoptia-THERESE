@@ -1,5 +1,7 @@
 """Le PDF déjà produit d'une pièce émise conserve l'identité de son émetteur."""
 
+import os
+import stat
 from pathlib import Path
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -8,6 +10,19 @@ import pytest
 from app.routers import invoices
 from app.services.user_profile import UserProfile
 from pypdf import PdfReader
+
+
+def _verifier_mode_compagnon(preuve: Path) -> None:
+    mode = preuve.stat().st_mode
+    assert stat.S_ISREG(mode)
+    if os.name == "nt":
+        # O_CREAT avec 0600 ne pose pas d'ACL privée sous Windows : le fichier
+        # hérite des droits du dossier. stat n'y prouve que lecture/écriture,
+        # pas une restriction au seul propriétaire (voir c20-windows.md).
+        assert mode & stat.S_IREAD
+        assert mode & stat.S_IWRITE
+    else:
+        assert stat.S_IMODE(mode) == 0o600
 
 
 @pytest.fixture(params=["direct", "lien-symbolique"])
@@ -213,7 +228,7 @@ async def test_interruption_apres_publication_du_pdf_est_reprise(
     assert reprise.status_code == 200, reprise.text
     assert reprise.json()["pdf_path"] == str(fichier)
     assert fichier.read_bytes() == contenu
-    assert preuve.stat().st_mode & 0o777 == 0o600
+    _verifier_mode_compagnon(preuve)
     texte = PdfReader(fichier).pages[0].extract_text()
     assert "Camille Avant" in texte and "Camille Après" not in texte
     assert ("Payée" if edition else "Envoyée") in texte
@@ -279,7 +294,7 @@ async def test_restauration_reprend_la_publication_interrompue(
     # _publier_pdf_atteste et chemin_pdf_a_ouvrir renvoient tous deux un chemin résolu.
     assert Path(reprise.json()["pdf_path"]).resolve() == fichier.resolve()
     assert fichier.read_bytes() == contenu
-    assert invoices._preuve_pdf(fichier).stat().st_mode & 0o777 == 0o600
+    _verifier_mode_compagnon(invoices._preuve_pdf(fichier))
     texte = PdfReader(fichier).pages[0].extract_text()
     assert "Camille Avant" in texte and "Camille Après" not in texte
     assert ("Payée" if edition else "Envoyée") in texte
@@ -343,7 +358,7 @@ async def test_restauration_apres_echec_du_nettoyage_du_compagnon(
     chiffree = Path(settings.data_dir) / "backups" / f"{sauvegarde.json()['backup_name']}.tar.gz.enc"
     decrypt_backup_archive(chiffree, archive, passe)
     with tarfile.open(archive, "r:gz") as tar:
-        membre_preuve = str(preuve.resolve().relative_to(Path(settings.data_dir).resolve()))
+        membre_preuve = preuve.resolve().relative_to(Path(settings.data_dir).resolve()).as_posix()
         assert tar.getmember(membre_preuve).islnk()
     profil.name = "Camille Après"
     restauration = await client.post(
@@ -512,7 +527,7 @@ async def test_pdf_archive_modifie_est_refuse_a_la_generation_et_a_l_ouverture(c
     assert genere.status_code == 200, genere.text
     fichier = Path(genere.json()["pdf_path"])
     preuve = fichier.with_name(f"{fichier.name}.therese.json")
-    assert preuve.stat().st_mode & 0o777 == 0o600
+    _verifier_mode_compagnon(preuve)
     modifie = fichier.read_bytes() + b"\nmodification"
     fichier.write_bytes(modifie)
 

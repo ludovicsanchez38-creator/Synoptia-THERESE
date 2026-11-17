@@ -10,6 +10,22 @@ from tests.test_c20_windows_zombies import _bloc
 TAURI_SRC = Path(__file__).resolve().parents[1] / "src/frontend/src-tauri/src"
 
 
+def _lire_etats(sortie: bytes) -> list[str]:
+    # Protocole ASCII distinct des journaux Rust, quel que soit leur encodage.
+    return [ligne.removeprefix(b"ETAT ").decode("ascii")
+            for ligne in sortie.splitlines() if ligne.startswith(b"ETAT ")]
+
+
+@pytest.mark.parametrize("journal", [
+    "[THÉRÈSE] Sidecar terminé".encode("utf-8"),
+    "[THÉRÈSE] Sidecar terminé".encode("cp1252"),
+    b"journal non decodable: \xff\x81",
+], ids=["utf8", "cp1252", "octets-inconnus"])
+def test_lecture_des_etats_independante_des_journaux(journal: bytes) -> None:
+    sortie = b"ETAT 1\r\nETAT 2\r\nETAT false 0\r\n" + journal + b"\r\nETAT true 1\r\nETAT false\r\n"
+    assert _lire_etats(sortie) == ["1", "2", "false 0", "true 1", "false"]
+
+
 def test_ancienne_relance_automatique_ne_remplace_pas_la_reprise_manuelle(tmp_path: Path) -> None:
     lib = (TAURI_SRC / "lib.rs").read_text(encoding="utf-8")
     commandes = (TAURI_SRC / "commands.rs").read_text(encoding="utf-8")
@@ -104,16 +120,16 @@ fn main() {
     schedule_sidecar_retry(&app);
     assert_eq!(restart_backend(app.clone()).unwrap(), 1);
     std::thread::expirer();
-    println!("{}", app.0.lancements.load(Ordering::SeqCst));
+    println!("ETAT {}", app.0.lancements.load(Ordering::SeqCst));
     schedule_sidecar_retry(&app);
     std::thread::expirer();
-    println!("{}", app.0.lancements.load(Ordering::SeqCst));
+    println!("ETAT {}", app.0.lancements.load(Ordering::SeqCst));
     simuler_terminaison(app.clone(), ancienne_generation);
-    println!("{} {}", app.0.sidecar_termine.load(Ordering::SeqCst),
+    println!("ETAT {} {}", app.0.sidecar_termine.load(Ordering::SeqCst),
         app.0.terminaisons.load(Ordering::SeqCst));
     let generation_courante = app.0.generation_relance.load(Ordering::SeqCst);
     simuler_terminaison(app.clone(), generation_courante);
-    println!("{} {}", app.0.sidecar_termine.load(Ordering::SeqCst),
+    println!("ETAT {} {}", app.0.sidecar_termine.load(Ordering::SeqCst),
         app.0.terminaisons.load(Ordering::SeqCst));
 
     // Un ancien délai est déjà entré dans le lancement quand l'utilisateur
@@ -137,7 +153,7 @@ fn main() {
     liberer_tx.send(()).unwrap();
     automatique.join().unwrap();
     manuelle.join().unwrap();
-    println!("{}", terminee_trop_tot);
+    println!("ETAT {}", terminee_trop_tot);
 }
 '''
     harnais = harnais.replace("__RELANCE_AUTO__", relance_auto)
@@ -148,14 +164,12 @@ fn main() {
     source.write_text(harnais, encoding="utf-8")
     compilation = subprocess.run(
         ["rustc", "--edition=2021", "-o", str(binaire), str(source)],
-        capture_output=True, text=True, check=False, timeout=30,
+        capture_output=True, encoding="utf-8", check=False, timeout=30,
     )
     assert compilation.returncode == 0, compilation.stderr
-    execution = subprocess.run([str(binaire)], capture_output=True, text=True, check=False, timeout=30)
+    execution = subprocess.run([str(binaire)], capture_output=True, check=False, timeout=30)
     assert execution.returncode == 0, execution.stderr
-    lignes = [ligne for ligne in execution.stdout.splitlines() if not ligne.startswith("[THÉRÈSE]")]
-    assert lignes[:2] == ["1", "2"]
-    assert lignes[2:] == ["false 0", "true 1", "false"]
+    assert _lire_etats(execution.stdout) == ["1", "2", "false 0", "true 1", "false"]
 
 
 @pytest.mark.parametrize("plateforme", ["linux", "macos", "windows"])

@@ -508,6 +508,7 @@ def test_masquage_des_identifiants_a_separateurs(entree, attendu):
         '"https://hote.invalid">a@b.invalid ' * 8_000,
         "https://hote.invalid:" + "9" * 400_000,
     ],
+    ids=["prefixe-et-urls", "urls-imbriquees", "url-et-mail", "port-tres-long"],
 )
 def test_masquage_reste_rapide_sur_un_texte_tres_long(texte):
     """Le coût est linéaire : un export ne doit pas pouvoir être figé par un champ volumineux."""
