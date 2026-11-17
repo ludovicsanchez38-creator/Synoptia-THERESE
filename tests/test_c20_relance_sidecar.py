@@ -3,6 +3,8 @@
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from tests.test_c20_windows_zombies import _bloc
 
 TAURI_SRC = Path(__file__).resolve().parents[1] / "src/frontend/src-tauri/src"
@@ -156,7 +158,8 @@ fn main() {
     assert lignes[2:] == ["false 0", "true 1", "false"]
 
 
-def test_generations_des_evenements_et_de_la_commande(tmp_path: Path) -> None:
+@pytest.mark.parametrize("plateforme", ["linux", "macos", "windows"])
+def test_generations_des_evenements_et_de_la_commande(tmp_path: Path, plateforme: str) -> None:
     """Exécute les émetteurs Rust réels avec un sidecar et une fenêtre simulés."""
     lib = (TAURI_SRC / "lib.rs").read_text(encoding="utf-8")
     commandes = (TAURI_SRC / "commands.rs").read_text(encoding="utf-8")
@@ -165,6 +168,11 @@ def test_generations_des_evenements_et_de_la_commande(tmp_path: Path) -> None:
         return signature + " " + _bloc(source, source.index(signature))
 
     spawn = fonction(lib, "pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle)")
+    # Sélectionner les branches de l'extrait indépendamment du système du banc.
+    for cible in ("linux", "macos", "windows"):
+        spawn = spawn.replace(
+            f'#[cfg(target_os = "{cible}")]', f'#[cfg(feature = "simulation_{cible}")]'
+        )
     relance = fonction(lib, "fn schedule_sidecar_retry(app: &tauri::AppHandle)")
     statut = fonction(
         lib, "fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32, generation: u64)"
@@ -235,6 +243,13 @@ mod tauri {
     impl AppHandle {
         pub fn state<T: Etat>(&self) -> &T { T::get(&self.0) }
         pub fn get_webview_window(&self, _: &str) -> Option<Window> { Some(Window(self.clone())) }
+        pub fn path(&self) -> PathResolver { PathResolver }
+    }
+    pub struct PathResolver;
+    impl PathResolver {
+        pub fn resource_dir(&self) -> ::std::io::Result<::std::path::PathBuf> {
+            Ok(::std::path::PathBuf::from("ressources-simulees"))
+        }
     }
     pub struct Window(AppHandle);
     impl Window {
@@ -271,7 +286,7 @@ mod tauri_plugin_shell {
     pub struct Command(tauri::AppHandle);
     impl Command {
         pub fn args<I, S>(self, _: I) -> Self where I: IntoIterator<Item = S>, S: AsRef<str> { self }
-        pub fn env(self, _: &str, _: &str) -> Self { self }
+        pub fn env<S: AsRef<str>>(self, _: &str, _: S) -> Self { self }
         pub fn spawn(self) -> Result<(process::Receiver, Child), &'static str> {
             if self.0.0.mode.load(Ordering::SeqCst) == 2 { Err("spawn simulé") }
             else { Ok((process::Receiver, Child)) }
@@ -324,7 +339,7 @@ fn main() {
     binaire = tmp_path / "evenements"
     source.write_text(harnais, encoding="utf-8")
     compilation = subprocess.run(
-        ["rustc", "--edition=2021", "-o", str(binaire), str(source)],
+        ["rustc", "--edition=2021", "--cfg", f'feature="simulation_{plateforme}"', "-o", str(binaire), str(source)],
         capture_output=True, text=True, check=False, timeout=30,
     )
     assert compilation.returncode == 0, compilation.stderr
