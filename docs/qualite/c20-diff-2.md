@@ -2,7 +2,7 @@
 
 Travail limité à `gpt/c20-diff-2`. Aucun commit ni push : l'index Git est inaccessible dans ce bac à sable, conformément au mandat (aucune tentative de `git add`). Les changements restent dans l'arbre pour reprise par l'orchestrateur. Aucun appel à un fournisseur LLM ni à un service en ligne.
 
-État après la passe 4 : 3 candidats confirmés pour 2 défauts distincts, 4 rejetés et 3 `regle_a_trancher` (B-1875 retiré, B-1876 et B-2002 soumis au même arbitrage de date). Les sections des passes précédentes conservent l'historique ; la section « Remédiation de la relecture, passe 4 » décrit la livraison actuelle et ses preuves.
+État après la passe 5 : 1 candidat confirmé (B-2003), 4 rejetés et 5 `regle_a_trancher` (B-1875, B-1877 et B-1878 retirés ; B-1876 et B-2002 soumis au même arbitrage de date). Les sections des passes précédentes conservent l'historique ; la section « Remédiation de la relecture, passe 5 » décrit la livraison actuelle et ses preuves.
 
 ## Verdicts et preuves
 
@@ -11,8 +11,8 @@ Travail limité à `gpt/c20-diff-2`. Aucun commit ni push : l'index Git est inac
 | B-1874 | rejete | `tests/test_b1219_outil_projet_valeurs_controlees.py::test_un_budget_illisible_ou_infini_n_est_pas_enregistre` ; `src/backend/app/services/memory_tools.py:263-271,766-777` | Aucun rouge : le convertisseur renvoie déjà `None` pour les valeurs citées, puis le stocke tel quel. | Aucun changement |
 | B-1875 | regle_a_trancher | **retiré du lot, reporté** ; constats 1 à 9 de la relecture, passe 4, détaillés ci-dessous | Preuves du relecteur : annulation après commit, versions non durables, courses de restitution, purge et sauvegarde incomplètes, reprises invisibles et verrou global | Code et tests du candidat revenus à l'état de `c20/integration` par annulation des seuls écarts du lot |
 | B-1876 | regle_a_trancher | `src/frontend/src/components/invoices/InvoiceForm.datePaiement.p155.test.tsx::B-1147 reprise après correctif : %s %s %s` ; la route `mark_invoice_paid` accepte aussi des horodatages | Aucun test rouge sans choisir une convention absente du contrat | Aucun changement |
-| B-1877 | confirme | `src/frontend/src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx::un ajout de A ne rejoint jamais B, même après la fusion` (2 ordres), puis 3 cas voisins | `Error: expect(element).not.toBeInTheDocument()` ; élément trouvé : `Livrable A` dans B (`/tmp/diff-2-b1877-rouge.xml`, 5 échecs) | non commité |
-| B-1878 | confirme | `src/frontend/src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx::un ajout de A ne rejoint jamais B, même après la fusion` ; doublon de B-1877 | Même rouge observé avant correction : `Error: expect(element).not.toBeInTheDocument()` ; `Livrable A` affiché dans B | non commité |
+| B-1877 | regle_a_trancher<br>retiré du lot, reporté | Constat 1, P1, de la passe 5 ; preuve du relecteur recopiée dans la section correspondante | « après A → B → A, le bouton est de nouveau actif alors que le premier POST attend ; une simulation du composant envoie deux créations pour le même titre. Si le premier POST échoue, son erreur est ignorée et sa saisie a été effacée. » | Code et tests du candidat revenus exactement à l'état de `c20/integration` ; aucun nouveau correctif |
+| B-1878 | regle_a_trancher<br>retiré du lot, reporté | Même candidat que B-1877 ; constat 1, P1, de la passe 5 | « après A → B → A, le bouton est de nouveau actif alors que le premier POST attend ; une simulation du composant envoie deux créations pour le même titre. Si le premier POST échoue, son erreur est ignorée et sa saisie a été effacée. » | Retrait complet commun à B-1877 ; aucun nouveau correctif |
 | B-1879 | rejete | `tests/test_p160_serie_commune.py::test_frontiere_annee_garde_numero_et_date_dans_la_meme_annee` ; `src/backend/app/routers/invoices.py:364-383` | Aucun : `issue_date` est une date civile à minuit, pas un instant UTC | Aucun changement |
 | B-1880 | rejete | `src/frontend/src/components/email/ResponseGeneratorModal.tsx:80-105,130-143` ; `src/frontend/src/components/email/ResponseGeneratorModal.obsolete.test.tsx::compte changé sans fermer et même UID : le vieux résultat ne remplace pas la réponse du nouveau compte` | Aucun défaut de production reproduit ; assertion de session effectivement incomplète | Aucun changement |
 | B-2002 | regle_a_trancher | `src/frontend/src/components/invoices/InvoiceForm.datePaiement.p155.test.tsx::B-1147 reprise après correctif : %s %s %s` ; même convention que B-1876 | Aucun sans arbitrage du sens des horodatages anciens | Aucun changement |
@@ -612,3 +612,104 @@ node --experimental-test-isolation=none \
 ```
 
 Le chargeur temporaire simule uniquement l'import de Playwright en interdisant `chromium.launch()` ; le gestionnaire réseau et ses assertions restent ceux du dépôt. Les dépendances Node sont utilisées hors ligne, avec le chargement `runner` et sans cache pour éviter toute écriture dans le répertoire partagé. Aucun correctif de lint ni autre modification hors des constats n'a été ajouté.
+
+## Remédiation de la relecture, passe 5
+
+Travail du 17 novembre 2026 dans cet arbre uniquement, après le rebase effectué par l'orchestrateur. Références vérifiées : `HEAD = 4ec920c7`, `c20/integration = 1550627b`. La consigne spécifique de cette dernière passe impose le retrait des candidats visés par un P1, sans nouvelle réparation. B-1877 et son doublon B-1878 deviennent donc **regle_a_trancher — retiré du lot, reporté**. B-2003 reste confirmé.
+
+Le retrait applique à l'envers les seuls écarts de B-1877/B-1878, après `git apply --reverse --check`, sans recopier de fichier de l'intégration. Il concerne exactement :
+
+- `src/frontend/src/components/memory/ProjectDeliverablesSection.tsx` : retrait de la table des relectures, des états et références propres aux ouvertures, des gardes et de leurs imports ; retour exact au composant intégré.
+- `src/frontend/src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx` : retrait du fichier propre au candidat, absent de l'intégration.
+
+`git diff --exit-code c20/integration -- <ces deux chemins>` ne produit aucune sortie et termine à 0. Aucun test de l'intégration n'est supprimé ni affaibli. Aucun nouveau test, correctif de production ou rouge préalable n'est revendiqué pour cette passe de retrait : la preuve du P1 est le constat du relecteur ci-dessous. Les rouges des passes antérieures restent des preuves historiques, associées à des correctifs désormais retirés.
+
+### Décisions constat par constat
+
+Les numéros de ligne cités sont ceux de la relecture. « Écarté, hors lot » signifie que le fichier a déjà un diff vide avec `c20/integration` dans l'arbre reçu ; cela ne prétend pas réfuter le défaut fonctionnel décrit. La consigne interdit de corriger ou de réintégrer les fichiers d'un autre lot.
+
+| Constat | Décision | Preuve et périmètre |
+| --- | --- | --- |
+| 1, P1 | **regle_a_trancher**<br>retiré du lot, reporté | B-1877/B-1878 retirés en entier, code et tests. `ProjectDeliverablesSection.tsx:48` : « Une création en cours disparaît de l’état du projet au retour. » Preuve recopiée intégralement ci-dessous. |
+| 2, P1 | **Écarté, hors lot** | `src/backend/app/services/invoice_pdf.py:864` : conservation des PDF émis et test B-1861. Aucun écart de ce fichier avec l'intégration ; aucun correctif de facturation de diff-2 à retirer. |
+| 3, P1 | **Écarté, hors lot** | `src/backend/app/models/database.py:165` : migration des destinataires historiques. Aucun écart avec l'intégration ; aucune modification de la migration. |
+| 4, P1 | **Écarté, hors lot** | `src/backend/app/routers/data.py:1346` : liens physiques à la restauration. Aucun écart avec l'intégration ; aucune reprise de code ni de tests d'un autre lot. |
+| 5, P1 | **Écarté, hors lot** | `src/backend/app/models/database.py:921` : preuve du schéma avant estampillage. Aucun écart avec l'intégration ; aucun changement de l'estampillage. |
+| 6, P1 | **Écarté, hors lot** | `src/backend/app/routers/invoices.py:861` : adresse avant première émission. Aucun écart avec l'intégration ; aucune modification des routes. |
+| 7, P1 | **Écarté, hors lot** | `src/backend/app/services/invoice_pdf.py:755` : mention de TVA. Aucun écart avec l'intégration ; aucune modification de la mention. |
+| 8, P1 | **Écarté, hors lot** | `src/backend/app/routers/invoices.py:1489` et `src/backend/app/services/invoice_pdf.py` : taux de pénalité. Les deux fichiers sont identiques à l'intégration. |
+| 9, P1 | **Écarté, hors lot** | `src/backend/app/routers/escalation.py:113` : devise et alias USD. Aucun écart avec l'intégration ; aucun changement des réponses de budget. |
+| 10, P2 | **Réserve acceptée** | Transmettre le livrable confirmé entre ouvertures tout en conservant l'alerte demande un changement de comportement, au-delà d'une ligne évidente. Aucun correctif supplémentaire ; le mécanisme et ses tests propres à B-1877/B-1878 sont retirés au titre du constat 1. Preuve recopiée dans « Réserves acceptées ». |
+| 11, P2 | **Écarté, hors lot et demande de réintégration** | `tests/test_alembic_stamp.py` et `tests/test_p119_regime_tva.py` sont identiques à l'intégration. `git diff --name-status c20/integration -- tests src/backend` ne montre que les deux fichiers de tests ajoutés par diff-2 : aucune suppression ni inversion de tests de facturation. Aucun bilan d'un autre lot réintégré. |
+| 12, P2 | **Écarté, hors lot** | `tests/test_c15_emission_concurrente.py` et `tests/test_c15_courses_suppression_conversion.py` sont identiques à l'intégration. Aucun changement et aucune exécution de ces tests, conformément à l'interdiction d'accéder à `.app-loop/`. |
+| 13, P2 | **Écarté, hors lot** | `src/backend/app/services/invoice_pdf.py:199` : lisibilité du pied de PDF et test B-1973. Aucun écart avec l'intégration ; aucun changement de style ni réintégration de test. |
+| 14, P2 | **Écarté, hors lot** | `src/backend/app/routers/invoices.py:1265` : messages français et test B-1975. Aucun écart avec l'intégration ; aucun changement de texte ni réintégration de test. |
+
+Preuve du relecteur pour le constat 1, sans nouvelle simulation revendiquée :
+
+> Une création en cours disparaît de l’état du projet au retour. — Preuve : après A → B → A, le bouton est de nouveau actif alors que le premier POST attend ; une simulation du composant envoie deux créations pour le même titre. Si le premier POST échoue, son erreur est ignorée et sa saisie a été effacée.
+
+### Réserves acceptées
+
+Constat 10, P2, `ProjectDeliverablesSection.tsx:109` :
+
+> La correction de la création après réouverture ne couvre que les relectures réussies. — Preuve : si le POST de l’ancienne fenêtre réussit mais que la nouvelle lecture échoue, la nouvelle fenêtre affiche l’alerte de lecture sans le livrable pourtant reçu dans `cree`. Les nouveaux tests supposent tous une relecture réussie. — Correction proposée : transmettre aussi le livrable confirmé à l’ouverture du même projet et garder l’alerte tant que la liste complète n’a pas été relue.
+
+Cette correction est reportée avec le candidat. Le retour à l'état intégré ne résout pas les courses entre ouvertures ; le lot ne revendique plus cette garantie. Les tests P-153 conservés vérifient notamment la fusion lecture/création et l'alerte de liste incomplète dans une même ouverture, sans prétendre couvrir le scénario reporté.
+
+### Appelants relus et reste du lot
+
+Après retrait, relecture du montage dans `ProjectModal.tsx:501`, de ses appelants `ProjectsPanel.tsx:267` et `chat/PanelContainer.tsx:164`, puis du composant revenu à l'intégration. La recherche dans `src/backend`, `src/frontend/src` et `tests` ne trouve plus `relecturesParProjet`, `generationProjet`, `projetCourant`, B-1877/B-1878 ni le nom du test retiré. Les deux fichiers de tests P-153 voisins restent inchangés et passent.
+
+Le diff final avec l'intégration contient cinq chemins : ce bilan, `ExplicationDuScore.tsx`, son test B-2003, `tests/test_b2029_couverture.py` et `tests/test_c20_diff2_livraison_passe3.py`. B-2003 et ses appelants CRM/Pipeline ont été relus et testés. Les deux tests Python restants sont rejoués avec leur voisin B-1851 et le scénario de frontière qu'ils appellent ; les transports y sont simulés. La garde de couverture est exercée sans navigateur sur ses trois contrôles Node voisins. Aucun de ces éléments ne dépend du candidat retiré.
+
+### Portes de la passe 5
+
+Les XML `/tmp/diff-2-r5.xml` et `/tmp/diff-2-r5-vitest.xml` ont été lus après la fin des commandes. Aucun lancement de suite complète. Les cas connus rouges du mandat ne font pas partie de cette sélection.
+
+| Porte | Périmètre | Passés | Échoués | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 3 fichiers entiers et le scénario de frontière appelé | **11** | **0** | **0** | **0** | `/tmp/diff-2-r5.xml`, XML lu, sortie 0 |
+| Vitest | 6 fichiers, 3 workers maximum | **46** | **0** | **0** | **0** | `/tmp/diff-2-r5-vitest.xml`, XML lu, sortie 0 |
+| Node | Deux contrôles B-2029 et leur voisin, sans navigateur | **3** | **0** | **0** | **0** | `/tmp/diff-2-r5-node.log`, TAP lu, sortie 0 |
+| Ruff | `src/backend tests`, sans correction automatique | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r5-ruff.log`, `All checks passed!`, sortie 0 |
+| TypeScript | `tsc --noEmit` | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r5-tsc.log` vide, sortie 0 |
+| ESLint | `npm run lint` | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r5-eslint.log`, sortie 0, 27 avertissements existants hors des fichiers modifiés |
+| Diff | `git diff --check` et identité des 11 chemins retirés ou hors lot | Sans objet | 0 | 0 | Sans objet | Sorties 0 ; `HEAD` reste `4ec920c7`, index inchangé |
+
+Total des tests de cette passe : **60 passés, 0 échoué, 0 erreur, 0 ignoré**. Tests ajoutés ou étendus : **0**, conformément à la consigne de retrait des P1 et de report des P2 non triviaux. Le garde Python compte **zéro tentative de connexion**. Les adresses des scénarios B-2029 sont de simples entrées de fonctions et de routes factices : aucun accès aux ports interdits. Le chargeur temporaire interdit le lancement de Playwright ; Vitest utilise les API simulées et le `fetch` interdit de `src/test/setup.ts`.
+
+Commandes rejouables depuis la racine :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 THERESE_DATA_DIR="$(mktemp -d /tmp/diff-2-r5-data-XXXXXX)" \
+ OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+ tests/test_b2029_couverture.py tests/test_c20_diff2_livraison_passe3.py \
+ tests/test_b1851_preuve_frontiere.py \
+ tests/test_frontiere_erreurs.py::TestRevueSosoPasse2::test_p7_f2_openrouter_et_ollama_ne_relaient_pas_le_detail \
+ -q -p tests.bancs_sans_reseau -p no:cacheprovider --timeout=120 \
+ --junitxml=/tmp/diff-2-r5.xml
+.venv/bin/python -m ruff check --no-fix --no-cache src/backend tests
+node --experimental-test-isolation=none \
+ --experimental-loader /tmp/diff-2-r5-sans-navigateur.mjs \
+ --test --test-name-pattern='B-2029 : seule la migration exacte|B-2029 : la garde acquitte|seules les lectures locales' \
+ tests/couverture/couverture-ecran.test.mjs
+```
+
+Depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx --no-install vitest run \
+ src/components/memory/ProjectDeliverablesSection.p153.test.tsx \
+ src/components/memory/ProjectModal.livrables.p153.test.tsx \
+ src/components/crm/ExplicationDuScore.cible.b2003.test.tsx \
+ src/components/crm/ExplicationDuScore.p152.test.tsx \
+ src/components/crm/PipelineView.da.test.tsx \
+ src/components/crm/PipelineView.clavier.test.tsx \
+ --maxWorkers=3 --no-cache --configLoader=runner \
+ --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-2-r5-vitest.xml
+npm_config_offline=true npx --no-install tsc --noEmit
+npm_config_offline=true npm run lint
+```
+
+Les fichiers de preuves et les données jetables restent sous `/tmp`. Aucun réseau, fournisseur LLM, navigateur ou serveur lancé ; aucun accès au profil réel ni à `.app-loop/`. Aucun `rm`, `git add`, commit, rebase, dépôt annexe ou bundle. Les liens non suivis `.venv` et `src/frontend/node_modules` préexistaient ; les changements de cette passe restent non commités pour l'orchestrateur.

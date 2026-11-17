@@ -4,7 +4,7 @@
  * client »). Même création que la vue des livrables (P-048), statut « À
  * faire » ; en lecture seule (démo), la liste seule.
  */
-import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Package } from 'lucide-react';
 
 import { createDeliverable, listDeliverables, type DeliverableResponse } from '../../services/api/crm-extended';
@@ -18,10 +18,6 @@ const LIBELLES_STATUT: Record<string, string> = {
   valide: 'Validé',
 };
 
-// Une création peut finir après démontage ; les ouvertures encore visibles
-// du même projet doivent alors relire l'état enregistré.
-const relecturesParProjet = new Map<string, Set<Dispatch<SetStateAction<number>>>>();
-
 export function ProjectDeliverablesSection({
   projectId,
   lectureSeule = false,
@@ -31,7 +27,6 @@ export function ProjectDeliverablesSection({
   lectureSeule?: boolean;
   masquer?: (texte: string) => string;
 }) {
-  const [projetAffiche, setProjetAffiche] = useState(projectId);
   const [livrables, setLivrables] = useState<DeliverableResponse[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [erreurLecture, setErreurLecture] = useState(false);
@@ -40,46 +35,20 @@ export function ProjectDeliverablesSection({
   const [titre, setTitre] = useState('');
   const [enCours, setEnCours] = useState(false);
   const versionEcritures = useRef(0);
-  const generationProjet = useRef(0);
-  const projetCourant = useRef<string | null>(projectId);
 
-  // Réinitialiser pendant le rendu : aucun DOM de B ne doit exposer l'état
-  // de A, même avant les effets (relecture diff-2, constat 3).
-  if (projetAffiche !== projectId) {
-    setProjetAffiche(projectId);
+  useEffect(() => {
     setLivrables(null);
     setErreur(null);
     setErreurLecture(false);
-    setTitre('');
-    setEnCours(false);
-  }
-
-  useLayoutEffect(() => {
-    projetCourant.current = projectId;
-    versionEcritures.current = 0;
-    const relectures = relecturesParProjet.get(projectId) ?? new Set();
-    relectures.add(setRelecture);
-    relecturesParProjet.set(projectId, relectures);
-    // B-1877 / B-1878 : une réponse appartient à cette ouverture, même si
-    // l'utilisateur revient ensuite au même projet (A → B → A).
-    return () => {
-      generationProjet.current += 1;
-      projetCourant.current = null;
-      relectures.delete(setRelecture);
-      if (relectures.size === 0) relecturesParProjet.delete(projectId);
-    };
   }, [projectId]);
 
   useEffect(() => {
     let vivant = true;
-    const generation = generationProjet.current;
-    const estCourante = () => vivant && projetCourant.current === projectId
-      && generationProjet.current === generation;
     const versionLue = versionEcritures.current;
     setLectureEnCours(true);
     listDeliverables({ project_id: projectId })
       .then((liste) => {
-        if (!estCourante()) return;
+        if (!vivant) return;
         if (versionLue === versionEcritures.current) {
           setLivrables(liste);
           setErreurLecture(false);
@@ -88,40 +57,31 @@ export function ProjectDeliverablesSection({
         // Une réponse antérieure à un ajout ne connaît pas ce livrable, mais
         // elle seule connaît les existants : fusion par identifiant.
         setLivrables((courants) => {
-          if (!estCourante()) return courants;
           const lus = new Set(liste.map((livrable) => livrable.id));
           return [...liste, ...(courants ?? []).filter((livrable) => !lus.has(livrable.id))];
         });
       })
-      .catch(() => { if (estCourante()) setErreurLecture(true); })
-      .finally(() => { if (estCourante()) setLectureEnCours(false); });
+      .catch(() => { if (vivant) setErreurLecture(true); })
+      .finally(() => { if (vivant) setLectureEnCours(false); });
     return () => { vivant = false; };
   }, [projectId, relecture]);
 
   async function ajouter(e: FormEvent) {
     e.preventDefault();
     if (!titre.trim() || enCours) return;
-    const generation = generationProjet.current;
     setEnCours(true);
     setErreur(null);
     try {
       const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: 'a_faire' });
-      for (const relire of relecturesParProjet.get(projectId) ?? []) {
-        if (relire !== setRelecture || generation !== generationProjet.current) {
-          relire((valeur) => valeur + 1);
-        }
-      }
-      if (generation !== generationProjet.current) return;
       versionEcritures.current += 1;
       // Une lecture arrivée avant cette réponse peut déjà contenir l'ajout.
       setLivrables((courants) => ((courants ?? []).some((livrable) => livrable.id === cree.id)
         ? courants : [...(courants ?? []), cree]));
       setTitre('');
     } catch (reason) {
-      if (generation !== generationProjet.current) return;
       setErreur(reason instanceof Error ? reason.message : 'Le livrable n’a pas pu être ajouté.');
     } finally {
-      if (generation === generationProjet.current) setEnCours(false);
+      setEnCours(false);
     }
   }
 
