@@ -28,9 +28,16 @@ export default defineConfig(({ command }) => ({
   envPrefix: ['VITE_', 'TAURI_ENV_'],
   // B-264 : les neuf surfaces chargées en lazy() faisaient découvrir des
   // dépendances en cours de session ; Vite ré-optimisait et rechargeait la
-  // page (~3 % des parcours de bout en bout). Le crawl couvre toutes les sources.
+  // page (~3 % des parcours de bout en bout). Le crawl couvre toutes les sources applicatives.
   optimizeDeps: {
-    entries: ['index.html', 'src/**/*.{ts,tsx}'],
+    // B-2054 : les tests utilisent aussi des outils Node natifs (Oxide, Lightning CSS).
+    entries: [
+      'index.html',
+      'src/**/*.{ts,tsx}',
+      '!src/**/*.{test,spec}.{ts,tsx}',
+      '!src/**/__tests__/**',
+      '!src/test/**',
+    ],
   },
   build: {
     // Tauri supports es2021
