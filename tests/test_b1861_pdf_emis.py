@@ -276,6 +276,85 @@ async def test_restauration_reprend_la_publication_interrompue(client, monkeypat
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("edition", [False, True])
+@pytest.mark.parametrize("voie", ["pdf", "pdf-ouverture"])
+async def test_restauration_apres_echec_du_nettoyage_du_compagnon(
+    client, monkeypatch, tmp_path, edition, voie
+):
+    import tarfile
+
+    from app.config import settings
+    from app.services.encryption import decrypt_backup_archive
+
+    dossier = Path(settings.data_dir) / "invoices" / f"{tmp_path.name}-{uuid4().hex}"
+    profil = UserProfile(name="Camille Avant", address="Paris", siret="12345678900010", legal_form="EI")
+    monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(dossier)))
+    contact = (await client.post("/api/memory/contacts", json={"first_name": "Alice", "address": "Lyon"})).json()
+    piece = (await client.post("/api/invoices/", json={
+        "contact_id": contact["id"],
+        "lines": [{"description": "Prestation", "quantity": 1, "unit_price_ht": 10}],
+    })).json()
+    chemin = f"/api/invoices/{piece['id']}"
+    emission = await client.put(chemin, json={"status": "sent"})
+    assert emission.status_code == 200, emission.text
+    original = dossier / f"{emission.json()['invoice_number']}.pdf"
+    if edition:
+        assert (await client.get(f"{chemin}/pdf")).status_code == 200
+        contenu_original = original.read_bytes()
+        assert (await client.patch(f"{chemin}/mark-paid", json={})).status_code == 200
+
+    unlink_reel = Path.unlink
+    echecs = []
+
+    def echec_compagnon_provisoire(self, *args, **kwargs):
+        if self.name.startswith(".therese-publication-") and self.name.endswith(".pdf.therese.json"):
+            echecs.append(self)
+            raise OSError("nettoyage du compagnon interrompu")
+        return unlink_reel(self, *args, **kwargs)
+
+    with monkeypatch.context() as contexte:
+        contexte.setattr(Path, "unlink", echec_compagnon_provisoire)
+        publication = await client.get(f"{chemin}/pdf")
+    assert publication.status_code == 200, publication.text
+    assert len(echecs) == 1
+    fichier = Path(publication.json()["pdf_path"])
+    contenu = fichier.read_bytes()
+    preuve = invoices._preuve_pdf(fichier)
+    contenu_preuve = preuve.read_bytes()
+
+    passe = "Passphrase-test-publication"
+    sauvegarde = await client.post("/api/data/backup", json={"password": passe})
+    assert sauvegarde.status_code == 200, sauvegarde.text
+    archive = tmp_path / "sauvegarde.tar.gz"
+    chiffree = Path(settings.data_dir) / "backups" / f"{sauvegarde.json()['backup_name']}.tar.gz.enc"
+    decrypt_backup_archive(chiffree, archive, passe)
+    with tarfile.open(archive, "r:gz") as tar:
+        membre_preuve = str(preuve.relative_to(settings.data_dir))
+        assert tar.getmember(membre_preuve).islnk()
+    profil.name = "Camille Après"
+    restauration = await client.post(
+        f"/api/data/restore/{sauvegarde.json()['backup_name']}?confirm=true", json={"password": passe},
+    )
+    assert restauration.status_code == 200, restauration.text
+    assert preuve.exists(), "Le compagnon final a disparu après restauration"
+    assert preuve.read_bytes() == contenu_preuve
+    assert fichier.read_bytes() == contenu
+    assert invoices._meme_fichier(echecs[0], preuve)
+    assert invoices._meme_fichier(Path(str(echecs[0]).removesuffix(".therese.json")), fichier)
+
+    reprise = await client.get(f"{chemin}/{voie}")
+    assert reprise.status_code == 200, reprise.text
+    assert reprise.json()["pdf_path"] == str(fichier)
+    assert (await client.get(f"{chemin}/pdf")).status_code == 200
+    texte = PdfReader(fichier).pages[0].extract_text()
+    assert "Camille Avant" in texte and "Camille Après" not in texte
+    assert ("Payée" if edition else "Envoyée") in texte
+    if edition:
+        assert original.read_bytes() == contenu_original
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("alteration", ["pdf_remplace", "preuve_modifiee"])
 async def test_reprise_ne_certifie_pas_un_fichier_etranger_ou_une_preuve_alteree(
     client, monkeypatch, tmp_path, alteration

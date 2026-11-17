@@ -84,3 +84,106 @@ def test_chaque_colonne_absente_preserve_toutes_les_valeurs_existantes(tmp_path,
         assert connexion.execute("SELECT " + ", ".join(colonnes) + " FROM invoices").fetchone() == attendu
         _ensure_invoice_client_snapshot(connexion)
         assert connexion.execute("SELECT " + ", ".join(colonnes) + " FROM invoices").fetchone() == attendu
+
+
+def test_interruption_avant_remplissage_reprend_au_demarrage(tmp_path, monkeypatch):
+    from app.models import database
+
+    chemin = tmp_path / "interrompue.db"
+    with closing(sqlite3.connect(chemin)) as connexion:
+        connexion.executescript("""
+            CREATE TABLE contacts (
+                id TEXT PRIMARY KEY, first_name TEXT, last_name TEXT,
+                company TEXT, email TEXT, phone TEXT, address TEXT
+            );
+            CREATE TABLE invoices (
+                id TEXT PRIMARY KEY, contact_id TEXT, currency TEXT,
+                client_company TEXT, client_email TEXT, client_phone TEXT
+            );
+            INSERT INTO contacts VALUES
+                ('c', 'Nom', 'Actuel', 'Société actuelle', 'actuel@example.test',
+                 '0123456789', 'Adresse actuelle');
+            INSERT INTO invoices VALUES
+                ('i', 'c', 'EUR', 'Société historique', NULL, '');
+        """)
+
+    colonnes_avant_interruption = []
+
+    class ConnexionInterrompue(sqlite3.Connection):
+        def execute(self, sql, parameters=()):
+            if sql.startswith("UPDATE invoices SET client_"):
+                colonnes_avant_interruption.extend(
+                    ligne[1] for ligne in super().execute("PRAGMA table_info(invoices)")
+                )
+                raise sqlite3.OperationalError("interruption avant le remplissage")
+            return super().execute(sql, parameters)
+
+    with monkeypatch.context() as contexte:
+        contexte.setattr(database, "db_connect", lambda path: sqlite3.connect(path, factory=ConnexionInterrompue))
+        with pytest.raises(sqlite3.OperationalError, match="interruption avant le remplissage"):
+            database.apply_adhoc_migrations(chemin)
+
+    # Le redémarrage ouvre une nouvelle connexion, comme init_db en production.
+    database.apply_adhoc_migrations(chemin)
+    with closing(sqlite3.connect(chemin)) as connexion:
+        resultat = connexion.execute(
+            "SELECT client_name, client_address, client_company, client_email, client_phone FROM invoices"
+        ).fetchone()
+    assert {"client_name", "client_address"} <= set(colonnes_avant_interruption)
+    assert resultat == ("Nom Actuel", "Adresse actuelle", "Société historique", None, "")
+
+
+@pytest.mark.parametrize("chiffree", [False, True])
+@pytest.mark.parametrize("phase", ["apres_premier_alter", "avant_remplissage"])
+def test_interruption_annule_les_colonnes_ajoutees(tmp_path, monkeypatch, chiffree, phase):
+    from app.models import database
+
+    chemin = tmp_path / "base.db"
+    with closing(sqlite3.connect(chemin)) as connexion:
+        connexion.executescript("""
+            CREATE TABLE contacts (
+                id TEXT PRIMARY KEY, first_name TEXT, last_name TEXT,
+                company TEXT, email TEXT, phone TEXT, address TEXT
+            );
+            CREATE TABLE invoices (
+                id TEXT PRIMARY KEY, contact_id TEXT, currency TEXT, client_company TEXT
+            );
+            INSERT INTO contacts VALUES ('c', 'Nom', 'Actuel', 'Autre société', '', '', 'Adresse actuelle');
+            INSERT INTO invoices VALUES ('i', 'c', 'EUR', 'Société historique');
+        """)
+    if chiffree:
+        database.ensure_db_encrypted(chemin)
+
+    connecter = database.db_connect
+
+    class ConnexionInterrompue:
+        def __init__(self, connexion):
+            self.connexion = connexion
+
+        def __getattr__(self, nom):
+            return getattr(self.connexion, nom)
+
+        def execute(self, sql, *args):
+            if phase == "avant_remplissage" and sql.startswith("UPDATE invoices SET client_"):
+                raise RuntimeError("interruption simulée")
+            resultat = self.connexion.execute(sql, *args)
+            if phase == "apres_premier_alter" and sql.startswith("ALTER TABLE invoices ADD COLUMN client_"):
+                raise RuntimeError("interruption simulée")
+            return resultat
+
+    with monkeypatch.context() as contexte:
+        contexte.setattr(database, "db_connect", lambda path: ConnexionInterrompue(connecter(path)))
+        with pytest.raises(RuntimeError, match="interruption simulée"):
+            database.apply_adhoc_migrations(chemin)
+
+    with closing(connecter(chemin)) as connexion:
+        colonnes = {ligne[1] for ligne in connexion.execute("PRAGMA table_info(invoices)")}
+    assert "client_name" not in colonnes
+    assert "client_address" not in colonnes
+
+    database.apply_adhoc_migrations(chemin)
+    with closing(connecter(chemin)) as connexion:
+        resultat = connexion.execute(
+            "SELECT client_name, client_address, client_company FROM invoices"
+        ).fetchone()
+    assert resultat == ("Nom Actuel", "Adresse actuelle", "Société historique")
