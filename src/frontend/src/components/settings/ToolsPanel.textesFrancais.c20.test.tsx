@@ -59,7 +59,7 @@ describe('Textes des connecteurs, cycle 20', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Supprimer Agenda' }));
     const dialogue = screen.getByRole('dialog', { name: 'Confirmer la suppression du connecteur' });
     expect(within(dialogue).getByRole('heading')).toHaveTextContent('Supprimer Agenda ?');
-    expect(dialogue).toHaveAccessibleDescription('Supprimer Agenda ?');
+    expect(dialogue).toHaveAccessibleDescription('Supprimer Agenda ? Cette action est irréversible.');
     expect(api.deleteMCPServer).not.toHaveBeenCalled();
     fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));
     await waitFor(() => expect(api.deleteMCPServer).toHaveBeenCalledWith('agenda-test'));
