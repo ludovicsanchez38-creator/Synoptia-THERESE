@@ -1,10 +1,12 @@
 """Un résultat de banc ne prouve pas l'absence de troncature sans journal."""
 
+import asyncio
 import importlib.util
 import json
 import os
 import runpy
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -13,7 +15,8 @@ import pytest
 @pytest.mark.parametrize(
     ("journal_lu", "troncatures", "attendu"),
     [(False, [], 1), (None, [], 1), (True, [], 0),
-     (True, ["truncated = 0"], 0), (True, ["truncated = 42"], 1)],
+     (True, ["truncated = 0"], 0), (True, ["truncated = 42"], 1),
+     (True, ["truncated = 0; truncated = 42"], 1)],
 )
 def test_verdict_exige_un_journal_lu(tmp_path, journal_lu, troncatures, attendu):
     banc = runpy.run_path(str(Path(__file__).resolve().parents[1] / "scripts/banc_ollama_r4.py"))
@@ -43,6 +46,8 @@ def banc_local(tmp_path, monkeypatch):
     banc = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(banc)
     monkeypatch.setattr(banc, "ROOT", tmp_path)
+    monkeypatch.setattr(banc, "DELAI_JOURNAL", 0.06, raising=False)
+    monkeypatch.setattr(banc, "DELAI_DEMARRAGE", 0.06, raising=False)
     return banc
 
 
@@ -50,6 +55,21 @@ def position_journal(banc, journal):
     # Permet le rejeu du même scénario sur la base qui ne relevait que stat().
     relever = getattr(banc, "relever_journal", lambda fichier: fichier.stat())
     return relever(journal)
+
+
+def resultat_valide(appel, preuve):
+    return {
+        "preuve_journal_v": 2,
+        "appels": [appel],
+        "tours": [
+            {"evenements": [{"type": "text", "content": "Camille"}]},
+            {"evenements": [{"type": "tool_result", "content": "[list_calendar_events]"},
+                            {"type": "text", "content": "Ton agenda est vide."}]},
+        ],
+        "selection": [[], ["list_calendar_events"]],
+        "charges_verifiees": [{"profil_entier": True}],
+        **preuve,
+    }
 
 
 @pytest.fixture
@@ -84,6 +104,20 @@ def test_journal_ne_lit_que_la_passe_courante(tmp_path, banc_local):
         "journal_serveur_lu": True,
         "troncatures": ["truncated = 0", "truncating input prompt"],
     }
+
+
+def test_alerte_reste_rouge_meme_avec_compteur_zero(tmp_path, banc_local, flux_journal):
+    journal, ecrire = flux_journal
+    position = position_journal(banc_local, journal)
+    requete = "/api/chat?banc_r4=alerte"
+    alerte = f'request="{requete}" stop processing: truncating input prompt; truncated = 0'
+    ecrire(alerte + f'\n[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{requete}"\n')
+    preuve = banc_local.lire_troncatures(journal, position, requete)
+    assert preuve["journal_serveur_lu"] is True
+    resultat = resultat_valide({"prompt_eval_count": 100, "journal_serveur_lu": True}, preuve)
+
+    assert banc_local.enregistrer_verdict(resultat, tmp_path) == 1
+    assert resultat["troncatures_effectives"] == [alerte]
 
 
 @pytest.mark.parametrize("incident", ["absent", "rotation", "raccourci", "exterieur"])
@@ -517,3 +551,155 @@ async def test_observation_restaure_les_hooks_si_le_flux_echoue(tmp_path, banc_l
                 pass
         assert client.event_hooks["request"] is precedents
         assert appel["journal_serveur_lu"] is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("natif", [False, True])
+@pytest.mark.parametrize("trace", ["complete", "sans_fin", "sans_recu", "silence"])
+async def test_observation_attend_les_deux_traces_apres_le_flux(banc_local, flux_journal, trace, natif):
+    from app.services.providers.base import LLMConfig, LLMProvider
+    from app.services.providers.ollama import OllamaProvider
+
+    journal, ecrire = flux_journal
+    journal.natif = natif
+    boucle = asyncio.get_running_loop()
+    rappels = []
+
+    def transport(request):
+        chemin = request.url.raw_path.decode()
+        prefixe = 'slot      release: id  0 | task 77 | ' if natif else f'request="{chemin}" '
+        if trace not in {"sans_fin", "silence"}:
+            rappels.append(boucle.call_later(0.01, ecrire,
+                f'{prefixe}stop processing: truncated = 0\n'))
+        if trace not in {"sans_recu", "silence"}:
+            rappels.append(boucle.call_later(0.02, ecrire,
+                f'[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{chemin}"\n'))
+        return httpx.Response(200, json={"message": {"content": "Camille"}, "done": True,
+                                        "prompt_eval_count": 100, "eval_count": 1})
+
+    try:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+            fournisseur = OllamaProvider(LLMConfig(LLMProvider.OLLAMA, "fictif"), client)
+            hooks = client.event_hooks["request"]
+            appel = {}
+
+            async def consommer():
+                return [e async for e in banc_local.observer_flux_journal(
+                    OllamaProvider._stream_request, fournisseur, banc_local.ADRESSE,
+                    "fictif", {}, appel, journal)]
+
+            evenements = await asyncio.wait_for(consommer(), timeout=0.5)
+            assert any(e.type == "done" for e in evenements)
+            assert client.event_hooks["request"] is hooks
+            assert appel["journal_serveur_lu"] is (trace == "complete")
+    finally:
+        for rappel in rappels:
+            rappel.cancel()
+
+
+@pytest.mark.parametrize("incident", [
+    "aucun", "alerte", "autre_requete", "deux_fins", "sans_fin", "sans_recu", "port_occupe",
+])
+def test_achever_recette_va_jusqu_au_verdict_avec_les_traces_natives(tmp_path, banc_local, monkeypatch, incident):
+    """Le vrai appelant, le lanceur, la capture et le verdict ; aucun processus LLM."""
+    from app.services.providers.base import LLMConfig, LLMProvider
+    from app.services.providers.ollama import OllamaProvider
+
+    racine = Path(__file__).resolve().parents[1]
+    script = tmp_path / "scripts/achever_recette_r4.py"
+    script.parent.mkdir()
+    script.write_bytes((racine / "scripts/achever_recette_r4.py").read_bytes())
+    logs = tmp_path / ".recette-r4/logs"
+    logs.mkdir(parents=True)
+    (tmp_path / ".recette-r4/models").mkdir()
+    monkeypatch.setattr(banc_local, "BANC", tmp_path / ".recette-r4")
+    portes = {
+        "avant-portes.log": ("avant", ["autonome", "mypy", "tsc", "ruff", "eslint"]),
+        "avant-rejeu-portes.log": ("avant", ["pytest"]),
+        "apres-front-portes.log": ("apres", ["autonome"]),
+        "apres-statique.log": ("apres", ["tsc", "ruff", "eslint"]),
+        "apres-portes.log": ("apres", ["pytest"]),
+    }
+    for fichier, (phase, noms) in portes.items():
+        (logs / fichier).write_text("".join(f"{phase} {nom} : 0\n" for nom in noms))
+    lecture, ecriture = os.pipe()
+    terminaisons = []
+    serveur = SimpleNamespace(pid=424242, stdout=os.fdopen(lecture, "rb"))
+    serveur.wait = lambda **_kw: 0
+
+    def demarrer(commande, **options):
+        assert commande == ["ollama", "serve"]
+        assert options["stdout"] == banc_local.subprocess.PIPE
+        assert options["stderr"] == banc_local.subprocess.STDOUT
+        assert options["start_new_session"] is True
+        assert options["env"]["OLLAMA_HOST"] == "127.0.0.1:11435"
+        assert options["env"]["OLLAMA_NUM_PARALLEL"] == "1"
+        assert options["env"]["OLLAMA_DEBUG"] == "1"
+        assert options["env"]["OLLAMA_MODELS"] == str(tmp_path / ".recette-r4/models")
+        os.write(ecriture, b'listen tcp: bind: address already in use\n' if incident == "port_occupe" else
+                 b'time=fictif level=INFO msg="Listening on 127.0.0.1:11435 (version fictive)"\n')
+        return serveur
+
+    async def mesurer_factice(journal):
+        position = banc_local.relever_journal(journal)
+
+        def transport(request):
+            chemin = request.url.raw_path.decode()
+            diagnostic = 'truncating input prompt; ' if incident == "alerte" else 'n_tokens = 7235, '
+            fin = f'slot      release: id  0 | task 77 | stop processing: {diagnostic}truncated = 0\n'
+            traces = '' if incident == "sans_fin" else fin
+            if incident != "sans_recu":
+                traces += f'[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "{chemin}"\n'
+            if incident == "autre_requete":
+                traces += '[GIN] date fictive | 200 | 1s | 127.0.0.1 | POST "/api/chat?banc_r4=autre"\n'
+            if incident == "deux_fins":
+                traces += fin.replace('task 77', 'task 78')
+            os.write(ecriture, traces.encode())
+            return httpx.Response(200, json={"message": {"content": "Camille"}, "done": True,
+                                            "prompt_eval_count": 100, "eval_count": 1})
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+            fournisseur = OllamaProvider(LLMConfig(LLMProvider.OLLAMA, "fictif"), client)
+            appel = {}
+            async for event in banc_local.observer_flux_journal(
+                OllamaProvider._stream_request, fournisseur, banc_local.ADRESSE,
+                "fictif", {}, appel, journal
+            ):
+                if event.type == "done":
+                    appel["prompt_eval_count"] = event.input_tokens
+        resultat = resultat_valide(appel, banc_local.lire_troncatures(journal, position))
+        return banc_local.enregistrer_verdict(resultat, tmp_path / ".recette-r4/banc-apres")
+
+    def appeler(commande, **options):
+        if commande[1] == str(tmp_path / "scripts/banc_ollama_r4.py"):
+            return banc_local.lancer(SimpleNamespace(phase="apres", code=None, journal_fd=None))
+        if "--enfant" in commande:
+            fd = int(commande[commande.index("--journal-fd") + 1])
+            assert options["pass_fds"] == (fd,)
+            return banc_local.mesurer(SimpleNamespace(
+                journal_fd=fd, journal_natif="--journal-natif" in commande,
+            ))
+        # Les portes de l'appelant sont simulées, jamais lancées.
+        return 0
+
+    monkeypatch.setattr(banc_local.subprocess, "Popen", demarrer)
+    monkeypatch.setattr(banc_local.subprocess, "call", appeler)
+    monkeypatch.setattr(banc_local.os, "killpg", lambda pid, sig: terminaisons.append((pid, sig)))
+    monkeypatch.setattr(banc_local, "mesurer_capture", lambda _args, journal: asyncio.run(mesurer_factice(journal)))
+    try:
+        if incident == "port_occupe":
+            with pytest.raises(RuntimeError, match="ne s’est pas déclaré prêt"):
+                runpy.run_path(str(script), run_name="__main__")
+            assert not (tmp_path / ".recette-r4/banc-apres/resultat.json").exists()
+        else:
+            with pytest.raises(SystemExit) as sortie:
+                runpy.run_path(str(script), run_name="__main__")
+            code = 0 if incident == "aucun" else 1
+            assert sortie.value.code == code
+            assert json.loads((tmp_path / ".recette-r4/banc-apres/resultat.json").read_text())["vert"] is (code == 0)
+            assert json.loads((logs / "banc-apres-code.json").read_text()) == {"code": code}
+        assert terminaisons and terminaisons[0][0] == serveur.pid
+        assert serveur.stdout.closed
+    finally:
+        serveur.stdout.close()
+        os.close(ecriture)
