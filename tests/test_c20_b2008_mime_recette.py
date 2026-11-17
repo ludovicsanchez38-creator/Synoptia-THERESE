@@ -1,5 +1,6 @@
 """Exercer la route de recette avec Playwright simulé, sans navigateur ni réseau."""
 
+import mimetypes
 import runpy
 import shutil
 import sys
@@ -56,6 +57,20 @@ def test_ressources_statiques_ont_un_type_mime(serveur_recette, nom, mime):
     servir(route)
     route.abort.assert_not_called()
     route.fulfill.assert_called_once_with(body=b"ressource fictive", content_type=mime)
+
+
+@pytest.mark.parametrize(("nom", "mime"), [
+    ("police.woff2", "font/woff2"), ("police.woff", "font/woff"),
+])
+def test_polices_sans_table_mime_systeme(serveur_recette, monkeypatch, nom, mime):
+    # Cette instance ne contient que les types intégrés à Python, sans table système.
+    monkeypatch.setattr(mimetypes, "_db", mimetypes.MimeTypes(filenames=()))
+    dist, servir = serveur_recette
+    (dist / nom).write_bytes(b"police fictive")
+    route = Mock(request=SimpleNamespace(url=f"http://recette.test/{nom}"))
+    servir(route)
+    route.abort.assert_not_called()
+    route.fulfill.assert_called_once_with(body=b"police fictive", content_type=mime)
 
 
 @pytest.mark.parametrize("url", [
