@@ -5,7 +5,7 @@ Exécution du 16 novembre 2026 dans l’arbre `gpt-c20-divers-ui`, branche
 (`v0.83.0-alpha-137-g4dfc79d1`). Les candidats ont été examinés dans l’ordre demandé.
 
 Bilan initial : trois candidats confirmés, cinq rejetés, une règle à trancher.
-La passe 4 retire B-1991 et le classe `regle_a_trancher`. Aucun commit,
+La passe 4 retire B-1991 et la passe 5 retire B-1989 ; tous deux deviennent `regle_a_trancher`. Aucun commit,
 aucun `git add`, aucun push. Les tests et correctifs restent dans cet arbre.
 Les rouges ci-dessous ont été exécutés avant leur correction respective.
 
@@ -16,7 +16,7 @@ est celui du cas dans le fichier indiqué.
 
 | ID | Verdict | Test (chemin::nom) | Rouge observé, en remplacement du commit du rouge | Commit du correctif |
 | --- | --- | --- | --- | --- |
-| B-1989 | `confirme` | `tests/test_invoice_pdf_francais.py::test_b1989_un_statut_inconnu_reste_en_francais_dans_le_pdf` | `AssertionError: assert 'Statut inconnu' in 'Document généré par THÉRÈSE - 16/11/2026\nPage 1\nFACTURE\nN° FACT-2026-324\nÉMETTEUR\nDESTINATAIRE\nÉmetteur de test...vrement : 40 €.\nEscompte pour paiement anticipé : néant.\nMentions légales : TVA incluse selon les taux en vigueur.\n'` ; 1 échec, 0 succès | non commité |
+| B-1989 | `regle_a_trancher` | Trois reproductions de la passe 5, exécutées puis retirées avec le candidat | P1 multiligne confirmé : `reportlab.platypus.doctemplate.LayoutError` ; preuves ci-dessous | retiré du lot, reporté |
 | B-1991 | `regle_a_trancher` | Six reproductions de la passe 4, exécutées puis retirées avec le candidat | Constats 1 à 6 du relecteur confirmés : 14 échecs avant retrait ; preuves ci-dessous | retiré du lot, reporté |
 | B-1995 | `confirme` | `src/frontend/src/components/calendar/CalendarPanel.da.test.tsx::B-1995 : le refus brut de Google est expliqué en français avec les données conservées` | `Error: expect(element).toHaveTextContent()` ; attendu : `L’API Google Calendar n’est pas activée.` ; reçu : `Google Calendar API has not been used in project 42 before or it is disabled.Données conservées.Réessayer` ; 1 échec, 0 succès, 28 cas exclus par le filtre | non commité |
 | B-2000 | `rejete` | `src/frontend/src/components/board/BoardPanel.souverainOllamaCloud.b1172.test.tsx::seul un modèle Cloud installé : le mode souverain ne se déclare pas disponible` | Aucun rouge : le mode actif reste Cloud, déjà annoncé avant confirmation | sans changement |
@@ -26,11 +26,18 @@ est celui du cas dans le fichier indiqué.
 | B-2007 | `rejete` | `src/frontend/src/components/chat/ChatInput.modeles.c18m1.test.tsx::Mistral Large 4 se voit en préversion, et le réglage d’effort n’est pas appliqué` | Aucun rouge : le libellé suit l’effort effectivement transmis par le moteur | sans changement |
 | B-2028 | `regle_a_trancher` | `src/frontend/src/components/onboarding/SecurityStep.deplieVisible.b1344.test.tsx::déplier le dernier risque l’amène sous les yeux` ; critère en discussion dans `tests/rendering/c22a.spec.ts:35` | Aucun rouge : pas de preuve d’un contenu effectivement masqué par ce pixel de tolérance | sans changement |
 
+**B-1989 : retiré du lot, reporté.** La passe 5 ci-dessous remplace les verdicts
+antérieurs de ce candidat. Preuve du relecteur : « Un statut historique multiligne
+peut empêcher la génération du PDF ». Le constat complet est recopié dans cette passe.
+
 **B-1991 : retiré du lot, reporté.** La passe 4 ci-dessous remplace les verdicts
 antérieurs de ce candidat. Preuve : les six constats du relecteur sur l’alias,
 le cache historique, les notes et la provenance, reproduits avant le retrait.
 
 ### B-1989 : repli du statut dans le PDF
+
+Historique avant retrait : le correctif et ses tests décrits ci-dessous ont été
+retirés en passe 5 ; aucune correction B-1989 ne reste dans le lot.
 
 Le nouveau test génère un vrai PDF dans `tmp_path`, puis en extrait le texte.
 Le rouge porte sur l’absence de « Statut inconnu », avec le repli anglais en place.
@@ -41,6 +48,8 @@ Chemin de production vérifié avant correction : la route
 `src/backend/app/routers/invoices.py:1364` appelle `InvoicePDFGenerator.generate_invoice_pdf` ;
 le générateur appelle `libelle_statut_pdf` dans `src/backend/app/services/invoice_pdf.py:478`.
 Le fichier corrigé est donc celui qui produit la facture servie par l’application.
+
+Limite des PDF déjà archivés : à statut historique inchangé, la route vérifie puis ressert l’archive sans appeler le générateur ; un ancien libellé comme « Partiellement paye » peut subsister, et l’original doit être préservé.
 
 L’ancienne assertion de `test_les_statuts_sont_traduits_et_accordes`, ligne 37,
 imposait précisément « Custom status ». Elle a été remplacée par une égalité
@@ -1121,3 +1130,199 @@ Aucun réseau, fournisseur LLM, accès à `~/.therese` ou `.app-loop/`, ni ouver
 des ports réservés. Aucune commande `rm`, aucun `git add`, commit, rebase, dépôt
 annexe ou bundle. Tous les changements de la passe restent non indexés et
 non commités pour l’orchestrateur.
+
+## Remédiation de la relecture, passe 5
+
+Exécution du 17 novembre 2026. La consigne finale de l’orchestrateur prime :
+retrait complet du candidat portant le P1, sans nouveau correctif de production ;
+pour les P2, seule la phrase manquante du bilan est corrigée. Les résultats des
+passes précédentes restent l’historique, sans valoir validation du candidat retiré.
+
+### Constat 1 — P1 : B-1989 retiré du lot, reporté
+
+Verdict final : `regle_a_trancher`. Constat du relecteur recopié :
+
+> P1 - invoice_pdf.py:495 - Un statut historique multiligne peut empêcher la génération du PDF - Avec `status = "x" + "\n" * 60 + "y"`, la génération complète réussit sur le socle mais lève `LayoutError` avec le lot : `_texte_pdf` transforme chaque saut de ligne en `<br/>` et la ligne du tableau devient trop haute pour une page. Reproduction effectuée en mémoire - Rendre ces sauts sans créer une ligne de tableau indivisible trop haute, puis ajouter un test de génération PDF avec ce statut.
+
+La reproduction temporaire a été écrite et exécutée seule avant le retrait.
+Ligne d’échec recopiée :
+
+```text
+E                       reportlab.platypus.doctemplate.LayoutError: Flowable <Table@0x7BBF40B07490 1 rows x 2 cols(tallest row 742)> with cell(0,0) containing
+```
+
+La cellule mesure 742 points pour un cadre disponible de 637,13 points.
+Le retrait supprime les deux changements de production B-1989 : le préfixe
+« Statut inconnu » et l’appel à `_texte_pdf` pour le statut. Aucun changement
+de pagination, de police ou de normalisation n’est ajouté. La même reproduction
+passe ensuite : 1 succès dans `/tmp/divers-ui-r5-c1-vert.xml`.
+
+Les anciens tests B-1989, les cas de la première relecture, l’import `pytest`
+devenu inutile et les trois reproductions de cette passe sont retirés avec le
+candidat. L’assertion du socle sur « Custom status » est rétablie exactement.
+Les deux fichiers suivants ont zéro écart avec `c20/integration`, vérifié avec
+`git diff --exit-code c20/integration -- <ces deux chemins>` :
+
+- `src/backend/app/services/invoice_pdf.py`
+- `tests/test_invoice_pdf_francais.py`
+
+Le retrait applique uniquement l’inverse du diff de ces deux fichiers, avec
+`git apply --reverse`, sans indexation ni recopie de fichier depuis une branche.
+Le patch complet est conservé dans `/tmp/divers-ui-r5-retrait-b1989.patch` ;
+les seuls ajouts temporaires de reproduction sont dans
+`/tmp/divers-ui-r5-reproductions.patch`, applicable à l’état avant retrait.
+
+### Réserves acceptées
+
+**Constat 2 — P2 : accent décomposé, laissé en réserve.** Constat recopié :
+
+> P2 - invoice_pdf.py:116 - Le correctif ne conserve pas tous les accents du statut historique dans le PDF - Avec la police de repli Helvetica, le statut `À ve\u0301rifier`, dont l’accent est décomposé, donne `À ve■rifier` dans le texte extrait du PDF généré en mémoire. Les tests couvrent seulement des accents composés - Normaliser une copie du texte pour l’affichage et tester l’extraction du PDF, en conservant la valeur enregistrée.
+
+La reproduction force Helvetica, extrait le PDF et vérifie la valeur source
+inchangée avant l’assertion sur le texte. Ligne d’échec recopiée :
+
+```text
+E       AssertionError: assert 'À vérifier' in 'Document généré par THÉRÈSE - 17/11/2026\nPage 1\nFACTURE\nN° FACT-2026-324\nÉMETTEUR\nDESTINATAIRE\nÉmetteur de test...vrement : 40 €.\nEscompte pour paiement anticipé : néant.\nMentions légales : TVA incluse selon les taux en vigueur.\n'
+```
+
+Une normalisation Unicode ajouterait un comportement et un import au générateur,
+au-delà d’une ligne de texte évidente ; elle contreviendrait aussi au retrait
+complet de B-1989. Aucun correctif n’est ajouté et aucune résolution de ce P2
+n’est revendiquée. Le rouge documente cette réserve, hors des portes après retrait.
+
+### Constat 3 — P2 : limite des archives documentée
+
+Une phrase est ajoutée dans le bilan B-1989 : à statut historique inchangé,
+la route vérifie puis ressert l’archive, sans appliquer le changement de libellé
+du générateur. Le texte « Partiellement paye » peut donc rester visible ;
+l’original doit être préservé. Cette limite demeure après le retrait du candidat.
+
+La reproduction temporaire crée une archive attestée avec cet ancien libellé,
+puis appelle les routes `pdf` et `pdf-ouverture` avec le même statut historique.
+Elle vérifie l’absence d’appel au générateur, le même chemin, les octets du PDF
+et de sa preuve inchangés, le statut source conservé et le libellé extrait.
+Le rouge porte ensuite uniquement sur la phrase manquante du bilan :
+
+```text
+E       AssertionError: Le bilan ne documente pas la limite des PDF déjà archivés
+```
+
+Après ajout de la phrase, le test passe seul : 1 succès dans
+`/tmp/divers-ui-r5-c3-vert.xml`. Il est retiré avec le candidat, conformément au
+retour exact de ses tests au socle ; aucune nouvelle couverture permanente de
+B-1989 n’est conservée. Aucun PDF existant ni aucune route n’a été modifié.
+
+### Preuves et appelants relus
+
+Les trois reproductions ont été exécutées séparément dans
+`tests/test_invoice_pdf_francais.py`, avant toute modification de production
+ou du bilan :
+
+| Constat | Test temporaire | Rouge : échecs / erreurs / succès |
+| --- | --- | --- |
+| 1 | `test_r5_c1_statut_historique_multiligne_genere_un_pdf` | 1 / 0 / 0 |
+| 2 | `test_r5_c2_accent_decompose_restitue_sans_modifier_la_valeur` | 1 / 0 / 0 |
+| 3 | `test_r5_c3_limite_documentee_et_archive_historique_preservee` | 1 / 0 / 0 |
+
+Les XML `/tmp/divers-ui-r5-c1-rouge.xml`, `/tmp/divers-ui-r5-c2-rouge.xml`
+et `/tmp/divers-ui-r5-c3-rouge.xml` ont été lus : 3 échecs attendus,
+0 erreur, 0 succès, 0 ignoré. Les deux XML verts ont également été lus.
+
+Après retrait, les appelants sont relus : `InvoicePDFGenerator.generate_invoice_pdf`
+compose toujours le bloc d’information (`invoice_pdf.py:933`) ; la publication
+attestée (`invoices.py:609`), la nouvelle édition (`:630`) et la génération
+d’un aperçu (`:1711`) gardent le contrat du socle. L’archive de même statut
+reste servie par `invoices.py:1585-1586` et `:1763-1775` ; son choix est fixé
+par `_numero_pdf_pour_statut` (`:510-514`). Ce routeur appartient au socle et
+a uniquement été lu. Aucun constat n’exige ici de réintégration ni de rebase.
+
+Les deux auxiliaires existants de la passe 2 ont été relus et réutilisés :
+réveil du sélecteur asyncio et écriture du JUnit avant le `os._exit` du conftest.
+Ils ne modifient aucune assertion ni aucun résultat. Les données des tests
+sont isolées dans des répertoires temporaires explicitement fournis à
+`THERESE_DATA_DIR`. Chaque reproduction utilise la même commande que la porte
+backend ci-dessous, avec son seul nom de test et son XML dédié.
+
+### Portes après retrait
+
+| Porte | Périmètre | Réussis | Échecs / erreurs | Ignorés |
+| --- | --- | ---: | ---: | ---: |
+| Pytest | 13 fichiers PDF, factures et calendrier voisins ; XML relu | 162 | 0 / 0 | 0 |
+| Ruff | `src/backend tests`, sans correction automatique | réussi | 0 diagnostic | sans objet |
+| Vitest | 9 fichiers du lot restant et voisins ; 3 workers maximum ; JSON relu | 74 | 0 | 0 |
+| Node | Contrat de simulation de la migration, sans navigateur ni serveur | 1 | 0 | 0 |
+| TypeScript | `npx tsc --noEmit` | réussi | 0 diagnostic | sans objet |
+| ESLint | `npm run lint` | réussi | 0 erreur, 27 avertissements | sans objet |
+
+Le XML `/tmp/divers-ui-r5.xml` a été lu avant Ruff : 162 cas, durée
+56,678 secondes. Il couvre notamment les quatre tests PDF du socle, les
+32 tests des PDF émis, la réouverture, les identités et les conditions de paiement,
+ainsi que les trois cas du contrat Google B-1995. Le JSON
+`/tmp/divers-ui-r5-front.json` confirme 74 succès dans neuf fichiers.
+ESLint termine avec le code 0 ; ses 27 avertissements ne sont pas corrigés
+hors périmètre. Aucun rouge connu n’a été exclu et aucune suite complète
+n’a été lancée.
+
+Commande backend finale :
+
+```sh
+divers_ui_r5_data="$(mktemp -d /tmp/divers-ui-r5-data-XXXXXX)"
+THERESE_DATA_DIR="$divers_ui_r5_data" \
+PYTHONPATH=/tmp/divers-ui-r2-harness OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest \
+  tests/test_invoice_pdf_francais.py \
+  tests/test_conditions_de_paiement_pdf.py \
+  tests/test_lot15_pdf_montants.py \
+  tests/test_b1357_mentions_pdf.py \
+  tests/test_c22b_identite_facture.py \
+  tests/test_facture_pdf_ouverture.py \
+  tests/test_b1861_pdf_emis.py \
+  tests/test_b1615_numero_a_lemission.py \
+  tests/test_frontiere_facturation_agenda.py \
+  tests/test_b1995_contrat_erreur_google.py \
+  tests/test_routers_calendar.py \
+  tests/test_regression_facturation_agenda.py \
+  tests/test_routers_invoices.py \
+  -q -p no:cacheprovider -p r2_reports --timeout=120 \
+  --junitxml=/tmp/divers-ui-r5.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Commandes frontend, depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx vitest run \
+  src/components/calendar/CalendarPanel.da.test.tsx \
+  src/components/calendar/CalendarPanel.cycle6.test.tsx \
+  src/components/calendar/CalendarPanel.grok0700.test.tsx \
+  src/components/calendar/calendarErrors.test.ts \
+  src/components/calendar/CalendarPanel.reconnexion.test.tsx \
+  src/components/invoices/InvoiceForm.soumission.test.tsx \
+  src/components/invoices/InvoiceForm.focusAbandon.b2014.test.tsx \
+  src/components/invoices/InvoiceForm.abandonDeSaisie.b1392.test.tsx \
+  src/components/invoices/InvoiceForm.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=json --outputFile=/tmp/divers-ui-r5-front.json
+npm_config_offline=true npx tsc --noEmit
+npm run lint
+```
+
+Le premier lancement du contrat Node échoue avant exécution :
+`ERR_MODULE_NOT_FOUND` pour `@playwright/test`, absent à la racine de cet arbre.
+Le chargeur existant `/tmp/divers-ui-r3-node-loader.mjs` a été relu puis réutilisé :
+il résout la dépendance déjà présente dans le cache local, sans téléchargement
+ni modification du dépôt. Le test passe alors avec cette commande, depuis la
+racine ; aucun navigateur n’est lancé et les adresses restent des données simulées :
+
+```sh
+NODE_OPTIONS='--import=/tmp/divers-ui-r3-node-loader.mjs' \
+  node tests/couverture/couverture-ecran.contrat-migration.test.mjs
+```
+
+La passe modifie uniquement ce bilan et les deux fichiers du retrait B-1989.
+Les autres écarts du lot sont inchangés. `git diff --check` passe ; l’index
+est vide et `HEAD` reste `f60aa805`. Les liens non suivis `.venv` et
+`src/frontend/node_modules`, présents avant cette passe, sont laissés tels quels.
+Aucun réseau, fournisseur LLM, port réservé, accès à `~/.therese` ou `.app-loop/`,
+aucune commande `rm`, aucun `git add`, commit, rebase, dépôt annexe ou bundle.
+Tous les changements restent non indexés et non commités pour l’orchestrateur.

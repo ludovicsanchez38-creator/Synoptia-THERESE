@@ -113,7 +113,7 @@ def libelle_statut_pdf(statut: str, type_document: str) -> str:
     libelle = STATUTS_PDF.get(type_document, {}).get(cle)
     if libelle:
         return libelle
-    return f"Statut inconnu : {statut.strip()}" if cle else "Non renseigné"
+    return cle.replace("_", " ").capitalize() or "Non renseigné"
 
 
 def chemin_pdf_a_ouvrir(dossier: str, numero: str) -> Path:
@@ -492,7 +492,7 @@ class InvoicePDFGenerator:
             invoice_data["due_date"].replace("Z", "")
         ).strftime("%d/%m/%Y")
 
-        status_label = _texte_pdf(libelle_statut_pdf(invoice_data["status"], document_type))
+        status_label = libelle_statut_pdf(invoice_data["status"], document_type)
 
         info_data = [
             [numero_label, invoice_data["invoice_number"]],
