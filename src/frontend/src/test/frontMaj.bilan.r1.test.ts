@@ -65,17 +65,18 @@ describe('Remédiation documentaire du lot front-maj', () => {
     expect(texte).toContain('## Remédiation de la relecture, passe 3');
   });
 
-  it('R4-4 : distingue les passes commitées des changements actuels et clôt les retards intégrés', () => {
+  it('R4-4 : conserve l’état historique reçu en passe 4 et les retards alors intégrés', () => {
     const texte = bilan();
     const introduction = texte.split('## Verdicts et preuves')[0];
     expect(introduction).toContain('État reçu pour la passe 4');
-    const etatActuel = introduction.split('Historique avant les rebases')[0];
-    expect(etatActuel).toContain('passe 3 commitée');
-    expect(etatActuel).toContain('`a498d9d3` et `31e3f98d` sont des ancêtres de HEAD');
-    expect(etatActuel).toContain('retard d’instrumentation');
-    expect(etatActuel).toContain('résolu');
-    expect(etatActuel).toContain('c20/integration');
-    expect(introduction).toContain('« Remédiation de la relecture, passe 4 » décrit le travail actuel');
+    const etatHistorique = introduction.split('État reçu pour la passe 4')[1]
+      ?.split('État reçu pour la passe 3')[0];
+    expect(etatHistorique).toContain('passe 3 commitée');
+    expect(etatHistorique).toContain('`a498d9d3` et `31e3f98d` sont des ancêtres de HEAD');
+    expect(etatHistorique).toContain('retard d’instrumentation');
+    expect(etatHistorique).toContain('résolu');
+    expect(etatHistorique).toContain('c20/integration');
+    expect(introduction).toContain('« Remédiation de la relecture, passe 4 » conserve le récit historique');
     expect(introduction).not.toContain('cette nouvelle ascendance manque encore au lot');
     const passe3 = texte.split('## Remédiation de la relecture, passe 3')[1]
       ?.split('## Remédiation de la relecture, passe 4')[0];
@@ -83,6 +84,53 @@ describe('Remédiation documentaire du lot front-maj', () => {
     expect(etatPasse3).toContain('passe 3 commitée');
     expect(etatPasse3).not.toContain('restent non commités');
     expect(passe3).toContain('VERDICT HISTORIQUE : NO-GO');
+  });
+
+  it('R5-1 : B-1953 est retiré et le blocage de l’accord reste une preuve de report', () => {
+    const texte = bilan();
+    const ligne = texte.split('\n').find((l) => l.startsWith('| B-1953 |'));
+    expect(ligne).toContain('`regle_a_trancher`');
+    expect(ligne).toContain('retiré du lot, reporté');
+    expect(ligne).not.toContain('RFCWizard.capture.b1953.test.tsx');
+    const passe5 = texte.split('## Remédiation de la relecture, passe 5')[1];
+    expect(passe5).toContain('son corps reste bloqué');
+    expect(passe5).toContain('Capturer');
+    expect(passe5).toContain('Aucun nouveau correctif du flux');
+  });
+
+  it('R5-2 : conserve le défaut des clés os-release répétées dans les réserves acceptées', () => {
+    const passe5 = bilan().split('## Remédiation de la relecture, passe 5')[1];
+    const reserves = passe5?.split('### Réserves acceptées')[1]?.split('### ')[0];
+    expect(reserves).toBeDefined();
+    expect(reserves).toContain('linux_distribution.rs:11');
+    expect(reserves).toContain('dernière valeur de chaque clé');
+    expect(reserves).toContain('Code et tests Rust inchangés');
+  });
+
+  it('R5-3 : borne l’état reçu en passe 5 et interdit de présenter la passe 4 comme non commitée', () => {
+    const texte = bilan();
+    const introduction = texte.split('## Verdicts et preuves')[0];
+    const etatRecu = introduction.split('Historique avant les rebases')[0];
+    expect(etatRecu).toContain('État reçu pour la passe 5 : HEAD `bbb715b6`');
+    // Instantané reçu après le rebase de l’orchestrateur ; aucun objet Git requis.
+    expect(etatRecu).toContain('passe 4 commitée');
+    expect(etatRecu).toContain('tests `56c2810e`, correctifs `bbb715b6`');
+    expect(etatRecu).toContain('`c20/integration` pointe sur `87310bad`');
+    for (const ancien of ['0047eb5e', '5e1ca36c', 'e9104455', '2fc424dc', 'e75d0a29']) {
+      expect(etatRecu).not.toContain(ancien);
+    }
+    expect(introduction).toContain('« Remédiation de la relecture, passe 5 » décrit le travail actuel');
+    expect(introduction).not.toContain('« Remédiation de la relecture, passe 4 » décrit le travail actuel');
+    const passe4 = texte.split('## Remédiation de la relecture, passe 4')[1]
+      ?.split('## Remédiation de la relecture, passe 5')[0];
+    const livraisonPasse4 = passe4?.split('### Constats et preuves')[0];
+    expect(livraisonPasse4).toContain('Départ historique');
+    expect(livraisonPasse4).toContain('commitée');
+    expect(livraisonPasse4).toContain('2fc424dc');
+    expect(livraisonPasse4).toContain('e75d0a29');
+    expect(passe4).not.toMatch(/(?:restent|sont)\s+non commités|travail actuel/);
+    expect(texte.match(/^## Remédiation de la relecture, passe \d+$/gm)?.at(-1))
+      .toBe('## Remédiation de la relecture, passe 5');
   });
 
   it('R4-5 : la procédure Linux décrit aussi Ubuntu et ses dérivées sans le mot debian', () => {
