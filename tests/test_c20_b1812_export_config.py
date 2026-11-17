@@ -409,3 +409,20 @@ async def test_export_d_une_preference_json_garde_ses_nombres(client, db_session
     assert json.loads(valeurs["relais_config"]) == {
         "seuil": 0.1, "password": "[REDACTED]", "url": "https://agenda.invalid/dav",
     }
+
+
+@pytest.mark.parametrize("profondeur", [400, 6000])
+def test_preference_json_trop_imbriquee_ne_sort_jamais_brute(profondeur):
+    """Revue de sécurité du 17/11 : un parcours qui déborde ne doit pas rendre la valeur telle quelle."""
+    from app.routers.data import _valeur_de_preference_exportable
+
+    valeur = '{"a":' * profondeur + '{"password":"FAUX-secret"}' + "}" * profondeur
+    sortie = _valeur_de_preference_exportable(Preference(key="relais_config", category="general", value=valeur))
+    assert "FAUX-secret" not in sortie
+
+
+def test_preference_qui_n_est_pas_un_json_sort_telle_quelle():
+    from app.routers.data import _valeur_de_preference_exportable
+
+    for valeur in ("sombre", "{pas du json", "[1, 2"):
+        assert _valeur_de_preference_exportable(Preference(key="theme", category="general", value=valeur)) == valeur
