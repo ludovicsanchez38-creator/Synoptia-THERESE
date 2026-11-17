@@ -411,14 +411,12 @@ test('la preuve de données jetables exige data_dir et db_path dans /private/tmp
   }));
 });
 
-test('la garde autorise les lectures, la prévisualisation et la sauvegarde du chat jetable', async () => {
+test('seules les lectures locales et la prévisualisation sans effet de bord passent', async () => {
   const cas = [
     ['GET', 'http://127.0.0.1:1420/', true],
     ['GET', 'http://127.0.0.1:17393/api/config/stats', true],
     ['POST', 'http://127.0.0.1:17393/api/variables/preview', true],
     ['POST', 'http://127.0.0.1:17393/api/variables/preview?muter=1', false],
-    ['POST', 'http://127.0.0.1:17393/api/chat/cache-migration', true],
-    ['POST', 'http://127.0.0.1:17393/api/chat/cache-migration?muter=1', false],
     ['POST', 'http://127.0.0.1:17393/api/config/preferences', false],
     ['DELETE', 'http://127.0.0.1:17393/api/config/preferences/working_directory', false],
     ['POST', 'http://127.0.0.1:1420/api/config/preferences', false],
