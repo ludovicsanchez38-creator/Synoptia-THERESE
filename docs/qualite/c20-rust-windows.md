@@ -65,6 +65,21 @@ Portes de cette passe, sans suite complète :
 
 Les commandes Windows, les événements, le sidecar et les réponses aux sondes frontend étaient simulés. Les harnais Rust ont été compilés sur macOS : aucune compilation Windows ni recette sur cette plateforme n'a été effectuée.
 
+## Remédiation de la relecture, passe 3
+
+Les deux réserves de la relecture sur les chemins contenant `--` et le délai CIM sont acceptées par l'orchestrateur et restent hors de cette passe. Seul le harnais du test de génération est modifié ; le code de production et les assertions existantes sont inchangés.
+
+Le test `tests/test_c20_relance_sidecar.py::test_generations_des_evenements_et_de_la_commande` a d'abord été lancé seul sur Linux et a échoué à la compilation avec ``AssertionError: error[E0599]: no method named `path` found for reference `&AppHandle` in the current scope``. Après extension du test aux trois configurations simulées, le cas `linux` a reproduit la même ligne d'échec. Le faux `AppHandle` fournit maintenant le résolveur de ressources demandé par la branche Linux et la fausse commande accepte une valeur d'environnement `String`. Les branches `cfg(target_os)` de l'extrait sont sélectionnées dans le harnais pour exécuter les scénarios Linux, macOS et Windows sur le même banc ; l'extrait actuel ne contient pas de branche propre à Windows. Les trois cas conservent les assertions sur les événements et les générations.
+
+L'autre test de relance extrait les fonctions de relance et de terminaison sans branche `target_os`. Le harnais de nettoyage Windows extrait déjà son bloc simulé indépendamment du système, et les tests qui lisent `lib.rs` ont aussi été vérifiés. Ces simulations ont été compilées et exécutées avec `rustc` sous Linux ; elles ne constituent pas une compilation ni une recette natives sur macOS ou Windows.
+
+Portes de cette passe, sans suite complète :
+
+- Test de génération étendu : **3 réussis, 0 échec, 0 erreur, 0 ignoré**, après lecture de `/tmp/rust-windows-r3-cible.xml`.
+- Cinq fichiers de tests autour des harnais, de la coque et du sidecar : **58 réussis, 0 échec, 0 erreur, 0 ignoré**, après lecture de `/tmp/rust-windows-r3-rust.xml`.
+- Porte élargie aux tests de démarrage : **73 réussis, 0 échec, 1 erreur, 0 ignoré**, après lecture de `/tmp/rust-windows-r3.xml`. `tests/test_main_startup.py::TestStartupKeychainSafety::test_startup_profile_preload_skips_decrypt` expire à 120 s dans la fixture `db_session`. Relancé seul avec un profil neuf, puis avec une base neuve en clair, il expire aussi. Une sonde Python indépendante de l'application reproduit le blocage : un `Future` résolu par `call_soon_threadsafe` depuis un thread différé expire. En mode debug, `asyncio` signale `PermissionError: [Errno 1] Operation not permitted` lors de l'écriture dans son socket interne de réveil. La porte élargie reste donc rouge dans cet environnement.
+- `ruff check --no-fix src/backend tests` : **0 erreur**. Aucun fichier frontend n'a été modifié.
+
 ## Portes
 
 - Frontend, `npm run test -- --run --configLoader runner` : **967 fichiers, 4 107 tests réussis, 0 échec**. Le chargeur `runner` évite une écriture dans `node_modules`, qui est un lien vers le dépôt principal. La commande sans cette option échoue avant les tests avec `EPERM` sur `.vite-temp`.
