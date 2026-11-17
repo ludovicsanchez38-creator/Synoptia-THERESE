@@ -250,22 +250,27 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
 def _fin_d_une_url_dans_un_texte(url: str) -> int:
     """Où s'arrête vraiment une URL prise dans une phrase, un lien Markdown ou un tableau.
 
-    Un accent grave ou une barre verticale la ferment ; une parenthèse, un
-    crochet ou une accolade fermants la ferment s'ils n'ont pas été ouverts
-    dans l'URL (`[texte](https://…)`, mais pas `Page_(test)`) ; la ponctuation
-    finale d'une phrase n'en fait pas partie. Ce qui suit reste du texte.
+    Ce qui suit cette fin n'est plus masqué : on ne raccourcit donc que si la
+    suite est manifestement du texte. Un fermant que l'URL n'a pas ouvert
+    (`[texte](https://…)`, mais pas `Page_(test)`), un accent grave ou une
+    barre verticale ne ferment l'URL que si, derrière les fermants, il n'y a
+    plus que de la ponctuation, ou bien une barre verticale ou un accent grave
+    (cellule de tableau, code). Sinon ils font partie de l'URL, et un secret
+    qui les contient part en entier.
     """
-    fin = next((i for i, caractere in enumerate(url) if caractere in "`|"), len(url))
+    fin = len(url)
     fermants = {")": "(", "]": "[", "}": "{"}
     ouverts = dict.fromkeys(fermants.values(), 0)
-    for i, caractere in enumerate(url[:fin]):
+    for i, caractere in enumerate(url):
         if caractere in ouverts:
             ouverts[caractere] += 1
-        elif caractere in fermants:
-            if not ouverts[fermants[caractere]]:
-                fin = i
-                break
+        elif caractere in fermants and ouverts[fermants[caractere]]:
             ouverts[fermants[caractere]] -= 1
+        elif caractere in fermants or caractere in "`|":
+            suite = url[i:].lstrip(")]}")
+            if not suite.strip(".,;:!?") or suite[0] in "`|":
+                fin = i
+            break
     while fin and url[fin - 1] in ".,;:!?":
         fin -= 1
     return fin

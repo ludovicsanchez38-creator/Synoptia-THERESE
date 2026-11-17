@@ -360,10 +360,13 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    compris. Hors identifiants et valeurs masquées, le texte sort caractère
    pour caractère.
 6 bis. Dans un texte, l'URL dont on masque les paramètres s'arrête où elle
-   s'arrête vraiment : avant un accent grave ou une barre verticale, avant une
-   parenthèse, un crochet ou une accolade fermants que l'URL n'a pas ouverts
-   (`[texte](https://…)`, mais pas `Page_(test)`), et avant la ponctuation
-   finale de la phrase. Dans un attribut HTML, `&amp;` sépare les paramètres
+   s'arrête vraiment : avant la ponctuation finale de la phrase, et avant un
+   fermant qu'elle n'a pas ouvert (`[texte](https://…)`, mais pas
+   `Page_(test)`), un accent grave ou une barre verticale, à condition que la
+   suite soit manifestement du texte (plus que de la ponctuation derrière les
+   fermants, ou une cellule de tableau, ou un code). Sinon ces caractères font
+   partie de l'URL et tout est masqué : ce qui suit la fin retenue n'étant
+   plus masqué, on ne raccourcit jamais dans le doute. Dans un attribut HTML, `&amp;` sépare les paramètres
    et une entité numérique (`&#45;`) fait partie de la valeur. Le guillemet
    ouvrant d'un attribut est reconnu même séparé de l'URL par une espace.
 7. Les clés sont masquées comme les valeurs. Deux clés distinctes qui se
@@ -376,11 +379,11 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    première version, quadratique, mettait plus de deux minutes sur 640 000
    caractères ; mesuré ensuite à 0,05 s).
 
-Tests : `tests/test_c20_b1812_export_config.py`, 140 tests dont 122 ajoutés par
+Tests : `tests/test_c20_b1812_export_config.py`, 145 tests dont 127 ajoutés par
 ces passes ; chaque reproduction des relecteurs est rejouée sur les deux
 routes d'export. Rouges constatés avant chaque correctif, dans l'ordre des
 commits : 5, 3, 4, 21, 2, 2, 14, 4, 9, 3, puis 8 (ces huit derniers tirés des sondes d'une huitième relecture interrompue faute de crédits Codex). Six cas de HTML et de texte et quatre
-cas de charge ajoutés par contre-épreuve de l'orchestrateur. 331 tests voisins
+cas de charge ajoutés par contre-épreuve de l'orchestrateur. 336 tests voisins
 de l'export verts ; ruff propre ; mypy du fichier inchangé (23).
 
 Limites connues, non couvertes (chacune demande une URL que les lecteurs
@@ -399,6 +402,9 @@ d'URL ne lisent pas comme l'utilisateur l'entend) :
   le premier `@` part ;
 - un secret passé en paramètre dont le dernier caractère est une ponctuation
   de phrase (`?token=abc!` dans une phrase) : ce dernier caractère reste ;
+  de même un secret qui contient une barre verticale ou un accent grave, ou
+  qui se termine par un fermant suivi de ponctuation : ce qui suit est pris
+  pour du texte ;
 - dans un texte, une URL collée à une adresse e-mail par un caractère de nom
   d'hôte (`https://site.invalid.contact@site.invalid`, espace oubliée) est lue
   comme la RFC la lit : ce qui précède le `@` part ;
