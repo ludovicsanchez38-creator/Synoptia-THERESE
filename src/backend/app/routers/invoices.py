@@ -645,6 +645,13 @@ async def _verifier_absence_pdf_avant_emission(session: AsyncSession, invoice: I
     try:
         chemin_pdf_a_ouvrir(dossier, invoice.invoice_number)
     except FileNotFoundError:
+        preuve = _preuve_pdf(Path(dossier).expanduser() / f"{invoice.invoice_number}.pdf")
+        if preuve.exists() or preuve.is_symlink():
+            raise HTTPException(
+                409,
+                "Un fichier compagnon porte déjà ce numéro. Déplace-le avant d'émettre cette pièce, "
+                "pour conserver les deux documents.",
+            )
         if not _apercus_pdf(dossier, invoice.id, invoice.invoice_number):
             return
     except ValueError as exc:

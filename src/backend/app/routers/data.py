@@ -11,8 +11,9 @@ import asyncio
 import json
 import logging
 import re
+from collections import Counter
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, get_args
 
 from app.config import settings
@@ -1317,19 +1318,8 @@ def _membre_est_sur(dest: str | Path, nom: str) -> bool:
     return cible == racine or cible.is_relative_to(racine)
 
 
-def _membre_attendu(dest: str | Path, member: Any) -> bool:
-    """B-1497 : un membre de sauvegarde est un fichier ou un dossier, sous une
-    entrée que la sauvegarde écrit, sans `..` ni chemin absolu.
-
-    `filter="data"` n'écarte que ce qui sort du dossier des données : un
-    `outputs/../x` ou un lien interne `outputs/t -> ../backups` y écrivait
-    ailleurs que dans les entrées attendues (les autres sauvegardes, dont
-    l'archive de sécurité du retour arrière).
-    """
-    from pathlib import PurePosixPath
-
-    nom = member.name
-    if not (member.isfile() or member.isdir()) or nom.startswith("/") or "\\" in nom:
+def _chemin_d_archive_attendu(dest: str | Path, nom: str) -> bool:
+    if nom.startswith("/") or "\\" in nom:
         return False
     segments = [s for s in PurePosixPath(nom).parts if s != "."]
     if not segments or ".." in segments or segments[0] not in NOMS_D_ARCHIVE:
@@ -1337,14 +1327,50 @@ def _membre_attendu(dest: str | Path, member: Any) -> bool:
     return _membre_est_sur(dest, nom)
 
 
+def _membre_attendu(dest: str | Path, member: Any) -> bool:
+    """B-1497 : fichier ou dossier sous une entrée attendue, sans remontée."""
+    return (member.isfile() or member.isdir()) and _chemin_d_archive_attendu(dest, member.name)
+
+
+def _lien_de_publication_sur(
+    member: Any, dest: str | Path, precedents: dict, fichiers: dict, comptes: Counter,
+) -> bool:
+    """Seul un lien vers un PDF provisoire et son compagnon peut être restauré."""
+    source, cible = PurePosixPath(member.linkname), PurePosixPath(member.name)
+    preuves = (f"{source}.therese.json", f"{cible}.therese.json")
+    preuve = next((nom for nom in preuves if comptes[nom] == 1 and nom in fichiers), None)
+    if (
+        preuve is None
+        or str(source) != member.linkname or str(cible) != member.name
+        or source.parent != cible.parent or not cible.name.endswith(".pdf")
+        or cible.name.startswith(".therese-publication-")
+        or not re.fullmatch(r"\.therese-publication-[0-9a-f]{64}-[0-9a-f]{32}\.pdf", source.name)
+        or any(comptes[nom] != 1 for nom in (str(source), str(cible)))
+        or str(source) not in precedents or not precedents[str(source)].isfile()
+        or not all(_chemin_d_archive_attendu(dest, nom) for nom in (str(source), str(cible), preuve))
+    ):
+        return False
+    # Un lien déjà présent sur disque ne doit pas détourner l'extraction vers
+    # une autre entrée, même si celle-ci reste dans le dossier des données.
+    racine = Path(dest).resolve()
+    return all((racine / nom).resolve() == racine / nom for nom in (str(source), str(cible), preuve))
+
+
 def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
     """Les membres qu'une sauvegarde peut extraire, et le nombre de liens
     ignorés. Lève HTTPException 400 au premier chemin inattendu (B-1497)."""
     membres = []
     liens_ignores = 0
-    for member in tar.getmembers():
+    precedents = {}
+    tous = tar.getmembers()
+    comptes = Counter(str(PurePosixPath(member.name)) for member in tous)
+    fichiers = {member.name: member for member in tous if member.isfile()}
+    for member in tous:
         if member.issym() or member.islnk():
-            liens_ignores += 1
+            if member.islnk() and _lien_de_publication_sur(member, dest, precedents, fichiers, comptes):
+                membres.append(member)
+            else:
+                liens_ignores += 1
             continue
         if not _membre_attendu(dest, member):
             raise HTTPException(
@@ -1352,6 +1378,7 @@ def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
                 detail="Archive de sauvegarde non sûre : elle contient un chemin inattendu.",
             )
         membres.append(member)
+        precedents[member.name] = member
     return membres, liens_ignores
 
 
@@ -1360,9 +1387,9 @@ def _safe_extractall(tar, dest) -> None:
     entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
     quand Python le connaît.
 
-    Les liens (symboliques ou physiques) ne sont pas extraits : l'application
-    n'en crée aucun, un lien posé à la main ne doit ni rendre la sauvegarde
-    irrestaurable ni ouvrir un passage vers une autre entrée.
+    Les liens sont ignorés, sauf ceux d'une publication PDF interrompue, dont
+    la source et le compagnon provisoire ou final sont des fichiers uniques du
+    même dossier. La reprise vérifie ensuite la preuve avant de finaliser la paire.
     """
     membres, liens_ignores = _membres_a_extraire(tar, dest)
     if liens_ignores:
