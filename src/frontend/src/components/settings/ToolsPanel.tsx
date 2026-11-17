@@ -1037,8 +1037,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                 <div className="w-10 h-10 rounded-md bg-[var(--color-error-tint)] flex items-center justify-center">
                   <AlertCircle className="w-5 h-5 text-error" />
                 </div>
-                <div>
-                  <h3 id="mcp-suppression-cible" className="font-semibold text-text">Supprimer {servers.find((server) => server.id === serverToDelete)?.name ?? 'ce connecteur'} ?</h3>
+                <div id="mcp-suppression-cible">
+                  <h3 className="font-semibold text-text">Supprimer {servers.find((server) => server.id === serverToDelete)?.name ?? 'ce connecteur'} ?</h3>
                   <p className="text-sm text-text-muted">Cette action est irréversible.</p>
                 </div>
               </div>

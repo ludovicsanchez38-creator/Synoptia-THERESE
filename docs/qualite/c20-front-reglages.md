@@ -1,6 +1,6 @@
 # Cycle 20 : lot front-reglages
 
-**État courant : voir « Remédiation de la relecture, passe 4 ».** Les passes précédentes sont historiques. B-1805, B-1848, B-1849 et B-1967 sont retirés et reportés ; leurs anciens résultats ne valent plus comme validation du lot livré. Les modifications du démarrage appartenant à rust-windows sont également retirées.
+**État courant : voir « Remédiation de la relecture, passe 5 ».** Les passes précédentes sont historiques. B-1805, B-1847, B-1848, B-1849, B-1966 et B-1967 sont retirés et reportés ; leurs anciens résultats ne valent plus comme validation du lot livré. Les modifications du démarrage appartenant à rust-windows sont également retirées. Les réserves Windows, propagation des erreurs RGPD et accès à l’explication des presets restent ouvertes.
 
 Le bilan initial ci-dessous décrit le travail sur `gpt/c20-front-reglages`, base `12a383fb`, issue de l’intégration v0.83.0-alpha, avant les commits de l’orchestrateur. Pendant cette intervention initiale, aucun commit, ajout à l’index, push, dépôt annexe ou bundle n’a été effectué. Le commit historique `41a438a8` a uniquement été lu, puis son correctif de SettingsModal reporté dans cet arbre ; aucune branche main n’a été modifiée. L’état vérifié lors de la reprise figure dans « Remédiation de la relecture, passe 1 ».
 
@@ -14,7 +14,7 @@ Les chemins de test sont relatifs au dépôt. La colonne rouge remplace le hash 
 | --- | --- | --- | --- | --- |
 | B-1805 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constats 3, 4, 5, 6 et 9 de la passe 4 | retiré du lot, reporté |
 | B-1846 | `regle_a_trancher` | Repère existant : `src/frontend/src/components/settings/SettingsModal.da.test.tsx::un refus de clé suivi d’un passage sur Ollama sans modèle reste annoncé` | Aucun rouge revendiqué : règle d’activation sans modèle absente | Aucun changement pour ce candidat |
-| B-1847 | `confirme` | `src/frontend/src/services/api/core.reprisePort.b1847.test.ts::réessaie après un premier port indisponible` | `AssertionError: expected 'http://127.0.0.1:17293' to be 'http://127.0.0.1:29147' // Object.is equality` | non commité |
+| B-1847 | `regle_a_trancher` | Test propre retiré ; tests de l’intégration conservés | Constat 2 de la passe 5 : la relance de SplashScreen ne rappelle pas initApiBase | retiré du lot, reporté |
 | B-1848 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constats 7, 8 et 12 de la passe 4 | retiré du lot, reporté |
 | B-1849 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constats 7, 8 et 12 ; dépendance aux sessions et au contrat d’ouverture de B-1848 | retiré du lot, reporté |
 | B-1959 | `confirme` | `src/frontend/src/components/settings/LLMTab.textesFrancais.c20.test.tsx::B-1959 : le statut indisponible tutoie et garde le motif` | `Error: expect(element).toHaveTextContent()` | non commité |
@@ -23,10 +23,10 @@ Les chemins de test sont relatifs au dépôt. La colonne rouge remplace le hash 
 | B-1962 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1962 : les décomptes de 0 outils sont en français` | `TestingLibraryElementError: Unable to find an element with the text: /0 outils disponible/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.` | non commité |
 | B-1963 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1963 : un échec de uvx sans motif ne suppose pas Node.js absent` | `AssertionError: expected "vi.fn()" to be called with arguments: [ Array(1) ]` | non commité |
 | B-1964 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1964 : la confirmation nomme le connecteur choisi parmi plusieurs` | `Error: expect(element).toHaveTextContent()` | non commité |
-| B-1965 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1965 : le connecteur stopped porte un état inactif accessible` | `TestingLibraryElementError: Unable to find an accessible element with the role "img" and name "Installé mais inactif : à démarrer depuis les connecteurs"` | non commité |
-| B-1966 | `confirme` | `src/frontend/src/components/ui/UpdateBanner.etatInstalle.b1966.test.tsx::B-1966 : après installation le bandeau annonce installé et propose de l’appliquer` | `Error: expect(element).toHaveTextContent()` | non commité |
+| B-1965 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1965 : le connecteur stopped porte un état inactif accessible` | `TestingLibraryElementError: Unable to find an accessible element with the role "img" and name "Installé mais inactif : à démarrer depuis les connecteurs"` | Réserve n°5 : accès à l’explication non garanti |
+| B-1966 | `regle_a_trancher` | Test propre retiré ; tests de l’intégration conservés | Constat 1 de la passe 5 : les événements tardifs masquent le résultat de l’installation | retiré du lot, reporté |
 | B-1967 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constat 11 de la passe 4 : callback client absent du parcours réel | retiré du lot, reporté |
-| B-1968 | `confirme` | `src/frontend/src/services/api/rgpd.erreursFrancaises.b1968.test.ts::B-1968 : erreur RGPD, export > le repli est français avec le statut HTTP, corps {}` | `AssertionError: expected [Function] to throw error including 'L’export des données personnelles a é…' but got 'RGPD export failed: Service Unavailab…'` | non commité |
+| B-1968 | `confirme` | `src/frontend/src/services/api/rgpd.erreursFrancaises.b1968.test.ts::B-1968 : erreur RGPD, export > le repli est français avec le statut HTTP, corps {}` | `AssertionError: expected [Function] to throw error including 'L’export des données personnelles a é…' but got 'RGPD export failed: Service Unavailab…'` | Client seulement ; réserve n°4 sur la propagation à l’interface |
 | B-1969 | `rejete` | `tests/test_f1_coherence_des_couches.py:306` est un docstring ; rendu courant : `src/backend/app/services/invoice_pdf.py:649` | Aucun défaut d’interface démontré : le PDF écrit « TVA à {taux} % » ; la table de libellés à la ligne 48 comporte déjà « TVA réduite 5,5% » | Aucun changement |
 
 ## B-1846 : règle à trancher
@@ -483,3 +483,124 @@ L’adaptation locale `/tmp/front_reglages_r2_ipc.py`, déjà utilisée et relue
 - `git diff --check` : **sortie 0**. Aucun lancement de suite complète, serveur, navigateur, compilation Rust ou recette native.
 
 HEAD reste `a0a6a780ff9db3836c9b9c2f0a4f7f2736e4ea4a`, intégration `0047eb5ea9d731c1249aed3fd6b37d91f3bc56e2`. `git merge-base --is-ancestor c20/integration HEAD` retourne **0**. Index inchangé, aucun commit ni ajout à l’index ; les retraits et ce bilan restent non commités. Les liens `.venv` et `src/frontend/node_modules` préexistants sont conservés. Aucun dépôt annexe, bundle, accès réseau, secret affiché, accès au dossier personnel THÉRÈSE ou à `.app-loop/`.
+
+## Remédiation de la relecture, passe 5
+
+Reprise du 17 novembre 2026 après le rebase de l’orchestrateur. La dernière consigne impose le retrait intégral des candidats P1 et limite les P2 à une retouche évidente de texte ou d’attribut. Aucun nouveau correctif P1 n’est livré. Les réserves ci-dessous restent ouvertes ; les portes vertes ne les lèvent pas.
+
+### Décision pour chaque constat
+
+| Constat | Décision | Candidat et changement |
+| --- | --- | --- |
+| 1 — progression tardive | Retiré | B-1966 : `regle_a_trancher`. Retrait de tous les changements de `UpdateBanner.tsx` et des deux cas de `UpdateBanner.etatInstalle.b1966.test.tsx`. |
+| 2 — reprise du port | Retiré | B-1847 : `regle_a_trancher`. Retrait de tous les changements de `services/api/core.ts` et des trois cas de `core.reprisePort.b1847.test.ts`. La reprise de `SplashScreen` reste au lot propriétaire rust-windows. |
+| 3 — installation Windows | Réserve acceptée | B-1966 est retiré au titre du constat 1. Aucun parcours Windows corrigé ni redémarrage à la demande sous Windows n’est revendiqué. |
+| 4 — erreurs RGPD affichées | Réserve acceptée | Code et tests B-1968 conservés. Leur preuve porte sur les exceptions du client ; elle ne démontre pas l’affichage de tous les messages. Aucune modification de `MemoryPanel` ou `PrivacyTab`, hors périmètre du lot. |
+| 5 — explication du preset | Réserve acceptée | Code et tests B-1965 conservés. Rendre le texte visible, l’associer au preset et assurer l’accès clavier dépasse la retouche d’un attribut. |
+| 6 — irréversibilité de la suppression | Corrigé | Un seul attribut `id` déplacé du titre au bloc contenant le titre et l’avertissement ; `aria-describedby` décrit maintenant les deux. Le test B-1964 exige exactement les deux phrases. |
+
+**B-1966 : `regle_a_trancher` — retiré du lot, reporté.** Preuve du relecteur, constat 1 :
+
+> Une progression reçue tardivement peut masquer le résultat de l’installation - Reproduction en mémoire avec le composant réel : après résolution de `downloadAndInstall`, les événements `Started`, `Progress`, puis `Finished` font passer le bandeau de « installée » à « Téléchargement… 100 % » et suppriment le bouton de redémarrage. Après un rejet pour signature invalide, ils masquent aussi l’erreur. Les événements IPC et la réponse de la commande empruntent des voies asynchrones distinctes - Ignorer les événements d’une installation terminée ou échouée et tester leur arrivée après les deux issues de la promesse.
+
+**B-1847 : `regle_a_trancher` — retiré du lot, reporté.** Preuve du relecteur, constat 2 :
+
+> B-1847 ne rétablit pas la découverte du port lors de la relance du démarrage - Après un repli, `SplashScreen` conserve `apiBaseReady` à vrai et ne rappelle pas `initApiBase`. Reproduit en mémoire avec un port de repli surchargé : après onze réponses IPC invalides, puis une relance avec le bon port disponible, les sondes restent sur le port de repli et aucun nouvel appel IPC n’a lieu. Le test du lot appelle directement `initApiBase` une seconde fois - Faire traiter la reprise du parcours par le lot propriétaire et la tester avec l’écran réel, ou retirer B-1847 des correctifs confirmés et le reporter.
+
+La garde de `SplashScreen.tsx:232` et l’affectation à la ligne 241 confirment la limite du parcours. La demande de correction de cet écran est écartée ici : il appartient à rust-windows. Aucun fichier d’un autre lot n’est modifié, réintégré ou rebasé.
+
+Les retraits inversent uniquement les blocs du lot, sans recopier de fichier depuis une autre branche. `git diff --exit-code c20/integration --` sur les quatre chemins des deux candidats retourne **0** : production identique à l’intégration, tests propres absents comme dans l’intégration. Aucun import, état ou test orphelin des deux candidats ne subsiste dans le frontend. Les tests préexistants de l’intégration sont conservés.
+
+### Réserves acceptées
+
+**Constat 3 — Windows.** Texte du relecteur :
+
+> Le bandeau « installée » et son bouton de redémarrage ne sont pas atteints sur Windows - Le plugin updater 2.10.0 utilisé par l’application lance l’installateur puis exécute `std::process::exit(0)` avant de résoudre la promesse. Le test simule une promesse résolue sous macOS et ne couvre pas cette fermeture - Prévoir et annoncer le parcours Windows avant le lancement, ou adapter l’enchaînement pour permettre le redémarrage à la demande ; tester et expliciter cette différence dans le bilan.
+
+Selon ce constat, Windows ferme le processus pendant l’installation, alors que le scénario macOS simulait une promesse résolue et un bouton utilisable ensuite. Annoncer et tester cette fermeture nécessite un parcours distinct. Le retrait B-1966 supprime les deux tests macOS propres au candidat ; les tests intégrés d’autorisation selon le type de paquet restent inchangés et ne prouvent pas cette fermeture. Aucune recette native Windows n’est revendiquée.
+
+**Constat 4 — propagation RGPD.** Texte du relecteur :
+
+> La plupart des messages RGPD corrigés ne parviennent pas à l’interface - `MemoryPanel` remplace les erreurs d’export, d’anonymisation et de renouvellement par ses propres messages et ignore celle des statistiques ; `PrivacyTab` ignore le détail de lecture des réglages. Trois autres fonctions modifiées n’ont aucun appelant de production. Seule l’erreur de sauvegarde des réglages atteint le texte affiché - Tester les parcours réellement affichés, ou limiter la correction aux branches utiles et signaler les autres dans le bilan.
+
+Lecture des appelants : `MemoryPanel.tsx:294,322,341,356` absorbe ou remplace les erreurs ; `PrivacyTab.tsx:216` ignore le détail de lecture, mais la ligne 235 transmet celui de sauvegarde à l’alerte rendue à la ligne 718. `updateContactRGPD`, `inferContactRGPD` et `togglePurgeExclude` n’ont aucun appelant de production trouvé. La propagation demanderait plusieurs branches et des fichiers hors lot ; elle est écartée de cette passe. Les neuf branches du client et leurs 27 cas restent tels quels, avec cette limite explicite.
+
+**Constat 5 — état des presets.** Texte du relecteur :
+
+> L’explication de l’état d’un preset reste difficile à atteindre - Le `title` est placé sous un parent `pointer-events-none`, tandis que le bouton du preset installé est désactivé et ne référence pas l’image d’état. Le test vérifie seulement la présence d’une image nommée - Afficher l’état en texte associé au preset et le rendre consultable à la souris comme au clavier.
+
+Les lignes 137, 139, 142 et 177 de `ToolsPanel.tsx` confirment cette réserve. Le nom accessible de l’image ne constitue pas une preuve d’accès à l’explication au clavier ou à la souris. Aucun changement du preset ni nouveau test prétendant couvrir cet accès n’est ajouté.
+
+### Test rouge avant la seule correction
+
+Le test existant `ToolsPanel.textesFrancais.c20.test.tsx::B-1964 : la confirmation nomme le connecteur choisi parmi plusieurs` est renforcé avant le changement de production. Son assertion exige désormais **« Supprimer Agenda ? Cette action est irréversible. »**. Le nom de la cible, l’absence de suppression avant confirmation et l’identifiant envoyé à l’API restent vérifiés.
+
+Exécution isolée avec `-t B-1964` : **1 échec, 11 cas non sélectionnés**, sortie 1. Ligne d’échec recopiée de `/tmp/front-reglages-r5-6-rouge.log` :
+
+```text
+Error: expect(element).toHaveAccessibleDescription()
+
+Expected element to have accessible description:
+  Supprimer Agenda ? Cette action est irréversible.
+Received:
+  Supprimer Agenda ?
+```
+
+Après ce rouge, l’attribut `id="mcp-suppression-cible"` passe du `h3` au `div` contenant le titre et le paragraphe. Aucun texte ni comportement de suppression ne change. `SettingsModal` → `ToolsPanel`, `confirmDelete`, la pile Échap et le piège de focus sont relus ; **28 tests voisins verts dans 8 fichiers**, dont l’assertion renforcée.
+
+**Tests nouveaux : 0 ; cas existant renforcé : 1 ; cas propres retirés : 5 dans 2 fichiers.** Aucun test de l’intégration n’est supprimé ou affaibli. Aucun rouge nouveau n’est revendiqué pour les retraits ou les réserves, conformément à la consigne finale de cette passe.
+
+Après chaque retrait, les appelants sont relus et les voisins rejoués : `App` → `UpdateBanner` (**20 cas verts**) ; garde de `SplashScreen`, réexportation API et `controlerGenerationAuDemarrage` → `initApiBase` (**70 cas verts**, plus les cas du contrôle de génération dans le groupe réglages). Les correctifs conservés des réglages, du profil et du client RGPD sont également rejoués.
+
+### Portes ciblées de la passe 5
+
+**Frontend : 318 passés, 0 échoué, 0 ignoré, 50 fichiers distincts passés, quatre sorties 0.** Les quatre rapports JSON ont été lus, résultat par résultat, sans doublon de fichier :
+
+| Groupe | Fichiers | Cas passés | Rapport |
+| --- | ---: | ---: | --- |
+| update | 1 | 20 | `/tmp/front-reglages-r5-update.json` |
+| demarrage | 9 | 70 | `/tmp/front-reglages-r5-demarrage.json` |
+| tools | 8 | 28 | `/tmp/front-reglages-r5-tools.json` |
+| reglages | 32 | 200 | `/tmp/front-reglages-r5-reglages.json` |
+
+Chaque groupe utilise depuis `src/frontend` : `npm_config_offline=true npx --no-install vitest run`, les fichiers ci-dessous, puis `--maxWorkers=3 --configLoader runner --no-cache --reporter=default --reporter=json --outputFile.json=/tmp/front-reglages-r5-<groupe>.json`. Les journaux portent les mêmes noms avec l’extension `.log`.
+
+```text
+update :
+src/components/ui/UpdateBanner.installation.test.tsx
+
+demarrage :
+src/components/SplashScreen*.test.tsx src/services/api/core*.test.ts
+
+tools :
+src/components/settings/ToolsPanel*.test.tsx
+
+reglages :
+src/components/settings/LLMTab*.test.tsx src/components/settings/ProfileTab*.test.tsx
+src/components/settings/SettingsModal*.test.* src/components/settings/PrivacyTab*.test.tsx
+src/components/memory/MemoryProfileBranch.r5.test.tsx
+src/components/memory/MemoryPanel.rgpd.b1929.test.tsx
+src/services/api/rgpd*.test.ts src/lib/capacites/generation.test.ts
+src/test/c19d/B-1074.test.ts
+```
+
+`npm_config_offline=true` et `--no-install` empêchent tout téléchargement ; `runner` et `--no-cache` évitent les écritures dans les dépendances partagées en lecture seule. Aucun délai ni aucune assertion n’est assoupli. Les avertissements du lanceur `Failed to create stream fd: Operation not permitted` n’ont empêché aucune collecte.
+
+**Backend : 31 passés, 0 échec, 0 erreur, 0 ignoré, sortie 0.** Le XML `/tmp/front-reglages-r5.xml` a été lu : 31 éléments `testcase`, aucune balise `failure`, `error` ou `skipped`. Aucun rouge connu soustrait. Commande exécutée depuis la racine :
+
+```sh
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-reglages-r5-data.XXXXXX)" \
+OLLAMA_BASE_URL=http://127.0.0.1:9 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp \
+.venv/bin/python -m pytest tests/test_routers_rgpd.py tests/test_routers_mcp.py \
+  -q -p no:cacheprovider -p front_reglages_r2_ipc --timeout=120 \
+  --junitxml=/tmp/front-reglages-r5.xml
+```
+
+L’adaptation préexistante `/tmp/front_reglages_r2_ipc.py` a été relue : elle remplace uniquement la paire de sockets du réveil interne asyncio par un pipe non bloquant. Les assertions, fixtures, routes et délais sont inchangés. L’orchestrateur peut retirer `PYTHONPATH=/tmp` et `-p front_reglages_r2_ipc` hors de ce bac à sable. Les données restent isolées dans `/tmp` ; aucun fournisseur ni serveur MCP réel n’est lancé. Journal : `/tmp/front-reglages-r5-backend.log`.
+
+- Ruff, après pytest : `RUFF_CACHE_DIR=/tmp/front-reglages-r5-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests`, **sortie 0, aucune erreur**, `All checks passed!` ; journal `/tmp/front-reglages-r5-ruff.log` lu.
+- TypeScript, après Vitest : `npm_config_offline=true npx --no-install tsc --noEmit`, **sortie 0, aucun diagnostic** ; `/tmp/front-reglages-r5-tsc.log` lu et vide. Les dépendances Playwright déjà extraites hors ligne lors de la passe 4 dans `/tmp/front-reglages-r4-deps/node_modules` sont réutilisées au moyen d’un lien racine temporaire, retiré immédiatement après le contrôle. Aucun manifeste, verrou, type ou réglage TypeScript n’est modifié.
+- ESLint, après TypeScript : `npm_config_offline=true npm run lint`, **sortie 0, 0 erreur, 27 avertissements** ; `/tmp/front-reglages-r5-lint.log` lu. Aucun nettoyage hors périmètre.
+- `git diff --check` : **sortie 0**. Cette passe touche **7 fichiers suivis**, dont deux tests propres supprimés et ce bilan. Les quatre chemins P1 ont un diff nul avec `c20/integration`, comme `SplashScreen`, `MemoryPanel` et `PrivacyTab`, laissés au lot propriétaire.
+
+HEAD reste `21305b22c191107bd2e8f55bfabec8c57b8fa472`, intégration `87310bade7c9f367c3d80e5bfa6687d9dd4ed266`, ancêtre de HEAD. Index vide, changements non commités ; aucun `git add`, commit, rebase, copie depuis une autre branche, dépôt annexe ou bundle. Les liens préexistants `.venv` et `src/frontend/node_modules` sont conservés. Aucune suite complète, aucun réseau, fournisseur LLM, port applicatif réservé, accès au dossier personnel THÉRÈSE ou à `.app-loop/` ; aucun secret affiché et aucune commande `rm`.
