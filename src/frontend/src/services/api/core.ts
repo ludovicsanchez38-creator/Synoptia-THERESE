@@ -410,9 +410,6 @@ export interface Stats {
   };
   uptime_seconds: number;
   data_dir: string;
-  data_profile?: string;
-  data_profile_id?: string;
-  data_profile_aliases?: string[];
   db_path: string;
 }
 
@@ -438,8 +435,6 @@ export async function checkHealth(): Promise<HealthStatus> {
   }
 }
 
-export async function getStats(dataProfiles: string[] = []): Promise<Stats> {
-  const params = new URLSearchParams();
-  for (const profile of dataProfiles) params.append('data_profiles', profile);
-  return request<Stats>(`/api/config/stats${params.size ? `?${params}` : ''}`);
+export async function getStats(): Promise<Stats> {
+  return request<Stats>('/api/config/stats');
 }

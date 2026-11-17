@@ -6,7 +6,7 @@ Les candidats sont examinés dans l'ordre demandé. Les doublons renvoient à le
 
 | ID | Verdict | Test (chemin::nom) | Rouge observé (aucun commit) | Correctif |
 | --- | --- | --- | --- | --- |
-| B-1868 | confirme | `src/frontend/src/lib/profileStorageIsolation.test.ts::B-1868 conserve le cache du même dossier` (5 cas) | `AssertionError: expected 'switched' to be 'unchanged' // Object.is equality` | non commité |
+| B-1868 | regle_a_trancher | Constats 1 à 8 de la relecture, passe 4 ; détail en fin de document | Preuves du relecteur conservées ci-dessous | retiré du lot, reporté |
 | B-1869 | rejete | `src/frontend/src/components/atelier/AgentCatalog.modeles.test.tsx::conserve le fournisseur et le modèle choisis quand ils ne sont plus proposés` | Aucun : test existant vert | sans changement |
 | B-1870 | confirme | `src/frontend/src/components/settings/LLMTab.effortOpenAI.test.tsx::B-1870 : Astra propose Très élevé et transmet xhigh à l’enregistrement` | `TestingLibraryElementError: Unable to find an accessible element with the role "option" and name /Très élevé/` | non commité |
 | B-1871 | rejete | `src/frontend/src/components/atelier/AgentSession.c9.test.tsx::dit que les outils ne sont pas confirmés quand le serveur ne répond pas` et `AgentSession.avatars.c9.test.tsx::sans profil serveur, l’invite ne liste pas les outils de la table locale` | Aucun : 4 tests existants verts | sans changement |
@@ -52,7 +52,7 @@ Aucun scénario ni garde existant n'a été supprimé. Ces changements d'attendu
 
 ## Règles à trancher et limites
 
-Aucun candidat `regle_a_trancher` : les règles utiles sont déjà fixées dans le code, les tests ou l'historique Git vérifié. Les chemins avec `~`, barres inverses, liens symboliques ou différences de casse ne sont pas fusionnés par hypothèse. Le rendu natif Tauri, les lecteurs d'écran réels et les fournisseurs LLM n'ont pas été sollicités. La suite complète et le rejeu des rouges sur la base restent à l'orchestrateur.
+État historique avant la passe 4 : aucun candidat `regle_a_trancher`. La passe 4 retire B-1868 et fait foi pour ce candidat ; les preuves et résultats des passes antérieures restent ci-dessous pour traçabilité. Le rendu natif Tauri, les lecteurs d'écran réels et les fournisseurs LLM n'ont pas été sollicités. La suite complète et le rejeu des rouges sur la base restent à l'orchestrateur.
 
 ## Portes finales
 
@@ -459,3 +459,100 @@ npx --offline --no-install vitest run \
 npx --offline --no-install tsc --noEmit
 npm run lint
 ```
+
+## Remédiation de la relecture, passe 4
+
+Départ : `73bdc191`, arbre déjà rebasé par l’orchestrateur. Les liens non suivis `.venv` et `src/frontend/node_modules` étaient présents au début et sont conservés. Cette section remplace les verdicts antérieurs pour B-1868 ; elle ne revendique aucun des correctifs des lots bancs, instrument ou rust-windows.
+
+**Décision (b) pour B-1868 : retiré du lot, reporté.** La comparaison de chemins a entraîné une migration des identités, une réserve de données, une fusion de files et des exigences nouvelles au démarrage. Les constats 2, 3, 5 et 6 demandent de coordonner stockage, interface, requêtes et ressources SQLite. Aucun correctif simple et prouvé ne couvre cet ensemble. Conformément à la consigne de cette passe, le candidat entier, production et tests spécifiques compris, est retiré ; aucun correctif partiel n’est conservé pour les constats 1, 4 ou 7.
+
+| Constat | Issue | Verdict | Intervention et preuve du relecteur |
+| --- | --- | --- | --- |
+| 1 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. `directory:profil` est pris pour une identité native ; brouillon purgé sans copie et retrait ignoré (`consentSync.ts:57` au départ). Classification par préfixe retirée. |
+| 2 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. La réserve `therese:unassigned-profile-data` n’a aucun lecteur de production et le chat ne migre que `therese-chat` (`purgeLocalData.ts:57` au départ). Réserve et migration native retirées. |
+| 3 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. Une ancienne file non vide bloque toutes les mutations, y compris la purge, sans résolution (`consentSync.ts:64` au départ). Blocage ajouté et fusion de files retirés ; la file préexistante de l’intégration reste inchangée. |
+| 4 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. `directory:7:42:00000000000040008000000000000000` satisfait aussi le motif numérique ancien, y compris dans une file inactive (`consentSync.ts:61` au départ). Identités natives et motif retirés ensemble. |
+| 5 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. Après réorientation d’un lien A → B, les statistiques peuvent annoncer B alors que le pool sert A (`config.py:1041` au départ). Annonce et validation de l’identité native retirées ; liaison aux ressources ouvertes à concevoir au cycle suivant. |
+| 6 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. Copier 3 000 caractères avant leur suppression dépasse un quota de 5 000 et arrête le démarrage (`purgeLocalData.ts:67` au départ). Copie préalable et contrat de migration retirés. |
+| 7 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. Une interruption laisse un marqueur vide, que `UUID(...)` refuse ensuite indéfiniment (`identite_profil.py:19` au départ). Service de marqueur et tests propres au candidat retirés. |
+| 8 | (b) | regle_a_trancher | B-1868 retiré du lot, reporté. `App` exigeait `storedDataProfiles` et `data_profile_id`, absents du double du lien d’évitement (`App.tsx:147` au départ). Exigences retirées dans `App` ; test rust-windows et vérification du CSS produit inchangés. |
+| 9 | (b), écarté hors lot | regle_a_trancher | Lot bancs : suppression du helper et de deux contre-épreuves, import du scénario Playwright par le programme TypeScript (`b1854-garde-parcours.test.ts:16`). Fichiers laissés strictement dans leur état de départ, sans réintégration. |
+| 10 | (b), écarté hors lot | regle_a_trancher | Lots instrument/bancs : autorisation de migration contraire à son interception locale et test Python attendant `continue` (`couverture-ecran.mjs:153`). Fichiers laissés strictement dans leur état de départ, sans réintégration. |
+
+Les issues (b) retirent aussi les tests du candidat : **aucun nouveau test ni rouge artificiel ajouté dans cette passe**. Les scénarios et lignes ci-dessus sont les preuves fournies par le relecteur, pas des échecs revendiqués comme reproduits ici. Les tests de l’intégration ne sont ni affaiblis ni désactivés. Les constats 9 et 10 suivent l’exception explicite de périmètre ; leur code n’est pas annoncé comme corrigé ou revenu à l’intégration.
+
+### Retrait vérifiable et appelants relus
+
+Un patch inverse limité aux écarts de B-1868 a été vérifié puis appliqué au seul arbre de travail, sans recopier de fichier depuis une branche. `git diff c20/integration -- <ces 16 fichiers>` est vide :
+
+- Backend : `src/backend/app/routers/config.py`, `src/backend/app/routers/consents.py`, `src/backend/app/services/identite_profil.py`, `tests/test_c20_identite_profil.py` (les deux derniers, propres au candidat, sont retirés).
+- Démarrage : `src/frontend/src/App.tsx`, `App.demarrageAccords.test.tsx`, `OnboardingRafraichitLeProfil.test.tsx`.
+- Bibliothèques frontend : `consent.ts`, `consentSync.ts`, `consentSync.profiles.test.ts`, `profileStorageIsolation.ts`, `profileStorageIsolation.test.ts`, `purgeLocalData.ts`, `purgeLocalData.test.ts` dans `src/frontend/src/lib/`.
+- API frontend : `src/frontend/src/services/api/core.ts`, `core.profil.test.ts` (ce dernier, propre au candidat, est retiré).
+
+Appelants relus après retrait : démarrage → statistiques → isolation → synchronisation ; `apiFetch` → `viderLesAccords` ; lecture des accords ; `PrivacyTab` → purge ; stockage différé → `migrerCacheChat` ; routes de décision et d’import → `_verifier_profil`. Le contrat de chemin de l’intégration est rétabli de bout en bout ; cela ne prétend pas résoudre les limites historiques de ce contrat ni récupérer des données produites par un candidat non livré.
+
+Les huit chemins hors lot contrôlés par empreinte sont `docs/qualite/c20-bancs.md`, `App.lienEvitement.b1915.test.tsx`, `b1854-garde-parcours.test.ts`, le helper `garde-lecture-seule.ts` (absent au départ), le parcours 08, les deux fichiers `couverture-ecran.*` et `test_b2029_couverture.py`. Les autres candidats du lot restent inchangés.
+
+### Portes de la passe 4
+
+Les XML ont été lus avec `xml.etree.ElementTree` en comptant les `testcase`, `failure`, `error` et `skipped`. Les contrôles hors lot sont rapportés séparément et ne sont pas comptés comme des portes réussies.
+
+| Porte | Périmètre | Passés | Échecs | Erreurs | Ignorés | Résultat |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 5 fichiers voisins et classe de lecture de configuration | 22 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r4.xml` lu ; 0 tentative de connexion |
+| Vitest | 22 fichiers de démarrage, persistance, accords et appelants | 99 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r4-vitest.xml` lu ; le lien d’évitement et son CSS produit passent, 1 cas compris dans les 99 |
+| Ruff | `src/backend tests`, sans correction | — | 0 | 0 | — | code 0 ; `All checks passed!` ; `/tmp/diff-front-1-r4-ruff.log` |
+| TypeScript | `tsc --noEmit` | — | — | 38 | — | code 2 ; constat 9 ; `/tmp/diff-front-1-r4-tsc.log` |
+| ESLint | `npm run lint` | — | 0 | 0 | — | code 0 ; 27 avertissements existants ; `/tmp/diff-front-1-r4-eslint.log` |
+| Vitest hors lot | B-1854 inchangé | 0 | 1 suite | 0 | 0 | arrêt à la collecte, aucun cas exécuté ; `/tmp/diff-front-1-r4-b1854.xml` lu |
+| Pytest hors lot | B-2029 inchangé, garde en mémoire | 0 | 1 | 0 | 0 | code 1 ; `/tmp/diff-front-1-r4-hors-lot.xml` lu ; 0 tentative de connexion |
+| Node hors lot | 2 gardes pures B-2029 inchangées | 0 | 2 | 0 | 0 | code 1 ; `/tmp/diff-front-1-r4-instrument-memoire.log` |
+
+**Rouges restants, rattachés aux constats écartés :**
+
+- Constat 9, compilation : `error TS2307: Cannot find module '@playwright/test' or its corresponding type declarations.` Les 38 erreurs sont toutes dans `tests/e2e/stories/` : 2 dans `helpers/backend.ts`, 4 dans `helpers/surfaces.ts`, 32 dans `parcours-08-capacites-prototype.spec.ts`. La garde Vitest isolée s’arrête elle aussi au chargement : `Error: Failed to resolve import "@playwright/test" from "../../tests/e2e/stories/parcours-08-capacites-prototype.spec.ts". Does the file exist?` Aucun ajout de dépendance ou changement de configuration TypeScript pour cacher ce constat.
+- Constat 10, Python isolé : `At index 0 diff: 'bloquee' != 'continue'`. Le double de route n’a pas de `fulfill` ; la vraie garde intercepte la migration, puis les cinq autres appels sont bloqués. Le test continue à attendre une continuation réseau.
+- Constat 10, garde Node `seule la migration exacte du chat est simulable` : `la simulation ne donne pas accès au réseau` puis `true !== false` (`couverture-ecran.test.mjs:39`).
+- Constat 10, garde Node `la garde acquitte et compte la migration sans accès réseau` : pour le suffixe `cache-migration?`, `+ action: 'continue'` au lieu de `- action: 'abort'` (`couverture-ecran.test.mjs:90`). Les assertions précédentes sur l’acquittement exact passent avant cette contre-épreuve rouge.
+
+Le premier essai Node et le premier essai Python de B-2029 ont échoué avant les assertions faute de paquet `@playwright/test` : `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@playwright/test'`. Ces sorties sont conservées sous `/tmp/diff-front-1-r4-instrument-chargement.log` et `/tmp/diff-front-1-r4-hors-lot-chargement.{log,xml}`. Pour contrôler uniquement les gardes en mémoire, `/tmp/diff-front-1-r4-playwright-inerte.mjs` fournit un export `chromium` dont tout lancement lève une erreur ; aucun code de garde ni aucune assertion n’est remplacé. Node est exécuté sans isolation en sous-processus, le premier essai isolé ne remontant qu’un `ERR_TEST_FAILURE`. Aucun navigateur n’est lancé. Le test B-1854 reste, lui, exécuté sans ce chargeur et son défaut de collecte est explicitement conservé.
+
+Les tests backend emploient des données jetables sous `/tmp`, la garde `tests.bancs_sans_reseau` et le tube local de réveil asyncio de la passe précédente (`/tmp/diff-front-1-r3-pytest/reveil_local.py`, relu). Le tube remplace uniquement le socket de réveil interdit dans ce bac ; aucune assertion ni route n’est substituée. La classe `TestConfigEndpoints` est sélectionnée dans `test_routers_config.py` : les autres classes sollicitent notamment une sonde Ollama réelle, incompatible avec ce mandat hors réseau. Vitest utilise `--offline --no-install --configLoader runner --no-cache --maxWorkers=3` pour ne pas écrire dans les dépendances partagées.
+
+```sh
+THERESE_DATA_DIR=$(mktemp -d /tmp/diff-front-1-r4-data-XXXXXX) \
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp/diff-front-1-r3-pytest:$PWD \
+OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  tests/test_t4_consentement_moteur.py tests/test_t4_2_restauration_accords.py \
+  tests/test_t4_3_accord_atelier.py tests/test_t4_contrat_studio_images_accord.py \
+  tests/test_r2_3_cache.py tests/test_routers_config.py::TestConfigEndpoints \
+  -q -p no:cacheprovider -p reveil_local -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-front-1-r4.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Dans `src/frontend` :
+
+```sh
+npx --offline --no-install vitest run \
+  src/App.demarrageAccords.test.tsx src/App.lienEvitement.b1915.test.tsx \
+  src/OnboardingRafraichitLeProfil.test.tsx \
+  src/lib/consent.test.ts src/lib/consentSync.test.ts src/lib/consentSync.demarrage.test.ts \
+  src/lib/consentSync.profiles.test.ts src/lib/profileStorageIsolation.test.ts \
+  src/lib/purgeLocalData.test.ts src/lib/debouncedStorage.test.ts \
+  src/lib/chatPersistence.r2.test.ts src/lib/chatPersistence.fin.test.ts \
+  src/services/api/core.test.ts src/services/api/core.accordNonEnregistre.test.ts \
+  src/services/api/core.portEtSingleton.test.ts src/services/api/core.apiErrorCode.test.ts \
+  src/services/api/core.validation.b1399.test.ts src/services/api/data.test.ts \
+  src/components/settings/PrivacyTab.test.tsx \
+  src/components/settings/PrivacyTab.purgeIndisponible.b1209.test.tsx \
+  src/components/onboarding/SecurityStep.consentement.test.tsx \
+  src/components/atelier/AgentSession.consentement.t4.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r4-vitest.xml
+npx --offline --no-install tsc --noEmit
+npm run lint
+```
+
+Contrôles finaux : aucun écart à `c20/integration` dans les 16 fichiers du candidat retiré ; huit empreintes hors lot inchangées ; seuls ces 16 chemins et le présent bilan sont modifiés ; `git diff --check` passe et l’index est inchangé. Les corrections des factures et d’effort OpenAI restent intactes. Aucun lancement de suite complète, fournisseur LLM, réseau, serveur sur les ports interdits, profil personnel ou `.app-loop/`. Aucun `rm`, `git add`, commit, rebase, dépôt annexe ni bundle.

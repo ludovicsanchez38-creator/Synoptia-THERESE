@@ -2,7 +2,6 @@
 import type { CloudGrant, CloudPurpose } from './consent';
 
 export const CONSENT_OUTBOX_PREFIX = 'therese-cloud-consent-pending';
-export const UNIDENTIFIED_CONSENT_OUTBOX = 'therese:unidentified-consent-outbox';
 const PROFILE = 'therese:data-profile';
 function profile(): string {
   return localStorage.getItem(PROFILE) || '';
@@ -11,32 +10,14 @@ function outbox(id: string): string {
   return `${CONSENT_OUTBOX_PREFIX}:${encodeURIComponent(id)}`;
 }
 
-/** Identités à faire vérifier par le moteur, y compris celles des files inactives. */
-export function storedDataProfiles(): string[] {
-  const ids = new Set(profile() ? [profile()] : []);
-  const prefix = `${CONSENT_OUTBOX_PREFIX}:`;
-  for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
-    if (!key?.startsWith(prefix) || key.endsWith(':revision')) continue;
-    const id = decodeURIComponent(key.slice(prefix.length));
-    if (id) ids.add(id);
-  }
-  return [...ids];
-}
-
 /** Appelé avant toute purge, quand l’identité du profil précédent est encore connue. */
 export function migrateConsentOutbox(id: string): void {
   const legacy = localStorage.getItem(CONSENT_OUTBOX_PREFIX);
-  if (!legacy) return;
-  // Le marqueur posé au premier démarrage n'est pas une preuve rétroactive.
-  // Une file globale n'est jamais créée avec une identité native connue.
-  if (!id || id.startsWith('directory:')) {
-    localStorage.setItem(UNIDENTIFIED_CONSENT_OUTBOX, 'true');
-  }
-  if (localStorage.getItem(UNIDENTIFIED_CONSENT_OUTBOX)) return;
+  if (!legacy || !id) return;
   const decisions: Decision[] = JSON.parse(legacy);
   const known = pending(id);
-  localStorage.setItem(outbox(id), JSON.stringify(mergeConsentDecisions([decisions, known])));
+  localStorage.setItem(outbox(id), JSON.stringify([
+    ...decisions.filter(d => !known.some(k => k.event_id === d.event_id)), ...known]));
   localStorage.removeItem(CONSENT_OUTBOX_PREFIX);
 }
 export const CONSENT_SAVE_ERROR = 'therese:cloud-consent-save-error';
@@ -53,100 +34,6 @@ const inFlight = new Map<string, Promise<void>>();
 function pending(id: string): Decision[] {
   return JSON.parse(localStorage.getItem(id ? outbox(id) : CONSENT_OUTBOX_PREFIX) || '[]');
 }
-
-export function isUnidentifiedDataProfile(id: string, current: string): boolean {
-  return !id.startsWith('directory:')
-    // Les identités numériques antérieures au nonce restent ambiguës lors
-    // du passage au format durable : un inode a pu être réutilisé.
-    || (/^directory:\d+:\d+:[a-f0-9]{32}$/.test(current) && /^directory:\d+:\d+:\d+$/.test(id));
-}
-
-export function hasUnidentifiedConsentDecisions(): boolean {
-  const unresolved = (id: string) => {
-    try {
-      const decisions = pending(id);
-      return !Array.isArray(decisions) || decisions.length > 0;
-    } catch {
-      return true;
-    }
-  };
-  return Boolean(profile()) && (unresolved('') || (profile().startsWith('directory:')
-    && storedDataProfiles().some(id => isUnidentifiedDataProfile(id, profile()) && unresolved(id))));
-}
-
-function checkIdentifiedDecisions(): void {
-  if (hasUnidentifiedConsentDecisions()) {
-    throw new Error('Des accords attendent dans un profil non identifié. Leur appartenance doit être établie avant de les synchroniser.');
-  }
-}
-
-function mergeConsentDecisions(queues: Decision[][]): Decision[] {
-  const decisions = new Map<string, Decision>();
-  const predecessors = new Map<string, Set<string>>();
-  for (const queue of queues) {
-    let previous: string | undefined;
-    for (const decision of queue) {
-      if (!decisions.has(decision.event_id)) {
-        decisions.set(decision.event_id, decision);
-        predecessors.set(decision.event_id, new Set());
-      }
-      if (previous && previous !== decision.event_id) predecessors.get(decision.event_id)!.add(previous);
-      previous = decision.event_id;
-    }
-  }
-  function precedes(a: string, b: string): boolean {
-    const todo = [...predecessors.get(b)!];
-    const seen = new Set<string>();
-    while (todo.length) {
-      const id = todo.pop()!;
-      if (id === a) return true;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      todo.push(...predecessors.get(id)!);
-    }
-    return false;
-  }
-  // Les dates murales ne prouvent aucun ordre. Les files et leurs événements
-  // communs le prouvent ; sinon, un retrait doit gagner sur un accord concurrent.
-  const prudence: [string, string][] = [];
-  for (const accord of decisions.values()) {
-    if (!accord.granted) continue;
-    for (const retrait of decisions.values()) {
-      if (!retrait.granted && retrait.purpose === accord.purpose
-        && retrait.provider.toLowerCase() === accord.provider.toLowerCase()
-        && !precedes(accord.event_id, retrait.event_id) && !precedes(retrait.event_id, accord.event_id)) {
-        prudence.push([accord.event_id, retrait.event_id]);
-      }
-    }
-  }
-  for (const [accord, retrait] of prudence) predecessors.get(retrait)!.add(accord);
-  const remaining = new Set(decisions.keys());
-  const merged: Decision[] = [];
-  while (remaining.size) {
-    const id = [...remaining].find(candidate => [...predecessors.get(candidate)!].every(p => !remaining.has(p)));
-    if (id === undefined) throw new Error('L’ordre des accords est ambigu. Les files ont été conservées sans envoi.');
-    merged.push(decisions.get(id)!);
-    remaining.delete(id);
-  }
-  return merged;
-}
-
-/** Réunit seulement les identités reconnues comme celles du profil actif. */
-export function reconcileConsentOutboxes(id: string, aliases: string[]): void {
-  const sources = aliases.filter(alias => alias !== id && localStorage.getItem(outbox(alias)) !== null);
-  if (!sources.length) return;
-  const merged = mergeConsentDecisions([pending(id), ...sources.map(pending)]);
-  // Écrire la destination avant de retirer les sources : une panne du stockage
-  // laisse des copies dédoublonnables, jamais un retrait perdu.
-  localStorage.setItem(outbox(id), JSON.stringify(merged));
-  const revisionKey = `${outbox(id)}:revision`;
-  localStorage.setItem(revisionKey, String(Number(localStorage.getItem(revisionKey) || '0') + 1));
-  for (const alias of sources) {
-    localStorage.removeItem(outbox(alias));
-    localStorage.removeItem(`${outbox(alias)}:revision`);
-  }
-}
-
 function checkProfile(id: string): void {
   if (!id || profile() !== id) {
     throw new Error('Le profil a changé. Reviens au profil concerné pour enregistrer tes accords avant de réessayer.');
@@ -175,15 +62,16 @@ export function queueConsentDecision(purpose: CloudPurpose, provider: string, gr
 
 export function flushConsentDecisions(): Promise<void> {
   const id = profile();
-  try { checkIdentifiedDecisions(); } catch (err) { return Promise.reject(err); }
   if (inFlight.has(id)) return inFlight.get(id)!;
+  if (id && JSON.parse(localStorage.getItem(CONSENT_OUTBOX_PREFIX) || '[]').length) {
+    return Promise.reject(new Error('Des accords attendent dans un profil non identifié. Rouvre ton profil habituel pour les synchroniser avant de réessayer.'));
+  }
   if (!pending(id).length) return Promise.resolve();
   const flight = (async () => {
     const { request } = await import('../services/api/core');
     checkProfile(id);
     while (pending(id).length) {
       checkProfile(id);
-      checkIdentifiedDecisions();
       const decision = pending(id)[0];
       await request('/api/consents', { method: 'POST',
         body: JSON.stringify({ ...decision, data_profile: id }) });
@@ -222,7 +110,6 @@ export async function synchroniserConsentements(): Promise<void> {
     // Import acquitté : si une décision est arrivée entre-temps, une relecture suffit.
     importer = false;
     checkProfile(id);
-    checkIdentifiedDecisions();
     if (localStorage.getItem(`${outbox(id)}:revision`) !== revision) continue;
     // Un retrait arrivé pendant l'import gagne aussi sur sa réponse périmée.
     const retraits = new Set(pending(id).filter(d => !d.granted).map(d => `${d.purpose}:${d.provider}`));

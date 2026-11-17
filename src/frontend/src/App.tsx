@@ -14,7 +14,6 @@ import * as api from './services/api';
 import { AuthentificationNavigateurImpossible } from './services/api/core';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
-import { storedDataProfiles } from './lib/consentSync';
 import { EcranDeChargement } from './components/EcranDeChargement';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
@@ -125,15 +124,9 @@ function ApplicationBootstrap() {
     if (!backendReady) return;
 
     async function initAndCheckOnboarding() {
-      function arreterPourCloisonnement(err: unknown) {
-        console.error('Cloisonnement du profil impossible :', err);
-        setErreurDeCloisonnement('Le dossier de données de ce profil n’a pas pu être identifié ou isolé.');
-      }
       // Retry loop : le backend peut mettre un instant à démarrer
       const maxRetries = 5;
-      let profilIdentifie = false;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        profilIdentifie = false;
         try {
           // Récupérer le token de session
           await api.initializeAuth();
@@ -142,32 +135,23 @@ function ApplicationBootstrap() {
           // lancements, meme quand THERESE_DATA_DIR change. Identifier le
           // profil backend avant de monter l'interface ; si le dossier a
           // change, purger les caches metier puis recharger des stores vierges.
-          let profiles: string[];
-          try {
-            profiles = storedDataProfiles();
-          } catch (err) {
-            arreterPourCloisonnement(err);
-            return;
-          }
-          const stats = await api.getStats(profiles);
+          const stats = await api.getStats();
           // B-517 : cette exception est déterministe (dossier de données vide ou
           // illisible), un nouvel essai identique ne la résout pas, et démarrer
           // sans cloison mélangerait les données de deux profils. On s'arrête.
           let isolation: ReturnType<typeof isolateDataProfilePersistence>;
           try {
-            if (!stats.data_profile_id) throw new Error('Identité du dossier absente.');
             isolation = isolateDataProfilePersistence(stats.data_dir, {
               reload: () => window.location.reload(),
-              canonicalDataDir: stats.data_profile,
-              verifiedAliases: stats.data_profile_aliases,
-              profileIdentity: stats.data_profile_id,
             });
           } catch (err) {
-            arreterPourCloisonnement(err);
+            console.error('Cloisonnement du profil impossible :', err);
+            setErreurDeCloisonnement(
+              'Le dossier de données de ce profil n’a pas pu être identifié ou isolé.'
+            );
             return;
           }
           if (isolation === 'switched') return;
-          profilIdentifie = true;
 
           // Correctifs 0.83 : une synchronisation des accords en échec ne bloque
           // jamais le démarrage. Le cache local reste tel quel (rien de perdu ni
@@ -198,11 +182,6 @@ function ApplicationBootstrap() {
             await new Promise(resolve => setTimeout(resolve, attempt * 500));
           }
         }
-      }
-
-      if (!profilIdentifie) {
-        arreterPourCloisonnement(new Error('Identité du profil indisponible après cinq tentatives.'));
-        return;
       }
 
       // Si toutes les tentatives echouent : NE PAS montrer l'onboarding
