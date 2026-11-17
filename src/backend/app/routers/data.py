@@ -194,12 +194,13 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
     jamais pris pour un identifiant.
 
     Un mot de passe saisi tel quel pouvant porter l'un de ces séparateurs, on
-    lit au-delà sur un seul indice : ce qui précède ne peut pas être un hôte et
-    son port (`nom:secret`). Le « @ » doit alors se trouver dans le mot qui
-    suit, sans nouvelle espace ; derrière le guillemet qui ferme l'URL, il doit
-    suivre aussitôt. Sans cet indice, une URL s'arrête à son séparateur, quoi
-    qu'il y ait derrière. (Un champ qui est une URL entière n'est pas lu ici :
-    voir `_masquer_urls_d_un_texte`.)
+    lit au-delà sur deux indices seulement : ce qui précède ne peut pas être un
+    hôte et son port (`nom:secret`), ou bien l'URL s'arrête sur un guillemet
+    que rien n'a ouvert et qu'une lettre ou un chiffre suit aussitôt. Le « @ »
+    doit alors se trouver dans le mot qui suit, sans nouvelle espace. Sans
+    indice, une URL s'arrête à son séparateur, quoi qu'il y ait derrière. (Un
+    champ qui est une URL entière n'est pas lu ici : voir
+    `_masquer_urls_d_un_texte`.)
     """
     fins = _FIN_AUTORITE + ("&;" if imbriquee else "")
     fin = debut
@@ -219,6 +220,11 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
             texte[suite].isspace() or texte[suite] in _SEPARATEURS_DE_TEXTE
         ):
             suite += 1
+    elif texte[fin] in "\"'" and not fermee and texte[fin + 1 : fin + 2].isalnum():
+        # Un guillemet que rien n'a ouvert, suivi aussitôt d'une lettre ou d'un
+        # chiffre : il est dans le mot de passe. Un attribut HTML ou un champ
+        # JSON se ferment sur « > », une virgule ou une espace, jamais ainsi.
+        suite = fin + 1
     else:
         return debut
     fin_suite = suite

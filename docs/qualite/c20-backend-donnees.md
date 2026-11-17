@@ -344,11 +344,12 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    accolade. Ce qui y précède le dernier `@` est un identifiant et part. Sans
    autre indice l'URL s'arrête là, quoi qu'il y ait derrière : lien HTML,
    Markdown, JSON ou dictionnaire dans un texte restent intacts.
-4. Dans un texte, on ne lit au-delà du séparateur que sur un seul indice : ce
+4. Dans un texte, on ne lit au-delà du séparateur que sur deux indices : ce
    qui précède ne peut pas être un hôte suivi de son port (`nom:secret` ; un
-   port suivi d'un point reste un port). Le `@` doit alors se trouver dans le
-   mot qui suit ; derrière le guillemet qui ferme l'URL, il doit suivre
-   aussitôt.
+   port suivi d'un point reste un port), ou bien l'URL s'arrête sur un
+   guillemet que rien n'a ouvert et qu'une lettre ou un chiffre suit aussitôt
+   (un attribut HTML ou un champ JSON se ferment sur `>`, une virgule ou une
+   espace). Le `@` doit alors se trouver dans le mot qui suit.
 5. Une URL passée en paramètre d'une autre est lue de la même façon, par la
    même boucle et sans récursion ; son autorité s'arrête en plus au séparateur
    de paramètres (`&`, `;`) : elle n'absorbe pas la suite de l'URL principale.
@@ -368,11 +369,11 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    première version, quadratique, mettait plus de deux minutes sur 640 000
    caractères ; mesuré ensuite à 0,05 s).
 
-Tests : `tests/test_c20_b1812_export_config.py`, 123 tests dont 105 ajoutés par
+Tests : `tests/test_c20_b1812_export_config.py`, 128 tests dont 110 ajoutés par
 ces passes ; chaque reproduction des relecteurs est rejouée sur les deux
 routes d'export. Rouges constatés avant chaque correctif, dans l'ordre des
-commits : 5, 3, 4, 21, 2, 2, 14, 4, puis 9. Six cas de HTML et de texte et quatre
-cas de charge ajoutés par contre-épreuve de l'orchestrateur. 314 tests voisins
+commits : 5, 3, 4, 21, 2, 2, 14, 4, 9, puis 3. Six cas de HTML et de texte et quatre
+cas de charge ajoutés par contre-épreuve de l'orchestrateur. 319 tests voisins
 de l'export verts ; ruff propre ; mypy du fichier inchangé (23).
 
 Limites connues, non couvertes (chacune demande une URL que les lecteurs
@@ -380,7 +381,7 @@ d'URL ne lisent pas comme l'utilisateur l'entend) :
 
 - DANS UN TEXTE seulement (un champ qui est une URL entière n'est pas
   concerné) : un mot de passe saisi tel quel qui contient un séparateur de
-  texte (guillemet, virgule, parenthèse, espace…) et dont ce qui le précède a
+  texte autre qu'un guillemet (virgule, parenthèse, espace…) et dont ce qui le précède a
   la forme d'un hôte, c'est-à-dire un nom d'utilisateur seul ou un début tout
   en chiffres (`nom:12 34@hôte`, `nom:42,secret@hôte`) ; ou plusieurs espaces.
   Choix assumé entre deux risques opposés : lire au-delà d'un séparateur sans
