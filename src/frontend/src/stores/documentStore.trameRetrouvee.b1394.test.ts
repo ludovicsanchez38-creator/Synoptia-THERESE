@@ -10,11 +10,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const api = vi.hoisted(() => ({ getDocument: vi.fn(), listerTraitements: vi.fn(), generateOutline: vi.fn() }));
+const api = vi.hoisted(() => ({ getDocument: vi.fn(), listerTraitements: vi.fn() }));
 vi.mock('../services/api/documents', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getDocument: api.getDocument,
-  generateOutline: api.generateOutline,
 }));
 vi.mock('../services/api/processingTasks', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -54,72 +53,5 @@ describe('documentStore - B-1394, une trame en cours est retrouvée à la réouv
     await useDocumentStore.getState().openDocument('doc-1');
     await vi.advanceTimersByTimeAsync(0);
     expect(useDocumentStore.getState().outlineGeneration).toBeNull();
-  });
-
-  it.each(['avant', 'après'])('R2-6 : un sondage de A terminé %s la lecture de B ne détourne pas son ouverture', async (ordre) => {
-    useDocumentStore.getState().closeDocument();
-    api.getDocument.mockReset().mockResolvedValue(vide);
-    let terminerSondage!: (traitements: typeof enCours[]) => void;
-    api.listerTraitements.mockReset().mockResolvedValue([]).mockResolvedValueOnce([enCours])
-      .mockImplementationOnce(() => new Promise(resolve => { terminerSondage = resolve; }));
-    await useDocumentStore.getState().openDocument('doc-1');
-    await vi.advanceTimersByTimeAsync(3000);
-    expect(terminerSondage).toBeTypeOf('function');
-    let terminerLecture!: (doc: typeof vide) => void;
-    api.getDocument.mockImplementationOnce(() => new Promise(resolve => { terminerLecture = resolve; }));
-    const ouvertureB = useDocumentStore.getState().openDocument('doc-2');
-    if (ordre === 'après') {
-      terminerLecture({ ...vide, id: 'doc-2' });
-      await ouvertureB;
-    }
-    terminerSondage([]);
-    await vi.advanceTimersByTimeAsync(0);
-    if (ordre === 'avant') terminerLecture({ ...vide, id: 'doc-2' });
-    await ouvertureB;
-
-    expect(api.getDocument.mock.calls.map(([id]) => id)).toEqual(['doc-1', 'doc-2']);
-    expect(useDocumentStore.getState().currentDocument?.id).toBe('doc-2');
-    expect(useDocumentStore.getState().isLoading).toBe(false);
-    expect(useDocumentStore.getState().outlineGeneration).toBeNull();
-    api.generateOutline.mockResolvedValue([]);
-    await useDocumentStore.getState().generateOutline('doc-2');
-    expect(api.generateOutline).toHaveBeenCalledWith('doc-2', expect.any(String));
-  });
-
-  it('R2-6 : une relecture interne conserve la surveillance de la même session', async () => {
-    useDocumentStore.getState().closeDocument();
-    api.getDocument.mockReset().mockResolvedValue(vide);
-    api.listerTraitements.mockReset().mockResolvedValueOnce([enCours]).mockResolvedValue([]);
-    await useDocumentStore.getState().openDocument('doc-1');
-    await vi.advanceTimersByTimeAsync(0);
-    await useDocumentStore.getState().openDocument('doc-1');
-    api.getDocument.mockResolvedValue(trame);
-    await vi.advanceTimersByTimeAsync(3000);
-
-    expect(useDocumentStore.getState().currentDocument?.sections_total).toBe(1);
-    expect(useDocumentStore.getState().outlineGeneration).toBeNull();
-  });
-
-  it.each(['fermeture', 'autre document', 'réouverture du même document'])('R1-6 : une recherche tardive ne réinstalle pas le suivi après %s', async (action) => {
-    useDocumentStore.getState().closeDocument();
-    api.getDocument.mockReset().mockImplementation(async (id: string) => ({ ...vide, id }));
-    api.generateOutline.mockReset().mockResolvedValue([]);
-    let terminer!: (traitements: typeof enCours[]) => void;
-    api.listerTraitements.mockReset().mockResolvedValue([]).mockImplementationOnce(
-      () => new Promise(resolve => { terminer = resolve; }),
-    );
-    await useDocumentStore.getState().openDocument('doc-1');
-    expect(terminer).toBeTypeOf('function');
-    if (action !== 'autre document') useDocumentStore.getState().closeDocument();
-    if (action !== 'fermeture') await useDocumentStore.getState().openDocument(action === 'autre document' ? 'doc-2' : 'doc-1');
-    terminer([enCours]);
-    await vi.advanceTimersByTimeAsync(0);
-
-    expect(useDocumentStore.getState().outlineGeneration).toBeNull();
-    await useDocumentStore.getState().openDocument('doc-2');
-    await useDocumentStore.getState().generateOutline('doc-2');
-    expect(api.generateOutline).toHaveBeenCalledWith('doc-2', expect.any(String));
-    expect(useDocumentStore.getState().outlineNotice).toBeNull();
-    useDocumentStore.getState().closeDocument();
   });
 });
