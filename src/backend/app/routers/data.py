@@ -131,7 +131,8 @@ def _cle_de_connexion(cle: str) -> bool:
 
 _DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
 _URL_DANS_UN_TEXTE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]*")
-_NOM_DE_PARAMETRE = re.compile(r"(?<=[?&#])([^=&#?]+)=")
+# Un nom de paramètre peut suivre un « ; » (ancien séparateur) ; la valeur d'un secret, elle, va jusqu'au « & » ou au « # ».
+_NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&;#?]+)=")
 _FIN_AUTORITE = "/?#"
 _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
 # Ce qui ne peut pas appartenir à un nom d'hôte et ferme une URL dans un texte.
@@ -193,12 +194,12 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
     identifiant. Un lien HTML ou Markdown suivi d'une adresse e-mail n'est donc
     jamais pris pour un identifiant.
 
-    Une URL entre guillemets ou chevrons s'arrête au guillemet fermant, quoi
-    qu'il y ait derrière. Sinon, un mot de passe saisi tel quel pouvant porter
-    l'un de ces séparateurs, on lit au-delà sur un indice précis : ce qui
-    précède ne peut pas être un hôte et son port (`nom:secret`), ou bien l'URL
-    s'arrête sur un guillemet que rien n'a ouvert. Le « @ » doit alors se
-    trouver dans le mot qui suit, sans nouvelle espace.
+    Un mot de passe saisi tel quel pouvant porter l'un de ces séparateurs, on
+    lit au-delà sur un indice précis : ce qui précède ne peut pas être un hôte
+    et son port (`nom:secret`), ou bien l'URL s'arrête sur un guillemet que
+    rien n'a ouvert. Le « @ » doit alors se trouver dans le mot qui suit, sans
+    nouvelle espace. Une URL entre guillemets ou chevrons dont l'autorité est
+    un hôte plausible s'arrête au guillemet fermant, quoi qu'il y ait derrière.
     """
     fins = _FIN_AUTORITE + ("&;" if imbriquee else "")
     fin = debut
@@ -209,15 +210,16 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
         return arobase + 1
     if fin >= len(texte) or texte[fin] in fins + "\r\n":
         return debut
-    if ouvrant and texte[fin] == (">" if ouvrant == "<" else ouvrant):
-        return debut
+    fermee = bool(ouvrant) and texte[fin] == (">" if ouvrant == "<" else ouvrant)
     suite = fin
     if not _port_plausible(texte[debut:fin]):
-        while suite < len(texte) and texte[suite] not in fins + "\r\n" and (
+        # `nom:secret` : le mot de passe continue. Derrière le guillemet fermant, il doit suivre aussitôt.
+        suite = fin + 1 if fermee else fin
+        while not fermee and suite < len(texte) and texte[suite] not in fins + "\r\n" and (
             texte[suite].isspace() or texte[suite] in _SEPARATEURS_DE_TEXTE
         ):
             suite += 1
-    elif texte[fin] in _GUILLEMETS:
+    elif texte[fin] in _GUILLEMETS and not fermee:
         suite = fin + 1
     else:
         return debut

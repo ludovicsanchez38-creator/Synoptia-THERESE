@@ -335,19 +335,21 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    appartenir à un nom d'hôte : `/`, `?`, `#`, espace, guillemet, apostrophe,
    chevron, barre oblique inverse, virgule, point-virgule, parenthèse,
    accolade. Ce qui y précède le dernier `@` est un identifiant et part.
-3. Une URL entre guillemets ou chevrons s'arrête au guillemet fermant, quoi
-   qu'il y ait derrière (lien HTML, Markdown, JSON ou dictionnaire dans un
-   texte).
-4. Sinon, on lit au-delà du séparateur dans deux cas seulement : ce qui
-   précède ne peut pas être un hôte suivi de son port (`nom:secret` ; un port
-   suivi d'un point reste un port), ou l'URL s'arrête sur un guillemet que rien
-   n'a ouvert. Le `@` doit alors se trouver dans le mot qui suit.
+3. Une URL entre guillemets ou chevrons dont l'autorité est un hôte plausible
+   s'arrête au guillemet fermant, quoi qu'il y ait derrière (lien HTML,
+   Markdown, JSON ou dictionnaire dans un texte).
+4. On lit au-delà du séparateur dans deux cas seulement : ce qui précède ne
+   peut pas être un hôte suivi de son port (`nom:secret` ; un port suivi d'un
+   point reste un port), y compris derrière un guillemet fermant si le mot de
+   passe le suit aussitôt ; ou l'URL s'arrête sur un guillemet que rien n'a
+   ouvert. Le `@` doit alors se trouver dans le mot qui suit.
 5. Une URL passée en paramètre d'une autre est lue de la même façon, par la
    même boucle et sans récursion ; son autorité s'arrête en plus au séparateur
    de paramètres (`&`, `;`) : elle n'absorbe pas la suite de l'URL principale.
 6. Les paramètres de connexion (`password=`, `access_token=`…) sont masqués
    dans une seconde passe, sur toute l'étendue de l'URL après son premier `?`
-   ou `#` ; leur valeur va jusqu'au `&` ou au `#` suivant, point-virgule
+   ou `#` ; un nom de paramètre est reconnu après `?`, `&`, `#` ou `;`, et
+   la valeur d'un secret va jusqu'au `&` ou au `#` suivant, point-virgule
    compris. Hors identifiants et valeurs masquées, le texte sort caractère
    pour caractère.
 7. Les clés sont masquées comme les valeurs. Deux clés distinctes qui se
@@ -360,18 +362,22 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    première version, quadratique, mettait plus de deux minutes sur 640 000
    caractères ; mesuré ensuite à 0,05 s).
 
-Tests : `tests/test_c20_b1812_export_config.py`, 107 tests dont 89 ajoutés par
+Tests : `tests/test_c20_b1812_export_config.py`, 111 tests dont 93 ajoutés par
 ces passes ; chaque reproduction des relecteurs est rejouée sur les deux
 routes d'export. Rouges constatés avant chaque correctif, dans l'ordre des
-commits : 5, 3, 4, 21, 2, 2, puis 14. Six cas de HTML et de texte et quatre
-cas de charge ajoutés par contre-épreuve de l'orchestrateur. 298 tests voisins
+commits : 5, 3, 4, 21, 2, 2, 14, puis 4. Six cas de HTML et de texte et quatre
+cas de charge ajoutés par contre-épreuve de l'orchestrateur. 302 tests voisins
 de l'export verts ; ruff propre ; mypy du fichier inchangé (23).
 
 Limites connues, non couvertes (chacune demande une URL que les lecteurs
 d'URL ne lisent pas comme l'utilisateur l'entend) :
 
 - un mot de passe saisi tel quel qui contient le guillemet même qui entoure
-  l'URL, ou un chevron fermant dans une URL entre chevrons ;
+  l'URL (ou le chevron fermant d'une URL entre chevrons) ET dont ce qui le
+  précède a la forme d'un hôte : pas de `:` (nom d'utilisateur seul) ou un
+  début tout en chiffres. Choix assumé entre deux risques opposés : lire
+  au-delà du guillemet fermant sans indice tronquait tout lien HTML suivi
+  d'une adresse e-mail (relecture 6) ;
 - un mot de passe qui contient une espace et qui commence par des chiffres
   (`nom:12 34@hôte`), ou qui contient plusieurs espaces ;
 - un nom d'utilisateur seul (sans `:`) contenant une virgule, un
