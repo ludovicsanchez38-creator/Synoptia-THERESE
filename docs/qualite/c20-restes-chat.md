@@ -135,6 +135,48 @@ plus haut : **266 réussis, 0 échec, 0 erreur, 0 ignoré** ; le XML
 et aucune suite complète lancée. Les mêmes garde réseau et adaptation temporaire
 du réveil `asyncio` que pour la passe 1 ont été utilisés.
 
+## Remédiation de la relecture, passe 3
+
+Les trois constats sont confirmés. Les variantes ont été ajoutées à
+`tests/test_c20_b2032_reperes_agenda.py` et exécutées isolément avant chaque
+correction. Elles comparent le texte reçu et le message assistant enregistré,
+en flux et hors flux ; les tests existants n'ont pas été affaiblis.
+
+- **1 — listes et bornes en gras.** Huit des dix variantes isolées étaient
+  rouges pour les listes numérotées et les tableaux avec chaque borne en gras ;
+  les deux variantes de durées numérotées passaient déjà. Ligne d'échec :
+  `E   AssertionError: assert '1. Réunion c...etien : 14:00' == '1. Réunion c...t pas de lui.'`
+  La détection accepte les libellés numérotés et normalise chaque borne pour
+  l'analyse, sans modifier le texte affiché. La relecture a ajouté la notation
+  Markdown `__` : les deux variantes échouaient avant leur correction, avec :
+  `E   AssertionError: assert '- Rendez-vou...0__–__15:00__' == '- Rendez-vou...t pas de lui.'`
+- **2 — ordre après rédaction.** Huit des quatorze variantes isolées étaient
+  rouges, notamment avec « et enfin » et « et à présent ». Ligne d'échec :
+  `E   AssertionError: assert '- 09h : Réun...retien fictif' == '- 09h : Réun...t pas de lui.'`
+  La construction verbale avec objet direct est distinguée de la liste
+  nominale ; les variantes nominales et l'adverbe après le verbe sont testés.
+- **3 — instruction citée.** Vingt des vingt-six variantes isolées étaient
+  rouges. Ligne d'échec :
+  `E   AssertionError: assert '- 09h : Réun...t pas de lui.' == '- 09h : Réun...retien fictif'`
+  Le texte cité à expliquer ou résumer est écarté de l'analyse, y compris ses
+  dates et actions, tandis qu'une lecture indépendante reste prise en compte.
+  Les tests couvrent plusieurs guillemets, les apostrophes et la lecture d'un
+  objet ou d'une date cités. La relecture a trouvé dix variantes rouges sur
+  seize pour des objets ou dates cités dans une lecture indépendante :
+  `E   AssertionError: assert '- 09h : Réun...retien fictif' == '- 09h : Réun...t pas de lui.'`
+  Elle a aussi trouvé six variantes rouges sur six pour « la liste » ou « je
+  consulte » dans l'explication, puis quatre sur six pour une lecture décrite
+  par un tiers ; leur ligne d'échec était celle du faux positif ci-dessus.
+
+Après chaque correction, les deux appelants ont été relus et les tests voisins
+exécutés. La porte finale réunit les neuf fichiers backend listés dans les
+portes ciblées ci-dessus et `tests/test_F11_recaps_lisibles.py` : **353 réussis,
+0 échec, 0 erreur, 0 ignoré**. Le XML `/tmp/restes-chat-r3.xml` a été lu.
+Ruff `check --no-fix src/backend tests` : **0 erreur**. Aucune suite complète
+ni vérification frontend n'a été lancée ; aucun fichier frontend n'a changé.
+Les tests ont utilisé les mêmes garde réseau et adaptation temporaire du réveil
+`asyncio` que pour les passes précédentes.
+
 ## Limites
 
 La reconnaissance des demandes et des horaires reste fondée sur des motifs :
