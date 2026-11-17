@@ -136,6 +136,13 @@ async def test_restitution_en_echec_preserve_les_suivantes_et_survit_a_la_sessio
     session = db_session
     for identifiant in ("premier", "second"):
         session.add(Project(id=identifiant, name="Dossier fictif"))
+    # La reprise valide désormais chaque entité, pas seulement son dossier.
+    # Ces fragments restituables représentent donc de vrais fichiers SQL.
+    for numero, identifiant in enumerate(("premier", "second"), start=1):
+        session.add(FileMetadata(
+            id=f"fragment-{numero}", name="Note fictive", path=str(tmp_path / f"{numero}.txt"),
+            extension=".txt", size=12, scope="project", scope_id=identifiant,
+        ))
     await session.commit()
     originaux = [point(1, "fragment-1", scope_id="premier"), point(2, "fragment-2", scope_id="second")]
     index_local.client.upsert(settings.qdrant_collection, points=originaux)
