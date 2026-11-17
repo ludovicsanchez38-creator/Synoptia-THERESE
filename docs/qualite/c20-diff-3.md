@@ -446,3 +446,151 @@ npm run lint
 Aucun lancement de suite complète, aucun réseau ni fournisseur LLM, aucun serveur, aucun usage des ports interdits, de `~/.therese` ou de `.app-loop/`. Aucune commande `rm`. Les tests utilisent des doubles de services et des données temporaires sous `/tmp` ; les dépendances partagées restent en lecture seule. Les rouges connus cités dans la demande ne font pas partie de la sélection.
 
 **Échecs aux portes finales : aucun.** Résultats effectivement relus : `/tmp/diff-3-r2.xml`, `/tmp/diff-3-r2-pytest-final.log`, `/tmp/diff-3-r2-vitest.json`, `/tmp/diff-3-r2-types-vert.json`, `/tmp/diff-3-r2-acquittement-vert.json`, `/tmp/diff-3-r2-ruff.log`, `/tmp/diff-3-r2-tsc.log`, `/tmp/diff-3-r2-lint.log`. Les tentatives interrompues du lanceur standard ne sont pas comptées comme des portes réussies.
+
+## Remédiation de la relecture, passe 3
+
+Intervention du 17 novembre 2026. HEAD reçu : `c84748159b50ff04edba225653600e7279012966`, branche `gpt/c20-diff-3`. Les fichiers suivis étaient propres ; les liens `.venv` et `src/frontend/node_modules` étaient déjà non suivis. Aucun commit, aucun `git add`, aucun dépôt annexe ni bundle. Les six constats sont confirmés ; la limite sur le rebase d'historique est détaillée au constat 6.
+
+### Constat 1, P1 : demande en vol et brouillon suivant
+
+Six cas `R3.1` ajoutés dans `ChatInput.accordAttentes.c20r2.test.tsx` : message et recherche, saisie conservée ou mise en file avant le premier événement, puis mise en file pendant la persistance préalable. Les quatre premiers cas ont échoué seuls avant correction ; la relecture des appelants a conduit aux deux cas de persistance, également exécutés seuls et rouges avant leur correction.
+
+```text
+AssertionError: expected [] to deeply equal [ 'Demande fictive A' ]
+AssertionError: expected [] to deeply equal [ Array(1) ]
+AssertionError: expected [ 'Demande suivante' ] to deeply equal [ 'Demande fictive A', …(1) ]
+AssertionError: expected [ 'Demande suivante' ] to deeply equal [ …(2) ]
+```
+
+La demande est validée avec son brouillon avant préparation. Une fois le traitement lancé, les attentes de persistance contrôlent toujours la conversation et la destination, mais le champ peut porter le tour suivant. Au premier événement, l'instantané envoyé crée les bulles ; seul le brouillon encore égal au texte envoyé est vidé, et seules les pièces envoyées sont retirées. La file se vide ensuite normalement.
+
+Appelants relus : envoi par bouton/Entrée, file et reprise différée, acquittement du message/de la recherche, persistance et adoption de l'identité serveur, autosauvegarde et arrêt. Premier groupe voisin : **47/47** ; après ajout de la persistance : **58/58**. Preuves : `/tmp/diff-3-r3-1-{rouge,vert}.{log,json}` et `/tmp/diff-3-r3-1-persistance-{rouge,vert}.{log,json}`.
+
+### Constat 2, P1 : bascule après acquittement
+
+Quatre cas `R3.2` ajoutés dans le même fichier, tous rouges seuls avant correction : message/recherche, événement suivant/exception du flux, avec un texte sans ponctuation encore en tampon.
+
+```text
+AssertionError: expected '' to be 'Texte encore en tampon\n\n*(interromp…' // Object.is equality
+AssertionError: expected 'Texte encore en tampon' to be 'Texte encore en tampon\n\n*(interromp…' // Object.is equality
+```
+
+Lors de la détection de la bascule, le message d'origine reçoit le texte accumulé et la mention `*(interrompu)*`, avec `isStreaming: false`, avant l'abandon du flux. Le minuteur est arrêté ; une navigation reçue dans ce flux est abandonnée aussi. Le même traitement couvre une exception après bascule. Le brouillon et les messages de la conversation affichée restent intacts.
+
+Appelants relus : action « Voir » dans `actionsStore`, `loadConversation`, mise à jour des messages par identifiant dans toutes les conversations, arrêt et gestion des erreurs. Groupe voisin : **39/39**. Preuves : `/tmp/diff-3-r3-2-{rouge,vert}.{log,json}`.
+
+### Constat 3, P2 : finalité recalculée après accord mémoire
+
+Trois cas `R3.3` ajoutés : changements `llm → documents` et `documents → llm` après accord mémoire, puis témoin où l'accord mémoire porte légitimement une autre finalité que la demande inchangée. Exécutés seuls avant correction : **2 échecs, 1 passé**. Les tests `R2.3` sur l'accord initial sont conservés sans modification.
+
+```text
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+```
+
+`requestPurpose` conserve la finalité calculée avant l'accord, indépendamment de `purpose`, qui peut venir de la demande d'accord mémoire. Les deux résolutions de la demande sont comparées. Un changement suspend la reprise et explique qu'il faut confirmer à nouveau ; l'envoi explicite suivant propose l'accord adapté, puis reprend la même source serveur sans doublon utilisateur. Une finalité mémoire distincte reste transmise quand la demande n'a pas changé.
+
+Appelants relus : accord initial, confirmation différée, réception de `memory_consent_required`, reprise par `resume_message_id`, contrat de `memory_card_purpose` et garde documentaire du moteur. Groupe voisin : **82/82**. Preuves : `/tmp/diff-3-r3-3-{rouge,vert}.{log,json}`.
+
+### Constat 4, P2 : priorité clavier et ouverture tardive du projet
+
+Deux cas `R3.4` ajoutés à `CloudConsentDialog.empilement.c20r1.test.tsx`, avec le vrai `ProjectModal` et les classes Tailwind compilées, accord disponible ou occupé. Ils ouvrent le projet après l'accord et vérifient le focus, l'isolation, Tab, Maj+Tab et Échap. Les deux échouaient seuls avant correction :
+
+```text
+Error: expect(element).toHaveFocus()
+```
+
+Le champ du projet recevait le focus. La pile conserve maintenant les éléments des dialogues : le focus initial et le pilotage clavier suivent leur ordre visuel, avec le même comparateur de couche et d'ordre DOM que l'isolation. Une fenêtre inscrite plus tard mais située derrière ne prend plus la priorité.
+
+Appelants relus : `CloudConsentDialog`, `ProjectModal`, pièges imbriqués et panneaux sans piégeage clavier. Les tests des deux ordres d'ouverture, du hook, du projet et de l'Atelier passent : **117/117**. Preuves : `/tmp/diff-3-r3-4-{rouge,vert}.{log,json}`.
+
+### Constat 5, P2 : sélection native pendant l'accord
+
+Un cas `R3.5` suspend le vrai parcours du sélecteur natif simulé pendant une réponse, fait arriver l'accord mémoire, puis rend la sélection. Rouge seul avant correction :
+
+```text
+AssertionError: expected [] to deeply equal ArrayContaining{…}
+```
+
+Le callback commun signale maintenant « Fichier à sélectionner à nouveau » et invite à terminer l'accord avant de sélectionner de nouveau le fichier. La sélection ne modifie pas la demande sous accord. Le test vérifie également l'absence d'indexation ou d'envoi du fichier, puis la réussite d'une nouvelle sélection après l'accord.
+
+Appelants relus : sélecteur natif, entrée navigateur, dépôt Tauri désactivé sous la modale, indexation et affichage des notifications. Groupe voisin : **37/37**. Preuves : `/tmp/diff-3-r3-5-{rouge,vert}.{log,json}`.
+
+Ces cinq constats ajoutent **16 cas frontend**, dont **15 rouges constatés avant correction et un témoin de comportement à conserver**. Aucun test existant n'a été affaibli.
+
+### Constat 6, P2 : apports du lot bancs absents
+
+La référence locale `c20/integration` valait `a498d9d3` à l'entrée. `git rev-list --left-right --count c20/integration...HEAD` donnait `6 6`, malgré l'annonce d'un arbre déjà rebasé. Les six commits absents sont `62c9f998`, `c82f199c`, `6c4609e5`, `16a025b3`, `d57e9d40`, `a498d9d3`.
+
+Les deux fichiers B-1851/B-1852 ont été rétablis d'abord, puis leurs **7 contre-épreuves** exécutées seules sans les corrections : **7 échecs**, XML parsé et relu. Chacune présentait cette ligne :
+
+```text
+Failed: DID NOT RAISE <class 'AssertionError'>
+```
+
+Le contenu des **24 fichiers** de ces six commits a ensuite été reporté dans l'arbre de travail. Ils sont identiques octet pour octet à `a498d9d3`, y compris le bilan du lot bancs. La frontière exige de nouveau un événement d'erreur et contrôle récursivement tous les champs ; les contre-épreuves d'attribution et les autres corrections du lot sont restaurées intégralement. Les apports de diff-3 sont conservés. Appelants relus : frontière des fournisseurs, attribution du chat, clôture des Actions, persistance différée, garde des parcours et recette à faux curl.
+
+**Limite d'historique : aucun rebase Git effectué.** Le répertoire Git est protégé en écriture et la consigne interdit de modifier les commits ou l'index. L'orchestrateur devra rebaser l'historique avant son commit. Pendant cette intervention, la référence partagée a encore avancé jusqu'à `c127023a` avec quatre commits du lot instrument ; ceux-ci ne font pas partie des six commits bancs visés par cette relecture. Cette passe reste limitée aux constats reçus et à la référence d'entrée `a498d9d3`.
+
+Preuve rouge : `/tmp/diff-3-r3-6-rouge.{log,xml}`. Les vérifications finales reprennent les fichiers B-1851/B-1852 entiers et leurs voisins.
+
+### Conditions des portes de la passe 3
+
+Le lanceur Pytest standard s'est arrêté de progresser après 14 cas, sans XML final, à l'entrée des tests utilisant le client asynchrone. Il a été interrompu. Une sonde `asyncio.run(asyncio.to_thread(...))` indépendante a également dépassé cinq secondes. Comme à la passe 2, `/tmp/diff-3-r3-polling/sitecustomize.py` borne l'attente d'`EpollSelector.select` à 1 ms pour pallier le réveil local interdit ; la même sonde termine alors. Aucun test, fixture, assertion ni code de production n'est remplacé par ce lanceur.
+
+La première porte avec ce lanceur comptait **123 passés et 1 échec de dépendance** (`test_b2029_couverture.py`) ; Vitest avait **396 assertions passées et 1 fichier non chargé** (`b1854-garde-parcours.test.ts`). Il manquait `@playwright/test`. Ses archives et celles de `playwright` et `playwright-core`, version **1.58.2**, ont été lues dans le cache npm local et extraites uniquement dans le `node_modules` ignoré de cet arbre. Aucun téléchargement, script d'installation ou navigateur lancé. Le test B-2029 seul repasse ensuite (**1/1**, XML relu), et les deux portes ciblées sont rejouées avec cette dépendance disponible.
+
+Les tests de garde simulent les URL : aucun port interdit n'est contacté. Le fichier Node est lancé uniquement sur le test de garde concerné ; les parcours navigateur et les cas utilisant des chemins hors du périmètre autorisé ne sont pas lancés. Le lanceur Node utilise `--experimental-test-isolation=none` pour éviter le canal de communication entre processus interdit dans ce bac.
+
+### Portes finales de la passe 3
+
+| Porte | Résultat |
+| --- | --- |
+| Pytest ciblé | **124/124 dans 15 fichiers**, 0 échec, 0 erreur, 0 ignoré ; `/tmp/diff-3-r3.xml` parsé et relu |
+| Garde hors réseau du processus Pytest | **0 tentative de connexion** |
+| Vitest ciblé et voisins | **398/398 dans 95 fichiers**, dont les 16 nouveaux cas ; 0 échec, 0 ignoré ; sortie 0, `success: true` |
+| Garde Node de couverture | **1/1**, cas nommé dans le TAP, sans navigateur |
+| Ruff | Sortie 0, `All checks passed!` |
+| TypeScript | Sortie 0, aucun diagnostic |
+| ESLint | Sortie 0, **0 erreur, 27 avertissements existants**, aucune correction de lint étrangère au lot |
+| Diff, index et HEAD | `git diff --check` sans défaut ; index inchangé ; HEAD toujours `c84748159b50ff04edba225653600e7279012966` |
+
+Les quatre cas Ollama et la recette `.deb` cités comme rouges connus passent avec les corrections restaurées du lot bancs. Les tests de bac à sable B-1153/B-1191 ne font pas partie de la sélection. **Aucun rouge restant dans les portes exécutées.** Les décomptes finaux ne cumulent pas les rejeux intermédiaires.
+
+Commandes backend, depuis la racine :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp/diff-3-r3-polling \
+  OLLAMA_BASE_URL=http://127.0.0.1:9 THERESE_DATA_DIR=/tmp/diff-3-r3-data \
+  .venv/bin/python -m pytest \
+  tests/test_b1851_preuve_frontiere.py tests/test_b1852_preuve_attribution.py \
+  tests/test_frontiere_erreurs.py tests/test_pluriel_fournisseur.py \
+  tests/test_lot14_frontiere_erreurs.py tests/test_actions_traitement.py \
+  tests/test_b2033_charges.py tests/test_r3_4_ollama.py tests/test_b1806_banc_ollama.py \
+  tests/test_securite_f2_recette_deb.py tests/test_b1807_recette_deb.py \
+  tests/test_b2029_couverture.py tests/test_t4_consentement_moteur.py \
+  tests/test_r2_2_protection.py tests/test_r2_3_outil.py \
+  -q -p no:cacheprovider -p tests.bancs_sans_reseau --timeout=120 \
+  --junitxml=/tmp/diff-3-r3.xml
+RUFF_CACHE_DIR=/tmp/diff-3-r3-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+node --experimental-test-isolation=none --test \
+  --test-name-pattern='^la garde autorise les lectures' tests/couverture/couverture-ecran.test.mjs
+```
+
+Commande frontend depuis `src/frontend` ; les options du chargeur évitent les écritures dans les dépendances partagées :
+
+```sh
+npm_config_offline=true VITE_THERESE_BACKEND_PORT=9 npx vitest run \
+  src/components/chat/ChatInput*.test.tsx src/components/shared/CloudConsentDialog*.test.tsx \
+  src/hooks/useDialogFocusTrap*.test.tsx src/hooks/useFileDrop*.test.ts src/hooks/useFileDrop*.test.tsx \
+  src/components/memory/ProjectModal*.test.tsx src/components/ui/DialogShell*.test.tsx \
+  src/components/atelier/AgentSession*.test.tsx src/components/calendar/CalendarPanel*.test.tsx \
+  src/components/chat/MessageBubble*.test.tsx src/lib/chatPersistence*.test.ts \
+  src/lib/debouncedStorage*.test.ts src/lib/consent*.test.ts src/stores/chatStore*.test.ts \
+  src/stores/actionsStore.resultatDansUneConversation.test.ts src/test/b1854-garde-parcours.test.ts \
+  --maxWorkers=3 --no-cache --configLoader runner \
+  --reporter=json --outputFile=/tmp/diff-3-r3-vitest.json
+npm_config_offline=true npx tsc --noEmit
+npm_config_offline=true npm run lint
+```
+
+Résultats finaux effectivement relus : `/tmp/diff-3-r3.xml`, `/tmp/diff-3-r3-pytest.log`, `/tmp/diff-3-r3-vitest.json`, `/tmp/diff-3-r3-node.log`, `/tmp/diff-3-r3-ruff.log`, `/tmp/diff-3-r3-tsc.log`, `/tmp/diff-3-r3-lint.log`. Aucun lancement de suite complète, aucun réseau ni fournisseur LLM, aucun serveur, aucun usage de `~/.therese` ou de `.app-loop/`, aucune commande `rm`. Tous les changements destinés à l'orchestrateur restent non commités.

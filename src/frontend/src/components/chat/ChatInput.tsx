@@ -79,6 +79,12 @@ function signalerDemandePerimee() {
   });
 }
 
+function finaliserReponseInterrompue(messageId: string, contenu: string) {
+  if (messageId) useChatStore.getState().updateMessage(
+    messageId, `${contenu}${contenu ? '\n\n' : ''}*(interrompu)*`,
+  );
+}
+
 interface ChatInputProps {
   onOpenCommandPalette?: () => void;
   initialPrompt?: string;
@@ -95,6 +101,7 @@ interface SendRequest {
   files: AttachedFile[];
   destination: string | null;
   purpose?: Extract<CloudPurpose, 'llm' | 'documents'>;
+  requestPurpose?: Extract<CloudPurpose, 'llm' | 'documents'>;
   memoryOrigin?: string;
 }
 
@@ -447,7 +454,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
     // Le sélecteur natif peut lui aussi terminer pendant l'accord affiché.
-    if (pendingCloudConsentRef.current) return;
+    if (pendingCloudConsentRef.current) {
+      if (files.length > 0) useStatusStore.getState().addNotification({
+        type: 'warning', title: 'Fichier à sélectionner à nouveau',
+        message: 'Un accord est en attente. Termine cette étape, puis sélectionne à nouveau le fichier à joindre.',
+      });
+      return;
+    }
     const newFiles = files.filter((file) => {
       if (attachedPathsRef.current.has(file.path)) return false;
       attachedPathsRef.current.add(file.path);
@@ -621,17 +634,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     files: [...attachedFilesRef.current], destination: contexteEnvoiRef.current.destination,
   }), []);
 
-  const demandeToujoursCourante = useCallback((demande: SendRequest) => {
+  const demandeToujoursCourante = useCallback((demande: SendRequest, verifierBrouillon = true) => {
     if (demande.conversationId === identiteConversationCourante()
-        && demande.message === textareaRef.current?.value.trim()
         && demande.destination === contexteEnvoiRef.current.destination
         && (!demande.memoryOrigin || demande.memoryOrigin === contexteEnvoiRef.current.origin)
+        && (!verifierBrouillon || (demande.message === textareaRef.current?.value.trim()
         && demande.files.length === attachedFilesRef.current.length
         && demande.files.every((file, index) => {
           const actuelle = attachedFilesRef.current[index];
           return file.path === actuelle.path && file.name === actuelle.name
             && file.size === actuelle.size && file.mimeType === actuelle.mimeType;
-        })) return true;
+        })))) return true;
     signalerDemandePerimee();
     return false;
   }, []);
@@ -718,16 +731,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     }
     if (!demandeToujoursCourante(demande)) return;
-    const finaliteCloud: CloudPurpose = demande.memoryOrigin && demande.purpose
-      ? demande.purpose
-      : demande.files.length > 0 || commandeDeFichier
-        ? 'documents'
-        : 'llm';
-    if (demande.purpose && demande.purpose !== finaliteCloud) {
+    const finaliteCloud = demande.files.length > 0 || commandeDeFichier ? 'documents' : 'llm';
+    // L'accord mémoire peut couvrir des documents historiques sans que la
+    // demande courante en lise. Comparer les deux résolutions de la demande.
+    if (demande.requestPurpose && demande.requestPurpose !== finaliteCloud) {
       signalerDemandePerimee();
       return;
     }
-    demande.purpose = finaliteCloud;
+    demande.requestPurpose = finaliteCloud;
     // B-1158 : l'accord porte sur la destination réelle ; un modèle Ollama
     // Cloud part chez ollama.com et le demande comme un fournisseur en ligne.
     const destinationMessage = demande.destination;
@@ -788,7 +799,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     let assistantMessageId = '';
     const accepterMessage = () => {
       if (assistantMessageId) return true;
-      if (!demandeToujoursCourante(demande)) return false;
+      // La demande est déjà partie : le composeur peut contenir le tour suivant.
+      if (demande.conversationId !== identiteConversationCourante()) {
+        signalerDemandePerimee();
+        return false;
+      }
     // Add user message
     // Revue Soso, passe 3 : le message ajouté localement doit porter le drapeau,
     // sinon changer de fournisseur en cours de conversation ne redemande pas le
@@ -804,17 +819,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // Suggestion Dr_logic 20/07 : l'ENVOI ramène toujours en bas de la
     // conversation (le scroll manuel reste respecté PENDANT la réponse).
     window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
-    setInput('');
     // B-1509 : le brouillon s'efface quand son texte quitte le champ, jamais
     // à la fin de la réponse (un texte tapé entre-temps y serait perdu).
-    clearDraft();
-    setAttachedFiles([]); // Clear attached files after sending
-    attachedPathsRef.current.clear();
-
-    // Reset textarea height
-    if (textareaRef.current) {
+    if (textareaRef.current?.value.trim() === trimmed) {
+      setInput('');
+      clearDraft();
       textareaRef.current.style.height = 'auto';
     }
+    const pathsEnvoyes = new Set(sentFiles.map(file => file.path));
+    setAttachedFiles(current => current.filter(file => !pathsEnvoyes.has(file.path)));
+    for (const path of pathsEnvoyes) attachedPathsRef.current.delete(path);
 
     // Start streaming
 
@@ -865,7 +879,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // identifiant, le backend en créerait une seconde, et le projet
       // resterait sur celle que plus personne n'affiche.
       await attendrePersistance();
-      if (!demandeToujoursCourante(demande)) return;
+      if (!demandeToujoursCourante(demande, false)) return;
       // Only send conversation_id if it's synced with backend.
       // L'identifiant est relu DANS le store : celui du rendu date d'avant
       // l'attente, et le rattachement vient peut-être de le remplacer. Envoyer
@@ -878,7 +892,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       let syncedConversationId = conversation?.synced ? idCourant : undefined;
       if (conversation && !conversation.ephemeral && idCourant) {
         syncedConversationId = await assurerConversationPersistee(idCourant);
-        if (!demandeToujoursCourante(demande)) return;
+        if (!demandeToujoursCourante(demande, false)) return;
       }
 
       // Stream response from backend (inclure skill_id si provient des guided prompts)
@@ -891,7 +905,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         conversation_id: syncedConversationId || undefined,
         include_memory: includeMemory,
         memory_card_grants: memoryCardGrantsForRequest(),
-        memory_card_purpose: finaliteCloud,
+        memory_card_purpose: demande.memoryOrigin ? demande.purpose : finaliteCloud,
         ...(repriseMemoire ? { resume_message_id: repriseMemoire.id } : {}),
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
@@ -908,6 +922,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       for await (const chunk of stream) {
         if (!accepterMessage() || demande.conversationId !== identiteConversationCourante()) {
           stopBatching();
+          pendingClientAction = null;
+          finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
           controller.abort();
           return;
         }
@@ -967,6 +983,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           });
           setShowSlashMenu(false);
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
+            requestPurpose: finaliteCloud,
             files: sentFiles, destination: demande.destination,
             conversationId: identiteConversationCourante(), message: trimmed,
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
@@ -1071,8 +1088,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } catch (error) {
       // Stop batching on error
       stopBatching();
-      if ((!assistantMessageId && !demandeToujoursCourante(demande))
-          || demande.conversationId !== identiteConversationCourante()) return;
+      if (demande.conversationId !== identiteConversationCourante()) {
+        pendingClientAction = null;
+        abortRef.current?.abort();
+        finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
+        if (!assistantMessageId) signalerDemandePerimee();
+        return;
+      }
+      if (!assistantMessageId && !demandeToujoursCourante(demande, false)) return;
       // Interruption volontaire : afficher le texte déjà reçu
       if (error instanceof DOMException && error.name === 'AbortError') {
         // Revue harmonisation F2a : l'utilisateur a ARRÊTÉ la réponse - la
@@ -1174,13 +1197,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     let assistantMessageId = '';
     const accepterMessage = () => {
       if (assistantMessageId) return true;
-      if (!demandeToujoursCourante(demande)) return false;
+      if (demande.conversationId !== identiteConversationCourante()) {
+        signalerDemandePerimee();
+        return false;
+      }
       addMessage({ role: 'user', content: `[Recherche approfondie] ${trimmed}` });
       // F9 revue : ce second chemin d'envoi doit aussi ramener en bas
       window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
-      setInput('');
-      clearDraft(); // B-1525 : le texte quitte le champ (B-1509).
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      if (textareaRef.current?.value.trim() === trimmed) {
+        setInput('');
+        clearDraft(); // B-1525 : seul le brouillon envoyé quitte le champ.
+        textareaRef.current.style.height = 'auto';
+      }
 
       assistantMessageId = addMessage({
         role: 'assistant',
@@ -1197,7 +1225,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     try {
       await attendrePersistance();
-      if (!demandeToujoursCourante(demande)) return;
+      if (!demandeToujoursCourante(demande, false)) return;
       // Même règle que sur le chemin normal : l'identifiant est relu dans le
       // store, jamais repris de la valeur figée au rendu.
       const conversation = currentConversation();
@@ -1205,7 +1233,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       let syncedConversationId = conversation?.synced ? idCourant : undefined;
       if (conversation && !conversation.ephemeral && idCourant) {
         syncedConversationId = await assurerConversationPersistee(idCourant);
-        if (!demandeToujoursCourante(demande)) return;
+        if (!demandeToujoursCourante(demande, false)) return;
       }
 
       const controller = new AbortController();
@@ -1218,6 +1246,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       for await (const chunk of stream) {
         if (!accepterMessage() || demande.conversationId !== identiteConversationCourante()) {
+          finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
           controller.abort();
           return;
         }
@@ -1260,8 +1289,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       updateMessage(assistantMessageId, accumulatedContent);
     } catch (error) {
-      if ((!assistantMessageId && !demandeToujoursCourante(demande))
-          || demande.conversationId !== identiteConversationCourante()) return;
+      if (demande.conversationId !== identiteConversationCourante()) {
+        abortRef.current?.abort();
+        finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
+        if (!assistantMessageId) signalerDemandePerimee();
+        return;
+      }
+      if (!assistantMessageId && !demandeToujoursCourante(demande, false)) return;
       if (error instanceof DOMException && error.name === 'AbortError') {
         updateMessage(assistantMessageId, accumulatedContent || '*(recherche interrompue)*');
       } else {
