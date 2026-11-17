@@ -508,5 +508,91 @@ La recette utilise uniquement une base jetable dans `/tmp`, une garde Python
 contre les connexions réseau et les chemins interdits, et aucun fournisseur
 LLM. Le sandbox refuse aussi l'écriture dans les sockets Unix : le réveil
 interne de la boucle asyncio du lanceur temporaire utilise donc un tube local.
+
+## Remédiation de la relecture, passe 7
+
+Seuls les deux écarts transmis par l'orchestrateur sont traités. Les réserves
+acceptées restent intactes. Aucun fichier n'a été repris depuis une autre
+branche ou un autre lot. Les seules modifications hors des cinq modules
+signalés, de leurs tests et de ce bilan sont le recalage du cliquet aux deux
+endroits explicitement autorisés. Aucun ajout à l'index ni commit.
+
+1. **Typage global.** `ReponseMission.__call__` porte les types ASGI
+   `Scope`, `Receive`, `Send` et le retour `None`. Les deux dictionnaires de
+   `_signaler_ligne_invalide` sont des `dict[str, Any]`. La préférence rendue
+   passe par une valeur annotée `str`, conforme à `Preference.value`
+   (`src/backend/app/models/entities.py:341`). Le résultat de la purge est
+   annoté `int`, conforme à `QdrantService.async_delete_by_entity`
+   (`src/backend/app/services/qdrant.py:763`) ; le retour `None` en cas
+   d'échec reste inchangé. Le cache d'agenda écarte le calendrier `None`
+   dans une vraie branche avant de lire `provider`, sans `assert`.
+   Aucun `cast`, `type: ignore` ni changement de comportement.
+
+   Cinq cas AST dans `tests/test_c20_r7_typage.py` ont chacun été lancés seuls
+   et vus rouges avant le correctif. Les cinq rapports
+   `/tmp/backend-donnees-r7-rouge-{1,2,3,4,5}.xml` ont été lus : un échec,
+   aucune erreur de recette dans chacun. Lignes d'échec recopiées des XML,
+   dans l'ordre ASGI, CRM, export, purge puis agenda :
+
+   ```text
+   AssertionError: assert {'receive': N... 'send': None} == {'receive': '...send': 'Send'}
+   AssertionError: assert {'row': 'dict...tats': 'dict'} == {'row': 'dict...ct[str, Any]'}
+   AssertionError: _valeur_de_preference_exportable retourne une valeur externe sans annotation str
+   AssertionError: purge_contact_vector retourne une valeur externe sans annotation int
+   AssertionError: Le cache doit écarter explicitement le calendrier None avant de lire provider
+   ```
+
+   La mesure globale à froid donne **927 avant, 922 après** :
+   `.venv/bin/python -m mypy src/backend/app --ignore-missing-imports
+   --no-error-summary --cache-dir=/dev/null`, puis comptage de ` error:`.
+   Journaux : `/tmp/backend-donnees-r7-mypy-avant.log` et
+   `/tmp/backend-donnees-r7-mypy-apres.log`. La comparaison des diagnostics,
+   après neutralisation des numéros de ligne, retire exactement les cinq
+   diagnostics signalés et n'en ajoute aucun. Le diagnostic de la purge
+   existait déjà sous une autre forme : sa correction descend donc d'une
+   unité sous les 923 de référence. **Le cliquet est abaissé à 922 dans
+   `.github/workflows/ci.yml` et `tests/test_cliquet_mypy_ci.py`.** Le test
+   d'égalité a d'abord été recalé et lancé seul contre l'ancien workflow :
+   `AssertionError: assert '923' == '922'`
+   (`/tmp/backend-donnees-r7-cliquet-rouge.xml`, lu).
+
+   Les appelants ont été relus après correction : réponse ASGI et finalisation
+   de mission, lecture/blocage/modification d'événement, import et synchronisation
+   CRM, assembleur partagé des exports, anonymisations manuelle et automatique.
+   Les tests voisins couvrent notamment les déconnexions ASGI 2.3/2.4, la
+   cloison entre comptes, le masquage des préférences et les purges partielles.
+
+2. **Test instable.**
+   `test_mypy_n_ajoute_aucune_erreur_dans_les_trois_expressions_corrigees`
+   est retiré, ainsi que ses trois imports devenus inutiles. Aucun saut,
+   allongement de délai ou nouvel essai. **La garde des trois expressions de
+   la passe 6 est le cliquet global.** Un sixième cas AST vérifie que ce
+   fichier de tests ne réimporte pas mypy ; il ne lance aucun analyseur.
+   Lancé seul avant le retrait, il donne :
+   `AssertionError: Un test d'export relance mypy : ['mypy']`
+   (`/tmp/backend-donnees-r7-rouge-6.xml`, lu). Après retrait, cette garde et
+   les 23 cas d'export restants passent : **24 réussis**, XML
+   `/tmp/backend-donnees-r7-instabilite-vert.xml` lu.
+
+Portes finales ciblées, rapports XML lus :
+
+- `/tmp/backend-donnees-r7.xml` : **431 réussis, 0 échec, 0 erreur,
+  0 exclu**, dont les six nouveaux cas statiques. Les 22 fichiers exécutés
+  couvrent les routes agents, agenda, CRM, données, configuration et RGPD,
+  les régressions C20 B-1810/1811/1812/1814/1815, l'export par conversation et
+  du profil, les préavis et les quatre régressions de purge du cycle 9.
+- `/tmp/backend-donnees-r7-cliquet.xml` : **7 réussis, 0 échec, 0 erreur,
+  0 exclu**, après modification du workflow ; les deux branches de comparaison
+  stricte restent vérifiées. Total des portes finales : **438 réussis**.
+- Ruff : `.venv/bin/python -m ruff check --no-fix src/backend tests`,
+  **0 erreur**. `git diff --check` est propre.
+
+Les lancements pytest utilisent `OLLAMA_BASE_URL=http://127.0.0.1:9`,
+`-q -p no:cacheprovider --timeout=120` et les chemins XML ci-dessus.
+La garde temporaire de la recette est adaptée à une base jetable dans
+`/tmp/backend-donnees-r7-data` et bloque les connexions réseau ainsi que les
+chemins protégés ; elle conserve le tube local de réveil asyncio de la passe 6.
+Aucun fournisseur LLM, service réel, port interdit, suite complète ou porte
+frontend n'a été sollicité. Aucun test existant n'a été affaibli.
 Cette adaptation reste dans `/tmp/backend-donnees-r6-garde/sitecustomize.py`
 et ne modifie ni l'application ni ses assertions.

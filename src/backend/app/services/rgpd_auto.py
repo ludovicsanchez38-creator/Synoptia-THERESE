@@ -42,7 +42,8 @@ async def purge_contact_vector(contact_id: str, max_attempts: int = 3) -> int | 
         try:
             from app.services.qdrant import get_qdrant_service
 
-            return await get_qdrant_service().async_delete_by_entity(contact_id)
+            supprimes: int = await get_qdrant_service().async_delete_by_entity(contact_id)
+            return supprimes
         except Exception as e:  # noqa: BLE001 - on retente puis on journalise
             last_error = e
             logger.warning(

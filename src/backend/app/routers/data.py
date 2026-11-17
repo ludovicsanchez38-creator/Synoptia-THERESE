@@ -497,7 +497,8 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
             return "[REDACTED]"
         if masquee != structure:
             return _ecrire_json(masquee)
-    return pref.value
+    valeur: str = pref.value
+    return valeur
 
 
 def _profil_pour_export() -> dict[str, Any] | None:

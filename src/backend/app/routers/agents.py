@@ -44,6 +44,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import func, select
+from starlette.types import Receive, Scope, Send
 
 logger = logging.getLogger(__name__)
 
@@ -784,7 +785,7 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
     flux = event_stream()
 
     class ReponseMission(StreamingResponse):
-        async def __call__(self, scope, receive, send):
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
             try:
                 await super().__call__(scope, receive, send)
             finally:

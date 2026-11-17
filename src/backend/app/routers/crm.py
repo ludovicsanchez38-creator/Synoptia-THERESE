@@ -78,7 +78,7 @@ def _sanitize_row(row: dict) -> dict:
     return sanitized
 
 
-def _signaler_ligne_invalide(stats: dict, row: dict, onglet: str, ligne: int) -> None:
+def _signaler_ligne_invalide(stats: dict[str, Any], row: dict[str, Any], onglet: str, ligne: int) -> None:
     if any(value is not None and str(value).strip() for value in row.values()):
         stats["errors"].append(f"{onglet}, ligne {ligne} : identifiant manquant ou valeur invalide.")
 

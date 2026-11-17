@@ -1126,7 +1126,7 @@ async def _evenement_en_cache(
 
     if calendar_id and calendar_id != "primary":
         calendrier = await session.get(Calendar, calendar_id)
-        if not autorise(calendrier):
+        if calendrier is None or not autorise(calendrier):
             return None
         if calendrier.provider == "caldav":
             copie = await session.get(CalendarEvent, _id_evenement_importe(calendar_id, event_id))
