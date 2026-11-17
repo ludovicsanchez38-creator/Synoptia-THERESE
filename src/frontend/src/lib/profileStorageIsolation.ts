@@ -6,7 +6,7 @@
  * conversations, evenements, comptes et brouillons du profil precedent.
  */
 import { purgeLocalPersistence } from './purgeLocalData';
-import { migrateConsentOutbox, reconcileConsentOutboxes, storedDataProfiles } from './consentSync';
+import { isUnidentifiedDataProfile, migrateConsentOutbox, reconcileConsentOutboxes, storedDataProfiles } from './consentSync';
 
 export const DATA_PROFILE_STORAGE_KEY = 'therese:data-profile';
 
@@ -64,7 +64,10 @@ export function isolateDataProfilePersistence(
 
   // Le helper desarme aussi les ecritures Zustand debouncées et purge le
   // sessionStorage. Sans cela, `pagehide` reecrirait therese-chat au reload.
-  purgeLocalPersistence({ profileSwitch: true });
+  purgeLocalPersistence({ profileSwitch: true,
+    unidentifiedProfile: options?.profileIdentity && isUnidentifiedDataProfile(previousDataDir ?? '', currentProfile)
+      ? previousDataDir : undefined,
+  });
   localStorage.setItem(DATA_PROFILE_STORAGE_KEY, currentProfile);
   options?.reload?.();
   return 'switched';

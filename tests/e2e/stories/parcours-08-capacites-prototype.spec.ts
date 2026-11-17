@@ -316,7 +316,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
       text_version: '3',
       data_categories: ['description du visuel', 'format', 'qualité'],
       occurred_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
-      data_profile: '/tmp/therese-test',
+      data_profile: await page.evaluate(() => localStorage.getItem('therese:data-profile')),
     }]);
     expect(ecritures).toEqual(['POST /api/consents', 'POST /api/images/generate']);
     expect(new URL(page.url()).searchParams.has('interface')).toBe(false);

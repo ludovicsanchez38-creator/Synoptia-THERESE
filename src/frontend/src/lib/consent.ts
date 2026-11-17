@@ -1,4 +1,4 @@
-import { queueConsentDecision } from './consentSync';
+import { hasUnidentifiedConsentDecisions, queueConsentDecision } from './consentSync';
 
 /**
  * THÉRÈSE v2 - Consentement transfert cloud (US-003 / RGPD-4)
@@ -84,6 +84,7 @@ export function grantCloudConsent(
 }
 
 export function hasCloudConsent(purpose: CloudPurpose, provider?: string, requiredCategories: string[] = []): boolean {
+  if (hasUnidentifiedConsentDecisions()) return false;
   const store = loadStore();
   if (provider !== undefined) {
     const grant = store.grants[grantKey(purpose, provider)];
@@ -110,6 +111,7 @@ export function revokeCloudConsent(purpose: CloudPurpose, provider: string): voi
 }
 
 export function listCloudConsents(): CloudGrant[] {
+  if (hasUnidentifiedConsentDecisions()) return [];
   return Object.values(loadStore().grants);
 }
 

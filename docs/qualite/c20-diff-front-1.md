@@ -347,3 +347,115 @@ Les trois rapports XML ci-dessous ont été lus avec `xml.etree.ElementTree`, en
 | Git | `git diff --check` et index | sans objet | 0 | 0 | sans objet | aucune erreur d’espacement, index inchangé |
 
 Les correctifs, leurs tests et les fichiers d’intégration reportés sont laissés non commités dans cet arbre. Le HEAD reste `d5dbaa0b` et l’intégration locale contrôlée reste `75498edd`. La suite complète et le rejeu contradictoire sans correctifs restent à l’orchestrateur.
+
+## Remédiation de la relecture, passe 3
+
+Départ constaté : `7b941459`, base commune avec l’intégration locale `a498d9d3` : `75498edd`. Les dépendances `.venv` et `src/frontend/node_modules` sont des liens non suivis déjà présents. Aucun index ni historique modifié.
+
+### Rouges isolés avant les correctifs
+
+- **C1** — `profileStorageIsolation.test.ts`, filtre `R3-C1 : garde` (3 variantes, options réelles de `App`) : `AssertionError: Les données anciennes doivent rester récupérables: expected null not to be null`. Preuve : `/tmp/diff-front-1-r3-c1-rouge.xml`.
+- **C2** — `consentSync.profiles.test.ts`, `R3-C2 : un retrait ancien bloque la réactivation au démarrage réel puis au rechargement` : `AssertionError: promise resolved "undefined" instead of rejecting`. Preuve : `/tmp/diff-front-1-r3-c2-rouge.xml`.
+- **C3** — `consentSync.profiles.test.ts`, filtre `R3-C3` : `AssertionError: promise resolved "undefined" instead of rejecting` au deuxième démarrage de B. Preuve : `/tmp/diff-front-1-r3-c3-rouge.xml`.
+- **C4** — `test_c20_identite_profil.py::test_r3_c4_un_inode_reutilise_ne_reprend_pas_l_identite_du_dossier_precedent` : `AssertionError: Un inode réutilisé doit désigner un nouveau profil` (`directory:7:42:0` des deux côtés). Preuve : `/tmp/diff-front-1-r3-c4-rouge.xml`, lu.
+- **C4, garde de transition** — deux cas frontend `R3-C4` : `AssertionError: promise resolved "undefined" instead of rejecting` et `AssertionError: the given combination of arguments (null and string) is invalid for this assertion.` La migration de l’ancienne identité numérique doit elle aussi conserver cache et retrait en attente. Preuve : `/tmp/diff-front-1-r3-c4-transition-rouge.xml`.
+- **C5** — test rétabli `test_les_deux_nettoyages_epargnent_un_backend_tiers[wmic_absent-wmic_absent]`, puis `test_les_nettoyages_refusent_les_options_ambigues[python-port_repete]`, chacun seul : `AssertionError: assert ['414'] == []`. Preuves : `/tmp/diff-front-1-r3-c5-rouge.xml` et `/tmp/diff-front-1-r3-c5-python-rouge.xml`.
+- **C6** — `SplashScreen.relanceDemarrage.b1912.test.tsx`, seul cas `sidecar : relance le moteur et reprend le démarrage` : `TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Relancer le moteur local"`. Le harnais Rust rétabli échoue aussi seul sur le contrat de génération absent : `AssertionError: error[E0061]: this function takes 4 arguments but 3 arguments were supplied`. Preuves : `/tmp/diff-front-1-r3-c6-rouge.xml` et `/tmp/diff-front-1-r3-c6-rust-rouge.xml`.
+- **C7** — `b1854-garde-parcours.test.ts::R3-C7 : laisse les statistiques fournir la vraie identité du moteur jetable`, seul : `AssertionError: expected Object{ status: 200, …(2) } to be 'moteur' // Object.is equality`. Preuve : `/tmp/diff-front-1-r3-c7-rouge.xml`.
+- **C8** — contre-épreuve rétablie `test_preuve_refuse_les_evenements_manquants_ou_non_surs[aucun_evenement-openrouter]`, seule : `Failed: DID NOT RAISE <class 'AssertionError'>`. Preuve : `/tmp/diff-front-1-r3-c8-rouge.xml`.
+- **C9** — `b1854-garde-parcours.test.ts::refuse les mutations sur les routes bouchonnées`, seul : `AssertionError: expected Object{ status: 200, …(2) } to match object { status: 405 }`. Preuve : `/tmp/diff-front-1-r3-c9-rouge.xml`.
+- **C10** — les deux tests rétablis de l’historique : `Error: expect(element).not.toContainElement(element)` et `AssertionError: expected +0 to be 1 // Object.is equality`. Preuve : `/tmp/diff-front-1-r3-c10-rouge.xml` (2 échecs).
+- **C11** — test rétabli `App.lienEvitement.b1915.test.tsx`, seul : `AssertionError: expected 0 to be greater than or equal to 50`. Preuve : `/tmp/diff-front-1-r3-c11-rouge.xml`.
+- **C2, garde du correctif** — `R3-C2 : une file ancienne illisible suspend les accords sans casser leur lecture`, seul : `SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)`. La lecture des accords doit considérer une file illisible comme ambiguë sans faire tomber l’écran. Preuve : `/tmp/diff-front-1-r3-c2-illisible-rouge.xml`.
+
+### Corrections, appelants et contrôles voisins
+
+1. **Données anciennes conservées.** Avant de retirer les clés actives, `purgeLocalPersistence` copie leurs valeurs brutes dans `therese:unassigned-profile-data`, avec le marqueur antérieur et les contenus du stockage local et de session. Cela inclut les brouillons, `therese-chat` et les stores sans préfixe. Une panne de cette écriture arrête l’isolation avant la purge. Cette réserve survit aux rechargements et aux changements de profil ; l’effacement explicitement demandé par la personne la retire. Aucun rattachement automatique ne se fonde sur la seule résolution actuelle d’un chemin. Les quatre nouvelles variantes de conservation/panne utilisent toutes les options passées par `App` ; une cinquième garde couvre l’effacement volontaire. Appelants relus : démarrage, `PrivacyTab.handleDeleteAll`, désarmement des écritures différées et migration du chat. Premier contrôle voisin : **62 réussites** ; contrôle final de la persistance : **88 réussites** avec les accords et gardes du parcours.
+
+2. **Retrait ambigu prioritaire.** Les files anciennes identifiées seulement par un chemin bloquent désormais la synchronisation et les envois métier du profil natif. Le contrôle intervient avant le vidage, avant chaque décision et avant de publier une réponse GET/import. Les lectures d’accords n’annoncent pas d’autorisation tant qu’une file est ambiguë, y compris si elle est illisible. Le retrait ancien reste intact pendant le démarrage et le rechargement. Les alias constatés aujourd’hui restent insuffisants pour prouver la destination historique : ils ne provoquent pas de fusion automatique. Les deux anciens cas R2-C2 sont renforcés : ils exigeaient un GET malgré une file ambiguë ; ils exigent maintenant un refus et zéro appel, en conservant toutes leurs assertions de non-transmission et de conservation. Trois nouveaux cas couvrent le retrait ancien, le GET tardif et le JSON illisible. Appelants relus : `hasCloudConsent`, `listCloudConsents`, `memoryCardGrantsForRequest`, `viderLesAccords`, `App` et l’Atelier. La première correction affectait les accords avant identification ; la garde est maintenant bornée au profil actif, les tests existants restent verts.
+
+3. **File globale non attribuée.** Le premier passage sans marqueur enregistre durablement `therese:unidentified-consent-outbox`. La purge conserve ce marqueur avec la file. Une identité native apparue après coup ne sert jamais à lui attribuer rétrospectivement un propriétaire. Le nouveau test rejoue trois démarrages de B puis un changement vers C, sans transfert ni réactivation. Appelants relus : les deux appels à `migrateConsentOutbox` (isolation et purge), vidage et synchronisation. Contrôle voisin après correction : **83 réussites**.
+
+4. **Identité durable du dossier.** Le moteur crée exclusivement `.therese-profile-id` dans le dossier de données et y synchronise un UUID. L’identité comprend ce nonce, le périphérique et l’inode : une création successive avec inode réutilisé diffère, une modification de contenu ou un lien vers le même dossier ne diffère pas. Un marqueur incomplet est refusé sans remplacement. Les trois nouveaux cas backend vérifient ces comportements et le refus HTTP 409 de l’ancienne identité. Deux gardes frontend protègent la transition depuis l’ancien identifiant numérique : cache conservé en attente, retrait non réactivé. Le test de volume insensible à la casse simule maintenant aussi les ouvertures de fichier sur ce volume, en gardant ses assertions d’identité. Appelants relus : statistiques et vérification des deux routes d’écriture des accords. Contrôle voisin : **16 réussites backend**, puis **85 frontend** avant les dernières gardes.
+
+5. **Intégration relue rétablie.** Les 12 commits entre `75498edd` et la révision du verdict `a498d9d3` ont été reportés dans les fichiers de travail, sans rebasage ni index. La comparaison finale de ces **37 fichiers** donne **32 identiques octet pour octet**. Les cinq adaptations sont explicites : `App` conserve les correctifs de profil du lot ; son test de lien reçoit ce contrat de démarrage ; le test de garde exécute le vrai parcours sans dépendance Playwright ; le parcours reçoit les statistiques réelles ; le harnais Rust simule aussi `resource_dir()` et l’argument possédé de `env` sous Linux. Les autres corrections et contre-épreuves du lot bancs sont conservées telles quelles, y compris les attentes bornées et le nettoyage des tâches de test. Le nettoyage Windows Rust/Python exige la ligne de commande exacte, sans faire confiance au seul nom `backend.exe`. Appelants relus : lancement du sidecar, point d’entrée Python, commande manuelle, et bancs restaurés de persistance, calendrier, attribution et traitements. Les **37 tests voisins du sidecar et du nettoyage** sont verts dans le XML final.
+
+   Pendant cette passe, `c20/integration` a avancé de `a498d9d3` à `c127023a` (quatre commits du lot instrument : `428c385b`, `4fe2f96b`, `1cb57d8b`, `c127023a`). Cette différence ultérieure porte sur trois fichiers : `docs/qualite/c20-instrument.md` et les deux fichiers `tests/couverture/couverture-ecran.*`. Elle est signalée pour l’intégration par l’orchestrateur ; le report reste borné à la révision citée dans le verdict, sans réviser ce nouveau lot. Aucun raisonnement ne suppose qu’une fusion à trois voies supprimerait les commits d’intégration. HEAD reste `7b941459` et l’index reste inchangé.
+
+6. **Reprise du moteur rétablie.** Le bouton revient après les erreurs de lancement, de port et de délai. Les relances manuelles sont sérialisées et portent une génération ; les anciennes relances différées, terminaisons et notifications sont écartées. Les tests de l’intégration couvrent également double clic, nouvel échec pendant l’IPC et santé tardive. Appelants relus : `SplashScreen`, `restart_backend`, `schedule_sidecar_retry`, `handle_sidecar_termination` et `SidecarStatusBanner`. **47 tests de SplashScreen** réussis ; les simulations Rust rétablies sont dans les 37 cas voisins ci-dessus. Deux erreurs de compilation du double Linux (`path()` absent puis `env` trop restrictif) ont été corrigées dans le harnais, sans toucher au code de production ni réduire les assertions.
+
+7. **Statistiques du parcours.** Le bouchon des statistiques est retiré ; le GET atteint le moteur jetable, dont `App` reçoit réellement `data_profile_id`. L’assertion du scénario Images compare l’accord au marqueur actif fourni par ce démarrage, au lieu du chemin factice. Le nouveau cas R3-C7 exerce la garde réelle du parcours et exige la continuation vers le moteur. Appelants relus : initialisation commune du parcours, contrat de `App` et assertion d’enregistrement de l’accord. Les trois gardes du parcours sont vertes après le correctif suivant.
+
+8. **Preuve de non-fuite.** Le test exige au moins une erreur et parcourt récursivement tous les champs des événements, y compris les arguments d’outil. Les six contre-épreuves de l’intégration sont rétablies. Appelants et producteurs relus : test de frontière, contre-épreuve et flux simulés OpenRouter/Ollama. **45 tests réussis** dans les deux fichiers voisins ; aucun fournisseur réel utilisé.
+
+9. **Garde du parcours.** La méthode est contrôlée avant tout bouchon. Seul le calcul ROI pur est autorisé par la garde à rejoindre le moteur ; le scénario vérifie deux résultats distincts. Le bouchon de génération d’image est limité au scénario qui contrôle son accord. Les deux contre-épreuves rétablies vérifient le refus des mutations et le passage du calcul. **3 tests de garde réussis** avec R3-C7. Les parcours navigateur complets restent hors de cette exécution sans réseau ni ports de service.
+
+10. **Historique accessible.** Ouverture, suppression et confirmation sont des commandes distinctes. La suppression reste visible et sa description accessible désigne la décision. Les deux tests rétablis vérifient structure, clavier, opacité et description. Appelants relus : consultation, suppression, conservation de la décision et gestion d’erreur. **7 tests voisins réussis** ; les autres fichiers BoardPanel sont également verts dans la porte finale.
+
+11. **Lien d’évitement.** La classe complète `focus:z-50` remplace l’interpolation et l’import devenu inutile est retiré. Le test rétabli scanne les sources avec Tailwind et vérifie le z-index calculé au focus. Il utilise les nouveaux champs de statistiques et la collecte des profils. Appelants relus : rendu du lien et cible `main-content` du canevas. **14 tests voisins réussis** avec le démarrage et la fin de mise en route.
+
+### Banc isolé et limites de preuve
+
+Les premières tentatives HTTP ont été interrompues dans le portail de threads de Starlette, avant l’entrée dans l’application. Le même blocage a été reproduit avec un `TestClient(Starlette())` vide : le bac refuse l’écriture sur le socket de réveil d’asyncio. Un module temporaire `/tmp/diff-front-1-r3-pytest/reveil_local.py` remplace uniquement ce socket interne par un tube `os.pipe`, sans modifier les horloges, les transports HTTP en mémoire ni les assertions. Le contrôle de connexion `tests.bancs_sans_reseau` compte **zéro tentative** à la porte finale. Une première variante de réveil périodique a aussi passé les 16 tests d’identité/accords, mais plus lentement ; le rejeu final utilise le tube.
+
+Playwright est absent des dépendances de cet arbre. Le test Vitest de garde transpile et exécute le fichier réel dans une VM, avec les mêmes doubles de dépendances et les mêmes assertions que l’intégration. Les tests Node purs de garde utilisent `/tmp/diff-front-1-r3-node/setup.mjs`, un chargeur qui fournit uniquement un objet `chromium` dont le lancement lève une erreur : aucun navigateur ni service n’est ouvert. Le premier passage backend donnait 136 réussites et un échec d’import Playwright dans la garde Node ; le cas isolé puis le périmètre final complet passent avec ce double. Les deux adaptations temporaires sont extérieures au dépôt et ne changent aucun test métier.
+
+Les tests ajoutés pour C1–C4 et C7 représentent **15 cas**, en plus des contre-épreuves rétablies de l’intégration. Aucun test préexistant n’est supprimé, ignoré ou affaibli. Aucune suite complète, aucun réseau, fournisseur LLM, service sur les ports interdits, accès au profil personnel ou à `.app-loop/`. Aucun `rm`, `git add`, commit, dépôt annexe ou bundle. Les deux liens de dépendances non suivis restent tels qu’au départ.
+
+### Portes finales de la passe 3
+
+Les XML finaux ont été lus avec `xml.etree.ElementTree` : décompte des cas, échecs, erreurs et ignorés, puis vérification qu’il n’en reste aucun en échec. Les lignes des rouges isolés ci-dessus proviennent des journaux et XML également lus.
+
+| Porte | Périmètre | Réussis | Échecs | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 18 fichiers ciblés | 137 | 0 | 0 | 0 | `/tmp/diff-front-1-r3.xml`, sortie 0 |
+| Vitest | 49 fichiers ciblés, 3 workers maximum | 254 | 0 | 0 | 0 | `/tmp/diff-front-1-r3-vitest.xml`, sortie 0 |
+| Node | garde de couverture, filtre sans navigateur | 1 | 0 | 0 | 0 | `/tmp/diff-front-1-r3-node.log`, sortie 0 |
+| Ruff | `src/backend tests`, sans correction automatique | sans objet | 0 | 0 | sans objet | `All checks passed!`, sortie 0 |
+| TypeScript | `tsc --noEmit` | sans objet | 0 | 0 | sans objet | `/tmp/diff-front-1-r3-tsc.log`, sortie 0 |
+| ESLint | `npm run lint` | sans objet | 0 | 0 | sans objet | 27 avertissements préexistants, sortie 0 |
+| Git | espacement et index | sans objet | 0 | 0 | sans objet | `git diff --check`, index inchangé |
+
+Les quatre cas Ollama connus ainsi que la recette Debian sont compris dans les 137 réussites ; aucun rouge connu n’a été retranché du total. Les deux bancs de commandes non concernés ne sont pas lancés.
+
+Commandes de rejeu ciblé depuis cet arbre (les adaptations `/tmp` ne sont nécessaires que dans ce bac sans sockets et sans Playwright) :
+
+```sh
+THERESE_DATA_DIR=$(mktemp -d /tmp/diff-front-1-r3-rejeu-XXXXXX) \
+  NODE_OPTIONS='--import /tmp/diff-front-1-r3-node/setup.mjs' \
+  PYTHONPATH=/tmp/diff-front-1-r3-pytest PYTHONDONTWRITEBYTECODE=1 \
+  OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  tests/test_c20_identite_profil.py tests/test_t4_consentement_moteur.py \
+  tests/test_c20_windows_zombies.py tests/test_c20_relance_sidecar.py \
+  tests/test_b1261_instance_unique.py tests/test_b954_b955_tueur_de_zombies.py \
+  tests/test_sidecar_attend_la_fin_du_processus.py tests/test_frontiere_erreurs.py \
+  tests/test_b1851_preuve_frontiere.py tests/test_actions_traitement.py \
+  tests/test_b2033_charges.py tests/test_pluriel_fournisseur.py \
+  tests/test_b1852_preuve_attribution.py tests/test_r3_4_ollama.py \
+  tests/test_b1806_banc_ollama.py tests/test_securite_f2_recette_deb.py \
+  tests/test_b1807_recette_deb.py tests/test_b2029_couverture.py \
+  -q -p no:cacheprovider -p reveil_local -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-front-1-r3.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+NODE_OPTIONS='--import /tmp/diff-front-1-r3-node/setup.mjs' \
+  node --test --test-name-pattern='la garde autorise les lectures' \
+  tests/couverture/couverture-ecran.test.mjs
+cd src/frontend
+npx --offline --no-install vitest run \
+  src/App.lienEvitement.b1915.test.tsx src/App.demarrageAccords.test.tsx \
+  src/OnboardingRafraichitLeProfil.test.tsx src/components/SplashScreen*.test.tsx \
+  src/components/ui/SidecarStatusBanner.test.tsx src/components/board/BoardPanel*.test.tsx \
+  src/lib/profileStorageIsolation.test.ts src/lib/consentSync*.test.ts src/lib/consent.test.ts \
+  src/lib/purgeLocalData.test.ts src/lib/debouncedStorage.test.ts src/lib/chatPersistence*.test.ts \
+  src/services/api/core*.test.ts src/components/atelier/AgentSession.profils.test.tsx \
+  src/components/atelier/AgentSession.consentement.t4.test.tsx \
+  src/components/settings/PrivacyTab.test.tsx \
+  src/components/calendar/CalendarPanel.reconnexion*.test.tsx \
+  src/components/calendar/CalendarPanel.reconciliationAvantEvenements.test.tsx \
+  src/components/chat/MessageBubble.b1970.test.tsx src/components/chat/MessageBubble.test.tsx \
+  src/test/b1854-garde-parcours.test.ts \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r3-vitest.xml
+npx --offline --no-install tsc --noEmit
+npm run lint
+```

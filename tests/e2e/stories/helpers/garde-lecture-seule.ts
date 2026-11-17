@@ -38,12 +38,8 @@ export async function installReadOnlyShell(page: PageLectureSeule, backendUrl: s
     // verifie (main.py, en-tete X-Therese-Token, compare_digest) : chacune
     // repartait en 401. La mise en route se pose desormais sur le vrai backend,
     // par `passerLaMiseEnRoute`, plutot que d'etre mimee ici.
-    if (pathname === '/api/config/stats') {
-      return json(route, {
-        entities: { contacts: 1, projects: 1, conversations: 0, messages: 0, files: 0 },
-        uptime_seconds: 60, data_dir: '/tmp/therese-test', db_path: '/tmp/therese-test.db',
-      });
-    }
+    // Les statistiques viennent du moteur jetable : App doit recevoir son
+    // identité réelle avant de monter le canevas et d'enregistrer les accords.
     if (pathname === '/api/config/profile') {
       return json(route, {
         name: 'Ludovic Sanchez', nickname: 'Ludo', company: 'Synoptïa', role: null,
