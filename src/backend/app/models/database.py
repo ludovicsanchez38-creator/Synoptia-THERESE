@@ -153,6 +153,11 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
             "OR TRIM(client_name) = '' LIMIT 1"
         ).fetchone() is not None
 
+    # SQLite ne démarre pas de transaction implicite pour ALTER TABLE : les
+    # colonnes et leur remplissage doivent pourtant survivre ensemble.
+    if missing_columns and not conn.in_transaction:
+        conn.execute("BEGIN")
+
     added: list[str] = []
     for column_name, definition in definitions.items():
         if column_name not in invoice_columns:

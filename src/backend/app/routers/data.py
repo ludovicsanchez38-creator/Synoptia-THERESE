@@ -1356,18 +1356,51 @@ def _lien_de_publication_sur(
     return all((racine / nom).resolve() == racine / nom for nom in (str(source), str(cible), preuve))
 
 
+def _lien_de_compagnon_sur(
+    member: Any, dest: str | Path, precedents: dict, publications: dict, comptes: Counter,
+) -> bool:
+    suffixe = ".therese.json"
+    if not member.name.endswith(suffixe) or not member.linkname.endswith(suffixe):
+        return False
+    source, cible = member.linkname, member.name
+    source_pdf, cible_pdf = source[:-len(suffixe)], cible[:-len(suffixe)]
+    source_path, cible_path = PurePosixPath(source_pdf), PurePosixPath(cible_pdf)
+    if (
+        str(source_path) != source_pdf or str(cible_path) != cible_pdf
+        or source_path.parent != cible_path.parent or not cible_path.name.endswith(".pdf")
+        or cible_path.name.startswith(".therese-publication-")
+        or not re.fullmatch(r"\.therese-publication-[0-9a-f]{64}-[0-9a-f]{32}\.pdf", source_path.name)
+        or any(comptes[nom] != 1 for nom in (source, cible, cible_pdf))
+        or source not in precedents or not precedents[source].isfile()
+        or not (
+            publications.get(cible_pdf) == source_pdf
+            # Les anciennes publications ont pu effacer le PDF provisoire
+            # tout en conservant le compagnon provisoire et son lien final.
+            or (comptes[source_pdf] == 0 and cible_pdf in precedents and precedents[cible_pdf].isfile())
+        )
+        or not all(_chemin_d_archive_attendu(dest, nom) for nom in (source, cible, cible_pdf))
+    ):
+        return False
+    racine = Path(dest).resolve()
+    return all((racine / nom).resolve() == racine / nom for nom in (source, cible, cible_pdf))
+
+
 def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
     """Les membres qu'une sauvegarde peut extraire, et le nombre de liens
     ignorés. Lève HTTPException 400 au premier chemin inattendu (B-1497)."""
     membres = []
     liens_ignores = 0
     precedents = {}
+    publications = {}
     tous = tar.getmembers()
     comptes = Counter(str(PurePosixPath(member.name)) for member in tous)
     fichiers = {member.name: member for member in tous if member.isfile()}
     for member in tous:
         if member.issym() or member.islnk():
             if member.islnk() and _lien_de_publication_sur(member, dest, precedents, fichiers, comptes):
+                membres.append(member)
+                publications[member.name] = member.linkname
+            elif member.islnk() and _lien_de_compagnon_sur(member, dest, precedents, publications, comptes):
                 membres.append(member)
             else:
                 liens_ignores += 1
@@ -1387,9 +1420,9 @@ def _safe_extractall(tar, dest) -> None:
     entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
     quand Python le connaît.
 
-    Les liens sont ignorés, sauf ceux d'une publication PDF interrompue, dont
-    la source et le compagnon provisoire ou final sont des fichiers uniques du
-    même dossier. La reprise vérifie ensuite la preuve avant de finaliser la paire.
+    Les liens sont ignorés, sauf ceux d'une publication PDF et de son compagnon
+    provisoire, après vérification de leurs noms et de leurs sources uniques
+    dans le même dossier. La reprise vérifie ensuite le contenu de la preuve.
     """
     membres, liens_ignores = _membres_a_extraire(tar, dest)
     if liens_ignores:

@@ -533,6 +533,7 @@ def _nettoyer_publication_pdf(provisoire: Path) -> None:
             fichier.unlink(missing_ok=True)
         except OSError:
             logger.warning("Impossible de retirer un fichier provisoire de publication PDF")
+            return
 
 
 def _meme_fichier(premier: Path, second: Path) -> bool:
@@ -565,8 +566,9 @@ def _lier_preuve_pdf(provisoire: Path, chemin: Path) -> None:
 
 def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Path], object]) -> None:
     preuve = _preuve_pdf(chemin)
-    if preuve.exists() or preuve.is_symlink():
+    if preuve.is_symlink():
         return
+    preuve_presente = preuve.exists()
     prefixe = _prefixe_publication_pdf(invoice, chemin)
     for provisoire in chemin.parent.glob(f"{prefixe}*.pdf"):
         if provisoire.is_symlink():
@@ -577,7 +579,16 @@ def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Pa
             continue
         if not identique:
             continue
+        preuve_provisoire = _preuve_pdf(provisoire)
+        if preuve_presente and (
+            preuve_provisoire.is_symlink() or not _meme_fichier(preuve_provisoire, preuve)
+        ):
+            continue
         verifier(provisoire)
+        if preuve_presente:
+            if _meme_fichier(provisoire, chemin) and _meme_fichier(preuve_provisoire, preuve):
+                _nettoyer_publication_pdf(provisoire)
+            return
         try:
             _lier_preuve_pdf(provisoire, chemin)
         except FileExistsError:
