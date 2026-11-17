@@ -10,6 +10,18 @@ from app.services.user_profile import UserProfile
 from pypdf import PdfReader
 
 
+@pytest.fixture(params=["direct", "lien-symbolique"])
+def data_dir_publication(request, monkeypatch, tmp_path):
+    from app.config import settings
+
+    if request.param == "lien-symbolique":
+        lien = tmp_path / "donnees"
+        lien.symlink_to(Path(settings.data_dir).resolve(), target_is_directory=True)
+        monkeypatch.setattr(settings, "data_dir", lien)
+        assert lien != lien.resolve()
+    return Path(settings.data_dir)
+
+
 @pytest.mark.asyncio
 async def test_brouillons_historiques_isoles_preservent_archive_partagee(client, monkeypatch, tmp_path):
     from sqlalchemy.orm.attributes import set_committed_value
@@ -213,10 +225,10 @@ async def test_interruption_apres_publication_du_pdf_est_reprise(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("edition", [False, True])
 @pytest.mark.parametrize("voie", ["pdf", "pdf-ouverture"])
-async def test_restauration_reprend_la_publication_interrompue(client, monkeypatch, tmp_path, edition, voie):
-    from app.config import settings
-
-    dossier = Path(settings.data_dir) / "invoices" / f"{tmp_path.name}-{uuid4().hex}"
+async def test_restauration_reprend_la_publication_interrompue(
+    client, monkeypatch, tmp_path, edition, voie, data_dir_publication
+):
+    dossier = data_dir_publication / "invoices" / f"{tmp_path.name}-{uuid4().hex}"
     profil = UserProfile(name="Camille Avant", address="Paris", siret="12345678900010", legal_form="EI")
     monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
     monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(dossier)))
@@ -264,7 +276,8 @@ async def test_restauration_reprend_la_publication_interrompue(client, monkeypat
 
     reprise = await client.get(f"{chemin}/{voie}")
     assert reprise.status_code == 200, reprise.text
-    assert reprise.json()["pdf_path"] == str(fichier)
+    # _publier_pdf_atteste et chemin_pdf_a_ouvrir renvoient tous deux un chemin résolu.
+    assert Path(reprise.json()["pdf_path"]).resolve() == fichier.resolve()
     assert fichier.read_bytes() == contenu
     assert invoices._preuve_pdf(fichier).stat().st_mode & 0o777 == 0o600
     texte = PdfReader(fichier).pages[0].extract_text()
@@ -279,14 +292,14 @@ async def test_restauration_reprend_la_publication_interrompue(client, monkeypat
 @pytest.mark.parametrize("edition", [False, True])
 @pytest.mark.parametrize("voie", ["pdf", "pdf-ouverture"])
 async def test_restauration_apres_echec_du_nettoyage_du_compagnon(
-    client, monkeypatch, tmp_path, edition, voie
+    client, monkeypatch, tmp_path, edition, voie, data_dir_publication
 ):
     import tarfile
 
     from app.config import settings
     from app.services.encryption import decrypt_backup_archive
 
-    dossier = Path(settings.data_dir) / "invoices" / f"{tmp_path.name}-{uuid4().hex}"
+    dossier = data_dir_publication / "invoices" / f"{tmp_path.name}-{uuid4().hex}"
     profil = UserProfile(name="Camille Avant", address="Paris", siret="12345678900010", legal_form="EI")
     monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
     monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(dossier)))
@@ -330,7 +343,7 @@ async def test_restauration_apres_echec_du_nettoyage_du_compagnon(
     chiffree = Path(settings.data_dir) / "backups" / f"{sauvegarde.json()['backup_name']}.tar.gz.enc"
     decrypt_backup_archive(chiffree, archive, passe)
     with tarfile.open(archive, "r:gz") as tar:
-        membre_preuve = str(preuve.relative_to(settings.data_dir))
+        membre_preuve = str(preuve.resolve().relative_to(Path(settings.data_dir).resolve()))
         assert tar.getmember(membre_preuve).islnk()
     profil.name = "Camille Après"
     restauration = await client.post(
