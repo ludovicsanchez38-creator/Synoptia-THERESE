@@ -668,6 +668,17 @@ def test_masquage_d_un_attribut_html_colle_au_suivant(texte):
         ("Voir https://portail.invalid/?password=FAUX]secret ici", "Voir https://portail.invalid/?password=[REDACTED] ici"),
         ("Voir https://portail.invalid/?a=1)&password=FAUX-secret ici", "Voir https://portail.invalid/?a=1)&password=[REDACTED] ici"),
         ("| https://portail.invalid/?token=FICTIF|a=b|", "| https://portail.invalid/?token=[REDACTED]|a=b|"),
+        (
+            "Voir https://portail.invalid/?token=FICTIF|suite&password=FAUX-secret ici",
+            "Voir https://portail.invalid/?token=[REDACTED]&password=[REDACTED] ici",
+        ),
+        (
+            "| https://portail.invalid/?token=FICTIF|https://autre.invalid/?password=FAUX-secret|",
+            "| https://portail.invalid/?token=[REDACTED]|",
+        ),
+        ("Voir https://portail.invalid/?token=FICTIF|suite ici", "Voir https://portail.invalid/?token=[REDACTED] ici"),
+        ("Voir https://portail.invalid/?token=FICTIF`suite ici", "Voir https://portail.invalid/?token=[REDACTED] ici"),
+        ("Voir `https://portail.invalid/?token=FICTIF`&password=FAUX-secret ici", "Voir `https://portail.invalid/?token=[REDACTED]&password=[REDACTED] ici"),
     ],
 )
 def test_masquage_ne_laisse_aucun_secret_apres_la_fin_apparente_d_une_url(entree, attendu):
