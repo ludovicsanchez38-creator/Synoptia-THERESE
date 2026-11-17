@@ -1,6 +1,6 @@
 # Cycle 20, lot diff-4
 
-**État courant, passe 5 :** B-1883 et B-2008 conservés, types MIME des polices explicités sur une ligne ; B-2029 et B-1885 `regle_a_trancher`, **retirés du lot, reportés**. Le test Python B-2029 est retiré, avec sa dépendance à Playwright et au répertoire courant. La section « Remédiation de la relecture, passe 5 » fait foi. Les récits, comptes et demandes de réintégration/rebase des passes précédentes ci-dessous sont historiques.
+**État courant, passe 6 :** B-1883 et B-2008 conservés, types MIME des polices et de WebP explicités ; B-2029 et B-1885 `regle_a_trancher`, **retirés du lot, reportés**. Le test `tests/test_b2029_couverture.py` est conservé par l'intégration et reste collecté ; il lance Node avec un import relatif au répertoire courant. La section « Remédiation de la relecture, passe 6 » fait foi. Les récits, comptes et demandes de réintégration/rebase des passes précédentes ci-dessous sont historiques.
 
 Arbre `gpt-c20-diff-4`, branche `gpt/c20-diff-4`, HEAD de départ et d'arrivée `4dfc79d1`. Trois candidats confirmés et corrigés, deux règles à trancher, cinq candidats rejetés. Vérifications locales sur le code présent dans cet arbre.
 
@@ -449,9 +449,9 @@ Départ : `HEAD=1f058430`, `c20/integration=1550627b`, ascendance vérifiée. La
 
 | Constat | Verdict du candidat | Traitement de cette passe |
 | --- | --- | --- |
-| 1, P1, B-2029 : dépendance Node dans la CI Python | `regle_a_trancher` | Retrait intégral des trois deltas B-2029 propres au lot : commentaire, assertions Node et fichier Python. Aucun nouveau correctif P1. |
+| 1, P1, B-2029 : dépendance Node dans la CI Python | `regle_a_trancher` | Retrait des deltas B-2029 propres au lot : commentaire, assertions Node et candidat Python. Le test Python présent dans l'arbre rebasé est celui de l'intégration. Aucun nouveau correctif P1. |
 | 2, P2, B-2008 : polices sans table MIME système | `confirme` | Une seule ligne de production : ajout explicite de `.woff: font/woff` et `.woff2: font/woff2` au dictionnaire existant. Deux cas de test ajoutés. |
-| 3, P2, B-2029 : dépendance au répertoire courant | `regle_a_trancher` | Reproduit depuis `/tmp`, puis supprimé avec le test Python du candidat retiré au constat 1 ; aucun correctif de résolution d'import ajouté. |
+| 3, P2, B-2029 : dépendance au répertoire courant | `regle_a_trancher` | Reproduction depuis `/tmp` retirée avec le candidat du lot ; le test Python conservé par l'intégration garde son import relatif au répertoire courant. |
 
 B-2029 : **retiré du lot, reporté**. Constat P1 du relecteur recopié comme preuve :
 
@@ -459,7 +459,7 @@ B-2029 : **retiré du lot, reporté**. Constat P1 du relecteur recopié comme pr
 
 ### Rouges isolés avant retrait ou correction
 
-Les deux reproductions B-2029 ont été ajoutées dans `tests/test_b2029_couverture.py`, exécutées séparément, puis retirées avec le fichier. Le nouveau test B-2008 a été ajouté avant de modifier le gestionnaire. Chaque XML a été lu : **1 test, 1 échec, 0 erreur, 0 ignoré**, code 1. Les lignes ci-dessous viennent de leurs messages d'échec.
+Les deux reproductions B-2029 ont été ajoutées dans `tests/test_b2029_couverture.py`, exécutées séparément, puis retirées avec le candidat du lot. Le fichier homonyme conservé par l'intégration est présent dans l'arbre livré. Le nouveau test B-2008 a été ajouté avant de modifier le gestionnaire. Chaque XML a été lu : **1 test, 1 échec, 0 erreur, 0 ignoré**, code 1. Les lignes ci-dessous viennent de leurs messages d'échec.
 
 | Constat | Test isolé | Ligne d'échec recopiée | XML lu |
 | --- | --- | --- | --- |
@@ -471,7 +471,7 @@ Le constat 1 utilise un chargeur Node qui refuse uniquement `@playwright/test` e
 
 ### Retrait, correctif minimal et appelants relus
 
-Le retrait B-2029 inverse uniquement les hunks propres au lot dans `tests/couverture/couverture-ecran.mjs` et `tests/couverture/couverture-ecran.test.mjs`, et supprime `tests/test_b2029_couverture.py`. Le contrôle suivant est **vide, code 0** :
+Le retrait B-2029 concerne uniquement les deltas propres au lot dans `tests/couverture/couverture-ecran.mjs`, `tests/couverture/couverture-ecran.test.mjs` et le candidat Python. Dans l'arbre rebasé livré, `tests/test_b2029_couverture.py` est conservé par l'intégration : le retrait du candidat ne signifie pas la suppression du test intégré. Le contrôle suivant est **vide, code 0**, ce qui prouve l'identité avec l'intégration, et non l'absence du fichier :
 
 ```sh
 git diff --exit-code c20/integration -- tests/couverture/couverture-ecran.mjs tests/couverture/couverture-ecran.test.mjs tests/test_b2029_couverture.py
@@ -483,7 +483,7 @@ Pour B-2008, le dictionnaire de `scripts/recette_r5_navigateur.py:38` reçoit le
 
 ### Réserves acceptées
 
-Aucun P2 supplémentaire laissé en réserve : le constat 2 relève de la ligne évidente autorisée ; le constat 3 disparaît avec le retrait exigé pour le P1. Le candidat B-2029 reste reporté, sans revendication d'une correction de son défaut initial par ce lot. Les passes antérieures restent historiques.
+Le constat 2 relève de la ligne évidente autorisée et est corrigé. Le candidat B-2029 reste reporté, sans revendication d'une correction de son défaut initial ni de l'import relatif du test conservé par l'intégration. Les passes antérieures restent historiques.
 
 ### Portes et limites des preuves
 
@@ -496,7 +496,7 @@ Aucun P2 supplémentaire laissé en réserve : le constat 2 relève de la ligne 
 | TypeScript `tsc --noEmit` | sans objet | **0 diagnostic** | `/tmp/diff-4-r5-tsc.log`, code 0 |
 | `git diff --check` et identité des trois fichiers B-2029 avec l'intégration | sans objet | **0** | codes 0 |
 
-Deux cas de test restent ajoutés à cette passe, tous deux pour B-2008 ; les deux reproductions B-2029 sont retirées avec le candidat. Aucun rouge connu n'est soustrait. Les deux scripts restants dans le lot ont leurs tests verts sans le test Python retiré.
+Deux cas de test restent ajoutés à cette passe, tous deux pour B-2008 ; les deux reproductions B-2029 sont retirées avec le candidat. Aucun rouge connu n'est soustrait. Le rejeu ciblé des deux scripts restants dans le lot ne sélectionnait pas le test Python B-2029 conservé par l'intégration.
 
 Commandes principales, depuis la racine :
 
@@ -513,10 +513,68 @@ node --import /tmp/diff4_node_stdio.mjs \
 git diff --check
 ```
 
-Le rejeu Python depuis `/tmp` utilise les chemins absolus de l'interpréteur et des deux fichiers de test, `PYTHONPATH` pointant sur cet arbre, une autre base temporaire et `NODE_OPTIONS=--experimental-loader=file:///tmp/diff-4-r5-sans-playwright.mjs`. Ce chargeur reprend le refus de `@playwright/test` de la reproduction rouge. Les tests Python conservés ne dépendent plus de Node ; aucun paquet n'est installé ou déplacé. Les jobs Linux et Windows sélectionnent `tests/` (`.github/workflows/ci.yml:204`, `.github/workflows/tests-windows.yml:116`) ; le fichier retiré n'y est donc plus collecté. Ce rejeu local ne prétend pas remplacer une exécution Windows.
+Le rejeu Python depuis `/tmp` utilise les chemins absolus de l'interpréteur et des deux fichiers de test, `PYTHONPATH` pointant sur cet arbre, une autre base temporaire et `NODE_OPTIONS=--experimental-loader=file:///tmp/diff-4-r5-sans-playwright.mjs`. Ce chargeur reprend le refus de `@playwright/test` de la reproduction rouge. Les deux fichiers Python sélectionnés pour ce rejeu ne dépendent pas de Node ; aucun paquet n'est installé ou déplacé. En revanche, `tests/test_b2029_couverture.py`, conservé par l'intégration, lance toujours Node avec un import relatif au répertoire courant et un chargeur simulant Playwright. Les jobs Linux et Windows sélectionnent `tests/` (`.github/workflows/ci.yml:204`, `.github/workflows/tests-windows.yml:116`) : ce test reste donc collecté. Le rejeu ciblé ne validait pas ce test et ne remplaçait pas une exécution Windows.
 
 Depuis `src/frontend`, `npm_config_offline=true npm_config_cache=/tmp/diff-4-r5-npm npx --no-install tsc --noEmit` passe. Aucun fichier frontend n'a été touché : Vitest et ESLint ne sont pas relancés.
 
 Le premier lancement Node avec `--test` n'a remonté que l'échec de son sous-processus. Le lancement direct a révélé **6 réussites et 4 échecs** liés aux canaux de `spawnSync` (`EPERM`, diagnostics vides). L'adaptation temporaire déjà utilisée en passe 4, `/tmp/diff4_node_stdio.mjs`, a été relue puis réutilisée : elle dirige stdout/stderr des vrais enfants vers des fichiers sous `/tmp`, puis les restitue. Les dix tests passent avec leurs assertions intactes. Ces essais initiaux ne sont pas comptés comme des portes vertes ; aucun correctif n'est apporté aux tests pour contourner le bac à sable.
 
 Le plugin `tests.bancs_sans_reseau` indique **0 tentative de connexion** dans chaque session Python. Les tests Node retenus utilisent des doubles en mémoire ; les parcours avec navigateur, `/private/tmp` ou corbeille personnelle ne sont pas exécutés. Aucune suite complète, aucun réseau, fournisseur LLM, port réservé, `~/.therese` ou `.app-loop/`. Aucun `rm`, rebase, commit, `git add`, dépôt annexe ou bundle. Les liens non suivis `.venv` et `src/frontend/node_modules`, présents à l'arrivée, restent en place. Tous les changements de cette passe restent non commités.
+
+## Remédiation de la relecture, passe 6
+
+Les trois constats sont confirmés et corrigés dans cet arbre. Le périmètre comprend uniquement la fixture et les tests B-2008, une entrée du dictionnaire MIME, les affirmations du bilan sur B-2029 et un nouveau test de cohérence du bilan. Aucun candidat supplémentaire retiré ; B-2029 et B-1885 restent retirés du lot et reportés. Aucun fichier d'un autre lot n'est modifié.
+
+### Tests rouges écrits avant chaque correction
+
+Chaque test a été écrit ou étendu avant son correctif, puis lancé seul. Les trois XML ont été lus : **1 test, 1 échec, 0 erreur, 0 ignoré** par constat, code 1. Le rouge WebP a également été reproduit seul sous Python 3.12.3, avec le même résultat.
+
+| Constat | Test isolé | Ligne d'échec recopiée | XML lu |
+| --- | --- | --- | --- |
+| 1, P1 Windows | `tests/test_c20_b2008_mime_recette.py::test_fixture_sans_o_directory` | `AttributeError: module 'os' has no attribute 'O_DIRECTORY'. Did you mean: 'O_DIRECT'?` | `/tmp/diff-4-r6-c1-rouge.xml` |
+| 2, P2 WebP | `tests/test_c20_b2008_mime_recette.py::test_ressources_sans_table_mime_systeme[photo.webp-image/webp]` | `Expected: fulfill(body=b'police fictive', content_type='image/webp')` ; `Actual: fulfill(body=b'police fictive', content_type='application/octet-stream')` | `/tmp/diff-4-r6-c2-rouge.xml` ; `/tmp/diff-4-r6-c2-py312-rouge.xml` |
+| 3, P2 bilan | `tests/test_c20_diff4_bilan.py::test_bilan_distingue_retrait_b2029_et_test_integre` | `AssertionError: Le bilan nie la collecte du test B-2029 pourtant présent.` | `/tmp/diff-4-r6-c3-rouge.xml` |
+
+### Correctifs minimaux et appelants relus
+
+1. **Windows.** Le nouveau test copie le module `os` dans un module simulé, y retire `O_DIRECTORY`, puis demande la véritable fixture et exerce le gestionnaire installé. La fixture ajoute maintenant `monkeypatch.setattr("os.O_DIRECTORY", 0, raising=False)` avant la simulation de `os.open`. Le script de recette reste inchangé pour ce constat. Relecture de l'initialisation simulée, de `page.route` et de la fermeture du navigateur. Après correction : B-2008 **16/16**, voisin B-1883 **4/4** ; `/tmp/diff-4-r6-c1-vert.xml` lu. Ce contrôle sous Linux reproduit l'absence de la constante ; aucune exécution Windows native n'est revendiquée.
+2. **WebP.** Une seule entrée de production est ajoutée au dictionnaire existant : `.webp: image/webp`. L'ancien test des deux polices sans table système est étendu aux dix cas déjà promis : WOFF2, WOFF, SVG, PNG, JPG majuscule, WebP, JavaScript, CSS, HTML et extension inconnue. Avant chaque appel au gestionnaire, une nouvelle base `MimeTypes(filenames=())` remplace la base système ; l'initialisation système est désactivée et l'entrée WebP intégrée à Python 3.13 est retirée pour reproduire aussi l'absence constatée sous 3.12.3. Les assertions de corps, type et absence d'abandon sont conservées. Relecture de `page.route` → `servir` → `route.fulfill`, des refus, de la normalisation d'extension et du repli binaire. Après correction : B-2008 **24/24** et B-1883 **4/4** sous Python **3.13.13** et **3.12.3** ; `/tmp/diff-4-r6-c2-vert.xml` et `/tmp/diff-4-r6-py312.xml` lus.
+3. **Bilan B-2029.** L'état courant et les affirmations de la passe 5 distinguent désormais le retrait du candidat du lot et le test conservé par l'intégration. Le nouveau test vérifie la présence du fichier, l'abandon de l'affirmation de non-collecte et cette distinction dans l'état courant. Le fichier intégré n'est ni modifié ni supprimé : son import relatif est visible à `tests/test_b2029_couverture.py:22`, son lancement de Node à la ligne 56. Le contrôle `git diff --exit-code c20/integration -- tests/couverture/couverture-ecran.mjs tests/couverture/couverture-ecran.test.mjs tests/test_b2029_couverture.py` reste vide, code **0**. Les sélections `tests/` des deux CI ont été relues, et `pytest --collect-only tests/test_b2029_couverture.py` collecte bien **1 test**, sans l'exécuter. Aucun correctif de ce test hors lot n'est revendiqué.
+
+### Portes ciblées et limites des preuves
+
+| Porte | Réussis | Échecs / erreurs / ignorés | Preuve |
+| --- | ---: | ---: | --- |
+| pytest final sous Python 3.13.13, lot et voisin B-1883 | **29** | **0 / 0 / 0** | `/tmp/diff-4-r6.xml`, XML lu |
+| pytest sous Python 3.12.3, B-2008 et voisin B-1883 | **28** | **0 / 0 / 0** | `/tmp/diff-4-r6-py312.xml`, XML lu ; rejeu non additionné aux comptes distincts |
+| Ruff `src/backend tests` | sans objet | **0 diagnostic** | code **0**, `All checks passed!` |
+| `git diff --check` | sans objet | **0** | code **0** |
+
+Répartition finale : B-2008 **24**, B-1883 **4**, cohérence du bilan **1**. La passe ajoute dix cas aux dix-neuf précédents : un cas sans `O_DIRECTORY`, huit formats supplémentaires sans table système et un contrôle du bilan. Aucun rouge connu n'est soustrait, aucune assertion existante n'est affaiblie. Le plugin hors réseau indique **0 tentative de connexion** dans chaque session.
+
+Commande de la porte finale depuis la racine :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 THERESE_DATA_DIR="$(mktemp -d /tmp/diff-4-r6-data-XXXXXX)" \
+OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  tests/test_c20_b2008_mime_recette.py tests/test_c20_b1883_finaliser_recette.py \
+  tests/test_c20_diff4_bilan.py \
+  -q -p no:cacheprovider -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-4-r6.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+git diff --check
+```
+
+Le Python 3.12.3 disponible n'a pas pytest installé. Le rejeu utilise les modules Python purs de pytest et de son plugin de timeout déjà présents dans `.venv`, sans installation :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+PYTHONPATH="$PWD/.venv/lib/python3.13/site-packages:$PWD" \
+OLLAMA_BASE_URL=http://127.0.0.1:9 python3.12 -m pytest \
+  --noconftest -c /dev/null --rootdir="$PWD" \
+  tests/test_c20_b2008_mime_recette.py tests/test_c20_b1883_finaliser_recette.py \
+  -q -p no:cacheprovider -p pytest_timeout -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-4-r6-py312.xml
+```
+
+Ces deux fichiers sont autonomes ; ce rejeu ne charge pas les fixtures backend ni les extensions binaires de Python 3.13. Python 3.11 n'a pas été rejoué localement. Aucun fichier frontend modifié : Vitest, TypeScript et ESLint non applicables. Aucune suite complète, aucun réseau, fournisseur LLM, port réservé, `~/.therese` ou `.app-loop/`. Aucun `rm`, rebase, copie depuis une autre référence, commit, `git add`, dépôt annexe ou bundle. Les changements restent non commités ; les liens préexistants `.venv` et `src/frontend/node_modules` sont conservés.
