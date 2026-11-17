@@ -187,3 +187,39 @@ modèle réel ni service en ligne n'a été appelé.
 Le test d'annulation compare le texte remis par le générateur SSE à la base.
 En cas de coupure réseau après cette remise, le serveur ne reçoit pas d'accusé
 de réception prouvant que le client a effectivement affiché chaque morceau.
+
+## Remédiation de la relecture, passe 4
+
+Les trois constats de B-2032 sont confirmés et corrigés (issue **a**). Chaque
+test a été ajouté puis exécuté seul avant son correctif. Les nouvelles variantes
+vérifient la réponse exacte et le message enregistré, en flux et hors flux.
+
+| Constat | Issue | Test et échec constaté avant correction |
+| --- | --- | --- |
+| 1 — lecture coordonnée et citation | a | `test_citation_apres_propositions_coordonnees` : `E   AssertionError: assert '- 09h : Réun...retien fictif' == '- 09h : Réun...t pas de lui.'` |
+| 2 — libellé en gras ou complément | a | `test_libelles_en_gras_et_complements_apres_horaire` : `E   AssertionError: assert '- **Réunion ...etien :** 14h' == '- **Réunion ...t pas de lui.'` |
+| 3 — instruction citée à écrire ou reformuler | a | `test_instructions_citees_a_ecrire_ou_reformuler` : `E   AssertionError: assert '- 09h : Réun...t pas de lui.' == '- 09h : Réun...retien fictif'` |
+
+1. La lecture coordonnée conserve les objets et dates cités après une rédaction
+   ou un résumé, sans confondre la proposition avec une liste nominale. Le cas
+   exact du relecteur échouait avant correction. Les 20 variantes ajoutées
+   comprennent les objets et dates cités, les dates numériques, les adverbes
+   et des listes nominales à ne pas interpréter comme des ordres.
+2. Les libellés dont le deux-points est en gras sont normalisés pour l'analyse,
+   et un complément après l'heure est accepté. L'autre exemple du relecteur
+   échouait aussi avec :
+   `E   AssertionError: assert '- Réunion : ... 14h, salle B' == '- Réunion : ...t pas de lui.'`
+   Huit des 14 variantes isolées étaient rouges ; les durées en gras ou suivies
+   d'un complément restent exclues.
+3. L'analyse des citations s'applique aussi à « rédige », « écris » et
+   « reformule », tout en conservant les lectures indépendantes et leurs objets
+   ou dates cités. Dix-huit des 32 variantes isolées étaient rouges avant
+   correction, notamment les deux phrases signalées par la relecture.
+
+Les appelants et tests voisins ont été vérifiés après les correctifs :
+**311**, puis **325**, puis **412 réussis**. La porte finale sur les neuf
+fichiers backend énumérés plus haut indique **0 échec, 0 erreur, 0 ignoré** ;
+le XML `/tmp/restes-chat-r4.xml` a été lu. Ruff
+`check --no-fix src/backend tests` : **0 erreur**. Aucun fichier frontend modifié
+et aucune suite complète lancée. La garde réseau et les fournisseurs simulés
+ont été utilisés pour les tests.

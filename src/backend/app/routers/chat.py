@@ -3787,23 +3787,33 @@ def _date_numerique_agenda(texte: str) -> bool:
 def _demande_lecture_agenda(message: str) -> bool:
     """Reconnaît seulement les formes explicites et datées du tour courant."""
     texte = _normaliser_demande_agenda(message)
-    if re.search(r"\b(?:resum\w*|expliqu\w*)\b", texte):
+
+    def liste_coordonne(avant: str) -> bool:
+        return bool(re.search(
+            r"\b(?:et|puis|ensuite)(?:\s+(?:(?:tres\s+)?\w+ment|enfin|vite|"
+            r"a\s+present|de\s+suite|maintenant|alors|aussi|apres|demain|"
+            r"lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche))*\s*$", avant,
+        ))
+
+    racines_redaction = ("resum", "expliqu", "redig", "ecri", "reformul")
+    if re.search(r"\b(?:resum\w*|expliqu\w*|redig\w*|ecri\w*|reformul\w*)\b", texte):
         morceaux = re.split(
             r'''(«[^»]*»|“[^”]*”|"[^"]*"|‘(?:[^’]|(?<=\w)’(?=\w))*’|'''
             r"(?<!\w)'(?:[^']|(?<=\w)'(?=\w))*'(?!\w))",
             texte,
         )
-        citation_expliquee = True
+        citation_a_ecarter = True
         for i in range(1, len(morceaux), 2):
             for action in re.finditer(
-                r"\b(?:resum\w*|expliqu\w*|lis|consulte|regarde|verifie|affiche|montre|liste|"
+                r"\b(?:resum\w*|expliqu\w*|redig\w*|ecri\w*|reformul\w*|"
+                r"lis|consulte|regarde|verifie|affiche|montre|liste|"
                 r"(?:peux|pourrais|veux)[- ]tu\s+(?:lire|consulter|regarder|verifier|"
                 r"afficher|montrer|lister))\b", morceaux[i - 1],
             ):
                 avant_action = morceaux[i - 1][:action.start()]
-                if not action.group().startswith(("resum", "expliqu")) and (
+                if not action.group().startswith(racines_redaction) and (
                     re.search(r"\b(?:je|tu|il|elle|on|nous|vous|ils|elles)\s*$", avant_action)
-                    or (action.group() == "liste" and re.search(
+                    or (action.group() == "liste" and not liste_coordonne(avant_action) and re.search(
                         r"\b(?:la|une|ma|ta|sa|cette|notre|votre|leur|les|des|ces)"
                         r"(?:\s+\w+){0,4}\s*$", avant_action,
                     ))
@@ -3813,9 +3823,9 @@ def _demande_lecture_agenda(message: str) -> bool:
                     ) and not re.search(r"(?:,|\b(?:et|puis|ensuite)\b)\s*$", avant_action))
                 ):
                     continue
-                citation_expliquee = action.group().startswith(("resum", "expliqu"))
+                citation_a_ecarter = action.group().startswith(racines_redaction)
             # Garder une citation qui appartient à une lecture indépendante.
-            if citation_expliquee:
+            if citation_a_ecarter:
                 morceaux[i] = " "
         texte = "".join(morceaux)
     texte = texte.replace("’", "'")
@@ -3844,7 +3854,7 @@ def _demande_lecture_agenda(message: str) -> bool:
             proposition = re.split(r"[.!?;,\n]|\b(?:et|puis|ensuite)\b", avant)[-1]
             # Conserver « et » entre adjectifs sans masquer l'ordre qui le suit.
             groupe_nominal = re.split(r"[.!?;,\n]|\b(?:puis|ensuite)\b", avant)[-1]
-            if lecture.group("action") == "liste" and not re.match(
+            if lecture.group("action") == "liste" and not liste_coordonne(avant) and not re.match(
                 r"\s+(?:(?:tres\s+)?\w+ment\s+)*"
                 r"(?:mon\s+(?:agenda|planning)|mes\s+rendez[ -]?vous)\b",
                 texte[lecture.end():],
@@ -3893,14 +3903,16 @@ def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
         rf"^\s*(?:[-*•]|\d+[.)])?\s*(?:\*\*|__)?{heure}"
         r"(?:\*\*|__)?(?:\s*[:–—-]\s*\S|\s+(?!d(?:e|u|es)\b)\S|[,;|]\s*\S)|"
         rf"(?:^\s*(?:[-*•]|\d+[.)])|\|)(?!\s*durees?\b)\s*[^|:\n]+:\s*"
-        rf"(?:\*\*|__)?{heure}(?:\s*[–—-]\s*{heure})?(?:\*\*|__)?\s*(?:\||$))",
+        rf"(?:\*\*|__)?{heure}(?:\s*[–—-]\s*{heure})?(?:\*\*|__)?"
+        r"\s*(?:[,;]\s*[^|\n]+)?\s*(?:\||$))",
     )
     # Normaliser les libellés Markdown seulement pour l'analyse, pas le texte diffusé.
     lignes = convert_markdown_tables_to_bullets(reponse).splitlines()
     lignes_normalisees = (
         re.sub(rf"(\*\*|__)({heure})\1", r"\2",
                re.sub(r"([*_]{1,3})([^*_|:\n]+?)\1(?=\s*:)", r"\2",
-                      _normaliser_demande_agenda(ligne)))
+                      re.sub(r"([*_]{1,3})([^*_|:\n]+?:)\1", r"\2",
+                             _normaliser_demande_agenda(ligne))))
         for ligne in lignes
     )
     if sum(bool(horaire.search(ligne)) for ligne in lignes_normalisees) < 2:
