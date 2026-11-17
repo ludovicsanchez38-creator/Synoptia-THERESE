@@ -439,8 +439,8 @@ TEXTES_SANS_IDENTIFIANT = [
     'Config : {"url":"https://hote.invalid:443","email":"a@b.invalid"} fin',
     "[contact@site.invalid](https://site.invalid)",
     "(voir https://site.invalid),a@b.invalid",
-    "https://site.invalid;a@b.invalid",
-    "https://site.invalid,a@b.invalid",
+    "Voir https://site.invalid;a@b.invalid ici",
+    "Liste : https://site.invalid,a@b.invalid fin",
     "<https://site.invalid>a@b.invalid",
     "https://site.invalid/?next=https://agenda.invalid&email=personne@example.invalid",
     "https://site.invalid/?a=1;next=https://agenda.invalid;email=personne@example.invalid",
@@ -536,3 +536,52 @@ def test_masquage_parametre_apres_point_virgule_et_guillemet_dans_un_mot_de_pass
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(entree) == attendu
+
+
+# Relecture 7 du lot (17/11/2026) : un champ qui est une URL entière se lit
+# comme une bibliothèque d'URL le lit ; dans un texte, un guillemet ne prolonge
+# jamais une URL sans l'indice « nom:secret ».
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        ("https://temoin:42,FAUX-secret@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ("https://temoin:42;FAUX(secret)@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ("https://temoin,x:12345@agenda.invalid:8443/dav", "https://agenda.invalid:8443/dav"),
+        ("  https://temoin:42,FAUX-secret@agenda.invalid/dav\n", "  https://agenda.invalid/dav\n"),
+        ('{"url":"https://temoin:42,FAUX-secret@agenda.invalid/dav"}', '{"url": "https://agenda.invalid/dav"}'),
+    ],
+)
+def test_masquage_d_un_champ_qui_est_une_url_entiere(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_masque_un_mot_de_passe_qui_commence_par_des_chiffres(client, db_session, route):
+    url = "https://temoin:42,FAUX-secret@agenda.invalid/dav"
+    db_session.add(Calendar(id="cal-chiffres", summary="Agenda", provider="caldav", caldav_url=url, remote_id=url))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    assert "FAUX-secret" not in reponse.text and "temoin" not in reponse.text
+    agenda = next(c for c in reponse.json()["calendars"] if c["id"] == "cal-chiffres")
+    assert agenda["caldav_url"] == "https://agenda.invalid/dav"
+
+
+@pytest.mark.parametrize(
+    "texte",
+    [
+        '<img src=" https://logo.invalid">personne@example.invalid',
+        '<a href= "https://site.invalid" >contact@site.invalid</a>',
+        "<a href=' https://site.invalid:8443/x '>a@b.invalid</a>",
+        "L'adresse est https://site.invalid'puis a@b.invalid",
+        'Il a dit "voir https://site.invalid"a@b.invalid',
+    ],
+)
+def test_masquage_dans_un_texte_un_guillemet_ne_prolonge_pas_une_url(texte):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(texte) == texte
