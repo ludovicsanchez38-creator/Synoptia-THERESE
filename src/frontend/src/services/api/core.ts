@@ -414,7 +414,25 @@ export interface Stats {
 }
 
 export async function checkHealth(): Promise<HealthStatus> {
-  return request<HealthStatus>('/health');
+  // La version doit arriver en entier : le délai d'apiFetch s'arrête aux en-têtes.
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expiration = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      const erreur = new DOMException(`Délai de ${API_TIMEOUT_MS} ms dépassé`, 'TimeoutError');
+      reject(erreur);
+      controller.abort(erreur);
+    }, API_TIMEOUT_MS);
+  });
+  try {
+    // Une réponse tardive ne peut plus résoudre la tentative expirée.
+    return await Promise.race([
+      request<HealthStatus>('/health', { signal: controller.signal, timeoutMs: null }),
+      expiration,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function getStats(): Promise<Stats> {

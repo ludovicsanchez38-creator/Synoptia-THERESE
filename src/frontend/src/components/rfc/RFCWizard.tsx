@@ -291,13 +291,13 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                     Retour
                   </Button>
                 )}
-                {captureEnAttente && (
-                  <p id="rfc-aide-capturer" role="status" aria-live="polite" className="text-xs text-text-muted">
-                    {isGenerating
+                <p id="rfc-aide-capturer" role="status" aria-live="polite" className={cn('text-xs text-text-muted', !captureEnAttente && 'sr-only')}>
+                  {captureEnAttente
+                    ? isGenerating
                       ? 'THÉRÈSE prépare ta commande. Patiente un instant.'
-                      : 'Attends la fin de la réponse de THÉRÈSE avant de capturer ta commande.'}
-                  </p>
-                )}
+                      : 'Attends la fin de la réponse de THÉRÈSE avant de capturer ta commande.'
+                    : ''}
+                </p>
                 <Button
                   variant="primary"
                   onClick={goToCapture}

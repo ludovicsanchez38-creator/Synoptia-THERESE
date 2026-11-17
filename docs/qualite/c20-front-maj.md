@@ -1,17 +1,21 @@
 # Cycle 20 : lot front-maj
 
 Arbre : `therese-c20-lots/gpt-c20-front-maj`, branche `gpt/c20-front-maj`.
-État remis à la relecture après la passe 1 : HEAD `7c94e52a`,
-tests `6ab9f8cf` et correctifs `7c94e52a` commités par l'orchestrateur.
-Les tests et correctifs du tableau historique ci-dessous sont également
-déjà commités. `c20/integration` n'est pas un ancêtre de cet état ;
-le constat 4 de la passe 2 reste ouvert.
+État reçu pour la passe 3 : HEAD `d3e815e7`, tests de passe 2 `fefd0e1d`
+et correctifs `d3e815e7` déjà commités par l'orchestrateur.
+La base d'intégration `75498edd` est un ancêtre du lot reçu.
+La référence locale `c20/integration` a depuis avancé à `a498d9d3`,
+incluant `31e3f98d` ; cette nouvelle ascendance manque encore au lot.
+Le constat 1 de la passe 3 décrit ce retard distinct.
+
+État remis à la relecture après la passe 1 (historique avant rebase) :
+`7c94e52a`, avec les tests `6ab9f8cf`.
 
 La reprise historique partait du rouge B-1950, maintenant `90e29bad` après
 rebase. Aucun commit n'avait été créé pendant cette reprise ;
 l'orchestrateur a ensuite commité les tests (`b53869ce`) et correctifs
 (`f1087358`). Les comptes ci-dessous sont historiques. Seule la section
-« Remédiation de la relecture, passe 2 » décrit le travail actuel, laissé
+« Remédiation de la relecture, passe 3 » décrit le travail actuel, laissé
 non commité. Aucun service réel n'est utilisé pour ses tests.
 
 Les identifiants sont présentés dans l'ordre demandé. B-1950 a été terminé
@@ -184,7 +188,8 @@ Départ historique : `f1087358`. Cette passe a ensuite été commitée par
 l'orchestrateur : `6ab9f8cf` pour les tests et `7c94e52a` pour les correctifs.
 C'est cet état qui a été remis à la relecture contradictoire suivante.
 La mention d'ascendance de `c20/integration` dans le précédent bilan ne
-décrit pas l'intégration locale courante ; voir le constat 4 de la passe 2.
+décrivait pas l'intégration locale lors de la passe 2. Le rebase effectué
+ensuite a intégré `75498edd` ; le nouveau retard est décrit en passe 3.
 Pendant la passe 1, aucun ajout à l'index, commit, push, dépôt annexe ou
 bundle n'avait été effectué par l'agent. Aucun réseau, fournisseur LLM,
 serveur ou application THÉRÈSE lancé. Aucun accès au profil réel,
@@ -351,12 +356,15 @@ publication n'est revendiquée. La hauteur B-1957 reste hors de cette passe.
 
 ## Remédiation de la relecture, passe 2
 
-Départ réellement constaté : HEAD `7c94e52a`, branche `gpt/c20-front-maj`.
-Les changements de cette passe restent non commités, sans ajout à l'index.
-Les seuls éléments non suivis présents au départ sont les liens `.venv`
-et `src/frontend/node_modules`, conservés tels quels. L'intégration locale
-est `75498edd`, qui contient `e82f038a` mais n'est pas un ancêtre de HEAD.
-Aucun réseau, fournisseur LLM, serveur ni application réelle utilisés.
+Départ historique : HEAD `7c94e52a`, branche `gpt/c20-front-maj`.
+Cette passe a depuis été commitée par l'orchestrateur : tests `fefd0e1d`,
+correctifs `d3e815e7`, après rebase sur `75498edd`.
+Cette base, qui contient `e82f038a`, est bien un ancêtre du lot reçu en
+passe 3. Les paragraphes suivants décrivent les observations de la passe 2,
+avant ces opérations ; ils ne décrivent pas la branche actuelle.
+Les liens `.venv` et `src/frontend/node_modules`, seuls éléments non suivis
+au départ, avaient été conservés. Aucun réseau, fournisseur LLM, serveur
+ni application réelle n'avait été utilisé.
 
 ### Constats et corrections
 
@@ -385,21 +393,18 @@ Aucun réseau, fournisseur LLM, serveur ni application réelle utilisés.
    `versionVide.b1845` sont remplacées par l'attente sans alerte ni lien,
    sans retirer l'interdiction d'appeler les publications avant la version.
    Deux nouveaux cas couvrent l'échec différé et la réponse vide au montage.
-4. **Intégration absente : confirmé, non corrigé dans cet arbre.** Le
-   contrôle d'ascendance échoue encore. `mcp_service.py:541` traite l'échec
-   sans arrêter le processus ; `board.py:501` annonce encore la longueur
-   du texte de refus comme un contexte web. Les six fichiers de tests
-   ajoutés jusqu'à `e82f038a` sont absents, conformément à la relecture.
-   La branche locale d'intégration contient en outre les commits migrations
-   jusqu'à `75498edd`. Rebaser créerait des commits et écrirait dans les
-   métadonnées Git hors de l'arbre autorisé, contrairement au mandat.
-   Le rebase reste donc à effectuer par l'orchestrateur ; aucun correctif
-   backend d'intégration n'est recopié ni revendiqué ici. La question de
-   traitement a été transmise pendant le travail.
+4. **Intégration absente : constat historique, résolu jusqu'à `75498edd`.**
+   Le contrôle d'ascendance échouait pendant cette passe. Les correctifs
+   MCP et Board ainsi que les six fichiers de tests jusqu'à `e82f038a`
+   manquaient alors. Le mandat ne permettait pas de réécrire les commits
+   et les métadonnées Git hors de l'arbre. L'orchestrateur a depuis
+   effectué ce rebase : `75498edd` est un ancêtre de `d3e815e7`.
+   Le retard sur les commits ultérieurs relève du constat 1 de la passe 3.
 5. **Bilan périmé : corrigé.** L'introduction et l'état de la passe 1 citent
-   les commits `6ab9f8cf` et `7c94e52a`. Seule cette passe 2 est annoncée
-   non commitée. Le test documentaire vérifie désormais aussi l'état de
-   la passe 1, l'introduction et la présence de cette section.
+   les commits `6ab9f8cf` et `7c94e52a`. Le bilan de l'époque annonçait
+   seulement la passe 2 non commitée. Cet état a été remplacé ci-dessus
+   par les commits effectivement reçus ; le test documentaire de passe 3
+   contrôle aussi leur ascendance réelle.
 
 ### Rouges isolés avant les correctifs
 
@@ -417,9 +422,10 @@ Les cas hors sélection ne sont pas des tests ignorés de la porte finale.
 Le rouge 1 est relevé dans la sortie du lancement isolé. Les journaux des
 rouges 2 à 5 sont `/tmp/front-maj-r2-N-rouge.log`. Le contrôle local de Git
 est jetable, hors suite produit : `/tmp/front-maj-r2-integration.xml`, lu,
-**1 échec, 0 erreur, 0 ignoré**. Il reste rouge et n'est pas présenté comme
-une réussite. Pour le reproduire sans ce fichier temporaire :
-`git merge-base --is-ancestor c20/integration HEAD` (sortie observée : 1).
+**1 échec, 0 erreur, 0 ignoré** à cette date, avant le rebase sur `75498edd`.
+Commande historique : `git merge-base --is-ancestor c20/integration HEAD`
+(sortie alors observée : 1). Le contrôle de la nouvelle référence locale
+est consigné séparément en passe 3.
 
 ### Appelants et tests voisins
 
@@ -466,7 +472,137 @@ RUFF_CACHE_DIR=/tmp/front-maj-r2-ruff-cache .venv/bin/python -m ruff check --no-
 git merge-base --is-ancestor c20/integration HEAD
 ```
 
-**VERDICT : NO-GO tant que le constat 4 reste ouvert.** Les constats 1, 2,
-3 et 5 sont corrigés et leurs portes ciblées sont vertes. L'orchestrateur
-doit encore remettre ce lot sur l'intégration courante et rejouer les
-vérifications. Aucun commit ni ajout à l'index pendant cette passe.
+**VERDICT HISTORIQUE : NO-GO tant que le constat 4 restait ouvert.** Les
+constats 1, 2, 3 et 5 étaient corrigés et leurs portes ciblées étaient vertes.
+L'orchestrateur a ensuite intégré `75498edd` et commité cette passe.
+Aucun commit ni ajout à l'index n'avait été fait par l'agent.
+
+## Remédiation de la relecture, passe 3
+
+État reçu le 17 novembre 2026 : HEAD `d3e815e7`, base commune avec
+`c20/integration` : `75498edd`. La référence d'intégration locale vaut
+`a498d9d3`. Les fichiers suivis étaient propres ; les deux liens de
+dépendances non suivis étaient déjà présents. Les changements de cette
+remise restent non commités, sans ajout à l'index.
+
+### Constats et corrections
+
+1. **Retard d'intégration confirmé, rebase restant à l'orchestrateur.**
+   Le contrôle local d'ascendance échoue. Une simulation de la seule
+   fonction `_kill_zombie_backends` extraite des sources Git confirme
+   également le défaut : sans WMIC, le code de HEAD arrête le PID fictif
+   `414` d'un `backend.exe` tiers ; le code de `c20/integration` l'épargne.
+   Aucun processus Windows réel n'est interrogé ou arrêté. Le rebase
+   réécrirait des commits et les métadonnées situées dans
+   `Synoptia-THERESE/.git/worktrees/gpt-c20-front-maj`, hors de cet arbre,
+   en lecture seule. Il n'a pas été exécuté, conformément au mandat.
+   Aucun correctif Windows n'est recopié partiellement ; ce constat
+   demeure ouvert et les deux rouges locaux ne sont pas masqués.
+2. **Lecture de version bloquée corrigée.** `checkHealth` borne désormais
+   toute la lecture à 30 secondes, corps JSON compris. L'expiration rejette
+   la promesse partagée et annule la requête. Une réponse ou un rejet tardif
+   ne peut plus changer le résultat expiré ni celui du nouvel essai.
+   Trois cas traversent le vrai service API avec un `fetch` simulé : lecture
+   au montage, lecture partagée avec le clic, résolution ou rejet tardif
+   pendant le nouvel essai. Ils vérifient alerte, lien manuel, bouton actif,
+   annulation, nouvelle requête et comparaison finale. Le délai des autres
+   requêtes API, notamment des flux, conserve son contrat.
+3. **Dérivées Ubuntu corrigées.** Le détecteur accepte les identifiants
+   exacts `debian` et `ubuntu` dans `ID` ou `ID_LIKE`. Deux tests ajoutés
+   couvrent `ID=pop / ID_LIKE=ubuntu` et Ubuntu sans `ID_LIKE`. Le test
+   d'exclusion des sous-chaînes est renforcé avec `nonubuntu`. Le paquet
+   `deb` et le système Linux restent exigés par l'appelant.
+4. **Région live de capture corrigée.** Le même paragraphe `status` reste
+   présent et accessible, vide lorsque Capturer devient actif, puis reçoit
+   le message de préparation. Le test existant vérifie maintenant l'identité
+   du nœud avant et après le clic, en conservant ses assertions sur le bouton,
+   son aide et le formulaire final. La vérification porte sur le DOM ;
+   aucune annonce avec un lecteur d'écran natif n'est revendiquée.
+5. **Bilan actualisé.** L'introduction et la passe 2 distinguent les états
+   historiques des commits livrés `fefd0e1d` et `d3e815e7`. Le test conserve
+   les vérifications historiques de passe 1 et remplace l'exigence périmée
+   « non commités » de passe 2 par les commits reçus, leur ascendance Git
+   effective avec `75498edd` et le rattachement du travail actuel à la passe 3.
+
+### Rouges isolés avant les correctifs
+
+Les lignes ci-dessous sont recopiées des sorties observées. Les cas exclus
+par `-t` ou `--exact` ne sont pas des tests ignorés de la porte finale.
+
+| Constat | Test ou sélection isolée | Ligne d'échec observée |
+| --- | --- | --- |
+| 1 | `/tmp/test_front_maj_r3_integration.py` | `AssertionError: c20/integration n'est pas un ancêtre de HEAD` |
+| 1, comportement Windows | `/tmp/test_front_maj_r3_windows.py`, cas `HEAD` | `AssertionError: Un backend.exe tiers a été arrêté` ; `assert ['414'] == []` |
+| 2 | `AboutTab.delai.r3.test.tsx`, trois cas | `TestingLibraryElementError: Unable to find an accessible element with the role "alert"` |
+| 3 | `linux_distribution.rs`, `tests::derivee_ubuntu_sans_identifiant_debian` | `assertion failed: est_debian_dans("ID=pop\nID_LIKE=ubuntu\n")` |
+| 4 | `RFCWizard.capture.b1953.test.tsx`, `annonce la préparation` | `TestingLibraryElementError: Unable to find an accessible element with the role "status"` |
+| 5 | `frontMaj.bilan.r1.test.ts`, `R3-5` | ``AssertionError: expected '# Cycle 20 : lot front-maj\n\nArbre :…' to contain 'État reçu pour la passe 3 : HEAD `d3e…'`` |
+
+Journaux : `/tmp/front-maj-r3-{1,2,3,4,5}-rouge.log`, plus
+`/tmp/front-maj-r3-1-windows-rouge.log`. Les XML des contrôles locaux Git et
+Windows ont été lus : chacun a **1 échec, 0 erreur, 0 ignoré** sur HEAD.
+Le même test Windows avec les sources de `c20/integration` a **1 succès**
+(`/tmp/front-maj-r3-windows-integration.xml`, lu). Ces contrôles locaux
+restent distincts de la suite produit et ne sont pas comptés comme verts.
+
+### Appelants et tests voisins
+
+Après chaque correctif, relecture de `SettingsModal → AboutTab → checkHealth`,
+de `useBackend` et `useHealthCheck`, de `get_system_info → UpdateBanner`, puis
+de `HomeCommands → RFCWizard → RFCChat / RFCCapture`. Les essais voisins ont
+donné **76 succès dans 18 fichiers** pour la lecture de version, **10 succès
+Rust et 39 succès dans 3 fichiers Vitest** pour les distributions, et
+**37 succès dans 15 fichiers** pour la capture. Rapports JSON
+`/tmp/front-maj-r3-{2,3,4}-vert.json` lus ; sortie Rust
+`/tmp/front-maj-r3-3-vert.log` lue. Aucun test existant désactivé ou affaibli.
+
+### Portes de cette passe
+
+| Porte | Résultat lu | Preuve |
+| --- | --- | --- |
+| Vitest ciblé, au plus 3 workers | **156 passés, 0 échoué, 0 ignoré, 0 todo ; 37 fichiers passés**, sortie 0 | `/tmp/front-maj-r3-vitest.json` ; rejeu des 4 contrôles documentaires dans `/tmp/front-maj-r3-5-vert.json` |
+| Rust, module de distribution seul | **10 passés, 0 échoué, 0 ignoré**, sortie 0 | `/tmp/front-maj-r3-3-vert.log` |
+| Pytest voisin updater | **16 passés, 0 échec, 0 erreur, 0 ignoré**, sortie 0 | `/tmp/front-maj-r3.xml`, XML lu |
+| Ruff backend et tests | **0 diagnostic**, sortie 0 | `/tmp/front-maj-r3-ruff.log` : `All checks passed!` |
+| TypeScript | **0 erreur**, sortie 0 | `/tmp/front-maj-r3-tsc.log`, vide |
+| ESLint | **0 erreur, 27 avertissements**, sortie 0 | `/tmp/front-maj-r3-lint.log` |
+| Contrôles locaux du constat 1, distincts de la suite produit | **2 échecs sur HEAD**, 0 erreur ; **1 succès sur les sources d'intégration** | `/tmp/front-maj-r3-integration.xml`, `/tmp/front-maj-r3-windows-head.xml`, `/tmp/front-maj-r3-windows-integration.xml`, tous lus |
+
+Les comptes ne cumulent pas les rejeux. Six nouveaux cas produit : trois
+pour la lecture de version, deux pour les distributions, un pour le bilan.
+Les assertions existantes de capture et d'exclusion des identifiants sont
+renforcées. Le contrôle documentaire compare les ascendants de l'état reçu
+`d3e815e7`, afin de rester valable après le rebase de l'orchestrateur.
+Les rouges connus du mandat ne font pas partie de la sélection ; aucun
+échec n'a été retranché des comptes.
+
+Commandes reproductibles :
+
+```sh
+# Depuis src/frontend ; outils installés, aucun téléchargement ni cache partagé.
+npx --offline --no-install vitest run src/components/settings/AboutTab src/components/ui/UpdateBanner src/components/rfc src/components/home/HomeCommands.assistantCommande.test.tsx src/components/home/HomeCommands.panneauGuide.test.tsx src/components/home/HomeCommands.cycle6.test.tsx src/hooks/useBackend.c9.test.ts src/hooks/useHealthCheck.test.ts src/services/api/core. src/services/api/authPrive.f2.test.ts src/services/api/config.timeouts.test.ts src/test/frontMaj.annonces.r1.test.tsx src/test/frontMaj.bilan.r1.test.ts --configLoader runner --maxWorkers=3 --no-cache --reporter=json --outputFile=/tmp/front-maj-r3-vitest.json
+npx --offline --no-install tsc --noEmit
+npm run lint
+
+# Depuis la racine ; profils et caches jetables, aucun bytecode partagé.
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-maj-r3-data.XXXXXX)" PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest tests/test_b1111_manifeste_updater.py -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/front-maj-r3.xml
+RUFF_CACHE_DIR=/tmp/front-maj-r3-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+/home/synoptia/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc --edition=2021 --test src/frontend/src-tauri/src/linux_distribution.rs -o /tmp/front-maj-r3-distribution-tests
+/tmp/front-maj-r3-distribution-tests
+git merge-base --is-ancestor c20/integration HEAD
+```
+
+Le compilateur Rust installé a été appelé par son chemin absolu : `rustc`
+n'était pas dans le PATH. La première erreur de commande n'est pas comptée
+comme un rouge produit ; le test de dérivée Ubuntu a ensuite échoué avant
+le changement du prédicat, puis les dix cas ont réussi.
+
+Le constat 1 reste ouvert : les correctifs de cette passe ne valent pas
+validation de l'intégration courante. Aucun réseau, fournisseur LLM, service
+réel, accès au profil personnel ou aux ports interdits. Les données pytest
+sont jetables, les appels frontend sont simulés. Aucune suite complète,
+aucune correction de lint ailleurs, aucun commit ni ajout à l'index.
+
+**VERDICT : NO-GO tant que le constat 1 reste ouvert.** Les constats 2 à 5
+sont corrigés et leurs portes ciblées sont vertes. Le rebase sur
+l'intégration courante et le rejeu de ses tests restent à l'orchestrateur.
