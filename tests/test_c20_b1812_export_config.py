@@ -578,10 +578,28 @@ async def test_export_masque_un_mot_de_passe_qui_commence_par_des_chiffres(clien
         '<a href= "https://site.invalid" >contact@site.invalid</a>',
         "<a href=' https://site.invalid:8443/x '>a@b.invalid</a>",
         "L'adresse est https://site.invalid'puis a@b.invalid",
-        'Il a dit "voir https://site.invalid"a@b.invalid',
+        'Il a dit "voir https://site.invalid" a@b.invalid',
+        "Sur https://site.invalid's admin@site.invalid répond",
+        '<td>"https://site.invalid"</td><td>a@b.invalid</td>',
     ],
 )
 def test_masquage_dans_un_texte_un_guillemet_ne_prolonge_pas_une_url(texte):
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(texte) == texte
+
+
+# Revue de sécurité du 17/11 : dans une phrase, un guillemet que rien n'a ouvert
+# et qu'une lettre ou un chiffre suit aussitôt appartient au mot de passe.
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        ('Connexion par http://temoin:123"x@hote.invalid puis rien', "Connexion par http://hote.invalid puis rien"),
+        ('Voir http://te"moin:FAUX@hote.invalid ici', "Voir http://hote.invalid ici"),
+        ("Voir http://temoin'x@hote.invalid/dav ici", "Voir http://hote.invalid/dav ici"),
+    ],
+)
+def test_masquage_d_un_guillemet_non_ouvert_dans_une_phrase(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
