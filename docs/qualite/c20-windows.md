@@ -163,3 +163,60 @@ Les XML et traces restent dans `.pytest_cache/b2056-*`, ignorés par Git :
 `b2056-mypy.log`. Les comptes sont lus dans les XML, le teardown pouvant
 couper le résumé console. La suite principale complète et le workflow
 Windows ne sont pas annoncés verts à partir de ces seules preuves macOS.
+
+## Remédiation de la relecture
+
+Cette section remplace la description de la détection mémoire dans la
+section 1 pour les deux constats P2 de la relecture croisée.
+
+**Comportement POSIX.** `plafond_memoire` distingue désormais l'absence de
+l'attribut `os.sysconf` de l'échec de son appel. Seule l'absence ouvre la
+lecture native Windows. Si `sysconf` existe et lève `OSError`, `ValueError`
+ou même `AttributeError` pendant son appel, le budget reste à 8 192 jetons,
+sans tentative de détection native.
+
+**Exceptions et appel sans borne.** Le chemin sans `sysconf` appelle
+directement `_windows_total_ram_bytes`, déjà disponible dans
+`system_resources.py`, pour lire `GlobalMemoryStatusEx`. Il n'appelle plus
+`detect_system_memory`, donc ni `platform.system()`, ni WMI, ni la commande
+`ver`. Toute exception dans le calcul, import et lecture native compris,
+rend 8 192 jetons. `system_resources.py` n'a pas été modifié. Les seuils de
+RAM et le plafond annoncé par le modèle restent identiques.
+
+**Tests rouges d'abord.** Cinq cas ajoutés dans
+`tests/test_b1797_agenda_sans_outil.py` sont exécutables sur toute machine :
+trois erreurs de `sysconf` présent (`OSError`, `ValueError`, `AttributeError`),
+un `KeyError` de lecture native sans `sysconf`, et une lecture de 32 Gio sans
+interroger la plateforme, dont l'appel simulé lèverait `KeyError`.
+Avant correction, les trois premiers rendent à tort 131 072 jetons et les
+deux autres propagent `KeyError` : **5 échecs sur les 5 nouveaux cas**.
+Les cinq cas existants de RAM (4, 8, 16, 32 Gio et mesure indisponible)
+passent dès cette phase. Le XML rouge compte donc 10 cas, 5 réussites et
+5 échecs, sans erreur ni cas ignoré.
+
+**Validation après correction.** Commande exécutée avec le venv demandé,
+sans ajout à l'index ni commit :
+
+```sh
+PYTHONPATH=src/backend PYTHONDONTWRITEBYTECODE=1 \
+OLLAMA_BASE_URL=http://127.0.0.1:9 \
+/Users/synoptia/.claude/travail/therese-c20-pile/venv/bin/python -m pytest \
+  tests/test_b1797_agenda_sans_outil.py tests/test_r4_0_budget.py \
+  tests/test_r3_4_ollama.py tests/test_b1806_banc_ollama.py \
+  -q -p no:cacheprovider --timeout=120 \
+  --junitxml=.pytest_cache/b2056-relecture-vert.xml
+PYTHONDONTWRITEBYTECODE=1 \
+/Users/synoptia/.claude/travail/therese-c20-pile/venv/bin/python -m ruff check \
+  --no-cache src/backend/app/services/ollama_budget.py \
+  tests/test_b1797_agenda_sans_outil.py
+git diff --check
+```
+
+Comptes lus dans les XML `.pytest_cache/b2056-relecture-rouge.xml` et
+`.pytest_cache/b2056-relecture-vert.xml` : **101 réussites, 0 échec,
+0 erreur, 0 ignoré** après correction, dont 86 pour l'agenda, 1 pour
+`test_r4_0_budget.py`, 10 pour `test_r3_4_ollama.py` et 4 pour
+`test_b1806_banc_ollama.py`. Les cinq nouveaux cas et les cas RAM existants
+sont verts. Ruff et `git diff --check` ne signalent aucune erreur.
+La lecture réelle de `GlobalMemoryStatusEx` reste à vérifier sous Windows ;
+les mesures natives sont simulées dans ces tests locaux sur macOS.
