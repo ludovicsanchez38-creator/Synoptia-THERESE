@@ -1,16 +1,25 @@
 # Cycle 20 : lot front-maj
 
 Arbre : `therese-c20-lots/gpt-c20-front-maj`, branche `gpt/c20-front-maj`.
-État reçu pour la passe 4 : HEAD `e9104455`, passe 3 commitée par
-l'orchestrateur (tests `08f49373`, correctifs `e9104455` après rebase).
-`a498d9d3` et `31e3f98d` sont des ancêtres de HEAD.
-Le retard d’instrumentation signalé ensuite sur `c127023a` est lui aussi
-résolu par le rebase de l'orchestrateur : la base locale `c20/integration`
-`0047eb5e` appartient à l'historique reçu. Aucun retard d'intégration
-ne reste à corriger dans cette passe.
+État reçu pour la passe 5 : HEAD `bbb715b6`, passe 4 commitée par
+l'orchestrateur (tests `56c2810e`, correctifs `bbb715b6` après son dernier rebase).
+Au début de cette passe, `c20/integration` pointe sur `87310bad`, ancêtre de HEAD
+(`git merge-base --is-ancestor c20/integration HEAD` : sortie 0).
+Ces références décrivent l'instantané reçu, pas un état Git à recalculer
+dans le test documentaire. Les changements de passe 5 sont laissés non commités.
 
 Historique avant les rebases : les identifiants ci-dessous décrivent les
 états remis aux relectures précédentes, sans exiger leur présence dans Git.
+État reçu pour la passe 4 : HEAD `e9104455`, passe 3 commitée par
+l'orchestrateur (tests `08f49373`, correctifs `e9104455` après rebase).
+`a498d9d3` et `31e3f98d` sont des ancêtres de HEAD à cette date.
+Le retard d’instrumentation signalé ensuite sur `c127023a` est lui aussi
+résolu par le rebase de l'orchestrateur : la base locale `c20/integration`
+était alors `0047eb5e`. Aucun retard d'intégration ne restait à corriger
+pendant la passe 4. L'état livré à sa relecture était ensuite `e75d0a29`,
+avec les tests `2fc424dc`, et la référence d'intégration `5e1ca36c`.
+Ces identifiants précèdent le dernier rebase effectué par l'orchestrateur.
+
 État reçu pour la passe 3 : HEAD `d3e815e7`, tests de passe 2 `fefd0e1d`
 et correctifs `d3e815e7` déjà commités par l'orchestrateur.
 La base d'intégration `75498edd` est un ancêtre du lot reçu à cette date.
@@ -25,8 +34,10 @@ La reprise historique partait du rouge B-1950, maintenant `90e29bad` après
 rebase. Aucun commit n'avait été créé pendant cette reprise ;
 l'orchestrateur a ensuite commité les tests (`b53869ce`) et correctifs
 (`f1087358`). Les comptes ci-dessous sont historiques. Seule la section
-« Remédiation de la relecture, passe 4 » décrit le travail actuel, laissé
+« Remédiation de la relecture, passe 5 » décrit le travail actuel, laissé
 non commité. Aucun service réel n'est utilisé pour ses tests.
+La section « Remédiation de la relecture, passe 4 » conserve le récit historique
+de la passe livrée et commitée avant cette reprise.
 La section « Remédiation de la relecture, passe 3 » conserve le récit
 historique de la passe précédente.
 
@@ -48,17 +59,21 @@ observées avant le correctif, avec les précisions utiles du diagnostic.
 | B-1950 | `confirme` | `rfc/RFCChat.reflechit.b1950.test.tsx::« THÉRÈSE réfléchit... » est un statut live` | `90e29bad` (hérité), rejoué rouge : `Error: expect(element).toHaveAttribute("role", "status")`, reçu `null`. 1 échec. | `f1087358` |
 | B-1951 | `confirme` | `rfc/RFCWizard.fermeture.b1951.test.tsx::permet de trouver la fermeture par son nom puis de fermer` | `TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Fermer l’assistant de commande"`. 1 échec. | `f1087358` |
 | B-1952 | `confirme` | `rfc/RFCWizard.aide.b1952.test.tsx::explique dès le départ qu’une réponse complète est nécessaire` et `::explique encore le blocage après une réponse interrompue et invite à renvoyer` | `Error: expect(element).toHaveAccessibleDescription()` ; attendu `/réponse complète/`, reçu `Envoie d’abord ton brief à THÉRÈSE : « Passer à Faire » s’active dès le premier message.` ; après interruption, description vide. 3 échecs. | `f1087358` |
-| B-1953 | `confirme` | `rfc/RFCWizard.capture.b1953.test.tsx::indique qu’il faut attendre la réponse avant de capturer` et `::annonce la préparation de la commande pendant la génération` | `Error: expect(element).toHaveAccessibleDescription()` ; attendu `/Attends la fin de la réponse/` puis `/THÉRÈSE prépare ta commande/`, reçu vide. 2 échecs. | `f1087358` |
+| B-1953 | `regle_a_trancher` | retiré du lot, reporté ; tests du candidat retirés | P1 de la passe 5 : accord bloqué après ses en-têtes, capture désactivée malgré l'arrêt ; preuve ci-dessous | Correctifs retirés en passe 5 |
 | B-1954 | `confirme` | `settings/AboutTab.annonces.b1954.test.tsx::annonce la vérification en cours puis la nouvelle version dans la même région` et `::annonce une mise à jour disponible` | `TestingLibraryElementError: Unable to find an accessible element with the role "status"`. 2 échecs, 1 succès. | `f1087358` |
 | B-1955 | `rejete` | `rfc/RFCWizard.aide.b1952.test.tsx::explique encore le blocage après une réponse interrompue et invite à renvoyer` | Doublon déjà traité par B-1952 au moment de son examen ; aucune nouvelle modification. | Sans objet ; couvert par B-1952 `f1087358` |
 | B-1956 | `rejete` | `rfc/RFCWizard.fermeture.b1951.test.tsx::permet de trouver la fermeture par son nom puis de fermer` | Doublon déjà traité par B-1951 au moment de son examen ; aucune nouvelle modification. | Sans objet ; couvert par B-1951 `f1087358` |
 | B-1957 | `regle_a_trancher` | Aucun test rouge de comportement obtenu | Hauteur fixe constatée, mais défilement prévu dans le parent ; voir la question de présentation et la limite de mesure ci-dessous. | Sans objet ; aucune modification de hauteur |
 | B-1958 | `confirme` | `prototype/usePrototypeEmailData.erreurs.b1958.test.tsx::explique l’échec de vérification des comptes avant de lister les messages, puis permet de réessayer` | `AssertionError: expected 'Impossible de charger les messages po…' to be 'Impossible de vérifier la connexion d…' // Object.is equality`. 1 échec, 1 succès. | `f1087358` |
 
-Bilan après requalification R1-9 : 9 candidats confirmés, dont 2 correctifs
-hérités et 7 terminés pendant cette reprise ; 1 amélioration héritée ;
+B-1953 : **retiré du lot, reporté**. Constat du relecteur, conservé comme preuve :
+
+> La capture peut rester bloquée après l’arrêt d’une réponse. Dans une reproduction en mémoire, après une première réponse complète, un accord en attente reçoit ses en-têtes mais son corps reste bloqué. L’annulation du chat et son délai de 60 secondes ne débloquent pas cette attente préalable : **Capturer** reste désactivé et le bouton d’arrêt reste affiché.
+
+Bilan après requalification R1-9 et retrait en passe 5 : 8 candidats confirmés, dont 2 correctifs
+hérités et 6 terminés pendant cette reprise ; 1 amélioration héritée ;
 2 doublons rejetés après correction du premier
-constat ; 1 règle de présentation à trancher. « Rejeté » ne signifie pas que
+constat ; 2 règles à trancher (B-1957 et B-1953 reporté). « Rejeté » ne signifie pas que
 B-1955 et B-1956 étaient déjà corrigés dans la base initiale.
 
 ## Exécution réelle des fichiers corrigés
@@ -628,6 +643,12 @@ de la nouvelle relecture sont traités dans la passe 4 ci-dessous.
 
 ## Remédiation de la relecture, passe 4
 
+Départ historique : HEAD `e9104455`. La passe 4 a ensuite été commitée
+par l'orchestrateur : tests `2fc424dc`, correctifs `e75d0a29`, état livré
+à la relecture. Après son dernier rebase, ces commits sont devenus
+`56c2810e` et `bbb715b6`. Les comptes et décisions de cette section sont
+historiques ; le retrait de B-1953 est décrit en passe 5.
+
 ### Constats et preuves avant correction
 
 1. **Écarté, déjà réglé par l'orchestrateur.** Le contrôle local
@@ -737,9 +758,140 @@ RUFF_CACHE_DIR=/tmp/front-maj-r4-ruff-cache .venv/bin/python -m ruff check --no-
 /tmp/front-maj-r4-distribution-tests
 ```
 
-Constats 2 à 5 corrigés selon **(a)** ; aucun candidat retiré selon (b).
-Constat 1 écarté conformément à la consigne de l'orchestrateur. Tous les
-changements de passe 4 restent non commités, sans ajout à l'index. Aucun
+Les constats 2 à 5 étaient corrigés selon **(a)** ; aucun candidat n'avait
+alors été retiré selon (b). Le constat 1 était écarté conformément à la
+consigne de l'orchestrateur. L'agent n'avait effectué aucun ajout à l'index
+ni commit ; l'orchestrateur a ensuite commité la passe 4 (`2fc424dc`, `e75d0a29`). Aucun
 réseau, fournisseur LLM, port interdit, profil personnel ni `.app-loop/`
 utilisé ; aucun fichier d'un autre lot modifié et aucune copie depuis une
-autre branche. La validation globale reste à l'orchestrateur.
+autre branche pendant cette passe historique.
+
+## Remédiation de la relecture, passe 5
+
+### Constat 1 — P1, B-1953 retiré du lot, reporté
+
+La consigne de dernière passe impose le retrait complet du candidat.
+Preuve du relecteur :
+
+> La capture peut rester bloquée après l’arrêt d’une réponse. Dans une reproduction en mémoire, après une première réponse complète, un accord en attente reçoit ses en-têtes mais son corps reste bloqué. L’annulation du chat et son délai de 60 secondes ne débloquent pas cette attente préalable : **Capturer** reste désactivé et le bouton d’arrêt reste affiché.
+
+Aucun nouveau correctif du flux ni test de l'accord bloqué : la demande
+initiale de réparation est remplacée par le retrait prescrit pour ce P1.
+Retrait de l'aide et de la région live Capturer, de l'état `makeStreaming`,
+de ses gardes et de son callback, puis du correctif de propriété du flux
+StrictMode de passe 4. `goToCapture`, le rendu de Faire et le traitement
+de la requête dans `RFCChat` retrouvent l'état de `c20/integration`, par
+retrait ciblé des ajouts du lot, sans recopier de fichier d'une branche.
+
+Les deux tests B-1953, les deux cas de capture R1-4 et les neuf cas
+StrictMode R4-2 sont retirés avec le candidat. Les deux cas R2-2 de
+Réfléchir restent inchangés dans `RFCWizard.flux.r1.test.tsx`. Le callback
+`onStreamingChange` reste utilisé uniquement par l'aide B-1952 de
+Réfléchir ; aucun état ou import propre à la capture n'est conservé.
+Les tests de confidentialité et les autres candidats ne sont pas affaiblis.
+
+Le contrôle documentaire R5-1 a été ajouté puis lancé seul avant retrait :
+**1 échec, 0 succès**, six cas non sélectionnés ; rapport
+`/tmp/front-maj-r5-1-rouge.json` lu. Ligne de rouge :
+``AssertionError: expected '| B-1953 | `confirme` | `rfc/RFCWizar…' to contain '`regle_a_trancher`'``.
+Ce rouge vérifie le classement du candidat et la preuve de report, pas une
+nouvelle réparation du blocage.
+
+### Réserves acceptées
+
+**Constat 2 — P2, `linux_distribution.rs:11`, laissé en réserve.**
+
+> La détection accepte une distribution incompatible si les champs sont répétés. Par exemple, des valeurs `ID` successives « debian » puis « manjaro », suivies de `ID_LIKE` « arch », donnent `true` : `any` retient la première valeur Debian. Un lecteur d’`os-release` devrait retenir la dernière valeur de chaque clé en cas de répétition. Un `.deb` extrait pourrait alors être proposé à l’installation automatique sur cette distribution.
+
+Le prédicat `contenu.lines().any(...)` confirme ce constat. Retenir la
+dernière occurrence de chaque clé ou rejeter les doublons nécessite de
+changer le parseur, au-delà d'une correction évidente de texte ou
+d'attribut autorisée pour un P2 en dernière passe. Code et tests Rust inchangés ;
+aucun test de répétition ajouté à la suite produit sans correctif autorisé.
+
+Le contrôle documentaire R5-2 a d'abord été lancé seul : **1 échec,
+0 succès**, sept cas non sélectionnés ; rapport
+`/tmp/front-maj-r5-2-rouge.json` lu. Ligne de rouge :
+`AssertionError: expected undefined to be defined`.
+Il vérifie la présence explicite de cette réserve, sans la présenter comme corrigée.
+
+### Constat 3 — P2, état livré corrigé dans le bilan
+
+L'introduction distingue l'instantané reçu pour la passe 5 (`bbb715b6`,
+base `87310bad`) de l'état livré avant rebase en passe 4 (`e75d0a29`, tests
+`2fc424dc`). `0047eb5e` et `5e1ca36c` restent des références historiques.
+La conclusion de passe 4 décrit désormais la remise puis les commits de
+l'orchestrateur ; seule la passe 5 reste non commitée.
+
+R4-4 contrôle toujours le récit de passe 4, maintenant dans son périmètre
+historique. R5-3 vérifie l'instantané reçu, les commits livrés de passe 4,
+l'absence des anciennes bases dans l'état reçu de passe 5 et l'absence de
+la formulation « restent non commités » dans la section de passe 4.
+Les tests restent exécutables sans objets Git. R5-3, lancé seul avant la
+correction : **1 échec, 0 succès**, huit cas non sélectionnés ; rapport
+`/tmp/front-maj-r5-3-rouge.json` lu. Ligne de rouge :
+``AssertionError: expected '# Cycle 20 : lot front-maj\n\nArbre :…' to contain 'État reçu pour la passe 5 : HEAD `bbb…'``.
+
+### Appelants et vérification du retrait
+
+Après retrait, relecture de `HomeCommands → RFCWizard → RFCChat / RFCCapture`,
+des sources vérifiées et des deux transitions. Comparaison en mémoire avec
+`c20/integration` : `goToCapture`, le rendu complet de Faire, le nettoyage,
+l'arrêt et `sendMessage` sont identiques à la base. Les deux fichiers de
+tests supprimés sont également absents de la base. Le diff restant de ces
+composants ne contient que B-1949, B-1950, B-1951 et B-1952 ; le suivi du
+flux de Réfléchir et ses deux tests R2-2 ont toujours un appelant.
+
+Le premier contrôle ad hoc de comparaison prenait un `return` interne
+pour la fin de `sendMessage` et échouait sur cette délimitation. La
+comparaison bornée par la fin exacte du callback réussit, sans changement
+du code produit. Ce contrôle local n'est pas compté comme test produit.
+
+Après le retrait, **40 tests dans 15 fichiers** ont réussi
+(`/tmp/front-maj-r5-1-vert.json`, lu). Après inscription de la réserve,
+les **8 contrôles documentaires** ont réussi
+(`/tmp/front-maj-r5-2-vert.json`, lu). Après correction de l'état livré,
+le contrôle documentaire complet et les voisins figurent dans la porte
+finale ci-dessous. Relecture également de `get_system_info → UpdateBanner`
+et des références du bilan après les modifications documentaires.
+
+### Portes de cette passe
+
+| Porte | Résultat lu | Preuve |
+| --- | --- | --- |
+| Vitest ciblé, au plus 3 workers | **161 passés, 0 échoué, 0 ignoré, 0 todo ; 38 fichiers**, sortie 0 | `/tmp/front-maj-r5-vitest.json`, lu |
+| Pytest voisin updater | **16 passés, 0 échec, 0 erreur, 0 ignoré**, sortie 0 | `/tmp/front-maj-r5.xml`, XML lu |
+| Rust, tests existants du module de distribution | **10 passés, 0 échoué, 0 ignoré**, sortie 0 | `/tmp/front-maj-r5-rust.log`, lu ; ne couvre pas la réserve des clés répétées |
+| Ruff backend et tests | **0 diagnostic**, sortie 0 | `/tmp/front-maj-r5-ruff.log` : `All checks passed!` |
+| TypeScript | **0 erreur**, sortie 0 | `/tmp/front-maj-r5-tsc.log`, vide |
+| ESLint | **0 erreur, 27 avertissements**, sortie 0 | `/tmp/front-maj-r5-lint.log`, résumé lu |
+
+Trois nouveaux contrôles documentaires R5-1/R5-2/R5-3, chacun rouge seul
+avant modification, et R4-4 adapté à l'état historique ; treize tests du
+candidat retiré supprimés. Aucun nouveau test métier du P1 ou du parseur
+Rust. Les comptes finaux ne cumulent pas les rejeux ; aucun rouge connu
+du mandat n'a été sélectionné ni déduit. Aucune suite complète lancée.
+
+Commandes reproductibles :
+
+```sh
+# Depuis src/frontend ; outils installés, sans téléchargement.
+npm_config_cache=/tmp/front-maj-r5-npm-cache npx --offline --no-install vitest run src/components/rfc src/components/home/HomeCommands.assistantCommande.test.tsx src/components/home/HomeCommands.panneauGuide.test.tsx src/components/home/HomeCommands.cycle6.test.tsx src/test/frontMaj.annonces.r1.test.tsx src/test/frontMaj.bilan.r1.test.ts src/components/settings/AboutTab src/components/ui/UpdateBanner src/components/prototype/usePrototypeEmailData src/hooks/useBackend.c9.test.ts src/hooks/useHealthCheck.test.ts src/services/api/core. src/services/api/authPrive.f2.test.ts src/services/api/config.timeouts.test.ts --configLoader runner --maxWorkers=3 --no-cache --reporter=json --outputFile=/tmp/front-maj-r5-vitest.json
+npm_config_cache=/tmp/front-maj-r5-npm-cache npx --offline --no-install tsc --noEmit
+npm_config_cache=/tmp/front-maj-r5-npm-cache npm run lint
+
+# Depuis la racine ; profil et caches jetables, aucun bytecode partagé écrit.
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-maj-r5-data.XXXXXX)" PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest tests/test_b1111_manifeste_updater.py -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/front-maj-r5.xml
+RUFF_CACHE_DIR=/tmp/front-maj-r5-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+/home/synoptia/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc --edition=2021 --test src/frontend/src-tauri/src/linux_distribution.rs -o /tmp/front-maj-r5-distribution-tests
+/tmp/front-maj-r5-distribution-tests
+```
+
+Sept fichiers du lot modifiés ou supprimés, index vide, HEAD inchangé
+`bbb715b6`. Les entrées non suivies `.venv` et `src/frontend/node_modules`
+étaient déjà présentes à la reprise. Aucun fichier d'un autre lot modifié,
+aucune copie depuis une branche, aucun rebase, ajout à l'index ou commit.
+Aucun réseau, fournisseur LLM, port interdit, profil personnel ni
+`.app-loop/` utilisé. Les changements de passe 5 restent non commités.
+Le constat 1 est retiré et reporté, le constat 2 reste une réserve acceptée,
+le constat 3 est corrigé. La validation globale reste à l'orchestrateur.

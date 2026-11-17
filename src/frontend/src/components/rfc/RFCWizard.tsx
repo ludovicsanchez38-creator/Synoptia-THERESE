@@ -64,14 +64,12 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   });
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [makeStreaming, setMakeStreaming] = useState(false);
   const [reflectStreaming, setReflectStreaming] = useState(false);
 
   const { createCommand, updateCommand } = useCommandsStore();
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
   const reflectHasSource = sourcesVerifiees(reflectMessages).length > 0;
-  const captureEnAttente = makeMessages.length === 0 || makeStreaming || isGenerating;
 
   // Tour 8 : une réponse supprimée côté moteur est retirée des deux étapes.
   const retirerAbsentes = useCallback((ids: string[]) => {
@@ -92,7 +90,6 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   }, [reflectMessages, reflectStreaming]);
 
   const goToCapture = useCallback(async () => {
-    if (makeStreaming || isGenerating) return;
     const sources = sourcesVerifiees([...reflectMessages, ...makeMessages]);
     if (!sources.length) {
       // Rien de vérifié à reprendre : le formulaire local reste ouvert.
@@ -127,7 +124,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
       setIsGenerating(false);
     }
     setStep('capture');
-  }, [reflectMessages, makeMessages, captureData, retirerAbsentes, makeStreaming, isGenerating]);
+  }, [reflectMessages, makeMessages, captureData, retirerAbsentes]);
 
   const handleSave = useCallback(async (data: typeof captureData) => {
     const rfc_source_ids = sourcesVerifiees([...reflectMessages, ...makeMessages]);
@@ -280,30 +277,21 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                         : undefined
                   }
                   onConversationUpdate={setMakeMessages}
-                  onStreamingChange={setMakeStreaming}
                   onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
-              <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
+              <div className="px-4 py-3 border-t border-border flex justify-between">
                 {!editCommand && (
                   <Button variant="ghost" onClick={() => setStep('reflect')} className="text-sm">
                     <ArrowLeft className="w-4 h-4 mr-1" />
                     Retour
                   </Button>
                 )}
-                <p id="rfc-aide-capturer" role="status" aria-live="polite" className={cn('text-xs text-text-muted', !captureEnAttente && 'sr-only')}>
-                  {captureEnAttente
-                    ? isGenerating
-                      ? 'THÉRÈSE prépare ta commande. Patiente un instant.'
-                      : 'Attends la fin de la réponse de THÉRÈSE avant de capturer ta commande.'
-                    : ''}
-                </p>
                 <Button
                   variant="primary"
                   onClick={goToCapture}
-                  disabled={captureEnAttente}
-                  aria-describedby={captureEnAttente ? 'rfc-aide-capturer' : undefined}
-                  className="flex items-center gap-2 text-sm ml-auto shrink-0"
+                  disabled={makeMessages.length === 0 || isGenerating}
+                  className="flex items-center gap-2 text-sm ml-auto"
                 >
                   {isGenerating ? 'Génération...' : 'Capturer'}
                   <ArrowRight className="w-4 h-4" />

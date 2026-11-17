@@ -62,7 +62,6 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      abortRef.current = null;
     };
   }, []);
 
@@ -121,7 +120,6 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       let wasTruncated = false;
       let absentes: string[] = [];
       for await (const chunk of stream) {
-        if (abortRef.current !== controller) return;
         // Vérifier si annulé (BUG-097)
         if (controller.signal.aborted) break;
 
@@ -152,7 +150,6 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
         // Ignorer les chunks de type tool_result/status pour le RFC (BUG-097)
       }
 
-      if (abortRef.current !== controller) return;
       if (wasTruncated) {
         accumulated += '\n\n_(Réponse tronquée - trop longue)_';
       }
@@ -164,21 +161,17 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       onConversationUpdate(finalMessages);
       if (absentes.length) onSourcesAbsentes?.(absentes);
     } catch (err) {
-      if (abortRef.current !== controller) return;
       // AbortError = annulation volontaire, pas une erreur
       const isAbort = err instanceof DOMException && err.name === 'AbortError';
       if (isAbort) {
         // Garder le contenu accumulé tel quel
         const currentMessages = [...updatedMessages];
         setMessages((prev) => {
-          if (abortRef.current !== controller) return prev;
           const lastMsg = prev.find((m) => m.id === assistantMsg.id);
           const content = lastMsg?.content || '_(Interrompu)_';
           const final = [...currentMessages, { ...assistantMsg, content, horsSuite: !assistantMsg.sourceId }];
           // Mettre à jour via le callback dans le prochain tick
-          setTimeout(() => {
-            if (abortRef.current === controller) onConversationUpdate(final);
-          }, 0);
+          setTimeout(() => onConversationUpdate(final), 0);
           return final;
         });
       } else {
@@ -190,9 +183,8 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, initialSour
       }
     } finally {
       clearTimeout(timeoutId);
-      // Garder l'identité jusqu'au prochain envoi, y compris pour le
-      // callback différé d'interruption. Un ancien flux ne libère pas le suivant.
-      if (abortRef.current === controller) setIsStreaming(false);
+      abortRef.current = null;
+      setIsStreaming(false);
     }
   }, [input, isStreaming, messages, systemPrompt, initialSourceIds, onConversationUpdate, onSourcesAbsentes]);
 
