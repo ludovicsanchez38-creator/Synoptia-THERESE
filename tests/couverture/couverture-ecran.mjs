@@ -140,8 +140,9 @@ export async function verifierPileJetable(base, expectedDataDir, fetcher = fetch
   return { data_dir: dataDir, db_path: dbPath };
 }
 
-// Seule la prévisualisation sans écriture est transmise. La migration exacte
-// du chat est acquittée localement par requeteASimuler, ses variantes bloquées.
+// Le POST /api/variables/preview est le seul verbe d'écriture admis : le
+// service (routers/variables.py -> variables_service.py) ne fait que SELECT,
+// substitution en mémoire et calcul d'empreinte, sans commit ni effet externe.
 export function requeteAutorisee(methode, adresse) {
   let url;
   try { url = new URL(adresse); } catch { return false; }

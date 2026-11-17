@@ -1,6 +1,6 @@
 # Cycle 20, lot diff-4
 
-**État courant, passe 4 :** B-2029 corrigé ; B-1885 `regle_a_trancher`, **retiré du lot, reporté**, pour les constats 2, 3 et 4. La section « Remédiation de la relecture, passe 4 » fait foi. Les récits, comptes et demandes de réintégration/rebase des passes précédentes ci-dessous sont historiques.
+**État courant, passe 5 :** B-1883 et B-2008 conservés, types MIME des polices explicités sur une ligne ; B-2029 et B-1885 `regle_a_trancher`, **retirés du lot, reportés**. Le test Python B-2029 est retiré, avec sa dépendance à Playwright et au répertoire courant. La section « Remédiation de la relecture, passe 5 » fait foi. Les récits, comptes et demandes de réintégration/rebase des passes précédentes ci-dessous sont historiques.
 
 Arbre `gpt-c20-diff-4`, branche `gpt/c20-diff-4`, HEAD de départ et d'arrivée `4dfc79d1`. Trois candidats confirmés et corrigés, deux règles à trancher, cinq candidats rejetés. Vérifications locales sur le code présent dans cet arbre.
 
@@ -22,8 +22,11 @@ La colonne « Rouge observé » remplace le commit rouge ; les messages viennent
 | B-2025 | `rejete` | `tests/test_c22b_pdf_sans_texte.py::test_scan_avertit_le_chat` | Sans objet : JPEG est une solution alternative proposée | aucun changement |
 | B-2026 | `rejete` | `tests/test_r1_10_tutoiement.py::test_tutoiement_par_defaut_et_consigne_personnelle_conservee` | Sans objet : les deux registres ont des périmètres distincts | aucun changement |
 | B-2027 | `rejete` | `tests/test_c22b_identite_facture.py::test_piece_deja_emise_sans_adresse_ne_propose_pas_de_modifier_le_brouillon` | Sans objet : une pièce émise n'est plus un brouillon modifiable | aucun changement |
+| B-2029 | `regle_a_trancher` | Deux reproductions isolées de la passe 5, retirées avec le candidat | `Error: Cannot find package '@playwright/test'` ; `ERR_MODULE_NOT_FOUND` depuis `/tmp` | retiré du lot, reporté |
 
 B-1885 : **retiré du lot, reporté**. Preuve de la relecture : « Une fin de tâche étrangère peut valider l'appel suivi et produire un faux vert » ; « Un tube fourni par `--journal-fd` peut perdre une alerte tout en certifiant un verdict vert » ; « Le lanceur peut ne pas trouver un binaire Ollama pourtant installé et accessible à l'appelant ». Les trois reproductions isolées de la passe 4 confirment ces constats.
+
+B-2029 : **retiré du lot, reporté**. Preuve de la relecture : « Le nouveau test fait échouer la CI backend sur une installation propre ». Le constat complet et les preuves du retrait figurent en passe 5.
 
 ## Corrections et chemin d'exécution vérifié avant modification
 
@@ -439,3 +442,81 @@ git diff --check
 Les deux adaptations temporaires de la passe 3 ont été relues et réutilisées : `/tmp/diff4_ipc.py` remplace seulement le réveil interne asyncio par un tube ; `/tmp/diff4_node_stdio.mjs` restitue stdout/stderr des vrais sous-processus Node depuis des fichiers temporaires. Elles ne modifient aucune assertion. Le plugin `tests.bancs_sans_reseau` indique **0 tentative de connexion** pour chaque session Python. Les cas Node retenus utilisent des doubles en mémoire ; les parcours qui ouvrent un navigateur ou manipulent `/private/tmp` et la corbeille personnelle ne sont pas exécutés.
 
 Aucun fichier sous `src/frontend` modifié : portes Vitest/TypeScript/ESLint non applicables à cette passe. Aucune suite complète, aucun réseau, aucun fournisseur réel, aucun accès aux ports réservés, à `~/.therese` ou à `.app-loop/`. Les liens non suivis `.venv` et `src/frontend/node_modules`, présents à l'arrivée, sont conservés. Les changements de cette passe restent non commités pour le rejeu et le commit de l'orchestrateur.
+
+## Remédiation de la relecture, passe 5
+
+Départ : `HEAD=1f058430`, `c20/integration=1550627b`, ascendance vérifiée. La consigne de dernière passe prime : retrait intégral du candidat P1 ; seul le P2 résolu par une ligne évidente est corrigé. Les anciens constats demandant une réintégration ou un rebase sont écartés. Aucun fichier d'un autre lot n'est modifié, aucun fichier entier n'est recopié depuis une autre référence.
+
+| Constat | Verdict du candidat | Traitement de cette passe |
+| --- | --- | --- |
+| 1, P1, B-2029 : dépendance Node dans la CI Python | `regle_a_trancher` | Retrait intégral des trois deltas B-2029 propres au lot : commentaire, assertions Node et fichier Python. Aucun nouveau correctif P1. |
+| 2, P2, B-2008 : polices sans table MIME système | `confirme` | Une seule ligne de production : ajout explicite de `.woff: font/woff` et `.woff2: font/woff2` au dictionnaire existant. Deux cas de test ajoutés. |
+| 3, P2, B-2029 : dépendance au répertoire courant | `regle_a_trancher` | Reproduit depuis `/tmp`, puis supprimé avec le test Python du candidat retiré au constat 1 ; aucun correctif de résolution d'import ajouté. |
+
+B-2029 : **retiré du lot, reporté**. Constat P1 du relecteur recopié comme preuve :
+
+> Le nouveau test fait échouer la CI backend sur une installation propre - Les jobs Python Linux et Windows sélectionnent ce test sans installer les dépendances Node à la racine. Son import charge `couverture-ecran.mjs`, qui dépend de `@playwright/test`. En simulant l’absence de ce paquet, le test lève `CalledProcessError` ; les validations du lot utilisaient un `node_modules` racine non suivi - Porter ces assertions dans la suite Node dédiée ou rendre le contrôle indépendant de Playwright, puis le vérifier dans les conditions des jobs backend.
+
+### Rouges isolés avant retrait ou correction
+
+Les deux reproductions B-2029 ont été ajoutées dans `tests/test_b2029_couverture.py`, exécutées séparément, puis retirées avec le fichier. Le nouveau test B-2008 a été ajouté avant de modifier le gestionnaire. Chaque XML a été lu : **1 test, 1 échec, 0 erreur, 0 ignoré**, code 1. Les lignes ci-dessous viennent de leurs messages d'échec.
+
+| Constat | Test isolé | Ligne d'échec recopiée | XML lu |
+| --- | --- | --- | --- |
+| 1 | `tests/test_b2029_couverture.py::test_garde_sans_dependances_node_des_jobs_backend` | `Error: Cannot find package '@playwright/test'` | `/tmp/diff-4-r5-c1-rouge.xml` |
+| 2 | `tests/test_c20_b2008_mime_recette.py::test_polices_sans_table_mime_systeme[police.woff2-font/woff2]` | `Expected: fulfill(body=b'police fictive', content_type='font/woff2')` ; `Actual: fulfill(body=b'police fictive', content_type='application/octet-stream')` | `/tmp/diff-4-r5-c2-rouge.xml` |
+| 3 | `tests/test_b2029_couverture.py::test_garde_depuis_tmp` | `Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/tmp/tests/couverture/couverture-ecran.mjs' imported from /tmp/[eval1]` | `/tmp/diff-4-r5-c3-rouge.xml` |
+
+Le constat 1 utilise un chargeur Node qui refuse uniquement `@playwright/test` et appelle le test existant depuis la racine ; il isole donc l'absence de dépendance du problème de répertoire courant. Le constat 3 appelle le même test après `chdir('/tmp')`. Le constat 2 remplace la base MIME par `MimeTypes(filenames=())`, limitée aux types intégrés à Python, puis exerce le véritable gestionnaire `servir` et son appel à `route.fulfill`. Exécution sous Python **3.13.13**.
+
+### Retrait, correctif minimal et appelants relus
+
+Le retrait B-2029 inverse uniquement les hunks propres au lot dans `tests/couverture/couverture-ecran.mjs` et `tests/couverture/couverture-ecran.test.mjs`, et supprime `tests/test_b2029_couverture.py`. Le contrôle suivant est **vide, code 0** :
+
+```sh
+git diff --exit-code c20/integration -- tests/couverture/couverture-ecran.mjs tests/couverture/couverture-ecran.test.mjs tests/test_b2029_couverture.py
+```
+
+La chaîne `requeteASimuler` → `installerGardeReseau` → `principal` et les tests Node déjà intégrés ont été relus. Leurs imports, états de comptage et attentes d'acquittements appartiennent à l'intégration ; aucun ajout du lot n'y reste orphelin. Les dix tests voisins en mémoire passent après retrait. Les assertions retirées sont exclusivement celles du candidat ; aucun test de l'intégration n'est affaibli.
+
+Pour B-2008, le dictionnaire de `scripts/recette_r5_navigateur.py:38` reçoit les deux types explicites sur sa ligne existante. Le branchement `page.route('**/*', servir)` et les chemins de refus, de normalisation d'extension et de repli binaire ont été relus. Les treize cas antérieurs restent inchangés ; les deux nouveaux cas couvrent `.woff2` et `.woff` sans table système. Le fichier passe **15/15**, avec le voisin B-1883 **4/4**. Aucun appelant hors lot n'est modifié.
+
+### Réserves acceptées
+
+Aucun P2 supplémentaire laissé en réserve : le constat 2 relève de la ligne évidente autorisée ; le constat 3 disparaît avec le retrait exigé pour le P1. Le candidat B-2029 reste reporté, sans revendication d'une correction de son défaut initial par ce lot. Les passes antérieures restent historiques.
+
+### Portes et limites des preuves
+
+| Porte | Réussis | Échecs / erreurs / ignorés | Preuve |
+| --- | ---: | ---: | --- |
+| pytest ciblé, B-1883 et B-2008 | **19** | **0 / 0 / 0** | `/tmp/diff-4-r5.xml`, XML lu |
+| Même sélection depuis `/tmp`, Playwright indisponible pour Node | **19** | **0 / 0 / 0** | `/tmp/diff-4-r5-isole.xml`, XML lu ; rejeu non additionné aux comptes distincts |
+| Node, garde et voisins sans navigateur | **10** | **0 / 0 / 0** | `/tmp/diff-4-r5-node-vert.log`, TAP lu |
+| Ruff `src/backend tests` | sans objet | **0 diagnostic** | `/tmp/diff-4-r5-ruff.log`, code 0 |
+| TypeScript `tsc --noEmit` | sans objet | **0 diagnostic** | `/tmp/diff-4-r5-tsc.log`, code 0 |
+| `git diff --check` et identité des trois fichiers B-2029 avec l'intégration | sans objet | **0** | codes 0 |
+
+Deux cas de test restent ajoutés à cette passe, tous deux pour B-2008 ; les deux reproductions B-2029 sont retirées avec le candidat. Aucun rouge connu n'est soustrait. Les deux scripts restants dans le lot ont leurs tests verts sans le test Python retiré.
+
+Commandes principales, depuis la racine :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 THERESE_DATA_DIR="$(mktemp -d /tmp/diff-4-r5-data-XXXXXX)" \
+OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  tests/test_c20_b1883_finaliser_recette.py tests/test_c20_b2008_mime_recette.py \
+  -q -p no:cacheprovider -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-4-r5.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+node --import /tmp/diff4_node_stdio.mjs \
+  --test-name-pattern='^(B-2029 : (seule la migration exacte|la garde acquitte)|B-2029 remédiation|B-2029 passe 2|la CLI|la base|seules les lectures|les gestes|B-1715)' \
+  tests/couverture/couverture-ecran.test.mjs
+git diff --check
+```
+
+Le rejeu Python depuis `/tmp` utilise les chemins absolus de l'interpréteur et des deux fichiers de test, `PYTHONPATH` pointant sur cet arbre, une autre base temporaire et `NODE_OPTIONS=--experimental-loader=file:///tmp/diff-4-r5-sans-playwright.mjs`. Ce chargeur reprend le refus de `@playwright/test` de la reproduction rouge. Les tests Python conservés ne dépendent plus de Node ; aucun paquet n'est installé ou déplacé. Les jobs Linux et Windows sélectionnent `tests/` (`.github/workflows/ci.yml:204`, `.github/workflows/tests-windows.yml:116`) ; le fichier retiré n'y est donc plus collecté. Ce rejeu local ne prétend pas remplacer une exécution Windows.
+
+Depuis `src/frontend`, `npm_config_offline=true npm_config_cache=/tmp/diff-4-r5-npm npx --no-install tsc --noEmit` passe. Aucun fichier frontend n'a été touché : Vitest et ESLint ne sont pas relancés.
+
+Le premier lancement Node avec `--test` n'a remonté que l'échec de son sous-processus. Le lancement direct a révélé **6 réussites et 4 échecs** liés aux canaux de `spawnSync` (`EPERM`, diagnostics vides). L'adaptation temporaire déjà utilisée en passe 4, `/tmp/diff4_node_stdio.mjs`, a été relue puis réutilisée : elle dirige stdout/stderr des vrais enfants vers des fichiers sous `/tmp`, puis les restitue. Les dix tests passent avec leurs assertions intactes. Ces essais initiaux ne sont pas comptés comme des portes vertes ; aucun correctif n'est apporté aux tests pour contourner le bac à sable.
+
+Le plugin `tests.bancs_sans_reseau` indique **0 tentative de connexion** dans chaque session Python. Les tests Node retenus utilisent des doubles en mémoire ; les parcours avec navigateur, `/private/tmp` ou corbeille personnelle ne sont pas exécutés. Aucune suite complète, aucun réseau, fournisseur LLM, port réservé, `~/.therese` ou `.app-loop/`. Aucun `rm`, rebase, commit, `git add`, dépôt annexe ou bundle. Les liens non suivis `.venv` et `src/frontend/node_modules`, présents à l'arrivée, restent en place. Tous les changements de cette passe restent non commités.
