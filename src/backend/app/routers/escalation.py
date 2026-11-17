@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _avec_montants_usd(donnees: dict) -> dict:
+def _avec_montants_usd(donnees: dict[str, object]) -> dict[str, object]:
     """Expose l'unité et des noms exacts sans casser les anciennes clés."""
     alias = {
         "monthly_budget_eur": "monthly_budget_usd",

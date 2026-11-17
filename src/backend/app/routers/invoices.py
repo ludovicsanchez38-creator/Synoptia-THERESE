@@ -16,6 +16,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities import Contact, Invoice, InvoiceLine, Preference
@@ -434,10 +435,11 @@ def _dernier_apercu_pdf(dossier: str, invoice_id: str, numero: str) -> Path | No
     apercus = _apercus_pdf(dossier, invoice_id, numero)
     if not apercus:
         return None
-    return chemin_pdf_a_ouvrir(dossier, max(apercus, key=lambda chemin: chemin.name).stem)
+    chemin: Path = chemin_pdf_a_ouvrir(dossier, max(apercus, key=lambda chemin: chemin.name).stem)
+    return chemin
 
 
-def _empreinte_donnees_pdf(invoice: Invoice, donnees: dict) -> str:
+def _empreinte_donnees_pdf(invoice: Invoice, donnees: dict[str, Any]) -> str:
     contenu = {
         "invoice_id": invoice.id,
         "invoice_number": invoice.invoice_number,
@@ -449,13 +451,13 @@ def _empreinte_donnees_pdf(invoice: Invoice, donnees: dict) -> str:
     return hashlib.sha256(serialise.encode("utf-8")).hexdigest()
 
 
-def _verifier_preuve_pdf(chemin: Path, invoice: Invoice) -> dict:
+def _verifier_preuve_pdf(chemin: Path, invoice: Invoice) -> dict[str, Any]:
     """Un ancien fichier au même nom ne prouve pas son origine."""
     preuve = _preuve_pdf(chemin)
     try:
         if preuve.is_symlink():
             raise ValueError("Lien de preuve interdit")
-        donnees = json.loads(preuve.read_text(encoding="utf-8"))
+        donnees: dict[str, Any] = json.loads(preuve.read_text(encoding="utf-8"))
         valide = (
             donnees.get("invoice_id") == invoice.id
             and donnees.get("invoice_number") == invoice.invoice_number
@@ -473,7 +475,7 @@ def _verifier_preuve_pdf(chemin: Path, invoice: Invoice) -> dict:
     return donnees
 
 
-def _verifier_archive_pdf(chemin: Path, invoice: Invoice) -> dict:
+def _verifier_archive_pdf(chemin: Path, invoice: Invoice) -> dict[str, Any]:
     archive = _verifier_preuve_pdf(chemin, invoice)
     try:
         empreinte = _empreinte_donnees_pdf(invoice, archive)
@@ -492,7 +494,7 @@ def _verifier_archive_pdf(chemin: Path, invoice: Invoice) -> dict:
     return archive
 
 
-def _enregistrer_preuve_pdf(chemin: Path, invoice: Invoice, details: dict) -> None:
+def _enregistrer_preuve_pdf(chemin: Path, invoice: Invoice, details: dict[str, Any]) -> None:
     donnees = {
         **details,
         "invoice_id": invoice.id,
@@ -507,16 +509,17 @@ def _enregistrer_preuve_pdf(chemin: Path, invoice: Invoice, details: dict) -> No
         json.dump(donnees, fichier, ensure_ascii=False)
 
 
-def _numero_pdf_pour_statut(invoice: Invoice, archive: dict, statut: str) -> str:
+def _numero_pdf_pour_statut(invoice: Invoice, archive: dict[str, Any], statut: str) -> str:
     if not isinstance(archive.get("statut"), str):
         raise HTTPException(409, "Les informations de l'archive PDF sont incomplètes.")
     if statut == archive["statut"]:
-        return invoice.invoice_number
+        numero: str = invoice.invoice_number
+        return numero
     empreinte = hashlib.sha256(statut.encode("utf-8")).hexdigest()[:16]
     return f"{invoice.invoice_number}--etat-{empreinte}"
 
 
-def _verifier_edition_pdf(chemin: Path, invoice: Invoice, archive: dict, statut: str) -> None:
+def _verifier_edition_pdf(chemin: Path, invoice: Invoice, archive: dict[str, Any], statut: str) -> None:
     edition = _verifier_preuve_pdf(chemin, invoice)
     if edition.get("archive_sha256") != archive["sha256"] or edition.get("statut") != statut:
         raise HTTPException(409, "L'origine de cette édition PDF ne peut pas être vérifiée.")
@@ -599,8 +602,8 @@ def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Pa
 
 
 def _publier_pdf_atteste(
-    output_dir: str, invoice: Invoice, details: dict, numero: str, *,
-    donnees: dict, contact: dict, profil: dict, currency: str,
+    output_dir: str, invoice: Invoice, details: dict[str, Any], numero: str, *,
+    donnees: dict[str, Any], contact: dict[str, str | None], profil: dict[str, Any], currency: str,
     verifier: Callable[[Path], object], empreinte_archive: str | None = None,
 ) -> str:
     generateur = InvoicePDFGenerator(output_dir=output_dir)
@@ -627,7 +630,7 @@ def _publier_pdf_atteste(
     return str(chemin)
 
 
-def _generer_edition_pdf(output_dir: str, invoice: Invoice, archive: dict, statut: str, numero: str) -> str:
+def _generer_edition_pdf(output_dir: str, invoice: Invoice, archive: dict[str, Any], statut: str, numero: str) -> str:
     try:
         donnees = dict(archive["invoice_data"])
         donnees["status"] = statut

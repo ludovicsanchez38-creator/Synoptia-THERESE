@@ -14,6 +14,7 @@ import re
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
+from tarfile import TarInfo
 from typing import Any, get_args
 
 from app.config import settings
@@ -1333,7 +1334,8 @@ def _membre_attendu(dest: str | Path, member: Any) -> bool:
 
 
 def _lien_de_publication_sur(
-    member: Any, dest: str | Path, precedents: dict, fichiers: dict, comptes: Counter,
+    member: Any, dest: str | Path, precedents: dict[str, TarInfo],
+    fichiers: dict[str, TarInfo], comptes: Counter[str],
 ) -> bool:
     """Seul un lien vers un PDF provisoire et son compagnon peut être restauré."""
     source, cible = PurePosixPath(member.linkname), PurePosixPath(member.name)
@@ -1357,7 +1359,8 @@ def _lien_de_publication_sur(
 
 
 def _lien_de_compagnon_sur(
-    member: Any, dest: str | Path, precedents: dict, publications: dict, comptes: Counter,
+    member: Any, dest: str | Path, precedents: dict[str, TarInfo],
+    publications: dict[str, str], comptes: Counter[str],
 ) -> bool:
     suffixe = ".therese.json"
     if not member.name.endswith(suffixe) or not member.linkname.endswith(suffixe):
@@ -1390,7 +1393,7 @@ def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
     ignorés. Lève HTTPException 400 au premier chemin inattendu (B-1497)."""
     membres = []
     liens_ignores = 0
-    precedents = {}
+    precedents: dict[str, TarInfo] = {}
     publications = {}
     tous = tar.getmembers()
     comptes = Counter(str(PurePosixPath(member.name)) for member in tous)
