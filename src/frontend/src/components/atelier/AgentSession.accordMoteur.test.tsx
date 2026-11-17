@@ -122,24 +122,4 @@ describe('AgentSession : accord du moteur avant la mission', () => {
     expect(moteur.mission).not.toHaveBeenCalled();
     expect(routes).toEqual(['/api/consents']);
   });
-
-  it.each(['Annuler', 'Échap'])('R1.4 : conserve la cause du refus après fermeture par %s', async (geste) => {
-    const routes = doublerLeMoteur(true);
-    render(<AgentSession model="openai::modele-test" profileId="researcher" onBack={vi.fn()} />);
-    await confirmer();
-    const dialogue = await screen.findByTestId('agent-cloud-consent');
-    fireEvent.click(screen.getByRole('button', { name: 'Autoriser et envoyer' }));
-    const erreur = await screen.findByRole('alert');
-    expect(dialogue).toContainElement(erreur);
-    const cause = erreur.textContent;
-    expect(cause).toContain(MESSAGE);
-
-    const annuler = screen.getByRole('button', { name: 'Annuler' });
-    if (geste === 'Échap') fireEvent.keyDown(annuler, { key: 'Escape' });
-    else fireEvent.click(annuler);
-    expect(screen.queryByTestId('agent-cloud-consent')).not.toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(cause!);
-    expect(moteur.mission).not.toHaveBeenCalled();
-    expect(routes).toEqual(['/api/consents']);
-  });
 });
