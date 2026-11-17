@@ -175,6 +175,13 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
             setMessage(messageMoteur.current);
           } else if (charge.state === 'running') {
             messageMoteur.current = null;
+            if (fatalSidecarError.current) {
+              fatalSidecarError.current = false;
+              setError(null);
+              setMoteurArrete(false);
+              setProgress(0);
+              setRelance((n) => n + 1);
+            }
           }
         }).then(garder);
       })
@@ -224,21 +231,22 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
   useEffect(() => {
     let cancelled = false;
+    const estCourant = () => !cancelled && !fatalSidecarError.current;
     const startTime = Date.now();
 
     async function poll() {
-      while (!cancelled && !fatalSidecarError.current) {
+      while (estCourant()) {
         // initApiBase mémorise une découverte réussie, mais libère son repli.
         // Le sondage suivant (ou une relance) peut donc retrouver le sidecar.
         try {
           await initApiBase();
         } catch {
-          if (!cancelled && !fatalSidecarError.current) {
+          if (estCourant()) {
             setError('Impossible de joindre le moteur. Relance THÉRÈSE.');
           }
           return;
         }
-        if (cancelled || fatalSidecarError.current) return;
+        if (!estCourant()) return;
         const elapsed = Date.now() - startTime;
 
         // Timeout
@@ -272,19 +280,19 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
         // Check
         const healthy = await checkHealth();
-        if (healthy === 'recovery' && !cancelled && !fatalSidecarError.current) {
+        if (healthy === 'recovery' && estCourant()) {
           setReprise(true);
           void setDockProgress(100);
           return;
         }
-        if (healthy === true && !cancelled && !fatalSidecarError.current) {
+        if (healthy === true && estCourant()) {
           setProgress(100);
           setMessage('Prêt !');
           // F-09 : effacer la progression du dock macOS
           void setDockProgress(100);
           // Petit délai pour l'animation
           await new Promise((r) => setTimeout(r, 300));
-          if (!cancelled && !fatalSidecarError.current) onReady();
+          if (estCourant()) onReady();
           return;
         }
 

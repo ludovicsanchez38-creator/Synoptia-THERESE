@@ -2,7 +2,7 @@ import { GuidePremierServiceIA } from '../llm/GuidePremierServiceIA';
 // Onglet configuration LLM - Paramètres THERESE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, AlertCircle, XCircle, Eye, EyeOff, Cpu, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Carte, CarteTete } from '../ui/Carte';
@@ -694,25 +694,34 @@ export function EffortSelector({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [failedEffort, setFailedEffort] = useState<string | null>(null);
+  const generationAffichage = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .getLLMConfig()
-      .then((cfg) => {
-        if (!cancelled) setEffort(cfg.effort || 'auto');
-      })
-      .catch((reason) => {
-        if (!cancelled) setError(reason instanceof Error ? reason.message : 'Effort de raisonnement indisponible.');
+    let lecture = 0;
+    setSaving(false);
+    setStatus(null);
+    const charger = () => {
+      const demande = ++lecture;
+      void api.getLLMConfig().then((cfg) => {
+        if (!cancelled && demande === lecture) setEffort(cfg.effort || 'auto');
+      }).catch((reason) => {
+        if (!cancelled && demande === lecture) setError(reason instanceof Error ? reason.message : 'Effort de raisonnement indisponible.');
       });
+    };
+    charger();
+    window.addEventListener('therese:llm-config-changed', charger);
     return () => {
       cancelled = true;
+      generationAffichage.current += 1;
+      window.removeEventListener('therese:llm-config-changed', charger);
     };
   }, [selectedProvider, selectedModel]);
 
   async function handleChange(value: string) {
     // B-1160 : sans modèle, l'effort partait avec un modèle vide.
     if (!selectedModel) return;
+    const generation = generationAffichage.current;
     const previous = effort;
     setEffort(value);
     setSaving(true);
@@ -721,21 +730,26 @@ export function EffortSelector({
     setFailedEffort(null);
     try {
       if (onSaveOptions) {
-        if (!await onSaveOptions({ effort: value as LLMEffort })) {
+        const enregistre = await onSaveOptions({ effort: value as LLMEffort });
+        if (generation !== generationAffichage.current) return;
+        if (!enregistre) {
+          setEffort(previous);
           setStatus(null);
           return;
         }
       } else {
         await api.setLLMConfig(selectedProvider as api.LLMProvider, selectedModel, value as LLMEffort);
       }
+      if (generation !== generationAffichage.current) return;
       setStatus('Effort de raisonnement enregistré.');
     } catch (err) {
+      if (generation !== generationAffichage.current) return;
       setEffort(previous);
       setStatus(null);
       setFailedEffort(value);
       setError(err instanceof Error ? err.message : 'L’effort de raisonnement n’a pas pu être enregistré.');
     } finally {
-      setSaving(false);
+      if (generation === generationAffichage.current) setSaving(false);
     }
   }
 

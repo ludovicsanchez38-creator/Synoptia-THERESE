@@ -297,3 +297,93 @@ Le mode npm hors ligne interdit le téléchargement. `runner` et `--no-cache` é
 - ESLint : `npm run lint`, **sortie 0, 0 erreur, 27 avertissements** ; `/tmp/front-reglages-r2-lint.log` lu, aucun nettoyage hors périmètre.
 - Ruff : `.venv/bin/python -m ruff check --no-fix src/backend tests`, **sortie 0**, `All checks passed!` ; `/tmp/front-reglages-r2-ruff.log` lu.
 - `git diff --check` : **sortie 0**. Tous les changements de cette passe restent non indexés et non commités. L’ascendance reste à corriger par l’orchestrateur.
+
+## Remédiation de la relecture, passe 3
+
+Intervention du 17 novembre 2026 dans ce seul arbre, limitée aux neuf constats. Tous sont confirmés. Les correctifs applicatifs sont apportés ; **l’ascendance du constat 1 reste à régler par l’orchestrateur**. Aucun commit, ajout à l’index, dépôt annexe, bundle, accès réseau, fournisseur LLM, serveur, port réservé, dossier personnel de THÉRÈSE ou `.app-loop/` utilisé. Les liens non suivis `.venv` et `src/frontend/node_modules`, présents à l’entrée, sont conservés.
+
+### Intégration et périmètre
+
+À l’entrée, `HEAD=8ccf608be78441c84cb8743a1ebd002f69b346c6` et `c20/integration=a498d9d3a6f9910959714de82cb7567a6de3d4c1`. Contrairement à l’état annoncé, `git merge-base --is-ancestor c20/integration HEAD` retourne **1**. Les six commits du lot rust-windows et les six du lot bancs ne sont pas ancêtres de HEAD. Le répertoire Git réel est `/data/boucle-therese-mac/Dev Synoptia/Synoptia-THERESE/.git/worktrees/gpt-c20-front-reglages`, hors de l’arbre autorisé ; le profil n’accorde que la lecture des métadonnées et interdit l’élévation. Aucun rebase n’a donc été tenté. Le NO-GO d’intégration n’est pas déclaré levé.
+
+Seul le contenu d’intégration lié aux constats 1, 2, 8 et 9 est rétabli, tests avant sources. `src/backend/main.py`, `src/frontend/src-tauri/src/{lib,commands}.rs`, `BoardPanel.tsx` et `App.tsx` retrouvent exactement leur contenu dans l’intégration. `SplashScreen.tsx` retrouve les protections de génération et garde la redécouverte du port de la passe 1 ; il ajoute la reprise automatique après `running`. Aucun correctif du lot bancs sans rapport avec les constats n’est recopié.
+
+### Tests rouges puis corrections
+
+Chaque constat a son lancement rouge isolé, avant son correctif : fichiers dédiés pour les tests restaurés, filtres `-t R3-N` pour les extensions. Les lignes ci-dessous sont recopiées des sorties réelles ; les erreurs Python proviennent des XML lus, le hook `pytest_sessionfinish` existant coupant le résumé terminal. Les chemins frontend sont relatifs à `src/frontend/src`.
+
+| Constat | Tests ajoutés ou restaurés | Ligne d’échec observée | Correction |
+| --- | --- | --- | --- |
+| 1 | `tests/test_c20_windows_zombies.py` : 24 cas restaurés, dont 23 rouges | `AssertionError: assert ['414'] == []` ; `AssertionError: assert ['4242'] == []` | Le Rust contrôle la ligne de commande WMIC, y compris UTF-16, puis chaque candidat tasklist via CIM. Le nettoyage Python vérifie aussi chaque candidat via CIM. Hôte, port et options exacts, PID courant et parent protégés, candidat illisible épargné. Ascendance non modifiable ici, voir ci-dessus. |
+| 2 | `components/SplashScreen.relanceDemarrage.b1912.test.tsx` : 10 cas restaurés et `R3-2` ajouté ; `tests/test_c20_relance_sidecar.py` : 2 cas restaurés | `TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Relancer le moteur local"` ; `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times` ; harnais Rust initial : `AssertionError: error[E0061]: this function takes 4 arguments but 3 arguments were supplied` | Bouton de relance après erreur/timeout, verrou contre les doubles clics, générations dans la commande et les événements, invalidation des anciennes relances et terminaisons. Un `running` accepté efface l’erreur et reprend le sondage. |
+| 3 | `components/settings/SettingsModal.ecrituresLLM.r1.test.tsx::R3-3`, 1 cas | `AssertionError: expected 'mistral-small-2603' to be 'mistral-large-latest' // Object.is equality` | Compteur d’intentions partagé entre réglages et chat, réservé dès le geste, avant le GET. Le retour d’un ancien GET ne peut plus soumettre un choix dépassé. La file des POST reste commune. |
+| 4 | Même fichier, `R3-4`, 3 cas : fournisseur, onglet et fermeture | `Error: expect(element).toHaveTextContent()` ; `TestingLibraryElementError: Unable to find role="alert"` | Le refus d’effort vit dans SettingsModal avec fournisseur, modèle, valeur et motif d’origine. L’alerte nomme cette cible et sa reprise la transmet explicitement. Les réponses d’un ancien sélecteur ne changent plus le sélecteur courant ; une reprise réussie recharge l’effort affiché. |
+| 5 | Même fichier, `R3-5`, 1 cas | `AssertionError: expected 'xhigh' to be 'auto' // Object.is equality` | La sauvegarde d’adresse lit aussi l’effort conservé dans la file commune et envoie `auto` si le modèle repris refuse `xhigh`. Le test retarde le GET du modèle, part de `xhigh` enregistré et vérifie le POST et le sélecteur. |
+| 6 | Même fichier, `R3-6`, 1 cas | `Error: expect(element).toHaveTextContent()` | Choix de la variante minimale autorisée : après refus du POST combiné, l’alerte dit explicitement « Le modèle « … » n’a pas été enregistré. Sélectionne-le à nouveau. », avec l’identifiant et le motif de refus de l’option. Le test vérifie ensuite que la sélection indépendante peut réussir. Les assertions R2-9 sur l’ancien modèle conservé ne sont pas affaiblies. |
+| 7 | `components/documents/DocumentsList.creationFermee.r2.test.tsx`, `R3-7`, 2 cas, dont 1 rouge | `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times` | L’intention de trame reste dans DocumentsList après une lecture refusée. Le bouton Réessayer passe par cette intention ; la première lecture réussie la consomme une seule fois. Retour, autre document et démontage l’annulent. La fermeture puis réouverture du même document ne lance pas de trame. |
+| 8 | `components/board/BoardPanel.interactionsHistorique.b1913.test.tsx` et `BoardPanel.visibiliteSuppression.b1914.test.tsx`, 2 cas restaurés | `Error: expect(element).not.toContainElement(element)` ; `AssertionError: expected +0 to be 1 // Object.is equality` | Ouverture et suppression sont des interactions distinctes. La suppression reste visible sans survol ; son nom accessible et sa description identifient la décision. La confirmation reste hors du contrôle d’ouverture. |
+| 9 | `App.lienEvitement.b1915.test.tsx`, 1 cas restauré | `AssertionError: expected 0 to be greater than or equal to 50` | Classe littérale `focus:z-50` détectable par Tailwind. Le test scanne les sources, compile le CSS et mesure le z-index du lien focalisé. |
+
+**22 cas frontend ajoutés ou rétablis** (9 nouveaux, 13 restaurés), dont 21 rouges avant correction et un témoin de fermeture. **26 cas Python restaurés**, dont 25 rouges avant correction et un témoin conservant les tests Rust du prédicat. Les deux harnais Rust compilent des fonctions de production avec des commandes et événements simulés ; aucun processus applicatif n’est lancé ou arrêté.
+
+Journaux rouges : `/tmp/front-reglages-r3-N-rouge.log`, N de 1 à 9 ; XML `/tmp/front-reglages-r3-1-rouge.xml` et `/tmp/front-reglages-r3-2-rouge.xml`, lus. Le journal Rust du constat 2 est `/tmp/front-reglages-r3-2-rust-rouge.log`. Dans le constat 4, le premier rouge est l’absence de l’identifiant du modèle dans l’alerte ; les deux autres sont l’absence d’alerte après démontage. Le test contrôle également la cible exacte du POST de reprise.
+
+Aucun test existant supprimé, assoupli ou rendu facultatif. Seuls deux fichiers de tests déjà présents sont étendus, sans changer leurs assertions. Le harnais restauré `test_c20_relance_sidecar.py` reçoit les doublures `app.path().resource_dir()` et `Command.env(impl AsRef<OsStr>)`, nécessaires à la compilation de la branche Linux déjà présente dans le code de production ; les assertions d’intégration restent identiques.
+
+### Appelants et contrôles après chaque correction
+
+- Constat 1 : point d’entrée Python, lancement du sidecar Rust et prédicat Unix relus ; **48 tests voisins verts** après adaptation asyncio décrite ci-dessous.
+- Constat 2 : `restart_backend`, lancement initial, relances différées, traitement des terminaisons, `RepriseDonnees`, `SidecarStatusBanner` et `UpdateBanner` relus. Les deux harnais et les tests de fin du processus donnent **5 cas verts**. Le rejeu frontend des constats 2 et 3 donne **77 cas verts**, avec la redécouverte du port conservée.
+- Constats 3 à 6 : sélecteur du chat, mémoire des modèles par fournisseur, chargement/réouverture des réglages, callbacks d’adresse et d’effort, propriétaire SettingsModal dans PanelContainer relus. Après les corrections 4, 5 et 6 : respectivement **84**, **60** et **39** cas voisins verts.
+- Constat 7 : callback de DocumentCreateModal, ouverture/reprise et retour/démontage de DocumentWorkspace, jetons et génération du store relus ; **132 cas voisins verts**. Aucun changement du store nécessaire.
+- Constat 8 : chargement, ouverture, suppression et confirmation dans BoardPanel, montage dans PanelContainer relus ; **32 cas voisins verts**.
+- Constat 9 : rendu de la coque App et cible `#main-content` relus ; **9 cas voisins verts**.
+
+Ces comptes intermédiaires se recouvrent et ne s’ajoutent pas aux portes finales.
+
+### Portes ciblées finales et adaptations d’exécution
+
+**Backend : 76 passés, 0 échec, 0 erreur, 0 ignoré, sortie 0.** `/tmp/front-reglages-r3.xml` lu : 76 éléments `testcase`, aucune balise `failure`, `error` ou `skipped`. Aucun rouge connu soustrait. Commande depuis la racine :
+
+```sh
+PATH=/home/synoptia/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH \
+OLLAMA_BASE_URL=http://127.0.0.1:9 PYTHONPATH=/tmp .venv/bin/python -m pytest \
+  tests/test_c20_windows_zombies.py tests/test_c20_relance_sidecar.py \
+  tests/test_b1261_instance_unique.py tests/test_b954_b955_tueur_de_zombies.py \
+  tests/test_main_startup.py tests/test_sidecar_attend_la_fin_du_processus.py \
+  tests/test_sentinelles_structure.py tests/test_regression_socle.py::TestTueurDeZombies \
+  -q -p no:cacheprovider -p front_reglages_r2_ipc --timeout=120 \
+  --junitxml=/tmp/front-reglages-r3.xml
+```
+
+Le compilateur Rust installé localement était absent du PATH initial : son répertoire est ajouté pour les harnais, sans téléchargement. Le premier lancement rouge sans ce PATH n’est pas utilisé comme preuve ; le rejeu effectif donne 23 échecs comportementaux sur 24 cas Windows.
+
+Le premier passage natif des voisins Python a donné **47 réussites et 1 erreur de setup** à 120 secondes dans `test_startup_profile_preload_skips_decrypt`, bloqué sur le réveil asyncio/aiosqlite. L’adaptation `/tmp/front_reglages_r2_ipc.py` de la passe 2, relue avant usage, remplace uniquement la paire de sockets de réveil interne d’asyncio par un pipe non bloquant. Le même ensemble passe ensuite à 48/48, puis la porte ciblée à 76/76. Aucune assertion, route, fixture, donnée ni délai n’est modifié. Sur les machines sans cette restriction, retirer `PYTHONPATH=/tmp` et `-p front_reglages_r2_ipc`. Journal final : `/tmp/front-reglages-r3-backend.log`.
+
+Commande frontend ciblée depuis `src/frontend`, sans suite complète :
+
+```sh
+npm_config_offline=true npx vitest run \
+  src/App*.test.tsx src/components/SplashScreen*.test.tsx \
+  src/components/EcranDeChargement*.test.tsx src/components/RepriseDonnees*.test.tsx \
+  src/components/ui/SidecarStatusBanner.test.tsx src/components/ui/UpdateBanner*.test.tsx \
+  src/components/settings/SettingsModal*.test.* src/components/settings/LLMTab*.test.tsx \
+  src/components/chat/ChatInput*.test.tsx src/components/chat/PanelContainer*.test.tsx \
+  src/components/documents/DocumentsList*.test.tsx src/components/documents/DocumentWorkspace*.test.tsx \
+  src/components/documents/DocumentCreateModal*.test.tsx src/stores/documentStore*.test.ts \
+  src/components/board/BoardPanel*.test.tsx src/lib/effortOpenAI*.test.ts \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=json --outputFile.json=/tmp/front-reglages-r3-frontend.json
+```
+
+`npm_config_offline=true` interdit les téléchargements ; `runner` et `--no-cache` évitent les écritures dans les dépendances partagées en lecture seule. La configuration, les assertions et les délais du dépôt sont conservés. Un lancement intermédiaire depuis la racine, où Vitest n’est pas installé, a été refusé par npm hors ligne avant collecte puis relancé depuis `src/frontend`.
+
+**Frontend : 507 passés, 0 échoué, 0 ignoré, 106 fichiers passés sur 106, sortie 0.** Le rapport `/tmp/front-reglages-r3-frontend.json` a été lu : chaque résultat individuel est `passed`. Journal `/tmp/front-reglages-r3-frontend.log`.
+
+- TypeScript : `npm_config_offline=true npx tsc --noEmit`, **sortie 0, aucun diagnostic** ; `/tmp/front-reglages-r3-tsc.log` lu et vide.
+- ESLint : `npm_config_offline=true npm run lint`, **sortie 0, 0 erreur, 27 avertissements** ; `/tmp/front-reglages-r3-lint.log` lu. Aucun nettoyage hors périmètre.
+- Ruff : `.venv/bin/python -m ruff check --no-fix src/backend tests`, **sortie 0**, `All checks passed!` ; `/tmp/front-reglages-r3-ruff.log` lu.
+- `git diff --check` : **sortie 0**. **21 fichiers** de cette passe : 12 sources, 8 fichiers de tests et ce bilan. Les six fichiers de tests restaurés sont non suivis ; les deux fichiers de tests préexistants ne reçoivent que des ajouts.
+- HEAD et référence d’intégration inchangés, aucune différence indexée. Tous les changements restent non commités. La commande d’ascendance retourne toujours **1** ; rebase à réaliser par l’orchestrateur dans un environnement autorisant l’écriture des métadonnées Git.
+
+Aucune recette native Tauri/Windows ni compilation Cargo complète n’est revendiquée. Les preuves Rust exécutent les fonctions extraites dans les harnais locaux ; les preuves frontend utilisent les vrais composants, leurs stores et des appels API/IPC doublés. Aucun des rouges connus exclus par la consigne n’a été rencontré dans ces portes ciblées.
