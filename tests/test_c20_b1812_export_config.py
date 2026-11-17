@@ -426,3 +426,68 @@ def test_preference_qui_n_est_pas_un_json_sort_telle_quelle():
 
     for valeur in ("sombre", "{pas du json", "[1, 2"):
         assert _valeur_de_preference_exportable(Preference(key="theme", category="general", value=valeur)) == valeur
+
+
+# Relecture 6 du lot (17/11/2026) : un lien HTML suivi d'une adresse e-mail
+# était tronqué, une URL imbriquée absorbait les paramètres suivants, et un
+# point-virgule coupait la valeur d'un paramètre de connexion.
+TEXTES_SANS_IDENTIFIANT = [
+    '<img src="https://logo.invalid">personne@example.invalid',
+    '<a href="https://site.invalid">contact@site.invalid</a>',
+    "<a href='https://site.invalid:8443/x'>a@b.invalid</a>",
+    "<a href=https://site.invalid>a@b.invalid</a>",
+    'Config : {"url":"https://hote.invalid:443","email":"a@b.invalid"} fin',
+    "[contact@site.invalid](https://site.invalid)",
+    "(voir https://site.invalid),a@b.invalid",
+    "https://site.invalid;a@b.invalid",
+    "https://site.invalid,a@b.invalid",
+    "<https://site.invalid>a@b.invalid",
+    "https://site.invalid/?next=https://agenda.invalid&email=personne@example.invalid",
+    "https://site.invalid/?a=1;next=https://agenda.invalid;email=personne@example.invalid",
+    "https://site.invalid/#retour=https://agenda.invalid:443&mail=a@b.invalid",
+]
+
+
+@pytest.mark.parametrize("texte", TEXTES_SANS_IDENTIFIANT)
+def test_masquage_laisse_intact_un_texte_sans_identifiant(texte):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(texte) == texte
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_conserve_html_et_url_imbriquee_sans_identifiant(client, db_session, route):
+    description = "\n".join(TEXTES_SANS_IDENTIFIANT)
+    db_session.add(Calendar(id="cal-html", summary="Agenda", description=description))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    agenda = next(c for c in reponse.json()["calendars"] if c["id"] == "cal-html")
+    assert agenda["description"] == description
+
+
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        # Un secret entier part, point-virgule compris ; les autres paramètres restent.
+        ("https://site.invalid/?password=FICTIF;deuxieme&vue=mois", "https://site.invalid/?password=[REDACTED]&vue=mois"),
+        ("https://site.invalid/?vue=mois;jour&token=FICTIF#p", "https://site.invalid/?vue=mois;jour&token=[REDACTED]#p"),
+        # Identifiants dont le mot de passe porte un séparateur de texte.
+        ('<a href="https://temoin:FAUX-secret@site.invalid/x">lien</a>', '<a href="https://site.invalid/x">lien</a>'),
+        ("https://temoin:FAUX,sec;ret@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ("https://temoin:FAUX)sec@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ("https://temoin:p&ss@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        ("https://temoin'x@agenda.invalid/dav", "https://agenda.invalid/dav"),
+        # Une URL imbriquée avec ses propres identifiants, suivie d'un autre paramètre.
+        (
+            "https://site.invalid/?next=https://temoin:FAUX-secret@agenda.invalid/x&email=personne@example.invalid",
+            "https://site.invalid/?next=https://agenda.invalid/x&email=personne@example.invalid",
+        ),
+    ],
+)
+def test_masquage_des_identifiants_a_separateurs(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
