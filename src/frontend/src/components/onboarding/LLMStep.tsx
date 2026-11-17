@@ -30,6 +30,27 @@ interface LLMStepProps {
   choixPrecedent?: api.LLMProvider | null;
 }
 
+interface EtatFournisseur {
+  saisie: string;
+  saving: boolean;
+  saved: boolean;
+  verification: { etat: string; message: string } | null;
+  error: string | null;
+  // B-246 : l'erreur de clé appartient au champ ; celle de configuration
+  // reste dans le bandeau général, même si le champ n'est plus affiché.
+  erreurDuChampCle: boolean;
+}
+
+interface DemandeCle {
+  numero: number;
+  saving: boolean;
+}
+
+const ETAT_FOURNISSEUR_INITIAL: EtatFournisseur = {
+  saisie: '', saving: false, saved: false, verification: null,
+  error: null, erreurDuChampCle: false,
+};
+
 // Catalogue centralisé (dette 0.43.4) : l'onboarding déclarait sa PROPRE copie
 // des fournisseurs et elle divergeait déjà des Réglages - gpt-5.3-codex y était
 // encore proposé, retiré partout ailleurs. Une seule copie statique de repli
@@ -90,7 +111,13 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   // reclassement silencieux, précisément ce qu'on corrige partout ailleurs.
   const modeleChoisiParLUtilisateur = useRef(false);
   const [selectedModel, setSelectedModel] = useState(() => modeleParDefaut(choixPrecedent ?? 'anthropic'));
-  const [apiKeyInput, setApiKeyInput] = useState('');
+  // B-2058 : saisie, attente et résultats appartiennent au fournisseur qui
+  // les a lancés, même quand on en consulte un autre avant leur résolution.
+  const [etatsFournisseurs, setEtatsFournisseurs] = useState<Partial<Record<api.LLMProvider, EtatFournisseur>>>({});
+  const {
+    saisie: apiKeyInput, saving, saved, verification, error, erreurDuChampCle,
+  } = etatsFournisseurs[selectedProvider] ?? ETAT_FOURNISSEUR_INITIAL;
+  const demandesCleRef = useRef<Partial<Record<api.LLMProvider, DemandeCle>>>({});
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   // B-239 : d'où sort la clé. Le booléen ci-dessus dit qu'elle existe, jamais
@@ -106,28 +133,33 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     { nom: string; gereLesOutils: boolean; motif?: string | null }[]
   >([]);
   const [systemResources, setSystemResources] = useState<api.SystemResources | null>(null);
-  const [saving, setSaving] = useState(false);
   const [configuring, setConfiguring] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // B-246 : toutes les erreurs de cette étape ne parlent pas du champ de
-  // clé. Celles qui viennent de « Continuer » surviennent même quand le
-  // champ n'est plus affiché (clé déjà enregistrée) : elles gardent le
-  // bandeau général, les autres sont signalées SUR le champ fautif.
-  const [erreurDuChampCle, setErreurDuChampCle] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  // B-1348 (boucle DQ) : la réponse du fournisseur à la clé qu'on vient d'enregistrer.
-  const [verification, setVerification] = useState<{ etat: string; message: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const loadRequestRef = useRef(0);
   // B-068 : le retour visuel « clé enregistrée » s'efface au bout de 3 s ; le
   // minuteur doit mourir avec l'étape.
-  const effacerLeSauveRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const effacerLeSauveRef = useRef<Partial<Record<api.LLMProvider, ReturnType<typeof setTimeout>>>>({});
   const configuringRef = useRef(false);
   // B-607 : un fournisseur enregistré dans CETTE étape (Continuer, puis Retour)
   // doit être défait si l'on choisit finalement « Configurer plus tard ».
 
+  function modifierEtatFournisseur(fournisseur: api.LLMProvider, changement: Partial<EtatFournisseur>, demande?: DemandeCle) {
+    setEtatsFournisseurs((precedents) => {
+      // Une nouvelle clé peut avoir été saisie après un rechargement du coffre.
+      // Le verdict ou le minuteur de l'ancienne demande ne doit pas la remplacer.
+      if (demande && demandesCleRef.current[fournisseur] !== demande) return precedents;
+      return {
+        ...precedents,
+        [fournisseur]: { ...(precedents[fournisseur] ?? ETAT_FOURNISSEUR_INITIAL), ...changement },
+      };
+    });
+  }
+
   const loadState = useCallback(async () => {
+    // B-2058 : une nouvelle sonde pourrait sélectionner Ollama d'office
+    // pendant que la configuration d'un autre fournisseur attend sa réponse.
+    if (configuringRef.current) return;
     const activeRequest = ++loadRequestRef.current;
     setLoading(true);
     setLoadError(null);
@@ -174,7 +206,8 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   }, [loadState]);
 
   useEffect(() => () => {
-    if (effacerLeSauveRef.current) clearTimeout(effacerLeSauveRef.current);
+    demandesCleRef.current = {};
+    Object.values(effacerLeSauveRef.current).forEach(clearTimeout);
   }, []);
 
   const currentProviderConfig = PROVIDERS.find(p => p.id === selectedProvider);
@@ -201,42 +234,53 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     : catalogueDynamique ?? (currentProviderConfig?.models || []);
 
   async function handleSaveApiKey() {
+    const fournisseur = selectedProvider;
+    // Le bouton est désactivé pendant l'écriture ; Entrée doit respecter
+    // le même verrou, y compris avant le prochain rendu React.
+    if (demandesCleRef.current[fournisseur]?.saving) return;
     // Audit bêta 27/10 (A2-22) : contrôle et envoi sur la saisie nettoyée.
     const cle = nettoyerCle(apiKeyInput);
     if (!cle) {
-      setErreurDuChampCle(true);
-      setError('Entre une clé API');
+      modifierEtatFournisseur(fournisseur, { erreurDuChampCle: true, error: 'Entre une clé API' });
       return;
     }
 
     const providerConfig = PROVIDERS.find(p => p.id === selectedProvider);
     if (providerConfig?.keyPrefix && !cle.startsWith(providerConfig.keyPrefix)) {
-      setErreurDuChampCle(true);
-      setError(`La clé API doit commencer par "${providerConfig.keyPrefix}"`);
+      modifierEtatFournisseur(fournisseur, {
+        erreurDuChampCle: true, error: `La clé API doit commencer par "${providerConfig.keyPrefix}"`,
+      });
       return;
     }
 
-    setSaving(true);
-    setErreurDuChampCle(false);
-    setError(null);
+    const demande = { numero: (demandesCleRef.current[fournisseur]?.numero ?? 0) + 1, saving: true };
+    demandesCleRef.current[fournisseur] = demande;
+    modifierEtatFournisseur(fournisseur, {
+      saving: true, saved: false, verification: null, erreurDuChampCle: false, error: null,
+    }, demande);
 
     try {
-      await api.setApiKey(selectedProvider, cle);
-      setSaved(true);
-      setApiKeys(prev => ({ ...prev, [selectedProvider]: true }));
+      await api.setApiKey(fournisseur, cle);
+      if (demandesCleRef.current[fournisseur] !== demande) return;
+      modifierEtatFournisseur(fournisseur, { saved: true, saisie: '' }, demande);
+      setApiKeys(prev => ({ ...prev, [fournisseur]: true }));
       // Une clé qu'on vient d'enregistrer EST passée par le coffre : sans cette
       // ligne, l'écran retomberait sur la formule prudente juste après une
       // saisie réussie.
-      setOrigineDesCles(prev => ({ ...prev, [selectedProvider]: 'coffre' }));
-      setApiKeyInput('');
-      if (effacerLeSauveRef.current) clearTimeout(effacerLeSauveRef.current);
-      effacerLeSauveRef.current = setTimeout(() => setSaved(false), 3000);
-      void verifierLaCle(selectedProvider);
+      setOrigineDesCles(prev => ({ ...prev, [fournisseur]: 'coffre' }));
+      clearTimeout(effacerLeSauveRef.current[fournisseur]);
+      effacerLeSauveRef.current[fournisseur] = setTimeout(
+        () => modifierEtatFournisseur(fournisseur, { saved: false }, demande), 3000,
+      );
+      void verifierLaCle(fournisseur, demande);
     } catch (err) {
-      setErreurDuChampCle(true);
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+      modifierEtatFournisseur(fournisseur, {
+        erreurDuChampCle: true,
+        error: err instanceof Error ? err.message : 'Erreur lors de la sauvegarde',
+      }, demande);
     } finally {
-      setSaving(false);
+      demande.saving = false;
+      modifierEtatFournisseur(fournisseur, { saving: false }, demande);
     }
   }
 
@@ -296,10 +340,10 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     [ollamaEnTete],
   );
   useEffect(() => {
-    if (loading || fournisseurChoisiParLUtilisateur.current) return;
+    if (loading || configuring || fournisseurChoisiParLUtilisateur.current) return;
     if (!ollamaEnTete || !modeleLocalQuiTient) return;
     setSelectedProvider('ollama');
-  }, [loading, ollamaEnTete, modeleLocalQuiTient]);
+  }, [loading, configuring, ollamaEnTete, modeleLocalQuiTient]);
 
   useEffect(() => {
     if (selectedProvider !== 'ollama' || modeleChoisiParLUtilisateur.current) return;
@@ -307,25 +351,26 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     setSelectedModel(modeleLocalParDefaut());
   }, [ollamaModels, selectedProvider, selectedModel, modeleLocalParDefaut]);
 
-  async function verifierLaCle(fournisseur: api.LLMProvider) {
-    setVerification({ etat: 'en_cours', message: 'Vérification de la clé auprès du service…' });
+  async function verifierLaCle(fournisseur: api.LLMProvider, demande: DemandeCle) {
+    modifierEtatFournisseur(fournisseur, {
+      verification: { etat: 'en_cours', message: 'Vérification de la clé auprès du service…' },
+    }, demande);
     try {
       const resultat = await api.verifierCle(fournisseur);
-      setVerification({ etat: resultat.etat, message: resultat.message });
+      modifierEtatFournisseur(fournisseur, {
+        verification: { etat: resultat.etat, message: resultat.message },
+      }, demande);
     } catch {
       // Vérification indisponible : la clé reste enregistrée, rien n'est affirmé.
-      setVerification(null);
+      modifierEtatFournisseur(fournisseur, { verification: null }, demande);
     }
   }
 
   async function handleSelectProvider(provider: api.LLMProvider) {
-    setVerification(null);
+    if (configuringRef.current) return;
     setSelectedProvider(provider);
     fournisseurChoisiParLUtilisateur.current = true;
     modeleChoisiParLUtilisateur.current = false;
-    setErreurDuChampCle(false);
-    setError(null);
-    setSaved(false);
 
     const providerConfig = PROVIDERS.find(p => p.id === provider);
     const defaultModel = providerConfig?.models[0]?.id || '';
@@ -366,8 +411,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
     if (configuringRef.current) return;
     configuringRef.current = true;
     setConfiguring(true);
-    setErreurDuChampCle(false);
-    setError(null);
+    modifierEtatFournisseur(selectedProvider, { erreurDuChampCle: false, error: null });
     try {
       await api.setLLMConfig(
         selectedProvider,
@@ -377,7 +421,9 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
       );
       onNext(selectedProvider);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la configuration');
+      modifierEtatFournisseur(selectedProvider, {
+        error: err instanceof Error ? err.message : 'Erreur lors de la configuration',
+      });
       configuringRef.current = false;
       setConfiguring(false);
     }
@@ -389,7 +435,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
         // B-1173 : c'est le modèle CHOISI qui doit savoir agir.
         && ollamaModels.some((m) => m.nom === selectedModel && m.gereLesOutils),
       )
-    : (hasApiKey || saved)
+    : hasApiKey
       // L'adresse Qwen n'est pas optionnelle : continuer sans elle livrerait
       // un fournisseur configuré incapable de répondre.
       && (selectedProvider !== 'qwen' || /^https?:\/\//.test(baseUrlInput.trim()));
@@ -429,7 +475,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
         </div>
       </div>
 
-      <GuidePremierServiceIA provider={selectedProvider} onRetest={() => void loadState()} />
+      <GuidePremierServiceIA provider={selectedProvider} onRetest={() => void loadState()} retesting={configuring} />
 
       {/* Provider Selection */}
       {/* BUG-100 : pas de plafond de hauteur sur cette liste. Avec 10 providers et la
@@ -456,7 +502,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
               tabIndex={isSelected ? 0 : -1}
               onClick={() => handleSelectProvider(provider.id)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
-              disabled={!isAvailable && provider.id === 'ollama'}
+              disabled={configuring || (!isAvailable && provider.id === 'ollama')}
               className={`flex min-h-9 w-full items-center gap-3 rounded-md border p-3 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                 isSelected
                   ? 'bg-accent-tint border-accent'
@@ -532,10 +578,9 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
                     type={showApiKey ? 'text' : 'password'}
                     value={apiKeyInput}
                     onChange={(e) => {
-                      setApiKeyInput(e.target.value);
-                      setErreurDuChampCle(false);
-                      setError(null);
-                      setVerification(null);
+                      modifierEtatFournisseur(selectedProvider, {
+                        saisie: e.target.value, erreurDuChampCle: false, error: null, verification: null,
+                      });
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && apiKeyInput.trim()) {
@@ -697,6 +742,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
             variant="secondary"
             size="sm"
             onClick={() => void loadState()}
+            disabled={configuring}
             className="mt-3"
           >
             Revérifier la disponibilité
@@ -710,7 +756,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
           ton="attention"
           className="mb-6"
           icone={<AlertCircle className="h-4 w-4 text-warning" />}
-          action={<Button variant="secondary" size="sm" onClick={() => void loadState()}>Réessayer la vérification</Button>}
+          action={<Button variant="secondary" size="sm" onClick={() => void loadState()} disabled={configuring}>Réessayer la vérification</Button>}
         >{loadError}</Alerte>
       )}
       {error && !erreurDuChampCle && (

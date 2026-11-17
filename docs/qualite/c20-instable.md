@@ -1,8 +1,9 @@
-# Cycle 20 : instabilité de la vérification de clé, B-2057
+# Cycle 20 : vérification de clé, B-2057 et B-2058
 
 Audit local du 18 novembre 2026, branche `c20/instable`, point de départ
-`f0ea4e69`. Aucun défaut du composant établi pour cet échec : le test lit
-avant la fin de la sauvegarde. Le correctif porte sur le test et sa recette.
+`f0ea4e69`. Pour l'échec B-2057, le test lit avant la fin de la sauvegarde.
+Sa correction est déjà intégrée dans `28261aba`. La relecture a aussi
+reproduit le défaut produit préexistant B-2058, traité séparément ci-dessous.
 
 ## Cause confirmée
 
@@ -63,7 +64,8 @@ Dans `LLMStep.verificationCle.b1348.test.tsx` :
   la mention permanente de la clé chiffrée reste affichée.
 
 Aucun délai d'attente augmenté, aucun retry, aucune assertion de succès retirée,
-aucun test sauté dans le fichier livré. Le composant reste inchangé.
+aucun test sauté dans le fichier livré. Ce premier lot B-2057 ne modifiait
+pas le composant ; la remédiation B-2058 le corrige ensuite.
 
 ## Tests voisins
 
@@ -102,20 +104,11 @@ La recherche a couvert les tests de `src/components/onboarding/` :
 
 ## Preuves reproductibles
 
-Depuis la racine :
-
-```sh
-node scripts/verifier_instabilite_b2057.mjs
-```
-
-Le script lit l'original depuis Git sans modifier l'index, conserve l'état
-corrigé présent, injecte **la même** promesse de sauvegarde retardée de
-250 ms réelles avec `node:timers/promises` dans les deux versions, puis
-restaure le fichier dans un `finally`. Ce délai représente la réponse lente
-du serveur ; il n'augmente aucun délai d'attente du test. L'horloge Node de
-l'injection reste réelle même quand les minuteries du test sont simulées.
-Les exécutions filtrées ciblent uniquement le cas indisponible pour comparer
-la même assertion. La campagne sous charge exécute le fichier entier sans filtre.
+Les comptes ci-dessous sont ceux de la campagne historique, vérifiés dans
+`scratchpad/b2057/2026-11-17T23-26-55.166Z/comptes.json`. Ils ne proviennent
+pas d'une nouvelle exécution de la recette après le commit `28261aba`.
+Depuis ce commit, `HEAD` contient le test corrigé : il ne peut plus servir
+de source « originale ». Les deux sources sont donc épinglées explicitement.
 
 | Condition | Processus Vitest | Résultat |
 | --- | ---: | --- |
@@ -131,13 +124,79 @@ La charge comporte huit processus Node indépendants qui calculent en boucle
 pendant les vingt commandes `npx --no-install vitest run <fichier>`.
 Leurs PID étaient 44958 à 44965. Leurs relevés `process.cpuUsage()` à l'arrêt
 donnent environ 32,1 à 32,6 secondes CPU par processus. Les huit ont été
-arrêtés et attendus par le script ; le lanceur a terminé en code 0.
+arrêtés et attendus à la fin de la campagne ; le lanceur a terminé en code 0.
 
 Sources testées, rapports JSON, journaux, comptes par passage et temps CPU
 sont conservés dans le répertoire local ignoré :
 `scratchpad/b2057/2026-11-17T23-26-55.166Z/`.
 La campagne complète dure quelques dizaines de secondes sur cette machine ;
 ce résultat ne prouve pas toutes les charges possibles.
+
+### Reproduction manuelle dans une copie temporaire
+
+Aucune commande ci-dessous ne réécrit le test suivi. Depuis la racine du
+dépôt, préparer une copie temporaire du frontend et réutiliser les dépendances
+déjà installées, sans installation ni réseau :
+
+```sh
+repro_b2057=$(mktemp -d /tmp/therese-b2057.XXXXXX)
+depot_b2057=$PWD
+git archive 28261aba src/frontend | tar -x -C "$repro_b2057"
+ln -s "$PWD/src/frontend/node_modules" "$repro_b2057/src/frontend/node_modules"
+test_b2057=src/frontend/src/components/onboarding/LLMStep.verificationCle.b1348.test.tsx
+git show "f0ea4e69:$test_b2057" > "$repro_b2057/$test_b2057"
+```
+
+Dans **cette copie temporaire**, ouvrir le test et ajouter l'import suivant :
+
+```tsx
+import { setTimeout as ralentirB2057 } from 'node:timers/promises';
+```
+
+Remplacer son unique `apiMocks.setApiKey.mockResolvedValue(undefined);` par :
+
+```tsx
+apiMocks.setApiKey.mockImplementation(() => ralentirB2057(250));
+```
+
+Depuis le frontend temporaire, exécuter manuellement trois fois la commande :
+
+```sh
+cd "$repro_b2057/src/frontend"
+npm_config_offline=true npm_config_update_notifier=false npx --no-install vitest run src/components/onboarding/LLMStep.verificationCle.b1348.test.tsx -t 'indisponible'
+```
+
+Attendu : un échec `getByText('Clé API enregistrée')` et un code 1 à chaque
+passage. Dans le même terminal, exporter le test corrigé dans le **même
+fichier temporaire** en utilisant le chemin conservé vers le dépôt d'origine :
+
+```sh
+git -C "$depot_b2057" show "28261aba:$test_b2057" > "$repro_b2057/$test_b2057"
+```
+
+Réappliquer à la main les deux modifications de lenteur ci-dessus dans la
+copie corrigée, puis relancer trois fois la même commande filtrée. Attendu :
+un test réussi, aucun échec, code 0. Le délai injecté reste de **250 ms réelles**
+dans les deux versions, y compris sous l'horloge simulée du test corrigé.
+Il simule le serveur sans augmenter le délai d'attente des assertions.
+
+Pour les vingt passages du fichier entier, réexporter la version `28261aba`
+sans injection et retirer `-t 'indisponible'` de la commande. Relancer cette
+commande vingt fois à la main et conserver chaque sortie avec son code.
+La charge historique était constituée de huit processus de calcul : pour
+refaire expressément cette condition, ouvrir huit terminaux séparés, lancer
+dans chacun `node -e 'let n=1; for (;;) n=Math.sqrt(n+1)'`, puis arrêter
+**chacun** avec Ctrl+C après les vingt passages. Ce choix reste manuel ;
+aucune charge n'a été lancée pendant la remédiation de la relecture.
+Sans cette charge, la répétition vérifie seulement les vingt passages normaux.
+
+Les deux fichiers `original.tsx` et `corrige.tsx` de la campagne historique
+restent également disponibles dans son dossier de preuves. La recette
+`scripts/verifier_instabilite_b2057.mjs` est retirée du dépôt : elle réécrivait
+un fichier suivi et lançait une charge CPU. Le déplacement vers `~/.Trash`+a été refusé par le bac à sable (`Operation not permitted`). Le fichier est
+conservé hors du dépôt dans
+`/tmp/therese-c20-b2057-retrait.9BDpVS/verifier_instabilite_b2057.mjs`.
+Aucune suppression ni modification de l'index n'a été exécutée.
 
 ## Code 1 avec tous les tests verts
 
@@ -192,7 +251,7 @@ Il ne permet pas de retrouver une pile absente. Aucune erreur n'est masquée,
 aucun seuil n'est relâché et aucun correctif spéculatif de configuration
 n'est livré.
 
-## Portes finales
+## Portes du premier lot B-2057
 
 Toutes les commandes utilisent les dépendances installées, avec
 `npm_config_offline=true npm_config_update_notifier=false`, depuis `src/frontend`.
@@ -202,9 +261,106 @@ Toutes les commandes utilisent les dépendances installées, avec
 | `npx --no-install vitest run src/components/onboarding src/test/fetchHorsReseau.r4c.test.ts --reporter=default --reporter=json --outputFile=../../scratchpad/b2057-portes/vitest.json` | 50 fichiers, 122/122 tests réussis, 0 erreur non interceptée rapportée, sortie 0 |
 | `npx --no-install tsc --noEmit` | 0 erreur, sortie 0 |
 | `npx --no-install eslint . --max-warnings 27` | 0 erreur, 27 avertissements, sortie 0 |
-| `node --check scripts/verifier_instabilite_b2057.mjs` depuis la racine | sortie 0 |
 
 Journaux sous `scratchpad/b2057-portes/`. La suite complète de 4 313 tests
 mentionnée dans le mandat n'a pas été relancée : la preuve livrée couvre le
 fichier répété et ses voisins. Aucun réseau, serveur, port interdit ou profil
 utilisateur utilisé. Aucun `git add`, commit ou suppression par `rm`.
+
+## Remédiation de la relecture : B-2058
+
+### Cause et correction produit
+
+`handleSaveApiKey` capture bien le fournisseur A dans sa fermeture : la clé
+était donc enregistrée sous A dans `apiKeys`. Mais `saving`, `saved`, le champ
+de saisie, les erreurs et `verification` étaient des états uniques partagés.
+Après sélection de B, la réponse de A posait encore `saved=true`, effaçait
+la saisie de B et y affichait son verdict. Le calcul `hasApiKey || saved`
+autorisait alors « Continuer » sous B sans clé B. Réinitialiser ces états
+au changement de fournisseur ne protégeait pas contre une réponse ultérieure.
+
+Ces états sont désormais rangés par fournisseur. Chaque sauvegarde crée une
+demande numérotée, utilisée aussi par sa vérification, ses erreurs, son
+`finally` et son minuteur. Une mise à jour n'est appliquée que si cette
+demande est encore courante pour ce fournisseur. Le retour sur A retrouve
+sa clé, son origine et son résultat, sans réutiliser ceux de B. Le bouton
+« Continuer » exige la présence de la clé du fournisseur sélectionné ; le
+message transitoire de sauvegarde n'accorde plus cette permission.
+
+Un verrou synchrone par fournisseur empêche également Entrée de lancer une
+seconde écriture pendant la première, ce que le bouton désactivé seul
+n'empêchait pas. Les minuteurs sont indépendants entre fournisseurs et
+annulés au démontage ; les demandes y sont invalidées avant toute réponse tardive.
+
+### Rouge puis vert en horloge pilotée
+
+Le nouveau fichier `LLMStep.changementFournisseur.b2058.test.tsx` utilise
+`vi.useFakeTimers()`, des promesses différées libérées explicitement et
+`act`, sans attente réelle. Exécuté avant toute modification du composant :
+**11/11 tests rouges, sortie 1**. Après correction, les onze cas et les dix
+tests B-1348 donnent **21/21 réussites, sortie 0**.
+
+Un douzième cas a ensuite reproduit en rouge la sélection automatique
+d'Ollama déclenchée par une nouvelle sonde pendant la configuration de A
+(`rouge-sonde.json`, un échec, sortie 1). Le complément interdit cette sonde
+pendant la configuration et protège aussi l'effet de sélection automatique.
+Les **12/12 cas B-2058 sont verts** dans la porte finale, sans cas sauté.
+
+Les douze cas couvrent :
+
+- Sauvegarde A en attente pendant **30 000 ms simulées**, passage à B,
+  résolution sous B : ni succès ni « Continuer » actif sous B, saisie B
+  conservée ; retour A configuré, puis expiration du message à 3 000 ms.
+- Vérification A acceptée, refusée ou rejetée après le passage à B : aucun
+  verdict A sous B ; retour A avec sa propre origine et le résultat attendu.
+- Échec de sauvegarde A et attente d'une sauvegarde B indépendante : aucune
+  erreur A sous B et aucune fin de A qui désactive l'attente de B.
+- Entrée pendant la sauvegarde : une seule écriture.
+- Nouvelle clé A après rechargement du coffre, puis ancienne vérification
+  acceptée ou rejetée : le nouveau verdict reste inchangé dans les deux cas.
+- Configuration finale A réussie ou échouée : le fournisseur reste verrouillé
+  jusqu'à la réponse ; en cas d'échec, l'édition redevient possible.
+- Sonde Ollama pendant la configuration de A : aucune nouvelle sonde n'est
+  lancée et le choix A reste conservé jusqu'à sa réponse.
+
+Rapports et journaux du rouge, du vert ciblé et des portes :
+`scratchpad/b2058-relecture/`.
+
+### Autres opérations asynchrones du composant
+
+- **Configuration finale (`setLLMConfig`) : concernée.** La sélection de B
+  restait possible pendant l'enregistrement de A ; la réponse pouvait alors
+  appeler `onNext(A)` ou afficher l'erreur A sous B. Le choix de fournisseur
+  est désormais désactivé pendant `configuring` et le gestionnaire respecte
+  aussi le verrou synchrone `configuringRef`. Les deux issues sont testées.
+  Les boutons de sonde sont aussi désactivés pendant cette attente ;
+  `loadState` et l'effet de sélection automatique respectent ce verrou.
+- **Chargement global (`loadState`) : pas ce défaut d'attribution.** Les clés
+  et origines sont déjà des tables par fournisseur, les sondes Ollama et RAM
+  sont globales. `loadRequestRef` protège les rechargements concurrents et le
+  démontage. Il ne transforme aucune réponse A en verdict du fournisseur B.
+- **Catalogue : déjà protégé.** L'effet dépend du fournisseur et sa fermeture
+  `annule` interdit à un ancien chargement de modifier le catalogue, le modèle
+  ou l'indicateur d'attente après changement de fournisseur ou démontage.
+- **Configurer plus tard : pas de résultat propre à A.** Le choix transmis
+  est toujours `null` ; `configuringRef` sérialise déjà les clics pendant
+  l'attente de `onNext(null)`. Le verrou du fournisseur couvre aussi ce délai.
+
+### Portes après remédiation
+
+Depuis `src/frontend`, dépendances installées uniquement, avec
+`npm_config_offline=true npm_config_update_notifier=false` :
+
+| Commande | Résultat final |
+| --- | --- |
+| `npx --no-install vitest run src/components/onboarding/ --reporter=default --reporter=json --outputFile=../../scratchpad/b2058-relecture/onboarding-final.json` | 50 fichiers, **132/132 tests réussis**, 0 échec, 0 test sauté, aucune erreur non interceptée rapportée, sortie 0 |
+| `npx --no-install tsc --noEmit` | **0 erreur**, sortie 0 |
+| `npx --no-install eslint . --max-warnings 27` | **0 erreur, 27 avertissements**, sortie 0 |
+
+Journaux : `onboarding-final.log`, `tsc-final.log`, `eslint-final.log` dans
+`scratchpad/b2058-relecture/`. Les deux sources B-2057 épinglées ont également
+été comparées aux fichiers conservés de la campagne : contenu identique.
+`git diff --check` passe ; l'index est inchangé. Aucun `git add`, commit,
+serveur, profil utilisateur, accès réseau ou processus de charge CPU pendant
+cette remédiation. La seule réserve d'exécution est la destination du fichier
+retiré : `/tmp` a remplacé la Corbeille, inaccessible dans le bac à sable.
