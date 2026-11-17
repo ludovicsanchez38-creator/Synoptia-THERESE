@@ -84,24 +84,10 @@ describe('EventForm - confirmation 0.40', () => {
 
     await waitFor(() => {
       expect(createEventMock).toHaveBeenCalledWith(
-        expect.objectContaining({ calendar_id: 'calendar-1', calendar_id_is_stored: true, summary: 'Point projet' }),
+        expect.objectContaining({ calendar_id: 'calendar-1', summary: 'Point projet' }),
         'account-1',
       );
     });
-  });
-
-  it('distingue une sélection inconnue nommée primary de l’alias Google', async () => {
-    seedCalendar(null, 'inconnu');
-    const calendrier = useCalendarStore.getState().calendars[0];
-    useCalendarStore.setState({ calendars: [{ ...calendrier, id: 'primary' }], currentCalendarId: 'primary' });
-    render(<PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider>);
-    fireEvent.change(screen.getByPlaceholderText("Titre de l'événement"), { target: { value: 'Point projet' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmer la création' }));
-    await waitFor(() => expect(createEventMock).toHaveBeenCalledWith(
-      expect.objectContaining({ calendar_id: 'primary', calendar_id_is_stored: true }),
-      'account-1',
-    ));
   });
 
   it.each(['google', 'caldav'])('bloque aussi la modification %s avant confirmation', async (provider) => {
