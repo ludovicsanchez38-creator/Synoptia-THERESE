@@ -1,6 +1,7 @@
 """Exercer la route de recette avec Playwright simulé, sans navigateur ni réseau."""
 
 import mimetypes
+import os
 import runpy
 import shutil
 import sys
@@ -30,6 +31,7 @@ def serveur_recette(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "playwright", paquet)
     monkeypatch.setitem(sys.modules, "playwright.sync_api", module)
     monkeypatch.setattr(sys, "path", sys.path.copy())
+    monkeypatch.setattr("os.O_DIRECTORY", 0, raising=False)
     monkeypatch.setattr("os.open", lambda *_args: 123)
     monkeypatch.setenv("TMPDIR", str(tmp_path))
 
@@ -41,6 +43,20 @@ def serveur_recette(tmp_path, monkeypatch):
         runpy.run_path(str(script), run_name="__main__")
     navigateur.close.assert_called_once()
     return dist, page.route.call_args.args[1]
+
+
+def test_fixture_sans_o_directory(monkeypatch, request):
+    os_simule = ModuleType("os")
+    os_simule.__dict__.update(vars(os))
+    monkeypatch.delattr(os_simule, "O_DIRECTORY", raising=False)
+    monkeypatch.setitem(sys.modules, "os", os_simule)
+
+    dist, servir = request.getfixturevalue("serveur_recette")
+    (dist / "index.html").write_bytes(b"page fictive")
+    route = Mock(request=SimpleNamespace(url="http://recette.test/"))
+    servir(route)
+    route.abort.assert_not_called()
+    route.fulfill.assert_called_once_with(body=b"page fictive", content_type="text/html")
 
 
 @pytest.mark.parametrize(("nom", "mime"), [
@@ -61,10 +77,18 @@ def test_ressources_statiques_ont_un_type_mime(serveur_recette, nom, mime):
 
 @pytest.mark.parametrize(("nom", "mime"), [
     ("police.woff2", "font/woff2"), ("police.woff", "font/woff"),
+    ("icone.svg", "image/svg+xml"), ("photo.png", "image/png"),
+    ("photo.JPG", "image/jpeg"), ("photo.webp", "image/webp"),
+    ("app.js", "application/javascript"), ("style.css", "text/css"),
+    ("index.html", "text/html"), ("archive.inconnu", "application/octet-stream"),
 ])
-def test_polices_sans_table_mime_systeme(serveur_recette, monkeypatch, nom, mime):
+def test_ressources_sans_table_mime_systeme(serveur_recette, monkeypatch, nom, mime):
     # Cette instance ne contient que les types intégrés à Python, sans table système.
-    monkeypatch.setattr(mimetypes, "_db", mimetypes.MimeTypes(filenames=()))
+    monkeypatch.setattr(mimetypes, "inited", True)
+    table = mimetypes.MimeTypes(filenames=())
+    # WebP est absent des types intégrés de Python 3.12.3, contrairement à 3.13.
+    table.types_map[1].pop(".webp", None)
+    monkeypatch.setattr(mimetypes, "_db", table)
     dist, servir = serveur_recette
     (dist / nom).write_bytes(b"police fictive")
     route = Mock(request=SimpleNamespace(url=f"http://recette.test/{nom}"))
