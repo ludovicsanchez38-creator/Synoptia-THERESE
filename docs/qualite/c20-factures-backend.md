@@ -93,6 +93,34 @@ Cette passe traite uniquement les deux régressions d'intégration signalées pa
 
 **Portes après correction :** 261 tests réussis, aucun échec, aucune erreur ni omission dans `/tmp/factures-backend-r5.xml` ; le banc séparé `src/backend/tests/test_escalation.py` compte 26 réussites, aucun échec et un test ignoré par sa propre marque (attente EUR contre réponse USD), XML `/tmp/factures-backend-r5-escalade.xml`. Les deux XML ont été lus. La porte couvre les trois fichiers appelant `ensure_alembic_stamp`, les tests de facturation, restauration, données et coûts voisins, ainsi que le cliquet. Ruff sur `src/backend tests` : **0 erreur**. Une garde temporaire refuse les connexions et les chemins exclus ; un tube anonyme assure le réveil asyncio dans ce bac à sable et la sortie forcée de pytest est différée après son bilan. La suite complète et le frontend n'ont pas été lancés. Les changements restent non commités.
 
+## Remédiation de la relecture, passe 6
+
+Cette passe traite uniquement les huit rouges macOS signalés par l'orchestrateur. Les réserves acceptées restent hors périmètre.
+
+**Vérification du produit avant modification des tests :** la première publication renvoie déjà un chemin résolu : `_publier_pdf_atteste` applique `Path(output_dir).expanduser().resolve()` (`src/backend/app/routers/invoices.py:610`) et retourne `str(chemin)` (ligne 630). Les éditions de statut passent par la même fonction (ligne 637). La reprise utilise `chemin_pdf_a_ouvrir`, qui résout le dossier et le fichier (`src/backend/app/services/invoice_pdf.py:123` et ligne 124), puis les routes retournent ce chemin (`src/backend/app/routers/invoices.py:1589`, ligne 1601 et ligne 1778). Première émission, reprise et ouverture sont donc cohérentes. Aucun changement du produit n'est nécessaire.
+
+Une fixture locale étend les deux tests existants avec un accès direct et un `data_dir` atteint par un lien symbolique créé dans `tmp_path`, pointant vers le même dossier de données temporaire. Elle vérifie que le chemin du lien diffère bien de son chemin résolu. Les huit cas existants sont conservés et huit variantes avec lien symbolique sont ajoutées : génération/ouverture, archive/édition. Chaque constat a d'abord été lancé seul avec ce lien, avant correction ; les deux XML rouges ont été lus.
+
+1. **Reprise de publication interrompue.** `tests/test_b1861_pdf_emis.py::test_restauration_reprend_la_publication_interrompue[lien-symbolique-pdf-False]`, ligne d'échec recopiée de `/tmp/factures-backend-r6-rouge1.log` :
+
+   ```text
+   E       AssertionError: assert '/tmp/facture...-2026-001.pdf' == '/tmp/pytest-...-2026-001.pdf'
+   ```
+
+   La comparaison résout désormais les deux chemins avant de vérifier leur égalité. Les vérifications du PDF, de son compagnon, des permissions, de l'identité de l'émetteur, du statut et de la préservation de l'original sont conservées.
+
+2. **Compagnon après échec du nettoyage.** `tests/test_b1861_pdf_emis.py::test_restauration_apres_echec_du_nettoyage_du_compagnon[lien-symbolique-pdf-False]`, ligne d'échec recopiée de `/tmp/factures-backend-r6-rouge2.log` :
+
+   ```text
+   E               ValueError: '/tmp/factures-r6-rouge2-64oCcf/invoices/test_restauration_apres_echec_0-3e2a399f721049df960ea09f10320e0a/FACT-2026-001.pdf.therese.json' is not in the subpath of '/tmp/pytest-of-synoptia/pytest-341/test_restauration_apres_echec_0/donnees'
+   ```
+
+   Le compagnon et `settings.data_dir` sont résolus avant `relative_to`. L'assertion `tar.getmember(membre_preuve).islnk()` et les contrôles des liens physiques, du contenu et de l'égalité entre première publication et reprise restent présents. Les sauvegardes chiffrées et restaurations sont réellement exécutées dans les deux scénarios.
+
+Après correction, les appelants de `_publier_pdf_atteste` et `chemin_pdf_a_ouvrir`, ainsi que le parcours des éditions, ont été relus. **Porte ciblée : 107 réussis, 0 échec, 0 erreur, 0 ignoré**, comptes lus dans `/tmp/factures-backend-r6.xml`, dont les huit variantes avec lien symbolique. Fichiers exécutés : `test_b1861_pdf_emis.py` (40), `test_b1497_extraction_sauvegarde.py` (18), `test_facture_pdf_ouverture.py` (8), `test_backup_complete.py` (14), `test_routers_invoices.py` (20), `test_invoice_pdf_francais.py` (4) et `test_b1614_facture_emise_figee.py` (3). **Ruff sur `src/backend tests` : 0 erreur** ; `git diff --check` passe.
+
+Le lanceur temporaire de la passe 5 a été réutilisé : il interdit le réseau et les chemins exclus, assure le réveil asyncio par tube anonyme dans ce bac à sable et diffère la sortie forcée de pytest pour laisser écrire le XML. La suite complète et les portes frontend n'ont pas été lancées. Seuls le test B-1861 et ce bilan sont modifiés ; les changements restent non commités. Le banc natif macOS reste à rejouer par l'orchestrateur.
+
 ## Portes
 
 - **Backend, porte finale : 6 556 réussis, 14 échoués, 62 ignorés, 0 erreur de collecte**, sur 6 632 cas, XML `/tmp/factures-backend-pytest.xml`. La commande demandée a été exécutée avec une garde locale pour interdire les connexions et opérations hors périmètre. Onze cas ont été ignorés par cette garde : ils créent un dépôt Git, exécutent un ensemble contenant de telles créations, ou touchent le dossier personnel. Les 51 autres ignorés le sont par la suite elle-même. Il s'agit donc d'une porte partielle et non verte.
