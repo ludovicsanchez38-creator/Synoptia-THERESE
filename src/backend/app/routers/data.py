@@ -137,7 +137,6 @@ _FIN_AUTORITE = "/?#"
 _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
 # Ce qui ne peut pas appartenir à un nom d'hôte et ferme une URL dans un texte.
 _SEPARATEURS_DE_TEXTE = _FIN_URL_DANS_UN_TEXTE + ",;(){}|^`"
-_GUILLEMETS = "\"'"
 _PONCTUATION_FINALE = ".:!»"
 
 
@@ -195,11 +194,12 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
     jamais pris pour un identifiant.
 
     Un mot de passe saisi tel quel pouvant porter l'un de ces séparateurs, on
-    lit au-delà sur un indice précis : ce qui précède ne peut pas être un hôte
-    et son port (`nom:secret`), ou bien l'URL s'arrête sur un guillemet que
-    rien n'a ouvert. Le « @ » doit alors se trouver dans le mot qui suit, sans
-    nouvelle espace. Une URL entre guillemets ou chevrons dont l'autorité est
-    un hôte plausible s'arrête au guillemet fermant, quoi qu'il y ait derrière.
+    lit au-delà sur un seul indice : ce qui précède ne peut pas être un hôte et
+    son port (`nom:secret`). Le « @ » doit alors se trouver dans le mot qui
+    suit, sans nouvelle espace ; derrière le guillemet qui ferme l'URL, il doit
+    suivre aussitôt. Sans cet indice, une URL s'arrête à son séparateur, quoi
+    qu'il y ait derrière. (Un champ qui est une URL entière n'est pas lu ici :
+    voir `_masquer_urls_d_un_texte`.)
     """
     fins = _FIN_AUTORITE + ("&;" if imbriquee else "")
     fin = debut
@@ -219,8 +219,6 @@ def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> i
             texte[suite].isspace() or texte[suite] in _SEPARATEURS_DE_TEXTE
         ):
             suite += 1
-    elif texte[fin] in _GUILLEMETS and not fermee:
-        suite = fin + 1
     else:
         return debut
     fin_suite = suite
@@ -243,6 +241,13 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
     fin_du_jeton = 0
     requete_du_jeton = -1
     ouvrant = ""
+    # Un champ qui n'est qu'une URL (adresse d'agenda, hôte de messagerie) se lit
+    # comme une bibliothèque d'URL le lit : l'autorité va jusqu'au premier
+    # « / », « ? » ou « # », et tout ce qui y précède le dernier « @ » est un
+    # identifiant, virgule, guillemet ou parenthèse compris.
+    nu = valeur.strip()
+    debut_du_champ = len(valeur) - len(valeur.lstrip())
+    url_entiere = bool(nu) and not any(caractere.isspace() for caractere in nu)
     while match := _DEBUT_URL.search(valeur, position):
         nouveau_jeton = match.start() >= fin_du_jeton
         if nouveau_jeton:
@@ -250,7 +255,13 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
         # Une URL trouvée dans la requête ou le fragment d'une autre lui est imbriquée.
         imbriquee = not nouveau_jeton and 0 <= requete_du_jeton < match.start()
         morceaux.append(valeur[position : match.end()])
-        position = _debut_de_l_hote(valeur, match.end(), ouvrant, imbriquee)
+        if url_entiere and match.start() == debut_du_champ:
+            fin_autorite = match.end()
+            while fin_autorite < len(valeur) and valeur[fin_autorite] not in _FIN_AUTORITE:
+                fin_autorite += 1
+            position = valeur.rfind("@", match.end(), fin_autorite) + 1 or match.end()
+        else:
+            position = _debut_de_l_hote(valeur, match.end(), ouvrant, imbriquee)
         if nouveau_jeton or position > fin_du_jeton:
             fin_du_jeton = position
             while (

@@ -306,7 +306,7 @@ sous-processus et les chemins protégés ; elle ne prouve pas l'interception
 d'éventuels appels natifs. Aucune suite complète ni modification frontend n'a
 été lancée. Les changements restent non commités.
 
-## Remédiation des relectures 4, 5 et 6 (écrite par l'orchestrateur)
+## Remédiation des relectures 4 à 7 (écrite par l'orchestrateur)
 
 Constats successifs sur le masquage des URL exportées : un port pris pour le
 début d'un identifiant quand une adresse e-mail suivait (relecture 4), y
@@ -314,7 +314,10 @@ compris derrière une ponctuation, des clés confondues une fois masquées et de
 nombres altérés par la réécriture d'un JSON (relecture 5), puis du HTML
 tronqué quand une adresse e-mail suit un lien, une URL imbriquée qui absorbait
 les paramètres suivants et un point-virgule qui coupait une valeur secrète
-(relecture 6). Entre-temps la revue de sécurité automatique des commits a
+(relecture 6), enfin un mot de passe commençant par des chiffres suivis
+d'une virgule resté en clair dans un champ qui n'est qu'une URL, et une
+espace avant l'URL d'un attribut HTML (relecture 7). Entre-temps la revue de
+sécurité automatique des commits a
 relevé une clé JSON en double rendue telle quelle, une récursion non bornée,
 un paramètre de connexion laissé en clair après une URL imbriquée et une
 préférence trop imbriquée rendue brute. Deux passes de Codex ayant échoué sur
@@ -331,18 +334,21 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    à masquer elle ressort telle quelle, à l'octet près. Sinon elle est réécrite
    depuis ce qui a été lu : seul l'espacement peut changer. La valeur d'une
    préférence suit la même voie.
-2. Dans un texte, l'autorité d'une URL s'arrête à tout ce qui ne peut pas
+2. Un champ qui est une URL entière (aucune espace : adresse d'agenda, hôte de
+   messagerie, valeur d'un champ JSON) est lu comme une bibliothèque d'URL le
+   lit : son autorité va jusqu'au premier `/`, `?` ou `#`, et tout ce qui y
+   précède le dernier `@` est un identifiant, quels que soient ses caractères.
+3. Dans un texte, l'autorité d'une URL s'arrête à tout ce qui ne peut pas
    appartenir à un nom d'hôte : `/`, `?`, `#`, espace, guillemet, apostrophe,
    chevron, barre oblique inverse, virgule, point-virgule, parenthèse,
-   accolade. Ce qui y précède le dernier `@` est un identifiant et part.
-3. Une URL entre guillemets ou chevrons dont l'autorité est un hôte plausible
-   s'arrête au guillemet fermant, quoi qu'il y ait derrière (lien HTML,
-   Markdown, JSON ou dictionnaire dans un texte).
-4. On lit au-delà du séparateur dans deux cas seulement : ce qui précède ne
-   peut pas être un hôte suivi de son port (`nom:secret` ; un port suivi d'un
-   point reste un port), y compris derrière un guillemet fermant si le mot de
-   passe le suit aussitôt ; ou l'URL s'arrête sur un guillemet que rien n'a
-   ouvert. Le `@` doit alors se trouver dans le mot qui suit.
+   accolade. Ce qui y précède le dernier `@` est un identifiant et part. Sans
+   autre indice l'URL s'arrête là, quoi qu'il y ait derrière : lien HTML,
+   Markdown, JSON ou dictionnaire dans un texte restent intacts.
+4. Dans un texte, on ne lit au-delà du séparateur que sur un seul indice : ce
+   qui précède ne peut pas être un hôte suivi de son port (`nom:secret` ; un
+   port suivi d'un point reste un port). Le `@` doit alors se trouver dans le
+   mot qui suit ; derrière le guillemet qui ferme l'URL, il doit suivre
+   aussitôt.
 5. Une URL passée en paramètre d'une autre est lue de la même façon, par la
    même boucle et sans récursion ; son autorité s'arrête en plus au séparateur
    de paramètres (`&`, `;`) : elle n'absorbe pas la suite de l'URL principale.
@@ -362,26 +368,29 @@ Règles (`_masquer_urls_export`, `src/backend/app/routers/data.py`) :
    première version, quadratique, mettait plus de deux minutes sur 640 000
    caractères ; mesuré ensuite à 0,05 s).
 
-Tests : `tests/test_c20_b1812_export_config.py`, 111 tests dont 93 ajoutés par
+Tests : `tests/test_c20_b1812_export_config.py`, 123 tests dont 105 ajoutés par
 ces passes ; chaque reproduction des relecteurs est rejouée sur les deux
 routes d'export. Rouges constatés avant chaque correctif, dans l'ordre des
-commits : 5, 3, 4, 21, 2, 2, 14, puis 4. Six cas de HTML et de texte et quatre
-cas de charge ajoutés par contre-épreuve de l'orchestrateur. 302 tests voisins
+commits : 5, 3, 4, 21, 2, 2, 14, 4, puis 9. Six cas de HTML et de texte et quatre
+cas de charge ajoutés par contre-épreuve de l'orchestrateur. 314 tests voisins
 de l'export verts ; ruff propre ; mypy du fichier inchangé (23).
 
 Limites connues, non couvertes (chacune demande une URL que les lecteurs
 d'URL ne lisent pas comme l'utilisateur l'entend) :
 
-- un mot de passe saisi tel quel qui contient le guillemet même qui entoure
-  l'URL (ou le chevron fermant d'une URL entre chevrons) ET dont ce qui le
-  précède a la forme d'un hôte : pas de `:` (nom d'utilisateur seul) ou un
-  début tout en chiffres. Choix assumé entre deux risques opposés : lire
-  au-delà du guillemet fermant sans indice tronquait tout lien HTML suivi
-  d'une adresse e-mail (relecture 6) ;
-- un mot de passe qui contient une espace et qui commence par des chiffres
-  (`nom:12 34@hôte`), ou qui contient plusieurs espaces ;
-- un nom d'utilisateur seul (sans `:`) contenant une virgule, un
-  point-virgule ou une parenthèse ;
+- DANS UN TEXTE seulement (un champ qui est une URL entière n'est pas
+  concerné) : un mot de passe saisi tel quel qui contient un séparateur de
+  texte (guillemet, virgule, parenthèse, espace…) et dont ce qui le précède a
+  la forme d'un hôte, c'est-à-dire un nom d'utilisateur seul ou un début tout
+  en chiffres (`nom:12 34@hôte`, `nom:42,secret@hôte`) ; ou plusieurs espaces.
+  Choix assumé entre deux risques opposés : lire au-delà d'un séparateur sans
+  indice tronquait tout lien HTML suivi d'une adresse e-mail (relectures 6
+  et 7) ;
+- dans un texte, une URL collée à une adresse e-mail par un caractère de nom
+  d'hôte (`https://site.invalid.contact@site.invalid`, espace oubliée) est lue
+  comme la RFC la lit : ce qui précède le `@` part ;
+- un champ entier de la forme `https://hôte,contact@domaine` (sans espace) est
+  lu comme une URL à identifiants, ce qu'il est pour toute bibliothèque ;
 - un mot de passe contenant `/`, `?` ou `#` non encodés, ou, dans une URL
   passée en paramètre d'une autre, `&` ou `;` ;
 - une URL encodée en pourcentage passée en paramètre d'une autre ;
