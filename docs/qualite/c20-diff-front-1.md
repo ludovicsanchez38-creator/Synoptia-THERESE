@@ -8,7 +8,7 @@ Les candidats sont examinés dans l'ordre demandé. Les doublons renvoient à le
 | --- | --- | --- | --- | --- |
 | B-1868 | regle_a_trancher | Constats 1 à 8 de la relecture, passe 4 ; détail en fin de document | Preuves du relecteur conservées ci-dessous | retiré du lot, reporté |
 | B-1869 | rejete | `src/frontend/src/components/atelier/AgentCatalog.modeles.test.tsx::conserve le fournisseur et le modèle choisis quand ils ne sont plus proposés` | Aucun : test existant vert | sans changement |
-| B-1870 | confirme | `src/frontend/src/components/settings/LLMTab.effortOpenAI.test.tsx::B-1870 : Astra propose Très élevé et transmet xhigh à l’enregistrement` | `TestingLibraryElementError: Unable to find an accessible element with the role "option" and name /Très élevé/` | non commité |
+| B-1870 | regle_a_trancher | Constat 1 de la relecture, passe 5 ; détail en fin de document | Preuve du relecteur recopiée ci-dessous | retiré du lot, reporté |
 | B-1871 | rejete | `src/frontend/src/components/atelier/AgentSession.c9.test.tsx::dit que les outils ne sont pas confirmés quand le serveur ne répond pas` et `AgentSession.avatars.c9.test.tsx::sans profil serveur, l’invite ne liste pas les outils de la table locale` | Aucun : 4 tests existants verts | sans changement |
 | B-1872 | rejete | `src/frontend/src/components/atelier/AgentSession.avatars.c9.test.tsx::sans profil serveur, l’invite ne liste pas les outils de la table locale` | Aucun : deux nœuds distincts, invite et confirmation | sans changement |
 | B-1873 | rejete | `AgentSession.outilsJumeaux.c9.test.tsx::le premier bloc reçoit « contenu de a », le second « contenu de b »` ; sonde supplémentaire par bloc, décrite ci-dessous | Aucun : sonde verte avant toute correction | sans changement |
@@ -29,7 +29,7 @@ Le premier lancement standard de Vitest est bloqué avant tout test : `EPERM: op
 ## Causes confirmées et chemins de production
 
 - **B-1868.** `App.tsx:145` appelle réellement `isolateDataProfilePersistence` avec le dossier annoncé par le moteur. Avant correction, cinq variantes n'ayant pour différence qu'un slash final déclenchaient `switched`, effaçaient le cache et rechargeaient. `profileStorageIsolation.ts:13-20,32-40` compare maintenant les chemins sans slash final, en préservant les racines `/` et `C:/`. Le marqueur existant reste inchangé, car les accords en attente sont rattachés à cette identité. Les scénarios de changement réel de profil et les cinq tests voisins d'isolement des accords restent verts. Portée volontaire : ni développement de `~`, ni assimilation d'une barre inverse à `/`, ni résolution de liens symboliques ou changement de casse. Sur POSIX, ces graphies ne garantissent pas le même dossier. Le code backend construit un `Path` à partir du dossier fourni, sans expansion du tilde (`src/backend/app/config.py:69-73`).
-- **B-1870.** `LLMTab.tsx:732` appelle `effortXhighPropose` pour construire le sélecteur. Astra manquait dans l'ensemble de `effortOpenAI.ts:24`, alors que le contrat interne `tests/test_p057_gpt6_astra.py::test_gpt_6_astra_est_au_catalogue_openai_avec_sa_fiche` autorise déjà `xhigh`. L'ajout d'Astra suffit. Le nouveau test exige l'option accessible, le changement de valeur et l'appel d'enregistrement exact avec `xhigh`. Cette vérification porte sur la cohérence de THÉRÈSE, pas sur les capacités actuelles d'un fournisseur externe.
+- **B-1870, historique avant retrait en passe 5.** `LLMTab.tsx:732` appelle `effortXhighPropose` pour construire le sélecteur. Astra manquait dans l'ensemble de `effortOpenAI.ts:24`, alors que le contrat interne `tests/test_p057_gpt6_astra.py::test_gpt_6_astra_est_au_catalogue_openai_avec_sa_fiche` autorise déjà `xhigh`. L'ajout d'Astra et son test dédié ont été retirés en passe 5 : les changements de fournisseur et de modèle n'étaient pas couverts. Cette vérification portait sur la cohérence de THÉRÈSE, pas sur les capacités actuelles d'un fournisseur externe.
 - **B-1992.** `InvoicesPanel.tsx:508` appelle `cellulesStatut` pour chaque ligne. La branche `paid` de `presentationFacture.ts:175-176` réutilise maintenant `libelleStatutPiece`, déjà utilisé par le formulaire (`InvoiceForm.tsx:611,853`). Elle affiche « Remboursé », avec ou sans date, pour un avoir. Les factures conservent « Payée ». La date et la tonalité de succès restent contrôlées.
 - **B-1993.** La fonction partagée, appelée par le formulaire, les filtres (`InvoicesPanel.tsx:390`) et le repli de ligne (`presentationFacture.ts:212`), accorde désormais accepté, refusé, expiré et converti avec « facture ». Le repli continue d'afficher le statut historique réel, même pour une ancienne combinaison type/statut qui n'est plus proposée à la création. Les filtres emploient le type sélectionné ; sans type précis, ils gardent l'accord féminin historique. Les nouveaux tests couvrent les quatre statuts, leur repli dans une ligne de facture et les filtres Devis/Avoirs.
 - **B-1994.** Le `catch` de `loadInvoices` (`InvoicesPanel.tsx:145`) alimente directement l'alerte de chargement. Le message inclut maintenant devis, factures et avoirs. Le nouveau test déclenche un rejet HTTP simulé, contrôle le texte et conserve une action « Réessayer » activée.
@@ -52,7 +52,7 @@ Aucun scénario ni garde existant n'a été supprimé. Ces changements d'attendu
 
 ## Règles à trancher et limites
 
-État historique avant la passe 4 : aucun candidat `regle_a_trancher`. La passe 4 retire B-1868 et fait foi pour ce candidat ; les preuves et résultats des passes antérieures restent ci-dessous pour traçabilité. Le rendu natif Tauri, les lecteurs d'écran réels et les fournisseurs LLM n'ont pas été sollicités. La suite complète et le rejeu des rouges sur la base restent à l'orchestrateur.
+État historique avant la passe 4 : aucun candidat `regle_a_trancher`. La passe 4 retire B-1868 et la passe 5 retire B-1870 ; ces verdicts font foi pour ces candidats. Les preuves et résultats des passes antérieures restent ci-dessous pour traçabilité. Le rendu natif Tauri, les lecteurs d'écran réels et les fournisseurs LLM n'ont pas été sollicités. La suite complète et le rejeu des rouges sur la base restent à l'orchestrateur.
 
 ## Portes finales
 
@@ -556,3 +556,119 @@ npm run lint
 ```
 
 Contrôles finaux : aucun écart à `c20/integration` dans les 16 fichiers du candidat retiré ; huit empreintes hors lot inchangées ; seuls ces 16 chemins et le présent bilan sont modifiés ; `git diff --check` passe et l’index est inchangé. Les corrections des factures et d’effort OpenAI restent intactes. Aucun lancement de suite complète, fournisseur LLM, réseau, serveur sur les ports interdits, profil personnel ou `.app-loop/`. Aucun `rm`, `git add`, commit, rebase, dépôt annexe ni bundle.
+
+## Remédiation de la relecture, passe 5
+
+Départ : `0157b699`, arbre déjà rebasé par l’orchestrateur, fichiers suivis propres. Les liens non suivis `.venv` et `src/frontend/node_modules` étaient présents et restent intacts. Cette dernière passe applique le retrait imposé pour le P1 et limite les corrections P2 à une ligne évidente. Les résultats historiques ci-dessus ne valent pas validation des constats laissés en réserve ou hors lot.
+
+| Constat | Candidat | Verdict | Intervention |
+| --- | --- | --- | --- |
+| 1, P1 | B-1870 | regle_a_trancher | retiré du lot, reporté ; production et test dédié retirés ensemble |
+| 2, P2 | B-1870 | réserve acceptée | aucun nouvel alignement du catalogue ; constat recopié ci-dessous |
+| 3, P2 | résidus B-1868, lot bancs | écarté hors lot | les deux fichiers restent dans leur état de départ |
+| 4, P2 | B-1992 | corrigé | date locale du scénario, attendu du 02/04/2026 conservé |
+
+### Constat 1 : B-1870 retiré du lot, reporté
+
+Preuve du relecteur, recopiée :
+
+> P1 - effortOpenAI.ts:24 - Le nouveau choix « Très élevé » pour Astra ouvre un parcours où l’écran ment sur l’effort actif. - Preuve : après sélection de `xhigh`, passer à Anthropic conserve cette valeur côté moteur, mais le sélecteur affiche « Auto », faute d’option `xhigh` pour Claude Opus 5.5. Une exécution en mémoire confirme `xhigh` enregistré et `auto` affiché ; le moteur transmet pourtant `xhigh`. Ce défaut existait pour d’autres modèles, mais le correctif rend ce parcours possible depuis Astra. - Correction proposée : réconcilier l’effort lors du changement de fournisseur et afficher toute valeur conservée ; tester le parcours Astra → Anthropic.
+
+La consigne de passe 5 impose le retrait à la place de cette correction proposée. Le patch inverse retire l’ajout d’Astra dans `EFFORT_XHIGH_PROPOSE`, rétablit le commentaire associé et retire le seul test ajouté pour B-1870. Aucun fichier n’a été recopié depuis une branche. `git diff c20/integration -- src/frontend/src/lib/effortOpenAI.ts src/frontend/src/components/settings/LLMTab.effortOpenAI.test.tsx` est vide ; les imports préexistants restent utilisés. Aucun nouveau test ni rouge artificiel pour ce retrait : le constat ci-dessus est la preuve du relecteur, pas une reproduction revendiquée ici.
+
+Appelants relus après retrait : `SettingsModal.tsx:548,601` (fournisseur et modèle), `LLMTab.tsx:732` (options affichées). Aucun de ces appelants n’est modifié. Les six fichiers ciblés du prédicat, du sélecteur et des réglages donnent **68 réussites**, zéro échec, erreur ou ignoré ; XML `/tmp/diff-front-1-r5-effort.xml` lu. Le retrait ferme le nouveau parcours Astra ; il ne prétend pas résoudre les incohérences préexistantes pour les autres modèles.
+
+### Réserves acceptées
+
+**Constat 2, P2**, recopié :
+
+> P2 - effortOpenAI.ts:24 - Le nouveau parcours Astra perd un réglage pourtant compatible lors d’un changement de modèle. - Preuve : Astra réglé sur `xhigh`, puis sélection de `gpt-6-sol` : `handleSelectModel` enregistre `auto`, car le prédicat exclut ce modèle ; le catalogue moteur accepte pourtant `xhigh` pour Sol et Luna. L’appel réel de cette fonction, avec API simulée, confirme la remise à `auto`. - Correction proposée : aligner les modèles proposés sur le catalogue et tester la conservation de l’effort lors du changement.
+
+Aligner les options et la conservation de l’effort change le comportement des réglages, au-delà d’une ligne de texte ou d’un attribut. Aucun correctif n’est donc ajouté en passe 5. `SettingsModal.tsx:607` garde la remise à `auto` et `modeles_catalogue.py:171-172` accepte toujours l’effort tel quel pour Sol et Luna. Le retrait du constat 1 enlève le nouvel accès depuis Astra sans régler ce défaut historique. Aucun test ajouté pour ce constat laissé en réserve.
+
+### Constat 3 écarté : fichiers du lot bancs
+
+Le relecteur constate que « le bouchon des statistiques a été retiré » dans `tests/e2e/stories/helpers/garde-lecture-seule.ts:41` et que « le test compare désormais le profil envoyé à la même valeur de `localStorage` qui sert à construire cet envoi » dans `tests/e2e/stories/parcours-08-capacites-prototype.spec.ts:319`. Ces écarts à l’intégration existent au départ ; ils ne sont ni niés ni annoncés comme retirés. Les deux fichiers appartiennent au lot bancs : l’interdiction explicite de toucher aux fichiers d’un autre lot s’applique. Aucune édition, réintégration, copie de fichier ou nouvelle assertion dans ces chemins ; l’orchestrateur devra traiter leurs résidus dans leur lot.
+
+### Constat 4 : rouge isolé avant correction de la date
+
+Le test paramétré `InvoicesPanel.da.test.tsx::B-1992 : un avoir payé affiche son remboursement` est d’abord renforcé par une assertion exacte sur la cellule Paiement ; les deux assertions existantes restent en place. Le seul cas daté, lancé avec `TZ=America/Los_Angeles` et la donnée UTC originale, échoue :
+
+```text
+AssertionError: expected 'Remboursé le 01/04/2026' to be 'Remboursé le 02/04/2026' // Object.is equality
+```
+
+XML `/tmp/diff-front-1-r5-c4-rouge.xml` lu : **1 échec, 0 erreur, 15 cas ignorés par le filtre**, code 1. Cette ligne a été recopiée avant de corriger la donnée. Le correctif remplace uniquement `2026-04-02T00:00:00Z` par `2026-04-02T12:00:00` dans ce scénario : midi local désigne le 2 avril quel que soit le fuseau du processus. L’attendu littéral `Remboursé le 02/04/2026`, le cas sans date et l’absence de « Payé » restent exigés. Le formatage de production n’est pas modifié.
+
+Appelants relus après correction : `dateListe` → `cellulesStatut` → cellule Paiement dans `InvoicesPanel` (`presentationFacture.ts:44,175`, `InvoicesPanel.tsx:508,544`). Les **16 tests du fichier** passent sous `America/Los_Angeles`, puis sous `Europe/Paris` avec les voisins de présentation, filtres, statuts et formulaire. **Aucun nouveau cas**, un test paramétré renforcé (deux cas), un test propre à B-1870 retiré avec ce candidat ; aucune assertion existante affaiblie.
+
+### Portes de la passe 5
+
+Les quatre XML verts et le XML rouge ont été lus avec `xml.etree.ElementTree` en comptant les `testcase`, `failure`, `error` et `skipped`. Le rejeu sous Los Angeles est distingué du total de cas frontend pour ne pas compter deux fois les mêmes tests.
+
+| Porte | Périmètre | Passés | Échecs | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 2 fichiers, catalogue Astra et parité des efforts | 16 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r5.xml` lu ; 0 tentative de connexion |
+| Vitest après retrait | 6 fichiers, prédicat et réglages | 68 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r5-effort.xml` lu |
+| Vitest factures | 14 fichiers, `TZ=Europe/Paris` | 110 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r5-factures.xml` lu |
+| Vitest fuseau | fichier DA complet, `TZ=America/Los_Angeles` | 16 | 0 | 0 | 0 | code 0 ; `/tmp/diff-front-1-r5-c4-los-angeles.xml` lu ; cas déjà compris dans les 110 |
+| Ruff | `src/backend tests`, sans correction | — | 0 | 0 | — | code 0 ; `All checks passed!` ; `/tmp/diff-front-1-r5-ruff.log` |
+| TypeScript | `tsc --noEmit` | — | 0 | 0 | — | code 0 ; `/tmp/diff-front-1-r5-tsc.log` vide |
+| ESLint | `npm run lint` | — | 0 | 0 | — | code 0 ; 27 avertissements, seuil existant 27 ; `/tmp/diff-front-1-r5-eslint.log` |
+
+Total frontend : **178 cas distincts réussis sur 20 fichiers**, plus 16 exécutions sous Los Angeles. Aucun rouge connu retranché de ces comptes ; aucun échec restant dans ces portes. Les constats 2 et 3 ne sont pas couverts comme corrigés par ces résultats. Les avertissements React `act` de tests voisins et les erreurs simulées de chargement/sauvegarde restent dans le journal des factures ; aucune assertion n’est supprimée pour les taire.
+
+Commandes exécutées (journaux sous `/tmp`, trois workers Vitest au maximum) :
+
+```sh
+THERESE_DATA_DIR=$(mktemp -d /tmp/diff-front-1-r5-data-XXXXXX) \
+PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 \
+  .venv/bin/python -m pytest \
+  tests/test_p057_gpt6_astra.py tests/test_effort_openai_parite_frontend.py \
+  -q -p no:cacheprovider -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-front-1-r5.xml
+RUFF_CACHE_DIR=/tmp/diff-front-1-r5-ruff-cache \
+  .venv/bin/python -m ruff check --no-fix src/backend tests
+cd src/frontend
+npx --offline --no-install vitest run \
+  src/lib/effortOpenAI.test.ts \
+  src/components/settings/LLMTab.effortOpenAI.test.tsx \
+  src/components/settings/LLMTab.test.tsx src/components/settings/LLMTab.da.test.tsx \
+  src/components/settings/SettingsModal.fournisseurIA.test.tsx \
+  src/components/settings/SettingsModal.defautCatalogue.r19b.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r5-effort.xml
+# Rouge isolé avant correction de la donnée (même commande de rejeu) :
+TZ=America/Los_Angeles npx --offline --no-install vitest run \
+  src/components/invoices/InvoicesPanel.da.test.tsx -t 'B-1992.*2026-04-02' \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r5-c4-rouge.xml
+# Après correction : fichier entier dans le fuseau qui révélait le défaut.
+TZ=America/Los_Angeles npx --offline --no-install vitest run \
+  src/components/invoices/InvoicesPanel.da.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r5-c4-los-angeles.xml
+TZ=Europe/Paris npx --offline --no-install vitest run \
+  src/components/invoices/InvoicesPanel.da.test.tsx \
+  src/components/invoices/InvoicesPanel.test.tsx \
+  src/components/invoices/InvoicesPanel.chargementEchoue.test.tsx \
+  src/components/invoices/InvoicesPanel.filtreType.test.tsx \
+  src/components/invoices/presentationFacture.test.ts \
+  src/components/invoices/statutsFacture.b1993.test.ts \
+  src/components/invoices/presentationFacture.envoiNonTrace.b1449.test.ts \
+  src/components/invoices/presentationFacture.dateDEnvoi.p139.test.ts \
+  src/components/invoices/InvoicesPanel.cycle6.test.tsx \
+  src/components/invoices/InvoicesPanel.conversion.c12.test.tsx \
+  src/components/invoices/InvoicesPanel.statutInconnu.test.tsx \
+  src/components/invoices/InvoiceForm.test.tsx \
+  src/components/invoices/InvoiceForm.datePaiement.p155.test.tsx \
+  src/components/invoices/InvoiceForm.da.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-front-1-r5-factures.xml
+npx --offline --no-install tsc --noEmit
+npm run lint
+```
+
+Les tests backend utilisent un dossier jetable et la garde réseau existante, avec **zéro tentative de connexion**. Les accès API frontend sont simulés ; les options Vitest évitent cache partagé et installation. Aucune suite complète ni service lancé. Les deux empreintes SHA-256 hors lot sont inchangées : `6a255542a47721106195cf894483639d609e8a77c133dc6c67b935cf2e082dd3` pour `garde-lecture-seule.ts`, `347324bfbd6ff33be47c81af0cc81db2baf59f4b94fed936751bc0ddce2a089a` pour le parcours 08.
+
+Quatre fichiers modifiés dans cette passe : ce bilan, `effortOpenAI.ts`, `LLMTab.effortOpenAI.test.tsx` et `InvoicesPanel.da.test.tsx`. Les deux fichiers B-1870 sont exactement à l’état de `c20/integration` ; B-1992, B-1993 et B-1994 restent testés indépendamment de ce candidat retiré. Changements laissés non commités, index inchangé, `git diff --check` vert. Aucun accès réseau, fournisseur LLM, port interdit, profil personnel ou `.app-loop/` ; aucun `rm`, `git add`, commit, rebase, dépôt annexe ni bundle.
