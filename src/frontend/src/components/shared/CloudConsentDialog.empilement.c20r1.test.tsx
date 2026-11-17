@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { compile } from 'tailwindcss';
 import { CloudConsentDialog } from './CloudConsentDialog';
 import { ConversationCanvasPrototype } from '../prototype/ConversationCanvasPrototype';
+import { ProjectModal } from '../memory/ProjectModal';
+import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
 import { useChatStore } from '../../stores/chatStore';
@@ -71,4 +73,36 @@ it.each([false, true])('R1.2 : l’accord tardif prend le premier plan devant la
   fireEvent.keyDown(recherche, { key: 'Escape' });
   expect(declencheur).toHaveFocus();
   expect(declencheur.closest('[inert]')).toBeNull();
+});
+
+it.each([false, true])('R3.4 : un projet ouvert après l’accord lui laisse le clavier (occupé : %s)', async busy => {
+  vi.spyOn(api, 'listContacts').mockResolvedValue([]);
+  const fermerProjet = vi.fn();
+  const annulerAccord = vi.fn();
+  const confirmer = vi.fn();
+  function ProjetTardif({ ouvert }: { ouvert: boolean }) {
+    return <>
+      <CloudConsentDialog title="Autoriser les fiches mémoire ?" dataCategories={['tes fiches mémoire']}
+        testId="accord-tardif" busy={busy} onCancel={annulerAccord} onConfirm={confirmer} />
+      {ouvert && <ProjectModal isOpen onClose={fermerProjet} fermerSiIntact />}
+    </>;
+  }
+  const vue = render(<ProjetTardif ouvert={false} />);
+  const annuler = screen.getByRole('button', { name: 'Annuler' });
+  expect(annuler).toHaveFocus();
+  // Une lecture de projet déclenchée avant l'accord vient de terminer.
+  vue.rerender(<ProjetTardif ouvert />);
+  await waitFor(() => expect(api.listContacts).toHaveBeenCalled());
+  const projet = screen.getByRole('dialog', { hidden: true });
+  expect(projet.closest('[inert]')).not.toBeNull();
+  expect(screen.getByRole('alertdialog').closest('[inert]')).toBeNull();
+  expect(annuler).toHaveFocus();
+  fireEvent.keyDown(annuler, { key: 'Tab', shiftKey: true });
+  expect(document.activeElement).toBe(busy ? annuler : screen.getByRole('button', { name: 'Autoriser et envoyer' }));
+  fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
+  expect(annuler).toHaveFocus();
+  fireEvent.keyDown(annuler, { key: 'Escape' });
+  expect(annulerAccord).toHaveBeenCalledTimes(1);
+  expect(fermerProjet).not.toHaveBeenCalled();
+  expect(confirmer).not.toHaveBeenCalled();
 });

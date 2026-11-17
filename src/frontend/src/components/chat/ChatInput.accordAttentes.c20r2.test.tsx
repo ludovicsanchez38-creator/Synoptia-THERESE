@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { open } from '@tauri-apps/plugin-dialog';
 import { installLocalStorageStub } from '../../test/localStorage-stub';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
@@ -110,6 +111,92 @@ function deposer(path: string) {
   act(() => tauri.listeners.get('tauri://drag-drop')?.({ payload: { paths: [path] } }));
 }
 
+it.each((['message', 'recherche'] as const).flatMap(parcours =>
+  [false, true].map(enFile => ({ parcours, enFile }))))(
+  'R3.1 : conserve la demande en vol avant le premier événement ($parcours, file : $enFile)',
+  async ({ parcours, enFile }) => {
+    vi.mocked(hasCloudConsent).mockReturnValue(true);
+    const premier = differe<void>();
+    const fin = differe<void>();
+    const flux = parcours === 'message' ? api.streamMessage : api.streamDeepResearch;
+    flux.mockImplementationOnce(async function* () {
+      await premier.promise;
+      yield { type: 'text', content: 'Réponse pour A. ', conversation_id: 'A' };
+      await fin.promise;
+      yield { type: 'done' };
+    });
+    const champ = await composer();
+    envoyer(parcours);
+    await waitFor(() => expect(flux).toHaveBeenCalledTimes(1));
+    fireEvent.change(champ, { target: { value: 'Demande suivante' } });
+    if (enFile) envoyer();
+    await terminer(premier, undefined);
+    const messages = useChatStore.getState().currentConversation()?.messages;
+    expect(messages?.filter(m => m.role === 'user').map(m => m.content)).toEqual([
+      parcours === 'message' ? 'Demande fictive A' : '[Recherche approfondie] Demande fictive A',
+    ]);
+    expect(messages?.find(m => m.role === 'assistant')?.content).toBe('Réponse pour A. ');
+    expect(champ).toHaveValue(enFile ? '' : 'Demande suivante');
+    expect(useStatusStore.getState().notifications).toHaveLength(0);
+    await terminer(fin, undefined);
+    await waitFor(() => expect(useChatStore.getState().isStreaming).toBe(false));
+    if (enFile) {
+      await waitFor(() => expect(api.streamMessage).toHaveBeenCalledTimes(parcours === 'message' ? 2 : 1));
+      expect(api.streamMessage.mock.lastCall?.[0].message).toBe('Demande suivante');
+    } else {
+      expect(champ).toHaveValue('Demande suivante');
+    }
+  },
+);
+
+it.each((['message', 'recherche'] as const).flatMap(parcours =>
+  [false, true].map(erreur => ({ parcours, erreur }))))(
+  'R3.2 : finalise la réponse après une bascule acquittée ($parcours, erreur : $erreur)',
+  async ({ parcours, erreur }) => {
+    vi.mocked(hasCloudConsent).mockReturnValue(true);
+    const suite = differe<void>();
+    const flux = parcours === 'message' ? api.streamMessage : api.streamDeepResearch;
+    flux.mockImplementationOnce(async function* () {
+      yield { type: 'text', content: 'Texte encore en tampon', conversation_id: 'A' };
+      await suite.promise;
+      if (erreur) throw new Error('Coupure factice');
+      yield { type: 'text', content: ' suite tardive' };
+      yield { type: 'done' };
+    });
+    const champ = await composer();
+    envoyer(parcours);
+    await waitFor(() => expect(useChatStore.getState().currentConversation()?.messages).toHaveLength(2));
+    basculer();
+    fireEvent.change(champ, { target: { value: 'Brouillon de B' } });
+    await terminer(suite, undefined);
+    const reponse = useChatStore.getState().conversations.find(c => c.id === 'A')?.messages[1];
+    expect(reponse?.content).toBe('Texte encore en tampon\n\n*(interrompu)*');
+    expect(reponse?.isStreaming).toBe(false);
+    expect(useChatStore.getState().currentConversation()?.messages).toHaveLength(0);
+    expect(champ).toHaveValue('Brouillon de B');
+    expect(useChatStore.getState().isStreaming).toBe(false);
+    expect(flux.mock.calls[0][1].aborted).toBe(true);
+  },
+);
+
+it.each(['message', 'recherche'] as const)('R3.1 : garde la demande mise en file pendant la persistance (%s)', async parcours => {
+  vi.mocked(hasCloudConsent).mockReturnValue(true);
+  const persistance = differe<void>();
+  attente.attendrePersistance.mockReturnValueOnce(persistance.promise);
+  const champ = await composer();
+  envoyer(parcours);
+  await waitFor(() => expect(attente.attendrePersistance).toHaveBeenCalledTimes(1));
+  fireEvent.change(champ, { target: { value: 'Demande suivante' } });
+  envoyer();
+  await terminer(persistance, undefined);
+  await waitFor(() => expect(useChatStore.getState().currentConversation()?.messages
+    .filter(m => m.role === 'user').map(m => m.content)).toEqual([
+    parcours === 'message' ? 'Demande fictive A' : '[Recherche approfondie] Demande fictive A',
+    'Demande suivante',
+  ]));
+  expect(useStatusStore.getState().notifications).toHaveLength(0);
+});
+
 it('R2.3 : le vrai dépôt Tauri ignore B.png pendant l’accord pour A.png', async () => {
   await composerAvecImage();
   envoyer();
@@ -159,6 +246,90 @@ it.each(['llm', 'documents'])('R2.3 : refuse une finalité différente après ac
   expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
     expect.objectContaining({ title: 'Demande à confirmer à nouveau' }),
   ]));
+});
+
+it.each(['llm', 'documents'] as const)('R3.3 : revalide la finalité après accord mémoire %s', async purpose => {
+  const accords = new Set<string>([purpose]);
+  vi.mocked(hasCloudConsent).mockImplementation(finalite => accords.has(finalite));
+  vi.mocked(grantCloudConsent).mockImplementation((finalite, provider, dataCategories) => {
+    accords.add(finalite);
+    return { purpose: finalite, provider, dataCategories, timestamp: '2026-01-01T00:00:00Z' };
+  });
+  variables.previewVariables.mockResolvedValue(apercu(purpose === 'llm' ? 'Bonjour' : '/fichier A.txt'));
+  api.streamMessage.mockImplementationOnce(async function* () {
+    yield { type: 'memory_consent_required', provider: 'openai', purpose,
+      conversation_id: 'A', message_id: 'source-A' };
+  });
+  const champ = await composer('{demande}');
+  envoyer();
+  await screen.findByTestId('chat-cloud-consent');
+  variables.previewVariables.mockResolvedValue(apercu(purpose === 'llm' ? '/fichier B.txt' : 'Bonjour'));
+  autoriser();
+  await act(async () => { await new Promise(r => setTimeout(r, 20)); });
+  expect(api.streamMessage).toHaveBeenCalledTimes(1);
+  expect(champ).toHaveValue('{demande}');
+  expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+    expect.objectContaining({ title: 'Demande à confirmer à nouveau' }),
+  ]));
+  // Le geste explicite suivant propose la finalité adaptée, puis reprend la source.
+  envoyer();
+  const accord = await screen.findByTestId('chat-cloud-consent');
+  if (purpose === 'llm') expect(accord).toHaveTextContent('contenu intégral des documents');
+  autoriser();
+  await waitFor(() => expect(api.streamMessage).toHaveBeenCalledTimes(2));
+  expect(api.streamMessage.mock.calls[1][0]).toMatchObject({
+    resume_message_id: 'source-A', memory_card_purpose: purpose === 'llm' ? 'documents' : 'llm',
+  });
+  expect(useChatStore.getState().currentConversation()?.messages.filter(m => m.role === 'user')).toHaveLength(1);
+});
+
+it('R3.3 : conserve une finalité mémoire distincte quand la demande ne change pas', async () => {
+  vi.mocked(hasCloudConsent).mockReturnValue(true);
+  api.streamMessage.mockImplementationOnce(async function* () {
+    yield { type: 'memory_consent_required', provider: 'openai', purpose: 'documents',
+      conversation_id: 'A', message_id: 'source-A' };
+  });
+  await composer();
+  envoyer();
+  await screen.findByTestId('chat-cloud-consent');
+  autoriser();
+  await waitFor(() => expect(api.streamMessage).toHaveBeenCalledTimes(2));
+  expect(api.streamMessage.mock.calls[1][0]).toMatchObject({
+    resume_message_id: 'source-A', memory_card_purpose: 'documents',
+  });
+});
+
+it('R3.5 : signale une sélection native revenue pendant l’accord mémoire', async () => {
+  vi.mocked(hasCloudConsent).mockReturnValue(true);
+  const selection = differe<string[]>();
+  const memoire = differe<void>();
+  vi.mocked(open).mockReturnValueOnce(selection.promise);
+  api.streamMessage.mockImplementationOnce(async function* () {
+    yield { type: 'status', content: 'Préparation', conversation_id: 'A' };
+    await memoire.promise;
+    yield { type: 'memory_consent_required', provider: 'openai', purpose: 'llm',
+      conversation_id: 'A', message_id: 'source-A' };
+  });
+  const champ = await composer();
+  envoyer();
+  await waitFor(() => expect(api.streamMessage).toHaveBeenCalledTimes(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Joindre un fichier' }));
+  await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
+  await terminer(memoire, undefined);
+  await screen.findByTestId('chat-cloud-consent');
+  await terminer(selection, ['B.png']);
+  expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+    expect.objectContaining({ title: 'Fichier à sélectionner à nouveau',
+      message: 'Un accord est en attente. Termine cette étape, puis sélectionne à nouveau le fichier à joindre.' }),
+  ]));
+  expect(api.indexFile).not.toHaveBeenCalled();
+  expect(champ).toHaveValue('Demande fictive A');
+  autoriser();
+  await waitFor(() => expect(api.streamMessage).toHaveBeenCalledTimes(2));
+  expect(api.streamMessage.mock.calls[1][0].file_paths).toBeUndefined();
+  vi.mocked(open).mockResolvedValueOnce(['B.png']);
+  fireEvent.click(screen.getByRole('button', { name: 'Joindre un fichier' }));
+  expect(await screen.findByRole('button', { name: 'Retirer B.png' })).toBeInTheDocument();
 });
 
 it.each(['variables', 'persistance', 'recherche'] as const)('R2.3 : revalide la destination pendant l’attente %s', async etape => {
