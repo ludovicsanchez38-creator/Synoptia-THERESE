@@ -3,31 +3,37 @@
 Usage : python3 scripts/banc_ollama_r4.py avant|apres [--code CHEMIN]
 Le backend tourne dans un processus isolé ; HTTP ASGI sans port supplémentaire.
 Les compteurs proviennent des réponses NDJSON réelles, pas d'une estimation.
---journal-fd doit désigner la lecture exclusive du tube anonyme recevant directement
-stdout/stderr du serveur, transmis par son lanceur. La capture en mémoire conserve
-tous les octets ; un fichier susceptible de rotation ne peut pas prouver un appel.
-Chaque appel porte un identifiant de recette dans sa query HTTP. Le journal doit
-contenir son reçu GIN 200 et une fin « stop processing: ... truncated » préfixée
-par request="/api/chat?banc_r4=...". Sans cette corrélation côté serveur, verdict rouge.
-Une croissance du fichier sans ces preuves laisse le verdict rouge.
+Sans --journal-fd, le lanceur démarre « ollama serve » sur le port réservé au banc,
+avec les modèles déjà présents dans .recette-r4/models, sans téléchargement.
+Le port doit être libre. Le serveur et ses runners sont arrêtés à la sortie.
+Sa sortie native est capturée par tube anonyme ; un seul appel à la fois permet
+d'associer une unique fin de slot à son unique reçu GIN 200 identifié dans l'URL.
+Un reçu concurrent ou plusieurs fins invalident la preuve. Un tube fourni par
+--journal-fd reste soumis au préfixe request="/api/chat?banc_r4=..." : sans maîtrise
+du serveur, une fin anonyme ne prouve rien. Aucun fichier rotatif ne certifie un appel.
 """
 import argparse
+import asyncio
 import hashlib
 import json
 import os
 import re
+import signal
 import stat
 import subprocess
 import sys
 import tempfile
 import threading
+import time
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
-BANC = ROOT / '.recette-r4'  # MODELE.txt recopié du modèle fourni, sans changer le serveur.
+BANC = ROOT / '.recette-r4'  # MODELE.txt et models : copie locale du modèle fourni.
 ADRESSE = 'http://127.0.0.1:11435'
+DELAI_JOURNAL = 2.0
+DELAI_DEMARRAGE = 10.0
 REGLE = 'Règle 3 : Toujours nommer les dossiers avec le préfixe LOUTRE-VIOLETTE.'
 TEMOIN = 'PAPILLON-CUIVRE'
 CONTEXTE = ('Règle 1 : Toujours répondre en français et tutoyer Camille.\n'
@@ -38,8 +44,6 @@ MD = f'# Consignes fictives\nLe mot témoin de THERESE.md est {TEMOIN}.\n'
 
 
 def lancer(args):
-    if args.journal_fd is None:
-        raise ValueError('Preuve serveur requise : fournir le tube via --journal-fd.')
     code = Path(args.code).resolve() if args.code else ROOT
     if not code.is_relative_to(ROOT):
         raise ValueError('Le code doit rester dans le worktree.')
@@ -51,7 +55,7 @@ def lancer(args):
         (dossier / nom).mkdir(exist_ok=True)
     donnees = tempfile.mkdtemp(prefix='profil-', dir=dossier / 'data')
     propre = {
-        'PATH': f'{ROOT}/.venv/bin:/usr/bin:/bin', 'HOME': str(dossier / 'home'),
+        'PATH': f'{ROOT}/.venv/bin:/usr/local/bin:/usr/bin:/bin', 'HOME': str(dossier / 'home'),
         'TMPDIR': str(dossier / 'tmp'), 'XDG_CACHE_HOME': str(dossier / 'home/cache'),
         'XDG_CONFIG_HOME': str(dossier / 'home/config'), 'PYTHONPATH': str(code / 'src/backend'),
         'THERESE_DATA_DIR': donnees, 'THERESE_ENV': 'test',
@@ -60,17 +64,51 @@ def lancer(args):
         'HF_HUB_OFFLINE': '1', 'TRANSFORMERS_OFFLINE': '1',
         'LANG': 'C.UTF-8', 'TZ': 'Europe/Paris',
     }
-    with (dossier / 'backend.log').open('w') as journal:
-        return subprocess.call([str(ROOT / '.venv/bin/python'), str(Path(__file__).resolve()),
-            args.phase, '--enfant', '--code', str(code), '--journal-fd', str(args.journal_fd)],
-            pass_fds=(args.journal_fd,), env=propre, cwd=code,
-            stdout=journal, stderr=subprocess.STDOUT)
+    serveur = None
+    try:
+        fd = args.journal_fd
+        if fd is None:
+            modeles = (BANC / 'models').resolve()
+            if not modeles.is_relative_to(ROOT) or not modeles.is_dir():
+                raise ValueError('Copie locale des modèles requise dans .recette-r4/models.')
+            serveur = subprocess.Popen(['ollama', 'serve'], cwd=code,
+                env={**propre, 'OLLAMA_HOST': '127.0.0.1:11435', 'OLLAMA_MODELS': str(modeles),
+                     'OLLAMA_DEBUG': '1', 'OLLAMA_NUM_PARALLEL': '1',
+                     'OLLAMA_MAX_LOADED_MODELS': '1', 'OLLAMA_NO_CLOUD': '1'},
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
+            fd = serveur.stdout.fileno()
+        commande = [str(ROOT / '.venv/bin/python'), str(Path(__file__).resolve()),
+            args.phase, '--enfant', '--code', str(code), '--journal-fd', str(fd)]
+        if serveur is not None:
+            commande.append('--journal-natif')
+        with (dossier / 'backend.log').open('w') as journal:
+            return subprocess.call(commande, pass_fds=(fd,), env=propre, cwd=code,
+                stdout=journal, stderr=subprocess.STDOUT)
+    finally:
+        if serveur is not None:
+            try:
+                os.killpg(serveur.pid, signal.SIGTERM)
+                serveur.wait(timeout=5)
+            except ProcessLookupError:
+                serveur.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(serveur.pid, signal.SIGKILL)
+                serveur.wait(timeout=5)
+            finally:
+                serveur.stdout.close()
 
 
 def mesurer(args):
     if args.journal_fd is None:
         raise ValueError('Preuve serveur requise : fournir le tube via --journal-fd.')
     with CaptureJournal(args.journal_fd) as journal:
+        if getattr(args, 'journal_natif', False):
+            limite = time.monotonic() + DELAI_DEMARRAGE
+            while b'Listening on 127.0.0.1:11435' not in (journal.lire() or b''):
+                if journal.erreur or time.monotonic() >= limite:
+                    raise RuntimeError('Le serveur dédié du banc ne s’est pas déclaré prêt.')
+                time.sleep(0.01)
+            journal.natif = True
         return mesurer_capture(args, journal)
 
 
@@ -231,6 +269,7 @@ class CaptureJournal:
         self.verrou = threading.Lock()
         self.arret = threading.Event()
         self.erreur = False
+        self.natif = False
         self.thread = threading.Thread(target=self._collecter, daemon=True)
 
     def __enter__(self):
@@ -352,6 +391,15 @@ async def observer_flux_journal(flux, fournisseur, base_url, modele, body, appel
     finally:
         hooks['request'] = precedents
         preuve = lire_troncatures(journal, position, requete=requete)
+        if envoyee and isinstance(journal, CaptureJournal) and position is not None:
+            boucle = asyncio.get_running_loop()
+            limite = boucle.time() + DELAI_JOURNAL
+            while not preuve['journal_serveur_lu'] and not journal.erreur:
+                restant = limite - boucle.time()
+                if restant <= 0:
+                    break
+                await asyncio.sleep(min(0.01, restant))
+                preuve = lire_troncatures(journal, position, requete=requete)
         appel['journal_serveur_lu'] = envoyee and preuve['journal_serveur_lu']
         appel['requete_journal'] = requete
 
@@ -382,6 +430,14 @@ def lire_troncatures(journal, position, requete=None):
         resultat['journal_serveur_lu'] = (capture
             and sum(bool(re.fullmatch(recu, ligne)) for ligne in lignes) == 1
             and sum(bool(re.search(fin, ligne)) for ligne in lignes) == 1)
+        if capture and journal.natif:
+            fin_native = (r'^slot\s+release:\s+id\s+\d+\s*\|\s*task\s+\d+\s*\|\s*'
+                          r'stop processing:.*\btruncated\s*=\s*\d+\s*$')
+            resultat['journal_serveur_lu'] = (
+                sum('[GIN]' in ligne for ligne in lignes) == 1
+                and sum(bool(re.fullmatch(recu, ligne)) for ligne in lignes) == 1
+                and sum('stop processing:' in ligne for ligne in lignes) == 1
+                and sum(bool(re.fullmatch(fin_native, ligne)) for ligne in lignes) == 1)
     return resultat
 
 
@@ -409,10 +465,11 @@ def lire_ajout_fichier(journal, position):
 def enregistrer_verdict(resultat, dossier):
     textes = [''.join(e.get('content') or '' for e in t['evenements'] if e.get('type') == 'text')
               for t in resultat['tours']]
-    # Le serveur écrit aussi « truncated = 0 » : conserver ces lignes brutes,
-    # mais ne pas les compter comme une troncature effective.
+    # Un compteur nul n'annule ni une alerte ni un autre compteur de la ligne.
+    # Retirer seulement ces valeurs bénignes avant de chercher les troncatures.
     effectives = [ligne for ligne in resultat['troncatures']
-                  if not re.search(r'\btruncated\s*=\s*0\b', ligne)]
+                  if re.search(r'truncat', re.sub(r'\btruncated\s*=\s*0\b', '', ligne,
+                                                flags=re.I), re.I)]
     resultat['reponses'] = textes
     resultat['troncatures_effectives'] = effectives
     resultat['vert'] = (bool(resultat['appels']) and resultat.get('preuve_journal_v') == 2
@@ -439,6 +496,7 @@ if __name__ == '__main__':
     parser.add_argument('--code')
     parser.add_argument('--enfant', action='store_true')
     parser.add_argument('--journal-fd', type=int, help='Descripteur hérité du tube anonyme de sortie du serveur')
+    parser.add_argument('--journal-natif', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--evaluer', action='store_true', help='Réévaluer les résultats sauvés sans requête réseau')
     arguments = parser.parse_args()
     if arguments.evaluer:

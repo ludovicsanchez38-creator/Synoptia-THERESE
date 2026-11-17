@@ -277,3 +277,94 @@ Les **610 cas pytest** se répartissent ainsi : trois fichiers du lot **62 réus
 Les seuls échecs finaux sont `tests.test_r3_4_ollama::test_refus_a_lecran_meme_sans_fiches[True-True]`, `[True-False]`, `[False-True]` et `[False-False]`, explicitement exclus par le mandat. **Aucun autre rouge final** ; aucun de ces quatre cas n'a été modifié, ignoré ou marqué xfail. Les **20 cas des treize fichiers restaurés** passent également. Rapports : `/tmp/diff-4-r2.xml` et `/tmp/diff-4-r2-vitest.xml` ; journaux : `/tmp/diff-4-r2-pytest.log`, `/tmp/diff-4-r2-vitest.log`, `/tmp/diff-4-r2-ruff.log`, `/tmp/diff-4-r2-tsc.log`, `/tmp/diff-4-r2-eslint.log`.
 
 Aucune suite complète, aucun réseau, aucun fournisseur réel, aucun port réservé, aucun accès à `~/.therese` ou `.app-loop/`. Les simulations HTTP utilisent exclusivement les transports en mémoire. L'historique et l'index restent inchangés ; l'orchestrateur conserve le rejeu sans correctifs, le rebase effectif et les commits.
+## Remédiation de la relecture, passe 3
+
+Les douze constats correspondent au code trouvé au début de cette passe. Les correctifs et les tests restent non commités, sans indexation. Les validations ci-dessous remplacent les comptes des passes précédentes. Aucun réseau, fournisseur, serveur de recette ou navigateur réel n'a été lancé. Les ports réservés, le profil réel et `.app-loop/` n'ont pas été utilisés.
+
+### Référence et limite du constat 5
+
+Contrairement au préambule du mandat, le départ est toujours `HEAD=fde4cf36`, avec `c20/integration=a498d9d3` et un ancêtre commun `31e3f98d`. L'index est vide de changements ; les seuls éléments non suivis au départ sont les liens de dépendances `.venv` et `src/frontend/node_modules`.
+
+Les **24 fichiers** apportés par `31e3f98d..a498d9d3` sont rétablis dans les fichiers de travail, d'abord leurs tests puis leurs correctifs. Leur contenu est vérifié octet par octet contre `a498d9d3`, y compris les onze fichiers de tests ou de harnais absents et `docs/qualite/c20-bancs.md`. Les correctifs propres à diff-4 ne sont pas écrasés par l'ancienne version de ses trois scripts présente sur cette intégration. Le test de reconnexion avec ouverture retardée du navigateur reproduit aussi le défaut avant restauration de son scénario parent.
+
+**Le rebase de l'historique n'est pas effectué.** `.git` est en lecture seule dans les permissions de cette session et le mandat interdit les commits et `git add`. Aucun faux état d'ascendance n'est annoncé : `HEAD` reste `fde4cf36`. Le constat 5 est traité pour les contenus de l'intégration de départ, mais reste ouvert pour l'historique.
+
+Pendant les portes, `c20/integration` avance à **`c127023a`** (quatre commits du lot instrument, depuis `428c385b`). Ces commits touchent trois fichiers : les deux fichiers de couverture écran et `docs/qualite/c20-instrument.md`. Ils introduisent l'acquittement simulé du POST de migration, alors que le constat 3 de ce mandat demande son autorisation limitée et que `test_b2029_couverture.py` exige sa transmission à la pile jetable. Le nouveau test d'intégration exige au contraire `requeteAutorisee('POST', MIGRATION_CHAT) === false`. Ces contrats incompatibles n'ont pas été conciliés en affaiblissant un test. Les portes de cette passe portent donc sur **`fde4cf36` + les 24 contenus de `a498d9d3` + ces remédiations**, et non sur `c127023a`. Le rebase final et cette divergence appartiennent à l'orchestrateur.
+
+### Rouges obtenus avant les correctifs
+
+Les neuf reproductions Python ont chacune été exécutées seules : **1 test, 1 échec, 0 erreur, 0 ignoré** dans chaque XML. Les constats 5 et 6 ont aussi une seule assertion de test exécutée en rouge sous Vitest (l'autre test du fichier 6 est hors sélection). Le constat 10 nécessite les deux tests successifs de fin de sauvegarde : son fichier isolé a **1 échec, 2 réussites et 1 rejet non intercepté**, ce dernier visible dans le journal Vitest mais pas comptabilisé comme erreur dans son XML. Les rapports ont été lus.
+
+| Constat | Reproduction principale | Ligne d'échec recopiée | Rapport sous `/tmp/` |
+| --- | --- | --- | --- |
+| 1 | `test_alerte_reste_rouge_meme_avec_compteur_zero` | `AssertionError: assert 0 == 1` | `diff-4-r3-c1-rouge.xml` |
+| 2 | `test_achever_recette_va_jusqu_au_verdict_avec_les_traces_natives` | `ValueError: Preuve serveur requise : fournir le tube via --journal-fd.` | `diff-4-r3-c2-rouge.xml` |
+| 3 | `test_garde_autorise_uniquement_la_migration_locale_du_chat` | `At index 0 diff: 'bloquee' != 'continue'` | `diff-4-r3-c3-rouge.xml` |
+| 4 | `test_observation_attend_les_deux_traces_apres_le_flux[complete]` | `AssertionError: assert False is ('complete' == 'complete'` | `diff-4-r3-c4-rouge.xml` |
+| 5 | `CalendarPanel.reconnexion.chargement.test.tsx` : scénario de reconnexion | `AssertionError: expected 1 to be greater than 1` | `diff-4-r3-c5-rouge.xml` |
+| 6 | `b1854-garde-parcours.test.ts` : `refuse les mutations sur les routes bouchonnées` | `expected { status: 200, …(2) } to match object { status: 405 } (2 matching properties omitted from actual)` | `diff-4-r3-c6-rouge.xml` |
+| 7 | `test_preuve_refuse_les_evenements_manquants_ou_non_surs[aucun_evenement-openrouter]` | `Failed: DID NOT RAISE <class 'AssertionError'>` | `diff-4-r3-c7-rouge.xml` |
+| 8 | `test_preuve_echoue_si_le_chat_annonce_le_fournisseur_choisi` | `Failed: DID NOT RAISE <class 'AssertionError'>` | `diff-4-r3-c8-rouge.xml` |
+| 9 | `test_refus_existant_avec_grande_fenetre[True-True]` | `assert not [{'messages': [{'content': "## Langue de tes réponses\nRéponds TOUJOURS en français, quelle que soit la langue du cont...erate_document', 'parameters': {'properties': {...}, 'required': [...], 'type': 'object'}}, 'type': 'function'}, ...]}]` | `diff-4-r3-c9-rouge.xml` |
+| 10 | `chatPersistence.fin.test.ts` : `aucune sauvegarde du test précédent ne part après son démontage` | `AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times` | `diff-4-r3-c10-rouge.xml` et `.log` |
+| 11 | `test_scenario_action_attend_le_commit_durable` | `AssertionError: assert 'running' == 'done'` | `diff-4-r3-c11-rouge.xml` |
+| 12 | `test_amorcage_avec_interpreteur_dans_un_chemin_a_espaces` | `AssertionError: assert '' == 'document-factice'` | `diff-4-r3-c12-rouge.xml` |
+
+Le deuxième défaut du constat 10 produit aussi `TypeError: Cannot read properties of undefined (reading 'dispatchEvent')`. Après extension des contre-exemples, le test 2 est paramétré (le témoin nominal est `[aucun]`) et le test 4 distingue le format corrélé et le format natif (`[complete-False]` et `[complete-True]`).
+
+### Corrections et relecture des appelants
+
+1. **Alerte et compteurs indépendants.** Le verdict retire uniquement les diagnostics de compteur nul avant de chercher une troncature. L'alerte corrélée `stop processing: truncating input prompt; truncated = 0`, accompagnée de son reçu GIN, reste rouge. Un autre test couvre deux compteurs sur une même ligne, dont un positif. `--evaluer`, `mesurer_capture` et les verdicts précédents restent exercés.
+2. **Chaîne R4 raccordée.** L'appel existant d'`achever_recette_r4.py` fonctionne sans descripteur fourni : `lancer` démarre le binaire Ollama, capture stdout/stderr dans un tube anonyme et transmet sa lecture à l'enfant. Le serveur dédié doit annoncer son écoute sous dix secondes ; une adresse déjà occupée échoue avant la mesure. Il utilise les modèles locaux de `.recette-r4/models`, un seul appel simultané et un seul modèle chargé. Le groupe de processus créé est arrêté à la sortie, avec attente bornée. Dans cette capture détenue par le lanceur, une seule fin native de slot et un seul reçu GIN 200 avec l'identifiant de l'appel sont exigés. Une autre requête, deux fins ou une trace manquante refusent la preuve. Un tube externe conserve l'exigence du préfixe corrélé : l'ancien test de fin anonyme étrangère reste strict. Le test part du véritable script `achever_recette_r4.py`, traverse `lancer`, `mesurer`, le transport Ollama sur `httpx.MockTransport`, puis écrit le verdict et le code de retour de l'appelant. Les portes, le processus serveur et la charge ASGI de recette sont simulés ; aucun Ollama n'est exécuté. Les sept variantes incluent l'alerte avec compteur nul, les traces étrangères ou absentes et le port occupé.
+3. **Sauvegarde du chat jetable.** Restauration du POST exact `/api/chat/cache-migration` sur l'origine du backend jetable, sans paramètres. Les variantes d'origine, de méthode et de query restent refusées. Les tests exercent le gestionnaire de route en mémoire, sans connexion aux adresses représentées. L'attestation de pile dans `principal` reste antérieure à l'installation de la garde.
+4. **Traces différées.** Après le flux, attente asynchrone des deux traces pendant au plus deux secondes ; absence persistante, erreur de capture ou preuve ambiguë restent rouges. Les hooks HTTP précédents sont restaurés avant l'attente. Huit cas couvrent les deux formats de journal, une preuve complète différée, une seule trace et le silence. Les tests voisins de capture, de rotation, de liens et d'échec du transport restent verts.
+5. **Contenus d'intégration.** Voir la limite d'historique et de référence ci-dessus. Le scénario CalendarPanel attend un premier sondage effectivement observé au lieu de supposer que l'ouverture différée du navigateur a terminé. Son contre-test restauré et son voisin passent.
+6. **Harnais du parcours 08.** Le contrôle de méthode précède les bouchons de lecture ; les mutations reçoivent 405. Le POST du calcul pur rejoint le moteur, et le scénario vérifie de nouveau les résultats 20 % puis 50 %. La génération d'image fictive reste limitée au seul scénario qui l'exerce. Les deux contre-épreuves de garde sont restaurées ; les 29 tests des routes et du service de calcul sont aussi verts.
+7. **Frontière d'erreur.** Restauration de l'exigence d'au moins un événement d'erreur et de la recherche récursive dans tous les champs de tous les événements. Les six contre-épreuves réintroduisent l'absence d'événement et les fuites dans un texte ou un appel d'outil, pour les deux fournisseurs. Le fichier de frontière complet passe.
+8. **Attribution effective.** Restauration de `_attribution(service) == ('openai', 'gpt-4.1')` et du double local de `_provider_pour`, qui empêche le scénario de contacter un fournisseur. Les contre-épreuves du mauvais fournisseur annoncé, des réponses HTTP/SSE et du badge sont restaurées. Les fichiers voisins du chat et de MessageBubble passent.
+9. **Charge supérieure à la fenêtre.** Restauration des 60 000 répétitions d'identité et des quatre cas avec plafond de 131 072 jetons. Les dix tests R3-4 et les quatre contre-épreuves passent, y compris les quatre rouges connus cités dans le mandat.
+10. **Fin des sauvegardes.** Restauration de l'annulation commune des écritures, sans oublier les stores persistants, et du garde `typeof window !== 'undefined'` avant l'événement d'erreur. Les trois tests de fin, les cinq tests R2 de persistance et les quatre tests du stockage différé passent ; aucun rejet non intercepté dans la porte finale.
+11. **Clôture durable de l'action.** Restauration de l'attente bornée du producteur, puis du nettoyage de ses seules tâches de clôture, y compris les fermetures protégées. Relecture de `ActionRunner._execute` et `TraitementHandle.terminer` : la clôture durable arrive bien après le statut mémoire et utilise `asyncio.shield`. Les sept contre-épreuves couvrent le commit retardé, le producteur bloqué, le nombre inattendu de producteurs et les différents moments d'annulation ; les huit tests voisins d'actions passent.
+12. **Interpréteur avec espaces.** Restauration du lanceur `/bin/sh` et de `shlex.quote` pour Python et le fichier du faux curl. Le contre-test crée un lien vers l'interpréteur dont le nom contient des espaces. Ce test et les trois tests de recette .deb passent.
+
+### Portes sur les fichiers résultants
+
+| Porte | Réussis | Échecs / erreurs | Ignorés | Preuve |
+| --- | ---: | ---: | ---: | --- |
+| pytest ciblé, 15 fichiers | 168 | 0 / 0 | 0 | `/tmp/diff-4-r3.xml`, XML lu |
+| pytest voisin calculateur, 2 fichiers | 29 | 0 / 0 | 0 | `/tmp/diff-4-r3-calculateurs.xml`, XML lu |
+| Vitest ciblé, 9 fichiers | 47 | 0 / 0 | 0 | `/tmp/diff-4-r3-vitest.xml`, XML lu |
+| Node, garde et voisins sans navigateur | 5 | 0 / 0 | 0 | `/tmp/diff-4-r3-c3-node-vert.log`, TAP lu |
+| Ruff `src/backend tests` | sans objet | 0 diagnostic | sans objet | `/tmp/diff-4-r3-ruff.log`, code 0 |
+| TypeScript `tsc --noEmit` | sans objet | 0 diagnostic | sans objet | `/tmp/diff-4-r3-tsc.log`, code 0 |
+| ESLint `npm run lint` | sans objet | 0 erreur | sans objet | `/tmp/diff-4-r3-eslint.log`, code 0 ; 27 avertissements existants |
+
+**197 tests Python distincts et 47 tests frontend passent. Aucun rouge connu n'a dû être soustrait aux comptes.** Les deux sessions Python finales indiquent chacune `Connexions interdites tentées : 0`. Les fichiers des anciens correctifs B-1883 et B-2008 sont inclus parmi les voisins du banc. Pas de suite complète.
+
+Commande principale, depuis cet arbre :
+
+```sh
+PYTHONPATH=/tmp NODE_OPTIONS=--import=file:///tmp/diff-4-r3-node-register.mjs \
+OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  tests/test_c20_b1883_finaliser_recette.py tests/test_c20_b1885_banc_ollama.py \
+  tests/test_c20_b2008_mime_recette.py tests/test_b1806_banc_ollama.py \
+  tests/test_r3_4_ollama.py tests/test_b1807_recette_deb.py \
+  tests/test_securite_f2_recette_deb.py tests/test_b1851_preuve_frontiere.py \
+  tests/test_frontiere_erreurs.py tests/test_b1852_preuve_attribution.py \
+  tests/test_pluriel_fournisseur.py tests/test_r2_3_outil.py \
+  tests/test_b2029_couverture.py tests/test_b2033_charges.py tests/test_actions_traitement.py \
+  -q -p no:cacheprovider -p diff4_ipc -p tests.bancs_sans_reseau \
+  --timeout=120 --junitxml=/tmp/diff-4-r3.xml
+```
+
+La commande des calculateurs conserve les mêmes options Python et ajoute seulement leurs deux fichiers, avec un XML distinct. Ruff a été lancé sans correction automatique. La commande frontend sélectionne les neuf fichiers `b1854-garde-parcours.test.ts`, `chatPersistence.fin.test.ts`, `chatPersistence.r2.test.ts`, `debouncedStorage.test.ts`, `MessageBubble.b1970.test.tsx`, `MessageBubble.test.tsx`, `MessageBubble.ollamaCloud.b1156.test.tsx` et les deux scénarios de reconnexion CalendarPanel, avec `--maxWorkers=3 --configLoader=runner --no-cache`. Puis `npx tsc --noEmit` et `npm run lint`, avec `npm_config_offline=true`.
+
+### Adaptations locales et portée des preuves
+
+Le bac à sable empêche le réveil inter-thread d'asyncio par socket interne : les premières tentatives ASGI restent bloquées avant le corps du test, dans `TestClient.__enter__`. Elles ont été interrompues, sans être présentées comme des rouges métier. Le diagnostic borné est conservé dans `/tmp/diff-4-r3-diagnostic-client.log`. Le plugin temporaire `/tmp/diff4_ipc.py` remplace uniquement ce canal de réveil par un tube anonyme non bloquant ; il ne modifie ni les assertions ni le backend. Le plugin restauré `tests.bancs_sans_reseau` interdit toute tentative de connexion.
+
+Playwright était absent des dépendances Node de la racine. Les premières reproductions en mémoire ont utilisé un module inerte sous `/tmp`, qui refuse tout lancement de navigateur, et une configuration Vitest dérivée de celle du dépôt avec cette seule résolution supplémentaire. Les trois archives `@playwright/test`, `playwright` et `playwright-core` en version 1.58.2 ont ensuite été restaurées **hors réseau** dans le `node_modules` ignoré de cet arbre depuis le cache local, après vérification SHA-512 contre `package-lock.json`. Aucun manifeste ni verrou n'a changé. La garde Python (1 test), ses voisins Node (4 tests) et les deux contre-épreuves Vitest ont été rejoués avec ces dépendances réelles et la configuration habituelle ; XML supplémentaires lus : `diff-4-r3-c3-dependances-reelles.xml` et `diff-4-r3-c6-dependances-reelles.xml`. Ces rejeux ne gonflent pas les comptes distincts du tableau. La porte TypeScript finale utilise les vrais types Playwright.
+
+Les tests Node sélectionnés ne lancent ni navigateur ni requête réseau. La suite navigateur et les parcours CLI qui écrivent dans `/private/tmp` ou déplacent vers la corbeille personnelle ne sont pas lancés dans cette passe. Le voisin CLI qui refuse une URL invalide a d'abord échoué parce que les canaux internes de son sous-processus Node ne rendaient pas son diagnostic dans ce bac à sable. Le module temporaire `/tmp/diff4_node_stdio.mjs` redirige seulement stdout/stderr de `spawnSync` vers des fichiers sous `/tmp`, puis les restitue au test. Le vrai enfant Node et toutes les assertions restent exercés. Le rejeu des cinq tests avec `node --import /tmp/diff4_node_stdio.mjs --test-name-pattern='^(la CLI|la base|la garde|les gestes|B-1715)' tests/couverture/couverture-ecran.test.mjs` passe. Aucun test n'a été affaibli pour contourner ces limites.
+
+La chaîne Ollama est vérifiée avec des processus et réponses fictifs. Son usage réel demande le binaire local, la copie du modèle fourni dans `.recette-r4/models`, son nom dans `MODELE.txt` et le port de banc libre ; il n'a pas été exécuté pendant cette passe. Les portes ciblées sont vertes, mais **le constat 5 reste ouvert pour le rebase et la divergence de l'intégration arrivée en cours de travail** : ce rapport ne prononce pas de GO global.
