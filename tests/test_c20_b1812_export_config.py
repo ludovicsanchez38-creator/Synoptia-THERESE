@@ -674,7 +674,8 @@ def test_masquage_d_un_attribut_html_colle_au_suivant(texte):
         ),
         (
             "| https://portail.invalid/?token=FICTIF|https://autre.invalid/?password=FAUX-secret|",
-            "| https://portail.invalid/?token=[REDACTED]|",
+            # La suite porte un secret : rien n'est coupé, tout part avec la valeur masquée.
+            "| https://portail.invalid/?token=[REDACTED]",
         ),
         ("Voir https://portail.invalid/?token=FICTIF|suite ici", "Voir https://portail.invalid/?token=[REDACTED] ici"),
         ("Voir https://portail.invalid/?token=FICTIF`suite ici", "Voir https://portail.invalid/?token=[REDACTED] ici"),

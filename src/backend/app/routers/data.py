@@ -253,10 +253,11 @@ def _fin_d_une_url_dans_un_texte(url: str) -> int:
     Ce qui suit cette fin n'est plus masqué : on ne raccourcit donc que si la
     suite est manifestement du texte. Un fermant que l'URL n'a pas ouvert
     (`[texte](https://…)`, mais pas `Page_(test)`), un accent grave ou une
-    barre verticale ne ferment l'URL que si, derrière les fermants, il n'y a
-    plus que de la ponctuation, ou bien une barre verticale ou un accent grave
-    (cellule de tableau, code). Sinon ils font partie de l'URL, et un secret
-    qui les contient part en entier.
+    barre verticale ne ferment l'URL que si la suite a la forme d'un texte :
+    plus que de la ponctuation derrière les fermants, un accent grave qui
+    termine un code, ou une barre verticale dans une ligne de tableau (qui se
+    termine par une barre). Et jamais si cette suite porte un paramètre de
+    connexion. Sinon ils font partie de l'URL, et tout part en entier.
     """
     fin = len(url)
     fermants = {")": "(", "]": "[", "}": "{"}
@@ -268,7 +269,13 @@ def _fin_d_une_url_dans_un_texte(url: str) -> int:
             ouverts[fermants[caractere]] -= 1
         elif caractere in fermants or caractere in "`|":
             suite = url[i:].lstrip(")]}")
-            if not suite.strip(".,;:!?") or suite[0] in "`|":
+            ponctuation_seule = not suite.strip(".,;:!?")
+            fin_de_code = suite[:1] == "`" and not suite[1:].strip(".,;:!?")
+            ligne_de_tableau = suite[:1] == "|" and url.rstrip(".,;:!?").endswith("|")
+            porte_un_secret = any(
+                _cle_de_connexion(unquote_plus(nom.group(1))) for nom in _NOM_DE_PARAMETRE.finditer(url, i)
+            )
+            if (ponctuation_seule or fin_de_code or ligne_de_tableau) and not porte_un_secret:
                 fin = i
             break
     while fin and url[fin - 1] in ".,;:!?":
