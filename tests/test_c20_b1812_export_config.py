@@ -387,3 +387,25 @@ def test_masquage_d_un_json_tres_imbrique_ne_fait_pas_tomber_l_export(profondeur
     sortie = _masquer_urls_export(texte)
     assert "temoin" not in sortie and "FAUX-secret" not in sortie
     assert "agenda.invalid/dav" in sortie
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_d_une_preference_json_garde_ses_nombres(client, db_session, route):
+    intacte = '{"montant":123456789.123456789,"url":"https://agenda.invalid:443"}'
+    db_session.add(Preference(key="devis_config", category="general", value=intacte))
+    db_session.add(Preference(
+        key="relais_config", category="general",
+        value='{"seuil":0.10,"password":"FAUX-secret","url":"https://temoin:FAUX-secret@agenda.invalid/dav"}',
+    ))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    valeurs = {p["key"]: p["value"] for p in reponse.json()["preferences"]}
+    assert valeurs["devis_config"] == intacte
+    assert "FAUX-secret" not in valeurs["relais_config"] and "temoin" not in valeurs["relais_config"]
+    assert '"seuil": 0.10' in valeurs["relais_config"]
+    assert json.loads(valeurs["relais_config"]) == {
+        "seuil": 0.1, "password": "[REDACTED]", "url": "https://agenda.invalid/dav",
+    }
