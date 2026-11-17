@@ -628,7 +628,6 @@ export {
   etatSync,
   journalSync,
   preparerPlanSync,
-  reprendreIndexSync,
   retirerRacineSync,
 } from './projectSync';
 export type { SyncEtat, SyncOperation, SyncPlan } from './projectSync';

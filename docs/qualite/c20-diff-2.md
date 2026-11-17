@@ -2,14 +2,14 @@
 
 Travail limité à `gpt/c20-diff-2`. Aucun commit ni push : l'index Git est inaccessible dans ce bac à sable, conformément au mandat (aucune tentative de `git add`). Les changements restent dans l'arbre pour reprise par l'orchestrateur. Aucun appel à un fournisseur LLM ni à un service en ligne.
 
-Résultat : 4 candidats confirmés pour 3 défauts distincts, 4 rejetés et 2 soumis au même arbitrage de date. Trois nouveaux fichiers de tests couvrent 10 cas, tous observés rouges avant correction puis verts. Aucun test existant modifié.
+État après la passe 4 : 3 candidats confirmés pour 2 défauts distincts, 4 rejetés et 3 `regle_a_trancher` (B-1875 retiré, B-1876 et B-2002 soumis au même arbitrage de date). Les sections des passes précédentes conservent l'historique ; la section « Remédiation de la relecture, passe 4 » décrit la livraison actuelle et ses preuves.
 
 ## Verdicts et preuves
 
 | Id | Verdict | Test (chemin::nom) ou preuve | Rouge observé (à la place du commit) | Correctif |
 | --- | --- | --- | --- | --- |
 | B-1874 | rejete | `tests/test_b1219_outil_projet_valeurs_controlees.py::test_un_budget_illisible_ou_infini_n_est_pas_enregistre` ; `src/backend/app/services/memory_tools.py:263-271,766-777` | Aucun rouge : le convertisseur renvoie déjà `None` pour les valeurs citées, puis le stocke tel quel. | Aucun changement |
-| B-1875 | confirme | `tests/test_b1875_anonymisation_transactionnelle.py::test_un_echec_annule_aussi_le_detachement` (4 cas : identité/commit, manuel/automatique) | `AssertionError: l'anonymisation annulée a détaché la racine` (4 échecs, `/tmp/diff-2-b1875-rouge.xml`) | non commité |
+| B-1875 | regle_a_trancher | **retiré du lot, reporté** ; constats 1 à 9 de la relecture, passe 4, détaillés ci-dessous | Preuves du relecteur : annulation après commit, versions non durables, courses de restitution, purge et sauvegarde incomplètes, reprises invisibles et verrou global | Code et tests du candidat revenus à l'état de `c20/integration` par annulation des seuls écarts du lot |
 | B-1876 | regle_a_trancher | `src/frontend/src/components/invoices/InvoiceForm.datePaiement.p155.test.tsx::B-1147 reprise après correctif : %s %s %s` ; la route `mark_invoice_paid` accepte aussi des horodatages | Aucun test rouge sans choisir une convention absente du contrat | Aucun changement |
 | B-1877 | confirme | `src/frontend/src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx::un ajout de A ne rejoint jamais B, même après la fusion` (2 ordres), puis 3 cas voisins | `Error: expect(element).not.toBeInTheDocument()` ; élément trouvé : `Livrable A` dans B (`/tmp/diff-2-b1877-rouge.xml`, 5 échecs) | non commité |
 | B-1878 | confirme | `src/frontend/src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx::un ajout de A ne rejoint jamais B, même après la fusion` ; doublon de B-1877 | Même rouge observé avant correction : `Error: expect(element).not.toBeInTheDocument()` ; `Livrable A` affiché dans B | non commité |
@@ -487,3 +487,128 @@ npm_config_offline=true npx --no-install vitest run \
 npm_config_offline=true npx --no-install tsc --noEmit
 npm_config_offline=true npm run lint
 ```
+
+## Remédiation de la relecture, passe 4
+
+Travail du 17 novembre 2026 dans cet arbre uniquement. Choix **(b) pour chacun des constats 1 à 9**, qui portent sur B-1875 et ses remédiations successives ; choix **(a) pour le constat 10**. B-1875 reste à reprendre au cycle suivant : cette passe ne revendique plus sa correction. B-1877, B-1878 et B-2003 restent inchangés.
+
+Aucun réseau, fournisseur LLM, navigateur ni serveur ; aucun accès au profil réel ou à `.app-loop/`. Aucun commit, ajout à l'index, rebase, dépôt annexe ni bundle. Les liens non suivis `.venv` et `src/frontend/node_modules` préexistaient et restent inchangés ; les modifications sont non commitées.
+
+Les 21 chemins de B-1875 sont revenus exactement à l'état de `c20/integration`. Le retrait a utilisé un patch inverse des seuls écarts du lot, vérifié avant application, sans recopier un fichier de l'intégration, sans rebase et sans reprendre un autre lot. Le diff avec l'intégration sur ces chemins est vide. Les tests propres au candidat ont été retirés avec son code, conformément à l'issue (b) ; aucune assertion des tests de l'intégration n'a été affaiblie.
+
+### Décisions constat par constat
+
+Les références de lignes dans ce tableau sont celles de la version relue, avant le retrait. Les preuves des lignes (b) sont les constats du relecteur, pas des simulations revendiquées comme exécutées pendant cette passe.
+
+| Constat | Issue et verdict | Preuve de la relecture et traitement |
+| --- | --- | --- |
+| 1, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:254` : l'annulation est repropagée après `_confirmer_copies`, avant `_annuler_retraits`, alors que SQL est durable ; verrous et purge après commit peuvent rester inachevés. Retrait du couplage aux événements SQLAlchemy, de l'attente différée et de leurs tests. |
+| 2, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:334` : l'anonymisation change `updated_at` avant la copie ; après rollback et restitution en panne, la reprise rejette la fiche durable puis efface le journal. Retrait de la capture de versions et des journaux avec le candidat. |
+| 3, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:370` : la première restitution réécrit les anciens points sans verrou du chemin ni validation, pendant une réindexation. Retrait de toutes les copies et restitutions ajoutées, y compris les adaptations du retrait de fichier. |
+| 4, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:473` : un import peut changer nom ou notes sans changer la date ; un identifiant sans version est également accepté. Retrait de cette validation et de ses tests, sans lui substituer une empreinte partielle. |
+| 5, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:298` : `restitutions-index` et `index_publications` survivent à la purge globale. Retrait des producteurs de journaux et du modèle de cette table ; aucun changement du composant de purge d'un autre lot. |
+| 6, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:302` : une sauvegarde omet les seuls fragments conservés dans un journal en attente ; leur remplacement à la restauration n'est pas coordonné. Retrait des journaux avec le candidat ; aucun changement du composant de sauvegarde/restauration. |
+| 7, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:494` : les clés `contact:<id>` ne sont ni exposées ni reprises par l'interface projet. Retrait du mécanisme, de la route, de l'état et du bouton de reprise, ainsi que du test d'écran propre à B-1875. |
+| 8, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `project_sync_service.py:520` : le dossier porteur peut disparaître et une seconde demande pendant le verrou laisse son travail en attente après les deux appels. Retrait de la file SQL, de son traitement et des appels au démarrage et après commit. |
+| 9, P1 | **(b) regle_a_trancher**<br>retiré du lot, reporté | `index_fiches.py:26` : le calcul et l'écriture vectorielle gardent le verrou global qui bloque aussi une écriture sans lien. Retrait du module, de ses écouteurs SQLAlchemy et de ses appelants ajoutés. |
+| 10, P2 | **(a) corrigé** | Retrait de l'autorisation de migration et du test Node contradictoire ajoutés par diff-2. Les deux fichiers de l'instrument ont un diff vide avec `c20/integration` ; la simulation et tous les contrôles du lot instrument sont conservés. Le test Python du lot attend désormais l'acquittement exact et bloque aussi la variante terminée par `?`. |
+
+Les constats 1 à 9 exigent ensemble une coordination des transactions SQL, de l'indexation par chemin, des écritures vectorielles, de la purge, de la sauvegarde et des reprises visibles. La consigne de cette passe conduit au retrait complet, sans nouvelle réparation partielle. Aucun test nouveau n'est livré pour ces neuf constats puisque les tests du candidat reviennent eux aussi à l'état de l'intégration.
+
+### Rouge puis vert du constat 10
+
+Test étendu **avant** de toucher à la garde : `tests/test_b2029_couverture.py::test_garde_simule_la_migration_exacte_et_bloque_ses_variantes`. Il exécute le vrai gestionnaire JavaScript, avec un navigateur dont le lancement est interdit et des routes factices ; aucune connexion aux adresses des cas de test n'est faite.
+
+Commande isolée :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+ tests/test_b2029_couverture.py::test_garde_simule_la_migration_exacte_et_bloque_ses_variantes \
+ -q -p tests.bancs_sans_reseau -p no:cacheprovider --timeout=120 \
+ --junitxml=/tmp/diff-2-r4-c10-rouge.xml
+```
+
+Ligne d'échec recopiée du XML : **`AssertionError: la migration avec ? contourne l'acquittement simulé`**, avec **`At index 1 diff: 'continue' != 'bloquee'`**. XML lu : **1 test, 1 échec, 0 erreur, 0 ignoré**. Après retrait des ajouts contradictoires : **1 passé, 0 échec, 0 erreur, 0 ignoré** (`/tmp/diff-2-r4-c10-vert.xml`, XML lu).
+
+Le test vérifie aussi la réponse simulée exacte (`200`, JSON `success: true`), le refus de l'autorisation réseau même pour l'URL exacte, une seule simulation et six requêtes bloquées. Les deux tests B-2029 intégrés et le test voisin des lectures/prévisualisations passent : **3 passés, 0 échec, 0 ignoré**, TAP lu dans `/tmp/diff-2-r4-node.log`. Aucun navigateur ni serveur n'a été lancé.
+
+### Périmètre du retrait et appelants relus
+
+Production backend : `models/entities_sync.py` ; `routers/files.py`, `routers/memory.py`, `routers/project_sync.py` ; `services/index_fiches.py`, `services/project_sync_service.py`, `services/qdrant.py`, `services/retrait_index.py`, `services/rgpd_auto.py`, `services/rgpd_identite.py`, sous `src/backend/app/`.
+
+Frontend : `components/memory/ProjectSyncSection.tsx`, `components/memory/ProjectSyncSection.restitution.c20.test.tsx`, `services/api/index.ts`, `services/api/projectSync.ts`, sous `src/frontend/src/`.
+
+Tests backend : `tests/conftest.py`, `tests/test_b1875_anonymisation_transactionnelle.py`, `tests/test_c20_diff2_relecture.py`, `tests/test_c20_diff2_relecture_passe2.py`, `tests/test_c20_diff2_relecture_passe3.py`, `tests/test_r5_10_rgpd.py`, `tests/test_routers_memory.py`. Les quatre fichiers de tests B-1875 et le test d'écran ajoutés par le candidat disparaissent avec lui ; les autres retrouvent leurs simulacres d'origine, sans changement de leurs assertions.
+
+Après retrait, relecture de la suppression de projet, de la cascade contact, des anonymisations manuelle/automatique, du détachement des racines, du démarrage Qdrant et de l'écran de synchronisation. La recherche dans `src/backend`, `src/frontend/src` et `tests` ne trouve plus aucune référence aux journaux, à `IndexPublication`, au module `index_fiches`, aux API de reprise retirées ni aux fonctions de copie/restitution. Pour le constat 10, relecture de `installerGardeReseau`, de son branchement sur `requeteASimuler` avant `requeteAutorisee`, puis exécution des voisins.
+
+### Portes de la passe 4
+
+Comptes lus dans les XML et les journaux après la fin des commandes, sans additionner les rejeux intermédiaires. Aucune suite complète lancée.
+
+| Porte | Périmètre | Passés | Échoués | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 29 fichiers ciblés | **187** | **0** | **0** | **0** | `/tmp/diff-2-r4.xml`, XML lu, sortie 0, 143,025 s |
+| Vitest | 10 fichiers, 3 workers maximum | **87** | **0** | **0** | **0** | `/tmp/diff-2-r4-vitest.xml`, XML lu, sortie 0 |
+| Node | Deux contrôles B-2029 et leur voisin, sans navigateur | **3** | **0** | **0** | **0** | `/tmp/diff-2-r4-node.log`, TAP lu, sortie 0 |
+| Ruff | `src/backend tests`, sans correction automatique | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r4-ruff.log`, `All checks passed!`, sortie 0 |
+| TypeScript | `tsc --noEmit` | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r4-tsc.log` vide, sortie 0 |
+| ESLint | `npm run lint` | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r4-eslint.log`, sortie 0, 27 avertissements existants |
+| Diff | `git diff --check`, identité des 23 chemins retirés/corrigés avec l'intégration | Sans objet | 0 | 0 | Sans objet | Sortie 0 ; `HEAD` reste `424ef611`, index vide |
+
+Total des portes : **277 passés, 0 échoué, 0 erreur, 0 ignoré**. Le garde réseau compte **zéro tentative**. Aucun rouge connu du mandat n'a été rencontré ou masqué. L'unique test étendu dans cette passe est celui du constat 10 ; les autres tests de ces portes sont conservés sans affaiblissement.
+
+Le premier lancement backend sans adaptateur a été interrompu après les quatre premiers tests, au blocage des réveils inter-fils asyncio déjà documenté aux passes 2 et 3. Sa sortie est conservée dans `/tmp/diff-2-r4-pytest-sans-reveil-interrompu.log`. Le rejeu utilise les deux adaptateurs temporaires déjà présents : `diff2_asyncio_poll` ajoute un réveil local toutes les millisecondes, `diff2_poll_child` applique le même réveil au fils isolé de fermeture Qdrant. Ils ne remplacent aucune opération métier ni assertion, et ne sont pas livrés dans le dépôt. Le garde `tests.bancs_sans_reseau` interdit les connexions sortantes.
+
+Commandes backend et lint :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+ tests/test_b2029_couverture.py tests/test_c20_diff2_livraison_passe3.py \
+ tests/test_b1685_anonymiser_un_dossier_synchronise.py \
+ tests/test_project_sync_service.py tests/test_project_sync_idempotence.py \
+ tests/test_project_sync_api.py tests/test_project_sync_boucle.py \
+ tests/test_project_sync_scanner.py tests/test_project_sync_messages.py \
+ tests/test_retrait_complet_qdrant.py tests/test_retrait_index_service.py \
+ tests/test_qdrant_lock.py tests/test_qdrant_shutdown_skip_services.py \
+ tests/test_routers_memory.py tests/test_routers_rgpd.py \
+ tests/test_rgpd_erasure.py tests/test_rgpd_purge_commit_echoue_c9.py \
+ tests/test_rgpd_purge_notifications_multiples_c9.py \
+ tests/test_b1651_purge_auto_alignee_sur_la_manuelle.py \
+ tests/test_r5_10_rgpd.py tests/test_b1503_suppression_projet_rend_ses_contacts.py \
+ tests/test_b1178_cascade_contact_purge_le_depot.py tests/test_memory_purge_disque_du_dossier.py \
+ tests/test_p148_trois_chemins_de_suppression.py tests/test_p148_ensemble_du_projet.py \
+ tests/test_files_indexation_integrite.py tests/test_files_indexation_non_bloquante.py \
+ tests/test_files_indexation_remediation.py tests/test_indexation_traitement.py \
+ -q -p diff2_asyncio_poll -p diff2_poll_child -p tests.bancs_sans_reseau \
+ -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-2-r4.xml
+.venv/bin/python -m ruff check --no-fix --no-cache src/backend tests
+git diff --check
+```
+
+Depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx --no-install vitest run \
+ src/components/memory/ProjectSyncSection \
+ src/components/memory/ProjectDeliverablesSection.changementProjet.b1877.test.tsx \
+ src/components/memory/ProjectDeliverablesSection.p153.test.tsx \
+ src/components/memory/ProjectModal.livrables.p153.test.tsx \
+ src/components/crm/ExplicationDuScore.cible.b2003.test.tsx \
+ src/components/crm/ExplicationDuScore.p152.test.tsx \
+ --maxWorkers=3 --no-cache --configLoader=runner \
+ --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-2-r4-vitest.xml
+npm_config_offline=true npx --no-install tsc --noEmit
+npm_config_offline=true npm run lint
+```
+
+Depuis la racine, pour les seuls contrôles Node sans navigateur :
+
+```sh
+node --experimental-test-isolation=none \
+ --experimental-loader /tmp/diff-2-r4-sans-navigateur.mjs \
+ --test --test-name-pattern='B-2029 : seule la migration exacte|B-2029 : la garde acquitte|seules les lectures locales' \
+ tests/couverture/couverture-ecran.test.mjs
+```
+
+Le chargeur temporaire simule uniquement l'import de Playwright en interdisant `chromium.launch()` ; le gestionnaire réseau et ses assertions restent ceux du dépôt. Les dépendances Node sont utilisées hors ligne, avec le chargement `runner` et sans cache pour éviter toute écriture dans le répertoire partagé. Aucun correctif de lint ni autre modification hors des constats n'a été ajouté.

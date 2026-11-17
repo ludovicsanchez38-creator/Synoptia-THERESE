@@ -52,12 +52,6 @@ async def retirer_de_lindex(*, file_id_attendu: str) -> RetraitResultat:
         await indexation.get_qdrant_service().async_delete_by_entity(file_id_attendu)
         return RetraitResultat(retire=True, deja_absent=True, file_id=file_id_attendu)
 
-    if meta.scope in ("project", "contact") and meta.scope_id:
-        from app.services.project_sync_service import _verrou_du_projet
-
-        cle = meta.scope_id if meta.scope == "project" else f"contact:{meta.scope_id}"
-        async with _verrou_du_projet(cle):
-            return await _retirer_sous_verrou(meta.path, file_id_attendu)
     return await _retirer_sous_verrou(meta.path, file_id_attendu)
 
 

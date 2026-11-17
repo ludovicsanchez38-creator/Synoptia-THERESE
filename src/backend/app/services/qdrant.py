@@ -8,9 +8,9 @@ import asyncio
 import logging
 import re
 import unicodedata
-from collections.abc import Awaitable, Collection, Sequence
+from collections.abc import Collection, Sequence
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 from uuid import uuid4
 
 from app.config import settings
@@ -31,33 +31,6 @@ from qdrant_client.models import (
 )
 
 logger = logging.getLogger(__name__)
-
-_T = TypeVar("_T")
-
-
-async def attendre_fin_operation(operation: Awaitable[_T]) -> _T:
-    """Diffère l'annulation jusqu'à la fin du travail, y compris en thread.
-
-    Annuler to_thread n'arrête pas son fil. Même plusieurs annulations ne
-    doivent pas permettre un rollback ou une libération de verrou avant lui.
-    """
-    tache = asyncio.ensure_future(operation)
-    annulation = None
-    while True:
-        try:
-            resultat = await asyncio.shield(tache)
-            break
-        except asyncio.CancelledError as erreur:
-            if tache.cancelled():
-                raise
-            annulation = erreur
-        except Exception:
-            if annulation is not None:
-                raise annulation
-            raise
-    if annulation is not None:
-        raise annulation
-    return resultat
 
 #: Types de souvenirs dont le périmètre est écrit dans le payload et reclassé
 #: au démarrage. Un payload de ces types sans périmètre est un vestige : il est
@@ -680,47 +653,6 @@ class QdrantService:
             )
         return total
 
-    def copier_fragments_projet(self, project_id: str, file_ids: Sequence[str]) -> list[PointStruct]:
-        """Copie exacte des points qui vont disparaître, sans réencoder leur texte."""
-        filtre = Filter(should=[
-            Filter(must=[
-                FieldCondition(key="scope", match=MatchValue(value="project")),
-                FieldCondition(key="scope_id", match=MatchValue(value=project_id)),
-            ]),
-            FieldCondition(key="entity_id", match=MatchAny(any=[project_id, *file_ids])),
-        ])
-        return self._copier_fragments(filtre)
-
-    async def async_copier_fragments_entites(self, entity_ids: Sequence[str]) -> list[PointStruct]:
-        filtre = Filter(must=[FieldCondition(key="entity_id", match=MatchAny(any=list(entity_ids)))])
-        return await asyncio.to_thread(self._copier_fragments, filtre)
-
-    def _copier_fragments(self, filtre: Filter) -> list[PointStruct]:
-        fragments: list[PointStruct] = []
-        offset = None
-        while True:
-            points, offset = self.client.scroll(
-                collection_name=settings.qdrant_collection, scroll_filter=filtre,
-                limit=1000, offset=offset, with_payload=True, with_vectors=True,
-            )
-            fragments.extend(PointStruct(id=p.id, payload=p.payload, vector=p.vector) for p in points)
-            if offset is None:
-                return fragments
-
-    def restituer_fragments(self, fragments: Sequence[PointStruct]) -> None:
-        """Rétablit les mêmes identifiants, payloads et vecteurs après rollback."""
-        for debut in range(0, len(fragments), 1000):
-            self.client.upsert(
-                collection_name=settings.qdrant_collection,
-                points=list(fragments[debut:debut + 1000]), wait=True,
-            )
-
-    async def async_copier_fragments_projet(self, project_id: str, file_ids: Sequence[str]) -> list[PointStruct]:
-        return await asyncio.to_thread(self.copier_fragments_projet, project_id, file_ids)
-
-    async def async_restituer_fragments(self, fragments: Sequence[PointStruct]) -> None:
-        await asyncio.to_thread(self.restituer_fragments, fragments)
-
     def delete_by_entity(self, entity_id: str) -> int:
         """
         Delete all memories for an entity.
@@ -800,9 +732,9 @@ class QdrantService:
         metadata: dict[str, Any] | None = None,
     ) -> str:
         """Async wrapper for add_memory."""
-        return await attendre_fin_operation(asyncio.to_thread(
+        return await asyncio.to_thread(
             self.add_memory, text, memory_type, entity_id, metadata
-        ))
+        )
 
     async def async_add_memories(
         self,
@@ -830,11 +762,11 @@ class QdrantService:
 
     async def async_delete_by_entity(self, entity_id: str) -> int:
         """Async wrapper for delete_by_entity."""
-        return await attendre_fin_operation(asyncio.to_thread(self.delete_by_entity, entity_id))
+        return await asyncio.to_thread(self.delete_by_entity, entity_id)
 
     async def async_delete_by_scope(self, scope: str, scope_id: str) -> int:
         """Async wrapper for delete_by_scope."""
-        return await attendre_fin_operation(asyncio.to_thread(self.delete_by_scope, scope, scope_id))
+        return await asyncio.to_thread(self.delete_by_scope, scope, scope_id)
 
     def close(self) -> None:
         """Close the Qdrant client."""
@@ -862,13 +794,6 @@ async def init_qdrant() -> None:
     service = get_qdrant_service()
     # Access client to trigger initialization
     _ = service.client
-    from app.services.project_sync_service import (
-        reprendre_publications_index,
-        reprendre_restitutions_index,
-    )
-
-    await reprendre_restitutions_index(service)
-    await reprendre_publications_index()
 
 
 async def close_qdrant() -> None:

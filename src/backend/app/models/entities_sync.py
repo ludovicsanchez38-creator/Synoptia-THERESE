@@ -1,6 +1,6 @@
 """Tables de project.sync (0.45) - design V2.1 du 24/08/2026.
 
-Cinq tables nouvelles (dont l'outbox de publication), zéro colonne ajoutée aux tables existantes :
+Quatre tables NOUVELLES, zéro colonne ajoutée aux tables existantes :
 `create_all()` crée les tables manquantes au démarrage packagé mais n'ajoute
 jamais de colonne, et les clés étrangères SQLite ne sont pas activées par les
 PRAGMA actuels - le ménage (suppression d'un projet, changement de racine)
@@ -41,16 +41,6 @@ class TypeOperation:
     REINDEXER = "reindexer"
     RETIRER = "retirer"
     CONFLIT = "conflit"  # chemin possédé par un autre périmètre : montré, jamais exécuté
-
-
-class IndexPublication(SQLModel, table=True):
-    """Travail durable validé dans la même transaction que le reclassement."""
-
-    __tablename__ = "index_publications"
-    id: str = Field(default_factory=generate_uuid, primary_key=True)
-    project_id: str = Field(index=True)
-    type_fiche: str
-    entity_id: str
 
 
 class ProjectSyncRoot(SQLModel, table=True):

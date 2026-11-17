@@ -18,24 +18,17 @@ Design V2.1 challengé deux fois. Les règles qui structurent ce module :
   `recuperer_taches_orphelines()` ne fait que marquer `interrupted`.
 """
 import asyncio
-import json
 import logging
-import os
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
-from dataclasses import dataclass, field
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
-from uuid import uuid4
 
-from app.config import settings
 from app.models.database import get_session_context
-from app.models.entities import Contact, FileMetadata, Project
+from app.models.entities import FileMetadata
 from app.models.entities_sync import (
     EtatOperation,
     EtatPlan,
-    IndexPublication,
     ProjectSyncEntry,
     ProjectSyncRoot,
     SyncOperation,
@@ -46,15 +39,8 @@ from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.processing import ProcessingTask
 from app.services import indexation, retrait_index, task_registry
 from app.services.project_sync import calculer_diff, scanner_racine
-from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session, SessionTransaction
-from sqlalchemy.util.concurrency import await_only
 from sqlmodel import select
-
-if TYPE_CHECKING:
-    from app.services.qdrant import QdrantService
-    from qdrant_client.models import PointStruct
 
 logger = logging.getLogger(__name__)
 
@@ -97,8 +83,6 @@ def _verrou(project_id: str) -> asyncio.Lock:
 async def _verrou_du_projet(project_id: str) -> "AsyncIterator[None]":
     verrou = _verrou(project_id)
     if verrou.locked():
-        if any(attente[0] is verrou for attente in _verrous_restitutions.values()):
-            raise OperationRefusee("Une restitution de l'index est en attente sur ce projet.")
         raise OperationRefusee(
             "Une synchronisation est déjà en cours sur ce projet."
         )
@@ -205,24 +189,14 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
         return actuelle
 
 
-async def retirer_racine(project_id: str, session: AsyncSession | None = None) -> None:
-    """Délie la racine, dans la transaction appelante si elle est fournie.
-
-    B-1875 : l'anonymisation et la suppression d'un dossier doivent pouvoir
-    annuler aussi le détachement. Le verrou projet dure jusqu'au commit ou
-    rollback, pour qu'un apply ne relise pas l'ancienne génération entretemps.
-    Ne retire RIEN de l'index : ça, c'est un plan.
-    """
-    if session is None:
-        async with get_session_context() as session_propre:
-            await retirer_racine(project_id, session_propre)
-            await session_propre.commit()
-        return
-
-    await _garder_verrou_index(project_id, session)
-    async with _verrou_racines:
+async def retirer_racine(project_id: str) -> None:
+    """Délie la racine. Ne retire RIEN de l'index : ça, c'est un plan."""
+    async with _verrou_du_projet(project_id), _verrou_racines, \
+            get_session_context() as session:
         resultat = await session.execute(
-            select(ProjectSyncRoot).where(ProjectSyncRoot.project_id == project_id)
+            select(ProjectSyncRoot).where(
+                ProjectSyncRoot.project_id == project_id
+            )
         )
         root = resultat.scalar_one_or_none()
         if root is None or root.detachee:
@@ -232,309 +206,7 @@ async def retirer_racine(project_id: str, session: AsyncSession | None = None) -
         root.detachee = True
         root.generation += 1
         await _invalider_generation(session, project_id)
-
-
-async def _garder_verrou_index(cle: str, session: AsyncSession) -> None:
-    from app.services.qdrant import attendre_fin_operation
-
-    if not session.in_transaction():
-        await session.begin()
-    cle_verrous = "retrait_racines_verrous"
-    if cle_verrous not in session.info:
-        verrous: dict[str, asyncio.Lock] = {}
-        session.info[cle_verrous] = verrous
-
-        def liberer_verrous(_session: Session, transaction: SessionTransaction) -> None:
-            # Un flush ferme une sous-transaction : seule la fin de la
-            # transaction métier libère les projets (y compris sur close).
-            if transaction.parent is None:
-                _session.info.pop("retrait_racines_publications", None)
-                commite = _session.info.pop("retraits_commites", False)
-                if commite:
-                    await_only(attendre_fin_operation(_confirmer_copies(_session)))
-                # Attendre toute la restitution, même si la fermeture de la
-                # session est annulée. Chaque dossier garde sa propre copie.
-                await_only(attendre_fin_operation(_annuler_retraits(_session, verrous)))
-                if commite:
-                    # Le commit est durable et ses verrous sont rendus. Une
-                    # panne du travail différé ne peut plus l'invalider.
-                    await_only(reprendre_publications_index())
-
-        def confirmer_retraits(_session: Session) -> None:
-            if not _session.in_nested_transaction():
-                _session.info["retraits_commites"] = True
-
-        event.listen(session.sync_session, "after_transaction_end", liberer_verrous)
-        event.listen(session.sync_session, "after_commit", confirmer_retraits)
-    verrous = session.info[cle_verrous]
-    if any(copie.cle_verrou == cle and copie.chemin in _verrous_restitutions
-           for copie in session.info.get("retrait_racines_index", [])):
-        raise OperationRefusee("Une restitution de l'index doit être terminée sur ce projet.")
-    if cle not in verrous:
-        verrou = _verrou(cle)
-        if verrou.locked():
-            raise OperationRefusee("Une synchronisation est déjà en cours sur ce projet.")
-        await verrou.acquire()
-        verrous[cle] = verrou
-
-
-@dataclass
-class _CopieIndex:
-    scope: str
-    scope_id: str
-    cle_verrou: str
-    qdrant: "QdrantService"
-    fragments: list["PointStruct"]
-    chemin: Path
-    versions: dict[str, list] = field(default_factory=dict)
-    annulee: bool = False
-
-
-_journaux_actifs: set[Path] = set()
-_verrous_restitutions: dict[Path, tuple[asyncio.Lock, dict[str, asyncio.Lock] | None]] = {}
-_verrou_reprise = asyncio.Lock()
-
-
-def _dossier_restitutions() -> Path:
-    return settings.data_dir / "restitutions-index"
-
-
-def _ecrire_copie(copie: _CopieIndex) -> None:
-    """Journal chiffré et atomique, durable AVANT le premier effacement."""
-    from app.services.encryption import encrypt_value
-
-    contenu = encrypt_value(json.dumps({
-        "scope": copie.scope, "scope_id": copie.scope_id, "cle_verrou": copie.cle_verrou,
-        "fragments": [p.model_dump(mode="json") for p in copie.fragments],
-        "versions": copie.versions,
-    }))
-    copie.chemin.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    temporaire = copie.chemin.with_suffix(".tmp")
-    with os.fdopen(os.open(temporaire, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as fichier:
-        fichier.write(contenu)
-        fichier.flush()
-        os.fsync(fichier.fileno())
-    os.replace(temporaire, copie.chemin)
-    if os.name != "nt":
-        dossier = os.open(copie.chemin.parent, os.O_RDONLY | os.O_DIRECTORY)
-        try:
-            os.fsync(dossier)
-        finally:
-            os.close(dossier)
-
-
-async def _garder_copie(scope: str, scope_id: str, cle: str, fragments: list["PointStruct"],
-                      session: AsyncSession, qdrant: "QdrantService") -> None:
-    from app.services.qdrant import attendre_fin_operation
-
-    if not fragments:
-        return
-    copie = _CopieIndex(scope, scope_id, cle, qdrant, fragments,
-                        _dossier_restitutions() / f"{uuid4()}.json.enc")
-    entites = await _entites_des_fragments(session, fragments)
-    copie.versions = {identifiant: _version_entite(entite) for identifiant, entite in entites.items()}
-    session.info.setdefault("retrait_racines_index", []).append(copie)
-    _journaux_actifs.add(copie.chemin)
-    await attendre_fin_operation(asyncio.to_thread(_ecrire_copie, copie))
-
-
-async def _confirmer_copies(session: Session) -> None:
-    copies = session.info.get("retrait_racines_index", [])
-    for copie in list(copies):
-        # Une restitution précédemment refusée appartient à un rollback,
-        # jamais au commit d'une nouvelle transaction de la même session.
-        if copie.annulee:
-            continue
-        try:
-            await asyncio.to_thread(copie.chemin.unlink, missing_ok=True)
-        except OSError:
-            # SQL attestera le commit à la reprise, sans ressusciter le projet.
-            logger.exception("Nettoyage du journal de retrait différé")
-        copies.remove(copie)
-        _journaux_actifs.discard(copie.chemin)
-
-
-async def _annuler_retraits(session: Session, verrous: dict[str, asyncio.Lock]) -> None:
-    copies = session.info.get("retrait_racines_index", [])
-    for copie in list(copies):
-        deja_annulee = copie.annulee
-        copie.annulee = True
-        try:
-            # Une reprise peut avoir terminé cette copie depuis la dernière
-            # transaction de la session. Ne jamais rejouer un ancien état.
-            if not deja_annulee or await asyncio.to_thread(copie.chemin.exists):
-                if deja_annulee:
-                    await _restituer_points_valides(
-                        copie.qdrant, copie.scope, copie.scope_id, copie.fragments, copie.versions,
-                    )
-                else:
-                    await copie.qdrant.async_restituer_fragments(copie.fragments)
-                await asyncio.to_thread(copie.chemin.unlink, missing_ok=True)
-            copies.remove(copie)
-            _verrous_restitutions.pop(copie.chemin, None)
-        except Exception:
-            _verrous_restitutions[copie.chemin] = (verrous[copie.cle_verrou], verrous)
-            logger.exception("Restitution d'index différée ; copie et verrou conservés")
-        finally:
-            _journaux_actifs.discard(copie.chemin)
-    en_attente = {copie.cle_verrou for copie in copies}
-    # Tous les dossiers ont été tentés avant la première libération.
-    for cle, verrou in list(verrous.items()):
-        if cle not in en_attente:
-            if verrou.locked():
-                verrou.release()
-            del verrous[cle]
-
-
-async def reprendre_restitutions_index(qdrant: "QdrantService", project_id: str | None = None) -> None:
-    """Rejoue les copies après redémarrage ou panne temporaire de l'index."""
-    from app.services.encryption import decrypt_value
-    from app.services.qdrant import attendre_fin_operation
-    from qdrant_client.models import PointStruct
-
-    async def reprendre() -> None:
-        chemins = await asyncio.to_thread(lambda: sorted(_dossier_restitutions().glob("*.json.enc")))
-        for chemin in chemins:
-            if chemin in _journaux_actifs:
-                continue
-            try:
-                contenu = await asyncio.to_thread(chemin.read_text)
-                copie = json.loads(await asyncio.to_thread(decrypt_value, contenu))
-                if project_id is not None and copie["cle_verrou"] != project_id:
-                    continue
-                attente = _verrous_restitutions.get(chemin)
-                verrou = attente[0] if attente else _verrou(copie["cle_verrou"])
-                if attente is None:
-                    if verrou.locked():
-                        continue
-                    await verrou.acquire()
-                    _verrous_restitutions[chemin] = (verrou, None)
-                await _restituer_points_valides(
-                    qdrant, copie["scope"], copie["scope_id"],
-                    [PointStruct(**p) for p in copie["fragments"]], copie.get("versions", {}),
-                )
-                await asyncio.to_thread(chemin.unlink)
-                _, detenteur = _verrous_restitutions.pop(chemin)
-                if detenteur is not None:
-                    detenteur.pop(copie["cle_verrou"], None)
-                verrou.release()
-            except Exception:
-                logger.exception("Reprise de restitution impossible ; journal conservé")
-
-    async with _verrou_reprise:
-        await attendre_fin_operation(reprendre())
-
-
-def _version_entite(entite) -> list:
-    instant = entite.updated_at
-    if instant.tzinfo is not None:
-        instant = instant.astimezone(UTC).replace(tzinfo=None)
-    return [type(entite).__name__, instant.isoformat(), entite.scope or "global", entite.scope_id,
-            getattr(entite, "content_hash", None)]
-
-
-async def _entites_des_fragments(session, fragments) -> dict:
-    ids = {p.payload.get("entity_id") for p in fragments if p.payload}
-    entites = {}
-    for modele in (FileMetadata, Contact, Project):
-        lignes = (await session.execute(select(modele).where(modele.id.in_(ids)))).scalars()
-        entites.update((ligne.id, ligne) for ligne in lignes)
-    return entites
-
-
-async def _restituer_points_valides(qdrant, scope, scope_id, fragments, versions) -> None:
-    from app.services.index_fiches import _verrou as verrou_fiches
-
-    # Même ordre que l'indexation : chemin, puis transaction SQL. La relecture
-    # se fait une fois ces verrous pris, jamais sur les instances du journal.
-    async with get_session_context() as session:
-        entites = await _entites_des_fragments(session, fragments)
-    chemins = sorted({e.path for e in entites.values() if isinstance(e, FileMetadata)})
-    async with AsyncExitStack() as pile:
-        for chemin in chemins:
-            await pile.enter_async_context(indexation._verrou_de_chemin(chemin))
-        await pile.enter_async_context(verrou_fiches())
-        async with get_session_context() as session:
-            proprietaire = await session.get(Project if scope == "project" else Contact, scope_id)
-            if proprietaire is None:
-                return
-            entites = await _entites_des_fragments(session, fragments)
-        valides = []
-        for point in fragments:
-            payload = point.payload or {}
-            identifiant = payload.get("entity_id")
-            entite = entites.get(identifiant)
-            if entite is None:
-                continue
-            if (payload.get("scope") or "global", payload.get("scope_id")) != (
-                entite.scope or "global", entite.scope_id,
-            ):
-                continue
-            if identifiant in versions and versions[identifiant] != _version_entite(entite):
-                continue
-            valides.append(point)
-        if valides:
-            await qdrant.async_restituer_fragments(valides)
-
-
-async def preparer_suppression_projet(
-    project_id: str, file_ids: list[str], session: AsyncSession, qdrant: "QdrantService",
-) -> None:
-    """Garde la racine et une copie de l'index jusqu'au résultat du commit SQL."""
-    await retirer_racine(project_id, session)
-    fragments = await qdrant.async_copier_fragments_projet(project_id, file_ids)
-    await _garder_copie("project", project_id, project_id, fragments, session, qdrant)
-
-
-async def preparer_suppression_fichiers_contact(
-    contact_id: str, file_ids: list[str], session: AsyncSession, qdrant: "QdrantService",
-) -> None:
-    if not file_ids:
-        return
-    cle = f"contact:{contact_id}"
-    await _garder_verrou_index(cle, session)
-    fragments = await qdrant.async_copier_fragments_entites(file_ids)
-    await _garder_copie("contact", contact_id, cle, fragments, session, qdrant)
-
-
-async def _publier_fiches_detachees(publications: set[tuple[str, str]]) -> None:
-    """Relit SQL après commit : une cascade peut aussi avoir supprimé la fiche."""
-    from app.models.entities import Contact, Project
-    from app.routers.memory import _embed_contact, _embed_project
-
-    for type_fiche, identifiant in publications:
-        modele = Contact if type_fiche == "contact" else Project
-        async with get_session_context() as session:
-            fiche = await session.get(modele, identifiant)
-        if fiche is not None:
-            publie = await (_embed_contact(fiche) if type_fiche == "contact" else _embed_project(fiche))
-            if publie is False:
-                raise RuntimeError("Publication d'index différée")
-
-
-_verrou_publications = asyncio.Lock()
-
-
-async def reprendre_publications_index() -> None:
-    """Reprend l'outbox SQL ; un échec conserve le travail, jamais le rollback."""
-    if _verrou_publications.locked():
-        return
-    async with _verrou_publications:
-        try:
-            async with get_session_context() as session:
-                travaux = (await session.execute(select(IndexPublication))).scalars().all()
-            for travail in travaux:
-                try:
-                    await _publier_fiches_detachees({(travail.type_fiche, travail.entity_id)})
-                    async with get_session_context() as session:
-                        ligne = await session.get(IndexPublication, travail.id)
-                        if ligne is not None:
-                            await session.delete(ligne)
-                            await session.commit()
-                except Exception:
-                    logger.exception("Republication différée ; travail SQL conservé")
-        except Exception:
-            logger.exception("Lecture des republications impossible ; travaux SQL conservés")
+        await session.commit()
 
 
 async def _invalider_generation(session: AsyncSession, project_id: str) -> None:
@@ -1050,10 +722,6 @@ async def etat_sync(project_id: str) -> dict[str, object]:
         "racine": root.racine if root else None,
         "generation": root.generation if root else None,
         "dernier_plan": plan,
-        "restitution_en_attente": any(
-            attente[0] is _verrous_projet.get(project_id)
-            for attente in _verrous_restitutions.values()
-        ),
     }
 
 

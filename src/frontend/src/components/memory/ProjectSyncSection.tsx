@@ -176,21 +176,6 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
     }
   };
 
-  const reprendreIndex = async () => {
-    const contexte = contexteCourant.current;
-    if (useDemoStore.getState().enabled || !contexte || contexte.projectId !== projectId || occupe) return;
-    setOccupe('restitution');
-    setErreur(null);
-    try {
-      const resultat = await api.reprendreIndexSync(projectId);
-      if (estCourant(contexte)) setEtat(resultat);
-    } catch (e) {
-      if (estCourant(contexte)) setErreur(messageDEchec(e, 'La restitution reste en attente.'));
-    } finally {
-      if (estCourant(contexte)) setOccupe(null);
-    }
-  };
-
   const preparer = async () => {
     const contexte = contexteCourant.current;
     if (useDemoStore.getState().enabled || !contexte || contexte.projectId !== projectId) return;
@@ -310,19 +295,6 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
         </Alerte>
       )}
 
-      {etat?.restitution_en_attente && (
-        <Alerte
-          titre="Restitution des documents en attente"
-          action={(
-            <Button size="sm" variant="secondary" onClick={() => void reprendreIndex()} disabled={modeDemo || occupe !== null}>
-              Réessayer la restitution
-            </Button>
-          )}
-        >
-          Les documents de ce dossier ne sont pas encore tous consultables.
-        </Alerte>
-      )}
-
       {etat === null ? (
         chargement && <p role="status" className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="ligne" />Chargement du dossier synchronisé…</p>
       ) : !etat.racine ? (
@@ -362,7 +334,7 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
               variant="ghost"
               size="icon"
               onClick={() => void delier()}
-              disabled={modeDemo || occupe !== null || etat?.restitution_en_attente}
+              disabled={modeDemo || occupe !== null}
               className="text-text-muted hover:text-error"
               aria-label="Délier le dossier"
               title="Délier (ne retire rien de l'index)"
@@ -376,7 +348,7 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
               size="sm"
               variant="secondary"
               onClick={() => void preparer()}
-              disabled={modeDemo || occupe !== null || etat?.restitution_en_attente}
+              disabled={modeDemo || occupe !== null}
             >
               {occupe === 'plan'
                 ? <Spinner taille="bouton" />
@@ -386,7 +358,7 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
               <Button
                 size="sm"
                 onClick={() => void appliquer()}
-                disabled={modeDemo || occupe !== null || etat?.restitution_en_attente}
+                disabled={modeDemo || occupe !== null}
               >
                 {occupe === 'apply'
                   ? <Spinner taille="bouton" />
