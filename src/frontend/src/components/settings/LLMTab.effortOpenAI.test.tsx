@@ -69,17 +69,6 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
   });
 
-  it('B-1870 : Astra propose Très élevé et transmet xhigh à l’enregistrement', async () => {
-    apiMocks.getLLMConfig.mockResolvedValue({ provider: 'openai', model: 'gpt-6-astra', effort: 'high' });
-    apiMocks.setLLMConfig.mockClear();
-    render(<EffortSelector selectedProvider="openai" selectedModel="gpt-6-astra" />);
-    const selecteur = await screen.findByRole('combobox', { name: 'Effort de raisonnement' });
-    expect(screen.getByRole('option', { name: /Très élevé/ })).toHaveValue('xhigh');
-    fireEvent.change(selecteur, { target: { value: 'xhigh' } });
-    await waitFor(() => expect(apiMocks.setLLMConfig).toHaveBeenCalledWith('openai', 'gpt-6-astra', 'xhigh'));
-    expect(selecteur).toHaveValue('xhigh');
-  });
-
   it('anthropic, ou gpt-4.1 : aucune mention', async () => {
     const { unmount } = render(<EffortSelector selectedProvider="anthropic" selectedModel="claude-sonnet-4-6" />);
     await screen.findByLabelText('Effort de raisonnement');

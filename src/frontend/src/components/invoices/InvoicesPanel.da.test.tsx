@@ -226,12 +226,13 @@ describe('Lot 5 DA : trois colonnes de statut', () => {
 
 describe('Lot 5 DA : compteur et dates', () => {
   it.each([
-    ['2026-04-02T00:00:00Z', 'Remboursé le 02/04/2026'],
+    ['2026-04-02T12:00:00', 'Remboursé le 02/04/2026'],
     [null, 'Remboursé'],
   ])('B-1992 : un avoir payé affiche son remboursement (%s)', async (payment_date, attendu) => {
     poser([piece({ document_type: 'avoir', status: 'paid', payment_date })]);
     render(<InvoicesPanel standalone />);
     const ligne = await screen.findByTestId('invoice-item');
+    expect(within(ligne).getAllByRole('cell')[3].textContent).toBe(attendu);
     expect(within(ligne).getByText(attendu)).toBeInTheDocument();
     expect(ligne).not.toHaveTextContent(/Payé/);
   });
