@@ -8,7 +8,14 @@ def plafond_memoire() -> int:
     try:
         ram = os.sysconf('SC_PHYS_PAGES') * os.sysconf('SC_PAGE_SIZE')
     except (AttributeError, ValueError, OSError):
-        return 8192
+        # Windows n'a pas sysconf : réutiliser sa détection native de RAM
+        # avant le repli prudent, sinon tous ses modèles sont bridés à 8k.
+        from app.services.system_resources import detect_system_memory
+
+        memoire = detect_system_memory().total_bytes
+        if memoire is None:
+            return 8192
+        ram = memoire
     return 8192 if ram < 8 * 1024**3 else (16384 if ram < 16 * 1024**3 else 131072)
 
 
