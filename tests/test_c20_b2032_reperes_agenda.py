@@ -55,9 +55,76 @@ HORAIRES = "- 09h : Réunion fictive\n- 14h : Entretien fictif"
         "- Durée : 2h | Activité : Trajet",
         False,
     ),
+    (
+        "| **Durée** | Activité |\n| --- | --- |\n"
+        "| 3h | Préparation |\n| 2h | Trajet |",
+        "- **Durée** : 3h | Activité : Préparation\n"
+        "- **Durée** : 2h | Activité : Trajet",
+        False,
+    ),
+    (
+        "| Durées | Activité |\n| --- | --- |\n"
+        "| 3h | Préparation |\n| 2h | Trajet |",
+        "- Durées : 3h | Activité : Préparation\n"
+        "- Durées : 2h | Activité : Trajet",
+        False,
+    ),
+    (
+        "| Activité | _Durées_ |\n| --- | --- |\n"
+        "| Préparation | 3h |\n| Trajet | 2h |",
+        "- Activité : Préparation | _Durées_ : 3h\n"
+        "- Activité : Trajet | _Durées_ : 2h",
+        False,
+    ),
+    (
+        "| Activité | **DURÉES** |\n| --- | --- |\n"
+        "| Préparation | 3h |\n| Trajet | 2h |",
+        "- Activité : Préparation | **DURÉES** : 3h\n"
+        "- Activité : Trajet | **DURÉES** : 2h",
+        False,
+    ),
+    (
+        "| **Durées** | Horaire |\n| --- | --- |\n"
+        "| 3h | 09:00 |\n| 2h | 14:00 |",
+        "- **Durées** : 3h | Horaire : 09:00\n"
+        "- **Durées** : 2h | Horaire : 14:00",
+        True,
+    ),
+    (
+        "* **Durée** : 3h\n* **Durée** : 2h",
+        "* **Durée** : 3h\n* **Durée** : 2h",
+        False,
+    ),
+    (
+        "* **Horaire** : 09:00\n* **Horaire** : 14:00",
+        "* **Horaire** : 09:00\n* **Horaire** : 14:00",
+        True,
+    ),
+    (
+        "- Réunion client : 09:00–10:00\n- Entretien : 14:00–15:00",
+        "- Réunion client : 09:00–10:00\n- Entretien : 14:00–15:00",
+        True,
+    ),
+    (
+        "| Rendez-vous | Horaire |\n| --- | --- |\n"
+        "| Réunion client | 09:00–10:00 |\n| Entretien | 14:00–15:00 |",
+        "- Rendez-vous : Réunion client | Horaire : 09:00–10:00\n"
+        "- Rendez-vous : Entretien | Horaire : 14:00–15:00",
+        True,
+    ),
+    (
+        "| Horaire | Rendez-vous |\n| --- | --- |\n"
+        "| **09h-10h** | Réunion client |\n| **14h-15h** | Entretien |",
+        "- Horaire : **09h-10h** | Rendez-vous : Réunion client\n"
+        "- Horaire : **14h-15h** | Rendez-vous : Entretien",
+        True,
+    ),
 ], ids=["heures_sans_separateur", "heures_h_sans_separateur", "heures_en_gras",
         "tableau_heure_en_premier", "tableau_heure_en_second", "durees_avec_minutes",
-        "tableau_de_durees"])
+        "tableau_de_durees", "duree_gras", "durees_pluriel", "durees_italique",
+        "durees_gras_pluriel", "durees_et_horaires", "duree_gras_puce_etoile",
+        "horaire_gras_puce_etoile", "plages_apres_libelle", "tableau_plages_en_second",
+        "tableau_plages_en_premier_gras"])
 async def test_horaires_et_tableaux_sans_separateur_conservent_la_reserve(
     client, db_session, fournisseur, contenu, converti, mention_attendue, stream  # noqa: F811
 ):
@@ -83,11 +150,28 @@ async def test_horaires_et_tableaux_sans_separateur_conservent_la_reserve(
     ("Rédige un résumé de la liste de mes rendez-vous de demain", False),
     ("Rédige une liste de mes rendez-vous demain", False),
     ("Rédige une longue liste de mes rendez-vous de demain", False),
+    ("Rédige une courte et claire liste de mes rendez-vous de demain", False),
+    ("Écris une brève et utile liste de mes rendez-vous demain", False),
+    ("Rédige une très courte et claire liste de mes rendez-vous demain", False),
+    ("Rédige une courte et très claire liste de mes rendez-vous demain", False),
+    ("Rédige une courte et claire et structurée liste de mes rendez-vous demain", False),
+    ("Rédige une note et liste mes rendez-vous de demain", True),
+    ("Rédige une note et demain liste mes rendez-vous", True),
+    ("Rédige une note et lundi liste mes rendez-vous", True),
+    ("Rédige une note et rapidement liste mes rendez-vous de demain", True),
+    ("Rédige une note et très rapidement liste mes rendez-vous de demain", True),
+    ("Rédige une note et après liste mes rendez-vous de demain", True),
+    ("Rédige une note et vite liste mes rendez-vous de demain", True),
+    ("Rédige une note et de suite liste mes rendez-vous de demain", True),
     ("Explique comment, demain, je consulte mon agenda et rédige un mail", False),
     ("Explique comment j'ai consulté mon agenda lundi", False),
     ("Explique comment Marie consulte mon agenda demain", False),
     ("Explique comment, demain, Marie consulte mon agenda", False),
     ("Explique comment je consulte mon agenda demain, puis lis mon agenda demain", True),
+    ("Explique comment lire mon agenda, puis demain consulte mon agenda.", True),
+    ("Explique comment lire mon agenda, puis consulte mon agenda demain.", True),
+    ("Explique comment lire mon agenda, ensuite demain consulte mon agenda.", True),
+    ("Explique comment lire mon agenda, ensuite consulte mon agenda demain.", True),
     ("Rédige une liste, puis consulte mon agenda demain", True),
     ("Rédige un mail, puis liste mes rendez-vous de demain", True),
     ("Rédige une note puis liste mes rendez-vous de demain", True),
@@ -98,8 +182,17 @@ async def test_horaires_et_tableaux_sans_separateur_conservent_la_reserve(
     ("Rédige un mail après avoir consulté mon agenda demain", True),
     ("S'il te plaît consulte mon agenda demain et rédige un mail", True),
 ], ids=["explication_je", "liste_nominale", "liste_a_rediger", "liste_avec_adjectif",
+        "liste_adjectifs_coordonnes", "liste_adjectifs_coordonnes_breve",
+        "liste_adjectifs_coordonnes_tres", "liste_adjectifs_et_tres",
+        "liste_trois_adjectifs_coordonnes", "note_et_liste_verbale",
+        "note_et_demain_liste_verbale", "note_et_lundi_liste_verbale", "note_et_rapidement_liste_verbale",
+        "note_et_tres_rapidement_liste_verbale", "note_et_apres_liste_verbale",
+        "note_et_vite_liste_verbale", "note_et_de_suite_liste_verbale",
         "explication_et_redaction", "explication_passee", "explication_tiers",
-        "explication_tiers_avec_incise", "explication_puis_lecture", "redaction_puis_lecture",
+        "explication_tiers_avec_incise", "explication_puis_lecture",
+        "explication_puis_demain_lecture", "explication_puis_lecture_demain",
+        "explication_ensuite_demain_lecture", "explication_ensuite_lecture_demain",
+        "redaction_puis_lecture",
         "redaction_puis_liste", "redaction_note_puis_liste", "lecture_puis_explication",
         "lecture_d_abord", "lecture_apres_repere", "lecture_prealable", "lecture_avant_redaction",
         "lecture_politesse"])
