@@ -28,14 +28,19 @@ describe('B-1953 : la capture désactivée est expliquée', () => {
     let terminer!: (v: typeof commande) => void;
     vi.mocked(generateTemplate).mockImplementation(() => new Promise((resolve) => { terminer = resolve; }));
     render(<RFCWizard onClose={vi.fn()} editCommand={commande} />);
+    const annonce = screen.getByRole('status');
     fireEvent.click(screen.getByRole('button', { name: 'Terminer la réponse' }));
     const capturer = screen.getByRole('button', { name: 'Capturer' });
     expect(capturer).toBeEnabled();
     expect(capturer).not.toHaveAttribute('aria-describedby');
+    // R3-4 : la région reste accessible et vide avant le clic.
+    expect(screen.getByRole('status')).toBe(annonce);
+    expect(annonce).toBeEmptyDOMElement();
     fireEvent.click(capturer);
     try {
       expect(screen.getByRole('button', { name: 'Génération...' })).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Génération...' })).toHaveAccessibleDescription(/THÉRÈSE prépare ta commande/);
+      expect(screen.getByRole('status')).toBe(annonce);
       expect(screen.getByRole('status')).toHaveTextContent('THÉRÈSE prépare ta commande');
     } finally {
       await act(async () => terminer(commande));
