@@ -6,8 +6,8 @@ de test interdit l'ouverture de sockets réseau IP.
 
 | ID | Verdict | Test de comportement | Échec observé avant correction | Correctif |
 | --- | --- | --- | --- | --- |
-| B-2031 | `confirme` | `tests/test_c20_b2031_texte_diffuse_annulation.py::test_le_partiel_enregistre_correspond_au_texte_relaye` | `E   AssertionError: assert ['Dernier morceau produit.'] == []` | non commité |
-| B-2032 | `confirme` | `tests/test_c20_b2032_reperes_agenda.py::test_la_mention_suit_les_reperes_reels_et_la_lecture_demandee` | `E       AssertionError: assert '- 09h : Réun...t pas de lui.' == '- 09h : Réun...retien fictif'` | non commité |
+| B-2031 | `confirme` | `tests/test_c20_b2031_texte_diffuse_annulation.py::test_le_partiel_enregistre_correspond_au_texte_relaye` | `E   AssertionError: assert ['Dernier morceau produit.'] == []` | conservé |
+| B-2032 | `regle_a_trancher` | tests retirés avec le candidat | `E       AssertionError: assert '- 09h : Réun...t pas de lui.' == '- 09h : Réun...retien fictif'` | retiré du lot, reporté |
 
 Pour B-2031, les deux variantes étaient rouges : sans texte relayé, le morceau
 produit était quand même enregistré ; après un premier morceau relayé, le texte
@@ -17,15 +17,11 @@ réponse SSE et le contenu en base. Le wrapper est utilisé par l'endpoint
 producteur la liste des morceaux de texte effectivement relayés, utilisée pour
 enregistrer le partiel lors de l'arrêt.
 
-Pour B-2032, 18 des 32 variantes étaient rouges : numéros de point et dates
-impossibles, durées présentées sur deux lignes, et lecture explicite associée à
-une rédaction. Les tests contrôlent la réponse et le contenu en base, en flux et
-hors flux. La détection est appelée par les deux voies de l'endpoint de chat.
-Les dates numériques sont validées ; une durée seule ne suffit pas à former
-une ligne de rendez-vous ; un verbe de rédaction ne masque plus une demande de
-lecture explicite. Aucun test existant n'a été affaibli ou modifié.
-
-Aucun candidat n'est classé `regle_a_trancher`.
+Pour B-2032, 18 des 32 variantes initiales étaient rouges : numéros de point,
+dates impossibles, durées sur deux lignes et lecture associée à une rédaction.
+Les corrections et les tests de ce candidat ont été retirés en passe 5. Les
+sections des passes 1 à 4 et leurs comptes décrivent l'historique, pas le code
+restant. Aucun test d'un autre candidat n'a été affaibli ou modifié.
 
 ## Portes ciblées
 
@@ -179,9 +175,9 @@ Les tests ont utilisé les mêmes garde réseau et adaptation temporaire du rév
 
 ## Limites
 
-La reconnaissance des demandes et des horaires reste fondée sur des motifs :
-un horaire isolé tel que `3h` est ambigu et n'est pas compté comme rendez-vous
-sans contexte. D'autres formulations peuvent échapper à la détection. Aucun
+La reconnaissance des demandes et des horaires reste fondée sur des motifs.
+Depuis le retrait de B-2032, une demande de rédaction peut masquer une lecture
+explicite et deux durées peuvent être comptées comme deux rendez-vous. Aucun
 modèle réel ni service en ligne n'a été appelé.
 
 Le test d'annulation compare le texte remis par le générateur SSE à la base.
@@ -223,3 +219,63 @@ le XML `/tmp/restes-chat-r4.xml` a été lu. Ruff
 `check --no-fix src/backend tests` : **0 erreur**. Aucun fichier frontend modifié
 et aucune suite complète lancée. La garde réseau et les fournisseurs simulés
 ont été utilisés pour les tests.
+
+## Remédiation de la relecture, passe 5
+
+Sur décision de l'orchestrateur, les deux constats concernent le même
+candidat B-2032. Le correctif et tous ses tests sont retirés ; aucun nouveau
+correctif P1 n'est introduit. Le correctif B-2031 reste dans le lot.
+
+| Constat | Verdict |
+| --- | --- |
+| 1 — date citée avant la lecture | `regle_a_trancher` |
+| 2 — complément après l'heure | `regle_a_trancher` |
+
+**1 — retiré du lot, reporté.** Constat du relecteur :
+
+> P1 - src/backend/app/routers/chat.py:3805 - La passe 4 efface les dates citées placées avant l’ordre de lecture. - Preuve : `Pour « demain », consulte mon agenda et rédige un mail.`, avec deux lignes horaires sans appel d’agenda, déclenchait la réserve avant cette remédiation. Désormais, `citation_a_ecarter = True` supprime « demain » ; le producteur exécuté en mémoire émet et transmet à la persistance les horaires sans réserve. - Correction proposée : rattacher la citation à sa proposition avant de l’écarter et préserver les dates précédant une lecture indépendante ; couvrir les deux voies.
+
+Avant retrait, le test temporaire `test_r5_date_citee_avant_lecture_independante`
+vérifiait la réponse et la persistance, en flux et hors flux : **2 échecs sur 2**.
+Ligne d'échec :
+`E   assert ('- 09h : Réu...tien fictif']) == ('- 09h : Réu...pas de lui.'])`.
+
+**2 — retiré du lot, reporté.** Constat du relecteur :
+
+> P1 - src/backend/app/routers/chat.py:3907 - La correction des compléments après l’heure reste incomplète. - Preuve : pour `Lis mon agenda de demain`, la réponse `- Réunion : 09h (salle A)\n- Entretien : 14h (salle B)` est émise et transmise à la persistance sans réserve, contrairement à l’intégration. Même échec avec `09h - salle A` et `14h - salle B` : le motif n’accepte les compléments qu’après une virgule ou un point-virgule. - Correction proposée : reconnaître ces compléments après un horaire explicite, conserver l’exclusion des durées et ajouter les tests en flux et hors flux.
+
+Avant retrait, le test temporaire `test_r5_complements_apres_horaire_explicite`
+vérifiait la réponse et la persistance en flux et hors flux : **4 échecs sur 6**
+pour les parenthèses et tirets, **2 réussites** pour les durées. Ligne d'échec :
+`E   assert ('- Réunion :...h (salle B)']) == ('- Réunion :...pas de lui.'])`.
+
+Les deux tests temporaires ont été retirés avec le fichier de tests B-2032,
+comme les tests de ce candidat aux passes précédentes. Le diff avec
+`c20/integration` ne contient plus de changement B-2032 dans `chat.py` ni
+dans son fichier de tests. La relecture des deux appelants confirme qu'ils
+utilisent toujours la détection d'agenda d'intégration. Dans cet état, les
+horaires avec parenthèses ou tirets reçoivent une réserve, mais la phrase du
+constat 1 n'en reçoit pas et deux durées peuvent à tort en recevoir une : ces
+règles restent à trancher.
+
+Le diff préexistant avec `c20/integration` contient aussi des écarts hors
+B-2031 et B-2032 : suppression de `docs/qualite/c20-diff-2.md`,
+`src/frontend/src/components/crm/ExplicationDuScore.cible.b2003.test.tsx`,
+`tests/test_b2029_couverture.py` et `tests/test_c20_diff2_livraison_passe3.py`,
+et modification de `src/frontend/src/components/crm/ExplicationDuScore.tsx`.
+Ces fichiers étaient déjà dans cet état au début et n'ont pas été touchés.
+
+Après retrait : **137 tests réussis, 0 échec, 0 erreur, 0 ignoré** ; le XML
+`/tmp/restes-chat-r5.xml` a été lu. Les fichiers exécutés sont
+`tests/test_c20_b2031_texte_diffuse_annulation.py`,
+`tests/test_chat_annulation_reelle.py`, `tests/test_chat_traitement.py`,
+`tests/test_b1795_agenda_selection_stream.py`,
+`tests/test_b1797_agenda_sans_outil.py`,
+`tests/test_c20_b1799_recherche_vide.py`,
+`tests/test_c20c_budget_historique.py`,
+`tests/test_agenda_lecture_et_reperes.py` et
+`tests/test_F11_recaps_lisibles.py`. Ruff `check --no-fix src/backend tests` :
+**0 erreur**. `tsc --noEmit` : **0 erreur**, code 0 ; trois messages du bac à
+sable signalent `Failed to create stream fd: Operation not permitted`.
+Aucun fichier frontend n'a été modifié, aucune suite complète n'a été lancée.
+La garde réseau et des fournisseurs simulés ont été utilisés pour les tests.

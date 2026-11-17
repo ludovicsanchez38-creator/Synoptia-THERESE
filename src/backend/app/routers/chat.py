@@ -3756,130 +3756,16 @@ def _normaliser_demande_agenda(message: str) -> str:
     )
 
 
-def _date_numerique_agenda(texte: str) -> bool:
-    """Accepte les dates possibles sans confondre un numéro de point avec une date."""
-    from datetime import date
-
-    motif = re.compile(
-        r"(?<![\w./-])(?:(?P<iso_annee>\d{4})-(?P<iso_mois>\d{1,2})-"
-        r"(?P<iso_jour>\d{1,2})|(?P<jour>\d{1,2})(?P<sep>[/.-])"
-        r"(?P<mois>\d{1,2})(?:(?P=sep)(?P<annee>\d{4}|\d{2}))?)"
-        r"(?!\d|[./-]\d)"
-    )
-    for resultat in motif.finditer(texte):
-        parties = resultat.groupdict()
-        if parties["sep"] == "." and not parties["annee"]:
-            # « point 1.2 » est un numéro ; « le 1.2 » est une date.
-            if not re.search(r"\b(?:le|du|au)\s*$", texte[:resultat.start()]):
-                continue
-        annee = int(parties["iso_annee"] or parties["annee"] or 2000)
-        if annee < 100:
-            annee += 2000
-        try:
-            date(annee, int(parties["iso_mois"] or parties["mois"]),
-                 int(parties["iso_jour"] or parties["jour"]))
-            return True
-        except ValueError:
-            continue
-    return False
-
-
 def _demande_lecture_agenda(message: str) -> bool:
     """Reconnaît seulement les formes explicites et datées du tour courant."""
-    texte = _normaliser_demande_agenda(message)
-
-    def liste_coordonne(avant: str) -> bool:
-        return bool(re.search(
-            r"\b(?:et|puis|ensuite)(?:\s+(?:(?:tres\s+)?\w+ment|enfin|vite|"
-            r"a\s+present|de\s+suite|maintenant|alors|aussi|apres|demain|"
-            r"lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche))*\s*$", avant,
-        ))
-
-    racines_redaction = ("resum", "expliqu", "redig", "ecri", "reformul")
-    if re.search(r"\b(?:resum\w*|expliqu\w*|redig\w*|ecri\w*|reformul\w*)\b", texte):
-        morceaux = re.split(
-            r'''(«[^»]*»|“[^”]*”|"[^"]*"|‘(?:[^’]|(?<=\w)’(?=\w))*’|'''
-            r"(?<!\w)'(?:[^']|(?<=\w)'(?=\w))*'(?!\w))",
-            texte,
-        )
-        citation_a_ecarter = True
-        for i in range(1, len(morceaux), 2):
-            for action in re.finditer(
-                r"\b(?:resum\w*|expliqu\w*|redig\w*|ecri\w*|reformul\w*|"
-                r"lis|consulte|regarde|verifie|affiche|montre|liste|"
-                r"(?:peux|pourrais|veux)[- ]tu\s+(?:lire|consulter|regarder|verifier|"
-                r"afficher|montrer|lister))\b", morceaux[i - 1],
-            ):
-                avant_action = morceaux[i - 1][:action.start()]
-                if not action.group().startswith(racines_redaction) and (
-                    re.search(r"\b(?:je|tu|il|elle|on|nous|vous|ils|elles)\s*$", avant_action)
-                    or (action.group() == "liste" and not liste_coordonne(avant_action) and re.search(
-                        r"\b(?:la|une|ma|ta|sa|cette|notre|votre|leur|les|des|ces)"
-                        r"(?:\s+\w+){0,4}\s*$", avant_action,
-                    ))
-                    or (re.search(
-                        r"\b(?:comment|pourquoi)\b[^.!?;\n]*$",
-                        re.split(r"\b(?:puis|ensuite)\b", avant_action)[-1],
-                    ) and not re.search(r"(?:,|\b(?:et|puis|ensuite)\b)\s*$", avant_action))
-                ):
-                    continue
-                citation_a_ecarter = action.group().startswith(racines_redaction)
-            # Garder une citation qui appartient à une lecture indépendante.
-            if citation_a_ecarter:
-                morceaux[i] = " "
-        texte = "".join(morceaux)
-    texte = texte.replace("’", "'")
+    texte = _normaliser_demande_agenda(message).replace("’", "'")
     if re.search(
-        r"\b(?:branch\w*|configur\w*|synchronis\w*|connect\w*|install\w*|"
+        r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*|"
+        r"branch\w*|configur\w*|synchronis\w*|connect\w*|install\w*|"
         r"utilis\w*|fonctionn\w*|ajout\w*|cree\w*|modifi\w*|deplac\w*|"
         r"annul\w*|supprim\w*|planifi\w*|organis\w*|envoi\w*|envoy\w*)\b", texte,
     ):
         return False
-    if re.search(r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*)\b", texte):
-        # Reconnaître un ordre de lecture distinct, pas « je consulte » dans
-        # une explication ni le nom « la liste » dans une demande de rédaction.
-        lectures = re.finditer(
-            r"\b(?P<action>lis|consulte|regarde|verifie|affiche|montre|liste|"
-            r"(?:peux|pourrais|veux)[- ]tu\s+(?:lire|consulter|regarder|verifier|"
-            r"afficher|montrer|lister))(?:-moi)?\b",
-            texte,
-        )
-        for lecture in lectures:
-            if not re.match(
-                r"[^.!?;\n]*\b(?:mon\s+agenda|mon\s+planning|mes\s+rendez[ -]?vous)\b",
-                texte[lecture.end():],
-            ):
-                continue
-            avant = texte[:lecture.start()]
-            proposition = re.split(r"[.!?;,\n]|\b(?:et|puis|ensuite)\b", avant)[-1]
-            # Conserver « et » entre adjectifs sans masquer l'ordre qui le suit.
-            groupe_nominal = re.split(r"[.!?;,\n]|\b(?:puis|ensuite)\b", avant)[-1]
-            if lecture.group("action") == "liste" and not liste_coordonne(avant) and not re.match(
-                r"\s+(?:(?:tres\s+)?\w+ment\s+)*"
-                r"(?:mon\s+(?:agenda|planning)|mes\s+rendez[ -]?vous)\b",
-                texte[lecture.end():],
-            ) and re.search(
-                r"\b(?:la|une|ma|ta|sa|cette|notre|votre|leur|les|des|ces)"
-                r"(?:\s+(?!et\b)\w+){0,2}"
-                r"(?:\s+et(?:\s+(?!(?:et|aujourd.hui|demain|apres(?:.demain)?|lundi|"
-                r"mardi|mercredi|jeudi|vendredi|samedi|dimanche|matin|soir|tard|"
-                r"maintenant|vite|aussi|alors|de|en|pour|tout|\w+ment)\b)(?!\d)\w+)"
-                r"{1,2}){0,2}\s*$", groupe_nominal,
-            ):
-                continue
-            if re.search(
-                r"\b(?:je|tu|il|elle|on|nous|vous|ils|elles)"
-                r"(?:\s+(?:ai|as|a|avons|avez|ont|avais|avait|avaient))?\s*$|"
-                r"(?:^|\W)j'(?:ai|avais|aurai|aurais)\s*$", proposition,
-            ):
-                continue
-            avant_explicatif = re.split(r"\b(?:puis|ensuite)\b", avant)[-1]
-            if (re.search(r"\b(?:comment|pourquoi)\b[^.!?;\n]*$", avant_explicatif)
-                    and not re.search(r"(?:,|\b(?:et|puis|ensuite)\b)\s*$", avant)):
-                continue
-            break
-        else:
-            return False
     demande = re.search(
         r"\b(?:mes\s+rendez[ -]?vous|mon\s+agenda|mon\s+planning|"
         r"qu'est[ -]ce\s+que\s+j'ai\s+de\s+prevu|suis[ -]je\s+disponible)\b", texte,
@@ -3888,34 +3774,18 @@ def _demande_lecture_agenda(message: str) -> bool:
         r"\b(?:aujourd.hui|demain|apres.demain|lundi|mardi|mercredi|jeudi|"
         r"vendredi|samedi|dimanche|semaine|mois|annee|matin|apres.midi|soir|"
         r"janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|"
-        r"novembre|decembre|(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d))\b", texte,
+        r"novembre|decembre|(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)|"
+        r"\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?)\b", texte,
     )
-    return bool(demande and (repere or _date_numerique_agenda(texte)))
+    return bool(demande and repere)
 
 
 def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
     """Une réserve uniquement pour une liste horaire et une demande explicite."""
     if not _demande_lecture_agenda(message):
         return ""
-    heure = r"(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)(?=\b|__)"
-    horaire = re.compile(
-        rf"(?:\b(?:a|vers|des)\s+{heure}|"
-        rf"^\s*(?:[-*•]|\d+[.)])?\s*(?:\*\*|__)?{heure}"
-        r"(?:\*\*|__)?(?:\s*[:–—-]\s*\S|\s+(?!d(?:e|u|es)\b)\S|[,;|]\s*\S)|"
-        rf"(?:^\s*(?:[-*•]|\d+[.)])|\|)(?!\s*durees?\b)\s*[^|:\n]+:\s*"
-        rf"(?:\*\*|__)?{heure}(?:\s*[–—-]\s*{heure})?(?:\*\*|__)?"
-        r"\s*(?:[,;]\s*[^|\n]+)?\s*(?:\||$))",
-    )
-    # Normaliser les libellés Markdown seulement pour l'analyse, pas le texte diffusé.
-    lignes = convert_markdown_tables_to_bullets(reponse).splitlines()
-    lignes_normalisees = (
-        re.sub(rf"(\*\*|__)({heure})\1", r"\2",
-               re.sub(r"([*_]{1,3})([^*_|:\n]+?)\1(?=\s*:)", r"\2",
-                      re.sub(r"([*_]{1,3})([^*_|:\n]+?:)\1", r"\2",
-                             _normaliser_demande_agenda(ligne))))
-        for ligne in lignes
-    )
-    if sum(bool(horaire.search(ligne)) for ligne in lignes_normalisees) < 2:
+    horaire = re.compile(r"\b(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)\b", re.IGNORECASE)
+    if sum(bool(horaire.search(ligne)) for ligne in reponse.splitlines()) < 2:
         return ""
     return "\n\nJe n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 
