@@ -12,6 +12,7 @@ import json
 import logging
 import re
 from collections import Counter
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from tarfile import TarInfo
@@ -74,7 +75,7 @@ from app.services.preference_security import est_cle_secrete_de_preference
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,8 @@ def _cle_de_connexion(cle: str) -> bool:
 
 
 _DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
-_URL_DANS_UN_TEXTE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]*")
+_CARACTERES_DE_SCHEMA = re.compile(r"[a-zA-Z0-9+.-]+")
+_INITIALE_DE_SCHEMA = re.compile(r"\b[a-zA-Z]")
 # Un nom de paramètre peut suivre un « ; » (ancien séparateur) ; la valeur d'un secret, elle, va jusqu'au « & » ou au « # ».
 _NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&;#?]+)=")
 _ENTITE_NUMERIQUE = re.compile(r"&#[xX]?[0-9a-fA-F]+;")
@@ -139,6 +141,20 @@ _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
 # Ce qui ne peut pas appartenir à un nom d'hôte et ferme une URL dans un texte.
 _SEPARATEURS_DE_TEXTE = _FIN_URL_DANS_UN_TEXTE + ",;(){}|^`"
 _PONCTUATION_FINALE = ".:!»"
+
+
+def _debuts_d_urls(texte: str) -> Iterator[tuple[int, int]]:
+    """Même reconnaissance que `_DEBUT_URL`, sans réexaminer les suffixes après un point.
+
+    Chaque suite de caractères de schéma est parcourue une seule fois ; seul
+    un « :// » à sa fin permet d'y chercher l'initiale à une frontière de mot.
+    """
+    for schema in _CARACTERES_DE_SCHEMA.finditer(texte):
+        if texte[schema.end() : schema.end() + 3] != "://":
+            continue
+        initiale = _INITIALE_DE_SCHEMA.search(texte, schema.start(), schema.end())
+        if initiale:
+            yield initiale.start(), schema.end() + 3
 
 
 def _masquer_parametres_d_une_url(url: str) -> str:
@@ -150,7 +166,7 @@ def _masquer_parametres_d_une_url(url: str) -> str:
     depart = min((i for i in (url.find("?"), url.find("#")) if i >= 0), default=-1)
     if depart < 0:
         return url
-    morceaux = []
+    morceaux: list[str] = []
     position = depart
     for nom in _NOM_DE_PARAMETRE.finditer(url, depart):
         if nom.start() < position or not _cle_de_connexion(unquote_plus(nom.group(1))):
@@ -303,20 +319,22 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
     nu = valeur.strip()
     debut_du_champ = len(valeur) - len(valeur.lstrip())
     url_entiere = bool(_DEBUT_URL.match(nu)) and not any(caractere.isspace() for caractere in nu)
-    while match := _DEBUT_URL.search(valeur, position):
-        nouveau_jeton = match.start() >= fin_du_jeton
+    for debut, fin_schema in _debuts_d_urls(valeur):
+        if debut < position:
+            continue
+        nouveau_jeton = debut >= fin_du_jeton
         if nouveau_jeton:
-            ouvrant = _guillemet_ouvrant(valeur, match.start(), fin_du_jeton)
+            ouvrant = _guillemet_ouvrant(valeur, debut, fin_du_jeton)
         # Une URL trouvée dans la requête ou le fragment d'une autre lui est imbriquée.
-        imbriquee = not nouveau_jeton and 0 <= requete_du_jeton < match.start()
-        morceaux.append(valeur[position : match.end()])
-        if url_entiere and match.start() == debut_du_champ:
-            fin_autorite = match.end()
+        imbriquee = not nouveau_jeton and 0 <= requete_du_jeton < debut
+        morceaux.append(valeur[position:fin_schema])
+        if url_entiere and debut == debut_du_champ:
+            fin_autorite = fin_schema
             while fin_autorite < len(valeur) and valeur[fin_autorite] not in _FIN_AUTORITE:
                 fin_autorite += 1
-            position = valeur.rfind("@", match.end(), fin_autorite) + 1 or match.end()
+            position = valeur.rfind("@", fin_schema, fin_autorite) + 1 or fin_schema
         else:
-            position = _debut_de_l_hote(valeur, match.end(), ouvrant, imbriquee)
+            position = _debut_de_l_hote(valeur, fin_schema, ouvrant, imbriquee)
         if nouveau_jeton or position > fin_du_jeton:
             fin_du_jeton = position
             while (
@@ -330,13 +348,28 @@ def _masquer_urls_d_un_texte(valeur: str) -> str:
                 default=-1,
             )
     sans_identifiants = "".join(morceaux) + valeur[position:]
+    if url_entiere:
+        fin_du_champ = len(sans_identifiants.rstrip())
+        return _masquer_parametres_d_une_url(sans_identifiants[:fin_du_champ]) + sans_identifiants[fin_du_champ:]
 
-    def masquer_les_parametres(trouvee: re.Match[str]) -> str:
-        url = trouvee.group()
-        fin = len(url) if url_entiere else _fin_d_une_url_dans_un_texte(url)
-        return _masquer_parametres_d_une_url(url[:fin]) + url[fin:]
+    morceaux = []
+    position = 0
+    for debut, fin_schema in _debuts_d_urls(sans_identifiants):
+        if debut < position:
+            continue
+        fin_url = fin_schema
+        while (
+            fin_url < len(sans_identifiants)
+            and not sans_identifiants[fin_url].isspace()
+            and sans_identifiants[fin_url] not in _FIN_URL_DANS_UN_TEXTE
+        ):
+            fin_url += 1
+        url = sans_identifiants[debut:fin_url]
+        fin = _fin_d_une_url_dans_un_texte(url)
+        morceaux.extend((sans_identifiants[position:debut], _masquer_parametres_d_une_url(url[:fin]), url[fin:]))
+        position = fin_url
 
-    return _URL_DANS_UN_TEXTE.sub(masquer_les_parametres, sans_identifiants)
+    return "".join(morceaux) + sans_identifiants[position:]
 
 
 class _NombreJson(str):
@@ -528,7 +561,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
 
         # Messages
         messages_result = session.execute(
-            select(Message).order_by(Message.created_at, Message.id)
+            select(Message).order_by(col(Message.created_at), col(Message.id))
         )
         messages = messages_result.scalars().all()
         messages_par_conversation: dict[str, list[Message]] = {}
@@ -765,7 +798,8 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             ],
         }
 
-        return _masquer_urls_export(export_data)
+        export_masque: dict[str, Any] = _masquer_urls_export(export_data)
+        return export_masque
     finally:
         session.close()
 

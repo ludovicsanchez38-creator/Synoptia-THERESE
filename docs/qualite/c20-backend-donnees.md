@@ -423,3 +423,90 @@ d'URL ne lisent pas comme l'utilisateur l'entend) :
 - les colonnes JSON que l'export décode avant de les masquer (`extra_data`…)
   passent par le lecteur JSON ordinaire, antérieur à ce lot : leurs nombres
   décimaux très longs y sont arrondis comme avant.
+
+## Remédiation de la relecture, passe 6
+
+Les corrections restent limitées aux trois constats transmis et aux règles
+retenues en P-173. Seuls `src/backend/app/routers/data.py`, le nouveau fichier
+`tests/test_c20_r6_export_config.py` et ce bilan sont modifiés. Les 150 tests
+de `tests/test_c20_b1812_export_config.py` sont inchangés. Aucun ajout à
+l'index, commit, rebase, dépôt annexe ou bundle ; aucun fichier de référence
+n'a été réintégré dans l'arbre.
+
+1. **P1, paramètres d'un champ URL entier.** Après le retrait des identifiants,
+   le masquage des paramètres porte sur toute l'URL, même lorsqu'un autre
+   paramètre contient une apostrophe, un guillemet, un chevron ou une barre
+   oblique inverse. Les espaces extérieurs au champ restent présents.
+   `test_export_masque_les_parametres_sur_tout_le_champ_url` ajoute 20 cas :
+   les deux routes, cinq délimiteurs, avant et après le paramètre secret ;
+   champs agenda, messagerie et préférence JSON. Rouge isolé avant correction :
+   **10 échecs et 10 réussites**, dont
+   `E       AssertionError: assert 'https://agen..._token=FICTIF' == 'https://agen...en=[REDACTED]'`
+   (`/tmp/backend-donnees-r6-url-rouge.xml`). Une contre-épreuve a révélé que
+   mon premier correctif absorbait les espaces finaux :
+   `test_masquage_d_une_url_entiere_conserve_les_espaces_autour` a échoué seul
+   avec `E       AssertionError: assert ' \thttps://a...en=[REDACTED]' == ' \thttps://a...REDACTED]\n  '`.
+   La borne du champ exclut maintenant ces espaces, comme auparavant.
+2. **P1, recherche quadratique.** Les deux passes partagent un parcours des
+   suites de caractères autorisés dans un schéma. Chaque suite n'est lue
+   qu'une fois ; sa fin doit porter `://` avant de rechercher une initiale
+   à une frontière de mot. Les règles de fin d'autorité et d'URL restent
+   identiques. `test_recherche_des_urls_reste_lineaire_sur_des_suffixes_a_points`
+   reproduit les tailles 64 000 et 128 000, avec l'URL du relecteur et sans
+   URL pour exercer également la seconde passe. Il borne le temps CPU à
+   `3 * temps_petit + 0,02 s` et à 5 s, pour isoler la mesure de la charge
+   partagée. Les deux rouges isolés ont donné
+   `E       AssertionError: Coût non linéaire : 4.285s puis 17.218s` et
+   `E       AssertionError: Coût non linéaire : 8.788s puis 34.870s`
+   (`/tmp/backend-donnees-r6-charge-rouge.xml`). Ils passent après correction,
+   ainsi que les quatre charges existantes. Une comparaison temporaire de
+   10 000 chaînes a aussi retrouvé les mêmes bornes de schéma que l'ancienne
+   expression régulière.
+3. **P2, les trois expressions de typage signalées.** `morceaux` est une
+   `list[str]`, le tri emploie `col(Message.created_at)` et `col(Message.id)`,
+   et le résultat masqué de l'assembleur est annoté `dict[str, Any]`.
+   Aucun `cast` ni `type: ignore`. Le test isolé
+   `test_mypy_n_ajoute_aucune_erreur_dans_les_trois_expressions_corrigees`
+   charge les modules de cet arbre avec mypy 1.19.1, sans cache. Il a d'abord
+   relevé les trois diagnostics, puis passe :
+   `E       AssertionError: src/backend/app/routers/data.py:169: error: Need type annotation for "morceaux" (hint: "morceaux: list[<type>] = ...")  [var-annotated]` ;
+   `E         src/backend/app/routers/data.py:563: error: Argument 1 to "order_by" of "GenerativeSelect" has incompatible type "datetime"` ;
+   `E         src/backend/app/routers/data.py:800: error: Returning Any from function declared to return "dict[str, Any]"  [no-any-return]`
+   (`/tmp/backend-donnees-r6-typage-rouge.xml`).
+
+**La porte mypy globale reste non conforme : 927 erreurs, contre 923 à
+l'intégration.** La commande de CI, avec `--no-incremental --cache-dir=/dev/null`,
+mesurait 929 erreurs avant cette passe et en mesure 927 après. La comparaison
+à froid avec les sources de référence lues uniquement en mémoire confirme
+923 contre 927, sans réécriture de fichier de référence dans l'arbre. Les
+quatre diagnostics nets restants étaient déjà présents avant cette passe :
+`crm.py:81` (`_signaler_ligne_invalide`, `type-arg`), `calendar.py:1131`
+(`_evenement_en_cache`, `union-attr`), `agents.py:787` (`__call__`,
+`no-untyped-def`) et `_valeur_de_preference_exportable` dans `data.py`
+(`no-any-return`, ligne 499 lors de la mesure, 500 après le dernier ajustement).
+Le diagnostic de `rgpd_auto.py:45` change de libellé (`int` vers `int | None`)
+sans changer le nombre. Ces expressions sortent des trois constats autorisés
+et n'ont pas été modifiées. Les journaux sont dans
+`/tmp/backend-donnees-r6-mypy-{avant,apres,integration,memoire}.log`.
+
+Les appelants ont été relus : chaînes et clés de JSON, préférences
+structurées, assembleur commun, délégation de `/api/config/export` et tri des
+messages. Après chaque correctif, les tests ajoutés, les 150 cas existants
+et les premiers voisins de l'export ont été rejoués.
+
+Porte finale ciblée, **rapport `/tmp/backend-donnees-r6.xml` lu : 249 tests
+réussis, 0 échec, 0 erreur, 0 exclu**, dont 24 nouveaux cas. Fichiers :
+`test_c20_r6_export_config.py`, `test_c20_b1812_export_config.py`,
+`test_routers_data.py`, `test_routers_config.py`,
+`test_export_config_par_conversation.py` et `test_data_export_profil_rgpd.py`.
+Options : `OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest
+<fichiers> -q -p no:cacheprovider --timeout=120
+--junitxml=/tmp/backend-donnees-r6.xml`. Ruff sur `src/backend tests` :
+**0 erreur** avec `--no-fix`. Aucune suite complète ni porte frontend.
+
+La recette utilise uniquement une base jetable dans `/tmp`, une garde Python
+contre les connexions réseau et les chemins interdits, et aucun fournisseur
+LLM. Le sandbox refuse aussi l'écriture dans les sockets Unix : le réveil
+interne de la boucle asyncio du lanceur temporaire utilise donc un tube local.
+Cette adaptation reste dans `/tmp/backend-donnees-r6-garde/sitecustomize.py`
+et ne modifie ni l'application ni ses assertions.
