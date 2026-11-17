@@ -25,7 +25,6 @@ import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
 import { effortXhighPropose } from '../../lib/effortOpenAI';
-import { intentionLLMCourante, nouvelleIntentionLLM, ordonnerEnregistrementLLM } from '../../lib/enregistrementLLM';
 import { modeleParDefaut } from '../../lib/catalogueModeles';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
@@ -127,16 +126,6 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   // fournisseur. Une ref et non un état : `handleSelectProvider` est asynchrone
   // et lirait une valeur périmée dans sa fermeture.
   const modelesParFournisseur = useRef<Partial<Record<api.LLMProvider, string>>>({});
-  const modelesDemandes = useRef<Partial<Record<api.LLMProvider, { choix: number; model: string }>>>({});
-  const dernierChoixLLM = useRef(0);
-  const derniereLectureLLM = useRef(0);
-  const enregistrementLLM = useRef<Promise<void>>(Promise.resolve());
-  const configurationLLMEnregistree = useRef<{ provider: api.LLMProvider; model: string } | null>(null);
-  const effortLLMEnregistre = useRef<{ valeur: LLMEffort } | null>(null);
-  const [refusEffort, setRefusEffort] = useState<{
-    provider: api.LLMProvider; model: string; effort: LLMEffort; message: string;
-  } | null>(null);
-  const [repriseEffortEnCours, setRepriseEffortEnCours] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [corruptedKeys, setCorruptedKeys] = useState<string[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -290,12 +279,6 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
       return erreurs;
     }
 
-    // Une réouverture attend le POST déjà lancé. Un choix ou une sauvegarde
-    // survenus pendant les lectures rendent ensuite leur résultat IA périmé.
-    const choixAvantLecture = dernierChoixLLM.current;
-    const lecture = ++derniereLectureLLM.current;
-    await enregistrementLLM.current;
-    const configurationAvantLecture = configurationLLMEnregistree.current;
     const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
       loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [], sources: {} as Record<string, string> }),
       loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: modeleParDefaut('anthropic'), available_models: [] }),
@@ -346,12 +329,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         llmConfig.available_models || [],
       );
 
-      if (lecture === derniereLectureLLM.current && choixAvantLecture === dernierChoixLLM.current && configurationAvantLecture === configurationLLMEnregistree.current) {
-        setSelectedProvider(loadedProvider);
-        setSelectedModel(resolvedModel);
-        modelesParFournisseur.current[loadedProvider] = resolvedModel;
-        configurationLLMEnregistree.current = { provider: loadedProvider, model: resolvedModel };
-      }
+      setSelectedProvider(loadedProvider);
+      setSelectedModel(resolvedModel);
+      modelesParFournisseur.current[loadedProvider] = resolvedModel;
       setStats(statsData);
       setProfile(profileData);
       setWorkingDir(workingDirData?.path || null);
@@ -565,47 +545,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     }
   }
 
-  /** B-1794 : ignorer les lectures dépassées et terminer les POST dans l'ordre. */
-  async function enregistrerChoixLLM(
-    choix: number, provider: api.LLMProvider, model: string,
-    options: { effort?: LLMEffort | (() => LLMEffort); baseUrl?: string; conserverOptions?: boolean } = {},
-  ): Promise<boolean> {
-    const enregistrement = ordonnerEnregistrementLLM(async () => {
-      // Une option explicitement demandée reste à enregistrer, même si un
-      // choix de modèle la suit. Tous les POST passent par cette même file.
-      if (!intentionLLMCourante(choix) && !options.conserverOptions) return false;
-      const demande = typeof options.effort === 'function' ? options.effort() : options.effort;
-      // Une option peut reprendre le modèle dont la lecture est encore en
-      // attente : elle doit alors respecter les efforts de ce nouveau modèle.
-      const conserve = demande ?? (options.baseUrl !== undefined ? (await api.getLLMConfig()).effort : undefined);
-      const effort = conserve === 'xhigh' && !effortXhighPropose(model) ? 'auto' : demande;
-      if (options.baseUrl !== undefined) await api.setLLMConfig(provider, model, effort, options.baseUrl);
-      else await api.setLLMConfig(provider, model, effort);
-      if (effort !== undefined) effortLLMEnregistre.current = { valeur: effort };
-      modelesParFournisseur.current[provider] = model;
-      configurationLLMEnregistree.current = { provider, model };
-      window.dispatchEvent(new Event('therese:llm-config-changed'));
-      return intentionLLMCourante(choix);
-    });
-    // Un refus n'empêche pas d'enregistrer le prochain choix.
-    enregistrementLLM.current = enregistrement.then(() => undefined, () => undefined);
-    return enregistrement;
-  }
-
-  async function retablirConfigurationLLM(choix: number): Promise<boolean> {
-    // Une ancienne sauvegarde peut réussir pendant que la dernière lecture échoue.
-    await enregistrementLLM.current;
-    if (!intentionLLMCourante(choix)) return false;
-    const configuration = configurationLLMEnregistree.current;
-    if (configuration) {
-      setSelectedProvider(configuration.provider);
-      setSelectedModel(configuration.model);
-    }
-    return true;
-  }
-
   async function handleSelectProvider(provider: api.LLMProvider) {
-    const choix = dernierChoixLLM.current = nouvelleIntentionLLM();
+    const previousProvider = selectedProvider;
+    const previousModel = selectedModel;
     setSelectedProvider(provider);
     // Hors du `if (defaultModel)` plus bas, et avant tout le reste : changer
     // de fournisseur n'est jamais un refus de clé. `defaultModel` est vide
@@ -628,7 +570,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     // qui y avait été enregistré, pas le premier du catalogue. Sans cette
     // mémoire, inspecter un fournisseur réécrivait la configuration active en
     // silence : mistral-medium-latest devenait mistral-large-latest au retour.
-    const dejaChoisi = modelesDemandes.current[provider]?.model ?? modelesParFournisseur.current[provider];
+    const dejaChoisi = modelesParFournisseur.current[provider];
     // Un modèle Ollama peut avoir disparu de la machine entre-temps ; les
     // catalogues cloud, eux, ne bougent pas d'un clic à l'autre.
     const toujoursPropose = provider !== 'ollama' || ollamaModels.includes(dejaChoisi ?? '');
@@ -642,89 +584,36 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
       setOperationStatus('Enregistrement du fournisseur IA…');
       setRetryOperation(null);
       try {
-        if (!await enregistrerChoixLLM(choix, provider, defaultModel)) return;
+        await api.setLLMConfig(provider, defaultModel);
+        modelesParFournisseur.current[provider] = defaultModel;
+        window.dispatchEvent(new Event('therese:llm-config-changed'));
         setOperationStatus('Fournisseur IA enregistré.');
       } catch (err) {
-        if (!await retablirConfigurationLLM(choix)) return;
+        setSelectedProvider(previousProvider);
+        setSelectedModel(previousModel);
         setOperationStatus(null);
         setError(err instanceof Error ? err.message : 'Le fournisseur IA n’a pas pu être enregistré.');
         setRetryOperation(() => () => void handleSelectProvider(provider));
       }
-    } else {
-      setOperationStatus(null);
-      setRetryOperation(null);
     }
   }
 
   async function handleSelectModel(modelId: string) {
-    const choix = dernierChoixLLM.current = nouvelleIntentionLLM();
-    const effortAvantLecture = effortLLMEnregistre.current;
-    // Un aller-retour entre fournisseurs conserve aussi le choix en cours.
-    // Il reste distinct du modèle confirmé, utilisé en cas de refus.
-    modelesDemandes.current[selectedProvider] = { choix, model: modelId };
     setError(null);
     setOperationStatus('Enregistrement du modèle IA…');
     setRetryOperation(null);
     try {
       const effort = (await api.getLLMConfig()).effort as LLMEffort | null;
-      if (!await enregistrerChoixLLM(choix, selectedProvider, modelId, { effort: () => {
-        // Une option sauvée pendant le GET prévaut sur cette lecture ancienne.
-        const actuel = effortLLMEnregistre.current !== effortAvantLecture
-          ? effortLLMEnregistre.current?.valeur : effort;
-        return actuel ?? 'auto';
-      } })) return;
+      const nouvelEffort = effort === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : effort ?? 'auto';
+      await api.setLLMConfig(selectedProvider, modelId, nouvelEffort);
       setSelectedModel(modelId);
+      modelesParFournisseur.current[selectedProvider] = modelId;
+      window.dispatchEvent(new Event('therese:llm-config-changed'));
       setOperationStatus('Modèle IA enregistré.');
     } catch (err) {
-      if (!await retablirConfigurationLLM(choix)) return;
       setOperationStatus(null);
       setError(err instanceof Error ? err.message : 'Le modèle IA n’a pas pu être enregistré.');
       setRetryOperation(() => () => void handleSelectModel(modelId));
-    } finally {
-      if (modelesDemandes.current[selectedProvider]?.choix === choix) {
-        delete modelesDemandes.current[selectedProvider];
-      }
-    }
-  }
-
-  async function handleSaveLLMOptions(
-    options: { effort?: LLMEffort; baseUrl?: string },
-    cible?: { provider: api.LLMProvider; model: string },
-  ): Promise<boolean> {
-    const provider = cible?.provider ?? selectedProvider;
-    const modeleEnAttente = cible ? undefined : modelesDemandes.current[provider];
-    const model = cible?.model ?? modeleEnAttente?.model ?? selectedModel;
-    if (!model) return false;
-    const choix = dernierChoixLLM.current = nouvelleIntentionLLM();
-    try {
-      const courant = await enregistrerChoixLLM(choix, provider, model, { ...options, conserverOptions: true });
-      if (options.effort !== undefined) {
-        setRefusEffort((refus) => refus?.provider === provider && refus.model === model ? null : refus);
-      }
-      if (!courant) return false;
-      setSelectedProvider(provider);
-      setSelectedModel(model);
-      if (modeleEnAttente) setOperationStatus('Modèle IA enregistré.');
-      return true;
-    } catch (err) {
-      // L'option demandée doit signaler son refus même si un modèle plus
-      // récent interdit de restaurer l'ancienne sélection.
-      const modeleRefuse = await retablirConfigurationLLM(choix) && modeleEnAttente;
-      if (modeleRefuse) setOperationStatus(null);
-      const motif = err instanceof Error ? err.message : 'L’option n’a pas pu être enregistrée.';
-      const message = modeleRefuse
-        ? `Le modèle « ${model} » n’a pas été enregistré. Sélectionne-le à nouveau. ${motif}`
-        : motif;
-      if (options.effort !== undefined) {
-        // Cette alerte appartient aux réglages, pas à l'onglet qui peut être
-        // démonté avant le refus. Sa cible reste celle du geste initial.
-        setRefusEffort({
-          provider, model, effort: options.effort,
-          message,
-        });
-        return false;
-      }
-      throw modeleRefuse ? new Error(message) : err;
     }
   }
 
@@ -909,7 +798,6 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
             setError={setError}
             onSelectProvider={handleSelectProvider}
             onSelectModel={handleSelectModel}
-            onSaveOptions={handleSaveLLMOptions}
             onSaveApiKey={handleSaveApiKey}
             onRetestOllama={retestOllama}
             retestingOllama={retestingOllama}
@@ -1159,24 +1047,6 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
                   </Alerte>
                 )}
                 {!loading && operationStatus && <p role="status" className="mb-4 px-4 py-3 text-sm text-info">{operationStatus}</p>}
-                {refusEffort && (
-                  <Alerte
-                    className="mb-4"
-                    icone={<AlertCircle className="h-[18px] w-[18px]" />}
-                    action={(
-                      <Button variant="ghost" size="md" disabled={repriseEffortEnCours} onClick={() => {
-                        setRepriseEffortEnCours(true);
-                        void handleSaveLLMOptions({ effort: refusEffort.effort }, refusEffort)
-                          .finally(() => setRepriseEffortEnCours(false));
-                      }}>
-                        Réessayer l’effort
-                      </Button>
-                    )}
-                  >
-                    Effort pour {PROVIDERS.find((p) => p.id === refusEffort.provider)?.name ?? refusEffort.provider}
-                    {' '}({refusEffort.model}) : {refusEffort.message}
-                  </Alerte>
-                )}
                 {/* B-454 : une erreur sans action de reprise (onglet Outils) n'atteignait jamais l'écran.
                     Lot 9 : un refus de clé n'a qu'UNE alerte, celle de la carte du
                     service. La condition reste `{error && (` : la garde de B-454

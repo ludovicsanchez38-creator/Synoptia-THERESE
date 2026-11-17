@@ -98,6 +98,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [relance, setRelance] = useState(0);
   const [relanceEnCours, setRelanceEnCours] = useState(false);
   const messageMoteur = useRef<string | null>(null);
+  const apiBaseReady = useRef(false);
   const fatalSidecarError = useRef(false);
   const erreursSidecar = useRef(0);
   const generationDerniereErreur = useRef<number | null>(null);
@@ -175,13 +176,6 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
             setMessage(messageMoteur.current);
           } else if (charge.state === 'running') {
             messageMoteur.current = null;
-            if (fatalSidecarError.current) {
-              fatalSidecarError.current = false;
-              setError(null);
-              setMoteurArrete(false);
-              setProgress(0);
-              setRelance((n) => n + 1);
-            }
           }
         }).then(garder);
       })
@@ -231,22 +225,23 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
   useEffect(() => {
     let cancelled = false;
-    const estCourant = () => !cancelled && !fatalSidecarError.current;
     const startTime = Date.now();
 
     async function poll() {
-      while (estCourant()) {
-        // initApiBase mémorise une découverte réussie, mais libère son repli.
-        // Le sondage suivant (ou une relance) peut donc retrouver le sidecar.
+      // Résoudre le port backend avant de commencer le polling
+      if (!apiBaseReady.current) {
         try {
           await initApiBase();
         } catch {
-          if (estCourant()) {
+          if (!cancelled && !fatalSidecarError.current) {
             setError('Impossible de joindre le moteur. Relance THÉRÈSE.');
           }
           return;
         }
-        if (!estCourant()) return;
+        apiBaseReady.current = true;
+      }
+
+      while (!cancelled && !fatalSidecarError.current) {
         const elapsed = Date.now() - startTime;
 
         // Timeout
@@ -280,19 +275,19 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
         // Check
         const healthy = await checkHealth();
-        if (healthy === 'recovery' && estCourant()) {
+        if (healthy === 'recovery' && !cancelled && !fatalSidecarError.current) {
           setReprise(true);
           void setDockProgress(100);
           return;
         }
-        if (healthy === true && estCourant()) {
+        if (healthy === true && !cancelled && !fatalSidecarError.current) {
           setProgress(100);
           setMessage('Prêt !');
           // F-09 : effacer la progression du dock macOS
           void setDockProgress(100);
           // Petit délai pour l'animation
           await new Promise((r) => setTimeout(r, 300));
-          if (estCourant()) onReady();
+          if (!cancelled && !fatalSidecarError.current) onReady();
           return;
         }
 

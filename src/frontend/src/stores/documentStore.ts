@@ -104,8 +104,7 @@ interface DocumentStore {
 
   // Documents
   loadDocuments: () => Promise<void>;
-  /** Vrai uniquement si la lecture a abouti dans l'atelier encore ouvert. */
-  openDocument: (id: string) => Promise<boolean>;
+  openDocument: (id: string) => Promise<void>;
   createDocument: (payload: DocumentCreateRequest) => Promise<DocumentResponse | null>;
   deleteDocument: (id: string) => Promise<void>;
   /** Referme l'atelier (D3) : reset currentDocument/sectionActive/error - évite
@@ -160,9 +159,6 @@ let draftAbortController: AbortController | null = null;
  * pas une donnée affichable.
  */
 let openDocumentToken = 0;
-let openingDocumentId: string | null = null;
-// Une relecture interne conserve la session ; naviguer ou fermer la périme.
-let documentSession = 0;
 
 /** B-1394 : intervalle du suivi d'une trame retrouvée après un rechargement. */
 const INTERVALLE_SUIVI_TRAME_MS = 3000;
@@ -212,29 +208,19 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // d'écrire (deux ouvertures entrelacées = la lente ne doit pas écraser
     // la récente, même si la garde d'affichage du composant masquerait le
     // mauvais contenu derrière un spinner persistant).
-    if ((openingDocumentId ?? get().currentDocument?.id) !== id) {
-      ++documentSession;
-      // Changer d'atelier détache le suivi précédent, comme une fermeture.
-      set({ outlineGeneration: null });
-    }
     const token = ++openDocumentToken;
-    openingDocumentId = id;
     set({ isLoading: true, error: null });
     try {
       const document = await apiGetDocument(id);
-      if (token !== openDocumentToken) return false; // réponse périmée - un appel plus récent gère l'état
+      if (token !== openDocumentToken) return; // réponse périmée - un appel plus récent gère l'état
       set({ currentDocument: document, isLoading: false });
       // B-1394 : une trame lancée avant un rechargement se génère encore côté
       // moteur ; sans la retrouver, l'écran disait « Aucune section » et
       // proposait de la relancer (409).
-      if (!document.sections_total && !get().outlineGeneration) void retrouverTrameEnCours(id, token);
-      return true;
+      if (!document.sections_total && !get().outlineGeneration) void retrouverTrameEnCours(id);
     } catch (e: any) {
-      if (token !== openDocumentToken) return false;
+      if (token !== openDocumentToken) return;
       set({ isLoading: false, error: e?.message || 'Impossible de charger le document.' });
-      return false;
-    } finally {
-      if (token === openDocumentToken) openingDocumentId = null;
     }
   },
 
@@ -255,14 +241,6 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     set({ error: null });
     try {
       await apiDeleteDocument(id);
-      if ((openingDocumentId ?? get().currentDocument?.id) === id) ++documentSession;
-      // B-1848 : une suppression confirmée périme seulement la lecture
-      // du document supprimé, jamais celle d'un autre document.
-      if (openingDocumentId === id) {
-        ++openDocumentToken;
-        openingDocumentId = null;
-        set({ isLoading: false });
-      }
       set((s) => ({
         documents: s.documents.filter((d) => d.id !== id),
         currentDocument: s.currentDocument?.id === id ? null : s.currentDocument,
@@ -273,9 +251,6 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   closeDocument: () => {
-    ++documentSession;
-    ++openDocumentToken;
-    openingDocumentId = null;
     // Finding B : abandonner un stream en cours plutôt que le laisser tourner
     // dans le vide (isStreaming resterait bloqué à `true`, et un `done`
     // tardif rechargerait un document qu'on vient de quitter).
@@ -286,7 +261,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // génération : l'annuler jetait le travail en silence. Elle continue en
     // fond, arrêtable dans « Travaux », et la réouverture reprend le suivi
     // (B-1394).
-    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false, isLoading: false, outlineGeneration: null });
+    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false, outlineGeneration: null });
   },
 
   requestCreateModal: () => set({ createModalRequested: true }),
@@ -404,21 +379,18 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   reorderSections: async (documentId, items) => {
-    const session = documentSession;
     set({ error: null });
     try {
       const sections = await apiReorderSections(documentId, items);
       set((s) => {
-        if (session !== documentSession || !s.currentDocument || s.currentDocument.id !== documentId) return s;
+        if (!s.currentDocument || s.currentDocument.id !== documentId) return s;
         return { currentDocument: { ...s.currentDocument, sections } };
       });
     } catch (e) {
-      if (session !== documentSession || get().currentDocument?.id !== documentId) return;
       if (e instanceof ReorderConflictError) {
         // Invariant anti-perte : le backend n'a RIEN écrit. On recharge la
         // trame réelle (resynchronisation) puis on affiche l'erreur causale.
         await get().openDocument(documentId);
-        if (session !== documentSession || get().currentDocument?.id !== documentId) return;
         set({ error: e.message || 'Réorganisation incomplète - la trame a été rechargée.' });
       } else {
         const message = e instanceof Error ? e.message : 'Impossible de réorganiser la trame.';
@@ -627,7 +599,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
  * la suit comme si on venait de la lancer (état de travail, bouton d'arrêt),
  * jusqu'à sa fin ; le document ouvert est alors relu.
  */
-async function retrouverTrameEnCours(documentId: string, token: number): Promise<void> {
+async function retrouverTrameEnCours(documentId: string): Promise<void> {
   const store = useDocumentStore;
   let actifs;
   try {
@@ -635,31 +607,22 @@ async function retrouverTrameEnCours(documentId: string, token: number): Promise
   } catch {
     return;
   }
-  if (token !== openDocumentToken || store.getState().currentDocument?.id !== documentId) return;
   const trame = actifs.find(
     (t) => t.type === 'document_outline' && t.entity_id === documentId && (t.state === 'queued' || t.state === 'running'),
   );
   if (!trame || store.getState().outlineGeneration) return;
   store.setState({ outlineGeneration: { documentId, taskId: trame.id, arretDemande: false } });
-  // Une relecture du même document ne quitte pas sa session de surveillance.
-  const session = documentSession;
-  const suiviActuel = () => session === documentSession
-    && store.getState().currentDocument?.id === documentId
-    && store.getState().outlineGeneration?.taskId === trame.id;
 
   for (;;) {
     await new Promise((fin) => setTimeout(fin, INTERVALLE_SUIVI_TRAME_MS));
-    if (!suiviActuel()) return;
+    if (store.getState().outlineGeneration?.taskId !== trame.id) return;
     try {
       const encore = await listerTraitements({ actives: true });
-      if (!suiviActuel()) return;
       if (!encore.some((t) => t.id === trame.id)) break;
     } catch {
-      if (!suiviActuel()) return;
       // Lecture manquée : on réessaie au prochain tour.
     }
   }
-  if (!suiviActuel()) return;
   store.setState((s) => (s.outlineGeneration?.taskId === trame.id ? { outlineGeneration: null } : {}));
-  if (session === documentSession && store.getState().currentDocument?.id === documentId) await store.getState().openDocument(documentId);
+  if (store.getState().currentDocument?.id === documentId) await store.getState().openDocument(documentId);
 }

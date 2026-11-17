@@ -2,7 +2,7 @@ import { GuidePremierServiceIA } from '../llm/GuidePremierServiceIA';
 // Onglet configuration LLM - Paramètres THERESE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, AlertCircle, XCircle, Eye, EyeOff, Cpu, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Carte, CarteTete } from '../ui/Carte';
@@ -75,8 +75,6 @@ export const IMAGE_PROVIDERS: ImageProviderConfig[] = [
   },
 ];
 
-export type EnregistrerOptionsLLM = (options: { effort?: LLMEffort; baseUrl?: string }) => Promise<boolean>;
-
 export interface LLMTabProps {
   selectedProvider: api.LLMProvider;
   selectedModel: string;
@@ -101,7 +99,6 @@ export interface LLMTabProps {
   setError: (v: string | null) => void;
   onSelectProvider: (provider: api.LLMProvider) => void;
   onSelectModel: (modelId: string) => void;
-  onSaveOptions?: EnregistrerOptionsLLM;
   onSaveApiKey: () => void;
   // BUG-049 : re-tester la disponibilité Ollama à la demande
   onRetestOllama?: () => void;
@@ -127,7 +124,6 @@ export function LLMTab({
   setError,
   onSelectProvider,
   onSelectModel,
-  onSaveOptions,
   onSaveApiKey,
   onRetestOllama,
   retestingOllama = false,
@@ -178,11 +174,7 @@ export function LLMTab({
     setSavingBaseUrl(true);
     setError(null);
     try {
-      if (onSaveOptions) {
-        if (!await onSaveOptions({ baseUrl: baseUrlInput.trim() })) return;
-      } else {
-        await api.setLLMConfig(selectedProvider, selectedModel, undefined, baseUrlInput.trim());
-      }
+      await api.setLLMConfig(selectedProvider, selectedModel, undefined, baseUrlInput.trim());
       setBaseUrlSaved(true);
       setTimeout(() => setBaseUrlSaved(false), 3000);
     } catch (err) {
@@ -470,7 +462,6 @@ export function LLMTab({
           availableModels={availableModels}
           selectedModel={selectedModel}
           onSelectModel={onSelectModel}
-          onSaveOptions={onSaveOptions}
           selectedProvider={selectedProvider}
         />
       </Carte>
@@ -526,13 +517,11 @@ function ModelSelector({
   availableModels,
   selectedModel,
   onSelectModel,
-  onSaveOptions,
   selectedProvider,
 }: {
   availableModels: { id: string; name: string; badge?: string }[];
   selectedModel: string;
   onSelectModel: (modelId: string) => void;
-  onSaveOptions?: EnregistrerOptionsLLM;
   selectedProvider: string;
 }) {
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -656,7 +645,6 @@ function ModelSelector({
       <EffortSelector
         selectedProvider={selectedProvider}
         selectedModel={selectedModel}
-        onSaveOptions={onSaveOptions}
         classeRangee={rangee}
       />
     </>
@@ -680,12 +668,10 @@ const OPTION_XHIGH = {
 export function EffortSelector({
   selectedProvider,
   selectedModel,
-  onSaveOptions,
   classeRangee = 'grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 border-t border-border px-4',
 }: {
   selectedProvider: string;
   selectedModel: string;
-  onSaveOptions?: EnregistrerOptionsLLM;
   /** Lot 9 : la rangée de la carte du service, mot pour mot celle du modèle. */
   classeRangee?: string;
 }) {
@@ -694,34 +680,25 @@ export function EffortSelector({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [failedEffort, setFailedEffort] = useState<string | null>(null);
-  const generationAffichage = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
-    let lecture = 0;
-    setSaving(false);
-    setStatus(null);
-    const charger = () => {
-      const demande = ++lecture;
-      void api.getLLMConfig().then((cfg) => {
-        if (!cancelled && demande === lecture) setEffort(cfg.effort || 'auto');
-      }).catch((reason) => {
-        if (!cancelled && demande === lecture) setError(reason instanceof Error ? reason.message : 'Effort de raisonnement indisponible.');
+    api
+      .getLLMConfig()
+      .then((cfg) => {
+        if (!cancelled) setEffort(cfg.effort || 'auto');
+      })
+      .catch((reason) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : 'Effort de raisonnement indisponible.');
       });
-    };
-    charger();
-    window.addEventListener('therese:llm-config-changed', charger);
     return () => {
       cancelled = true;
-      generationAffichage.current += 1;
-      window.removeEventListener('therese:llm-config-changed', charger);
     };
   }, [selectedProvider, selectedModel]);
 
   async function handleChange(value: string) {
     // B-1160 : sans modèle, l'effort partait avec un modèle vide.
     if (!selectedModel) return;
-    const generation = generationAffichage.current;
     const previous = effort;
     setEffort(value);
     setSaving(true);
@@ -729,27 +706,19 @@ export function EffortSelector({
     setStatus('Enregistrement de l’effort…');
     setFailedEffort(null);
     try {
-      if (onSaveOptions) {
-        const enregistre = await onSaveOptions({ effort: value as LLMEffort });
-        if (generation !== generationAffichage.current) return;
-        if (!enregistre) {
-          setEffort(previous);
-          setStatus(null);
-          return;
-        }
-      } else {
-        await api.setLLMConfig(selectedProvider as api.LLMProvider, selectedModel, value as LLMEffort);
-      }
-      if (generation !== generationAffichage.current) return;
+      await api.setLLMConfig(
+        selectedProvider as api.LLMProvider,
+        selectedModel,
+        value as LLMEffort
+      );
       setStatus('Effort de raisonnement enregistré.');
     } catch (err) {
-      if (generation !== generationAffichage.current) return;
       setEffort(previous);
       setStatus(null);
       setFailedEffort(value);
       setError(err instanceof Error ? err.message : 'L’effort de raisonnement n’a pas pu être enregistré.');
     } finally {
-      if (generation === generationAffichage.current) setSaving(false);
+      setSaving(false);
     }
   }
 

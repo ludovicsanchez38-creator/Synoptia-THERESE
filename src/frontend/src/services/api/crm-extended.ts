@@ -262,8 +262,8 @@ export async function initiateCRMOAuth(): Promise<{
     method: 'POST',
   });
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error?.detail || error?.message || `La connexion au CRM n’a pas pu démarrer (erreur ${response.status}).`);
+    const error = await response.json();
+    throw new Error(error.detail || `Failed to initiate OAuth: ${response.statusText}`);
   }
   return response.json();
 }
@@ -275,8 +275,8 @@ export async function handleCRMOAuthCallback(state: string, code: string): Promi
   const params = new URLSearchParams({ state, code });
   const response = await apiFetch(`${API_BASE}/api/crm/sync/callback?${params}`);
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error?.detail || error?.message || `La connexion au CRM n’a pas pu être finalisée (erreur ${response.status}).`);
+    const error = await response.json();
+    throw new Error(error.detail || `OAuth callback failed: ${response.statusText}`);
   }
   return response.json();
 }
@@ -286,8 +286,8 @@ export async function syncCRM(): Promise<CRMSyncResponse> {
     method: 'POST',
   });
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error?.detail || error?.message || `La synchronisation du CRM a échoué (erreur ${response.status}).`);
+    const error = await response.json();
+    throw new Error(error.detail || `CRM sync failed: ${response.statusText}`);
   }
   return response.json();
 }

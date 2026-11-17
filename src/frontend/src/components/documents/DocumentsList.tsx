@@ -128,9 +128,6 @@ export function DocumentsList() {
   // volontairement : le store ne porte pas de notion de "vue courante",
   // seulement les données du document ouvert.
   const [workspaceOpenId, setWorkspaceOpenId] = useState<string | null>(null);
-  // La création demande une trame même si sa première lecture échoue.
-  // Cette intention expire dès que l'utilisateur quitte cet atelier.
-  const creationEnAttenteRef = useRef<string | null>(null);
   // P-142 : l'atelier ouvert se rouvre après un rechargement. Lu au premier
   // rendu ; quitter la vue normalement (démontage) l'oublie.
   const documentQuitteRef = useRef<string | null | undefined>(undefined);
@@ -170,7 +167,6 @@ export function DocumentsList() {
 
   const handleOpen = useCallback(
     (id: string) => {
-      creationEnAttenteRef.current = null;
       setWorkspaceOpenId(id);
       openDocument(id);
     },
@@ -193,13 +189,9 @@ export function DocumentsList() {
   useEffect(() => {
     memoriserLeDocument(workspaceOpenId);
   }, [workspaceOpenId]);
-  useEffect(() => () => {
-    creationEnAttenteRef.current = null;
-    memoriserLeDocument(null);
-  }, []);
+  useEffect(() => () => memoriserLeDocument(null), []);
 
   const handleBackToList = useCallback(() => {
-    creationEnAttenteRef.current = null;
     setWorkspaceOpenId(null);
   }, []);
 
@@ -225,12 +217,9 @@ export function DocumentsList() {
     async (id: string) => {
       if (generationLanceeRef.current.has(id)) return;
       generationLanceeRef.current.add(id);
-      creationEnAttenteRef.current = id;
       setWorkspaceOpenId(id);
       try {
-        if (!await openDocument(id)) return;
-        if (creationEnAttenteRef.current !== id) return;
-        creationEnAttenteRef.current = null;
+        await openDocument(id);
         await generateOutline(id);
       } finally {
         // La garde ne sert qu'à empêcher DEUX générations pour la même création
@@ -243,12 +232,7 @@ export function DocumentsList() {
   );
 
   if (workspaceOpenId) {
-    return <DocumentWorkspace
-      documentId={workspaceOpenId}
-      onBack={handleBackToList}
-      onRetryOpen={creationEnAttenteRef.current === workspaceOpenId
-        ? () => void handleCreated(workspaceOpenId) : undefined}
-    />;
+    return <DocumentWorkspace documentId={workspaceOpenId} onBack={handleBackToList} />;
   }
 
   return (

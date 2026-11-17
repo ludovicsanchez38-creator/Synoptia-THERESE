@@ -53,10 +53,9 @@ import { Etiquette } from '../ui/Etiquette';
 export interface DocumentWorkspaceProps {
   documentId: string;
   onBack: () => void;
-  onRetryOpen?: () => void;
 }
 
-export function DocumentWorkspace({ documentId, onBack, onRetryOpen }: DocumentWorkspaceProps) {
+export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps) {
   const currentDocument = useDocumentStore((s) => s.currentDocument);
   const sectionActive = useDocumentStore((s) => s.sectionActive);
   const isStreaming = useDocumentStore((s) => s.isStreaming);
@@ -211,7 +210,7 @@ export function DocumentWorkspace({ documentId, onBack, onRetryOpen }: DocumentW
           {error && !isLoading ? (
             <div className="flex flex-col items-center gap-3 px-4">
               <p role="alert" className="text-sm text-error">{error}</p>
-              <Button variant="secondary" type="button" onClick={onRetryOpen ?? (() => void openDocument(documentId))}>Réessayer</Button>
+              <Button variant="secondary" type="button" onClick={() => void openDocument(documentId)}>Réessayer</Button>
             </div>
           ) : (
             <div role="status" className="flex items-center gap-2 text-sm text-text-muted">

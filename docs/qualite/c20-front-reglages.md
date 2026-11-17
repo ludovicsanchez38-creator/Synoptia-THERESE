@@ -1,5 +1,7 @@
 # Cycle 20 : lot front-reglages
 
+**État courant : voir « Remédiation de la relecture, passe 4 ».** Les passes précédentes sont historiques. B-1805, B-1848, B-1849 et B-1967 sont retirés et reportés ; leurs anciens résultats ne valent plus comme validation du lot livré. Les modifications du démarrage appartenant à rust-windows sont également retirées.
+
 Le bilan initial ci-dessous décrit le travail sur `gpt/c20-front-reglages`, base `12a383fb`, issue de l’intégration v0.83.0-alpha, avant les commits de l’orchestrateur. Pendant cette intervention initiale, aucun commit, ajout à l’index, push, dépôt annexe ou bundle n’a été effectué. Le commit historique `41a438a8` a uniquement été lu, puis son correctif de SettingsModal reporté dans cet arbre ; aucune branche main n’a été modifiée. L’état vérifié lors de la reprise figure dans « Remédiation de la relecture, passe 1 ».
 
 Les candidats ont été traités dans l’ordre demandé. Pour chacun des 14 confirmés, le test de comportement a été écrit et exécuté avant la correction, puis vérifié au vert. Les appels API, IPC et mises à jour sont doublés ; aucun fournisseur ni service en ligne n’a été appelé. Aucun backend n’a été démarré et aucun port applicatif réservé ni dossier de données personnel n’a été utilisé.
@@ -10,11 +12,11 @@ Les chemins de test sont relatifs au dépôt. La colonne rouge remplace le hash 
 
 | Id | Verdict | Test (chemin::nom) | Rouge observé, sans commit | Correctif |
 | --- | --- | --- | --- | --- |
-| B-1805 | `confirme` | `src/frontend/src/components/settings/SettingsModal.dernierChoix.b1805.test.tsx::B-1805 : une ancienne lecture lente ne remplace pas le dernier modèle choisi` | `AssertionError: expected last "vi.fn()" call to have been called with [ 'mistral', …(2) ]` | non commité |
+| B-1805 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constats 3, 4, 5, 6 et 9 de la passe 4 | retiré du lot, reporté |
 | B-1846 | `regle_a_trancher` | Repère existant : `src/frontend/src/components/settings/SettingsModal.da.test.tsx::un refus de clé suivi d’un passage sur Ollama sans modèle reste annoncé` | Aucun rouge revendiqué : règle d’activation sans modèle absente | Aucun changement pour ce candidat |
 | B-1847 | `confirme` | `src/frontend/src/services/api/core.reprisePort.b1847.test.ts::réessaie après un premier port indisponible` | `AssertionError: expected 'http://127.0.0.1:17293' to be 'http://127.0.0.1:29147' // Object.is equality` | non commité |
-| B-1848 | `confirme` | `src/frontend/src/stores/documentStore.ouvertureAnnulee.b1848.test.ts::une fermeture empêche une lecture tardive de rouvrir le document` | `AssertionError: expected { id: 'a', title: 'a', …(10) } to be null` | non commité |
-| B-1849 | `confirme` | `src/frontend/src/stores/documentStore.chargementFerme.b1849.test.ts::ne reste pas occupé après la fermeture et une réussite tardive` | `AssertionError: expected true to be false // Object.is equality` | non commité |
+| B-1848 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constats 7, 8 et 12 de la passe 4 | retiré du lot, reporté |
+| B-1849 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constats 7, 8 et 12 ; dépendance aux sessions et au contrat d’ouverture de B-1848 | retiré du lot, reporté |
 | B-1959 | `confirme` | `src/frontend/src/components/settings/LLMTab.textesFrancais.c20.test.tsx::B-1959 : le statut indisponible tutoie et garde le motif` | `Error: expect(element).toHaveTextContent()` | non commité |
 | B-1960 | `confirme` | `src/frontend/src/components/settings/LLMTab.textesFrancais.c20.test.tsx::B-1960 : le bouton français ouvre la saisie du modèle personnalisé` | `TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Modèle personnalisé"` | non commité |
 | B-1961 | `confirme` | `src/frontend/src/components/settings/ProfileTab.edition.b1961.test.tsx::B-1961 : le dialogue annonce la modification et sauvegarde le texte saisi` | `Error: expect(element).toHaveAccessibleName()` | non commité |
@@ -23,7 +25,7 @@ Les chemins de test sont relatifs au dépôt. La colonne rouge remplace le hash 
 | B-1964 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1964 : la confirmation nomme le connecteur choisi parmi plusieurs` | `Error: expect(element).toHaveTextContent()` | non commité |
 | B-1965 | `confirme` | `src/frontend/src/components/settings/ToolsPanel.textesFrancais.c20.test.tsx::B-1965 : le connecteur stopped porte un état inactif accessible` | `TestingLibraryElementError: Unable to find an accessible element with the role "img" and name "Installé mais inactif : à démarrer depuis les connecteurs"` | non commité |
 | B-1966 | `confirme` | `src/frontend/src/components/ui/UpdateBanner.etatInstalle.b1966.test.tsx::B-1966 : après installation le bandeau annonce installé et propose de l’appliquer` | `Error: expect(element).toHaveTextContent()` | non commité |
-| B-1967 | `confirme` | `src/frontend/src/services/api/crm-extended.erreursFrancaises.b1967.test.ts::B-1967 : erreur de connexion > le repli est en français avec le statut HTTP, corps {}` | `AssertionError: expected [Function] to throw error including 'La connexion au CRM n’a pas pu démarr…' but got 'Failed to initiate OAuth: Service Una…'` | non commité |
+| B-1967 | `regle_a_trancher` | Tests propres au candidat retirés ; tests de l’intégration conservés | Constat 11 de la passe 4 : callback client absent du parcours réel | retiré du lot, reporté |
 | B-1968 | `confirme` | `src/frontend/src/services/api/rgpd.erreursFrancaises.b1968.test.ts::B-1968 : erreur RGPD, export > le repli est français avec le statut HTTP, corps {}` | `AssertionError: expected [Function] to throw error including 'L’export des données personnelles a é…' but got 'RGPD export failed: Service Unavailab…'` | non commité |
 | B-1969 | `rejete` | `tests/test_f1_coherence_des_couches.py:306` est un docstring ; rendu courant : `src/backend/app/services/invoice_pdf.py:649` | Aucun défaut d’interface démontré : le PDF écrit « TVA à {taux} % » ; la table de libellés à la ligne 48 comporte déjà « TVA réduite 5,5% » | Aucun changement |
 
@@ -387,3 +389,97 @@ npm_config_offline=true npx vitest run \
 - HEAD et référence d’intégration inchangés, aucune différence indexée. Tous les changements restent non commités. La commande d’ascendance retourne toujours **1** ; rebase à réaliser par l’orchestrateur dans un environnement autorisant l’écriture des métadonnées Git.
 
 Aucune recette native Tauri/Windows ni compilation Cargo complète n’est revendiquée. Les preuves Rust exécutent les fonctions extraites dans les harnais locaux ; les preuves frontend utilisent les vrais composants, leurs stores et des appels API/IPC doublés. Aucun des rouges connus exclus par la consigne n’a été rencontré dans ces portes ciblées.
+
+## Remédiation de la relecture, passe 4
+
+Reprise du 17 novembre 2026 après le rebase de l’orchestrateur. Cette passe applique **l’issue (b)** aux candidats concernés : retrait complet de leur code et de leurs tests propres. Elle ne revendique pas la résolution des défauts reportés. Les constats 1 et 10 étaient déjà réglés par l’orchestrateur ; aucune réintégration ni aucun rebase n’est effectué ici.
+
+### Décision pour chaque constat
+
+| Constat | Issue | Candidat et verdict courant | Changement / preuve du report |
+| --- | --- | --- | --- |
+| 1 | (a), déjà réglé par l’orchestrateur | Hors correctif applicatif de cette passe | `c20/integration` est ancêtre de HEAD, aucun marqueur de conflit dans les deux tests cités. Aucun fichier restauré depuis une autre branche. |
+| 2 | (b) | Extension démarrage B-1847 / B-1912 : `regle_a_trancher` | Toutes les modifications de `SplashScreen.tsx` et le test propre `SplashScreen.reprisePort.r1.test.tsx` sont retirés. Preuve du relecteur : « La relance automatique réussie ne reprend pas le démarrage ». Le moteur et sa relance appartiennent à rust-windows. |
+| 3 | (b) | B-1805 : `regle_a_trancher` | Retrait du compteur d’intentions et de la file commune, ainsi que de leurs appelants. Preuve : « Un ancien choix des réglages peut écraser un choix plus récent du chat ». |
+| 4 | (b) | B-1805 : `regle_a_trancher` | Retrait de la conservation et de la reprise d’effort ajoutées aux réglages et au sélecteur. Preuve : « La reprise d’un effort refusé peut modifier le mauvais fournisseur ». |
+| 5 | (b) | B-1805 : `regle_a_trancher` | Retrait de la sauvegarde combinée adresse/modèle/effort. Preuve : « Une sauvegarde d’adresse peut conserver un effort incompatible ». |
+| 6 | (b) | B-1805 : `regle_a_trancher` | Retrait de la gestion des options et des choix de modèle en attente. Preuve : « Le refus d’une option abandonne silencieusement un choix de modèle ». |
+| 7 | (b) | B-1848 / B-1849 : `regle_a_trancher` | Retrait du contrat d’ouverture booléen et de ses adaptations dans la liste et l’atelier. Preuve : « Réessayer l’ouverture d’un document créé ne relance pas sa trame ». |
+| 8 | (b) | B-1848 / B-1849 : `regle_a_trancher` | Retrait de la notion de session et des gardes ajoutées aux réorganisations. Preuve : « Une réorganisation réussie peut rester invisible après réouverture », ordre enregistré `[B, A]`, affiché `[A, B]`. |
+| 9 | (b) | B-1805 : `regle_a_trancher` | Retrait de l’attente locale et des gardes de lecture ajoutées à la réouverture. Preuve : « Les réglages peuvent afficher l’ancien modèle après un choix du chat ». |
+| 10 | (a), déjà réglé par l’orchestrateur | Lot instrument, aucun changement | Diff nul sur `tests/couverture/`. La demande de réintégration depuis une autre branche est écartée conformément au périmètre. |
+| 11 | (b) | B-1967 : `regle_a_trancher` | Retrait de tout le candidat CRM, y compris ses tests. Preuve : « Le repli français du retour OAuth corrigé est du code mort ». |
+| 12 | (b) | B-1848 / B-1849 : `regle_a_trancher` | Retrait complet des changements du store, y compris le retour booléen ignoré par la resynchronisation. Preuve : « Un échec de resynchronisation après conflit est masqué ». |
+
+**B-1805 : retiré du lot, reporté.** Les constats 3 à 6 et 9 portent sur un même ensemble de changements entre deux composants, une file de POST et plusieurs GET. La passe 3 avait traité plusieurs cas, mais le constat 9 laisse cette coordination incomplète. Le candidat entier est retiré, conformément à l’issue (b), au lieu de conserver une partie de ces correctifs.
+
+**B-1848 et B-1849 : retirés du lot, reportés.** Les constats 7, 8 et 12 portent sur les adaptations successives de l’ouverture, de la génération et des sessions. Leur retrait inclut les deux candidats du store et tous leurs prolongements dans l’atelier. Le cas inverse du test R2-8 ne prouve pas celui décrit au constat 8 ; aucun comportement de resynchronisation corrigé n’est revendiqué ici.
+
+**B-1967 : retiré du lot, reporté.** Le constat 11 est confirmé par le parcours réel : `CRMSyncPanel.tsx:125` démarre OAuth, les lignes 128–132 ouvrent le navigateur, puis la ligne 152 sonde `getCRMSyncConfig`. `handleCRMOAuthCallback` n’a aucun appelant de production frontend, seulement sa définition et sa réexportation dans `services/api/index.ts:466`. Le repli de cette fonction ne prouve donc aucun message affiché sur le retour OAuth. Tout le candidat, et pas seulement ce test, est retiré.
+
+**Extension du démarrage : retirée du lot, reportée à rust-windows.** Le constat 2 et la consigne d’appartenance imposent ce retrait. Le correctif B-1847 du client `services/api/core.ts` et son test unitaire restent inchangés ; ils ne constituent plus une preuve de reprise du SplashScreen.
+
+### Périmètre du retrait et tests
+
+Les retraits sont effectués en inversant les seuls blocs du diff du lot contre `c20/integration`, sans recopier de fichier. Les contrôles finaux donnent un diff nul sur :
+
+- `SplashScreen.tsx`, son test propre retiré et les deux tests rust-windows désignés par l’orchestrateur ; aucun sidecar ni fichier Rust/Python modifié ;
+- `SettingsModal.tsx`, `ChatInput.tsx`, `lib/enregistrementLLM.ts` et les deux tests propres à B-1805 ;
+- `documentStore.ts`, les tests propres B-1848/B-1849, `documentStore.trameRetrouvee.b1394.test.ts` et tout `components/documents/` ;
+- `crm-extended.ts`, son test propre B-1967, et `tests/couverture/`.
+
+Dans `LLMTab.tsx`, seuls restent les trois blocs de libellés de B-1959/B-1960 : tutoiement du message Ollama, commentaire correspondant et « Modèle personnalisé ». Aucun changement d’effort, d’adresse, de callback ou de cycle de vie de B-1805 n’y subsiste. Les autres candidats du lot sont conservés sans modification.
+
+**Tests ajoutés dans cette passe : 0. Rouges nouveaux revendiqués : 0.** Aucun correctif applicatif nouveau n’est livré : l’issue (b) exige de retirer aussi les tests propres aux candidats reportés. Les sept fichiers de tests propres retirés étaient absents de l’intégration. Les extensions de tests préexistants reviennent exactement à leur état intégré ; aucune assertion de l’intégration n’est affaiblie. Les preuves rouges des passes antérieures restent historiques et ne sont pas présentées comme des reproductions de cette passe.
+
+Après chaque groupe de retraits, les appelants sont relus et les fichiers voisins exécutés : découverte du port et démarrage ; `PanelContainer` → `SettingsModal` → `LLMTab` et sélecteur du chat ; `DocumentCreateModal` → `DocumentsList` → `DocumentWorkspace` et actions du store ; parcours OAuth et synchronisation de `CRMSyncPanel`.
+
+### Portes ciblées de la passe 4
+
+**Frontend : 464 passés, 0 échoué, 0 ignoré, 89 fichiers passés.** Les trois rapports JSON ont été lus, résultat par résultat :
+
+| Groupe | Fichiers | Cas passés | Rapport |
+| --- | ---: | ---: | --- |
+| Démarrage et client API | 10 | 73 | `/tmp/front-reglages-r4-demarrage.json` |
+| Réglages, chat et effort | 57 | 225 | `/tmp/front-reglages-r4-reglages.json` |
+| Atelier, store et contrats CRM | 22 | 166 | `/tmp/front-reglages-r4-documents-crm.json` |
+
+Commandes depuis `src/frontend`, avec `npm_config_offline=true`, `npx --no-install vitest run`, `--maxWorkers=3 --configLoader runner --no-cache --reporter=default --reporter=json` et le rapport propre au groupe :
+
+```text
+src/components/SplashScreen*.test.tsx src/services/api/core*.test.ts
+
+src/components/settings/SettingsModal*.test.* src/components/settings/LLMTab*.test.tsx
+src/components/chat/ChatInput*.test.tsx src/components/chat/PanelContainer*.test.tsx
+src/lib/effortOpenAI*.test.ts
+
+src/components/documents/DocumentsList*.test.tsx src/components/documents/DocumentWorkspace*.test.tsx
+src/components/documents/DocumentCreateModal*.test.tsx src/components/documents/OutlineTree*.test.tsx
+src/stores/documentStore*.test.ts src/services/api/documents*.test.ts
+src/test/lot12.test.ts src/test/lot9DA.test.ts src/lib/champsNommes.test.ts
+```
+
+`runner` et `--no-cache` évitent les écritures dans le lien partagé de dépendances. Les appels HTTP/IPC sont doublés ; aucun port applicatif n’est ouvert. Les messages `Failed to create stream fd: Operation not permitted` du lanceur n’ont empêché aucune collecte : chaque processus Vitest a terminé avec le code 0.
+
+**Backend : 90 passés, 0 échec, 0 erreur, 0 ignoré, sortie 0.** `/tmp/front-reglages-r4.xml` lu : 90 éléments `testcase`, aucune balise `failure`, `error` ou `skipped`. Aucun rouge connu soustrait. Commande depuis la racine :
+
+```sh
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-reglages-r4-data.XXXXXX)" \
+OLLAMA_BASE_URL=http://127.0.0.1:9 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp \
+.venv/bin/python -m pytest \
+  tests/test_documents_router.py tests/test_documents_entities.py \
+  tests/test_crm_sync_last_interaction_conservee_c9.py \
+  tests/test_crm_sync_deux_comptes_gmail_c9.py \
+  tests/test_effort_openai_parite_frontend.py tests/test_provider_effort.py \
+  -q -p no:cacheprovider -p front_reglages_r2_ipc --timeout=120 \
+  --junitxml=/tmp/front-reglages-r4.xml
+```
+
+L’adaptation locale `/tmp/front_reglages_r2_ipc.py`, déjà utilisée et relue, remplace uniquement le réveil interne asyncio par un pipe. Les assertions, fixtures, routes et délais restent inchangés. L’isolation des données est explicite dans `/tmp`. Journal : `/tmp/front-reglages-r4-backend.log`. Aucun fournisseur appelé.
+
+- Ruff : `.venv/bin/python -m ruff check --no-fix src/backend tests`, **sortie 0**, `All checks passed!`. Cache dirigé dans `/tmp/front-reglages-r4-ruff-cache` ; journal `/tmp/front-reglages-r4-ruff.log` lu.
+- TypeScript : `npm_config_offline=true npx --no-install tsc --noEmit`, **sortie finale 0, aucun diagnostic** ; `/tmp/front-reglages-r4-tsc-final.log` lu et vide. Le premier lancement avait 38 diagnostics issus de la dépendance racine `@playwright/test` introuvable et des types qui en découlent dans les E2E. Les archives officielles déjà présentes dans le cache npm de `@playwright/test`, `playwright` et `playwright-core`, toutes en **1.58.2**, ont été extraites dans `/tmp/front-reglages-r4-deps` après vérification de leur intégrité SHA-512. Un lien racine `node_modules` temporaire a servi au contrôle, puis a été retiré. Aucun téléchargement, stub de types, changement de configuration TypeScript, de manifeste ou de verrou. La tentative npm en mode strictement hors ligne avait échoué sur les métadonnées absentes (`ENOTCACHED`) avant cette extraction locale.
+- ESLint : `npm_config_offline=true npm run lint`, **sortie 0, 0 erreur, 27 avertissements**, journal `/tmp/front-reglages-r4-lint.log` lu. Aucun nettoyage hors périmètre.
+- `git diff --check` : **sortie 0**. Aucun lancement de suite complète, serveur, navigateur, compilation Rust ou recette native.
+
+HEAD reste `a0a6a780ff9db3836c9b9c2f0a4f7f2736e4ea4a`, intégration `0047eb5ea9d731c1249aed3fd6b37d91f3bc56e2`. `git merge-base --is-ancestor c20/integration HEAD` retourne **0**. Index inchangé, aucun commit ni ajout à l’index ; les retraits et ce bilan restent non commités. Les liens `.venv` et `src/frontend/node_modules` préexistants sont conservés. Aucun dépôt annexe, bundle, accès réseau, secret affiché, accès au dossier personnel THÉRÈSE ou à `.app-loop/`.
