@@ -16,6 +16,47 @@ from tests.test_r2_3_outil import fournisseur  # noqa: F401
 MENTION = "Je n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
 
 
+@pytest.mark.parametrize("erreur", [OSError, ValueError, AttributeError],
+                         ids=["oserror", "valueerror", "attributeerror"])
+def test_budget_sysconf_present_en_echec_garde_le_repli(monkeypatch, erreur):
+    from app.services import ollama_budget, system_resources
+
+    monkeypatch.setattr(ollama_budget.os, "sysconf", MagicMock(side_effect=erreur("Échec sysconf")),
+                        raising=False)
+    monkeypatch.setattr(system_resources.platform, "system", lambda: "Windows")
+    lecture_native = MagicMock(return_value=32 * system_resources.GIB)
+    monkeypatch.setattr(system_resources, "_windows_total_ram_bytes", lecture_native)
+
+    assert ollama_budget.plafond_memoire() == 8192
+    lecture_native.assert_not_called()
+
+
+def test_budget_sans_sysconf_et_lecture_native_en_keyerror_garde_le_repli(monkeypatch):
+    from app.services import ollama_budget, system_resources
+
+    monkeypatch.delattr(ollama_budget.os, "sysconf", raising=False)
+    monkeypatch.setattr(system_resources.platform, "system", lambda: "Windows")
+    lecture_native = MagicMock(side_effect=KeyError("TotalPhysicalMemory"))
+    monkeypatch.setattr(system_resources, "_windows_total_ram_bytes", lecture_native)
+
+    assert ollama_budget.plafond_memoire() == 8192
+    lecture_native.assert_called_once_with()
+
+
+def test_budget_sans_sysconf_lit_la_ram_sans_interroger_la_plateforme(monkeypatch):
+    from app.services import ollama_budget, system_resources
+
+    monkeypatch.delattr(ollama_budget.os, "sysconf", raising=False)
+    plateforme = MagicMock(side_effect=KeyError("WMI incomplet"))
+    monkeypatch.setattr(system_resources.platform, "system", plateforme)
+    lecture_native = MagicMock(return_value=32 * system_resources.GIB)
+    monkeypatch.setattr(system_resources, "_windows_total_ram_bytes", lecture_native)
+
+    assert ollama_budget.plafond_memoire() == 131072
+    plateforme.assert_not_called()
+    lecture_native.assert_called_once_with()
+
+
 @pytest.mark.parametrize(("ram_gio", "plafond"), [
     (4, 8192), (8, 16384), (16, 131072), (32, 131072), (None, 8192),
 ], ids=["4-gio", "8-gio", "16-gio", "32-gio", "detection-indisponible"])
