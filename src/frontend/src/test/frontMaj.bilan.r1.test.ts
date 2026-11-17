@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// R4-3 : le bilan doit se tester même sans objets Git (archive ou clone nettoyé).
+vi.mock('node:child_process', () => ({
+  spawnSync: () => { throw new Error('R4-3 : aucun objet Git disponible pour le test documentaire'); },
+}));
 
 const bilan = () => readFileSync(resolve(__dirname, '../../../../docs/qualite/c20-front-maj.md'), 'utf8');
 
@@ -41,7 +45,7 @@ describe('Remédiation documentaire du lot front-maj', () => {
     expect(passe1).not.toContain('cette passe non commitée');
   });
 
-  it('R3-5 : décrit la passe 2 commitée sur sa base intégrée et réserve le travail actuel à la passe 3', () => {
+  it('R3-5 : conserve le récit historique de la passe 2 commitée et de la reprise en passe 3', () => {
     const texte = bilan();
     const introduction = texte.split('## Verdicts et preuves')[0];
     const passe2 = texte.split('## Remédiation de la relecture, passe 2')[1]
@@ -51,11 +55,6 @@ describe('Remédiation documentaire du lot front-maj', () => {
     for (const commit of ['fefd0e1d', 'd3e815e7', '75498edd']) {
       expect(introduction).toContain(commit);
       expect(etatPasse2).toContain(commit);
-      // Vérifier l'état reçu, même après le prochain rebase de l'orchestrateur.
-      const ascendance = spawnSync('git', ['merge-base', '--is-ancestor', commit, 'd3e815e7'], {
-        cwd: resolve(__dirname, '../../../..'), encoding: 'utf8',
-      });
-      expect(ascendance.status, `${commit} doit appartenir à l’état reçu d3e815e7`).toBe(0);
     }
     expect(etatPasse2).toContain('commitée');
     expect(etatPasse2).toContain('Départ historique');
@@ -64,5 +63,34 @@ describe('Remédiation documentaire du lot front-maj', () => {
     expect(introduction).toContain('« Remédiation de la relecture, passe 3 »');
     expect(introduction).toContain('`75498edd` est un ancêtre du lot reçu');
     expect(texte).toContain('## Remédiation de la relecture, passe 3');
+  });
+
+  it('R4-4 : distingue les passes commitées des changements actuels et clôt les retards intégrés', () => {
+    const texte = bilan();
+    const introduction = texte.split('## Verdicts et preuves')[0];
+    expect(introduction).toContain('État reçu pour la passe 4');
+    const etatActuel = introduction.split('Historique avant les rebases')[0];
+    expect(etatActuel).toContain('passe 3 commitée');
+    expect(etatActuel).toContain('`a498d9d3` et `31e3f98d` sont des ancêtres de HEAD');
+    expect(etatActuel).toContain('retard d’instrumentation');
+    expect(etatActuel).toContain('résolu');
+    expect(etatActuel).toContain('c20/integration');
+    expect(introduction).toContain('« Remédiation de la relecture, passe 4 » décrit le travail actuel');
+    expect(introduction).not.toContain('cette nouvelle ascendance manque encore au lot');
+    const passe3 = texte.split('## Remédiation de la relecture, passe 3')[1]
+      ?.split('## Remédiation de la relecture, passe 4')[0];
+    const etatPasse3 = passe3?.split('### Constats et corrections')[0];
+    expect(etatPasse3).toContain('passe 3 commitée');
+    expect(etatPasse3).not.toContain('restent non commités');
+    expect(passe3).toContain('VERDICT HISTORIQUE : NO-GO');
+  });
+
+  it('R4-5 : la procédure Linux décrit aussi Ubuntu et ses dérivées sans le mot debian', () => {
+    const procedure = readFileSync(resolve(__dirname, '../../../../docs/UPDATER-SETUP.md'), 'utf8');
+    const controle = procedure.split('## Contrôle du manifeste Linux (B-1111)')[1]?.split('## Clés')[0];
+    expect(controle).toMatch(/mot exact\s+`debian` ou `ubuntu`/);
+    expect(controle).toContain('`ID` et `ID_LIKE`');
+    expect(controle).toContain('`ID=ubuntu` sans `ID_LIKE`');
+    expect(controle).toContain('`ID=pop` avec `ID_LIKE=ubuntu`');
   });
 });
