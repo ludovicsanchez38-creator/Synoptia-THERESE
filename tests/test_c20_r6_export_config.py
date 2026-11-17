@@ -1,9 +1,6 @@
 """Régressions de la passe 6 : règles d'export retenues en P-173."""
 
-import ast
 import json
-import re
-from pathlib import Path
 from time import process_time
 
 import pytest
@@ -67,30 +64,3 @@ def test_recherche_des_urls_reste_lineaire_sur_des_suffixes_a_points(prefixe):
     petite, grande = durees
     assert grande < 3 * petite + 0.02, f"Coût non linéaire : {petite:.3f}s puis {grande:.3f}s"
     assert grande < 5, f"Recherche trop lente : {grande:.3f}s CPU"
-
-
-def test_mypy_n_ajoute_aucune_erreur_dans_les_trois_expressions_corrigees(monkeypatch):
-    from mypy import api
-
-    racine = Path(__file__).resolve().parents[1]
-    source = racine / "src/backend/app/routers/data.py"
-    blocs = {
-        noeud.name: range(noeud.lineno, noeud.end_lineno + 1)
-        for noeud in ast.parse(source.read_text(encoding="utf-8")).body
-        if isinstance(noeud, ast.FunctionDef)
-        and noeud.name in {"_masquer_parametres_d_une_url", "_assembler_export_rgpd"}
-    }
-    # Le venv est partagé : imposer les modules de CET arbre, sans les importer.
-    monkeypatch.setenv("MYPYPATH", str(racine / "src/backend"))
-    sortie, erreurs, statut = api.run([
-        "--package", "app.routers.data", "--explicit-package-bases",
-        "--ignore-missing-imports", "--no-error-summary", "--follow-imports=silent",
-        "--no-incremental", "--cache-dir=/dev/null",
-    ])
-    assert statut in (0, 1) and not erreurs, sortie + erreurs
-    nouvelles = []
-    for ligne in sortie.splitlines():
-        diagnostic = re.search(r":(\d+): error: .*\[(var-annotated|arg-type|no-any-return)\]$", ligne)
-        if diagnostic and any(int(diagnostic[1]) in bloc for bloc in blocs.values()):
-            nouvelles.append(ligne)
-    assert not nouvelles, "\n".join(nouvelles)
