@@ -1,12 +1,22 @@
 # Cycle 20 : lot front-maj
 
 Arbre : `therese-c20-lots/gpt-c20-front-maj`, branche `gpt/c20-front-maj`.
+État reçu pour la passe 4 : HEAD `e9104455`, passe 3 commitée par
+l'orchestrateur (tests `08f49373`, correctifs `e9104455` après rebase).
+`a498d9d3` et `31e3f98d` sont des ancêtres de HEAD.
+Le retard d’instrumentation signalé ensuite sur `c127023a` est lui aussi
+résolu par le rebase de l'orchestrateur : la base locale `c20/integration`
+`0047eb5e` appartient à l'historique reçu. Aucun retard d'intégration
+ne reste à corriger dans cette passe.
+
+Historique avant les rebases : les identifiants ci-dessous décrivent les
+états remis aux relectures précédentes, sans exiger leur présence dans Git.
 État reçu pour la passe 3 : HEAD `d3e815e7`, tests de passe 2 `fefd0e1d`
 et correctifs `d3e815e7` déjà commités par l'orchestrateur.
-La base d'intégration `75498edd` est un ancêtre du lot reçu.
-La référence locale `c20/integration` a depuis avancé à `a498d9d3`,
-incluant `31e3f98d` ; cette nouvelle ascendance manque encore au lot.
-Le constat 1 de la passe 3 décrit ce retard distinct.
+La base d'intégration `75498edd` est un ancêtre du lot reçu à cette date.
+La référence locale `c20/integration` avait alors avancé à `a498d9d3`,
+incluant `31e3f98d` ; cette ascendance manquait au lot avant le rebase.
+Le constat 1 de la passe 3 décrit ce retard historique, désormais résolu.
 
 État remis à la relecture après la passe 1 (historique avant rebase) :
 `7c94e52a`, avec les tests `6ab9f8cf`.
@@ -15,8 +25,10 @@ La reprise historique partait du rouge B-1950, maintenant `90e29bad` après
 rebase. Aucun commit n'avait été créé pendant cette reprise ;
 l'orchestrateur a ensuite commité les tests (`b53869ce`) et correctifs
 (`f1087358`). Les comptes ci-dessous sont historiques. Seule la section
-« Remédiation de la relecture, passe 3 » décrit le travail actuel, laissé
+« Remédiation de la relecture, passe 4 » décrit le travail actuel, laissé
 non commité. Aucun service réel n'est utilisé pour ses tests.
+La section « Remédiation de la relecture, passe 3 » conserve le récit
+historique de la passe précédente.
 
 Les identifiants sont présentés dans l'ordre demandé. B-1950 a été terminé
 en premier, conformément à la consigne particulière de reprise.
@@ -479,16 +491,21 @@ Aucun commit ni ajout à l'index n'avait été fait par l'agent.
 
 ## Remédiation de la relecture, passe 3
 
-État reçu le 17 novembre 2026 : HEAD `d3e815e7`, base commune avec
-`c20/integration` : `75498edd`. La référence d'intégration locale vaut
+**Historique : passe 3 commitée.** Les changements ont été commités par
+l'orchestrateur : tests `08f49373`, correctifs `e9104455` après rebase.
+Les constats et comptes suivants décrivent les essais avant ce rebase ;
+l'état livré actuel figure dans la passe 4.
+
+État reçu alors, le 17 novembre 2026 : HEAD `d3e815e7`, base commune avec
+`c20/integration` : `75498edd`. La référence d'intégration locale valait
 `a498d9d3`. Les fichiers suivis étaient propres ; les deux liens de
-dépendances non suivis étaient déjà présents. Les changements de cette
-remise restent non commités, sans ajout à l'index.
+dépendances non suivis étaient déjà présents. L'agent avait laissé ses
+changements non commités, sans ajout à l'index, pour l'orchestrateur.
 
 ### Constats et corrections
 
-1. **Retard d'intégration confirmé, rebase restant à l'orchestrateur.**
-   Le contrôle local d'ascendance échoue. Une simulation de la seule
+1. **Retard d'intégration confirmé à cette date, résolu depuis.**
+   Le contrôle local d'ascendance échouait. Une simulation de la seule
    fonction `_kill_zombie_backends` extraite des sources Git confirme
    également le défaut : sans WMIC, le code de HEAD arrête le PID fictif
    `414` d'un `backend.exe` tiers ; le code de `c20/integration` l'épargne.
@@ -497,7 +514,7 @@ remise restent non commités, sans ajout à l'index.
    `Synoptia-THERESE/.git/worktrees/gpt-c20-front-maj`, hors de cet arbre,
    en lecture seule. Il n'a pas été exécuté, conformément au mandat.
    Aucun correctif Windows n'est recopié partiellement ; ce constat
-   demeure ouvert et les deux rouges locaux ne sont pas masqués.
+   était alors ouvert et les deux rouges locaux n'étaient pas masqués.
 2. **Lecture de version bloquée corrigée.** `checkHealth` borne désormais
    toute la lecture à 30 secondes, corps JSON compris. L'expiration rejette
    la promesse partagée et annule la requête. Une réponse ou un rejet tardif
@@ -571,8 +588,9 @@ Rust et 39 succès dans 3 fichiers Vitest** pour les distributions, et
 Les comptes ne cumulent pas les rejeux. Six nouveaux cas produit : trois
 pour la lecture de version, deux pour les distributions, un pour le bilan.
 Les assertions existantes de capture et d'exclusion des identifiants sont
-renforcées. Le contrôle documentaire compare les ascendants de l'état reçu
-`d3e815e7`, afin de rester valable après le rebase de l'orchestrateur.
+renforcées. Le contrôle documentaire comparait les ascendants de l'état reçu
+`d3e815e7`. Cette dépendance périmée est retirée en passe 4 ; le contrôle
+porte désormais exclusivement sur le contenu du bilan.
 Les rouges connus du mandat ne font pas partie de la sélection ; aucun
 échec n'a été retranché des comptes.
 
@@ -597,12 +615,131 @@ n'était pas dans le PATH. La première erreur de commande n'est pas comptée
 comme un rouge produit ; le test de dérivée Ubuntu a ensuite échoué avant
 le changement du prédicat, puis les dix cas ont réussi.
 
-Le constat 1 reste ouvert : les correctifs de cette passe ne valent pas
-validation de l'intégration courante. Aucun réseau, fournisseur LLM, service
+Le constat 1 restait ouvert à cette date : ces essais ne validaient pas
+l'intégration d'alors. Aucun réseau, fournisseur LLM, service
 réel, accès au profil personnel ou aux ports interdits. Les données pytest
 sont jetables, les appels frontend sont simulés. Aucune suite complète,
 aucune correction de lint ailleurs, aucun commit ni ajout à l'index.
 
-**VERDICT : NO-GO tant que le constat 1 reste ouvert.** Les constats 2 à 5
-sont corrigés et leurs portes ciblées sont vertes. Le rebase sur
-l'intégration courante et le rejeu de ses tests restent à l'orchestrateur.
+**VERDICT HISTORIQUE : NO-GO tant que le constat 1 restait ouvert.** Les
+constats 2 à 5 étaient corrigés et leurs portes ciblées étaient vertes.
+Le rebase demandé a depuis été effectué par l'orchestrateur ; les constats
+de la nouvelle relecture sont traités dans la passe 4 ci-dessous.
+
+## Remédiation de la relecture, passe 4
+
+### Constats et preuves avant correction
+
+1. **Écarté, déjà réglé par l'orchestrateur.** Le contrôle local
+   `git merge-base --is-ancestor c20/integration HEAD` sort à 0.
+   Aucun changement sous `tests/couverture/`, aucun rebase ni copie depuis
+   une autre branche.
+2. **(a) Correction de la propriété du flux sous StrictMode.** Le nouveau
+   fichier `rfc/RFCWizard.strictMode.r4.test.tsx`, lancé seul avant le
+   correctif, donne **9 échecs, 0 succès**. Ligne de rouge :
+   `Error: expect(element).toBeDisabled()` puis
+   `Received element is not disabled:`. Le retour ou l'erreur de l'ancien
+   flux réactive Capturer ; son AbortError écrase aussi le texte courant
+   (`TestingLibraryElementError: Unable to find an element with the text: Proposition courante en cours.`).
+   Rapport `/tmp/front-maj-r4-2-rouge.json` lu. Les neuf cas croisent trois
+   fins de l'ancien flux (retour, AbortError, erreur) et trois issues du
+   flux courant (fin normale, arrêt, démontage).
+3. **(a) Contrôle documentaire sans objets Git.** Le test R3-5 a d'abord
+   été étendu pour rendre toute consultation Git indisponible, puis lancé
+   seul : **1 échec**, ligne
+   `Error: R4-3 : aucun objet Git disponible pour le test documentaire`.
+   Rapport `/tmp/front-maj-r4-3-rouge.json` lu (les trois autres tests du
+   fichier n'étaient pas sélectionnés). Suppression de l'import et de
+   l'appel `spawnSync` ; les assertions sur le contenu historique du bilan
+   sont conservées. Les identifiants historiques restent du texte, jamais
+   des objets à résoudre ; le double interdit toujours leur consultation.
+4. **(a) État livré et historique séparés.** Le nouveau test R4-4 de
+   `frontMaj.bilan.r1.test.ts`, lancé seul avant modification du récit,
+   donne **1 échec**, ligne
+   `AssertionError: expected '# Cycle 20 : lot front-maj\n\nArbre :…' to contain 'État reçu pour la passe 4'`.
+   Rapport `/tmp/front-maj-r4-4-rouge.json` lu (quatre autres tests non
+   sélectionnés). Il contrôle ensuite la passe 3 commitée, les correctifs
+   intégrés, la résolution du retard d'instrumentation et le caractère
+   historique du NO-GO précédent, uniquement à partir du texte.
+5. **(a) Procédure Debian/Ubuntu alignée sur le prédicat.** Le nouveau
+   test R4-5 de `frontMaj.bilan.r1.test.ts`, lancé seul avant correction
+   de la procédure, donne **1 échec**, ligne
+   ``AssertionError: expected '\n\nLe bandeau contrôle aussi la dist…' to match /mot exact\s+`debian` ou `ubuntu`/``.
+   Rapport `/tmp/front-maj-r4-5-rouge.json` lu (cinq autres tests non
+   sélectionnés). La procédure précise les deux mots exacts dans `ID` ou
+   `ID_LIKE`, Ubuntu sans `ID_LIKE` et la dérivée `ID=pop / ID_LIKE=ubuntu`.
+
+### Appelants et tests voisins
+
+Après le correctif 2, relecture de `HomeCommands → RFCWizard → RFCChat`,
+des callbacks de conversation, de flux et de sources absentes, ainsi que
+des transitions Faire/Capturer et de `sourcesVerifiees`. Le correctif reste
+dans `RFCChat` : seul le contrôleur de la requête courante autorise les
+modifications d'état et les callbacks, y compris celui différé après une
+interruption. Le démontage invalide cette identité. L'ancien flux ne peut
+ni libérer la capture, ni effacer la réponse, ni perdre le contrôleur du
+flux courant. **46 tests passés dans 16 fichiers**, dont les neuf nouveaux
+cas StrictMode, dans `/tmp/front-maj-r4-2-vert.json`, lu.
+
+Après les correctifs 3 et 4, relecture des références documentaires et des
+assertions historiques ; le fichier documentaire complet donne d'abord
+**4**, puis **5 succès** (`/tmp/front-maj-r4-{3,4}-vert.json`, lus).
+Pour séparer tests et correctifs du constat 3, l'ajout du double
+`node:child_process` constitue le test rouge ; le retrait de l'import et du
+bloc `spawnSync` constitue le correctif, dans le même fichier.
+
+Après le correctif 5, relecture du prédicat Rust et de ses appelants
+`get_system_info → UpdateBanner`, à la vérification et au clic.
+Le module Rust inchangé donne **10 succès** ; les trois fichiers voisins
+UpdateBanner et les six contrôles documentaires donnent **45 succès dans
+4 fichiers** (`/tmp/front-maj-r4-5-vert.json` et journal Rust lus).
+Onze nouveaux cas, un test étendu ; aucune assertion métier existante
+retirée ou affaiblie. Seule la dépendance documentaire Git visée par le
+constat 3 est supprimée.
+
+### Portes de cette passe
+
+| Porte | Résultat lu | Preuve |
+| --- | --- | --- |
+| Vitest ciblé, au plus 3 workers | **91 passés, 0 échoué, 0 ignoré, 0 todo ; 20 fichiers distincts**, sorties 0 | `/tmp/front-maj-r4-2-vert.json` et `/tmp/front-maj-r4-5-vert.json` |
+| Rust, module de distribution seul | **10 passés, 0 échoué, 0 ignoré**, sortie 0 | `/tmp/front-maj-r4-rust.log` |
+| Pytest voisin updater | **16 passés, 0 échec, 0 erreur, 0 ignoré**, sortie 0 | `/tmp/front-maj-r4.xml`, XML lu |
+| Ruff backend et tests | **0 diagnostic**, sortie 0 | `/tmp/front-maj-r4-ruff.log` : `All checks passed!` |
+| TypeScript | **0 erreur**, sortie 0 | `/tmp/front-maj-r4-tsc-vert.log`, vide |
+| ESLint | **0 erreur, 27 avertissements**, sortie 0 | `/tmp/front-maj-r4-lint.log` |
+
+Les comptes Vitest réunissent deux sélections disjointes, sans cumuler les
+rejeux intermédiaires. Aucun rouge connu du mandat n'a été sélectionné ni
+retranché ; aucune suite complète n'a été lancée.
+
+Le premier TypeScript a signalé 38 diagnostics dus à `@playwright/test`
+introuvable depuis les tests d'instrumentation importés par le frontend.
+Les trois paquets `@playwright/test`, `playwright` et `playwright-core`
+1.58.2 ont été installés uniquement dans le `node_modules/` local ignoré,
+depuis les archives du cache npm déjà présentes, après contrôle de leurs
+empreintes contre `package-lock.json` ; installation hors ligne, scripts
+désactivés. Aucun manifeste, lockfile ou fichier d'instrumentation modifié.
+La même commande `tsc --noEmit` passe ensuite sans exclusion ni dérogation.
+
+Commandes reproductibles :
+
+```sh
+# Depuis src/frontend, dépendances installées ; aucun téléchargement.
+npm_config_cache=/tmp/front-maj-r4-npm-cache npx --offline --no-install vitest run src/components/rfc src/components/home/HomeCommands.assistantCommande.test.tsx src/components/home/HomeCommands.panneauGuide.test.tsx src/components/home/HomeCommands.cycle6.test.tsx src/test/frontMaj.annonces.r1.test.tsx --configLoader runner --maxWorkers=3 --no-cache --reporter=json --outputFile=/tmp/front-maj-r4-2-vert.json
+npm_config_cache=/tmp/front-maj-r4-npm-cache npx --offline --no-install vitest run src/components/ui/UpdateBanner src/test/frontMaj.bilan.r1.test.ts --configLoader runner --maxWorkers=3 --no-cache --reporter=json --outputFile=/tmp/front-maj-r4-5-vert.json
+npm_config_cache=/tmp/front-maj-r4-npm-cache npx --offline --no-install tsc --noEmit
+npm_config_cache=/tmp/front-maj-r4-npm-cache npm run lint
+
+# Depuis la racine ; données jetables, aucun bytecode ou cache partagé écrit.
+THERESE_DATA_DIR="$(mktemp -d /tmp/front-maj-r4-data.XXXXXX)" PYTHONDONTWRITEBYTECODE=1 OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest tests/test_b1111_manifeste_updater.py -q -p no:cacheprovider --timeout=120 --junitxml=/tmp/front-maj-r4.xml
+RUFF_CACHE_DIR=/tmp/front-maj-r4-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+/home/synoptia/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc --edition=2021 --test src/frontend/src-tauri/src/linux_distribution.rs -o /tmp/front-maj-r4-distribution-tests
+/tmp/front-maj-r4-distribution-tests
+```
+
+Constats 2 à 5 corrigés selon **(a)** ; aucun candidat retiré selon (b).
+Constat 1 écarté conformément à la consigne de l'orchestrateur. Tous les
+changements de passe 4 restent non commités, sans ajout à l'index. Aucun
+réseau, fournisseur LLM, port interdit, profil personnel ni `.app-loop/`
+utilisé ; aucun fichier d'un autre lot modifié et aucune copie depuis une
+autre branche. La validation globale reste à l'orchestrateur.

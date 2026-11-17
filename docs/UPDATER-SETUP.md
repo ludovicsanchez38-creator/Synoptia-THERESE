@@ -46,8 +46,10 @@ canal de mise à jour cassé.
 
 Le bandeau contrôle aussi la distribution à l'exécution (B-1801) : le type
 Tauri `deb` ne suffit pas. `get_system_info` lit `ID` et `ID_LIKE` dans
-`/etc/os-release`, avec repli sur `/usr/lib/os-release`, et exige le mot
-`debian`. Les autres distributions et les lectures impossibles reçoivent un
+`/etc/os-release`, avec repli sur `/usr/lib/os-release`, et accepte un mot exact
+`debian` ou `ubuntu` dans l'un de ces deux champs. Cela inclut
+`ID=ubuntu` sans `ID_LIKE` et `ID=pop` avec `ID_LIKE=ubuntu`.
+Les autres distributions et les lectures impossibles reçoivent un
 lien de téléchargement manuel. L'OS vient aussi de cette commande native,
 pas de `navigator.platform`. Un OS absent ou inconnu interdit l'installation
 automatique ; macOS exige `app` et Windows exige `nsis` ou `msi`.
