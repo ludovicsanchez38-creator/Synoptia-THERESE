@@ -1,5 +1,7 @@
 # Cycle 20, lot diff-3
 
+**État après la passe 4 : 2 confirmés, 6 rejetés, 2 règles à trancher. B-2020 est retiré du lot, reporté.** La section « Remédiation de la relecture, passe 4 » fait foi pour le résultat livré ; les comptes rendus précédents restent historiques.
+
 Travail réalisé le 16 novembre 2026, uniquement dans l’arbre `gpt-c20-diff-3`, branche `gpt/c20-diff-3`. HEAD initial et final : `4dfc79d1568d123d7b517113a984b75baca84fc0`. L’arbre était propre au départ. Aucun commit, aucune tentative de `git add`, aucun push. Les trois tests ajoutés et les quatre composants corrigés restent non commités.
 
 Les candidats ont été examinés dans l’ordre demandé. Bilan : **3 confirmés, 6 rejetés, 1 règle à trancher**. Les huit cas des trois nouveaux fichiers de test ont échoué avant leur correctif, sur les assertions décrites ci-dessous. Aucun test existant n’a été modifié.
@@ -17,9 +19,11 @@ La colonne du rouge remplace le hash du commit conformément à la particularit�
 | B-2017 | `rejete` | `src/frontend/src/components/llm/GuidePremierServiceIA.test.tsx::rend l’installation locale accessible même avant la détection d’Ollama` ; sonde temporaire de conservation de l’ouverture décrite ci-dessous | Sans objet : gestes conservés après deux causes de nouveau rendu | Sans objet |
 | B-2018 | `rejete` | `src/frontend/scripts-recette/recette-r5-memoire.mjs::build` | Sans objet : même constat que B-1895, même parcours de compilation valide | Sans objet |
 | B-2019 | `rejete` | `src/frontend/src/components/chat/ChatInput.memoireAccord.r2.test.tsx::le signal serveur demande l’accord puis reprend la même source sans doublon utilisateur` | Sans objet : même constat que B-1896, description française présente | Sans objet |
-| B-2020 | `confirme` | `src/frontend/src/components/shared/CloudConsentDialog.clavier.c20.test.tsx::B-2020 : place le focus sur Annuler et isole le fond du dialogue modal` ; trois autres cas clavier dans ce fichier | `Error: expect(element).toHaveFocus()` ; `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times` | non commité |
+| B-2020 | `regle_a_trancher` | Neuf reproductions R4.1 à R4.8 exécutées avant retrait ; sources conservées dans `/tmp/diff-3-r4-reproductions/` | Huit constats de la relecture confirmés ; lignes d’échec ci-dessous, passe 4 | retiré du lot, reporté |
 | B-2021 | `confirme` | `src/frontend/src/components/memory/AgentMemoryPanel.origineVide.c20.test.tsx::B-2021 : distingue une recherche par origine sans résultat de la mémoire vide (%s)` | `Error: Unable to find an element with the text: Aucune fiche ne correspond à ta recherche.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.` | non commité |
 | B-2022 | `rejete` | `src/frontend/src/lib/catalogueModeles.openrouter.r19b.test.ts::retire le préfixe des modèles du catalogue et conserve les inconnus` et `::B-1097 : decorer formate aussi le modèle absent du catalogue %s` | Sans objet : nom dérivé d’un identifiant fictif, conforme au contrat existant | Sans objet |
+
+**B-2020 : retiré du lot, reporté.** Preuve : les constats 1 à 8 de la quatrième relecture décrivent des pertes de brouillons et de pièces, une file hors conversation ou hors ordre, une navigation périmée et trois défauts de priorité ou d’isolation du focus. Les reproductions de la passe 4 les confirment.
 
 ## Rejets et règle à trancher
 
@@ -594,3 +598,130 @@ npm_config_offline=true npm run lint
 ```
 
 Résultats finaux effectivement relus : `/tmp/diff-3-r3.xml`, `/tmp/diff-3-r3-pytest.log`, `/tmp/diff-3-r3-vitest.json`, `/tmp/diff-3-r3-node.log`, `/tmp/diff-3-r3-ruff.log`, `/tmp/diff-3-r3-tsc.log`, `/tmp/diff-3-r3-lint.log`. Aucun lancement de suite complète, aucun réseau ni fournisseur LLM, aucun serveur, aucun usage de `~/.therese` ou de `.app-loop/`, aucune commande `rm`. Tous les changements destinés à l'orchestrateur restent non commités.
+
+## Remédiation de la relecture, passe 4
+
+Intervention du 17 novembre 2026 dans le seul arbre `gpt-c20-diff-3`, branche `gpt/c20-diff-3`. HEAD reçu : `c731e992ec36b409107b187f7bc3c1eff9ba1816`. Référence locale `c20/integration` : `5e1ca36cb43b2666d9a569e4c2e7160af5225366`. Les fichiers suivis étaient propres ; les liens `.venv` et `src/frontend/node_modules` étaient déjà non suivis.
+
+### Décision pour chacun des huit constats
+
+**Option (b) pour les huit constats : retrait complet de B-2020 et de ses remédiations.** Le candidat ne se limite plus au clavier de l’accord : ses modifications coordonnent le composeur, la file, l’identité des conversations, les accords et la pile des modales. Les défauts confirmés demandent notamment de définir l’ordre des reprises et de gérer deux états distincts de saisie. Aucun correctif simple et prouvé ne couvre cet ensemble. La règle de la quatrième passe conduit donc au retrait du candidat entier, y compris pour les défauts de focus ; aucun sous-correctif de B-2020 n’est conservé. B-2016 et B-2021 restent inchangés.
+
+| Constat | Issue | Preuve du relecteur rejouée avant retrait |
+| --- | --- | --- |
+| 1, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Message mis en file dans A, `loadConversation('B')` comme l’action « Voir », puis arrêt du flux A : second envoi dans B et brouillon enregistré de B supprimé. |
+| 2, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Nouveau texte saisi avant le premier événement `memory_consent_required` : le champ reprend la demande précédente, même après confirmation. |
+| 3, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Seconde demande en file avant l’accord mémoire : le second appel part alors que l’accord est affiché, sans décision. |
+| 4, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Deux cas : saisie A → B → A, puis retrait et nouvel ajout de `A.png` avant acquittement ; le nouveau texte ou la nouvelle pièce disparaît. |
+| 5, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Action de navigation reçue pour A, passage à B puis fin normale de l’itérateur SSE sans autre événement : l’événement de navigation est exécuté. |
+| 6, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Vrai `DialogShell` en `relative z-10` dans un parent modal `fixed z-50` : focus derrière l’aide et Échap reçu par le parent. |
+| 7, P1 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Une modale avec `isolateBackground: true` s’ouvre derrière le vrai accord porté dans `body` : l’`alertdialog` devient inerte, `aria-hidden` et perd le focus. |
+| 8, P2 | **(b)** `regle_a_trancher`<br>retiré du lot, reporté | Vrai `ProjectModal` ouvert après l’accord : après fermeture effective de celui-ci, le projet est visible mais le focus reste sur le déclencheur du fond. |
+
+Le retrait ne résout pas les défauts présents dans l’état d’intégration ; il reporte le candidat avec ces preuves, conformément à l’option (b). Aucun constat n’est rejeté comme faux ou écarté pour appartenance à un autre lot. Aucun fichier d’un autre lot n’est repris.
+
+### Tests écrits et rouges observés avant retrait
+
+Les tests R4 ont été ajoutés aux deux fichiers de test de B-2020, avant toute modification de production. Chaque constat a été exécuté séparément par `-t '^R4\.<numéro> :'`, dans un processus Vitest distinct, `--maxWorkers=3 --no-cache --configLoader runner`. Le constat 4 comprend deux cas. Résultat : **9 tests exécutés, 9 échecs reproduisant les constats**, sans test existant modifié ni affaibli pendant cette reproduction. Les autres cas des fichiers étaient exclus par le filtre.
+
+Sources complètes conservées avant retrait :
+
+- `/tmp/diff-3-r4-reproductions/ChatInput.accordAttentes.c20r2.test.tsx` : R4.1 à R4.5 ;
+- `/tmp/diff-3-r4-reproductions/CloudConsentDialog.empilement.c20r1.test.tsx` : R4.6 à R4.8.
+
+Ces sources utilisent les vrais composants et hooks ; les échanges serveur et Tauri sont simulés en mémoire. Le scénario 6 utilise le vrai `DialogShell` et un parent reprenant les options d’isolation et le positionnement de `SettingsModal`. Les classes Tailwind sont compilées en mémoire. Le scénario 8 utilise le vrai `ProjectModal`, avec `listContacts` simulé.
+
+Lignes d’échec recopiées depuis les rapports, avant retrait :
+
+```text
+R4.1 : la file de A ne part pas dans B après le chargement Voir puis l’arrêt
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+AssertionError: expected null to be 'Brouillon enregistré de B' // Object.is equality
+
+R4.2 : le premier événement d’accord mémoire conserve le brouillon suivant
+Error: expect(element).toHaveValue(Brouillon suivant)
+
+R4.3 : la file attend la décision mémoire puis reprend après la première demande
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+
+R4.4 : un nouvel ajout identique reste après acquittement (texte)
+Error: expect(element).toHaveValue(Demande fictive A)
+R4.4 : un nouvel ajout identique reste après acquittement (pièce)
+Error: expect(received).toBeInTheDocument()
+
+R4.5 : la fermeture normale sans événement après bascule abandonne la navigation
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+R4.6 : le vrai DialogShell imbriqué garde le focus et Échap devant son parent
+Error: expect(element).toHaveFocus()
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+
+R4.7 : une modale isolante tardive épargne l’alertdialog au-dessus
+AssertionError: expected <div …(3)><div …(5)>…(3)</div></div> to be null
+Error: expect(element).toHaveFocus()
+
+R4.8 : le vrai ProjectModal récupère le focus à la fermeture de l’accord
+Error: expect(element).toContainElement(element)
+```
+
+Preuves : `/tmp/diff-3-r4-{1,2,3,4,5,6,7,8}-rouge.log` et les huit rapports `.json`, tous relus. Les tests du candidat, reproductions comprises, quittent ensuite le lot avec son code de production : ils ne sont pas comptés dans la porte verte de l’état final.
+
+### Retrait et relecture des appelants
+
+Le retrait applique **l’inverse des seuls hunks de diff-3** sur les 16 chemins de B-2020, après `git apply --reverse --check`. Aucun fichier n’a été recopié depuis `c20/integration`, aucun rebase ni changement de l’index effectué. La liste des chemins est conservée dans `/tmp/diff-3-r4-b2020-fichiers.txt` et l’écart annulé dans `/tmp/diff-3-r4-b2020-ecart.patch`.
+
+Les huit fichiers de production revenus à l’intégration sont `AgentSession.tsx`, `ChatInput.tsx`, `SlashCommandsMenu.tsx`, `CloudConsentDialog.tsx`, `useDialogFocusTrap.ts`, `useKeyboardShortcuts.ts`, `chatStore.ts` et `z-layers.ts`. Les trois tests préexistants `AgentSession.accordMoteur.test.tsx`, `AgentSession.consentement.t4.test.tsx` et `ChatInput.rattachement.test.tsx` retrouvent exactement leur contenu d’intégration. Les cinq fichiers de tests créés pour B-2020 sont retirés : `ChatInput.accordAttentes.c20r2.test.tsx`, `ChatInput.accordContexte.c20r1.test.tsx`, `SlashCommandsMenu.modale.c20r2.test.tsx`, `CloudConsentDialog.clavier.c20.test.tsx` et `CloudConsentDialog.empilement.c20r1.test.tsx`.
+
+Vérification après retrait : `git diff --exit-code c20/integration -- <les 16 chemins>` réussit, sans sortie. L’écart du lot avec l’intégration se limite désormais au bilan, à `Aide.tsx` et son test B-2016, ainsi qu’à `AgentMemoryPanel.tsx` et son test B-2021.
+
+Appelants relus après retrait : rendu et confirmation de l’accord dans `ChatInput` et `AgentSession`, reprise mémoire et file, références de l’identité dans le store, raccourcis et menu slash, usage du hook par `DialogShell` et `ProjectModal`. Les options et propriétés supprimées avec le candidat ne laissent pas de référence résiduelle dans ces appelants. Les tests voisins couvrent ces parcours, l’autosauvegarde, la synchronisation des conversations, la navigation et les deux candidats conservés.
+
+### Portes de la passe 4
+
+| Porte | Résultat final |
+| --- | --- |
+| Pytest ciblé | **18/18 dans 3 fichiers**, 0 échec, 0 erreur, 0 ignoré ; `/tmp/diff-3-r4.xml` parsé et ses 18 cas effectivement relus |
+| Garde hors réseau de Pytest | **0 tentative de connexion** |
+| Vitest ciblé et voisins | **318/318 dans 89 fichiers**, 0 échec, 0 ignoré ; rapport JSON relu, `success: true`, sortie 0 |
+| Ruff | Sortie 0, `All checks passed!` |
+| TypeScript | Sortie 0, aucun diagnostic |
+| ESLint | Sortie 0, **0 erreur, 27 avertissements existants** ; aucune correction étrangère au périmètre |
+| Retrait de B-2020 | **16/16 chemins sans écart avec `c20/integration`**, production et tests |
+| Diff, index et HEAD | `git diff --check` sans défaut, index inchangé, HEAD toujours `c731e992ec36b409107b187f7bc3c1eff9ba1816` |
+
+Le lancement Pytest standard n’a produit aucun résultat ni XML et a été interrompu (sortie 130). Une sonde indépendante `asyncio.run(asyncio.to_thread(...))`, bornée à six secondes, a expiré elle aussi (sortie 124). Le lanceur temporaire `/tmp/diff-3-r4-polling/sitecustomize.py` borne `EpollSelector.select` à 1 ms ; la même sonde termine alors (sortie 0). Ce contournement du réveil système bloqué, déjà rencontré aux passes précédentes, ne remplace aucune assertion, fixture ou fonction de production. Seul le rejeu terminé avec XML est compté dans la porte Pytest.
+
+Commandes backend depuis la racine ; Ruff a été lancé après la lecture du XML :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp/diff-3-r4-polling \
+  OLLAMA_BASE_URL=http://127.0.0.1:9 THERESE_DATA_DIR=/tmp/diff-3-r4-data \
+  .venv/bin/python -m pytest \
+  tests/test_t4_consentement_moteur.py tests/test_r2_2_protection.py tests/test_r2_3_outil.py \
+  -q -p no:cacheprovider -p tests.bancs_sans_reseau --timeout=120 \
+  --junitxml=/tmp/diff-3-r4.xml
+RUFF_CACHE_DIR=/tmp/diff-3-r4-ruff-cache .venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Commandes frontend depuis `src/frontend`, avec dépendances locales et chargeur évitant les écritures dans le `node_modules` partagé :
+
+```sh
+npm_config_offline=true VITE_THERESE_BACKEND_PORT=9 npx vitest run \
+  src/components/chat/ChatInput*.test.tsx src/components/chat/SlashCommandsMenu*.test.tsx \
+  src/components/atelier/AgentSession*.test.tsx src/components/memory/ProjectModal*.test.tsx \
+  src/hooks/useDialogFocusTrap*.test.tsx src/hooks/useKeyboardShortcuts*.test.ts \
+  src/hooks/useKeyboardShortcuts*.test.tsx src/hooks/useAutosave*.test.ts \
+  src/hooks/useConversationSync*.test.ts src/hooks/useConversationSync*.test.tsx \
+  src/stores/chatStore*.test.ts src/lib/clientActions.test.ts \
+  src/lib/identiteConversation.test.ts src/lib/rattachementConversation.test.ts \
+  src/components/Aide*.test.tsx src/components/prototype/Aide.palette.test.tsx \
+  src/components/memory/AgentMemoryPanel*.test.tsx \
+  --maxWorkers=3 --no-cache --configLoader runner \
+  --reporter=default --reporter=json --outputFile=/tmp/diff-3-r4-vitest.json
+npm_config_offline=true npx tsc --noEmit
+npm_config_offline=true npm run lint
+```
+
+**Aucun rouge restant dans les portes de l’état livré.** Les neuf rouges de reproduction sont des preuves du candidat retiré, pas des tests laissés en échec dans le lot. Aucun rouge connu de l’orchestrateur n’est inclus dans cette sélection. Les rapports finaux relus sont `/tmp/diff-3-r4.xml`, `/tmp/diff-3-r4-pytest.log`, `/tmp/diff-3-r4-vitest.json`, `/tmp/diff-3-r4-vitest.log`, `/tmp/diff-3-r4-ruff.log`, `/tmp/diff-3-r4-tsc.log` et `/tmp/diff-3-r4-lint.log`.
+
+Aucune suite complète, aucun réseau ni fournisseur LLM, aucun serveur ou port interdit, aucun usage de `~/.therese` ni de `.app-loop/`, aucune commande `rm`. Aucun commit, `git add`, dépôt annexe, bundle ou rebase. Les modifications de retrait et le bilan restent non commités pour l’orchestrateur.

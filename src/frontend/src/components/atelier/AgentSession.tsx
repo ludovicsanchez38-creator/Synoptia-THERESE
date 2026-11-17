@@ -489,9 +489,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     setAccordEnAttente(null);
     setPendingInstruction(null);
     setAccordOccupe(false);
-    setErreurAccord(erreur => erreur ?? "La mission n’a pas démarré. Donne ton accord pour lancer cet agent.");
-    // La première confirmation a disparu ; attendre la réactivation du champ.
-    requestAnimationFrame(() => inputRef.current?.focus());
+    setErreurAccord("La mission n’a pas démarré. Donne ton accord pour lancer cet agent.");
   }, []);
   useEffect(() => {
     if (accordEnAttente) return pushEscapeHandler(annulerAccord);
@@ -737,7 +735,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       </div>
 
       {/* Input */}
-      {erreurAccord && !accordEnAttente && <p role="alert" className="px-3 py-2 text-sm text-text">{erreurAccord}</p>}
+      {erreurAccord && <p role="alert" className="px-3 py-2 text-sm text-text">{erreurAccord}</p>}
       {accordEnAttente && <CloudConsentDialog
         testId="agent-cloud-consent"
         title={`Autoriser l’envoi pour cet agent à ${accordEnAttente.destination.label || libelleDuFournisseur(accordEnAttente.destination.provider || '')} (${accordEnAttente.destination.purposes.join(', ')}) ?`}
@@ -745,7 +743,6 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         onCancel={annulerAccord}
         onConfirm={() => { void autoriserAgent(); }}
         busy={accordOccupe}
-        error={erreurAccord}
       />}
       {pendingInstruction && (
         <div ref={confirmationRef} tabIndex={-1} role="alertdialog" aria-label="Confirmer l’appel de l’agent" className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">

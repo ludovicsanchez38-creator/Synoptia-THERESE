@@ -67,24 +67,6 @@ import { Spinner } from '../ui/Spinner';
 const MIN_ROWS = 2;
 const MAX_ROWS = 12;
 
-function identiteConversationCourante() {
-  const etat = useChatStore.getState();
-  return etat.currentConversation()?.localId ?? etat.currentConversationId;
-}
-
-function signalerDemandePerimee() {
-  useStatusStore.getState().addNotification({
-    type: 'warning', title: 'Demande à confirmer à nouveau',
-    message: 'La conversation ou la demande a changé. Vérifie le brouillon, puis relance l’envoi.',
-  });
-}
-
-function finaliserReponseInterrompue(messageId: string, contenu: string) {
-  if (messageId) useChatStore.getState().updateMessage(
-    messageId, `${contenu}${contenu ? '\n\n' : ''}*(interrompu)*`,
-  );
-}
-
 interface ChatInputProps {
   onOpenCommandPalette?: () => void;
   initialPrompt?: string;
@@ -95,21 +77,12 @@ interface ChatInputProps {
   demandeDeFocus?: number;
 }
 
-interface SendRequest {
-  conversationId: string | null;
-  message: string;
-  files: AttachedFile[];
-  destination: string | null;
-  purpose?: Extract<CloudPurpose, 'llm' | 'documents'>;
-  requestPurpose?: Extract<CloudPurpose, 'llm' | 'documents'>;
+interface PendingCloudConsent {
   memoryOrigin?: string;
-}
-
-interface PendingCloudConsent extends SendRequest {
   action: 'message' | 'deep-research';
   // Revue Soso : la finalité fait partie de la demande. Un accord donné pour
   // les messages ne vaut pas pour l'envoi de documents.
-  purpose: Extract<CloudPurpose, 'llm' | 'documents'>;
+  purpose: CloudPurpose;
   // B-1158 : destination d'accord (fournisseur, ou « ollama-cloud »).
   provider: string;
   providerLabel: string;
@@ -267,10 +240,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [consentLabel, setConsentLabel] = useState<string | null>(null);
   const destinationAccord = consentProvider !== undefined ? consentProvider : fournisseurDAccord(currentProvider, currentModel);
   const [pendingCloudConsent, setPendingCloudConsent] = useState<PendingCloudConsent | null>(null);
-  const pendingCloudConsentRef = useRef(pendingCloudConsent);
-  pendingCloudConsentRef.current = pendingCloudConsent;
-  const contexteEnvoiRef = useRef({ destination: destinationAccord, origin: `${currentProvider}:${currentModel}` });
-  contexteEnvoiRef.current = { destination: destinationAccord, origin: `${currentProvider}:${currentModel}` };
   // Mémorise le FOURNISSEUR accordé dans la session : changer de fournisseur
   // redemande un accord (consentement par fournisseur, revue 0.40).
   const cloudConsentGrantedRef = useRef<string | null>(null);
@@ -453,14 +422,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   }, [indexAttachment]);
 
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
-    // Le sélecteur natif peut lui aussi terminer pendant l'accord affiché.
-    if (pendingCloudConsentRef.current) {
-      if (files.length > 0) useStatusStore.getState().addNotification({
-        type: 'warning', title: 'Fichier à sélectionner à nouveau',
-        message: 'Un accord est en attente. Termine cette étape, puis sélectionne à nouveau le fichier à joindre.',
-      });
-      return;
-    }
     const newFiles = files.filter((file) => {
       if (attachedPathsRef.current.has(file.path)) return false;
       attachedPathsRef.current.add(file.path);
@@ -485,7 +446,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   const { isDragging } = useFileDrop({
     onDrop: handleFilesDropped,
-    disabled: isDisabled || pendingCloudConsent !== null,
+    disabled: isDisabled,
   });
 
   // Voice recording
@@ -629,32 +590,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     if (cible) zone.setSelectionRange(cible.debut, cible.fin);
   }, [input, variablesPreview]);
 
-  const capturerDemande = useCallback((message: string): SendRequest => ({
-    conversationId: identiteConversationCourante(), message,
-    files: [...attachedFilesRef.current], destination: contexteEnvoiRef.current.destination,
-  }), []);
-
-  const demandeToujoursCourante = useCallback((demande: SendRequest, verifierBrouillon = true) => {
-    if (demande.conversationId === identiteConversationCourante()
-        && demande.destination === contexteEnvoiRef.current.destination
-        && (!demande.memoryOrigin || demande.memoryOrigin === contexteEnvoiRef.current.origin)
-        && (!verifierBrouillon || (demande.message === textareaRef.current?.value.trim()
-        && demande.files.length === attachedFilesRef.current.length
-        && demande.files.every((file, index) => {
-          const actuelle = attachedFilesRef.current[index];
-          return file.path === actuelle.path && file.name === actuelle.name
-            && file.size === actuelle.size && file.mimeType === actuelle.mimeType;
-        })))) return true;
-    signalerDemandePerimee();
-    return false;
-  }, []);
-
-  const sendMessage = useCallback(async (demandeInitiale?: SendRequest) => {
-    // Capturer avant la première attente, puis reprendre cet instantané après l'accord.
-    const demande = demandeInitiale ?? capturerDemande(input.trim());
-    const trimmed = demande.message;
+  const sendMessage = useCallback(async () => {
+    const trimmed = input.trim();
     if (!trimmed || isOffline || modelAvailable !== true) return;
-    if (!demandeToujoursCourante(demande)) return;
     if (attachedFiles.some((file) => file.indexStatus !== 'ready')) return;
 
     // Detection {{action: agent_id}} -> rediriger vers le panneau Actions
@@ -665,7 +603,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // Charger les agents si pas encore fait
       if (actionsStore.agents.length === 0) {
         await actionsStore.loadAgents();
-        if (!demandeToujoursCourante(demande)) return;
       }
       const agent = useActionsStore.getState().agents.find((a) => a.id === agentId);
       if (agent) {
@@ -730,26 +667,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         // Aperçu indisponible : le texte saisi fait foi, comme avant.
       }
     }
-    if (!demandeToujoursCourante(demande)) return;
-    const finaliteCloud = demande.files.length > 0 || commandeDeFichier ? 'documents' : 'llm';
-    // L'accord mémoire peut couvrir des documents historiques sans que la
-    // demande courante en lise. Comparer les deux résolutions de la demande.
-    if (demande.requestPurpose && demande.requestPurpose !== finaliteCloud) {
-      signalerDemandePerimee();
-      return;
-    }
-    demande.requestPurpose = finaliteCloud;
+    const finaliteCloud: CloudPurpose =
+      attachedFiles.length > 0 || commandeDeFichier
+        ? 'documents'
+        : 'llm';
     // B-1158 : l'accord porte sur la destination réelle ; un modèle Ollama
     // Cloud part chez ollama.com et le demande comme un fournisseur en ligne.
-    const destinationMessage = demande.destination;
+    const destinationMessage = destinationAccord;
     if (
       destinationMessage
       && cloudConsentGrantedRef.current !== `${finaliteCloud}:${destinationMessage}`
       && !hasCloudConsent(finaliteCloud, destinationMessage)
     ) {
-      setShowSlashMenu(false);
       setPendingCloudConsent({
-        ...demande,
         action: 'message',
         purpose: finaliteCloud,
         provider: destinationMessage,
@@ -779,7 +709,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     // Build message content with file attachments
     // BUG-044 : capturer les paths AVANT le clear pour les envoyer au backend
-    const sentFiles = demande.files;
+    const sentFiles = attachedFiles;
     const filePaths = sentFiles.length > 0
       ? sentFiles.map((f) => f.path)
       : undefined;
@@ -791,19 +721,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     // Un échange accepté à l'écran doit déjà être acquitté par le serveur.
     // Avant le premier octet SSE, le texte reste dans le composeur.
-    if (!useChatStore.getState().currentConversationId) {
-      demande.conversationId = useChatStore.getState().createConversation();
-    }
+    if (!useChatStore.getState().currentConversationId) useChatStore.getState().createConversation();
     setStreaming(true);
     setActivity('thinking', 'Envoi en cours...');
     let assistantMessageId = '';
     const accepterMessage = () => {
-      if (assistantMessageId) return true;
-      // La demande est déjà partie : le composeur peut contenir le tour suivant.
-      if (demande.conversationId !== identiteConversationCourante()) {
-        signalerDemandePerimee();
-        return false;
-      }
+      if (assistantMessageId) return;
     // Add user message
     // Revue Soso, passe 3 : le message ajouté localement doit porter le drapeau,
     // sinon changer de fournisseur en cours de conversation ne redemande pas le
@@ -819,16 +742,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // Suggestion Dr_logic 20/07 : l'ENVOI ramène toujours en bas de la
     // conversation (le scroll manuel reste respecté PENDANT la réponse).
     window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
+    setInput('');
     // B-1509 : le brouillon s'efface quand son texte quitte le champ, jamais
     // à la fin de la réponse (un texte tapé entre-temps y serait perdu).
-    if (textareaRef.current?.value.trim() === trimmed) {
-      setInput('');
-      clearDraft();
+    clearDraft();
+    setAttachedFiles([]); // Clear attached files after sending
+    attachedPathsRef.current.clear();
+
+    // Reset textarea height
+    if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    const pathsEnvoyes = new Set(sentFiles.map(file => file.path));
-    setAttachedFiles(current => current.filter(file => !pathsEnvoyes.has(file.path)));
-    for (const path of pathsEnvoyes) attachedPathsRef.current.delete(path);
 
     // Start streaming
 
@@ -838,7 +762,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       content: '',
       isStreaming: true,
     });
-    return true;
+
     };
 
     let accumulatedContent = '';
@@ -879,7 +803,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // identifiant, le backend en créerait une seconde, et le projet
       // resterait sur celle que plus personne n'affiche.
       await attendrePersistance();
-      if (!demandeToujoursCourante(demande, false)) return;
       // Only send conversation_id if it's synced with backend.
       // L'identifiant est relu DANS le store : celui du rendu date d'avant
       // l'attente, et le rattachement vient peut-être de le remplacer. Envoyer
@@ -892,7 +815,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       let syncedConversationId = conversation?.synced ? idCourant : undefined;
       if (conversation && !conversation.ephemeral && idCourant) {
         syncedConversationId = await assurerConversationPersistee(idCourant);
-        if (!demandeToujoursCourante(demande, false)) return;
       }
 
       // Stream response from backend (inclure skill_id si provient des guided prompts)
@@ -905,7 +827,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         conversation_id: syncedConversationId || undefined,
         include_memory: includeMemory,
         memory_card_grants: memoryCardGrantsForRequest(),
-        memory_card_purpose: demande.memoryOrigin ? demande.purpose : finaliteCloud,
+        memory_card_purpose: finaliteCloud,
         ...(repriseMemoire ? { resume_message_id: repriseMemoire.id } : {}),
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
@@ -920,13 +842,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setPendingSkillId(undefined);
 
       for await (const chunk of stream) {
-        if (!accepterMessage() || demande.conversationId !== identiteConversationCourante()) {
-          stopBatching();
-          pendingClientAction = null;
-          finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
-          controller.abort();
-          return;
-        }
+        accepterMessage();
         // Capture the backend conversation ID from the first chunk
         if (chunk.conversation_id && !backendConversationId) {
           backendConversationId = chunk.conversation_id;
@@ -981,11 +897,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             for (const file of fichiers) attachedPathsRef.current.add(file.path);
             return fichiers;
           });
-          setShowSlashMenu(false);
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
-            requestPurpose: finaliteCloud,
-            files: sentFiles, destination: demande.destination,
-            conversationId: identiteConversationCourante(), message: trimmed,
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
             memoryOrigin: `${currentProvider}:${currentModel}`,
             dataCategories: [...responseDataCategories(),
@@ -1088,14 +1000,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } catch (error) {
       // Stop batching on error
       stopBatching();
-      if (demande.conversationId !== identiteConversationCourante()) {
-        pendingClientAction = null;
-        abortRef.current?.abort();
-        finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
-        if (!assistantMessageId) signalerDemandePerimee();
-        return;
-      }
-      if (!assistantMessageId && !demandeToujoursCourante(demande, false)) return;
       // Interruption volontaire : afficher le texte déjà reçu
       if (error instanceof DOMException && error.name === 'AbortError') {
         // Revue harmonisation F2a : l'utilisateur a ARRÊTÉ la réponse - la
@@ -1163,24 +1067,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } finally {
       envoiEnPreparationRef.current = false;
     }
-  }, [capturerDemande, demandeToujoursCourante, consentLabel, input, isOffline, modelAvailable, isStreaming, includeMemory, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
+  }, [destinationAccord, consentLabel, input, isOffline, modelAvailable, isStreaming, includeMemory, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
 
   // Recherche approfondie
-  const handleDeepResearch = useCallback(async (demandeInitiale?: SendRequest) => {
-    const demande = demandeInitiale ?? capturerDemande(input.trim());
-    const trimmed = demande.message;
+  const handleDeepResearch = useCallback(async () => {
+    const trimmed = input.trim();
     if (!trimmed || isOffline || isStreaming) return;
-    if (!demandeToujoursCourante(demande)) return;
 
-    const destinationRecherche = demande.destination;
+    const destinationRecherche = destinationAccord;
     if (
       destinationRecherche
       && cloudConsentGrantedRef.current !== `llm:${destinationRecherche}`
       && !hasCloudConsent('llm', destinationRecherche)
     ) {
-      setShowSlashMenu(false);
       setPendingCloudConsent({
-        ...demande,
         action: 'deep-research',
         purpose: 'llm',
         provider: destinationRecherche,
@@ -1191,41 +1091,27 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     }
 
     setShowSlashMenu(false);
-    if (!useChatStore.getState().currentConversationId) {
-      demande.conversationId = useChatStore.getState().createConversation();
-    }
-    let assistantMessageId = '';
-    const accepterMessage = () => {
-      if (assistantMessageId) return true;
-      if (demande.conversationId !== identiteConversationCourante()) {
-        signalerDemandePerimee();
-        return false;
-      }
-      addMessage({ role: 'user', content: `[Recherche approfondie] ${trimmed}` });
-      // F9 revue : ce second chemin d'envoi doit aussi ramener en bas
-      window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
-      if (textareaRef.current?.value.trim() === trimmed) {
-        setInput('');
-        clearDraft(); // B-1525 : seul le brouillon envoyé quitte le champ.
-        textareaRef.current.style.height = 'auto';
-      }
+    addMessage({ role: 'user', content: `[Recherche approfondie] ${trimmed}` });
+    // F9 revue : ce second chemin d'envoi doit aussi ramener en bas
+    window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
+    setInput('');
+    clearDraft(); // B-1525 : le texte quitte le champ (B-1509).
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
-      assistantMessageId = addMessage({
-        role: 'assistant',
-        content: '',
-        isStreaming: true,
-      });
-      return true;
-    };
     setStreaming(true);
     setActivity('thinking', 'Lancement de la recherche approfondie...');
+
+    const assistantMessageId = addMessage({
+      role: 'assistant',
+      content: '',
+      isStreaming: true,
+    });
 
     let accumulatedContent = '';
     let backendConversationId: string | null = null;
 
     try {
       await attendrePersistance();
-      if (!demandeToujoursCourante(demande, false)) return;
       // Même règle que sur le chemin normal : l'identifiant est relu dans le
       // store, jamais repris de la valeur figée au rendu.
       const conversation = currentConversation();
@@ -1233,7 +1119,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       let syncedConversationId = conversation?.synced ? idCourant : undefined;
       if (conversation && !conversation.ephemeral && idCourant) {
         syncedConversationId = await assurerConversationPersistee(idCourant);
-        if (!demandeToujoursCourante(demande, false)) return;
       }
 
       const controller = new AbortController();
@@ -1245,11 +1130,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }, controller.signal);
 
       for await (const chunk of stream) {
-        if (!accepterMessage() || demande.conversationId !== identiteConversationCourante()) {
-          finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
-          controller.abort();
-          return;
-        }
         if (chunk.conversation_id && !backendConversationId) {
           backendConversationId = chunk.conversation_id;
           const dejaEnregistree = Boolean(
@@ -1289,19 +1169,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       updateMessage(assistantMessageId, accumulatedContent);
     } catch (error) {
-      if (demande.conversationId !== identiteConversationCourante()) {
-        abortRef.current?.abort();
-        finaliserReponseInterrompue(assistantMessageId, accumulatedContent);
-        if (!assistantMessageId) signalerDemandePerimee();
-        return;
-      }
-      if (!assistantMessageId && !demandeToujoursCourante(demande, false)) return;
       if (error instanceof DOMException && error.name === 'AbortError') {
         updateMessage(assistantMessageId, accumulatedContent || '*(recherche interrompue)*');
       } else {
         const errorMessage = error instanceof Error ? error.message : 'Erreur de recherche';
-        if (assistantMessageId) updateMessage(assistantMessageId, errorMessage);
-        else useStatusStore.getState().addNotification({ type: 'error', title: 'Recherche non envoyée', message: errorMessage });
+        updateMessage(assistantMessageId, errorMessage);
       }
     } finally {
       abortRef.current = null;
@@ -1309,7 +1181,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [capturerDemande, demandeToujoursCourante, consentLabel, input, isOffline, isStreaming, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, clearDraft]);
+  }, [destinationAccord, consentLabel, input, isOffline, isStreaming, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, clearDraft]);
 
   // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
   const sendMessageRef = useRef(sendMessage);
@@ -1318,18 +1190,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   deepResearchRef.current = handleDeepResearch;
 
   const confirmCloudConsent = useCallback(() => {
-    // L'accord reste attaché à la demande affichée, même si une mise à jour
-    // change la conversation ou le brouillon avant l'envoi différé.
-    if (!pendingCloudConsent) return;
-    if (!demandeToujoursCourante(pendingCloudConsent)) {
-      setPendingCloudConsent(null);
-      return;
-    }
-    if (pendingCloudConsent.memoryOrigin
+    if (!pendingCloudConsent || (pendingCloudConsent.memoryOrigin
       ? pendingCloudConsent.memoryOrigin !== `${currentProvider}:${currentModel}`
-      : destinationAccord !== pendingCloudConsent.provider) {
+      : destinationAccord !== pendingCloudConsent.provider)) {
       setPendingCloudConsent(null);
-      signalerDemandePerimee();
       return;
     }
     grantCloudConsent(
@@ -1342,10 +1206,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     const action = pendingCloudConsent.action;
     setPendingCloudConsent(null);
     window.setTimeout(() => {
-      if (action === 'message') void sendMessageRef.current(pendingCloudConsent);
-      else void deepResearchRef.current(pendingCloudConsent);
+      if (action === 'message') void sendMessageRef.current();
+      else void deepResearchRef.current();
     }, 0);
-  }, [demandeToujoursCourante, destinationAccord, currentProvider, currentModel, pendingCloudConsent]);
+  }, [destinationAccord, currentProvider, currentModel, pendingCloudConsent]);
 
   // Auto-send du prompt en file d'attente quand le streaming finit
   useEffect(() => {
@@ -1526,7 +1390,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     <div className="p-4 relative" data-zone-composeur="">
       {/* Slash commands menu */}
       <SlashCommandsMenu
-        isOpen={showSlashMenu && !pendingCloudConsent}
+        isOpen={showSlashMenu}
         query={input}
         selectedIndex={slashMenuIndex}
         onSelect={handleSlashCommandSelect}
@@ -1913,7 +1777,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             variant="ghost"
             size="icon"
             className="h-11 w-11 flex-shrink-0 text-accent hover:bg-accent-tint"
-            onClick={() => void handleDeepResearch()}
+            onClick={handleDeepResearch}
             disabled={isDisabled || attachedFiles.some((file) => file.indexStatus !== 'ready')}
             title="Recherche approfondie (multi-sources)"
             aria-label="Lancer une recherche approfondie"
@@ -1926,7 +1790,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           size="icon"
           data-testid="chat-send-btn"
           className="h-11 w-11 flex-shrink-0"
-          onClick={() => void sendMessage()}
+          onClick={sendMessage}
           disabled={isDisabled || !input.trim() || attachedFiles.some((file) => file.indexStatus !== 'ready')}
           title={isStreaming ? 'Envoyer en file d\'attente' : 'Envoyer (↵)'}
           aria-label={isStreaming ? 'Mettre le message en file d’attente' : 'Envoyer le message'}

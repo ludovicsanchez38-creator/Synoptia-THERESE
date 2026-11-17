@@ -70,8 +70,6 @@ export interface Message {
 
 export interface Conversation {
   id: string;
-  /** Identité conservée quand le serveur remplace l'identifiant local. */
-  localId?: string;
   title: string;
   messages: Message[];
   createdAt: Date;
@@ -398,10 +396,7 @@ export const useChatStore = create<ChatStore>()(
       // Sync actions
       setConversations: (conversations) => {
         // Tri par updatedAt desc (plus récentes en haut)
-        const locales = get().conversations;
-        const sorted = conversations.map(c => ({
-          ...c, localId: locales.find(locale => locale.id === c.id)?.localId ?? c.localId,
-        })).sort(
+        const sorted = [...conversations].sort(
           (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
         appliquerLectureChat(() => set({ conversations: sorted }));
@@ -464,7 +459,7 @@ export const useChatStore = create<ChatStore>()(
       updateConversationId: (oldId, newId) => {
         set((state) => ({
           conversations: state.conversations.map((c) =>
-            c.id === oldId ? { ...c, localId: c.localId ?? oldId, id: newId, synced: true } : c
+            c.id === oldId ? { ...c, id: newId, synced: true } : c
           ),
           currentConversationId:
             state.currentConversationId === oldId ? newId : state.currentConversationId,

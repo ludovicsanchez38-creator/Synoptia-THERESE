@@ -29,8 +29,9 @@ const FOCUSABLE_SELECTOR =
 // B-463 : un lecteur natif avec commandes prend le focus ; absent du sélecteur,
 // il laissait Tab sortir du dialogue depuis le canevas Voix.
 
-// L'ordre d'inscription peut différer de l'ordre visuel (ouverture différée).
-const trapStack: { id: symbol; dialog: HTMLElement }[] = [];
+// Pile des pièges actifs (même principe que escapeStack) : le dernier
+// enregistré est la modale du dessus, seule autorisée à piloter le clavier.
+const trapStack: symbol[] = [];
 
 interface IsolatedElementState {
   count: number;
@@ -101,11 +102,6 @@ function estAuDessus(candidat: HTMLElement, reference: HTMLElement): boolean {
   return Boolean(
     reference.compareDocumentPosition(candidat) & Node.DOCUMENT_POSITION_FOLLOWING,
   );
-}
-
-function aUnPiegeAuDessus(dialog: HTMLElement): boolean {
-  return trapStack.some(piege => piege.dialog !== dialog && piege.dialog.isConnected
-    && estAuDessus(piege.dialog, dialog));
 }
 
 /**
@@ -201,7 +197,7 @@ export function useDialogFocusTrap(
     const dialog = ref.current;
     if (!dialog) return;
 
-    if (!aUnPiegeAuDessus(dialog) && !dialog.contains(document.activeElement)) {
+    if (!dialog.contains(document.activeElement)) {
       declencheurRef.current = document.activeElement as HTMLElement | null;
       const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
       const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
@@ -285,10 +281,10 @@ export function useDialogFocusTrap(
     // Revue Soso S1-3 : un panneau côte à côte ne pilote pas le clavier - il
     // n'entre donc pas dans la pile. Sinon un réarmement le place au-dessus
     // d'une modale ouverte entre-temps et lui vole Escape.
-    trapStack.push({ id: trapId, dialog });
+    trapStack.push(trapId);
 
     function isTopmost(): boolean {
-      return !aUnPiegeAuDessus(dialog!);
+      return trapStack[trapStack.length - 1] === trapId;
     }
 
     function handleKeyDown(e: KeyboardEvent) {
@@ -344,7 +340,7 @@ export function useDialogFocusTrap(
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      const idx = trapStack.findIndex(piege => piege.id === trapId);
+      const idx = trapStack.indexOf(trapId);
       if (idx !== -1) trapStack.splice(idx, 1);
     };
     // hasEscape (booléen stable) plutôt que onEscape (identité instable) :

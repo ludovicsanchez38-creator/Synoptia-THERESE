@@ -294,8 +294,7 @@ export function SlashCommandsMenu({
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (!isOpen || e.defaultPrevented
-          || document.querySelector('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]')) return;
+      if (!isOpen) return;
 
       switch (e.key) {
         case 'ArrowDown':
