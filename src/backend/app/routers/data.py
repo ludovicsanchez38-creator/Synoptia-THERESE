@@ -131,10 +131,13 @@ def _cle_de_connexion(cle: str) -> bool:
 
 _DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
 _URL_DANS_UN_TEXTE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>\\]*")
-_NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&#;?]+)=")
+_NOM_DE_PARAMETRE = re.compile(r"(?<=[?&#])([^=&#?]+)=")
 _FIN_AUTORITE = "/?#"
 _FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
-_PONCTUATION_FINALE = ",.;:!?)]}»"
+# Ce qui ne peut pas appartenir à un nom d'hôte et ferme une URL dans un texte.
+_SEPARATEURS_DE_TEXTE = _FIN_URL_DANS_UN_TEXTE + ",;(){}|^`"
+_GUILLEMETS = "\"'"
+_PONCTUATION_FINALE = ".:!»"
 
 
 def _masquer_parametres_d_une_url(url: str) -> str:
@@ -152,7 +155,7 @@ def _masquer_parametres_d_une_url(url: str) -> str:
         if nom.start() < position or not _cle_de_connexion(unquote_plus(nom.group(1))):
             continue
         fin_valeur = nom.end()
-        while fin_valeur < len(url) and url[fin_valeur] not in "&#;":
+        while fin_valeur < len(url) and url[fin_valeur] not in "&#":
             fin_valeur += 1
         morceaux.extend((url[position : nom.end()], "[REDACTED]"))
         position = fin_valeur
@@ -168,48 +171,96 @@ def _port_plausible(autorite: str) -> bool:
     return not deux_points or not port or (port.isascii() and port.isdigit())
 
 
-def _debut_de_l_hote(texte: str, debut: int) -> int:
+def _guillemet_ouvrant(texte: str, schema: int, plancher: int) -> str:
+    """Le guillemet ou le chevron qui ouvre la valeur où se trouve l'URL, s'il y en a un.
+
+    `plancher` est la fin du jeton précédent : la lecture arrière ne repasse
+    jamais sur un caractère déjà lu, le coût total reste linéaire.
+    """
+    position = schema - 1
+    while position >= plancher and not texte[position].isspace() and texte[position] not in _FIN_URL_DANS_UN_TEXTE:
+        position -= 1
+    return texte[position] if position >= plancher and texte[position] in "\"'<" else ""
+
+
+def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> int:
     """Où commence l'hôte d'une URL dont l'autorité commence à `debut`.
 
-    Lecture de la RFC 3986 : l'autorité s'arrête au premier « / », « ? » ou
-    « # », et tout ce qui y précède le dernier « @ » est un identifiant, quels
-    que soient ses caractères (un mot de passe saisi tel quel peut porter une
-    apostrophe, un guillemet, un chevron). Une espace termine l'URL dans un
-    texte ; elle ne prolonge l'identifiant que dans un cas étroit : ce qui la
-    précède ne peut pas être un hôte suivi de son port (`nom:secret`), et le
-    mot qui la suit porte lui-même le « @ ».
+    L'autorité est lue au plus étroit : elle s'arrête à tout ce qui ne peut pas
+    appartenir à un nom d'hôte (espace, guillemet, chevron, virgule,
+    parenthèse…), et, pour une URL passée en paramètre d'une autre, au
+    séparateur de paramètres. Ce qui y précède le dernier « @ » est un
+    identifiant. Un lien HTML ou Markdown suivi d'une adresse e-mail n'est donc
+    jamais pris pour un identifiant.
+
+    Une URL entre guillemets ou chevrons s'arrête au guillemet fermant, quoi
+    qu'il y ait derrière. Sinon, un mot de passe saisi tel quel pouvant porter
+    l'un de ces séparateurs, on lit au-delà sur un indice précis : ce qui
+    précède ne peut pas être un hôte et son port (`nom:secret`), ou bien l'URL
+    s'arrête sur un guillemet que rien n'a ouvert. Le « @ » doit alors se
+    trouver dans le mot qui suit, sans nouvelle espace.
     """
+    fins = _FIN_AUTORITE + ("&;" if imbriquee else "")
     fin = debut
-    while fin < len(texte) and not texte[fin].isspace() and texte[fin] not in _FIN_AUTORITE:
+    while fin < len(texte) and not texte[fin].isspace() and texte[fin] not in _SEPARATEURS_DE_TEXTE + fins:
         fin += 1
     arobase = texte.rfind("@", debut, fin)
     if arobase >= 0:
         return arobase + 1
-    fin_hote = debut
-    while fin_hote < fin and texte[fin_hote] not in _FIN_URL_DANS_UN_TEXTE:
-        fin_hote += 1
-    if _port_plausible(texte[debut:fin_hote]) or fin >= len(texte) or texte[fin] in _FIN_AUTORITE + "\r\n":
+    if fin >= len(texte) or texte[fin] in fins + "\r\n":
+        return debut
+    if ouvrant and texte[fin] == (">" if ouvrant == "<" else ouvrant):
         return debut
     suite = fin
-    while suite < len(texte) and texte[suite].isspace() and texte[suite] not in "\r\n":
-        suite += 1
+    if not _port_plausible(texte[debut:fin]):
+        while suite < len(texte) and texte[suite] not in fins + "\r\n" and (
+            texte[suite].isspace() or texte[suite] in _SEPARATEURS_DE_TEXTE
+        ):
+            suite += 1
+    elif texte[fin] in _GUILLEMETS:
+        suite = fin + 1
+    else:
+        return debut
     fin_suite = suite
-    while fin_suite < len(texte) and not texte[fin_suite].isspace() and texte[fin_suite] not in _FIN_AUTORITE:
+    while fin_suite < len(texte) and not texte[fin_suite].isspace() and texte[fin_suite] not in fins:
         fin_suite += 1
     arobase = texte.rfind("@", suite, fin_suite)
     return arobase + 1 if arobase >= 0 else debut
 
 
 def _masquer_urls_d_un_texte(valeur: str) -> str:
-    """Deux passes, sans récursion : les identifiants de chaque URL, puis ses paramètres.
+    """Deux passes, sans récursion et en temps linéaire : les identifiants de chaque URL, puis ses paramètres.
 
     Le reste du texte, casse et ponctuation comprises, sort tel qu'il est entré.
+    Un « jeton » est la suite de caractères, sans espace ni guillemet, qui
+    contient une URL : ses bornes, son guillemet ouvrant et le début de sa
+    requête ne sont calculés qu'une fois, même s'il contient mille URL.
     """
     morceaux = []
     position = 0
+    fin_du_jeton = 0
+    requete_du_jeton = -1
+    ouvrant = ""
     while match := _DEBUT_URL.search(valeur, position):
+        nouveau_jeton = match.start() >= fin_du_jeton
+        if nouveau_jeton:
+            ouvrant = _guillemet_ouvrant(valeur, match.start(), fin_du_jeton)
+        # Une URL trouvée dans la requête ou le fragment d'une autre lui est imbriquée.
+        imbriquee = not nouveau_jeton and 0 <= requete_du_jeton < match.start()
         morceaux.append(valeur[position : match.end()])
-        position = _debut_de_l_hote(valeur, match.end())
+        position = _debut_de_l_hote(valeur, match.end(), ouvrant, imbriquee)
+        if nouveau_jeton or position > fin_du_jeton:
+            fin_du_jeton = position
+            while (
+                fin_du_jeton < len(valeur)
+                and not valeur[fin_du_jeton].isspace()
+                and valeur[fin_du_jeton] not in _FIN_URL_DANS_UN_TEXTE
+            ):
+                fin_du_jeton += 1
+            requete_du_jeton = min(
+                (i for i in (valeur.find("?", position, fin_du_jeton), valeur.find("#", position, fin_du_jeton)) if i >= 0),
+                default=-1,
+            )
     sans_identifiants = "".join(morceaux) + valeur[position:]
     return _URL_DANS_UN_TEXTE.sub(lambda url: _masquer_parametres_d_une_url(url.group()), sans_identifiants)
 
