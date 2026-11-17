@@ -349,3 +349,111 @@ async def test_la_mention_suit_les_reperes_reels_et_la_lecture_demandee(
     assert _texte(reponse, stream) == attendu
     messages = (await db_session.execute(select(Message))).scalars().all()
     assert [message.content for message in messages if message.role == "assistant"] == [attendu]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True], ids=["sans_flux", "flux"])
+@pytest.mark.parametrize(("demande", "mention_attendue"), [
+    ("Résume une note et liste « mes rendez-vous » demain", True),
+    ("Résume une note et liste mes rendez-vous pour « demain »", True),
+    ("Résume une note et liste « mes rendez-vous » pour « demain »", True),
+    ("Explique une note et liste « mes rendez-vous » lundi", True),
+    ("Résume une note et enfin liste rapidement « mes rendez-vous » demain", True),
+    ("Résume une note et à présent liste « mes rendez-vous » demain", True),
+    ("Résume une note puis liste « mes rendez-vous » demain", True),
+    ("Résume une note et liste « mon agenda » le « 01/12/2026 »", True),
+    ("Résume une courte et claire liste « Consulte mon agenda demain »", False),
+    ("Résume une courte et claire liste « mes rendez-vous » demain", False),
+], ids=["objet_cite", "date_citee", "objet_et_date_cites", "explication_et_objet",
+        "adverbes_et_objet", "a_present_et_objet", "puis_et_objet",
+        "agenda_et_date_numerique", "liste_nominale_citee", "liste_nominale_objet_cite"])
+async def test_citation_apres_propositions_coordonnees(
+    client, db_session, fournisseur, demande, mention_attendue, stream  # noqa: F811
+):
+    class Modele:
+        async def stream(self, *args, **kwargs):
+            yield StreamEvent(type="text", content=HORAIRES)
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    fournisseur[0]._provider = Modele()
+    reponse = await client.post("/api/chat/send", json={
+        "message": demande, "include_memory": False, "stream": stream,
+    })
+    attendu = HORAIRES + ("\n\n" + MENTION if mention_attendue else "")
+    assert _texte(reponse, stream) == attendu
+    messages = (await db_session.execute(select(Message))).scalars().all()
+    assert [message.content for message in messages if message.role == "assistant"] == [attendu]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True], ids=["sans_flux", "flux"])
+@pytest.mark.parametrize(("contenu", "mention_attendue"), [
+    ("- **Réunion :** 09h\n- **Entretien :** 14h", True),
+    ("- Réunion : 09h, salle A\n- Entretien : 14h, salle B", True),
+    ("- **Réunion :** 09h, salle A\n- **Entretien :** 14h, salle B", True),
+    ("- **Durée :** 3h\n- **Durée :** 2h", False),
+    ("- Durée : 3h, préparation\n- Durée : 2h, trajet", False),
+    ("- **Durée :** 3h, préparation\n- **Durée :** 2h, trajet", False),
+    ("- Horaire : 09h, durée 3h\n- Horaire : 14h, durée 2h", True),
+], ids=["deux_points_en_gras", "complements", "gras_et_complements", "durees_en_gras",
+        "durees_et_complements", "durees_gras_et_complements", "horaires_et_durees"])
+async def test_libelles_en_gras_et_complements_apres_horaire(
+    client, db_session, fournisseur, contenu, mention_attendue, stream  # noqa: F811
+):
+    class Modele:
+        async def stream(self, *args, **kwargs):
+            yield StreamEvent(type="text", content=contenu)
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    fournisseur[0]._provider = Modele()
+    reponse = await client.post("/api/chat/send", json={
+        "message": "Lis mon agenda de demain", "include_memory": False, "stream": stream,
+    })
+    attendu = contenu + ("\n\n" + MENTION if mention_attendue else "")
+    assert _texte(reponse, stream) == attendu
+    messages = (await db_session.execute(select(Message))).scalars().all()
+    assert [message.content for message in messages if message.role == "assistant"] == [attendu]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True], ids=["sans_flux", "flux"])
+@pytest.mark.parametrize(("demande", "mention_attendue"), [
+    ("Reformule la phrase « Consulte mon agenda demain »", False),
+    ("Écris la phrase « Consulte mon agenda demain »", False),
+    ("Rédige la phrase « Consulte mon agenda demain »", False),
+    ('Reformule la phrase "Consulte mon agenda demain"', False),
+    ("Écris la phrase ‘Consulte mon agenda demain, c’est urgent’", False),
+    ("« Consulte mon agenda demain » : écris cette phrase", False),
+    ("Écris « demain », puis lis mon agenda", False),
+    ("Reformule « Consulte mon agenda demain », puis lis mon agenda lundi", True),
+    ("Écris « Consulte mon agenda demain », puis liste « mes rendez-vous » lundi", True),
+    ("Rédige « Ajoute un rendez-vous demain », puis consulte mon agenda lundi", True),
+    ("Reformule « Bonjour », puis lis « mon agenda » pour « lundi »", True),
+    ("Lis « mon agenda » demain puis écris « Consulte mon agenda lundi »", True),
+    ("Écris une note et liste « mes rendez-vous » demain", True),
+    ("Rédige une note et lis « mon agenda » demain", True),
+    ("Reformule une courte et claire liste « mes rendez-vous » demain", False),
+    ("Écris « Consulte mon agenda demain », puis lis mon agenda", False),
+], ids=["reformule_instruction", "ecris_instruction", "redige_instruction",
+        "guillemets_droits", "apostrophe_dans_citation", "citation_avant_redaction",
+        "date_ecrite_puis_lecture_sans_date", "reformule_puis_lecture",
+        "ecris_puis_liste_objet_cite", "redige_action_puis_lecture",
+        "reformule_puis_objet_et_date_cites", "lecture_puis_ecris",
+        "ecris_et_liste_objet_cite", "redige_et_lis_objet_cite",
+        "reformule_liste_nominale_citee", "instruction_citee_puis_lecture_sans_date"])
+async def test_instructions_citees_a_ecrire_ou_reformuler(
+    client, db_session, fournisseur, demande, mention_attendue, stream  # noqa: F811
+):
+    class Modele:
+        async def stream(self, *args, **kwargs):
+            yield StreamEvent(type="text", content=HORAIRES)
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    fournisseur[0]._provider = Modele()
+    reponse = await client.post("/api/chat/send", json={
+        "message": demande, "include_memory": False, "stream": stream,
+    })
+    attendu = HORAIRES + ("\n\n" + MENTION if mention_attendue else "")
+    assert _texte(reponse, stream) == attendu
+    messages = (await db_session.execute(select(Message))).scalars().all()
+    assert [message.content for message in messages if message.role == "assistant"] == [attendu]
