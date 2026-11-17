@@ -603,3 +603,50 @@ def test_masquage_d_un_guillemet_non_ouvert_dans_une_phrase(entree, attendu):
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(entree) == attendu
+
+
+# Sondes de la relecture 8 (interrompue faute de crédits Codex, 17/11/2026) :
+# un jeton masqué dans un lien Markdown mangeait la parenthèse fermante et la
+# suite de la ligne, un attribut HTML collé au suivant était mal lu.
+@pytest.mark.parametrize(
+    ("entree", "attendu"),
+    [
+        ("[Dossier](https://portail.invalid/?access_token=FICTIF)", "[Dossier](https://portail.invalid/?access_token=[REDACTED])"),
+        (
+            "|[Dossier](https://portail.invalid/?access_token=FICTIF)|contact@example.invalid|1500|",
+            "|[Dossier](https://portail.invalid/?access_token=[REDACTED])|contact@example.invalid|1500|",
+        ),
+        ("Copier `https://portail.invalid/?token=FICTIF` puis continuer.", "Copier `https://portail.invalid/?token=[REDACTED]` puis continuer."),
+        ("Voir (https://portail.invalid/?token=FICTIF), puis écrire.", "Voir (https://portail.invalid/?token=[REDACTED]), puis écrire."),
+        ("Lien : https://portail.invalid/?token=FICTIF. Merci.", "Lien : https://portail.invalid/?token=[REDACTED]. Merci."),
+        ("https://wiki.invalid/Page_(test)?token=FICTIF&vue=1", "https://wiki.invalid/Page_(test)?token=[REDACTED]&vue=1"),
+        ("Voir https://wiki.invalid/Page_(test) et la suite", "Voir https://wiki.invalid/Page_(test) et la suite"),
+        # Dans un attribut HTML, « &amp; » sépare les paramètres et « &#45; » fait partie de la valeur.
+        (
+            '<a href="https://portail.invalid/?access_token=FAUX&#45;suite&amp;vue=mois">Dossier</a>',
+            '<a href="https://portail.invalid/?access_token=[REDACTED]&amp;vue=mois">Dossier</a>',
+        ),
+        (
+            '<a href="https://portail.invalid/?vue=mois&amp;password=FAUX-secret">Dossier</a>',
+            '<a href="https://portail.invalid/?vue=mois&amp;password=[REDACTED]">Dossier</a>',
+        ),
+    ],
+)
+def test_masquage_d_un_parametre_dans_un_lien_markdown_ou_html(entree, attendu):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(entree) == attendu
+
+
+@pytest.mark.parametrize(
+    "texte",
+    [
+        '<a href=" https://site.invalid"title="contact@example.invalid">Contact</a>',
+        "<a href=' https://site.invalid'title='contact@example.invalid'>Contact</a>",
+        '<img src="https://logo.invalid"alt="a@b.invalid">',
+    ],
+)
+def test_masquage_d_un_attribut_html_colle_au_suivant(texte):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(texte) == texte
