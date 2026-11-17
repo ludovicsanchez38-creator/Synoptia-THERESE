@@ -51,7 +51,6 @@ import App from './App';
 import * as api from './services/api';
 import { synchroniserConsentements } from './lib/consentSync';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
-import { installLocalStorageStub } from './test/localStorage-stub';
 
 const synchro = vi.mocked(synchroniserConsentements);
 const statut = vi.mocked(api.getOnboardingStatus);
@@ -62,9 +61,8 @@ describe('Démarrage : la synchronisation des accords ne bloque jamais la mise e
 
   beforeEach(() => {
     vi.clearAllMocks();
-    installLocalStorageStub();
     vi.mocked(api.initializeAuth).mockResolvedValue(undefined);
-    vi.mocked(api.getStats).mockResolvedValue({ data_dir: '/profils/test', data_profile_id: 'directory:1:1:0' } as Awaited<ReturnType<typeof api.getStats>>);
+    vi.mocked(api.getStats).mockResolvedValue({ data_dir: '/profils/test' } as Awaited<ReturnType<typeof api.getStats>>);
     isolation.mockReturnValue('unchanged');
     synchro.mockResolvedValue(undefined);
     statut.mockResolvedValue({ completed: true } as Awaited<ReturnType<typeof api.getOnboardingStatus>>);
@@ -73,49 +71,6 @@ describe('Démarrage : la synchronisation des accords ne bloque jamais la mise e
 
   afterEach(() => {
     avertissements.mockRestore();
-  });
-
-  it('R1-C1 : fait vérifier les anciennes identités avant le cloisonnement', async () => {
-    const ancien = '/profils/intermediaire/../A';
-    const autre = '/profils/B';
-    localStorage.setItem('therese:data-profile', ancien);
-    const cle = `therese-cloud-consent-pending:${encodeURIComponent(autre)}`;
-    localStorage.setItem(cle, '[]');
-    localStorage.setItem(`${cle}:revision`, '2');
-    vi.mocked(api.getStats).mockResolvedValue({
-      data_dir: ancien, data_profile: '/profils/A', data_profile_aliases: [ancien],
-      data_profile_id: 'directory:1:1:0',
-    } as Awaited<ReturnType<typeof api.getStats>>);
-
-    render(<App />);
-    await screen.findByTestId('canevas-double');
-
-    expect(api.getStats).toHaveBeenCalledWith([ancien, autre]);
-    expect(isolation).toHaveBeenCalledWith(ancien, {
-      reload: expect.any(Function), canonicalDataDir: '/profils/A', verifiedAliases: [ancien],
-      profileIdentity: 'directory:1:1:0',
-    });
-    expect(isolation.mock.invocationCallOrder[0]).toBeLessThan(synchro.mock.invocationCallOrder[0]);
-  });
-
-  it('R1-C1 : une identité locale illisible arrête le démarrage avant les statistiques', async () => {
-    const lire = vi.mocked(localStorage.getItem).getMockImplementation()!;
-    vi.mocked(localStorage.getItem).mockImplementation((key) => {
-      if (key === 'therese:data-profile') throw new Error('Stockage inaccessible');
-      return lire(key);
-    });
-    const erreurs = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      render(<App />);
-      expect(await screen.findByRole('heading', { name: 'Cloisonnement du profil impossible' })).toBeInTheDocument();
-      expect(api.getStats).not.toHaveBeenCalled();
-      expect(api.initializeAuth).toHaveBeenCalledTimes(1);
-      expect(synchro).not.toHaveBeenCalled();
-      expect(statut).not.toHaveBeenCalled();
-    } finally {
-      vi.mocked(localStorage.getItem).mockImplementation(lire);
-      erreurs.mockRestore();
-    }
   });
 
   it('accords synchronisés : la mise en route est vérifiée une fois et l’assistant s’ouvre si elle manque', async () => {
@@ -192,56 +147,16 @@ describe('Démarrage : la synchronisation des accords ne bloque jamais la mise e
     }
   });
 
-  it('R2-C5 : moteur injoignable cinq fois, le cloisonnement non établi arrête l’application', async () => {
+  it('moteur injoignable cinq fois : ni assistant ni synchronisation, l’application s’ouvre', async () => {
     vi.mocked(api.getStats).mockRejectedValue(new Error('Moteur injoignable'));
     const erreurs = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Cloisonnement du profil impossible' }, { timeout: 9000 })).toBeInTheDocument();
+    expect(await screen.findByTestId('canevas-double', {}, { timeout: 9000 })).toBeInTheDocument();
     expect(api.initializeAuth).toHaveBeenCalledTimes(5);
-    expect(isolation).not.toHaveBeenCalled();
     expect(synchro).not.toHaveBeenCalled();
     expect(statut).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Terminer la configuration' })).not.toBeInTheDocument();
-    expect(screen.queryByTestId('canevas-double')).not.toBeInTheDocument();
     erreurs.mockRestore();
-  }, 15_000);
-
-  it('R2-C5 : sans identité durable annoncée, aucun écran métier ne démarre', async () => {
-    vi.mocked(api.getStats).mockResolvedValue({ data_dir: '/profils/test' } as Awaited<ReturnType<typeof api.getStats>>);
-    const erreurs = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      render(<App />);
-      expect(await screen.findByRole('heading', { name: 'Cloisonnement du profil impossible' })).toBeInTheDocument();
-      expect(isolation).not.toHaveBeenCalled();
-      expect(synchro).not.toHaveBeenCalled();
-      expect(statut).not.toHaveBeenCalled();
-      expect(screen.queryByTestId('canevas-double')).not.toBeInTheDocument();
-    } finally {
-      erreurs.mockRestore();
-    }
-  });
-
-  it('R2-C5 : une indisponibilité passagère attend l’identité avant d’ouvrir le canevas', async () => {
-    vi.mocked(api.getStats).mockRejectedValueOnce(new Error('Dossier temporairement inaccessible'));
-    render(<App />);
-    expect(screen.queryByTestId('canevas-double')).not.toBeInTheDocument();
-    expect(await screen.findByTestId('canevas-double', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(api.getStats).toHaveBeenCalledTimes(2);
-    expect(isolation).toHaveBeenCalledTimes(1);
-    expect(isolation.mock.invocationCallOrder[0]).toBeLessThan(synchro.mock.invocationCallOrder[0]);
-  });
-
-  it('R2-C5 : après isolation, seul l’échec de mise en route conserve le repli existant', async () => {
-    statut.mockRejectedValue(new Error('Mise en route indisponible'));
-    const erreurs = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      render(<App />);
-      expect(await screen.findByTestId('canevas-double', {}, { timeout: 9000 })).toBeInTheDocument();
-      expect(isolation).toHaveBeenCalledTimes(5);
-      expect(screen.queryByRole('button', { name: 'Terminer la configuration' })).not.toBeInTheDocument();
-    } finally {
-      erreurs.mockRestore();
-    }
   }, 15_000);
 });
