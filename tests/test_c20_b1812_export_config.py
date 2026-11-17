@@ -281,3 +281,109 @@ def test_masquage_des_parametres_de_connexion_sur_toute_l_url(entree, attendu):
     from app.routers.data import _masquer_urls_export
 
     assert _masquer_urls_export(entree) == attendu
+
+
+# Relecture 5 du lot (17/11/2026) : une ponctuation après le port relançait la
+# confusion avec un identifiant, deux clés distinctes devenaient identiques une
+# fois masquées, et la réécriture d'un JSON altérait ses nombres.
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+@pytest.mark.parametrize("apres_le_port", [",", ".", ")", ";", " :", "!"])
+async def test_export_conserve_un_port_suivi_d_une_ponctuation(client, db_session, route, apres_le_port):
+    description = f"Voir https://agenda.invalid:443{apres_le_port} puis contacter : personne@example.invalid"
+    db_session.add(Calendar(id="cal-ponctuation", summary="Agenda", description=description))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    agenda = next(c for c in reponse.json()["calendars"] if c["id"] == "cal-ponctuation")
+    assert agenda["description"] == description
+
+
+@pytest.mark.parametrize(
+    "texte",
+    [
+        "Voir https://exemple.invalid:test puis écrire à a@b.invalid",
+        "Serveur https://exemple.invalid:prod, deux mots puis a@b.invalid",
+        "https://agenda.invalid:443, puis a@b.invalid",
+    ],
+)
+def test_masquage_ne_prolonge_un_identifiant_que_sur_le_mot_suivant(texte):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(texte) == texte
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["/api/data/export", "/api/config/export"])
+async def test_export_garde_deux_entrees_dont_les_cles_se_confondent_une_fois_masquees(client, db_session, route):
+    db_session.add(Project(
+        id="projet-cles", name="Projet aux deux agendas",
+        extra_data=json.dumps({
+            "https://alice:FICTIF-a@agenda.invalid/dav": "Personnel",
+            "https://bob:FICTIF-b@agenda.invalid/dav": "Travail",
+        }),
+    ))
+    await db_session.commit()
+
+    reponse = await (client.get(route) if route == "/api/data/export" else client.post(route))
+    assert reponse.status_code == 200
+    assert all(secret not in reponse.text for secret in ("alice", "bob", "FICTIF-a", "FICTIF-b"))
+    projet = next(p for p in reponse.json()["projects"] if p["id"] == "projet-cles")
+    donnees = projet["extra_data"] if isinstance(projet["extra_data"], dict) else json.loads(projet["extra_data"])
+    assert sorted(donnees.values()) == ["Personnel", "Travail"]
+    assert all("agenda.invalid/dav" in cle for cle in donnees)
+
+
+def test_masquage_des_cles_sans_collision_avec_une_cle_deja_presente():
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export({
+        "https://temoin:FAUX-secret@agenda.invalid/dav": "avec identifiants",
+        "https://agenda.invalid/dav": "sans identifiants",
+    })
+    assert sorted(sortie.values()) == ["avec identifiants", "sans identifiants"]
+    assert sortie["https://agenda.invalid/dav"] == "sans identifiants"
+    assert not any("temoin" in cle or "FAUX-secret" in cle for cle in sortie)
+
+    texte = _masquer_urls_export(
+        '{"https://alice:FICTIF-a@agenda.invalid/dav":"Personnel","https://bob:FICTIF-b@agenda.invalid/dav":"Travail"}'
+    )
+    assert sorted(json.loads(texte).values()) == ["Personnel", "Travail"]
+    assert "alice" not in texte and "bob" not in texte and "FICTIF" not in texte
+
+
+@pytest.mark.parametrize(
+    "texte",
+    [
+        '{"montant":123456789.123456789}',
+        '{"grand": 123456789012345678901234567890, "petit": 1e-400, "liste": [0.1, 1.10, -0.0]}',
+        '{ "espaces" :  "gardés" ,"vide":{},"rien":null,"vrai":true }',
+    ],
+)
+def test_masquage_rend_tel_quel_un_json_sans_identifiant(texte):
+    from app.routers.data import _masquer_urls_export
+
+    assert _masquer_urls_export(texte) == texte
+
+
+def test_masquage_d_un_json_garde_ses_nombres_au_caractere_pres():
+    from app.routers.data import _masquer_urls_export
+
+    sortie = _masquer_urls_export(
+        '{"url":"https://temoin:FAUX-secret@agenda.invalid/dav","montant":123456789.123456789,"n":1.10,"ok":true}'
+    )
+    assert "temoin" not in sortie and "FAUX-secret" not in sortie
+    assert "123456789.123456789" in sortie and "1.10" in sortie
+    assert json.loads(sortie)["url"] == "https://agenda.invalid/dav"
+    assert json.loads(sortie)["ok"] is True
+
+
+@pytest.mark.parametrize("profondeur", [300, 5000])
+def test_masquage_d_un_json_tres_imbrique_ne_fait_pas_tomber_l_export(profondeur):
+    from app.routers.data import _masquer_urls_export
+
+    texte = "[" * profondeur + '"https://temoin:FAUX-secret@agenda.invalid/dav"' + "]" * profondeur
+    sortie = _masquer_urls_export(texte)
+    assert "temoin" not in sortie and "FAUX-secret" not in sortie
+    assert "agenda.invalid/dav" in sortie
