@@ -1072,9 +1072,6 @@ class CreateEventRequest(BaseModel):
     """Request pour créer un événement."""
 
     calendar_id: str = "primary"
-    # Une sélection désigne une ligne SQL, même si son id vaut « primary ».
-    # Sans cet indicateur, l'alias Google historique reste accepté.
-    calendar_id_is_stored: bool = False
     summary: str
     description: str | None = None
     location: str | None = None

@@ -263,7 +263,6 @@ export function EventForm() {
           // Create new event
           const request: api.CreateEventRequest = {
             calendar_id: currentCalendarId,
-            calendar_id_is_stored: true,
             summary,
             description: description || undefined,
             location: location || undefined,

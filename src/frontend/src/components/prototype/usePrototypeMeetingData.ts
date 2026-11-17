@@ -236,7 +236,7 @@ export function usePrototypeMeetingData(enabled = true) {
       const calendar = data.calendars.find((item) => item.id === request.calendar_id);
       if (!calendar) throw new Error('Sélectionne un calendrier disponible.');
 
-      const created = await createEvent({ ...request, calendar_id_is_stored: true }, calendar.account_id || undefined);
+      const created = await createEvent(request, calendar.account_id || undefined);
       const events = uniqueEvents([...data.events, created]).sort((left, right) => eventStart(left) - eventStart(right));
       const nextData = { ...data, events };
       workspace.current = nextData;

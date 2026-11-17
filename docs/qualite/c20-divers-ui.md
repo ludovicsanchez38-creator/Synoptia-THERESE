@@ -4,7 +4,8 @@ Exécution du 16 novembre 2026 dans l’arbre `gpt-c20-divers-ui`, branche
 `gpt/c20-divers-ui`. Base constatée : `4dfc79d1568d123d7b517113a984b75baca84fc0`
 (`v0.83.0-alpha-137-g4dfc79d1`). Les candidats ont été examinés dans l’ordre demandé.
 
-Trois candidats confirmés, cinq rejetés, une règle à trancher. Aucun commit,
+Bilan initial : trois candidats confirmés, cinq rejetés, une règle à trancher.
+La passe 4 retire B-1991 et le classe `regle_a_trancher`. Aucun commit,
 aucun `git add`, aucun push. Les tests et correctifs restent dans cet arbre.
 Les rouges ci-dessous ont été exécutés avant leur correction respective.
 
@@ -16,7 +17,7 @@ est celui du cas dans le fichier indiqué.
 | ID | Verdict | Test (chemin::nom) | Rouge observé, en remplacement du commit du rouge | Commit du correctif |
 | --- | --- | --- | --- | --- |
 | B-1989 | `confirme` | `tests/test_invoice_pdf_francais.py::test_b1989_un_statut_inconnu_reste_en_francais_dans_le_pdf` | `AssertionError: assert 'Statut inconnu' in 'Document généré par THÉRÈSE - 16/11/2026\nPage 1\nFACTURE\nN° FACT-2026-324\nÉMETTEUR\nDESTINATAIRE\nÉmetteur de test...vrement : 40 €.\nEscompte pour paiement anticipé : néant.\nMentions légales : TVA incluse selon les taux en vigueur.\n'` ; 1 échec, 0 succès | non commité |
-| B-1991 | `confirme` | `tests/test_b1991_fournisseur_agenda_inconnu.py::test_b1991_creer_sur_un_fournisseur_inconnu_explique_le_refus` | `AssertionError: assert 'account_id r...ogle Calendar' == 'Ce fournisse...is en charge.'` ; valeur reçue : `account_id requis pour Google Calendar` ; 1 échec, 0 succès | non commité |
+| B-1991 | `regle_a_trancher` | Six reproductions de la passe 4, exécutées puis retirées avec le candidat | Constats 1 à 6 du relecteur confirmés : 14 échecs avant retrait ; preuves ci-dessous | retiré du lot, reporté |
 | B-1995 | `confirme` | `src/frontend/src/components/calendar/CalendarPanel.da.test.tsx::B-1995 : le refus brut de Google est expliqué en français avec les données conservées` | `Error: expect(element).toHaveTextContent()` ; attendu : `L’API Google Calendar n’est pas activée.` ; reçu : `Google Calendar API has not been used in project 42 before or it is disabled.Données conservées.Réessayer` ; 1 échec, 0 succès, 28 cas exclus par le filtre | non commité |
 | B-2000 | `rejete` | `src/frontend/src/components/board/BoardPanel.souverainOllamaCloud.b1172.test.tsx::seul un modèle Cloud installé : le mode souverain ne se déclare pas disponible` | Aucun rouge : le mode actif reste Cloud, déjà annoncé avant confirmation | sans changement |
 | B-2001 | `rejete` | `src/frontend/src/components/settings/PrivacyTab.purgeIndisponible.b1209.test.tsx::« Enregistrer » n’envoie pas des valeurs par défaut non lues` et `::B-1230 : les commandes de purge sont grisées et la raison est dite` | Aucun rouge : valeurs signalées comme défauts, commandes désactivées, aucun envoi | sans changement |
@@ -24,6 +25,10 @@ est celui du cas dans le fichier indiqué.
 | B-2005 | `rejete` | `src/frontend/src/components/invoices/InvoicesPanel.debordement.p162.test.tsx::retire indice et arrêt clavier quand le filtre ne contient aucune pièce` | Aucun rouge : pas de tableau à faire défiler ; les actions restent accessibles | sans changement |
 | B-2007 | `rejete` | `src/frontend/src/components/chat/ChatInput.modeles.c18m1.test.tsx::Mistral Large 4 se voit en préversion, et le réglage d’effort n’est pas appliqué` | Aucun rouge : le libellé suit l’effort effectivement transmis par le moteur | sans changement |
 | B-2028 | `regle_a_trancher` | `src/frontend/src/components/onboarding/SecurityStep.deplieVisible.b1344.test.tsx::déplier le dernier risque l’amène sous les yeux` ; critère en discussion dans `tests/rendering/c22a.spec.ts:35` | Aucun rouge : pas de preuve d’un contenu effectivement masqué par ce pixel de tolérance | sans changement |
+
+**B-1991 : retiré du lot, reporté.** La passe 4 ci-dessous remplace les verdicts
+antérieurs de ce candidat. Preuve : les six constats du relecteur sur l’alias,
+le cache historique, les notes et la provenance, reproduits avant le retrait.
 
 ### B-1989 : repli du statut dans le PDF
 
@@ -913,3 +918,206 @@ Aucun rouge connu de la demande ne figure dans ces fichiers ciblés. Le contenu
 B-2029 et son contrat sont corrigés ; **l'historique n'est pas rebasé** et ce point
 du constat 4 demeure à traiter par l'orchestrateur. `HEAD` reste `70cce49c` et
 l'index reste inchangé.
+
+## Remédiation de la relecture, passe 4
+
+Reprise du 17 novembre 2026 sur `7f279b65`, dans l’arbre déjà rebasé sur
+`c20/integration` par l’orchestrateur. Aucun fichier suivi n’était modifié ; les
+liens `.venv` et `src/frontend/node_modules` étaient déjà non suivis. Les passages
+des anciennes passes annonçant un rebase restant à faire sont historiques.
+Cette passe n’effectue aucun rebase et ne reprend aucun fichier d’un autre lot.
+
+### Décision : retrait complet de B-1991
+
+Les six constats portent sur le même candidat B-1991 et ses remédiations.
+**Option (b) pour chacun : `regle_a_trancher`, retiré du lot, reporté.**
+Le report laisse les défauts à traiter au cycle suivant ; les portes vertes
+ci-dessous valident le retrait, pas une résolution de ces six scénarios.
+
+Le constat 5 impose de coordonner l’agenda et les notes CRM. La note référence
+le couple `(calendar_event_id, calendar_id)` : recherche sur les deux champs
+dans `src/backend/app/routers/crm.py:139`, puis détection de suppression par
+comparaison du calendrier à la ligne 157. La vérification de lien impose le
+même couple dans `src/backend/app/services/meeting_notes.py:24`. Les créations
+de notes passent aussi par la file d’écritures de `crm.py:173`. Ces fichiers
+n’appartiennent pas à ce correctif et restent intacts.
+
+Le constat 6 interdit de déduire la provenance du seul compte et de l’identifiant.
+`CalendarEvent` porte un identifiant global et une référence d’agenda, sans
+preuve indépendante du fournisseur (`src/backend/app/models/entities.py:564`).
+La fixture historique des passes précédentes associait justement `primary` à
+un fournisseur `inconnu` ; une réponse Google homonyme ne lève pas cette
+ambiguïté. Les attentes de réaffectation de ces anciens tests ne constituent
+donc pas une preuve sûre. Aucun champ de provenance n’est inventé.
+
+Résoudre seulement l’alias dans les constats 2 et 3 laisserait ces deux problèmes
+d’identité dans le même candidat. Le retrait est donc complet, conformément à
+la consigne de cette passe, sans nouvelle correction partielle.
+
+| Constat | Choix | Verdict | Preuve du relecteur, confirmée en mémoire |
+| --- | --- | --- | --- |
+| 1 | (b) | `regle_a_trancher` | Première lecture par l’identifiant réel : l’événement historique est écarté. |
+| 2 | (b) | `regle_a_trancher` | Sans ligne SQL `primary`, modification et suppression Google laissent le cache périmé. |
+| 3 | (b) | `regle_a_trancher` | L’alias implicite entre en collision avec les fournisseurs pris en charge avant le choix de destination. |
+| 4 | (b) | `regle_a_trancher` | Lecture unitaire historique avant toute liste ou mutation : HTTP 404. |
+| 5 | (b) | `regle_a_trancher` | Après réconciliation, la note est marquée comme liée à un événement supprimé. |
+| 6 | (b) | `regle_a_trancher` | Le même compte et le même identifiant ne prouvent pas la provenance ; la ligne homonyme est déplacée ou supprimée. |
+
+**Pour chacune des six lignes : retiré du lot, reporté.**
+
+### Reproductions avant retrait
+
+Six tests ont été ajoutés dans `tests/test_c20_calendar_primary_relecture.py`,
+avant toute modification de production. Chacun a été lancé seul (ses variantes
+paramétrées ensemble), avec SQLite en mémoire, les routes FastAPI et le vrai
+service Google sur `httpx.MockTransport`. Les branches locales et CalDAV du
+constat 3 sont simulées. Aucun appel réseau réel.
+
+| Constat | Test ajouté, puis retiré avec le candidat | Échecs / cas | Ligne d’échec recopiée |
+| --- | --- | ---: | --- |
+| 1 | `test_r4_c1_premiere_lecture_par_identifiant_reel` | 1 / 1 | `AssertionError: assert [] == ['rendez-vous']` |
+| 2 | `test_r4_c2_mutation_alias_sans_ligne_primary` | 2 / 2 | `AssertionError: assert 'Ancien titre' == 'Titre modifié'` ; `AssertionError: assert [CalendarEven...imezone.utc))] == []` |
+| 3 | `test_r4_c3_alias_avant_choix_du_fournisseur` | 6 / 6 | `AssertionError: assert (0 + 1) == 0` (création locale et CalDAV) ; `AssertionError: assert (1 + 0) == 0` (lecture) |
+| 4 | `test_r4_c4_lecture_unitaire_avant_liste_ou_mutation` | 1 / 1 | `E       assert 404 == 200` |
+| 5 | `test_r4_c5_notes_relues_apres_reconciliation` | 1 / 1 | `E       assert True is False` |
+| 6 | `test_r4_c6_homonyme_fournisseur_inconnu_conserve` | 3 / 3 | `E       assert 0 == 1` (suppression) |
+
+Le constat 1 commence directement par l’identifiant réel sélectionné, avec une
+source déclarée Google : aucune lecture préalable de `primary`. Le constat 2
+précharge le cache sous l’identifiant réel sans aucune ligne SQL `primary`.
+Le constat 3 couvre lecture et création pour `local`, `caldav` et `google` ;
+pour ce dernier, la ligne homonyme appartient à l’autre compte. Ce cas de lecture
+échoue avec `AssertionError: {"detail":"Calendrier introuvable : primary"}` ;
+la création n’appelle pas la résolution et échoue avec :
+
+```text
+AssertionError: assert ('GET', '/calendar/v3/calendars/primary') in [('POST', '/calendar/v3/calendars/primary/events')]
+```
+
+Le constat 4 lit l’événement avant toute liste ou mutation. Le constat 5 vérifie
+d’abord le lien et `event_deleted=false`, puis relit les notes après la liste
+Google : `event_deleted` devient `true`. Le constat 6 compare toute la ligne
+et son dossier pour GET, PUT et DELETE, avec fournisseur inconnu, même compte
+et même identifiant. GET et PUT modifient notamment `calendar_id` et `summary` ;
+DELETE laisse zéro ligne au lieu d’une.
+
+Les six XML `/tmp/divers-ui-r4-c1-rouge.xml` à
+`/tmp/divers-ui-r4-c6-rouge.xml` ont été lus : **14 échecs, 0 erreur,
+0 succès, 0 ignoré**. Ils décrivent l’état avant retrait. Aucun de ces rouges
+n’est présenté comme un défaut corrigé. Les reproductions et les anciens tests
+du candidat sont retirés du lot avec lui, comme l’exige l’option (b).
+
+Commande exécutée séparément pour chacun des six noms ci-dessus :
+
+```sh
+PYTHONPATH=/tmp/divers-ui-r2-harness OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest \
+  tests/test_c20_calendar_primary_relecture.py::<nom_du_test> \
+  -q -p no:cacheprovider -p r2_reports --timeout=120 \
+  --junitxml=/tmp/divers-ui-r4-c<N>-rouge.xml
+```
+
+### Périmètre exact du retrait
+
+Seuls les écarts B-1991 ont été annulés, par application inverse du diff du lot
+avec `git apply --reverse`, sans indexation. Aucun fichier n’a été recopié
+depuis une branche. Le diff d’annulation, comprenant les reproductions, est
+conservé dans `/tmp/divers-ui-r4-retrait-b1991.patch`.
+
+Les onze chemins suivants ont **zéro écart avec `c20/integration`**, vérifié
+avec `git diff --exit-code c20/integration -- <ces chemins>` :
+
+- `src/backend/app/routers/calendar.py`
+- `src/backend/app/models/schemas.py`
+- `src/frontend/src/services/api/calendar.ts`
+- `src/frontend/src/services/api/calendar.selection.test.ts` (absent du socle)
+- `src/frontend/src/components/calendar/EventForm.tsx`
+- `src/frontend/src/components/calendar/EventForm.test.tsx`
+- `src/frontend/src/components/prototype/usePrototypeMeetingData.ts`
+- `src/frontend/src/components/prototype/usePrototypeMeetingData.test.tsx`
+- `tests/test_regression_facturation_agenda.py`
+- `tests/test_b1991_fournisseur_agenda_inconnu.py` (absent du socle)
+- `tests/test_c20_calendar_primary_relecture.py` (absent du socle)
+
+Les tests du socle gardent exactement leurs assertions. Les suppressions
+concernent exclusivement les tests ajoutés pour le candidat retiré. Les autres
+candidats du lot et les fichiers des autres lots ne sont pas modifiés.
+
+Appelants relus après retrait : `CalendarPanel.loadEvents`, `EventForm`,
+`EventDetail`, `usePrototypeMeetingData`, la synchronisation du routeur,
+les mutations de `CalendarService`, les lectures de `dashboard.py` et les
+références CRM décrites ci-dessus. Le frontend et le backend utilisent de nouveau
+ensemble le contrat du socle, sans indicateur résiduel `calendar_id_is_stored`.
+
+### Portes après retrait
+
+| Porte | Périmètre | Réussis | Échecs / erreurs | Ignorés |
+| --- | --- | ---: | ---: | ---: |
+| Pytest | 13 fichiers calendrier et notes voisins ; XML relu | 117 | 0 / 0 | 0 |
+| Ruff | `src/backend tests`, sans correction automatique | réussi | 0 diagnostic | sans objet |
+| Vitest | 28 fichiers calendrier, API CalDAV et hook prototype ; JSON relu | 171 | 0 | 0 |
+| TypeScript | `npx tsc --noEmit` | réussi | 0 diagnostic | sans objet |
+| ESLint | `npm run lint` | réussi | 0 erreur, 27 avertissements | sans objet |
+
+Le XML `/tmp/divers-ui-r4.xml` a été lu avant Ruff : 117 cas, durée
+90,397 secondes. Le JSON `/tmp/divers-ui-r4-front.json` a été lu ; le journal
+ESLint `/tmp/divers-ui-r4-eslint.log` confirme le code de sortie 0 et les
+27 avertissements. Aucun rouge connu n’a été exclu : les fichiers concernés
+ne font pas partie de cette sélection. Aucune suite complète n’a été lancée.
+
+Commande backend finale :
+
+```sh
+divers_ui_r4_data="$(mktemp -d /tmp/divers-ui-r4-data-XXXXXX)"
+THERESE_DATA_DIR="$divers_ui_r4_data" \
+PYTHONPATH=/tmp/divers-ui-r2-harness OLLAMA_BASE_URL=http://127.0.0.1:9 \
+.venv/bin/python -m pytest \
+  tests/test_routers_calendar.py \
+  tests/test_regression_facturation_agenda.py \
+  tests/test_frontiere_facturation_agenda.py \
+  tests/test_c22b_caldav_ecriture.py \
+  tests/test_calendar_allday_semantics.py \
+  tests/test_google_calendar_civil_time.py \
+  tests/test_calendar_jeton_de_version.py \
+  tests/test_calendar_rappel_par_defaut.py \
+  tests/test_pluriel_agenda_google.py \
+  tests/test_agenda_portes_par_identifiant.py \
+  tests/test_b1995_contrat_erreur_google.py \
+  tests/test_r5_9_notes.py \
+  tests/test_c20_b1889_notes_heritees.py \
+  -q -p no:cacheprovider -p r2_reports --timeout=120 \
+  --junitxml=/tmp/divers-ui-r4.xml
+.venv/bin/python -m ruff check --no-fix src/backend tests
+```
+
+Les deux auxiliaires existants de la passe 2 ont été relus et réutilisés :
+réveil périodique du sélecteur asyncio et écriture du JUnit avant le
+`os._exit` du conftest. Ils ne modifient aucune assertion et ne sont pas ajoutés
+au dépôt. Les données des tests voisins sont dans un répertoire temporaire
+explicitement fourni à `THERESE_DATA_DIR`.
+
+Commandes frontend, depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx vitest run \
+  src/services/api/caldav.test.ts \
+  src/components/calendar \
+  src/components/prototype/usePrototypeMeetingData.test.tsx \
+  --maxWorkers=3 --configLoader runner --no-cache \
+  --reporter=json --outputFile=/tmp/divers-ui-r4-front.json \
+  > /tmp/divers-ui-r4-vitest.log 2>&1
+npm_config_offline=true npx tsc --noEmit
+npm run lint > /tmp/divers-ui-r4-eslint.log 2>&1
+```
+
+La passe ne modifie que les onze chemins du retrait et ce bilan. Les autres
+écarts du lot restent intacts. `git diff --check` passe, aucune modification n’est indexée et
+`HEAD` reste `7f279b65`. Les onze chemins retirés sont identiques à
+`c20/integration` (`87310bad` au contrôle). Aucun résidu de l’indicateur
+`calendar_id_is_stored` ou des trois auxiliaires B-1991 n’est présent dans
+`src/backend`, `src/frontend/src` et `tests`.
+
+Aucun réseau, fournisseur LLM, accès à `~/.therese` ou `.app-loop/`, ni ouverture
+des ports réservés. Aucune commande `rm`, aucun `git add`, commit, rebase, dépôt
+annexe ou bundle. Tous les changements de la passe restent non indexés et
+non commités pour l’orchestrateur.
