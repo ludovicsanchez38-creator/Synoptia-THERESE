@@ -113,6 +113,31 @@ it('R2-2 : le sélecteur du chat attend le POST des réglages fermés', async ()
   expect(screen.getByRole('button', { name: 'Modèle de conversation' })).toHaveTextContent('Mistral Large');
 });
 
+it('R3-3 : le choix du chat prévaut sur un ancien GET des réglages', async () => {
+  enregistree.available_models = ['mistral-medium-latest', 'mistral-small-2603', 'mistral-large-latest'];
+  useStatusStore.setState({ connectionState: 'connected' });
+  const vue = (isOpen: boolean) => <>
+    <ChatInput />
+    <SettingsModal isOpen={isOpen} requestedTab="ai" onClose={vi.fn()} />
+  </>;
+  const { rerender } = render(vue(true));
+  await waitFor(() => expect(screen.getByLabelText('Modèle')).toHaveValue(enregistree.model));
+  const avant = { ...enregistree };
+  let terminer!: () => void;
+  vi.mocked(api.getLLMConfig).mockImplementationOnce(() => new Promise(resolve => { terminer = () => resolve(avant); }));
+  fireEvent.change(screen.getByLabelText('Modèle'), { target: { value: 'mistral-small-2603' } });
+  await waitFor(() => expect(terminer).toBeTypeOf('function'));
+  rerender(vue(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Modèle de conversation' }));
+  fireEvent.change(screen.getByRole('listbox', { name: 'Choisir le modèle' }), { target: { value: 'mistral-large-latest' } });
+  await waitFor(() => expect(enregistree.model).toBe('mistral-large-latest'));
+  await act(async () => { terminer(); });
+
+  expect(enregistree.model).toBe('mistral-large-latest');
+  expect(api.setLLMConfig).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Modèle de conversation' })).toHaveTextContent('Mistral Large');
+});
+
 it('R1-3 : régler l’effort pendant le choix d’un modèle conserve ce modèle', async () => {
   await ouvrir();
   const enregistrer = vi.mocked(api.setLLMConfig).getMockImplementation()!;
@@ -151,6 +176,28 @@ it('R2-4 : l’option normalise xhigh quand elle reprend un modèle en attente d
   expect(api.setLLMConfig).toHaveBeenCalledTimes(1);
 });
 
+it('R3-5 : l’adresse normalise aussi l’effort conservé du modèle en attente', async () => {
+  enregistree = { ...enregistree, provider: 'qwen', model: 'qwen3.8-max', effort: 'xhigh', base_url: 'https://exemple.invalid/v1' };
+  await ouvrir();
+  await waitFor(() => expect(screen.getByLabelText('Adresse de ton espace de travail')).toHaveValue(enregistree.base_url));
+  const avant = { ...enregistree };
+  let terminer!: () => void;
+  vi.mocked(api.getLLMConfig).mockImplementationOnce(() => new Promise(resolve => { terminer = () => resolve(avant); }));
+  const select = screen.getByLabelText('Modèle') as HTMLSelectElement;
+  const suivant = Array.from(select.options).find(opt => opt.value !== enregistree.model)!.value;
+  fireEvent.change(select, { target: { value: suivant } });
+  fireEvent.click(screen.getByRole('button', { name: 'Enregistrer l’adresse' }));
+  await waitFor(() => expect(api.setLLMConfig).toHaveBeenCalledTimes(1));
+  await act(async () => { terminer(); });
+
+  expect(enregistree.model).toBe(suivant);
+  expect(enregistree.effort).toBe('auto');
+  expect(api.setLLMConfig).toHaveBeenLastCalledWith('qwen', suivant, 'auto', avant.base_url);
+  expect(screen.getByLabelText('Effort de raisonnement')).toHaveValue('auto');
+  expect(screen.queryByRole('option', { name: /Très élevé/ })).toBeNull();
+  expect(api.setLLMConfig).toHaveBeenCalledTimes(1);
+});
+
 it.each(['réussite', 'refus'])('R2-9 : la sauvegarde d’adresse clôt le statut du modèle repris après %s', async (issue) => {
   enregistree = { ...enregistree, provider: 'qwen', model: 'qwen3.8-max', base_url: 'https://exemple.invalid/v1' };
   await ouvrir();
@@ -177,6 +224,31 @@ it.each(['réussite', 'refus'])('R2-9 : la sauvegarde d’adresse clôt le statu
     expect(screen.getByRole('alert')).toHaveTextContent('Adresse refusée');
     expect(screen.queryByText('Modèle IA enregistré.')).toBeNull();
   }
+});
+
+it('R3-6 : le refus d’adresse annonce aussi le modèle qui n’a pas été enregistré', async () => {
+  enregistree = { ...enregistree, provider: 'qwen', model: 'qwen3.8-max', base_url: 'https://exemple.invalid/v1' };
+  await ouvrir();
+  await waitFor(() => expect(screen.getByLabelText('Adresse de ton espace de travail')).toHaveValue(enregistree.base_url));
+  const avant = { ...enregistree };
+  let terminer!: () => void;
+  vi.mocked(api.getLLMConfig).mockImplementationOnce(() => new Promise(resolve => { terminer = () => resolve(avant); }));
+  vi.mocked(api.setLLMConfig).mockRejectedValueOnce(new Error('Adresse refusée'));
+  const select = screen.getByLabelText('Modèle') as HTMLSelectElement;
+  const suivant = Array.from(select.options).find(opt => opt.value !== enregistree.model)!.value;
+  fireEvent.change(select, { target: { value: suivant } });
+  fireEvent.change(screen.getByLabelText('Adresse de ton espace de travail'), { target: { value: 'invalide' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Enregistrer l’adresse' }));
+  await screen.findByRole('alert');
+  await act(async () => { terminer(); });
+
+  expect(screen.getByRole('alert')).toHaveTextContent(`Le modèle « ${suivant} » n’a pas été enregistré`);
+  expect(screen.getByRole('alert')).toHaveTextContent('Adresse refusée');
+  expect(enregistree.model).toBe(avant.model);
+  fireEvent.change(select, { target: { value: suivant } });
+  await waitFor(() => expect(enregistree.model).toBe(suivant));
+  expect(enregistree.base_url).toBe(avant.base_url);
+  expect(screen.queryByRole('alert')).toBeNull();
 });
 
 it.each(['effort', 'adresse'])('R1-3 : le refus de %s laisse son erreur lisible et la file réutilisable', async (option) => {
@@ -226,6 +298,35 @@ it.each(['effort', 'adresse'])('R2-3 : le refus concurrent de %s reste annoncé 
   expect(enregistree.effort).toBe('auto');
   expect(screen.getByRole('alert')).toHaveTextContent('Option concurrente refusée');
   expect(screen.getByLabelText('Modèle')).toHaveValue(suivant);
+});
+
+it.each(['fournisseur', 'onglet', 'fermeture'])('R3-4 : un effort refusé garde sa cible après changement de %s', async (navigation) => {
+  enregistree = { ...enregistree, provider: 'openai', model: 'gpt-6.1-sol' };
+  const { rerender } = await ouvrir();
+  let refuser!: (erreur: Error) => void;
+  vi.mocked(api.setLLMConfig).mockImplementationOnce(() => new Promise((_resolve, reject) => { refuser = reject; }));
+  fireEvent.change(screen.getByLabelText('Effort de raisonnement'), { target: { value: 'high' } });
+  await waitFor(() => expect(refuser).toBeTypeOf('function'));
+  if (navigation === 'fournisseur') {
+    fireEvent.click(screen.getByRole('button', { name: /Mistral/ }));
+  } else if (navigation === 'onglet') {
+    fireEvent.click(screen.getByRole('tab', { name: /Accessibilité et affichage/ }));
+    expect(screen.queryByLabelText('Effort de raisonnement')).toBeNull();
+  } else {
+    rerender(<SettingsModal isOpen={false} requestedTab="ai" onClose={vi.fn()} />);
+  }
+  await act(async () => { refuser(new Error('Effort OpenAI refusé')); });
+  if (navigation === 'fermeture') {
+    rerender(<SettingsModal isOpen requestedTab="ai" onClose={vi.fn()} />);
+  }
+  const alerte = await screen.findByRole('alert');
+  expect(alerte).toHaveTextContent('Effort OpenAI refusé');
+  expect(alerte).toHaveTextContent('gpt-6.1-sol');
+  fireEvent.click(screen.getByRole('button', { name: 'Réessayer l’effort' }));
+  await waitFor(() => expect(api.setLLMConfig).toHaveBeenLastCalledWith('openai', 'gpt-6.1-sol', 'high'));
+  expect(enregistree.provider).toBe('openai');
+  expect(enregistree.effort).toBe('high');
+  expect(screen.queryByRole('alert')).toBeNull();
 });
 
 it.each(['avant', 'après'])('R1-4 : la réouverture, terminée %s le POST, garde le fournisseur enregistré', async (ordre) => {
