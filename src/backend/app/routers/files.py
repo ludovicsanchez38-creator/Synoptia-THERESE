@@ -370,10 +370,13 @@ async def delete_file(
     # par la recherche, sans plus aucune métadonnée pour les retrouver. Une
     # erreur Qdrant répond désormais 500 et la ligne reste : l'état demeure
     # réparable en réessayant.
+    from app.services.project_sync_service import OperationRefusee
     from app.services.retrait_index import retirer_de_lindex
 
     try:
         await retirer_de_lindex(file_id_attendu=file_id)
+    except OperationRefusee as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         logger.error(f"Retrait d'index en échec pour {file_id}: {e}")
         raise HTTPException(

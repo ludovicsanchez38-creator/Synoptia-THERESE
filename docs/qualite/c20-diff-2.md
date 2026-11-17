@@ -324,3 +324,166 @@ npm_config_offline=true npx --no-install vitest run \
 npm_config_offline=true npx --no-install tsc --noEmit
 npm_config_offline=true npm run lint
 ```
+
+
+## Remédiation de la relecture, passe 3
+
+Travail du 17 novembre 2026, dans cet arbre uniquement. Aucun réseau, fournisseur, serveur, port réservé, accès au profil réel ou à `.app-loop/`. Aucun `git add`, commit, dépôt annexe ou bundle. Les liens non suivis `.venv` et `src/frontend/node_modules` préexistaient ; les résultats restent non commités.
+
+Les constats 1 à 4 et 6 à 12 sont corrigés. Le constat 5 est **partiellement traité : les fichiers de la référence auditée sont rétablis, mais le rebase reste à l'orchestrateur**. Aucune ascendance corrigée n'est revendiquée.
+
+### Reproductions avant correction
+
+Chaque constat a été exécuté isolément, avant sa correction. Les échecs ci-dessous proviennent des sorties et XML rouges. Les simulations Windows n'interrogent ni n'arrêtent de processus réel ; les tests SQL et Qdrant utilisent des données jetables et des vecteurs fixes.
+
+| Constat | Test ajouté, étendu ou rétabli | Ligne d'échec recopiée | Correctif |
+| --- | --- | --- | --- |
+| 1 | `test_republication_ne_depasse_pas_la_modification_de_la_fiche` et `test_indexation_refuse_une_version_de_fiche_perimee`, contact et projet | `AssertionError: la republication ressuscite une fiche supprimée` ; `AssertionError: une version périmée remplace le vecteur courant` | Verrou partagé entre la publication et la transaction SQL, y compris les imports, le CRM et l'anonymisation. Relecture et comparaison de la version complète avant toute écriture vectorielle ; le verrou dure jusqu'à la fin de l'écriture. |
+| 2 | `test_retrait_fichier_coordonne_avec_restitution` ; `test_reprise_revalide_chaque_entite_du_journal`, suppression / périmètre / version | `Failed: DID NOT RAISE <class 'fastapi.exceptions.HTTPException'>` ; `AssertionError: la reprise restitue une entité supprimée, reclassée ou remplacée` | Le retrait manuel partage le verrou du propriétaire et répond 409 pendant une restitution. Le journal garde les versions ; la reprise relit chaque entité, son périmètre et sa version sous les verrous des chemins et des écritures SQL. Les points absents ou périmés ne sont pas rejoués. |
+| 3 | `test_republication_en_panne_ne_fait_pas_echouer_un_commit_durable`, panne SQL / vectorielle | `AssertionError: la republication fait échouer un commit déjà durable` | Table `index_publications`, écrite dans la transaction du reclassement. `after_commit` ne fait plus de lecture SQL ; le travail démarre après la clôture de la transaction et la libération des verrous. Un échec conserve le travail durable, ne remonte pas comme un échec du commit et laisse continuer la purge du dépôt et du contact. Reprise au démarrage et par la route de réessai. |
+| 4 | `test_restitution_visible_et_reessayable_sans_redemarrage` et `ProjectSyncSection.restitution.c20.test.tsx` | `AssertionError: la restitution en attente est invisible` ; `Unable to find role="button" and name "Réessayer la restitution"` | État `restitution_en_attente`, route `POST /api/projects/{id}/sync/reprendre-index` et alerte dans la fiche projet. L'alerte reste pendant la panne, le réessai fonctionne sans réinitialiser Qdrant, et une réponse de l'ancien projet est ignorée. |
+| 5 | `test_les_preuves_integrees_sont_livrees` | `AssertionError: Preuves intégrées absentes : ['tests/test_c20_windows_zombies.py', 'tests/test_c20_relance_sidecar.py', 'tests/test_b1806_banc_ollama.py', 'tests/test_b1807_recette_deb.py', 'tests/test_b1851_preuve_frontiere.py', 'tests/test_b1852_preuve_attribution.py', 'tests/test_b2029_couverture.py', 'tests/test_b2033_charges.py', 'tests/bancs_sans_reseau.py', 'src/frontend/src/App.lienEvitement.b1915.test.tsx', 'src/frontend/src/components/SplashScreen.relanceDemarrage.b1912.test.tsx', 'src/frontend/src/components/board/BoardPanel.interactionsHistorique.b1913.test.tsx', 'src/frontend/src/components/board/BoardPanel.visibiliteSuppression.b1914.test.tsx', 'src/frontend/src/components/calendar/CalendarPanel.reconnexion.chargement.test.tsx', 'src/frontend/src/components/chat/MessageBubble.b1970.test.tsx', 'src/frontend/src/lib/chatPersistence.fin.test.ts', 'src/frontend/src/test/b1854-garde-parcours.test.ts']` | Les 37 fichiers modifiés entre `75498edd` et `a498d9d3` sont rétablis, dont les 17 preuves absentes et les deux bilans. Les adaptations de harnais sont détaillées ci-dessous. Le graphe Git reste inchangé. |
+| 6 | `tests/test_c20_windows_zombies.py` rétabli, 24 cas | `AssertionError: assert ['414'] == []` | Restauration des contrôles d'exécutable, d'hôte et de port côté Python et Rust. Sans WMIC, chaque candidat de `tasklist` est confirmé par CIM avant tout arrêt ; les options ambiguës restent refusées. |
+| 7 | `tests/test_c20_relance_sidecar.py` rétabli, 2 cas | `AssertionError: error[E0061]: this function takes 4 arguments but 3 arguments were supplied` ; `ValueError: substring not found` | Restauration de la génération des relances, du verrou de lancement, du contrôle des terminaisons tardives et de la génération renvoyée à l'interface. Le harnais exécute les fonctions Rust réelles avec une horloge et un sidecar simulés. |
+| 8 | `SplashScreen.relanceDemarrage.b1912.test.tsx` rétabli, 10 cas | `TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Relancer le moteur local"` | Restauration du bouton pour les erreurs de démarrage, de la remise à zéro et du rejet des événements d'une ancienne génération. |
+| 9 | `BoardPanel.interactionsHistorique.b1913.test.tsx` et `BoardPanel.visibiliteSuppression.b1914.test.tsx` rétablis | `Error: expect(element).not.toContainElement(element)` ; `AssertionError: expected +0 to be 1 // Object.is equality` | La suppression reste visible ; ouvrir la décision et la supprimer sont deux interactions distinctes. |
+| 10 | `App.lienEvitement.b1915.test.tsx` rétabli | `AssertionError: expected 0 to be greater than or equal to 50` | Classe complète `focus:z-50`, vérifiée avec le CSS réellement produit par Tailwind. |
+| 11 | `b1854-garde-parcours.test.ts` et le parcours 08 rétablis | `expected { status: 200, …(2) } to be 'moteur' // Object.is equality` | Le POST du calculateur passe au moteur local jetable ; les valeurs 50 % et 20 % sont rétablies dans le parcours. La garde continue de refuser les autres mutations. Les calculs backend sont également rejoués par transport interne, sans serveur. |
+| 12 | Assertions restaurées dans `test_frontiere_erreurs.py`, deux mutations dans `test_c20_diff2_livraison_passe3.py` et six cas restaurés de B-1851 | `Failed: DID NOT RAISE <class 'AssertionError'>` | Un événement d'erreur est obligatoire ; tous les champs de tous les événements sont contrôlés récursivement, y compris les arguments d'outils et les événements autres que l'erreur. |
+
+Les XML initiaux sont `/tmp/diff-2-r3-<numéro>-rouge.xml`. Pour le constat 2, `/tmp/diff-2-r3-2-rouge-confirme.xml` confirme séparément les trois variantes avec des verrous isolés par test. Pour le constat 11, le premier lancement était arrêté par l'absence locale de Playwright : `/tmp/diff-2-r3-11-rouge-confirme.xml` exécute ensuite le parcours original de `HEAD` avec ses seules dépendances simulées et reproduit les deux défauts de la garde. Le parcours corrigé est remis après cette vérification.
+
+La panne SQL du constat 3 reproduisait aussi, au nettoyage de la session, `sqlalchemy.exc.InvalidRequestError: This session is in 'committed' state; no further SQL can be emitted within this transaction.` Le scénario corrigé vérifie le commit durable dans une nouvelle session, la purge réelle du dépôt, l'absence du vecteur du contact et la présence du travail SQL jusqu'à sa reprise réussie.
+
+### Relecture des appelants et régressions du correctif
+
+Appelants relus : création, modification et suppression des contacts et projets ; import et indexation des fiches ; anonymisations manuelle et automatique ; purge globale par SQL direct ; retrait de fichier et retrait par plan ; indexation par chemin ; démarrage Qdrant ; lecture de l'état de synchronisation et écran projet. Côté intégration : lanceur et commande Rust, événements consommés par le splash, interactions de l'historique du Board, lien d'évitement et garde du parcours calculateur.
+
+Deux compléments au constat 1 ont été exécutés au rouge après cette relecture :
+
+- `test_annuler_publication_attend_le_fil_avant_de_liberer_la_fiche` : `AssertionError: le fil de publication annulé ressuscite la fiche supprimée` (`/tmp/diff-2-r3-1-annulation-rouge.xml`). Le wrapper Qdrant attend maintenant la fin effective de son fil, même si la coroutine est annulée. Les voisins Qdrant et indexation passent ensuite.
+- Les variantes `supprimer_sql`, contact et projet : `AssertionError: la republication ressuscite une fiche supprimée` (`/tmp/diff-2-r3-1-sql-rouge.xml`). Le verrou couvre également les DELETE/UPDATE directs utilisés par la purge globale ; les voisins de la route de données sont rejoués.
+
+Le test historique de reprise de la passe 2 conservait des fragments sans aucune entité fichier SQL. La nouvelle validation les écartait à juste titre. Son jeu de données comporte maintenant les deux fichiers correspondants ; **toutes ses assertions restent intactes**, notamment les identifiants, vecteurs, payloads, verrous et reprise après redémarrage. Aucun test existant n'est affaibli.
+
+Les harnais restaurés ont été adaptés sans changer leurs assertions : le simulacre Tauri expose les ressources Linux et accepte `String` dans `env` ; le garde Vitest exécute le vrai fichier TypeScript avec ses dépendances simulées, sans importer Playwright ; B-2029 charge la vraie garde JavaScript avec un navigateur dont tout lancement est interdit. Les premiers échecs de compilation/import sont conservés dans les journaux intermédiaires. La suite navigateur de couverture et le parcours E2E avec serveurs ne sont pas revendiqués : les ports du mandat ne sont jamais ouverts.
+
+### Intégration et limites exactes
+
+Au début : `HEAD = 88fc3a0b`, `c20/integration = a498d9d3`, ancêtre commun `75498edd`. La référence partagée a avancé pendant les tests vers `c127023a` (lot instrument, trois fichiers). Cette passe reste bornée au verdict portant sur `a498d9d3` ; elle n'intègre pas les travaux arrivés après le début de la remédiation.
+
+La comparaison des 37 chemins avec `git show a498d9d3:<chemin>` donne 34 fichiers identiques et trois adaptations de tests seulement : `tests/test_c20_relance_sidecar.py`, `tests/test_b2029_couverture.py` et `src/frontend/src/test/b1854-garde-parcours.test.ts`. Tous les fichiers de production rétablis pour les constats 5 à 12 correspondent à la référence auditée. Les fichiers nouveaux restent non suivis jusqu'à leur ajout par l'orchestrateur ; un diff de l'index seul ne représente donc pas la livraison.
+
+L'interdiction de commit et les métadonnées Git en lecture seule empêchent le rebase dans cette session. Le constat 5 n'est pas écarté : **l'ascendance reste à corriger par l'orchestrateur**, sur sa référence choisie. `HEAD` et l'index n'ont pas été modifiés.
+
+### Portes de cette passe
+
+Les XML finaux ont été lus après la fin des commandes. Aucune suite complète n'a été lancée.
+
+| Porte | Périmètre | Passés | Échoués | Erreurs | Ignorés | Preuve |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Pytest | 49 fichiers ciblés | **403** | **0** | **0** | **0** | `/tmp/diff-2-r3.xml`, sortie 0, 305,157 s |
+| Vitest | 36 fichiers, 3 workers maximum | **143** | **0** | **0** | **0** | `/tmp/diff-2-r3-vitest.xml`, sortie 0 |
+| Node | Garde HTTP de l'instrument uniquement, sans navigateur | **1** | **0** | **0** | **0** | `/tmp/diff-2-r3-couverture-ciblee.log`, TAP lu, sortie 0 |
+| Ruff | `src/backend tests`, sans correction automatique | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r3-ruff.log` : `All checks passed!` |
+| TypeScript | `tsc --noEmit` | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r3-tsc.log` vide, sortie 0 |
+| ESLint | `npm run lint` | Sans objet | 0 | 0 | Sans objet | `/tmp/diff-2-r3-eslint.log`, sortie 0, 27 avertissements existants |
+| Diff | `git diff --check` | Sans objet | 0 | 0 | Sans objet | Sortie 0 ; index vide et `HEAD` inchangé |
+
+Total final, sans additionner les rejeux intermédiaires : **547 tests passés**. Les quatre cas connus `test_refus_a_lecran_meme_sans_fiches` ont été explicitement désélectionnés. Les autres rouges connus du mandat ne font pas partie de la sélection. Les quatre scénarios restaurés B-1806, qui réutilisent ce parcours avec leur propre budget explicite, passent.
+
+Le garde réseau a bloqué **trois tentatives** pendant le regroupement final : aucune connexion sortante n'a été autorisée. Il ne faut donc pas confondre « aucun réseau utilisé » et « aucune tentative ». Les nouveaux tests de concurrence et leurs voisins rejoués isolément affichent zéro tentative. Le diagnostic local attribue exactement ces trois tentatives à `detect_default_ollama_model`, lors de la construction du service dans les tests existants `test_delete_all_ne_laisse_pas_la_cle_au_service_des_modeles`, `test_delete_all_n_oublie_ni_la_cle_brave_ni_l_extracteur` et `test_la_restauration_ne_laisse_pas_l_ancienne_cle_au_service` de `tests/test_routers_data.py`. Le garde intercepte `socket.create_connection` avant toute connexion : aucun catalogue ni fournisseur réel n'a été contacté. La trace ne contient ni adresse ni contenu de requête (`/tmp/diff-2-r3-reseau-traces.json`). Les 76 cas du diagnostic ciblé passent aussi ; ils ne sont pas ajoutés au total.
+
+Les 16 cas de `test_c20_diff2_relecture_passe3.py`, les 3 cas de `test_c20_diff2_livraison_passe3.py` et les 2 cas de l'écran de restitution sont nouveaux. Les tests rétablis de l'intégration restent comptés une seule fois dans les portes. Les premiers rouges environnementaux sont conservés dans les XML intermédiaires ; les rejeux finaux ne comportent plus d'échec.
+
+Pour la garde Node ciblée, le chargeur temporaire est le même simulacre de navigateur interdit que celui créé par B-2029 :
+
+```sh
+node --experimental-test-isolation=none \
+  --experimental-loader /tmp/diff-2-r3-sans-navigateur.mjs \
+  --test --test-name-pattern='la garde autorise' \
+  tests/couverture/couverture-ecran.test.mjs
+```
+
+Le bac à sable ne réveille pas correctement certaines boucles asyncio depuis les fils. Comme à la passe 2, `/tmp/diff2_asyncio_poll.py` ajoute uniquement un réveil local toutes les millisecondes. `/tmp/diff2_poll_child.py` applique le même réveil au processus isolé du test de fermeture Qdrant, dont l'environnement ne reprend pas les plugins pytest ; son scénario et ses assertions restent inchangés. Aucune opération SQL, vectorielle ou assertion n'est remplacée. Ces adaptateurs temporaires ne sont pas livrés dans le dépôt. Le plugin restauré `tests.bancs_sans_reseau` interdit et compte les connexions sortantes.
+
+La liste de rejeu backend (49 fichiers) est celle-ci :
+
+```text
+tests/test_c20_diff2_livraison_passe3.py
+tests/test_c20_diff2_relecture_passe3.py
+tests/test_c20_diff2_relecture_passe2.py
+tests/test_c20_diff2_relecture.py
+tests/test_b1875_anonymisation_transactionnelle.py
+tests/test_b1685_anonymiser_un_dossier_synchronise.py
+tests/test_project_sync_service.py
+tests/test_project_sync_idempotence.py
+tests/test_project_sync_api.py
+tests/test_project_sync_boucle.py
+tests/test_retrait_complet_qdrant.py
+tests/test_retrait_index_service.py
+tests/test_qdrant_lock.py
+tests/test_qdrant_shutdown_skip_services.py
+tests/test_routers_memory.py
+tests/test_routers_rgpd.py
+tests/test_routers_data.py
+tests/test_rgpd_erasure.py
+tests/test_rgpd_purge_commit_echoue_c9.py
+tests/test_rgpd_purge_notifications_multiples_c9.py
+tests/test_b1651_purge_auto_alignee_sur_la_manuelle.py
+tests/test_b1503_suppression_projet_rend_ses_contacts.py
+tests/test_b1178_cascade_contact_purge_le_depot.py
+tests/test_memory_purge_disque_du_dossier.py
+tests/test_p148_trois_chemins_de_suppression.py
+tests/test_p148_ensemble_du_projet.py
+tests/test_b1222_indexation_de_fond_sans_course.py
+tests/test_files_indexation_integrite.py
+tests/test_files_indexation_non_bloquante.py
+tests/test_files_indexation_remediation.py
+tests/test_indexation_traitement.py
+tests/test_caracterisation_indexation.py
+tests/test_b1318_semaphore_d_indexation_neuf.py
+tests/test_c20_windows_zombies.py
+tests/test_c20_relance_sidecar.py
+tests/test_sidecar_attend_la_fin_du_processus.py
+tests/test_b954_b955_tueur_de_zombies.py
+tests/test_frontiere_erreurs.py
+tests/test_b1851_preuve_frontiere.py
+tests/test_b1852_preuve_attribution.py
+tests/test_pluriel_fournisseur.py
+tests/test_actions_traitement.py
+tests/test_b2033_charges.py
+tests/test_b2029_couverture.py
+tests/test_b1806_banc_ollama.py
+tests/test_b1807_recette_deb.py
+tests/test_r3_4_ollama.py
+tests/test_services_calculators.py
+tests/test_routers_calculators.py
+```
+
+Commande backend (les deux plugins `/tmp` ne sont utiles que dans ce bac à sable) :
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/tmp OLLAMA_BASE_URL=http://127.0.0.1:9 .venv/bin/python -m pytest \
+  <les 49 fichiers ci-dessus> -k 'not test_refus_a_lecran_meme_sans_fiches' \
+  -q -p diff2_asyncio_poll -p diff2_poll_child -p tests.bancs_sans_reseau \
+  -p no:cacheprovider --timeout=120 --junitxml=/tmp/diff-2-r3.xml
+.venv/bin/python -m ruff check --no-fix --no-cache src/backend tests
+git diff --check
+```
+
+Depuis `src/frontend` :
+
+```sh
+npm_config_offline=true npx --no-install vitest run \
+  src/App.lienEvitement.b1915.test.tsx src/App.demarrageAccords.test.tsx \
+  src/components/SplashScreen src/components/board/BoardPanel \
+  src/components/calendar/CalendarPanel.reconnexion \
+  src/components/chat/MessageBubble.b1970.test.tsx src/lib/chatPersistence \
+  src/lib/debouncedStorage.test.ts src/test/b1854-garde-parcours.test.ts \
+  src/components/memory/ProjectSyncSection \
+  --maxWorkers=3 --no-cache --configLoader=runner \
+  --reporter=default --reporter=junit --outputFile.junit=/tmp/diff-2-r3-vitest.xml
+npm_config_offline=true npx --no-install tsc --noEmit
+npm_config_offline=true npm run lint
+```

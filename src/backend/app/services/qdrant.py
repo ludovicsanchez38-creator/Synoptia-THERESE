@@ -800,9 +800,9 @@ class QdrantService:
         metadata: dict[str, Any] | None = None,
     ) -> str:
         """Async wrapper for add_memory."""
-        return await asyncio.to_thread(
+        return await attendre_fin_operation(asyncio.to_thread(
             self.add_memory, text, memory_type, entity_id, metadata
-        )
+        ))
 
     async def async_add_memories(
         self,
@@ -862,9 +862,13 @@ async def init_qdrant() -> None:
     service = get_qdrant_service()
     # Access client to trigger initialization
     _ = service.client
-    from app.services.project_sync_service import reprendre_restitutions_index
+    from app.services.project_sync_service import (
+        reprendre_publications_index,
+        reprendre_restitutions_index,
+    )
 
     await reprendre_restitutions_index(service)
+    await reprendre_publications_index()
 
 
 async def close_qdrant() -> None:

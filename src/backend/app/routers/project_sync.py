@@ -142,11 +142,21 @@ async def etat(project_id: str) -> dict[str, Any]:
         "racine": etat_courant["racine"],
         "generation": etat_courant["generation"],
         "dernier_plan": _plan_en_dict(plan) if plan else None,
+        "restitution_en_attente": etat_courant.get("restitution_en_attente", False),
         "run": (
             {"etat": run.state, "progression": run.progress}
             if run else None
         ),
     }
+
+
+@router.post("/{project_id}/sync/reprendre-index")
+async def reprendre_index(project_id: str) -> dict[str, Any]:
+    from app.services.qdrant import get_qdrant_service
+
+    await svc.reprendre_restitutions_index(get_qdrant_service(), project_id)
+    await svc.reprendre_publications_index()
+    return await etat(project_id)
 
 
 @router.get("/{project_id}/sync/journal")

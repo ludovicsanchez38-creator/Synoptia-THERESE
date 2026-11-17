@@ -42,6 +42,7 @@ export interface SyncEtat {
   generation: number | null;
   dernier_plan: SyncPlan | null;
   run: { etat: string; progression: number | null } | null;
+  restitution_en_attente?: boolean;
 }
 
 export async function definirRacineSync(
@@ -75,6 +76,10 @@ export async function appliquerPlanSync(
 
 export async function etatSync(projectId: string): Promise<SyncEtat> {
   return request<SyncEtat>(`/api/projects/${projectId}/sync`);
+}
+
+export async function reprendreIndexSync(projectId: string): Promise<SyncEtat> {
+  return request<SyncEtat>(`/api/projects/${projectId}/sync/reprendre-index`, { method: 'POST' });
 }
 
 export async function journalSync(

@@ -30,6 +30,7 @@ from app.routers.memory_drafts import router as brouillons_router
 from app.services.action_journal import clause_du_contact as clause_activites_du_contact
 from app.services.audit import AuditAction, log_activity
 from app.services.civil_time import date_civile_paris
+from app.services.index_fiches import fiche_a_publier, garder_verrou_fiches
 from app.services.projet_ensemble import (
     LIMITE_MAXIMALE,
     LIMITE_PAR_DEFAUT,
@@ -257,58 +258,68 @@ def _vider_les_fiches_rendues() -> list[str]:
     return rendues
 
 
-async def _embed_contact(contact: Contact) -> None:
+async def _embed_contact(contact: Contact) -> bool:
     """Add or update contact embedding in Qdrant."""
     try:
-        qdrant = get_qdrant_service()
-        # Delete existing embedding first
-        await qdrant.async_delete_by_entity(contact.id)
-        # Add new embedding
-        text = _contact_to_embedding_text(contact)
-        await qdrant.async_add_memory(
-            text=text,
-            memory_type="contact",
-            entity_id=contact.id,
-            metadata={
-                "name": contact.display_name,
-                "company": contact.company,
-                "email": contact.email,
-                # 0.43 : sans périmètre dans le payload, l'embedding d'un
-                # contact de projet remontait dans le contexte de TOUTES les
-                # conversations — la cloison SQL de `read_contact` était
-                # contournée par le RAG.
-                "scope": contact.scope or "global",
-                "scope_id": contact.scope_id,
-            },
-        )
-        logger.debug(f"Embedded contact {contact.id}")
+        async with fiche_a_publier(contact) as actuelle:
+            if actuelle is None:
+                return False
+            qdrant = get_qdrant_service()
+            # Delete existing embedding first
+            await qdrant.async_delete_by_entity(contact.id)
+            # Add new embedding
+            text = _contact_to_embedding_text(contact)
+            await qdrant.async_add_memory(
+                text=text,
+                memory_type="contact",
+                entity_id=contact.id,
+                metadata={
+                    "name": contact.display_name,
+                    "company": contact.company,
+                    "email": contact.email,
+                    # 0.43 : sans périmètre dans le payload, l'embedding d'un
+                    # contact de projet remontait dans le contexte de TOUTES les
+                    # conversations — la cloison SQL de `read_contact` était
+                    # contournée par le RAG.
+                    "scope": contact.scope or "global",
+                    "scope_id": contact.scope_id,
+                },
+            )
+            logger.debug(f"Embedded contact {contact.id}")
+            return True
     except Exception as e:
         logger.warning(f"Failed to embed contact {contact.id}: {e}")
+        return False
 
 
-async def _embed_project(project: Project) -> None:
+async def _embed_project(project: Project) -> bool:
     """Add or update project embedding in Qdrant."""
     try:
-        qdrant = get_qdrant_service()
-        # Delete existing embedding first
-        await qdrant.async_delete_by_entity(project.id)
-        # Add new embedding
-        text = _project_to_embedding_text(project)
-        await qdrant.async_add_memory(
-            text=text,
-            memory_type="project",
-            entity_id=project.id,
-            metadata={
-                "name": project.name,
-                "status": project.status,
-                "budget": project.budget,
-                "scope": project.scope or "global",
-                "scope_id": project.scope_id,
-            },
-        )
-        logger.debug(f"Embedded project {project.id}")
+        async with fiche_a_publier(project) as actuelle:
+            if actuelle is None:
+                return False
+            qdrant = get_qdrant_service()
+            # Delete existing embedding first
+            await qdrant.async_delete_by_entity(project.id)
+            # Add new embedding
+            text = _project_to_embedding_text(project)
+            await qdrant.async_add_memory(
+                text=text,
+                memory_type="project",
+                entity_id=project.id,
+                metadata={
+                    "name": project.name,
+                    "status": project.status,
+                    "budget": project.budget,
+                    "scope": project.scope or "global",
+                    "scope_id": project.scope_id,
+                },
+            )
+            logger.debug(f"Embedded project {project.id}")
+            return True
     except Exception as e:
         logger.warning(f"Failed to embed project {project.id}: {e}")
+        return False
 
 
 async def _delete_embedding(entity_id: str) -> None:
@@ -392,6 +403,7 @@ async def _nettoyer_et_supprimer_projet(
     from app.models.entities import CalendarEvent, Deliverable, Document, Task
     from app.services.project_sync_service import preparer_suppression_projet
 
+    await garder_verrou_fiches(session)
     project_id = project.id
     files = (
         await session.execute(select(FileMetadata).where(clause_fichiers(project_id)))
@@ -449,9 +461,11 @@ async def _nettoyer_et_supprimer_projet(
         element.scope = "global"
         element.scope_id = None
         session.add(element)
-    publications = session.info.setdefault("retrait_racines_publications", set())
-    publications.update(("contact", fiche.id) for fiche in contacts_ranges)
-    publications.update(("project", dossier.id) for dossier in sous_dossiers)
+    from app.models.entities_sync import IndexPublication
+
+    for type_fiche, fiches in (("contact", contacts_ranges), ("project", sous_dossiers)):
+        for fiche in fiches:
+            session.add(IndexPublication(project_id=project_id, type_fiche=type_fiche, entity_id=fiche.id))
 
     # B-179 : `Project.tasks` et `Project.deliverables` portent
     # `cascade_delete=True`. Ces deux familles disparaissent donc avec le
