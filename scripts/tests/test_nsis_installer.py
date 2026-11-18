@@ -8,6 +8,7 @@ aligné sur 512 octets, désinstalleur différent du stub dans .rsrc seulement.
 import copy
 import importlib.util
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -162,6 +163,32 @@ class StubTests(unittest.TestCase):
                 signed = signed_pe(self.uninstaller, certificate, checksum)
                 self.assertEqual(nsis.verify_uninstaller(installer, signed, self.catalog)['sha256'], nsis.sha(signed))
 
+    def test_signed_uninstaller_accepts_only_minimal_zero_alignment_padding(self):
+        signed = signed_pe(self.uninstaller)
+        self.assertEqual(nsis.verify_uninstaller(self.installer, signed, self.catalog)['sha256'], nsis.sha(signed))
+        cases = {
+            'huit octets nuls au-delà du minimum': self.uninstaller + bytes(8),
+            # signed_pe ajoute un octet nul de moins : la longueur alignée reste
+            # correcte, seul le contenu du remplissage doit faire refuser ce cas.
+            'octet non nul dans le remplissage minimal': self.uninstaller + b'X',
+        }
+        for label, raw in cases.items():
+            with self.subTest(label), self.assertRaisesRegex(ValueError, 'Données en trop ou manquantes'):
+                nsis.verify_uninstaller(self.installer, signed_pe(raw), self.catalog)
+
+    def test_signed_uninstaller_length_cannot_be_less_than_28(self):
+        raw = nsis_exe(stub(resources=b'autre icone'), uninstall=True, payload=b'')
+        signed = signed_pe(raw)
+        with self.subTest(length=28):
+            self.assertEqual(nsis.verify_uninstaller(self.installer, signed, self.catalog)['sha256'], nsis.sha(signed))
+        altered = bytearray(raw)
+        offset, _, _ = nsis.firstheader(raw)
+        altered[offset + 24:offset + 28] = (27).to_bytes(4, 'little')
+        # Le dernier octet de longueur est nul : sans la borne basse, il serait
+        # absorbé par le padding et les autres contrôles accepteraient ce PE.
+        with self.subTest(length=27), self.assertRaisesRegex(ValueError, 'Données en trop ou manquantes'):
+            nsis.verify_uninstaller(self.installer, signed_pe(bytes(altered)), self.catalog)
+
     def test_signed_uninstaller_alterations_are_refused(self):
         header_changed = bytearray(stub(resources=b'autre icone'))
         header_changed[0x40] ^= 1
@@ -220,12 +247,17 @@ class CaptureTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             nsis.capture_plugin(self.path, self.catalog, self.root)
 
-    def test_callback_captures_before_signing_and_stops_on_capture_failure(self):
+    def test_callback_statically_captures_before_signing_and_throws_on_capture_failure(self):
+        # Contrôle de structure seulement, sans exécution de PowerShell.
         script = (ROOT / 'scripts/sign_windows.ps1').read_text(encoding='utf-8')
-        capture = script.index("'nsis_installer.py') capture $Path")
-        guard = script.index("if ($LASTEXITCODE -ne 0)")
-        self.assertLess(capture, guard)
-        self.assertLess(guard, script.index('Invoke-TrustedSigning @params'))
+        capture_guard = re.search(
+            r"(?m)^[ \t]*&\s+python\s+\(Join-Path\s+\$PSScriptRoot\s+'nsis_installer\.py'\)"
+            r"[ \t]+capture[ \t]+\$Path[ \t]*\r?\n"
+            r"\s*if\s*\(\s*\$LASTEXITCODE\s+-ne\s+0\s*\)\s*"
+            r"\{\s*throw\s+'[^'\r\n]+'\s*;?\s*\}", script)
+        self.assertIsNotNone(capture_guard, 'La capture doit être suivie du contrôle de son code de sortie avec throw')
+        self.assertLess(capture_guard.end(), script.index('Import-Module TrustedSigning'))
+        self.assertLess(script.index('Import-Module TrustedSigning'), script.index('Invoke-TrustedSigning @params'))
 
 
 class InstallerGuardTests(unittest.TestCase):
@@ -361,6 +393,21 @@ class InstallerGuardTests(unittest.TestCase):
         reference.rename(reference.with_suffix('.absent'))
         with self.assertRaisesRegex(ValueError, r'\$PLUGINSDIR/System.dll'):
             self.verify(folder)
+
+    def test_coherent_replacement_of_reference_and_signed_plugin_is_refused(self):
+        replacement = stub(code=b'intrus')
+        reference = self.root / nsis.UNSIGNED / nsis.sha(self.plugins['System.dll'])
+        reference.write_bytes(replacement)
+        for container in ('installer', 'uninstaller'):
+            with self.subTest(container=container):
+                inner = {'$PLUGINSDIR/System.dll': signed_pe(replacement)} if container == 'uninstaller' else None
+                folder = self.layout(inner=inner)
+                if container == 'installer':
+                    (folder / '$PLUGINSDIR/System.dll').write_bytes(signed_pe(replacement))
+                # Référence et greffon ont la même identité hors signature,
+                # mais leur original ne correspond plus au SHA-256 du verrou.
+                with self.assertRaisesRegex(ValueError, r'\$PLUGINSDIR/System.dll'):
+                    self.verify(folder)
 
     def test_signed_uninstaller_and_its_signed_plugin_are_proven_together(self):
         folder = self.layout(inner={'$PLUGINSDIR/LangDLL.dll': signed_pe(self.plugins['LangDLL.dll'])})

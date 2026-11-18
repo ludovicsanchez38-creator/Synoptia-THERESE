@@ -133,3 +133,40 @@ L'orchestrateur doit vérifier sur la prochaine construction Windows :
    de la documentation canonique.
 
 Aucune construction Windows réelle ni publication n'a été effectuée ici.
+
+## Réserves de la relecture : tests durcis
+
+Trois méthodes ajoutées dans `scripts/tests/test_nsis_installer.py` couvrent
+le remplacement simultané de la référence et du greffon signé dans chacun
+des deux conteneurs, le padding nul excessif ou non nul, et les longueurs
+27 (refusée) et 28 (acceptée). Le test PowerShell existant vérifie maintenant
+que l'appel de capture est immédiatement suivi du contrôle de `$LASTEXITCODE`
+avec un `throw` dans son bloc, avant l'import du module et la signature.
+
+Chaque mutation a été appliquée séparément dans une copie sous
+`/tmp/b2060-tests-durcis-lszm3cgu/`, puis la méthode concernée a été lancée
+contre cette copie. Le témoin sans mutation passe ses 27 tests.
+
+| Garde retirée ou affaiblie dans la copie | Résultat du test ciblé |
+| --- | --- |
+| SHA-256 de la référence contre le verrou, contrôle de non-signature conservé | Rouge : 2 échecs, installeur et désinstalleur |
+| Padding nul de longueur arbitraire autorisé | Rouge : 1 échec, 8 octets nuls au-delà du minimum |
+| Contrôle du contenu nul du padding retiré | Rouge : 1 échec, octet non nul à longueur alignée correcte |
+| `length < 28` retiré | Rouge : 1 échec à 27 ; 28 reste accepté |
+| `throw` du bloc d'échec de capture retiré | Rouge : 1 échec du contrôle de structure |
+
+Les cinq lancements ciblés exécutent chacun une méthode, sans erreur
+d'exécution : six échecs d'assertion au total, dont deux sous-cas pour le
+SHA-256. Commandes, substitutions exactes et empreintes des scripts sont
+dans `resultats.json` ; les journaux et `reproduire.py` sont dans le même
+dossier temporaire. Après les mutations, sur l'arbre intact :
+`python3 -m unittest discover -s scripts/tests -p 'test_nsis_installer.py'`
+donne **27 tests réussis**, sans échec ni erreur (`suite-intacte.log`).
+Aucun script de production n'a été modifié ; aucun staging ni commit.
+
+Limite : ni `pwsh` ni `powershell` ne sont disponibles sur ce Mac ; le test
+PowerShell reste statique et ne démontre pas une exécution réelle de signature.
+Réserve non traitée : `sign_windows.ps1` appelle la capture pour tout fichier
+signé ; un Python absent ou un verrou invalide interromprait donc toute
+signature. Le workflow `.github/workflows/release.yml` installe Python avec
+`actions/setup-python` avant la construction.
