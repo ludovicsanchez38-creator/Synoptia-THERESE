@@ -386,7 +386,7 @@ export function CapabilityCenter({
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <nav role="tablist" className="flex w-full shrink-0 gap-1 overflow-x-auto border-b border-border bg-surface-2 p-2 md:block md:w-[250px] md:overflow-y-auto md:border-b-0 md:border-r md:p-3" aria-label="Intentions">
-            {capabilityGroups.map((group) => {
+            {capabilityGroups.map((group, index) => {
               const Icon = group.icon;
               const selected = selectedGroup === group.id && !query;
               const n = countForGroup(group.id);
@@ -400,9 +400,9 @@ export function CapabilityCenter({
                   // l'attribut suit la même règle que la mise en avant visuelle.
                   aria-selected={selected}
                   aria-controls="capability-results-panel"
-                  // B-1938 : l’onglet dans l’ordre de tabulation est le sélectionné.
-                  // Pendant une recherche aucun ne l’est (B-857), donc aucun ne reste à 0.
-                  tabIndex={selected ? 0 : -1}
+                  // B-2064 : sans sélection pendant la recherche, le premier
+                  // onglet reste un point d’entrée clavier dans la liste.
+                  tabIndex={selected || (Boolean(query) && index === 0) ? 0 : -1}
                   onKeyDown={(event) => handleRovingFocus(
                     event,
                     '[role="tab"]',

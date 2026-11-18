@@ -965,7 +965,27 @@ class InvoicePDFGenerator:
             with tempfile.NamedTemporaryFile(dir=self.output_dir) as provisoire:
                 provisoire.write(contenu.getvalue())
                 provisoire.flush()
-                os.link(provisoire.name, filepath)
+                try:
+                    os.link(provisoire.name, filepath)
+                except FileExistsError:
+                    raise
+                except (OSError, AttributeError):
+                    # B-2062 : certains volumes refusent les liens physiques
+                    # (exFAT, FAT32, partages réseau), et le code d'erreur
+                    # change d'un système à l'autre (EPERM, ENOTSUP, EINVAL
+                    # sous Windows). Tout refus autre que « existe déjà »
+                    # passe donc par une création exclusive, qui garde la
+                    # garantie de ne jamais écraser un PDF existant.
+                    fichier = filepath.open("xb")
+                    try:
+                        with fichier:
+                            fichier.write(contenu.getvalue())
+                            fichier.flush()
+                            os.fsync(fichier.fileno())
+                    except BaseException:
+                        # Seul le fichier créé par cette tentative est retiré.
+                        filepath.unlink(missing_ok=True)
+                        raise
             return str(chemin_pdf_a_ouvrir(str(self.output_dir), numero_fichier or invoice_number))
 
         logger.info("Invoice PDF generated: %s", filepath)

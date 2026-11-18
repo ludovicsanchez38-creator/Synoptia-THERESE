@@ -231,7 +231,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // fond, Annuler) ; intacte, Échap ferme la modale seule, comme avant.
   const saisieCourante = JSON.stringify({
     documentType, contactId, currency, issueDate, dueDate, status, notes, validiteJours, lines, lineInputs,
-    clientAddress, clientBillingAddress, serviceDate, purchaseOrder,
+    clientAddress, clientBillingAddress, serviceDate, purchaseOrder, factureOrigineId,
   });
   const saisieInitiale = useRef(saisieCourante);
   const { abandonDemande, demanderFermeture, continuerSaisie, abandonner } = useQuestionDAbandonDeModale({
