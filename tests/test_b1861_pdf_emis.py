@@ -1,5 +1,8 @@
 """Le PDF déjà produit d'une pièce émise conserve l'identité de son émetteur."""
 
+import errno
+import hashlib
+import json
 import os
 import stat
 from pathlib import Path
@@ -118,6 +121,78 @@ async def test_brouillons_historiques_isoles_preservent_archive_partagee(client,
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("situation", ["normale", "collision", "remplacement"])
+async def test_devis_et_archive_pdf_sans_liens_physiques(client, monkeypatch, tmp_path, situation):
+    profil = UserProfile(name="Camille Avant", address="Paris", siret="12345678900010", legal_form="EI")
+    monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
+    contact = (await client.post("/api/memory/contacts", json={"first_name": "Alice", "address": "Lyon"})).json()
+    archives = {}
+
+    def refuser_lien(source, destination):
+        chemin = Path(destination)
+        if chemin.name.startswith("FACT-"):
+            archives[chemin] = Path(source).read_bytes()
+            if situation == "collision" and chemin.suffix == ".pdf":
+                chemin.write_bytes(b"PDF existant")
+            if situation == "remplacement" and chemin.suffix == ".json":
+                tiers = tmp_path / "tiers.pdf"
+                tiers.write_bytes(fichier.read_bytes())
+                tiers.replace(fichier)
+        raise OSError(errno.EPERM, "Lien physique indisponible")
+
+    monkeypatch.setattr(os, "link", refuser_lien)
+
+    async def creer_piece(type_document):
+        creation = await client.post("/api/invoices/", json={
+            "contact_id": contact["id"], "document_type": type_document,
+            "lines": [{"description": "Prestation B-2062", "quantity": 1, "unit_price_ht": 10}],
+        })
+        assert creation.status_code == 200, creation.text
+        return f"/api/invoices/{creation.json()['id']}"
+
+    devis = await creer_piece("devis")
+    apercu = await client.get(f"{devis}/pdf")
+    assert apercu.status_code == 200, apercu.text
+    texte = PdfReader(apercu.json()["pdf_path"]).pages[0].extract_text()
+    assert "DEVIS" in texte and "Prestation B-2062" in texte
+
+    facture = await creer_piece("facture")
+    emission = await client.put(facture, json={"status": "sent"})
+    assert emission.status_code == 200, emission.text
+    numero = emission.json()["invoice_number"]
+    fichier = tmp_path / f"{numero}.pdf"
+    preuve = fichier.with_suffix(".pdf.therese.json")
+    publication = await client.get(f"{facture}/pdf")
+    if situation != "normale":
+        assert publication.status_code == 409, publication.text
+        attendu = b"PDF existant" if situation == "collision" else archives[fichier]
+        assert fichier.read_bytes() == attendu
+        assert not preuve.exists()
+        return
+
+    assert publication.status_code == 200, publication.text
+    assert Path(publication.json()["pdf_path"]) == fichier
+    contenu = fichier.read_bytes()
+    contenu_preuve = preuve.read_bytes()
+    assert contenu == archives[fichier]
+    assert contenu_preuve == archives[preuve]
+    assert json.loads(contenu_preuve)["sha256"] == hashlib.sha256(contenu).hexdigest()
+    _verifier_mode_compagnon(preuve)
+    texte = PdfReader(fichier).pages[0].extract_text()
+    assert all(mention in texte for mention in (numero, "Envoyée", "Camille Avant", "Alice", "Prestation B-2062"))
+
+    profil.name = "Camille Après"
+    for route in ("pdf", "pdf-ouverture"):
+        seconde = await client.get(f"{facture}/{route}")
+        assert seconde.status_code == 200, seconde.text
+        assert Path(seconde.json()["pdf_path"]) == fichier
+    assert fichier.read_bytes() == contenu
+    assert preuve.read_bytes() == contenu_preuve
+    assert not list(tmp_path.glob(".therese-publication-*"))
+
+
+@pytest.mark.asyncio
 async def test_ouverture_retrouve_le_dernier_apercu_sur_un_disque_aux_dates_identiques(
     client, monkeypatch, tmp_path
 ):
@@ -211,7 +286,7 @@ async def test_interruption_apres_publication_du_pdf_est_reprise(
 
     def interrompre_compagnon(source, destination, *args, **kwargs):
         if str(destination).endswith(".pdf.therese.json"):
-            raise OSError("interruption de publication simulée")
+            raise RuntimeError("interruption de publication simulée")
         return lien_reel(source, destination, *args, **kwargs)
 
     with monkeypatch.context() as contexte:
@@ -266,7 +341,7 @@ async def test_restauration_reprend_la_publication_interrompue(
 
     def interrompre_compagnon(source, destination, *args, **kwargs):
         if str(destination).endswith(".pdf.therese.json"):
-            raise OSError("interruption de publication simulée")
+            raise RuntimeError("interruption de publication simulée")
         return lien_reel(source, destination, *args, **kwargs)
 
     with monkeypatch.context() as contexte:
@@ -387,8 +462,6 @@ async def test_restauration_apres_echec_du_nettoyage_du_compagnon(
 async def test_reprise_ne_certifie_pas_un_fichier_etranger_ou_une_preuve_alteree(
     client, monkeypatch, tmp_path, alteration
 ):
-    import json
-
     profil = UserProfile(name="Camille", address="Paris", siret="12345678900010", legal_form="EI")
     monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
     monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
@@ -406,7 +479,7 @@ async def test_reprise_ne_certifie_pas_un_fichier_etranger_ou_une_preuve_alteree
 
     def interrompre_compagnon(source, destination, *args, **kwargs):
         if Path(destination) == preuve:
-            raise OSError("interruption de publication simulée")
+            raise RuntimeError("interruption de publication simulée")
         return lien_reel(source, destination, *args, **kwargs)
 
     with monkeypatch.context() as contexte:

@@ -1,6 +1,7 @@
 """B-2062 : publier un PDF sans écraser l'existant sur un volume sans liens physiques."""
 
 import errno
+import io
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -80,7 +81,7 @@ def test_un_pdf_déjà_présent_n_est_pas_écrasé_sans_lien_physique(tmp_path, 
 def test_un_échec_de_publication_supprime_le_pdf_partiel(tmp_path, monkeypatch, étape):
     fichier = tmp_path / "PIECE-2062.pdf"
     monkeypatch.setattr(invoice_pdf.os, "link", Mock(side_effect=OSError(errno.EPERM, "Refusé")))
-    ouvrir_réel = Path.open
+    ouvrir_réel = io.open
     écritures = []
 
     def ouvrir(chemin, mode="r", *args, **kwargs):
@@ -97,7 +98,7 @@ def test_un_échec_de_publication_supprime_le_pdf_partiel(tmp_path, monkeypatch,
         return flux
 
     if étape == "écriture":
-        monkeypatch.setattr(Path, "open", ouvrir)
+        monkeypatch.setattr(io, "open", ouvrir)
     else:
         monkeypatch.setattr(invoice_pdf.os, "fsync", Mock(
             side_effect=OSError(errno.EIO, "Synchronisation interrompue"),
@@ -110,6 +111,49 @@ def test_un_échec_de_publication_supprime_le_pdf_partiel(tmp_path, monkeypatch,
     if étape == "écriture":
         assert écritures == [23]
     assert list(tmp_path.iterdir()) == []
+
+
+def test_un_echec_de_publication_preserve_le_fichier_remplace(tmp_path, monkeypatch):
+    fichier = tmp_path / "PIECE-2062.pdf"
+    tiers = tmp_path / "tiers.pdf"
+    tiers.write_bytes(b"PDF du tiers")
+    erreur = OSError(errno.EIO, "Synchronisation interrompue")
+    monkeypatch.setattr(invoice_pdf.os, "link", Mock(side_effect=OSError(errno.EPERM, "Refusé")))
+
+    def remplacer_avant_echec(_descripteur):
+        tiers.replace(fichier)
+        raise erreur
+
+    monkeypatch.setattr(invoice_pdf.os, "fsync", remplacer_avant_echec)
+
+    with pytest.raises(OSError) as resultat:
+        générer(tmp_path)
+
+    assert resultat.value is erreur
+    assert fichier.read_bytes() == b"PDF du tiers"
+
+
+def test_un_echec_du_nettoyage_preserve_l_erreur_de_publication(tmp_path, monkeypatch):
+    fichier = tmp_path / "PIECE-2062.pdf"
+    erreur = OSError(errno.EIO, "Synchronisation interrompue")
+    monkeypatch.setattr(invoice_pdf.os, "link", Mock(side_effect=OSError(errno.EPERM, "Refusé")))
+    monkeypatch.setattr(invoice_pdf.os, "fsync", Mock(side_effect=erreur))
+    retirer_reel = Path.unlink
+    echecs = []
+
+    def retirer(chemin, *args, **kwargs):
+        if chemin == fichier:
+            echecs.append(chemin)
+            raise OSError(errno.EACCES, "Retrait refusé")
+        return retirer_reel(chemin, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", retirer)
+
+    with pytest.raises(OSError) as resultat:
+        générer(tmp_path)
+
+    assert echecs == [fichier]
+    assert resultat.value is erreur
 
 
 def test_un_pdf_apparu_entre_temps_reste_une_erreur_propagée(tmp_path, monkeypatch):
