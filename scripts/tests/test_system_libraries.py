@@ -1,13 +1,15 @@
 """Contre-épreuves des octets embarqués et des sources système."""
 import copy
 import importlib.util
+import io
 import json
 import sys
 import shutil
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -139,6 +141,155 @@ class SystemLibraryTests(unittest.TestCase):
         self.assertIn('dpkg-source -x', text)
         self.assertIn('THERESE_BACKEND_LIBS', text)
         self.assertIn('libmvec', text)
+
+
+class UbuntuSourceDownloadTests(unittest.TestCase):
+    """B-2059 : repli 404 simulé, sans changer les octets du verrou."""
+
+    @classmethod
+    def setUpClass(cls):
+        import system_libraries
+        cls.m = system_libraries
+        cls.catalog = cls.m.load_catalog(ROOT)
+
+    def setUp(self):
+        base = ROOT / '.work-t2/round6'
+        base.mkdir(parents=True, exist_ok=True)
+        self.folder = Path(tempfile.mkdtemp(prefix='ubuntu-source-test-', dir=base))
+        self.raw = b'locked source fixture'
+        self.source = self.fixture(next(s for s in self.catalog['sources']
+                                        if s['filename'].endswith('.dsc') and s['package'] == 'glibc'))
+        self.launchpad = ('https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/'
+                          'glibc/2.35-0ubuntu3.15/glibc_2.35-0ubuntu3.15.dsc')
+
+    def fixture(self, source):
+        return {**source, 'sha256': self.m.sha(self.raw), 'size': len(self.raw)}
+
+    def http_error(self, url, code):
+        error = urllib.error.HTTPError(url, code, str(code), {}, io.BytesIO())
+        self.addCleanup(error.close)
+        return error
+
+    def assemble(self, sources=None, name='assembled', cache=None):
+        catalog = {**self.catalog, 'sources': sources if sources is not None else [self.source]}
+        # Seuls les octets des sources sont des fixtures ; notices et preuves
+        # passent par le véritable assemblage, jusque dans le verrou copié.
+        with patch.object(self.m, 'load_catalog', return_value=catalog):
+            return self.m.assemble_sources(self.folder / name, ROOT, cache=cache)
+
+    def test_mirror_404_assembles_exact_sources_from_derived_launchpad_urls(self):
+        for index, original in enumerate(self.catalog['sources']):
+            source = self.fixture(original)
+            expected = ('https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/'
+                        f'{source["package"]}/{source["version"]}/{source["filename"]}')
+            missing = self.http_error(source['url'], 404)
+            with (self.subTest(filename=source['filename']),
+                  patch.object(self.m.urllib.request, 'urlopen',
+                               side_effect=[missing, io.BytesIO(self.raw)]) as download):
+                name = f'assembled-{index}'
+                self.assertEqual(self.assemble([source], name), (1, len(self.raw)))
+                self.assertEqual(download.call_args_list,
+                                 [call(source['url'], timeout=60), call(expected, timeout=60)])
+                self.assertEqual((self.folder / name / 'sources' / source['filename']).read_bytes(), self.raw)
+
+    def test_launchpad_fallback_rejects_same_size_wrong_hash(self):
+        wrong = b'x' * len(self.raw)
+        missing = self.http_error(self.source['url'], 404)
+        with (patch.object(self.m.urllib.request, 'urlopen',
+                           side_effect=[missing, io.BytesIO(wrong)]) as download,
+              self.assertRaisesRegex(ValueError, 'Source système altérée')):
+            self.assemble()
+        self.assertEqual(download.call_count, 2)
+        self.assertFalse((self.folder / 'assembled/sources' / self.source['filename']).exists())
+        self.assertFalse((self.folder / 'assembled/system-libraries.lock.json').exists())
+
+    def test_launchpad_fallback_rejects_wrong_size_even_with_matching_hash(self):
+        source = {**self.source, 'size': len(self.raw) + 1}
+        missing = self.http_error(source['url'], 404)
+        with (patch.object(self.m.urllib.request, 'urlopen',
+                           side_effect=[missing, io.BytesIO(self.raw)]),
+              self.assertRaisesRegex(ValueError, 'Source système altérée')):
+            self.assemble([source])
+        self.assertFalse((self.folder / 'assembled/sources' / source['filename']).exists())
+
+    def test_unapproved_source_origin_is_rejected_before_download(self):
+        for index, url in enumerate((
+                'https://example.test/' + self.source['filename'],
+                self.source['url'].replace('archive.ubuntu.com', 'archive.ubuntu.com.example.test'),
+                self.source['url'].replace('https:', 'http:'),
+                self.launchpad.replace('launchpad.net', 'launchpad.net.example.test'),
+                self.launchpad.replace('/glibc/', '/other/'),
+                self.launchpad.replace('2.35-0ubuntu3.15/', '2.35-0ubuntu3.16/'))):
+            with self.subTest(url=url):
+                with (patch.object(self.m.urllib.request, 'urlopen',
+                                   side_effect=lambda *args, **kwargs: io.BytesIO(self.raw)) as download,
+                      self.assertRaisesRegex(ValueError, 'URL Ubuntu')):
+                    self.assemble([{**self.source, 'url': url}], f'assembled-{index}')
+                download.assert_not_called()
+
+    def test_other_download_errors_are_reported_without_fallback(self):
+        for index, error in enumerate((
+                self.http_error(self.source['url'], 500),
+                TimeoutError('délai dépassé'), urllib.error.URLError('délai dépassé'))):
+            with (self.subTest(error=error),
+                  patch.object(self.m.urllib.request, 'urlopen', side_effect=error) as download,
+                  self.assertRaises(type(error)) as raised):
+                self.assemble(name=f'assembled-{index}')
+            self.assertIs(raised.exception, error)
+            download.assert_called_once_with(self.source['url'], timeout=60)
+
+    def test_launchpad_failure_is_reported_without_another_retry(self):
+        for index, error in enumerate((
+                self.http_error(self.launchpad, 404),
+                self.http_error(self.launchpad, 500),
+                TimeoutError('délai Launchpad dépassé'))):
+            missing = self.http_error(self.source['url'], 404)
+            with self.subTest(error=error):
+                with (patch.object(self.m.urllib.request, 'urlopen', side_effect=[missing, error]) as download,
+                      self.assertRaises(type(error)) as raised):
+                    self.assemble(name=f'assembled-{index}')
+                self.assertIs(raised.exception, error)
+                self.assertEqual(download.call_args_list,
+                                 [call(self.source['url'], timeout=60), call(self.launchpad, timeout=60)])
+
+    def test_nominal_assembly_preserves_bytes_lock_and_counts(self):
+        sources = [self.fixture(s) for s in self.catalog['sources']]
+        with patch.object(self.m.urllib.request, 'urlopen',
+                          side_effect=lambda *args, **kwargs: io.BytesIO(self.raw)) as download:
+            self.assertEqual(self.assemble(sources), (11, 11 * len(self.raw)))
+        self.assertEqual(download.call_args_list, [call(s['url'], timeout=60) for s in sources])
+        for source in sources:
+            self.assertEqual((self.folder / 'assembled/sources' / source['filename']).read_bytes(), self.raw)
+        self.assertEqual((self.folder / 'assembled/system-libraries.lock.json').read_bytes(),
+                         (ROOT / self.m.CATALOG).read_bytes())
+
+    def test_valid_cache_does_not_download(self):
+        cache = self.folder / 'cache'
+        cache.mkdir()
+        (cache / self.source['filename']).write_bytes(self.raw)
+        with patch.object(self.m.urllib.request, 'urlopen', side_effect=AssertionError('network')) as download:
+            self.assertEqual(self.assemble(cache=cache), (1, len(self.raw)))
+        download.assert_not_called()
+
+    def test_canonical_launchpad_source_url_is_accepted_without_retry(self):
+        with patch.object(self.m.urllib.request, 'urlopen', return_value=io.BytesIO(self.raw)) as download:
+            self.assertEqual(self.assemble([{**self.source, 'url': self.launchpad}]), (1, len(self.raw)))
+        download.assert_called_once_with(self.launchpad, timeout=60)
+
+    def test_binary_launchpad_url_uses_files_path(self):
+        row = next(r for r in self.catalog['libraries'] if r['name'] == 'libmvec.so.1')
+        source = {'package': row['source_package'], 'version': row['source_version'],
+                  'filename': 'libc6_2.35-0ubuntu3.15_amd64.deb', 'url': row['binary_package_url']}
+        self.assertEqual(self.m.ubuntu_download_urls(source), (source['url'],
+                         'https://launchpad.net/ubuntu/+archive/primary/+files/' + source['filename']))
+
+    def test_unsafe_locked_identity_is_rejected_before_download(self):
+        for index, key in enumerate(('package', 'version', 'filename')):
+            with self.subTest(key=key):
+                with (patch.object(self.m.urllib.request, 'urlopen', return_value=io.BytesIO(self.raw)) as download,
+                      self.assertRaisesRegex(ValueError, 'Identité Ubuntu')):
+                    self.assemble([{**self.source, key: '../escape'}], f'assembled-{index}')
+                download.assert_not_called()
 
 
 class InstallerContentTests(unittest.TestCase):
