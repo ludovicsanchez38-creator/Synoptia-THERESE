@@ -50,6 +50,44 @@ La porte Ruff demandée a d'abord signalé 23 écarts déjà présents à `HEAD`
 
 Les tests ont conservé leurs copies temporaires dans `.work-t2/round7`, qui totalise 3,1 Go au contrôle de cette remédiation. Aucun nettoyage n'a été effectué.
 
+## Réconciliation avec l'intégration (18/11)
+
+Contrôle dans cet arbre, sur `c20/signature-c20`, après rebase des huit commits du lot sur `c20/integration`. Aucun code de publication, workflow ou dépendance CI n'a été modifié. Aucun réseau, serveur, accès à `~/.therese`, `git add` ou commit n'a été utilisé.
+
+- **B-1085** : le test existant de `scripts/tests/test_release_pipeline.py` appelle toujours `release_notes.body` pour les notes signées et non signées. Son attente de commande macOS lit désormais `productName` dans `tauri.conf.json` et il vérifie que tous les chemins `/Applications/….app` produits correspondent à ce nom. Le contrôle existant de l'absence de `xattr` après signature est conservé. La garde `tests/test_b1085_commande_xattr_nom_du_paquet.py` interdit désormais tout chemin d'application dans le workflow, sans dupliquer les tests du générateur.
+- **Découverte unittest** : les deux modules qui importaient `pytest` utilisent désormais `unittest.TestCase`, `unittest.mock` et des dossiers temporaires. Chaque cas paramétré devient un `subTest`, avec restauration des substitutions et un dossier neuf pour chaque course de création.
+
+| Module converti | Cas avant | Cas après | Méthodes unittest | Sous-tests paramétrés | Assertions conservées | Attentes d'exception conservées |
+|---|---:|---:|---:|---:|---:|---:|
+| `test_c20_b1886_executable_etranger.py` | 2 | 2 | 2 | 0 | 10 | 2 |
+| `test_c20_signature_gardes.py` | 11 | 11 | 5 | 9 | 12 | 2 |
+| Total | 13 | 13 | 7 | 9 | 22 | 4 |
+
+Les neuf sous-tests remplacent trois méthodes paramétrées comptant chacune trois cas. Les quatre autres méthodes représentent chacune un cas : le total reste donc treize, et non seize. La comparaison des arbres syntaxiques avec `HEAD` confirme la conservation, test par test, des expressions des 22 assertions, des quatre attentes d'exception, de leurs messages recherchés et des neuf jeux de paramètres.
+
+Commandes exécutées avant puis après modification :
+
+```sh
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+OLLAMA_BASE_URL=http://127.0.0.1:9 PYTHONPATH=src/backend /Users/synoptia/.claude/travail/therese-c20-pile/venv/bin/python -m pytest tests/test_b1085_commande_xattr_nom_du_paquet.py scripts/tests -q -p no:cacheprovider
+```
+
+- **Unittest avant** : 203 tests, dont 196 réussis, 5 erreurs et 2 ignorés. Deux erreurs sont les imports `pytest` ; les trois autres sont les outils Linux absents indiqués ci-dessous.
+- **Unittest après** : 208 tests, dont 203 réussis, 3 erreurs et 2 ignorés. Les sept méthodes converties remplacent les deux erreurs de chargement. Aucun import `pytest` ne reste dans ces modules.
+- **Pytest après** : 216 tests, dont 211 réussis, 3 échecs et 2 ignorés, ainsi que **821 sous-tests réussis**. B-1085, le test des notes et les sept méthodes converties sont verts. Le rapport XML compte 1 037 tests en incluant les sous-tests. Pour cette exécution, `PYTEST_ADDOPTS` ne contient que `--junitxml=.work-t2/reconciliation-18-11/pytest-apres.xml` : le hook existant de `tests/conftest.py` appelle `os._exit` avant l'affichage du résumé terminal, d'où ce relevé XML.
+
+Les trois erreurs restantes de `CPythonComponentsTests` sont identiques avant et après modification, avec le même `FileNotFoundError`, et constituent aussi les trois échecs pytest :
+
+| Test | Outil absent sur ce Mac |
+|---|---|
+| `test_expat_embeds_separate_cc0_siphash` | `readelf` |
+| `test_real_fixtures_define_components_instead_of_importing_them` | `readelf` |
+| `test_real_deb_cli_refuses_old_notices_then_accepts_completed_notices` | `dpkg-deb` |
+
+Ces limites n'ont pas été masquées et aucun outil n'a été installé. Les deux tests déjà ignorés nécessitent également `dpkg-deb`. Les journaux avant/après, le relevé des erreurs, le rapport XML et le contrôle de conservation des assertions sont dans le dossier local ignoré `.work-t2/reconciliation-18-11/`. Les copies CPython de `.work-t2/round7` sont conservées, sans nettoyage.
+
+Ruff sur les quatre fichiers Python touchés : **vert** (`venv/bin/python -m ruff check --no-cache` avec leurs chemins). `git diff --check` : **vert**. Toutes les modifications restent hors index.
+
 ## À vérifier sur un vrai build
 
 - B-1886 avec les secrets Microsoft présents : extraire `therese.exe` de l'installeur NSIS et de l'image MSI et vérifier qu'il est accepté par la comparaison normalisée ; un horodatage ou une seconde signature compris dans la taille déclarée passent ; un octet après la taille déclarée ou un alignement autre que 8 bloquerait la release.

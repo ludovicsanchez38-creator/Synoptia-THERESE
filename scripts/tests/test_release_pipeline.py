@@ -274,9 +274,11 @@ class PipelineTests(unittest.TestCase):
 
     def test_release_notes_unsigned_text_is_frozen_and_signed_text_drops_workarounds(self):
         notes = self.load('release_notes.py')
+        nom = json.loads((ROOT / 'src/frontend/src-tauri/tauri.conf.json').read_text(encoding='utf-8'))['productName']
         unsigned = notes.body('v0.0.0-alpha', False, False)
         self.assertIn("- **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, "
-                      "ouvre le Terminal et lance : `xattr -cr /Applications/THERESE.app` puis relance l'app.", unsigned)
+                      f"ouvre le Terminal et lance : `xattr -cr /Applications/{nom}.app` puis relance l'app.", unsigned)
+        self.assertEqual(set(re.findall(r"/Applications/([^\r\n`]+?)\.app", unsigned)), {nom})
         self.assertIn("- **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller", unsigned)
         signed = notes.body('v0.0.0-alpha', True, True)
         for workaround in ('xattr', 'non signée', 'antivirus'):
