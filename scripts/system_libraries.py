@@ -19,6 +19,7 @@ import sys
 import sysconfig
 import tarfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -309,10 +310,34 @@ def ubuntu_download_urls(item: dict) -> tuple[str, str | None]:
     return url, permanent
 
 
+class UbuntuRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuser une destination non admise avant qu'urllib ne la demande."""
+
+    def __init__(self, allowed_hosts: set[str]):
+        self.allowed_hosts = allowed_hosts
+
+    def http_error_302(self, req, fp, code, msg, headers):
+        location = headers.get('location', headers.get('uri'))
+        if location is not None:
+            target = urllib.parse.urlsplit(urllib.parse.urljoin(req.full_url, location))
+            # Comparer l'autorité entière exclut aussi les ports explicites
+            # (même :443) et les identifiants placés avant l'hôte.
+            if target.scheme != 'https' or target.netloc.lower() not in self.allowed_hosts:
+                fp.close()
+                raise ValueError('Redirection Ubuntu refusée vers l’hôte : ' +
+                                 (target.hostname or '(sans hôte)'))
+        return super().http_error_302(req, fp, code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
+
+
 def download_ubuntu_source(item: dict) -> bytes:
     url, permanent = ubuntu_download_urls(item)
+    launchpad_hosts = {'launchpad.net', 'launchpadlibrarian.net'}
+    hosts = {'archive.ubuntu.com'} if permanent is not None else launchpad_hosts
+    opener = urllib.request.build_opener(UbuntuRedirectHandler(hosts))
     try:
-        with urllib.request.urlopen(url, timeout=60) as response:
+        with opener.open(url, timeout=60) as response:
             return response.read()
     except urllib.error.HTTPError as exc:
         if exc.code != 404 or permanent is None:
@@ -320,7 +345,8 @@ def download_ubuntu_source(item: dict) -> bytes:
         exc.close()
     # Un seul repli : les erreurs Launchpad, délais et autres codes HTTP
     # remontent au CLI. L'assembleur contrôle SHA-256 ET taille avant écriture.
-    with urllib.request.urlopen(permanent, timeout=60) as response:
+    opener = urllib.request.build_opener(UbuntuRedirectHandler(launchpad_hosts))
+    with opener.open(permanent, timeout=60) as response:
         return response.read()
 
 

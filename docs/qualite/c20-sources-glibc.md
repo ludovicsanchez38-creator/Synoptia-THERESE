@@ -119,3 +119,60 @@ La prochaine mise à jour de l'image du runner changera les octets livrés et
 exigera un **nouveau rapprochement** des natifs, paquets binaires, sources et
 notices. Le repli ne met à jour aucune version et n'assouplit aucune garde de
 provenance. Aucun build Linux ni contrôle d'installeur réel n'a été exécuté ici.
+
+## Remédiation de la relecture
+
+Les constats P1 et P2 sont corrigés dans le même périmètre, hors réseau.
+`UbuntuRedirectHandler` remplace le gestionnaire de redirections par défaut
+dans les ouvreurs locaux du téléchargement Ubuntu. Il contrôle chaque
+destination avant de laisser urllib construire et envoyer la requête suivante,
+pour les codes 301, 302, 303, 307 et 308 :
+
+- Origine nominale : uniquement `https://archive.ubuntu.com/…`.
+- Repli ou URL Launchpad canonique : uniquement `https://launchpad.net/…`
+  et `https://launchpadlibrarian.net/…`, y compris aux sauts suivants.
+- Un autre hôte, un schéma autre que HTTPS ou un port explicite, même `:443`,
+  ferme la réponse et lève une erreur qui nomme l'hôte refusé. Aucun appel
+  vers cette destination n'est effectué. L'autorité complète est comparée,
+  ce qui refuse aussi les identifiants dans l'URL et les faux sous-domaines.
+
+Les 11 tests existants utilisent désormais un transport en mémoire au niveau
+de `BaseHandler.default_open`, sans remplacer `urlopen` ni `OpenerDirector.open`.
+L'ouvreur, le traitement des codes HTTP et les redirections sont ceux d'urllib.
+Les réponses sont de véritables `http.client.HTTPResponse` sur des flux mémoire.
+Une route absente échoue immédiatement ; ce transport ne crée aucune socket.
+
+Dix méthodes de test ont été ajoutées : redirection Launchpad vers Librarian
+suivie, refus des autres hôtes pour les cinq codes de redirection, refus de
+HTTP/file/FTP et des ports explicites, redirections absolues et relatives
+internes au miroir, refus de sortie du miroir, refus de sortie après un saut
+Librarian, réponse plus courte que la taille verrouillée et véritable
+`IncompleteRead` déclenché par un `Content-Length` supérieur au corps reçu.
+Les deux cas de troncature couvrent le miroir et le repli et vérifient que
+le dossier d'assemblage reste vide. Le contrôle de taille est aussi testé
+avec une empreinte correspondant aux octets courts. Les assertions sur les
+requêtes reçues prouvent l'absence d'appel vers les destinations refusées.
+
+Avant toute modification du script, la commande ciblée sur
+`UbuntuSourceDownloadTests` a exécuté **21 méthodes** : les **11 existantes
+restent vertes**, **6 des 10 nouvelles sont rouges**, 4 sont déjà vertes.
+Résumé unittest : **21 échecs d'assertion et 2 erreurs**, sous-cas compris,
+code de sortie 1. Journal : `.work-t2/round6/b2059-review-red.log`.
+Les deux erreurs correspondent aux redirections `file://` déjà refusées par
+urllib avec `HTTPError`, au lieu de l'erreur explicite attendue de la garde.
+Les refus de troncature étaient déjà assurés par la lecture et le contrôle
+taille/SHA-256 ; aucune modification de ces contrôles n'a été nécessaire.
+
+Après correction, les deux commandes demandées ont été exécutées :
+
+- `python3 -m unittest discover -s scripts/tests -p 'test_system_libraries.py'` :
+  **42 tests, 41 réussis, 1 ignoré**, zéro échec ni erreur, code de sortie 0.
+  Les **21 tests Ubuntu**, dont les 11 existants, passent. Le test ignoré
+  nécessite `dpkg-deb`. Journal : `.work-t2/round6/b2059-review-system-libraries.log`.
+- `python3 scripts/system_libraries.py check` : code de sortie 0,
+  **18 bibliothèques Linux, 4 macOS, 10 Windows, 11 sources** ;
+  **58 fichiers CPython Linux, 59 macOS, 21 Windows**.
+  Journal : `.work-t2/round6/b2059-review-check.log`.
+
+Seuls le script, ses tests et cette section ont été modifiés. Aucun réseau,
+`git add`, commit ou `rm`. Les deux commits de départ et l'index restent inchangés.
