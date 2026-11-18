@@ -289,6 +289,22 @@ Debian/Ubuntu et signatures amont). Le job de sources les assemble et joint
 `THERESE-sources-systeme-linux.tar.gz` avant les installeurs. Le catalogue couvre
 également les licences permissives et l'exception GCC des autres fichiers.
 
+Si une URL verrouillée du miroir `https://archive.ubuntu.com/ubuntu/` répond
+**404**, l'assembleur essaie une seule fois l'archive permanente Ubuntu de
+Launchpad. L'adresse est dérivée du paquet source, de la version et du nom de
+fichier verrouillés :
+`https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/<paquet>/<version>/<fichier>`.
+La forme des paquets binaires est
+`https://launchpad.net/ubuntu/+archive/primary/+files/<fichier.deb>` ; ces paquets
+servent au rapprochement des natifs et ne sont pas téléchargés par cet assemblage.
+Aucune autre origine n'est admise par le résolveur. Le verrou et les preuves
+restent inchangés : **SHA-256 et taille doivent correspondre avant écriture**,
+y compris pour le cache local. Une empreinte ou une taille différente, un code
+HTTP autre que 404, un délai dépassé ou un échec Launchpad arrête l'assemblage.
+Ce repli restaure l'accès aux mêmes sources ; une mise à jour du runner exige
+toujours le rapprochement décrit ci-dessus. Le contrôle hors réseau B-2059 est
+consigné dans [le rapport du cycle 20](qualite/c20-sources-glibc.md).
+
 ```bash
 python scripts/system_libraries.py check
 python scripts/system_libraries.py assemble-sources .work-t2/sources-systeme-linux
