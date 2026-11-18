@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import nsis_installer as nsis
 import system_libraries as system
+from windows_pe import authenticode_signed, unsigned_pe_digest
 
 ROOT = Path(__file__).resolve().parents[1]
 TAURI = 'src/frontend/src-tauri'
@@ -38,35 +39,6 @@ def engine_name(platform):
     return names[0] + ('.exe' if platform == 'Windows' else '')
 
 
-def unsigned_pe_digest(raw):
-    """Comparer les octets du PE en neutralisant uniquement les effets d'Authenticode."""
-    if len(raw) < 0x40 or raw[:2] != b'MZ':
-        return None
-    header = int.from_bytes(raw[0x3c:0x40], 'little')
-    optional = header + 24
-    if raw[header:header + 4] != b'PE\0\0' or len(raw) < optional + 2:
-        return None
-    magic = int.from_bytes(raw[optional:optional + 2], 'little')
-    if magic not in (0x10b, 0x20b):
-        return None
-    checksum = optional + 64
-    security = optional + (112 if magic == 0x20b else 96) + 4 * 8
-    if len(raw) < security + 8:
-        return None
-    offset = int.from_bytes(raw[security:security + 4], 'little')
-    size = int.from_bytes(raw[security + 4:security + 8], 'little')
-    if offset or size:
-        if not offset or not size or offset % 8 or offset < security + 8 or offset + size != len(raw):
-            return None
-        body = bytearray(raw[:offset])
-    else:
-        body = bytearray(raw)
-    body[checksum:checksum + 4] = b'\0' * 4
-    body[security:security + 8] = b'\0' * 8
-    body.extend(b'\0' * (-len(body) % 8))
-    return system.sha(body)
-
-
 def built_digests(root, platform, package, normalized=False):
     """Empreintes admises pour le binaire principal de CE build une fois empaqueté :
     l'original de target/release, ou le même avec le seul jeton de son paquet."""
@@ -85,23 +57,6 @@ def built_digests(root, platform, package, normalized=False):
             if digest is not None:
                 digests.add(digest)
     return digests
-
-
-def authenticode_signed(raw):
-    """Vrai si l'en-tête PE déclare une table de certificats (répertoire de sécurité)."""
-    if len(raw) < 0x40 or raw[:2] != b'MZ':
-        raise ValueError('En-tête PE illisible')
-    header = int.from_bytes(raw[0x3c:0x40], 'little')
-    optional = header + 24
-    if raw[header:header + 4] != b'PE\0\0' or len(raw) < optional + 2:
-        raise ValueError('En-tête PE illisible')
-    magic = int.from_bytes(raw[optional:optional + 2], 'little')
-    if magic not in (0x10b, 0x20b):
-        raise ValueError('En-tête PE illisible')
-    security = optional + (112 if magic == 0x20b else 96) + 4 * 8
-    if len(raw) < security + 8:
-        raise ValueError('En-tête PE illisible')
-    return int.from_bytes(raw[security + 4:security + 8], 'little') != 0
 
 
 def check_directory(directory, expected):
@@ -257,7 +212,7 @@ def extract_nsis(path, folder):
     return folder
 
 
-def verify_uninstaller(path, installer, catalog, folder):
+def verify_uninstaller(path, installer, catalog, folder, root=ROOT):
     """Désinstalleur reconstitué par 7-Zip : même stub que l'installeur, greffons inventoriés."""
     raw = path.read_bytes()
     with installer.open('rb') as f:
@@ -271,7 +226,8 @@ def verify_uninstaller(path, installer, catalog, folder):
             if not system.native(f.read(4)):
                 continue
         digest = system.file_sha(item)
-        record = nsis.plugin(catalog, item.name, digest) if relative.startswith('$PLUGINSDIR/') else None
+        record = nsis.plugin(catalog, item.name, digest, raw=item.read_bytes(), root=root) \
+            if relative.startswith('$PLUGINSDIR/') and relative.count('/') == 1 else None
         if record is None:
             refusals.append('Binaire du désinstalleur sans inventaire : uninstall.exe!' + relative
                             + ' (SHA-256 ' + digest + ')')
@@ -339,14 +295,14 @@ def verify_directory(folder, manifest, platform, root=ROOT, package=None, instal
             continue
         digest = system.file_sha(path)
         if catalog is not None and relative.startswith('$PLUGINSDIR/') and relative.count('/') == 1:
-            record = nsis.plugin(catalog, path.name, digest)
+            record = nsis.plugin(catalog, path.name, digest, raw=path.read_bytes(), root=root)
             if record is not None:
                 records[relative] = record
                 continue
         if catalog is not None and relative == 'uninstall.exe':
             uninstaller = path
             try:
-                found, inner = verify_uninstaller(path, installer, catalog, folder)
+                found, inner = verify_uninstaller(path, installer, catalog, folder, root)
             except ValueError as exc:
                 refusals.append(str(exc) + ' : ' + relative)
             else:

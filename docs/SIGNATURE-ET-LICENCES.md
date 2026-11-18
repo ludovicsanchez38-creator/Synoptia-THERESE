@@ -370,6 +370,54 @@ Les binaires auxiliaires introduits par NSIS/AppImage ne bénéficient d'aucune
 exemption implicite. Ces extracteurs et la reliaison ne sont pas validés par
 un build de plateforme ici.
 
+### Identité des composants NSIS signés (B-2060)
+
+`licenses/nsis-installer.lock.json` épingle les SHA-256 des greffons **non
+signés** et le code du stub NSIS. Le verrou et les notices restent inchangés
+lors d'une signature. Un greffon non signé doit toujours avoir son nom exact,
+sa place directement sous `$PLUGINSDIR/` et son SHA-256 intégral inventorié.
+Cette règle vaut aussi pour les greffons extraits du désinstalleur.
+
+Avant `Invoke-TrustedSigning`, le callback `scripts/sign_windows.ps1` appelle
+`python scripts/nsis_installer.py capture <fichier>`. Pour les seuls noms du
+verrou, cette commande vérifie le SHA-256 intégral puis conserve les octets
+dans `.work-release/nsis-unsigned/<sha256>`, local au build et non versionné.
+Les autres fichiers à signer ne sont pas copiés. Un deuxième appel sur un
+greffon déjà signé exige sa correspondance avec la copie originale conservée.
+Une erreur arrête le callback avant signature.
+
+Pour un greffon signé, la garde relit cette copie et vérifie à nouveau son
+SHA-256 contre le verrou avant toute neutralisation. Les contrôles PE du
+binaire principal et de NSIS sont partagés dans `scripts/windows_pe.py` :
+seuls le checksum PE, l'entrée Security et les octets de la table de
+certificats sont neutralisés. Les deux corps ainsi obtenus sont comparés par
+SHA-256, avec le seul alignement nul minimal à huit octets déjà nécessaire
+à Authenticode. Aucun autre champ d'en-tête, code, ressource ou donnée n'est
+ignoré. La table doit être après les en-têtes et toutes les sections
+physiques, alignée et exactement en fin de fichier. Une table hors limites,
+chevauchant une section, ou suivie d'octets est refusée. Une référence absente
+ou altérée est également refusée : aucune confiance n'est accordée au cache
+sur son nom seul. La preuve conserve le SHA-256 réellement livré et ajoute
+`inventory_sha256` et `unsigned_pe_sha256` pour ce rapprochement.
+
+Pour `uninstall.exe`, le premier en-tête NSIS est recherché à un multiple de
+512 octets, avec sa marque `DEADBEEF` / `NullsoftInst`. La garde exige le
+drapeau de désinstallation, le même début de données que dans l'installeur,
+les sections, le point d'entrée et le code du stub épinglé, puis le même stub
+octet pour octet hors `.rsrc`. Avec une signature, seuls checksum et Security
+sont neutralisés dans cette dernière comparaison. La longueur NSIS déclarée
+doit atteindre exactement la fin des données avant certificat ; seuls zéro
+à sept octets nuls, nécessaires à l'alignement de ce certificat, sont admis
+après cette longueur. Sans signature, aucun octet supplémentaire n'est admis.
+Les natifs du désinstalleur restent extraits par 7-Zip et inventoriés.
+
+Ce contrôle prouve l'identité des octets, pas la validité cryptographique du
+certificat, son horodatage ou son éditeur, qui relèvent séparément de
+`scripts/verify_windows_signing.ps1`. Il ne prétend pas comparer l'intégralité
+des ressources ni des instructions NSIS du désinstalleur à un exemplaire
+amont : ces éléments sont générés par makensis. Les preuves et les limites
+de la vérification locale sont dans [le rapport B-2060](qualite/c20-win-installeur.md).
+
 La méthode de reconstruction et de remplacement LGPL est dans
 [`licenses/LISEZMOI-SOURCES.txt`](../licenses/LISEZMOI-SOURCES.txt), incluse dans
 les deux archives. Elle couvre les paquets source Ubuntu, libmvec et la copie
