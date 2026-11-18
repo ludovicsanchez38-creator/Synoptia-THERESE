@@ -8,8 +8,13 @@ import shutil
 import tempfile
 import unittest
 import urllib.error
+import urllib.request
+from contextlib import contextmanager
+from email.message import Message
+from http.client import HTTPResponse, IncompleteRead
 from pathlib import Path
-from unittest.mock import call, patch
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -143,6 +148,30 @@ class SystemLibraryTests(unittest.TestCase):
         self.assertIn('libmvec', text)
 
 
+class SourceResponseHandler(urllib.request.BaseHandler):
+    """Transport en mémoire ; les redirections et lectures restent celles d'urllib."""
+
+    def __init__(self, routes):
+        self.routes = routes
+        self.requests = []
+
+    def default_open(self, request):
+        self.requests.append(request.full_url)
+        if request.full_url not in self.routes:
+            raise AssertionError('Requête imprévue : ' + request.full_url)
+        result = self.routes[request.full_url]
+        if isinstance(result, Exception):
+            raise result
+        code, headers, body = result
+        headers = {'Content-Length': str(len(body)), **headers}
+        wire = (f'HTTP/1.1 {code} Fixture\r\n' +
+                ''.join(f'{key}: {value}\r\n' for key, value in headers.items()) + '\r\n').encode('ascii')
+        response = HTTPResponse(SimpleNamespace(makefile=lambda *args: io.BytesIO(wire + body)),
+                                url=request.full_url)
+        response.begin()
+        return response
+
+
 class UbuntuSourceDownloadTests(unittest.TestCase):
     """B-2059 : repli 404 simulé, sans changer les octets du verrou."""
 
@@ -166,9 +195,28 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
         return {**source, 'sha256': self.m.sha(self.raw), 'size': len(self.raw)}
 
     def http_error(self, url, code):
-        error = urllib.error.HTTPError(url, code, str(code), {}, io.BytesIO())
+        error = urllib.error.HTTPError(url, code, str(code), Message(), io.BytesIO())
         self.addCleanup(error.close)
         return error
+
+    @contextmanager
+    def responses(self, routes):
+        transport = SourceResponseHandler(routes)
+        build_opener = self.m.urllib.request.build_opener
+
+        def simulated_opener(*handlers):
+            return build_opener(urllib.request.ProxyHandler({}), transport, *handlers)
+
+        # Le code initial passe par l'ouvreur global ; le correctif utilise
+        # son propre ouvreur. Dans les deux cas, seul le transport est simulé.
+        with (patch.object(self.m.urllib.request, 'build_opener', side_effect=simulated_opener),
+              patch.object(self.m.urllib.request, '_opener', None)):
+            yield transport.requests
+
+    def fallback_routes(self, target):
+        return {self.source['url']: (404, {}, b''),
+                self.launchpad: (302, {'Location': target}, b''),
+                target: (200, {}, self.raw)}
 
     def assemble(self, sources=None, name='assembled', cache=None):
         catalog = {**self.catalog, 'sources': sources if sources is not None else [self.source]}
@@ -182,32 +230,28 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
             source = self.fixture(original)
             expected = ('https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/'
                         f'{source["package"]}/{source["version"]}/{source["filename"]}')
-            missing = self.http_error(source['url'], 404)
             with (self.subTest(filename=source['filename']),
-                  patch.object(self.m.urllib.request, 'urlopen',
-                               side_effect=[missing, io.BytesIO(self.raw)]) as download):
+                  self.responses({source['url']: (404, {}, b''),
+                                  expected: (200, {}, self.raw)}) as requests):
                 name = f'assembled-{index}'
                 self.assertEqual(self.assemble([source], name), (1, len(self.raw)))
-                self.assertEqual(download.call_args_list,
-                                 [call(source['url'], timeout=60), call(expected, timeout=60)])
+                self.assertEqual(requests, [source['url'], expected])
                 self.assertEqual((self.folder / name / 'sources' / source['filename']).read_bytes(), self.raw)
 
     def test_launchpad_fallback_rejects_same_size_wrong_hash(self):
         wrong = b'x' * len(self.raw)
-        missing = self.http_error(self.source['url'], 404)
-        with (patch.object(self.m.urllib.request, 'urlopen',
-                           side_effect=[missing, io.BytesIO(wrong)]) as download,
+        with (self.responses({self.source['url']: (404, {}, b''),
+                              self.launchpad: (200, {}, wrong)}) as requests,
               self.assertRaisesRegex(ValueError, 'Source système altérée')):
             self.assemble()
-        self.assertEqual(download.call_count, 2)
+        self.assertEqual(requests, [self.source['url'], self.launchpad])
         self.assertFalse((self.folder / 'assembled/sources' / self.source['filename']).exists())
         self.assertFalse((self.folder / 'assembled/system-libraries.lock.json').exists())
 
     def test_launchpad_fallback_rejects_wrong_size_even_with_matching_hash(self):
         source = {**self.source, 'size': len(self.raw) + 1}
-        missing = self.http_error(source['url'], 404)
-        with (patch.object(self.m.urllib.request, 'urlopen',
-                           side_effect=[missing, io.BytesIO(self.raw)]),
+        with (self.responses({source['url']: (404, {}, b''),
+                              self.launchpad: (200, {}, self.raw)}),
               self.assertRaisesRegex(ValueError, 'Source système altérée')):
             self.assemble([source])
         self.assertFalse((self.folder / 'assembled/sources' / source['filename']).exists())
@@ -221,43 +265,40 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
                 self.launchpad.replace('/glibc/', '/other/'),
                 self.launchpad.replace('2.35-0ubuntu3.15/', '2.35-0ubuntu3.16/'))):
             with self.subTest(url=url):
-                with (patch.object(self.m.urllib.request, 'urlopen',
-                                   side_effect=lambda *args, **kwargs: io.BytesIO(self.raw)) as download,
+                with (self.responses({}) as requests,
                       self.assertRaisesRegex(ValueError, 'URL Ubuntu')):
                     self.assemble([{**self.source, 'url': url}], f'assembled-{index}')
-                download.assert_not_called()
+                self.assertEqual(requests, [])
 
     def test_other_download_errors_are_reported_without_fallback(self):
         for index, error in enumerate((
                 self.http_error(self.source['url'], 500),
                 TimeoutError('délai dépassé'), urllib.error.URLError('délai dépassé'))):
             with (self.subTest(error=error),
-                  patch.object(self.m.urllib.request, 'urlopen', side_effect=error) as download,
+                  self.responses({self.source['url']: error}) as requests,
                   self.assertRaises(type(error)) as raised):
                 self.assemble(name=f'assembled-{index}')
             self.assertIs(raised.exception, error)
-            download.assert_called_once_with(self.source['url'], timeout=60)
+            self.assertEqual(requests, [self.source['url']])
 
     def test_launchpad_failure_is_reported_without_another_retry(self):
         for index, error in enumerate((
                 self.http_error(self.launchpad, 404),
                 self.http_error(self.launchpad, 500),
                 TimeoutError('délai Launchpad dépassé'))):
-            missing = self.http_error(self.source['url'], 404)
             with self.subTest(error=error):
-                with (patch.object(self.m.urllib.request, 'urlopen', side_effect=[missing, error]) as download,
+                with (self.responses({self.source['url']: (404, {}, b''),
+                                      self.launchpad: error}) as requests,
                       self.assertRaises(type(error)) as raised):
                     self.assemble(name=f'assembled-{index}')
                 self.assertIs(raised.exception, error)
-                self.assertEqual(download.call_args_list,
-                                 [call(self.source['url'], timeout=60), call(self.launchpad, timeout=60)])
+                self.assertEqual(requests, [self.source['url'], self.launchpad])
 
     def test_nominal_assembly_preserves_bytes_lock_and_counts(self):
         sources = [self.fixture(s) for s in self.catalog['sources']]
-        with patch.object(self.m.urllib.request, 'urlopen',
-                          side_effect=lambda *args, **kwargs: io.BytesIO(self.raw)) as download:
+        with self.responses({s['url']: (200, {}, self.raw) for s in sources}) as requests:
             self.assertEqual(self.assemble(sources), (11, 11 * len(self.raw)))
-        self.assertEqual(download.call_args_list, [call(s['url'], timeout=60) for s in sources])
+        self.assertEqual(requests, [s['url'] for s in sources])
         for source in sources:
             self.assertEqual((self.folder / 'assembled/sources' / source['filename']).read_bytes(), self.raw)
         self.assertEqual((self.folder / 'assembled/system-libraries.lock.json').read_bytes(),
@@ -267,14 +308,14 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
         cache = self.folder / 'cache'
         cache.mkdir()
         (cache / self.source['filename']).write_bytes(self.raw)
-        with patch.object(self.m.urllib.request, 'urlopen', side_effect=AssertionError('network')) as download:
+        with self.responses({}) as requests:
             self.assertEqual(self.assemble(cache=cache), (1, len(self.raw)))
-        download.assert_not_called()
+        self.assertEqual(requests, [])
 
     def test_canonical_launchpad_source_url_is_accepted_without_retry(self):
-        with patch.object(self.m.urllib.request, 'urlopen', return_value=io.BytesIO(self.raw)) as download:
+        with self.responses({self.launchpad: (200, {}, self.raw)}) as requests:
             self.assertEqual(self.assemble([{**self.source, 'url': self.launchpad}]), (1, len(self.raw)))
-        download.assert_called_once_with(self.launchpad, timeout=60)
+        self.assertEqual(requests, [self.launchpad])
 
     def test_binary_launchpad_url_uses_files_path(self):
         row = next(r for r in self.catalog['libraries'] if r['name'] == 'libmvec.so.1')
@@ -286,10 +327,126 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
     def test_unsafe_locked_identity_is_rejected_before_download(self):
         for index, key in enumerate(('package', 'version', 'filename')):
             with self.subTest(key=key):
-                with (patch.object(self.m.urllib.request, 'urlopen', return_value=io.BytesIO(self.raw)) as download,
+                with (self.responses({}) as requests,
                       self.assertRaisesRegex(ValueError, 'Identité Ubuntu')):
                     self.assemble([{**self.source, key: '../escape'}], f'assembled-{index}')
-                download.assert_not_called()
+                self.assertEqual(requests, [])
+
+    def test_launchpad_redirect_to_librarian_is_followed(self):
+        target = 'https://launchpadlibrarian.net/123/source'
+        for index, direct in enumerate((False, True)):
+            routes = self.fallback_routes(target)
+            source = {**self.source, 'url': self.launchpad} if direct else self.source
+            with self.subTest(direct=direct), self.responses(routes) as requests:
+                name = f'assembled-{index}'
+                self.assertEqual(self.assemble([source], name), (1, len(self.raw)))
+                self.assertEqual(requests, ([self.source['url']] if not direct else []) +
+                                 [self.launchpad, target])
+                self.assertEqual((self.folder / name / 'sources' / source['filename']).read_bytes(), self.raw)
+
+    def test_launchpad_redirect_to_unapproved_host_is_rejected_before_request(self):
+        for code in (301, 302, 303, 307, 308):
+            target = 'https://example.test/source'
+            routes = self.fallback_routes(target)
+            routes[self.launchpad] = (code, {'Location': target}, b'')
+            with self.subTest(code=code):
+                with self.responses(routes) as requests:
+                    with self.assertRaisesRegex(ValueError, 'example[.]test'):
+                        self.assemble(name=f'assembled-{code}')
+                self.assertEqual(requests, [self.source['url'], self.launchpad])
+
+    def test_launchpad_redirect_to_other_scheme_is_rejected_before_request(self):
+        for scheme in ('http', 'file', 'ftp'):
+            target = f'{scheme}://launchpadlibrarian.net/source'
+            with self.subTest(scheme=scheme):
+                with self.responses(self.fallback_routes(target)) as requests:
+                    with self.assertRaisesRegex(ValueError, 'launchpadlibrarian[.]net'):
+                        self.assemble(name=f'assembled-{scheme}')
+                self.assertEqual(requests, [self.source['url'], self.launchpad])
+
+    def test_launchpad_redirect_with_explicit_port_is_rejected_before_request(self):
+        for index, authority in enumerate(('launchpad.net:443', 'launchpadlibrarian.net:443',
+                                           'launchpadlibrarian.net:8443', 'launchpadlibrarian.net:')):
+            target = f'https://{authority}/source'
+            with self.subTest(authority=authority):
+                with self.responses(self.fallback_routes(target)) as requests:
+                    with self.assertRaisesRegex(ValueError, authority.split(':')[0].replace('.', '[.]')):
+                        self.assemble(name=f'assembled-{index}')
+                self.assertEqual(requests, [self.source['url'], self.launchpad])
+
+    def test_mirror_redirect_within_archive_is_followed(self):
+        for index, target in enumerate(('https://archive.ubuntu.com/source', '/source')):
+            absolute = 'https://archive.ubuntu.com/source'
+            with (self.subTest(target=target),
+                  self.responses({self.source['url']: (302, {'Location': target}, b''),
+                                  absolute: (200, {}, self.raw)}) as requests):
+                self.assertEqual(self.assemble(name=f'assembled-{index}'), (1, len(self.raw)))
+                self.assertEqual(requests, [self.source['url'], absolute])
+
+    def test_mirror_redirect_to_other_host_is_rejected_before_request(self):
+        for index, host in enumerate(('example.test', 'launchpad.net', 'launchpadlibrarian.net',
+                                      'archive.ubuntu.com.example.test')):
+            target = f'https://{host}/source'
+            with self.subTest(host=host):
+                with self.responses({self.source['url']: (302, {'Location': target}, b''),
+                                     target: (200, {}, self.raw)}) as requests:
+                    with self.assertRaisesRegex(ValueError, host.replace('.', '[.]')):
+                        self.assemble(name=f'assembled-{index}')
+                self.assertEqual(requests, [self.source['url']])
+
+    def test_mirror_redirect_with_other_scheme_or_port_is_rejected_before_request(self):
+        for index, target in enumerate(('http://archive.ubuntu.com/source',
+                                        'file://archive.ubuntu.com/source',
+                                        'ftp://archive.ubuntu.com/source',
+                                        'https://archive.ubuntu.com:443/source')):
+            with self.subTest(target=target):
+                with self.responses({self.source['url']: (302, {'Location': target}, b''),
+                                     target: (200, {}, self.raw)}) as requests:
+                    with self.assertRaisesRegex(ValueError, 'archive[.]ubuntu[.]com'):
+                        self.assemble(name=f'assembled-{index}')
+                self.assertEqual(requests, [self.source['url']])
+
+    def test_librarian_redirect_cannot_escape_fallback_hosts(self):
+        librarian = 'https://launchpadlibrarian.net/123/source'
+        for index, host in enumerate(('example.test', 'archive.ubuntu.com',
+                                      'launchpadlibrarian.net.example.test')):
+            target = f'https://{host}/source'
+            routes = self.fallback_routes(librarian)
+            routes[librarian] = (302, {'Location': target}, b'')
+            routes[target] = (200, {}, self.raw)
+            with self.subTest(host=host):
+                with self.responses(routes) as requests:
+                    with self.assertRaisesRegex(ValueError, host.replace('.', '[.]')):
+                        self.assemble(name=f'assembled-{index}')
+                self.assertEqual(requests, [self.source['url'], self.launchpad, librarian])
+
+    def test_short_response_is_rejected_without_writing(self):
+        short = self.raw[:-1]
+        source = {**self.source, 'sha256': self.m.sha(short)}
+        for index, fallback in enumerate((False, True)):
+            url = self.launchpad if fallback else source['url']
+            routes = {url: (200, {}, short)}
+            if fallback:
+                routes[source['url']] = (404, {}, b'')
+            with self.subTest(fallback=fallback):
+                with self.responses(routes) as requests:
+                    with self.assertRaisesRegex(ValueError, 'Source système altérée'):
+                        self.assemble([source], name=f'assembled-{index}')
+                self.assertEqual(requests, [source['url'], self.launchpad] if fallback else [source['url']])
+                self.assertEqual(list((self.folder / f'assembled-{index}').iterdir()), [])
+
+    def test_incomplete_read_is_rejected_without_writing(self):
+        for index, fallback in enumerate((False, True)):
+            url = self.launchpad if fallback else self.source['url']
+            routes = {url: (200, {'Content-Length': str(len(self.raw) + 1)}, self.raw)}
+            if fallback:
+                routes[self.source['url']] = (404, {}, b'')
+            with self.subTest(fallback=fallback):
+                with self.responses(routes) as requests:
+                    with self.assertRaises(IncompleteRead):
+                        self.assemble(name=f'assembled-{index}')
+                self.assertEqual(requests, [self.source['url'], self.launchpad] if fallback else [self.source['url']])
+                self.assertEqual(list((self.folder / f'assembled-{index}').iterdir()), [])
 
 
 class InstallerContentTests(unittest.TestCase):
