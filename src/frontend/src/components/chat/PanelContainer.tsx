@@ -140,7 +140,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
       <Suspense
         fallback={
           <div className="flex items-center justify-center h-full">
-            <div className="text-text-muted">Chargement...</div>
+            <div role="status" className="text-text-muted">Chargement...</div>
           </div>
         }
       >

@@ -85,14 +85,14 @@ describe('AgentSession : accord du moteur avant la mission', () => {
     expect(routes).toEqual(['/api/consents']);
   });
 
-  it('garde le message actuel si la vérification de destination échoue', async () => {
+  it('affiche le refus du moteur si la vérification de destination échoue', async () => {
     moteur.consent.mockRejectedValueOnce(new AccordNonEnregistre(MESSAGE, new Error(MESSAGE)));
     render(<AgentSession model="openai::modele-test" profileId="researcher" onBack={vi.fn()} />);
 
     await confirmer();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Vérifie la connexion au moteur');
-    expect(screen.getByRole('alert')).not.toHaveTextContent(MESSAGE);
+    expect(await screen.findByRole('alert')).toHaveTextContent(MESSAGE);
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Vérifie la connexion au moteur');
     expect(moteur.mission).not.toHaveBeenCalled();
   });
 

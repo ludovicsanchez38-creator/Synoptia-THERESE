@@ -59,4 +59,11 @@ describe('B-236 — aucune requête d’événements avant réconciliation de la
     expect(idsDemandes[0]).toBe('frais-8c9f6db7');
     expect(idsDemandes).not.toContain('perime-be06b033');
   });
+
+  it('utilise le compte de l’agenda local pour lire ses événements', async () => {
+    useEmailStore.setState({ currentAccountId: 'autre-compte' });
+    render(<CalendarPanel standalone />);
+    await waitFor(() => expect(vi.mocked(api.listEvents)).toHaveBeenCalled());
+    expect(vi.mocked(api.listEvents)).toHaveBeenCalledWith(undefined, 'frais-8c9f6db7', expect.anything());
+  });
 });

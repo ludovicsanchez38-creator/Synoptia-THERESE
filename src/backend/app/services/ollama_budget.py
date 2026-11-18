@@ -6,10 +6,20 @@ from typing import Any
 def plafond_memoire() -> int:
     """BUG-052 sous 8 Gio, 16k sous 16 Gio, fenêtre modèle plafonnée à 128k au-delà."""
     try:
-        ram = os.sysconf('SC_PHYS_PAGES') * os.sysconf('SC_PAGE_SIZE')
-    except (AttributeError, ValueError, OSError):
+        try:
+            sysconf = os.sysconf
+        except AttributeError:
+            # Windows : lecture native directe, sans détection de plateforme
+            # ni commande externe susceptible de bloquer le calcul.
+            from app.services.system_resources import _windows_total_ram_bytes
+
+            ram = _windows_total_ram_bytes()
+        else:
+            ram = sysconf('SC_PHYS_PAGES') * sysconf('SC_PAGE_SIZE')
+        return 8192 if ram < 8 * 1024**3 else (16384 if ram < 16 * 1024**3 else 131072)
+    except Exception:
+        # Tout échec conserve le repli prudent historique, y compris sur POSIX.
         return 8192
-    return 8192 if ram < 8 * 1024**3 else (16384 if ram < 16 * 1024**3 else 131072)
 
 
 def fenetre_ollama(config: Any) -> int:

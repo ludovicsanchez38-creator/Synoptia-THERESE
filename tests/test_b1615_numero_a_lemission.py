@@ -24,7 +24,7 @@ def _annee() -> int:
 async def _contact(client: AsyncClient) -> str:
     reponse = await client.post(
         "/api/memory/contacts",
-        json={"first_name": "Hélène", "last_name": "Ménard", "email": "helene@test.fr"},
+        json={"first_name": "Hélène", "last_name": "Ménard", "email": "helene@test.fr", "address": "Lyon"},
     )
     assert reponse.status_code == 200, reponse.text
     return reponse.json()["id"]
@@ -101,6 +101,7 @@ async def test_un_brouillon_deja_numerote_garde_son_numero(client: AsyncClient):
             Invoice(
                 invoice_number=numero,
                 contact_id=contact,
+                client_address="Lyon",
                 document_type="facture",
                 status="draft",
                 due_date=datetime.now(UTC) + timedelta(days=30),
@@ -138,6 +139,7 @@ async def _brouillon_historique(contact_id: str, numero: str, statut: str = "dra
         piece = Invoice(
             invoice_number=numero,
             contact_id=contact_id,
+            client_address="Lyon",
             document_type="facture",
             status=statut,
             issue_date=datetime(2026, 1, 7, tzinfo=UTC),

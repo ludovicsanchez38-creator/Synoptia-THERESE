@@ -429,7 +429,7 @@ def pytest_sessionfinish(session, exitstatus):
 def sonde_imap_hors_reseau(request, monkeypatch):
     """B-194 : la mise en route IMAP teste la connexion avant d'enregistrer.
     Aucun test ne parle au réseau : la sonde réussit par défaut ; un test qui
-    veut une panne remplace lui-même `ImapSmtpProvider.test_connection`.
+    veut une panne remplace lui-même `ImapSmtpProvider.test_connection_details`.
     Un test marqué `imap_reel` garde la vraie méthode (il fournit ses propres
     faux serveurs, cf. B-039)."""
     if request.node.get_closest_marker("imap_reel"):
@@ -442,5 +442,5 @@ def sonde_imap_hors_reseau(request, monkeypatch):
         # répondait `ok` et masquait la clé `success` lue par la route).
         return {"success": True, "imap_ok": True, "smtp_ok": True, "message": "Connexion IMAP et SMTP reussie"}
 
-    monkeypatch.setattr(module.ImapSmtpProvider, "test_connection", _ok)
+    monkeypatch.setattr(module.ImapSmtpProvider, "test_connection_details", _ok)
     yield

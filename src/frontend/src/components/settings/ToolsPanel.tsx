@@ -109,6 +109,10 @@ function PresetCategory({
                   (s) => s.name === preset.name && s.status === 'running'
                 );
                 const isInstalled = servers.some((s) => s.name === preset.name);
+                const isStarting = servers.some((s) => s.name === preset.name && s.status === 'starting');
+                const statutInstalle = isStarting
+                  ? 'Installé : démarrage en cours'
+                  : 'Installé mais inactif : à démarrer depuis les connecteurs';
                 const isInstalling = installingPreset === preset.id;
                 // B-1193 : le risque se lit avant le clic qui installe et démarre.
                 const risqueSignale = (preset.risk_level === 'high' || preset.risk_level === 'medium') && Boolean(preset.risk_warning);
@@ -170,8 +174,10 @@ function PresetCategory({
                         {isInstalling && <Spinner taille="bouton" className="text-accent-cyan-ink" />}
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-success" />}
                         {!isInstalling && isInstalled && !runningServer && (
-                          <span title="Installé mais inactif : à démarrer depuis les connecteurs">
-                            <AlertCircle className="w-4 h-4 text-warning" />
+                          <span role="img" aria-label={statutInstalle} title={statutInstalle}>
+                            {isStarting
+                              ? <Spinner taille="bouton" aria-hidden="true" />
+                              : <AlertCircle aria-hidden="true" className="w-4 h-4 text-warning" />}
                           </span>
                         )}
                       </div>
@@ -450,7 +456,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
       // Verifier si le serveur a demarre correctement
       if (installed.status === 'error') {
-        onError(installed.name + ' installé mais erreur au démarrage : ' + (installed.error || 'Erreur inconnue. Vérifie que Node.js est installé.'));
+        onError(installed.name + ' installé mais erreur au démarrage : ' + (installed.error || 'Consulte les détails du connecteur, puis réessaie de le démarrer.'));
       } else if (installed.status !== 'running') {
         // Auto-start seulement si pas deja running (le backend demarre deja)
         try {
@@ -545,7 +551,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             <h3 className="font-medium text-text">Connecteurs</h3>
             <p className="text-xs text-text-muted">
               {status?.running_servers || 0} actif(s) sur {status?.total_servers || 0} •{' '}
-              {status?.total_tools || 0} tools disponibles
+              {status?.total_tools || 0} outil{status?.total_tools === 1 ? '' : 's'} disponible{status?.total_tools === 1 ? '' : 's'}
             </p>
           </div>
         </div>
@@ -815,7 +821,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-text-muted">
-                    {server.tools.length} tool{server.tools.length !== 1 ? 's' : ''}
+                    {server.tools.length} outil{server.tools.length !== 1 ? 's' : ''}
                   </span>
                   {/* Quick delete button for error servers */}
                   {server.status === 'error' && (
@@ -915,7 +921,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                       {/* Tools list */}
                       {server.tools.length > 0 && (
                         <div>
-                          <p className="text-xs text-text-muted mb-2">Tools disponibles :</p>
+                          <p className="text-xs text-text-muted mb-2">Outils disponibles :</p>
                           <div className="space-y-1">
                             {server.tools.map((tool) => (
                               <div
@@ -1021,6 +1027,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               role="dialog"
               aria-modal="true"
               aria-label="Confirmer la suppression du connecteur"
+              aria-describedby="mcp-suppression-cible"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -1030,8 +1037,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                 <div className="w-10 h-10 rounded-md bg-[var(--color-error-tint)] flex items-center justify-center">
                   <AlertCircle className="w-5 h-5 text-error" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-text">Supprimer ce connecteur ?</h3>
+                <div id="mcp-suppression-cible">
+                  <h3 className="font-semibold text-text">Supprimer {servers.find((server) => server.id === serverToDelete)?.name ?? 'ce connecteur'} ?</h3>
                   <p className="text-sm text-text-muted">Cette action est irréversible.</p>
                 </div>
               </div>

@@ -1,9 +1,11 @@
 import '@testing-library/jest-dom';
 import { afterEach, vi } from 'vitest';
+import { __annulerEcrituresPourTests } from '../lib/debouncedStorage';
 
 // P-142 : l'écran quitté vit dans sessionStorage (reprise après rechargement).
 // Un test ne doit pas hériter de l'écran laissé par le précédent.
 afterEach(() => {
+  __annulerEcrituresPourTests();
   try {
     window.sessionStorage.clear();
   } catch {

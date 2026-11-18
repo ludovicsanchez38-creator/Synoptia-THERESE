@@ -79,9 +79,11 @@ def message_verification(etat: str, nom: str) -> str:
         "non_rattachee": (
             "Ta clé Claude n'est rattachée à aucun espace de travail. Dans la Console "
             "Claude, crée une clé rattachée à un espace (par exemple « Default Workspace »)."
+            if nom in ("Anthropic", "Claude") else
+            f"Ta clé {nom} n'est rattachée à aucun espace de travail. Vérifie son rattachement auprès de {nom}."
         ),
         "paiement": f"{nom} signale un problème de paiement sur ce compte : vérifie la facturation.",
-        "limite": f"Clé acceptée par {nom}, qui limite pour l'instant le nombre de requêtes.",
+        "limite": f"Impossible de vérifier la clé pour l’instant : {nom} limite le nombre de requêtes. Réessaie plus tard.",
         "injoignable": (
             f"Impossible de joindre {nom} pour vérifier la clé. Elle est enregistrée et sera "
             "vérifiée à ton premier message."

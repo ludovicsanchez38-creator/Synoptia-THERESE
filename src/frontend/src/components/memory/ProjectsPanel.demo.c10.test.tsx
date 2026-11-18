@@ -1,10 +1,12 @@
 /** B-939 : le nom protégé sur la carte ne doit pas ressortir dans sa confirmation. */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../services/api';
 import { useDemoStore } from '../../stores/demoStore';
 import { buildReplacementMap, maskText } from '../../lib/demoMask';
 import { ProjectsPanel } from './ProjectsPanel';
+import { Notifications } from '../ui/Notifications';
+import { useStatusStore } from '../../stores/statusStore';
 
 // Revue P-148, constat 14 : la confirmation lit la route d'ensemble ; sans
 // ce simulacre, elle retombait en silence sur la mise en garde générale et
@@ -58,5 +60,21 @@ describe('B-939 : confirmation de suppression depuis Projets en mode démo', () 
     fireEvent.click(await screen.findByRole('button', { name: `Supprimer ${PROJET.name}` }));
     expect(screen.getByRole('dialog', { name: 'Supprimer ce projet ?' })).toHaveTextContent(PROJET.name);
     expect(api.deleteProject).not.toHaveBeenCalled();
+  });
+
+  it('avertit durablement si les fichiers du projet restent sur disque', async () => {
+    useDemoStore.setState({ enabled: false, replacementMap: new Map() });
+    useStatusStore.setState({ notifications: [] });
+    const message = 'Le projet a été supprimé en base. Des fichiers du dossier restent sur disque.';
+    api.deleteProject.mockResolvedValue({ deleted: false, message });
+    render(<><ProjectsPanel /><Notifications /></>);
+    fireEvent.click(await screen.findByRole('button', { name: `Supprimer ${PROJET.name}` }));
+    const dialogue = screen.getByRole('dialog', { name: 'Supprimer ce projet ?' });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(PROJET.name)).not.toBeInTheDocument());
+    expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+      expect.objectContaining({ message, duration: 0 }),
+    ]));
   });
 });

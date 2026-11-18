@@ -34,6 +34,10 @@ class IndexationAbandonnee(Exception):
     laissait chaque surface inventer sa propre interprétation (0.47)."""
 
 
+class ExtractionImpossible(Exception):
+    """Aucun texte n'a pu être extrait ; l'index existant reste intact."""
+
+
 class ContenuModifieDepuisLePlan(Exception):
     """Le fichier ne correspond plus à l'empreinte attendue : rien n'est écrit.
 
@@ -100,7 +104,7 @@ async def _verrou_de_chemin(chemin: str) -> AsyncIterator[None]:
             _verrous_par_chemin.pop(chemin, None)
 
 
-async def extract_text_async(file_path: Path) -> str:
+async def extract_text_async(file_path: Path) -> str | None:
     """Extrait le texte d'un fichier sans bloquer la boucle d'événements."""
     return await run_in_threadpool(extract_text, file_path)
 
@@ -434,7 +438,7 @@ def _consommer_issue(geste: "asyncio.Task[FileResponse]") -> None:
     issue = geste.exception()
     if issue is not None and not isinstance(
         issue,
-        (IndexationAbandonnee, ContenuModifieDepuisLePlan, ConflitDePerimetre),
+        (IndexationAbandonnee, ExtractionImpossible, ContenuModifieDepuisLePlan, ConflitDePerimetre),
     ):
         logger.warning(
             "Geste d'indexation détaché terminé en échec", exc_info=issue
@@ -619,6 +623,12 @@ async def _indexer_apres_verifications(
 
     text_content = await extract_text_async(source_extraction)
     await _verifier_abandon()
+    if text_content is None:
+        # None signale une erreur ou un format non pris en charge ; une chaîne
+        # vide est un résultat différent et suit le traitement existant.
+        raise ExtractionImpossible(
+            f"Impossible d'extraire le texte de « {file_name} ». Vérifie le fichier ou son format."
+        )
     chunk_count = chunk_count_existant
     indexed_at = indexed_at_existant
 

@@ -18,6 +18,8 @@ import subprocess
 import sys
 import sysconfig
 import tarfile
+import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -25,6 +27,8 @@ import cpython_components
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/system-libraries.lock.json'
+UBUNTU_MIRROR = 'https://archive.ubuntu.com/ubuntu/'
+UBUNTU_LAUNCHPAD = 'https://launchpad.net/ubuntu/+archive/primary/'
 MACOS_PACKAGE_URL = 'https://www.python.org/ftp/python/3.13.17/python-3.13.17-macos11.pkg'
 MACOS_PACKAGE_SHA256 = '3053592af66128269efab37fe7851a4894920b27c442aeec99ce4d34d17c07e3'
 WINDOWS_MEMBERS = {
@@ -285,6 +289,67 @@ def render_notices(root=ROOT):
     return '\n'.join(lines) + '\n\n' + cpython_components.render(root, catalog['cpython'])
 
 
+def ubuntu_download_urls(item: dict) -> tuple[str, str | None]:
+    """Dériver l'archive permanente des champs verrouillés, sans autre origine."""
+    package, version, filename = (item[key] for key in ('package', 'version', 'filename'))
+    for value, pattern in ((package, r'[a-z0-9][a-z0-9+.-]*'),
+                           (version, r'[0-9][A-Za-z0-9.+:~\-]*'),
+                           (filename, r'[A-Za-z0-9][A-Za-z0-9.+:~_\-]*')):
+        if not re.fullmatch(pattern, value):
+            raise ValueError('Identité Ubuntu invalide : ' + value)
+    permanent = (UBUNTU_LAUNCHPAD + '+files/' + filename if filename.endswith('.deb') else
+                 UBUNTU_LAUNCHPAD + f'+sourcefiles/{package}/{version}/{filename}')
+    url = item['url']
+    if url == permanent:
+        return url, None
+    mirror_pattern = (re.escape(UBUNTU_MIRROR) +
+                      r'pool/(?:main|universe|restricted|multiverse)/[a-z0-9]+/' +
+                      re.escape(package) + '/' + re.escape(filename))
+    if not re.fullmatch(mirror_pattern, url):
+        raise ValueError('URL Ubuntu non canonique : ' + url)
+    return url, permanent
+
+
+class UbuntuRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuser une destination non admise avant qu'urllib ne la demande."""
+
+    def __init__(self, allowed_hosts: set[str]):
+        self.allowed_hosts = allowed_hosts
+
+    def http_error_302(self, req, fp, code, msg, headers):
+        location = headers.get('location', headers.get('uri'))
+        if location is not None:
+            target = urllib.parse.urlsplit(urllib.parse.urljoin(req.full_url, location))
+            # Comparer l'autorité entière exclut aussi les ports explicites
+            # (même :443) et les identifiants placés avant l'hôte.
+            if target.scheme != 'https' or target.netloc.lower() not in self.allowed_hosts:
+                fp.close()
+                raise ValueError('Redirection Ubuntu refusée vers l’hôte : ' +
+                                 (target.hostname or '(sans hôte)'))
+        return super().http_error_302(req, fp, code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
+
+
+def download_ubuntu_source(item: dict) -> bytes:
+    url, permanent = ubuntu_download_urls(item)
+    launchpad_hosts = {'launchpad.net', 'launchpadlibrarian.net'}
+    hosts = {'archive.ubuntu.com'} if permanent is not None else launchpad_hosts
+    opener = urllib.request.build_opener(UbuntuRedirectHandler(hosts))
+    try:
+        with opener.open(url, timeout=60) as response:
+            return response.read()
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404 or permanent is None:
+            raise
+        exc.close()
+    # Un seul repli : les erreurs Launchpad, délais et autres codes HTTP
+    # remontent au CLI. L'assembleur contrôle SHA-256 ET taille avant écriture.
+    opener = urllib.request.build_opener(UbuntuRedirectHandler(launchpad_hosts))
+    with opener.open(permanent, timeout=60) as response:
+        return response.read()
+
+
 def assemble_sources(folder, root=ROOT, cache=None):
     catalog = load_catalog(root)
     folder.mkdir(parents=True, exist_ok=False)
@@ -293,8 +358,7 @@ def assemble_sources(folder, root=ROOT, cache=None):
         if cached and cached.is_file():
             raw = cached.read_bytes()
         else:
-            with urllib.request.urlopen(item['url'], timeout=60) as response:
-                raw = response.read()
+            raw = download_ubuntu_source(item)
         if sha(raw) != item['sha256'] or len(raw) != item['size']:
             raise ValueError('Source système altérée : ' + item['filename'])
         target = folder / 'sources' / item['filename']

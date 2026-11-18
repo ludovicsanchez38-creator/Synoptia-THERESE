@@ -2,6 +2,9 @@
 # Le module est installé par l'action officielle Microsoft épinglée dans release.yml.
 param([Parameter(Mandatory = $true)][string]$Path)
 $ErrorActionPreference = 'Stop'
+# Conserver les octets épinglés avant que Tauri ne signe les greffons NSIS.
+& python (Join-Path $PSScriptRoot 'nsis_installer.py') capture $Path
+if ($LASTEXITCODE -ne 0) { throw 'Échec de la preuve du greffon NSIS avant signature' }
 Import-Module TrustedSigning -RequiredVersion 0.5.8
 $params = @{
     Endpoint = $env:AZURE_SIGNING_ENDPOINT

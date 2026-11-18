@@ -96,9 +96,14 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [moteurArrete, setMoteurArrete] = useState(false);
   const [reprise, setReprise] = useState(false);
   const [relance, setRelance] = useState(0);
+  const [relanceEnCours, setRelanceEnCours] = useState(false);
   const messageMoteur = useRef<string | null>(null);
   const apiBaseReady = useRef(false);
   const fatalSidecarError = useRef(false);
+  const erreursSidecar = useRef(0);
+  const generationDerniereErreur = useRef<number | null>(null);
+  const generationCourante = useRef(0);
+  const relanceEnCoursRef = useRef(false);
   const reducedMotion = prefersReducedMotion();
 
   // Charger la version de l'app (tauri.conf.json)
@@ -121,29 +126,47 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
       if (disposed) fn();
       else unlisteners.push(fn);
     };
+    const accepterGeneration = (valeur: unknown): number | null | false => {
+      if (typeof valeur !== 'number' || !Number.isSafeInteger(valeur) || valeur < 0) return null;
+      if (valeur < generationCourante.current) return false;
+      generationCourante.current = valeur;
+      return valeur;
+    };
 
     import('@tauri-apps/api/event')
       .then(({ listen }) => {
-        listen<string>('sidecar-error', (event) => {
+        listen<unknown>('sidecar-error', (event) => {
+          const details = event.payload && typeof event.payload === 'object'
+            ? event.payload as { message?: unknown; generation?: unknown }
+            : null;
+          const generation = accepterGeneration(details?.generation);
+          if (generation === false) return;
           // B-757 : l'erreur est fatale pour CE démarrage. Le polling vit dans
           // un autre effet ; ce ref partagé l'arrête et interdit un onReady
           // tardif si le health check déjà parti finit par répondre 200.
           fatalSidecarError.current = true;
+          erreursSidecar.current += 1;
+          generationDerniereErreur.current = generation;
           // Audit bêta 27/10 : la commande de secours n'existe que sous macOS.
           const secours = isMacPlatform()
             ? "\n\nDans le Terminal :\nxattr -cr /Applications/THERESE.app\npuis relance l'app."
             : "\n\nRelance THÉRÈSE. Si l'erreur revient, réinstalle-la depuis la page de téléchargement.";
-          setError(`Le moteur n'a pas pu démarrer :\n${event.payload}${secours}`);
+          const message = typeof event.payload === 'string' ? event.payload : details?.message;
+          setError(`Le moteur n'a pas pu démarrer :\n${message}${secours}`);
         }).then(garder);
 
         // B-1262 : sans cet écouteur, l'abandon du moteur par Rust était perdu
         // (le bandeau qui l'écoute n'est monté qu'après le démarrage) et le
         // splash attendait dix minutes un port vide.
         listen<unknown>('sidecar-status', (event) => {
-          const charge = event.payload as { state?: unknown; attempt?: unknown } | null;
+          const charge = event.payload as { state?: unknown; attempt?: unknown; generation?: unknown } | null;
           if (!charge || typeof charge !== 'object') return;
+          const generation = accepterGeneration(charge.generation);
+          if (generation === false) return;
           if (charge.state === 'failed') {
             fatalSidecarError.current = true;
+            erreursSidecar.current += 1;
+            generationDerniereErreur.current = generation;
             setMoteurArrete(true);
           } else if (charge.state === 'restarting') {
             const tentative = typeof charge.attempt === 'number' && charge.attempt > 0
@@ -167,20 +190,38 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   }, []);
 
   const relancerMoteur = useCallback(async () => {
+    if (relanceEnCoursRef.current) return;
+    relanceEnCoursRef.current = true;
+    setRelanceEnCours(true);
+    const erreursAvantRelance = erreursSidecar.current;
     setMoteurArrete(false);
     setReprise(false);
     messageMoteur.current = 'Le moteur local redémarre…';
     setMessage(messageMoteur.current);
     try {
       const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('restart_backend');
+      const generation = await invoke<number | undefined>('restart_backend');
+      if (typeof generation === 'number') {
+        if (generation < generationCourante.current) return;
+        generationCourante.current = generation;
+      }
+      // Un échec de l'ancien lancement peut arriver pendant l'attente du verrou.
+      if (erreursSidecar.current !== erreursAvantRelance
+          && (generationDerniereErreur.current === null || generation === undefined
+              || generationDerniereErreur.current >= generation)) return;
+      setMoteurArrete(false);
+      setError(null);
+      setProgress(0);
+      fatalSidecarError.current = false;
+      setRelance((n) => n + 1);
     } catch {
-      setMoteurArrete(true);
-      return;
+      if (error) setError('Impossible de relancer le moteur. Essaie à nouveau.');
+      else setMoteurArrete(true);
+    } finally {
+      relanceEnCoursRef.current = false;
+      setRelanceEnCours(false);
     }
-    fatalSidecarError.current = false;
-    setRelance((n) => n + 1);
-  }, []);
+  }, [error]);
 
   useEffect(() => {
     let cancelled = false;
@@ -281,7 +322,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
               </p>
             )}
           </div>
-          <Button className="mt-4" onClick={() => void relancerMoteur()}>
+          <Button className="mt-4" disabled={relanceEnCours} onClick={() => void relancerMoteur()}>
             Relancer le moteur local
           </Button>
         </div>
@@ -302,6 +343,9 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4">
             <p className="text-error text-sm">{error}</p>
           </div>
+          <Button className="mt-4" disabled={relanceEnCours} onClick={() => void relancerMoteur()}>
+            Relancer le moteur local
+          </Button>
         </div>
       </div>
     );

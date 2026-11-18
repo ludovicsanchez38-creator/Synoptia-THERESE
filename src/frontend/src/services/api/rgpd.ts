@@ -52,8 +52,8 @@ export interface RGPDInferResponse {
 export async function exportContactRGPD(contactId: string): Promise<RGPDExportResponse> {
   const response = await apiFetch(`${API_BASE}/api/rgpd/export/${contactId}`);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `RGPD export failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `L’export des données personnelles a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -65,8 +65,8 @@ export async function anonymizeContact(contactId: string, reason: string): Promi
     body: JSON.stringify({ reason }),
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `RGPD anonymize failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `L’anonymisation du contact a échoué (erreur ${response.status}).`);
   }
   const resultat = await response.json();
   notifyMemoryChange();
@@ -78,8 +78,8 @@ export async function renewContactConsent(contactId: string): Promise<RGPDRenewC
     method: 'POST',
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `RGPD renew consent failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `Le renouvellement du consentement a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -94,8 +94,8 @@ export async function updateContactRGPD(
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `RGPD update failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `La mise à jour des informations de confidentialité a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -103,8 +103,8 @@ export async function updateContactRGPD(
 export async function getRGPDStats(): Promise<RGPDStatsResponse> {
   const response = await apiFetch(`${API_BASE}/api/rgpd/stats`);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `RGPD stats failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `Le chargement des statistiques de confidentialité a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -114,8 +114,8 @@ export async function inferContactRGPD(contactId: string): Promise<RGPDInferResp
     method: 'POST',
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `RGPD infer failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `La détermination de la base légale a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -133,8 +133,8 @@ export interface PurgeSettingsResponse {
 export async function getPurgeSettings(): Promise<PurgeSettingsResponse> {
   const response = await apiFetch(`${API_BASE}/api/rgpd/purge/settings`);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `Purge settings failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `La lecture des réglages de suppression automatique a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -148,8 +148,8 @@ export async function updatePurgeSettings(
     { method: 'PUT' },
   );
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `Purge settings update failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `L’enregistrement des réglages de suppression automatique a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }
@@ -161,8 +161,8 @@ export async function togglePurgeExclude(
     method: 'PATCH',
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || `Toggle purge exclude failed: ${response.statusText}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.detail || error?.message || `La modification de la protection du contact contre la suppression automatique a échoué (erreur ${response.status}).`);
   }
   return response.json();
 }

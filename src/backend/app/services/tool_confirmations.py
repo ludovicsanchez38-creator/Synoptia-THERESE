@@ -12,6 +12,8 @@ quelques secondes/minutes). Une confirmation perdue à un redémarrage est sans
 conséquence : l'action n'a tout simplement pas eu lieu (fail-safe).
 """
 import json
+import re
+import unicodedata
 import uuid
 from copy import deepcopy
 from typing import Any
@@ -165,9 +167,18 @@ def empreinte_action(tool_name: str, arguments: dict[str, Any]) -> str | None:
     None = fail-open : l'appelant DOIT émettre la carte. On ne devine pas
     l'identité d'un envoi dont on ne comprend pas les arguments.
     """
-    if _base_tool_name(tool_name) != "send_email":
-        # Les autres outils sensibles n'ont pas d'identité normalisée à ce jour :
-        # comportement inchangé, une carte par appel.
+    if tool_name != "send_email":
+        # Un connecteur MCP homonyme n'a pas le même contrat que l'outil natif.
+        # Faute d'identité connue, garder une carte par appel.
+        return None
+
+    connus = {
+        "to", "cc", "subject", "is_html", *_ALIAS_CORPS,
+        "_compte_ecran", "_confirmation_destination", "_ai_provenance", "_provenance_documents",
+    }
+    if arguments.keys() - connus:
+        # Une copie cachée, une pièce jointe ou tout autre champ inconnu peut
+        # changer l'envoi : ne jamais fusionner quand on ne sait pas l'évaluer.
         return None
 
     destinataires = _normaliser_adresses(arguments.get("to"))
@@ -182,24 +193,37 @@ def empreinte_action(tool_name: str, arguments: dict[str, Any]) -> str | None:
     if objet is not None and not isinstance(objet, str):
         return None
 
+    html = arguments.get("is_html", False)
+    if not isinstance(html, bool):
+        return None
+
     corps: str | None = None
     for cle in _ALIAS_CORPS:
         valeur = arguments.get(cle)
         if isinstance(valeur, str):
+            if corps is not None and corps != valeur:
+                return None
             corps = valeur
-            break
-        if valeur is not None:
+        elif valeur is not None:
             return None
 
-    return "|".join(
-        (
-            "send_email",
-            destinataires,
-            copies,
-            (objet or "").strip(),
-            (corps or "").strip(),
-        )
-    )
+    provenance = arguments.get("_ai_provenance")
+    if provenance is not None:
+        if not isinstance(provenance, dict):
+            return None
+        # La date est générée à chaque appel du modèle, pas choisie pour l'envoi.
+        provenance = {cle: valeur for cle, valeur in provenance.items() if cle != "date"}
+
+    try:
+        # Une structure JSON évite les collisions dues aux séparateurs dans
+        # l'objet ou le corps ; ce dernier n'est pas tronqué par l'envoi.
+        return json.dumps([
+            tool_name, destinataires, copies, (objet or "").strip(), corps or "", html,
+            arguments.get("_compte_ecran"), arguments.get("_confirmation_destination"),
+            provenance, arguments.get("_provenance_documents"),
+        ], sort_keys=True, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return None
 
 
 def canoniser_arguments(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -243,12 +267,66 @@ def canoniser_pour_connecteur(
     return deepcopy(canonises)
 
 
+def _affirme_une_creation(texte: str) -> bool:
+    """Repère une affirmation de création, sans confondre une négation explicite."""
+    texte = unicodedata.normalize("NFC", texte)
+    affirmation = re.compile(
+        r"\b(?:créé(?:e|s|es)?|ajouté(?:e|s|es)?|enregistré(?:e|s|es)?|"
+        r"cree(?:e|s|es)?|ajoute(?:e|s|es)?|enregistre(?:e|s|es)?|"
+        r"(?:cr[eé]ation|enregistrement)\b.{0,80}?\b(?:r[eé]ussi(?:e|s|es)?|"
+        r"effectu[eé](?:e|s|es)?|confirm[eé](?:e|s|es)?))\b",
+        re.IGNORECASE,
+    )
+    negation = re.compile(r"\b(?:pas|non|jamais|rien|aucun(?:e)?)\b|n['’]", re.IGNORECASE)
+    for proposition in re.split(r"[.,;:!?\n]|\bmais\b", texte, flags=re.IGNORECASE):
+        for mention in affirmation.finditer(proposition):
+            avant = proposition[:mention.start()]
+            # Sans accent, « ajoute » peut être un impératif. En début de
+            # proposition, ce n'est pas une preuve d'écriture accomplie.
+            if mention.group().lower() in {"cree", "ajoute", "enregistre"} and not avant.strip():
+                continue
+            if re.search(
+                r"\b(?:peut|peuvent|doit|doivent|devra|devront|devrait|devraient|"
+                r"pourra|pourront|pourrait|pourraient|va|vont|sera|seront|serait|seraient)"
+                r"(?:\s+\w+){0,3}\s*$", avant, re.IGNORECASE,
+            ):
+                continue
+            if (mention.group().lower().startswith("enregistr")
+                    and re.search(r"\bd[eé]j[aà]\s*$", avant, re.IGNORECASE)):
+                continue
+            if not negation.search(proposition[:mention.end()]):
+                return True
+    return False
+
+
 def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
     """La confirmation alimente la bulle et l'aperçu, pas le modèle."""
     try:
         donnees = json.loads(resultat)
     except (ValueError, TypeError):
         return resultat
+    confirmations = {
+        "create_contact": "Contact créé.",
+        "create_project": "Projet créé.",
+        "create_task": "Tâche créée.",
+        "create_invoice": "Brouillon créé dans Devis et factures.",
+    }
+    if nom in confirmations:
+        succes = isinstance(donnees, dict) and donnees.get("success") is True
+        if isinstance(donnees, dict) and donnees.get("already_existed") is True:
+            ignores = donnees.get("champs_ignores")
+            if isinstance(ignores, list) and ignores and all(isinstance(c, str) for c in ignores):
+                return "Cet élément existe déjà. Ces informations n'ont pas été enregistrées : " + ", ".join(ignores) + "."
+            return "Cet élément existe déjà. Aucune nouvelle création n'est confirmée."
+        if not succes or donnees.get("error"):
+            # Conserver la cause lisible, sauf si elle annonce une création
+            # que le statut ne confirme pas.
+            if isinstance(donnees, dict):
+                for cle in ("error", "message"):
+                    message = donnees.get(cle)
+                    if isinstance(message, str) and message.strip() and not _affirme_une_creation(message):
+                        return message
+            return "La création n'est pas confirmée. Vérifie dans l'application avant de réessayer."
     if isinstance(donnees, dict):
         message = donnees.get("message")
         if isinstance(message, str) and message.strip():
@@ -258,12 +336,6 @@ def resultat_pour_l_ecran(nom: str, resultat: str) -> str:
             return f"L'action n'a pas abouti : {erreur}"
         if donnees.get("success") is False:
             return "L'action n'a pas abouti. Vérifie les informations de la carte."
-    confirmations = {
-        "create_contact": "Contact créé.",
-        "create_project": "Projet créé.",
-        "create_task": "Tâche créée.",
-        "create_invoice": "Brouillon créé dans Devis et factures.",
-    }
     if nom in confirmations:
         return confirmations[nom]
 

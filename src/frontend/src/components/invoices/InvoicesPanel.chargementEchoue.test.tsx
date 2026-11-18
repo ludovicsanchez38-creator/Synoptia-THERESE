@@ -92,7 +92,7 @@ describe('B-009 : un échec de rechargement efface le chargement précédent', (
     fireEvent.click(screen.getByRole('button', { name: 'Payée' }));
 
     expect(
-      await screen.findByText(/Impossible de charger les factures/),
+      await screen.findByText(/Impossible de charger les devis, factures et avoirs/),
     ).toBeInTheDocument();
 
     await waitFor(() => {

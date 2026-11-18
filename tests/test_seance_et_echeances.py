@@ -16,7 +16,7 @@ existe déjà, jamais une table de plus.
 from datetime import date
 
 import pytest
-from app.models.entities import CalendarEvent
+from app.models.entities import Calendar, CalendarEvent
 from app.services.echeances import DELAI_PAR_DEFAUT_JOURS, echeance_de_suivi
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,6 +41,7 @@ async def test_un_evenement_peut_etre_bloque_sans_etre_annule(db_session: AsyncS
 
 
 async def _evenement(session: AsyncSession, **kw) -> CalendarEvent:
+    session.add(Calendar(id="cal-1", account_id="local", summary="Agenda local"))
     e = CalendarEvent(id=kw.pop("id", "ev-test"), calendar_id="cal-1",
                       summary="Séance 2 PROPULSER", status="confirmed", **kw)
     session.add(e)
@@ -53,7 +54,8 @@ async def test_un_blocage_dit_toujours_pourquoi(client, db_session: AsyncSession
     """Un booléen « bloqué » sans motif obligerait Ludo à se souvenir."""
     await _evenement(db_session, id="ev-motif")
 
-    reponse = await client.patch("/api/calendar/events/ev-motif/blocage", json={"blocage": "   "})
+    reponse = await client.patch("/api/calendar/events/ev-motif/blocage",
+                                 params={"account_id": "local"}, json={"blocage": "   "})
 
     assert reponse.status_code == 400, reponse.text
     assert (await client.patch(
@@ -69,6 +71,7 @@ async def test_bloquer_ne_supprime_pas_la_seance(client, db_session: AsyncSessio
     await _evenement(db_session, id="ev-bloque")
 
     reponse = await client.patch("/api/calendar/events/ev-bloque/blocage",
+                                 params={"account_id": "local"},
                                  json={"blocage": "Attestation fiscale manquante (Atlas)"})
 
     assert reponse.status_code == 200, reponse.text
@@ -81,6 +84,7 @@ async def test_lever_un_blocage(client, db_session: AsyncSession):
     await _evenement(db_session, id="ev-libere", blocage="Attestation manquante")
 
     reponse = await client.patch("/api/calendar/events/ev-libere/blocage",
+                                 params={"account_id": "local"},
                                  json={"blocage": None})
 
     assert reponse.status_code == 200, reponse.text
@@ -228,6 +232,7 @@ async def test_un_blocage_survit_a_la_relecture(client, db_session: AsyncSession
     await _evenement(db_session, id="ev-audience")
 
     pose = await client.patch("/api/calendar/events/ev-audience/blocage",
+                              params={"account_id": "local"},
                               json={"blocage": "Greffe : audience renvoyée, date non communiquée"})
     assert pose.status_code == 200, pose.text
 

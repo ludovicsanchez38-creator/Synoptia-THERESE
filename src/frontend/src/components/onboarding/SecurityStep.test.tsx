@@ -24,7 +24,12 @@ describe('SecurityStep - consentement cloud conditionnel', () => {
     render(<SecurityStep provider="openai" onNext={onNext} onBack={vi.fn()} />);
 
     expect(screen.getByText(/vers OpenAI/)).toBeInTheDocument();
-    expect(screen.getByText(/messages et le contexte utile/)).toBeInTheDocument();
+    // B-1986 : l'ancienne phrase « messages et le contexte utile » sous-estimait
+    // l'envoi. Le libellé nomme toujours les messages et le contexte, puis accepte
+    // l'ensemble annoncé.
+    const accord = screen.getByRole('checkbox').closest('label')?.textContent ?? '';
+    expect(accord).toMatch(/mes messages, le contexte utile/);
+    expect(accord).toMatch(/ces données soient envoyées à OpenAI/);
     const next = screen.getByTestId('onboarding-next-btn');
     expect(next).toBeDisabled();
 

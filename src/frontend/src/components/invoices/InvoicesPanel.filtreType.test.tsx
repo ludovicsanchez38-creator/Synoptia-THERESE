@@ -74,7 +74,8 @@ describe('B-005 : changer de type de document assainit le statut', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Devis' }));
 
     const statutCourant = useInvoiceStore.getState().filters.status;
-    const proposes = ['Toutes', 'Brouillon', 'Envoyée', 'Accepté', 'Refusé', 'Expiré', 'Converti'];
+    // B-1993 : l'envoi s'accorde lui aussi avec « devis ».
+    const proposes = ['Toutes', 'Brouillon', 'Envoyé', 'Accepté', 'Refusé', 'Expiré', 'Converti'];
     expect(statutCourant).toBe('all');
     for (const libelle of proposes) {
       expect(screen.getByRole('button', { name: libelle })).toBeInTheDocument();

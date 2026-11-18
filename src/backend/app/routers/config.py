@@ -653,6 +653,12 @@ async def set_preference(
             detail="Choisis le dossier de travail par POST /api/config/working-directory.",
         )
 
+    if key.lower() == "web_search_enabled":
+        raise HTTPException(
+            status_code=400,
+            detail="Modifie la recherche web par POST /api/config/web-search.",
+        )
+
     # Revue dette 0.43.4 : ce detour permettait d'ecrire une adresse de
     # fournisseur invalide, relue ensuite sans controle par POST /llm.
     if key.lower().endswith("_base_url"):
@@ -727,10 +733,7 @@ async def get_web_search_status(session: AsyncSession = Depends(get_session)):
     # Vérifier si Brave Search est configuré
     has_brave = bool(os.environ.get("BRAVE_API_KEY"))
     if not has_brave:
-        brave_result = await session.execute(
-            select(Preference).where(Preference.key == "brave_api_key")
-        )
-        has_brave = brave_result.scalar_one_or_none() is not None
+        has_brave, _ = await _check_key_decryptable(session, "brave_api_key")
 
     others_provider = "Brave Search API" if has_brave else "DuckDuckGo (tool calling)"
     description = (
@@ -902,6 +905,12 @@ async def delete_preference(
             detail="Le dossier de travail se choisit par POST /api/config/working-directory.",
         )
 
+    if key.lower() == "web_search_enabled":
+        raise HTTPException(
+            status_code=400,
+            detail="Modifie la recherche web par POST /api/config/web-search.",
+        )
+
     # B-1711 : la route dédiée vide aussi les caches LLM et fournisseur.
     # Ici, une suppression SQL seule laisse la clé utilisable en mémoire.
     if "api_key" in key.lower():
@@ -926,83 +935,15 @@ async def delete_preference(
 async def export_data(
     session: AsyncSession = Depends(get_session),
 ):
+    """Exporte les données de portabilité, sans les secrets de connexion.
+
+    Le JSON contient les métadonnées des fichiers, pas les fichiers eux-mêmes.
     """
-    Export all user data.
+    # Les deux routes utilisent le même assembleur et le même masquage.
+    from app.routers.data import export_all_data
 
-    Returns a JSON file with all contacts, projects, conversations, etc.
-    """
-    from app.models.entities import Contact, Conversation, Message, Project
+    return await export_all_data(session)
 
-    # Get all data
-    contacts_result = await session.execute(select(Contact))
-    contacts = contacts_result.scalars().all()
-
-    projects_result = await session.execute(select(Project))
-    projects = projects_result.scalars().all()
-
-    conversations_result = await session.execute(select(Conversation))
-    conversations = conversations_result.scalars().all()
-
-    messages_result = await session.execute(select(Message).order_by(Message.created_at, Message.id))
-    messages = messages_result.scalars().all()
-    # B-511 : une passe pour ranger les messages par conversation, au lieu d'un
-    # filtre imbriqué conversations × messages (coût quadratique).
-    messages_par_conversation: dict[str, list[Message]] = {}
-    for m in messages:
-        messages_par_conversation.setdefault(m.conversation_id, []).append(m)
-
-    export_data = {
-        "exported_at": datetime.now(UTC).isoformat(),
-        "app_version": settings.app_version,
-        "contacts": [
-            {
-                "id": c.id,
-                "first_name": c.first_name,
-                "last_name": c.last_name,
-                "company": c.company,
-                "email": c.email,
-                "phone": c.phone,
-                "notes": c.notes,
-                "tags": json.loads(c.tags) if c.tags else None,
-                "created_at": c.created_at.isoformat(),
-            }
-            for c in contacts
-        ],
-        "projects": [
-            {
-                "id": p.id,
-                "name": p.name,
-                "description": p.description,
-                "contact_id": p.contact_id,
-                "status": p.status,
-                "budget": p.budget,
-                "notes": p.notes,
-                "tags": json.loads(p.tags) if p.tags else None,
-                "created_at": p.created_at.isoformat(),
-            }
-            for p in projects
-        ],
-        "conversations": [
-            {
-                "id": conv.id,
-                "title": conv.title,
-                "summary": conv.summary,
-                "created_at": conv.created_at.isoformat(),
-                "messages": [
-                    {
-                        "id": m.id,
-                        "role": m.role,
-                        "content": m.content,
-                        "created_at": m.created_at.isoformat(),
-                    }
-                    for m in messages_par_conversation.get(conv.id, [])
-                ],
-            }
-            for conv in conversations
-        ],
-    }
-
-    return export_data
 
 
 @router.get("/stats")
@@ -1218,10 +1159,9 @@ async def set_profile(
 @router.delete("/profile")
 async def delete_profile(session: AsyncSession = Depends(get_session)):
     """Delete user profile."""
-    from app.services.user_profile import delete_user_profile, set_cached_profile
+    from app.services.user_profile import delete_user_profile
 
     deleted = await delete_user_profile(session)
-    set_cached_profile(None)
 
     return {"deleted": deleted}
 

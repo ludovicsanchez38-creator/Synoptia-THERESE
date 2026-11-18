@@ -27,8 +27,16 @@ async function installationAutomatiqueAutorisee(): Promise<boolean> {
     // Un .deb extrait à la main ne doit pas tomber dans install_appimage.
     const { getBundleType } = await import('@tauri-apps/api/app');
     const type = await getBundleType();
-    if (/linux/i.test(navigator.platform)) return type === 'deb';
-    return ['deb', 'app', 'nsis', 'msi'].includes(type);
+    if (!['deb', 'app', 'nsis', 'msi'].includes(type)) return false;
+    // Le système natif fait foi, même si la webview masque sa plateforme.
+    const { invoke } = await import('@tauri-apps/api/core');
+    const systeme = await invoke<{ os?: string; linux_debian?: boolean }>('get_system_info');
+    switch (systeme?.os) {
+      case 'linux': return type === 'deb' && systeme.linux_debian === true;
+      case 'macos': return type === 'app';
+      case 'windows': return type === 'nsis' || type === 'msi';
+      default: return false;
+    }
   } catch {
     // Type inconnu ou API indisponible : proposer l'installation manuelle.
     return false;
@@ -241,7 +249,7 @@ export function UpdateBanner() {
       {state.phase === 'manual' && (
         <>
           <span className="text-text">
-            Pour cette installation, télécharge la nouvelle version puis installe-la manuellement.
+            Impossible de vérifier automatiquement les mises à jour pour cette installation. Tu peux télécharger THÉRÈSE et l’installer manuellement.
           </span>
           <a
             href={DOWNLOAD_URL}

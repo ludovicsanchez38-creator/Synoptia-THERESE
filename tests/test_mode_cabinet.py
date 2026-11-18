@@ -408,10 +408,12 @@ class TestLaSuppressionGeneriqueNeCoupePasLeCloisonnement:
     @pytest.mark.asyncio
     async def test_une_preference_ordinaire_se_supprime_toujours(self, client):
         """La garde vise une clé, pas la route."""
-        pose = await client.post("/api/config/web-search?enabled=true")
+        pose = await client.post(
+            "/api/config/preferences", json={"key": "preference_ordinaire", "value": True}
+        )
         assert pose.status_code == 200, pose.text
 
-        efface = await client.delete("/api/config/preferences/web_search_enabled")
+        efface = await client.delete("/api/config/preferences/preference_ordinaire")
 
         assert efface.status_code == 200, efface.text
         assert efface.json()["deleted"] is True

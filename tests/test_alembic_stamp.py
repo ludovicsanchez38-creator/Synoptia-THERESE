@@ -126,13 +126,6 @@ def _make_patched_tracked_db(
     ]
     with closing(sqlite3.connect(str(db_path))) as conn:
         conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY)")
-        # P-139 : la colonne sent_at fait partie du schéma patché de la tête.
-        conn.execute(
-            "CREATE TABLE invoices "
-            "(id VARCHAR PRIMARY KEY, currency TEXT, validite_jours INTEGER"
-            + ("" if sans_date_d_envoi else ", sent_at TIMESTAMP")
-            + ")"
-        )
         conn.execute("CREATE TABLE variables (id VARCHAR PRIMARY KEY)")
         conn.execute(
             "CREATE TABLE board_decisions (id VARCHAR PRIMARY KEY, "
@@ -147,6 +140,18 @@ def _make_patched_tracked_db(
         conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
         conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
+    from app.models.entities import Invoice
+    from sqlalchemy import create_engine
+
+    moteur = create_engine(f"sqlite:///{db_path}")
+    try:
+        Invoice.__table__.create(moteur)
+    finally:
+        moteur.dispose()
+    if sans_date_d_envoi:
+        with closing(sqlite3.connect(db_path)) as conn:
+            conn.execute("ALTER TABLE invoices DROP COLUMN sent_at")
+            conn.commit()
     _creer_tables_sync_reelles(db_path)
     _creer_tables_planning_reelles(db_path)
 
@@ -172,7 +177,7 @@ def test_stamp_db_legacy(tmp_path):
     db = tmp_path / "legacy.db"
     _make_legacy_db(db)
     ensure_alembic_stamp(db)
-    assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+    assert _read_stamp(db) is None  # Le schéma minimal ne prouve pas la tête.
 
 
 def test_stamp_idempotent_et_ne_regresse_pas(tmp_path):
@@ -251,7 +256,10 @@ def test_stamp_sur_db_chiffree(tmp_path):
     from app.models.database import db_connect, ensure_db_encrypted
 
     db = tmp_path / "therese.db"
-    _make_legacy_db(db)
+    _make_patched_tracked_db(db)
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("DROP TABLE alembic_version")
+        conn.commit()
     ensure_db_encrypted(db)
 
     ensure_alembic_stamp(db)

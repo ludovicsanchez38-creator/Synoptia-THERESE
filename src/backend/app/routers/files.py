@@ -18,6 +18,7 @@ from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.schemas import FileIndexRequest, FileResponse
 from app.services.file_parser import avis_sans_texte
 from app.services.indexation import (
+    ExtractionImpossible,
     IndexationAbandonnee,
     extract_text_async,
     index_payload,
@@ -155,7 +156,7 @@ def _consommer_issue_superviseur(superviseur: "asyncio.Task[object]") -> None:
         return
     issue = superviseur.exception()
     if issue is not None and not isinstance(
-        issue, (IndexationAbandonnee, HTTPException)
+        issue, (ExtractionImpossible, IndexationAbandonnee, HTTPException)
     ):
         logger.warning(
             "Superviseur d'indexation terminé en échec", exc_info=issue
@@ -316,6 +317,8 @@ async def index_file(
         return resultat
     except IndexationAbandonnee as e:
         raise HTTPException(status_code=409, detail=str(e))
+    except ExtractionImpossible as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
 
 @router.get("/{file_id}", response_model=FileResponse)
@@ -584,6 +587,8 @@ async def upload_file(
         )
     except IndexationAbandonnee as e:
         raise HTTPException(status_code=409, detail=str(e))
+    except ExtractionImpossible as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
 
 # R1-6 : une sélection extérieure reste refusée à l'indexation ; seul un

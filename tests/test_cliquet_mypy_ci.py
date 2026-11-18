@@ -154,7 +154,10 @@ class TestCliquetMypy:
         # 31/10/2026 (correctifs 0.83) : ces quatre erreurs sont corrigées,
         # rien d'autre ne bouge : 923 à froid sous Linux, même commande.
         # Confirmation sur le runner à venir.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "923"
+        # 17/11/2026 (cycle 20, backend-donnees, passe 7) : les quatre erreurs
+        # nouvelles du lot sont retirées ; le retour de purge_contact_vector
+        # est aussi annoté : 922 à froid sous Linux, sans cache.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "922"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")

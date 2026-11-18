@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_RETENTION_MONTHS = 36
 
 
-async def purge_contact_vector(contact_id: str, max_attempts: int = 3) -> int:
+async def purge_contact_vector(contact_id: str, max_attempts: int = 3) -> int | None:
     """Supprime l'embedding Qdrant d'un contact (droit à l'oubli, Art. 17).
 
     Sans cette purge, la fiche anonymisée [ANONYMISÉ] continue de remonter en
@@ -42,7 +42,8 @@ async def purge_contact_vector(contact_id: str, max_attempts: int = 3) -> int:
         try:
             from app.services.qdrant import get_qdrant_service
 
-            return await get_qdrant_service().async_delete_by_entity(contact_id)
+            supprimes: int = await get_qdrant_service().async_delete_by_entity(contact_id)
+            return supprimes
         except Exception as e:  # noqa: BLE001 - on retente puis on journalise
             last_error = e
             logger.warning(
@@ -53,7 +54,7 @@ async def purge_contact_vector(contact_id: str, max_attempts: int = 3) -> int:
         f"RGPD: purge vecteur Qdrant définitivement échouée pour {contact_id} "
         f"après {max_attempts} tentatives: {last_error}"
     )
-    return 0
+    return None
 
 
 async def _get_purge_retention_months() -> int:
@@ -251,8 +252,7 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 results["notifications"] += 1
 
             # Anonymisation le jour J
-            anonymized_ids: list[str] = []
-            dossiers_a_purger: list[str] = []
+            purges_a_verifier: dict[str, tuple[list[str], str]] = {}
             for contact in contacts_to_purge:
                 # Vérifier qu'on n'a pas déjà notifié l'anonymisation
                 existing = await session.execute(
@@ -267,7 +267,7 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 # B-880, B-1438 puis B-1651 : le même traitement que la route
                 # manuelle (tâches, brouillons, prestations, activités, dossiers
                 # et e-mails compris), décision de Ludo du 26/09.
-                dossiers_a_purger.extend(await anonymiser_la_personne(session, contact, now))
+                dossiers = await anonymiser_la_personne(session, contact, now)
 
                 # Log d'activité
                 activity = Activity(
@@ -280,34 +280,64 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
 
                 # Notification
                 notif = Notification(
-                    title="Contact anonymisé (RGPD)",
+                    title="Anonymisation à vérifier (RGPD)",
                     # B-880 : la notification survit à l'effacement, elle ne
                     # porte donc plus le nom de la personne.
-                    message=f"Un contact a été anonymisé automatiquement (inactif depuis {retention_months} mois)",
-                    type="info",
+                    message=(
+                        "Les données en base ont été anonymisées. La suppression des fichiers "
+                        "et de l'index de recherche reste à vérifier."
+                    ),
+                    type="warning",
                     source="rgpd_purge_done",
                     action_url=f"/crm/contacts/{contact.id}",
                     action_label="Voir",
                 )
                 session.add(notif)
-                anonymized_ids.append(contact.id)
-                results["anonymisations"] += 1
+                purges_a_verifier[contact.id] = (dossiers, notif.id)
 
             await session.commit()
 
         # Purge du fantôme vectoriel (P0-RGPD-1) hors session SQL : même droit à
         # l'oubli que l'anonymisation manuelle, sinon la fiche [ANONYMISÉ]
         # resterait indexée dans Qdrant.
-        for cid in anonymized_ids:
-            await purge_contact_vector(cid)
-        # B-445 : le dépôt disque des dossiers supprimés, après le commit.
-        if dossiers_a_purger:
-            from app.routers.memory import _purger_le_depot_du_dossier
+        from app.routers.memory import _purger_le_depot_du_dossier
 
-            for dossier_id in dossiers_a_purger:
-                await _purger_le_depot_du_dossier(dossier_id)
+        for cid, (dossiers, notification_id) in purges_a_verifier.items():
+            restes = []
+            if await purge_contact_vector(cid) is None:
+                restes.append("l'index de recherche du contact")
+            depots = [
+                dossier_id for dossier_id in dossiers
+                if not await _purger_le_depot_du_dossier(dossier_id)
+            ]
+            if depots:
+                restes.append("les dépôts des dossiers : " + ", ".join(depots))
+            async with get_session_context() as session:
+                notif = await session.get(Notification, notification_id)
+                if notif is None:
+                    raise RuntimeError("Notification de purge introuvable")
+                if restes:
+                    notif.title = "Anonymisation incomplète (RGPD)"
+                    notif.message = (
+                        "Les données en base ont été anonymisées, mais il reste à vérifier "
+                        "ou à supprimer : " + " ; ".join(restes) + "."
+                    )
+                    results["anonymisations_incompletes"] = (
+                        results.get("anonymisations_incompletes", 0) + 1
+                    )
+                else:
+                    notif.title = "Contact anonymisé (RGPD)"
+                    notif.message = (
+                        f"Un contact a été anonymisé automatiquement (inactif depuis {retention_months} mois)"
+                    )
+                    notif.type = "info"
+                    results["anonymisations"] += 1
+                await session.commit()
 
-        total = results["notifications"] + results["anonymisations"]
+        total = (
+            results["notifications"] + results["anonymisations"]
+            + results.get("anonymisations_incompletes", 0)
+        )
         if total > 0:
             logger.info(f"Purge RGPD auto : {results}")
         else:

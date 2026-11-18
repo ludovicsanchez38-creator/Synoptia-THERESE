@@ -23,6 +23,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { cn } from '../../lib/utils';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
@@ -501,6 +502,10 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
+  const dialogueRef = useRef<HTMLDivElement>(null);
+  // B-1922 : le dialogue est aria-modal. Le piège déplace le focus et le
+  // retient. Échap reste dans la pile (B-262), pas dans le piège.
+  useDialogFocusTrap(dialogueRef, { active: true, isolateBackground: true });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -522,6 +527,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
     <div className={`fixed inset-0 flex items-center justify-center ${Z_LAYER.MODAL_NESTED}`}>
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <motion.div
+        ref={dialogueRef}
         role="dialog"
         aria-modal="true"
         aria-label="Nouveau contact CRM"
@@ -850,6 +856,9 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
+  const dialogueRef = useRef<HTMLDivElement>(null);
+  // B-1922 : même piège que le nouveau contact. Échap reste dans la pile (B-336).
+  useDialogFocusTrap(dialogueRef, { active: true, isolateBackground: true });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -882,6 +891,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
     <div className={`fixed inset-0 flex items-center justify-center ${Z_LAYER.MODAL_NESTED}`}>
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <motion.div
+        ref={dialogueRef}
         role="dialog"
         aria-modal="true"
         aria-label="Nouvelle activité CRM"

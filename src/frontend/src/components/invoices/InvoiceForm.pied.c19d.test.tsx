@@ -10,6 +10,7 @@ it('B-1079 : le pied et ses groupes peuvent revenir à la ligne sans comprimer l
   const pied = question.parentElement!.parentElement!;
   expect(pied).toHaveClass('flex-wrap', 'gap-3');
   expect(question.parentElement).toHaveClass('basis-full');
+  fireEvent.click(screen.getByRole('button', { name: 'Continuer la saisie' }));
   expect(screen.getByRole('button', { name: 'Créer' }).parentElement).toHaveClass('shrink-0');
 });
 
@@ -28,6 +29,7 @@ it('B-1079 : facture émise, paiement et abandon restent des groupes indépendan
   fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
   const question = screen.getByText('Abandonner les modifications ?');
   expect(question.parentElement).toHaveClass('basis-full');
+  fireEvent.click(screen.getByRole('button', { name: 'Continuer la saisie' }));
   const paiement = screen.getByRole('button', { name: 'Marquer comme payée' }).parentElement;
   expect(paiement).toHaveClass('flex-wrap', '[&>button]:shrink-0', '[&>button]:whitespace-nowrap');
   expect(screen.getByText('Payée le')).toHaveClass('whitespace-nowrap');

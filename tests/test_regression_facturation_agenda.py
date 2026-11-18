@@ -220,7 +220,7 @@ class TestTestDeConnexionImapSmtp:
         provider._connect_mailbox = lambda **kw: (_ for _ in ()).throw(ConnectionRefusedError("IMAP refusé"))
 
         top = asyncio.get_running_loop().time()
-        verdict = await asyncio.wait_for(provider.test_connection(), timeout=8)
+        verdict = await asyncio.wait_for(provider.test_connection_details(), timeout=8)
         duree = asyncio.get_running_loop().time() - top
 
         assert "success" in verdict, verdict

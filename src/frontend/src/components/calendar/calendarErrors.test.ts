@@ -1,11 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { isGoogleAuthError, classifyCalendarError } from './calendarErrors';
+import reponseGoogle403 from './fixtures/googleCalendar403.json';
 
-const MSG_403 =
-  "Google refuse l'accès au calendrier (403). Active l'API « Google Calendar » dans ta " +
-  'console Google Cloud (APIs et services > Bibliothèque > Google Calendar API > Activer), ' +
-  "puis relance la synchronisation. Si le souci persiste, vérifie que l'accès au calendrier " +
-  'a bien été autorisé pour ce compte.';
+const MSG_403 = reponseGoogle403.body.message;
 
 describe('isGoogleAuthError (BUG-109 / boucle "connexion expirée", lcjp 12/06/2026)', () => {
   it('classe une vraie expiration / credentials manquants comme reauth (cas légitime backend 401)', () => {

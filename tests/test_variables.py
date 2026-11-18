@@ -233,6 +233,7 @@ def _creer_tables_sync_depuis_modeles(db_path):
     SQLModel.metadata.create_all(engine, tables=[
         SQLModel.metadata.tables[t]
         for t in (
+            "invoices",
             "project_sync_roots", "project_sync_entries",
             "sync_plans", "sync_operations",
             "task_schedules", "task_dependencies",
@@ -253,9 +254,6 @@ class TestMigration:
         conn = sqlite3.connect(db)
         conn.execute("CREATE TABLE contacts (id TEXT PRIMARY KEY)")
         conn.execute(
-            "CREATE TABLE invoices (id TEXT PRIMARY KEY, validite_jours INTEGER, sent_at TIMESTAMP)"  # P-139
-        )
-        conn.execute(
             "CREATE TABLE board_decisions ("
             "id TEXT PRIMARY KEY, web_sources TEXT, synthesis_usage TEXT)"
         )
@@ -274,7 +272,7 @@ class TestMigration:
         conn.commit()
         conn.close()
         # 0.45 (passe 3) : la preuve exige TOUTES les colonnes des modèles -
-        # les tables sync se créent depuis les modèles, jamais à la main.
+        # ces tables se créent depuis les modèles, jamais à la main.
         _creer_tables_sync_depuis_modeles(db)
         return db
 
@@ -293,8 +291,9 @@ class TestMigration:
 
     def test_pas_de_restamp_sans_table_variables(self, tmp_path):
         import sqlite3
+        from contextlib import closing
 
-        from app.models.database import ensure_alembic_stamp
+        from app.models.database import ALEMBIC_HEAD_REVISION, ensure_alembic_stamp
 
         db = self._base_legacy(tmp_path, with_variables=False)
         ensure_alembic_stamp(db)
@@ -305,13 +304,25 @@ class TestMigration:
             "une base SANS la table variables ne doit PAS être ré-estampillée "
             "à la nouvelle tête (la migration serait sautée)"
         )
+        with closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("CREATE TABLE variables (id TEXT PRIMARY KEY)")
+        ensure_alembic_stamp(db)
+        with closing(sqlite3.connect(db)) as conn:
+            version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+        assert version == ALEMBIC_HEAD_REVISION
 
     def test_restamp_avec_schema_complet(self, tmp_path):
         import sqlite3
+        from contextlib import closing
 
         from app.models.database import ALEMBIC_HEAD_REVISION, ensure_alembic_stamp
+        from app.models.entities import Invoice
 
         db = self._base_legacy(tmp_path, with_variables=True)
+        with closing(sqlite3.connect(db)) as conn:
+            colonnes = {ligne[1] for ligne in conn.execute("PRAGMA table_info(invoices)")}
+        absentes = set(Invoice.__table__.columns.keys()) - colonnes
+        assert not absentes, f"Colonnes de factures absentes : {len(absentes)}"
         ensure_alembic_stamp(db)
         conn = sqlite3.connect(db)
         version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
@@ -322,7 +333,7 @@ class TestMigration:
         import sqlite3
         from contextlib import closing
 
-        from app.models.database import ensure_alembic_stamp
+        from app.models.database import ALEMBIC_HEAD_REVISION, ensure_alembic_stamp
 
         db = self._base_legacy(tmp_path, with_variables=True)
         with closing(sqlite3.connect(db)) as conn, conn:
@@ -331,6 +342,12 @@ class TestMigration:
         with closing(sqlite3.connect(db)) as conn, conn:
             version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
         assert version == "ancienne_tete", "La migration de provenance doit encore s’exécuter"
+        with closing(sqlite3.connect(db)) as conn, conn:
+            conn.execute("ALTER TABLE email_messages ADD COLUMN ai_generation_id VARCHAR")
+        ensure_alembic_stamp(db)
+        with closing(sqlite3.connect(db)) as conn, conn:
+            version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+        assert version == ALEMBIC_HEAD_REVISION
 
 
 class TestParseVariableActions:

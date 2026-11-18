@@ -147,7 +147,10 @@ export function ProjectsPanel() {
     const id = deleteTarget.id;
     setDeleteTarget(null);
     try {
-      await api.deleteProject(id);
+      const resultat = await api.deleteProject(id);
+      if (resultat?.deleted === false) {
+        addNotification({ type: 'error', title: 'Suppression incomplète', message: resultat.message || 'Des fichiers restent à vérifier.', duration: 0 });
+      }
       setProjects((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error('Failed to delete project:', err);

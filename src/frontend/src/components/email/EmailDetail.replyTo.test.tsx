@@ -39,7 +39,11 @@ it('répond au Reply-To et affiche cette adresse avant confirmation, sans envoi 
   expect(within(carte).getByText('À').nextElementSibling).toHaveTextContent('prospect@example.fr');
   expect(send).not.toHaveBeenCalled();
   fireEvent.click(within(carte).getByRole('button', { name: 'Confirmer et envoyer' }));
-  await waitFor(() => expect(send).toHaveBeenCalledWith('compte', expect.objectContaining({ to: ['prospect@example.fr'] })));
+  await waitFor(() => expect(send).toHaveBeenCalledWith(
+    'compte',
+    expect.objectContaining({ to: ['prospect@example.fr'] }),
+    expect.any(AbortSignal),
+  ));
 });
 
 it('répond à tous avec Reply-To, les copies et sans son propre compte', () => {

@@ -168,6 +168,9 @@ def marque_reponse(context: Any) -> bool | None:
     marquée, False sinon. Une réponse ne devient plus « documents » parce
     qu'une ancienne fiche a servi.
     """
-    if not getattr(context, 'contient_documents', False):
+    marque = getattr(context, 'contient_documents', None)
+    if marque is not True and marque is not False:
+        return True
+    if marque is False:
         return False
     return None if getattr(context, 'documents_averes', None) is False else True

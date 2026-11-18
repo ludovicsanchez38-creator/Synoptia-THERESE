@@ -25,11 +25,12 @@ import { Spinner } from '../ui/Spinner';
 
 const LIMITE_DOCUMENTS_ACCUEIL = 50;
 
-function libelleDocumentsCharges(n: number): string {
+function libelleDocumentsCharges(n: number, affiches: number): string {
+  const apercu = n > affiches ? `, ${affiches} affichés ici` : '';
   if (n >= LIMITE_DOCUMENTS_ACCUEIL) {
-    return `${n} documents chargés (total non mesuré)`;
+    return `${n} documents chargés (total non mesuré)${apercu}`;
   }
-  return `${n} document${n > 1 ? 's' : ''} enregistré${n > 1 ? 's' : ''}`;
+  return `${n} document${n > 1 ? 's' : ''} enregistré${n > 1 ? 's' : ''}${apercu}`;
 }
 
 type InvoiceSelection = string | 'new-devis' | null;
@@ -170,7 +171,7 @@ export function InvoiceWorkspaceCard({
           <div>
             <h2 id="invoice-workspace-title" className="text-base font-semibold text-text">Facturer un client</h2>
             <p className="text-xs text-text-muted">
-              {resource.status === 'ready' ? libelleDocumentsCharges(resource.data.invoices.length) : 'Lecture de tes devis et factures'}
+              {resource.status === 'ready' ? libelleDocumentsCharges(resource.data.invoices.length, invoices.length) : 'Lecture de tes devis et factures'}
             </p>
           </div>
         </div>
@@ -619,7 +620,9 @@ function DevisDraftForm({
           {lines.map((line, index) => (
             <div key={index} className="grid gap-2 rounded-md bg-surface-2 p-3 sm:grid-cols-[1fr_70px_100px_86px_32px]">
               <input id={`devis-description-${index}`} aria-label={`Description ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-description-${index}`} aria-describedby={errorFieldId === `devis-description-${index}` ? 'devis-form-error' : undefined} placeholder="Description" value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <span className="min-w-0 text-xs text-text-muted sm:hidden">Qté</span>
               <input id={`devis-quantity-${index}`} aria-label={`Quantité ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-quantity-${index}`} aria-describedby={errorFieldId === `devis-quantity-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.quantity} onChange={(event) => updateLine(index, { quantity: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <span className="min-w-0 text-xs text-text-muted sm:hidden">Prix HT</span>
               <input id={`devis-price-${index}`} aria-label={`Prix HT ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-price-${index}`} aria-describedby={errorFieldId === `devis-price-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.unitPrice} onChange={(event) => updateLine(index, { unitPrice: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
               <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="min-w-0 rounded-sm border border-border bg-surface px-2 py-2 text-sm">
                 {[20, 10, 5.5, 2.1, 0].map((rate) => <option key={rate} value={rate}>{rate.toLocaleString('fr-FR')} %</option>)}
@@ -656,12 +659,14 @@ function DevisDraftForm({
                 <p className="mt-1">Destinataire : {confirmationSnapshot.recipient}</p>
                 <p>Montant TTC : {formatMoney(confirmationSnapshot.totalTtc, confirmationSnapshot.request.currency)}</p>
                 <p>Échéance : {formatDate(confirmationSnapshot.request.due_date)}</p>
-                <p className="mt-1 font-semibold">Cette action crée un document local. Elle ne génère aucun PDF et n’envoie rien.</p>
+                <p className="mt-1 font-semibold">{brouillonEnregistre
+                  ? 'Cette action met à jour le brouillon. Elle ne génère aucun PDF et n’envoie rien.'
+                  : 'Cette action crée un document local. Elle ne génère aucun PDF et n’envoie rien.'}</p>
               </div>
             </div>
             <div className="mt-3 flex justify-end gap-2">
               <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
-              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-sm font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
+              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-sm font-semibold text-success-ink disabled:opacity-60">{saving ? (brouillonEnregistre ? 'Mise à jour…' : 'Création…') : (brouillonEnregistre ? 'Confirmer la mise à jour' : 'Confirmer le brouillon')}</button>
             </div>
           </div>
         )}

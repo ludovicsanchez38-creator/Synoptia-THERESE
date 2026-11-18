@@ -17,8 +17,6 @@ import asyncio
 
 import pytest
 
-from tests.aide_lecture_source import ordre_dans_le_code
-
 
 async def _attendre() -> None:
     from app.services.user_profile import _INDEXATIONS_EN_COURS
@@ -69,11 +67,8 @@ class TestUneSuppressionTient:
       contrôle. La suppression prend donc le verrou à son tour : elle attend
       celle qui est en vol, puis supprime pour de bon.
 
-    Ces deux protections sont vérifiées ici sur le code lui-même. Un test de
-    séquence a été tenté d'abord, avec deux tâches concurrentes : il partageait
-    une session de base de données entre elles, ce que SQLAlchemy asynchrone ne
-    supporte pas — le test mesurait alors son propre défaut de montage, pas le
-    comportement du code.
+    Le test concurrent utilise la session du service de suppression et la
+    session indépendante que l'indexation ouvre pour relire le profil.
     """
 
     def test_la_suppression_avance_la_generation(self):
@@ -88,22 +83,40 @@ class TestUneSuppressionTient:
             "l'ancien profil serait réécrit après coup"
         )
 
-    def test_la_suppression_attend_l_indexation_en_cours(self):
-        import inspect
+    @pytest.mark.asyncio
+    async def test_la_suppression_attend_l_indexation_en_cours(self, db_session, monkeypatch):
+        from types import SimpleNamespace
 
         from app.services import user_profile as module
 
-        source = inspect.getsource(module.delete_user_profile)
-
-        assert "_VERROU_INDEXATION" in source, (
-            "la suppression ne prend pas le verrou : une indexation déjà "
-            "entrée dans la section critique écrirait après elle, et les "
-            "données personnelles réapparaîtraient"
+        await module.set_user_profile(
+            db_session, module.UserProfile(name="Profil fictif"), embed_in_qdrant=False,
         )
-        # L'ordre compte : avancer la génération AVANT de prendre le verrou,
-        # sinon les tâches en attente entrent quand même. Mesuré sur le CODE :
-        # str.index rend la première occurrence, commentaires compris, donc un
-        # commentaire citant le verrou en préambule inversait la mesure.
-        assert ordre_dans_le_code(
-            source, "_GENERATION_PROFIL += 1", "_VERROU_INDEXATION"
-        ), "la génération doit être avancée avant la prise du verrou"
+        demarre, terminer = asyncio.Event(), asyncio.Event()
+        vecteur = []
+
+        async def indexation(profile):
+            demarre.set()
+            await terminer.wait()
+            vecteur.append(profile.name)
+
+        def supprimer(_identifiant):
+            vecteur.clear()
+            return 1
+
+        monkeypatch.setattr(module, "_embed_profile", indexation)
+        monkeypatch.setattr(
+            module, "get_qdrant_service", lambda: SimpleNamespace(delete_by_entity=supprimer),
+        )
+        tache = asyncio.create_task(module._indexer_en_arriere_plan(
+            module.UserProfile(name="Profil fictif"), module._GENERATION_PROFIL,
+        ))
+        await asyncio.wait_for(demarre.wait(), 3)
+        suppression = asyncio.create_task(module.delete_user_profile(db_session))
+        await asyncio.sleep(0)
+        assert not suppression.done()
+        terminer.set()
+        await tache
+        assert await suppression is True
+        assert vecteur == []
+        assert await module.get_user_profile(db_session) is None

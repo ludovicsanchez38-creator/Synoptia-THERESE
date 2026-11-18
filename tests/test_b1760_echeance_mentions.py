@@ -180,7 +180,11 @@ async def _texte_pdf(
     )
     assert profil.is_billing_complete()
     with monkeypatch.context() as contexte:
+        async def dossier_isole(_session):
+            return str(Path(db.settings.data_dir) / "b1760" / identifiant)
+
         contexte.setattr(factures, "get_cached_profile", lambda: profil)
+        contexte.setattr(factures, "_get_invoice_output_dir", dossier_isole)
         reponse = await client.get(f"/api/invoices/{identifiant}/pdf")
     assert reponse.status_code == 200, reponse.text
     chemin = Path(reponse.json()["pdf_path"]).resolve()
@@ -258,7 +262,7 @@ async def test_conversion_differee_une_seule_echeance_http_base_et_pdf(
     assert _REGLEMENT in texte
     assert _NOTES in texte
     if devise == "EUR":
-        assert "11,62 %" in texte
+        assert "taux de refinancement" in texte and "majoré de 10 points" in texte
         assert "40 EUR" in texte
     else:
         assert "40 EUR" not in texte

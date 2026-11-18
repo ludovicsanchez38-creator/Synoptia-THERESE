@@ -73,6 +73,15 @@ describe('Point 7 : « Annulé » s’accorde comme les autres libellés', () =>
 });
 
 describe('Point 8 : un couple type/statut non décrit dit le statut réel', () => {
+  it.each([
+    ['accepted', 'Acceptée'],
+    ['refused', 'Refusée'],
+    ['expired', 'Expirée'],
+    ['converted', 'Convertie'],
+  ] as const)('B-1993 : la facture historique %s garde un libellé féminin', (status, attendu) => {
+    expect(cellulesStatut(piece({ status })).paiement.texte).toBe(attendu);
+  });
+
   it('une facture convertie n’est pas présentée « Impayée »', () => {
     const { envoi, paiement } = cellulesStatut(
       piece({ document_type: 'facture', status: 'converted' }),
@@ -81,7 +90,8 @@ describe('Point 8 : un couple type/statut non décrit dit le statut réel', () =
     expect(envoi.texte).toBe('Envoi non tracé');
     expect('sous' in envoi && envoi.sous).toMatch(/^Émise le /);
     expect('ton' in paiement && paiement.ton).toBe('neutre');
-    expect(paiement.texte).toBe(STATUS_CONFIG.converted.label);
+    // B-1993 : le repli garde le statut réel et l'accord de « facture ».
+    expect(paiement.texte).toBe('Convertie');
     expect(paiement.texte).not.toMatch(/Impay/);
   });
 

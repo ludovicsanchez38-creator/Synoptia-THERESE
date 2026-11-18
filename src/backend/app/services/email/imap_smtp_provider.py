@@ -16,6 +16,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 from typing import Any
 
 import aiosmtplib
@@ -457,6 +458,17 @@ class ImapSmtpProvider(EmailProvider):
         msg["From"] = self._email
         msg["To"] = ", ".join(request.to)
         msg["Subject"] = request.subject
+        msg["Date"] = formatdate(localtime=True)
+        # Un domaine explicite évite la résolution DNS et la divulgation du
+        # nom du poste par le domaine par défaut de make_msgid().
+        domain = self._email.rpartition("@")[2].strip().lower()
+        try:
+            domain = domain.encode("idna").decode("ascii")
+        except UnicodeError:
+            domain = ""
+        if not re.fullmatch(r"[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*", domain):
+            domain = "localhost"
+        msg["Message-ID"] = make_msgid(domain=domain)
         from app.services.marquage_ia import entete_ia
         marquage = entete_ia(request.ai_provenance)
         if marquage:
@@ -536,7 +548,12 @@ class ImapSmtpProvider(EmailProvider):
 
     def _message_du_brouillon(self, request: SendEmailRequest) -> MIMEMultipart:
         """MIME d'un brouillon, identique qu'on le crée ou qu'on le remplace."""
-        if request.is_html:
+        if request.is_html and request.attachments:
+            msg = MIMEMultipart("mixed")
+            contenu = MIMEMultipart("alternative")
+            contenu.attach(MIMEText(request.body, "html", "utf-8"))
+            msg.attach(contenu)
+        elif request.is_html:
             msg = MIMEMultipart("alternative")
             msg.attach(MIMEText(request.body, "html", "utf-8"))
         else:
@@ -553,6 +570,19 @@ class ImapSmtpProvider(EmailProvider):
 
         if request.cc:
             msg["Cc"] = ", ".join(request.cc)
+
+        if request.bcc:
+            msg["Bcc"] = ", ".join(request.bcc)
+        if request.in_reply_to:
+            msg["In-Reply-To"] = request.in_reply_to
+        if request.references:
+            msg["References"] = request.references
+        for filename, content, content_type in request.attachments:
+            part = MIMEBase(*content_type.split("/", 1))
+            part.set_payload(content)
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", "attachment", filename=filename)
+            msg.attach(part)
 
         return msg
 
@@ -898,7 +928,11 @@ class ImapSmtpProvider(EmailProvider):
             "smtp_host": self._smtp_host,
         }
 
-    async def test_connection(self) -> dict:
+    async def test_connection(self) -> bool:
+        """Respecte le contrat commun des fournisseurs de messagerie."""
+        return bool((await self.test_connection_details())["success"])
+
+    async def test_connection_details(self) -> dict:
         """Test IMAP and SMTP connections with timeout."""
 
         # Test IMAP - uses the same _connect_mailbox as all other operations

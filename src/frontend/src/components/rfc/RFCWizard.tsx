@@ -64,10 +64,12 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   });
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [reflectStreaming, setReflectStreaming] = useState(false);
 
   const { createCommand, updateCommand } = useCommandsStore();
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
+  const reflectHasSource = sourcesVerifiees(reflectMessages).length > 0;
 
   // Tour 8 : une réponse supprimée côté moteur est retirée des deux étapes.
   const retirerAbsentes = useCallback((ids: string[]) => {
@@ -76,6 +78,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
   }, []);
 
   const goToMake = useCallback(async () => {
+    if (reflectStreaming) return;
     // Tour 7 : une réponse refusée ou interrompue n'est simplement pas
     // reprise. Seule l'absence de toute réponse vérifiée arrête la suite.
     if (!sourcesVerifiees(reflectMessages).length) {
@@ -84,7 +87,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
     }
     setError('');
     setStep('make');
-  }, [reflectMessages]);
+  }, [reflectMessages, reflectStreaming]);
 
   const goToCapture = useCallback(async () => {
     const sources = sourcesVerifiees([...reflectMessages, ...makeMessages]);
@@ -160,7 +163,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
     >
       {/* Header avec stepper */}
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer l’assistant de commande" className="h-8 w-8">
           <ArrowLeft className="w-4 h-4" />
         </Button>
 
@@ -218,14 +221,19 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                   systemPrompt={REFLECT_SYSTEM_PROMPT}
                   placeholder="Décris ta commande idéale..."
                   onConversationUpdate={setReflectMessages}
+                  onStreamingChange={setReflectStreaming}
                   onSourcesAbsentes={retirerAbsentes}
                 />
               </div>
               <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
                 {/* B-636 : un bouton désactivé sans explication. L'aide dit ce qui manque. */}
-                {reflectMessages.length === 0 ? (
+                {!reflectHasSource || reflectStreaming ? (
                   <p id="rfc-aide-passer-a-faire" className="text-xs text-text-muted">
-                    Envoie d’abord ton brief à THÉRÈSE : « Passer à Faire » s’active dès le premier message.
+                    {reflectStreaming
+                      ? 'THÉRÈSE répond. Attends une réponse complète avant de passer à Faire.'
+                      : reflectMessages.length === 0
+                        ? 'Envoie d’abord ton brief à THÉRÈSE, puis attends une réponse complète avant de passer à Faire.'
+                        : 'Pour passer à Faire, il faut une réponse complète. Renvoie ton message.'}
                   </p>
                 ) : (
                   <span />
@@ -233,8 +241,8 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 <Button
                   variant="primary"
                   onClick={goToMake}
-                  disabled={reflectMessages.length === 0}
-                  aria-describedby={reflectMessages.length === 0 ? 'rfc-aide-passer-a-faire' : undefined}
+                  disabled={reflectMessages.length === 0 || reflectStreaming}
+                  aria-describedby={!reflectHasSource || reflectStreaming ? 'rfc-aide-passer-a-faire' : undefined}
                   className="flex items-center gap-2 text-sm shrink-0"
                 >
                   Passer à Faire

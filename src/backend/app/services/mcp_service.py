@@ -533,12 +533,19 @@ class MCPService:
 
             return True
 
-        except FileNotFoundError:
+        except asyncio.CancelledError:
+            await self.stop_server(server_id)
             server.status = MCPServerStatus.ERROR
-            server.error = f"Command not found: {server.command}"
+            server.error = "Le démarrage du serveur MCP a été interrompu."
+            raise
+        except FileNotFoundError:
+            await self.stop_server(server_id)
+            server.status = MCPServerStatus.ERROR
+            server.error = f"Commande introuvable : {server.command}"
             logger.error(f"Failed to start {server.name}: {server.error}")
             return False
         except Exception as e:
+            await self.stop_server(server_id)
             server.status = MCPServerStatus.ERROR
             server.error = str(e)
             logger.error(f"Failed to start {server.name}: {e}")
@@ -565,15 +572,17 @@ class MCPService:
             # Process already dead, that's fine
             pass
 
-        # Cancel reader tasks
-        if server_id in self._reader_tasks:
-            self._reader_tasks[server_id].cancel()
-            del self._reader_tasks[server_id]
-
-        # Cancel stderr reader task (Sprint 2 - PERF-2.8)
-        if server_id in self._stderr_reader_tasks:
-            self._stderr_reader_tasks[server_id].cancel()
-            del self._stderr_reader_tasks[server_id]
+        # Attendre la fin effective des lecteurs avant de rendre la main.
+        lecteurs = [
+            t for t in (
+                self._reader_tasks.pop(server_id, None),
+                self._stderr_reader_tasks.pop(server_id, None),
+            ) if t is not None
+        ]
+        for lecteur in lecteurs:
+            lecteur.cancel()
+        if lecteurs:
+            await asyncio.gather(*lecteurs, return_exceptions=True)
 
         del self._processes[server_id]
 
@@ -731,17 +740,17 @@ class MCPService:
         self._pending_timestamps[request_id] = time.time()  # Sprint 2 - PERF-2.14
         self._pending_deadlines[request_id] = time.time() + timeout + 5.0  # B-350
 
-        # Send request
-        request_line = json.dumps(request) + "\n"
-        process.stdin.write(request_line.encode())
-        await process.stdin.drain()
-
         # B-1473 : attendre la réponse OU la fin du processus. Un serveur mort
         # avant de répondre (paquet npm introuvable) faisait attendre le délai
         # entier, 90 s pour `initialize`, puis disait « Request timeout » sans
         # la cause.
-        fin_du_processus = asyncio.ensure_future(process.wait())
+        fin_du_processus = None
         try:
+            # Même un pipe fermé pendant l'envoi doit libérer la requête.
+            request_line = json.dumps(request) + "\n"
+            process.stdin.write(request_line.encode())
+            await process.stdin.drain()
+            fin_du_processus = asyncio.ensure_future(process.wait())
             await asyncio.wait(
                 {future, fin_du_processus}, timeout=timeout, return_when=asyncio.FIRST_COMPLETED,
             )
@@ -754,7 +763,7 @@ class MCPService:
                 raise RuntimeError(self._cause_de_l_arret(server_id, method, process.returncode))
             raise RuntimeError(f"Request timeout: {method}")
         finally:
-            if not fin_du_processus.done():
+            if fin_du_processus is not None and not fin_du_processus.done():
                 fin_du_processus.cancel()
             self._pending_requests.pop(request_id, None)
             self._pending_timestamps.pop(request_id, None)  # Sprint 2 - PERF-2.14

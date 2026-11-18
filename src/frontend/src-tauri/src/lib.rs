@@ -51,7 +51,7 @@ fn backend_ecoute_encore(port: u16) -> bool {
 /// nommé `backend` (ou `backend-<cible>`, `.exe` toléré), écoutant sur
 /// 127.0.0.1 et sur le port de THÉRÈSE. Le chemin de l'exécutable peut
 /// contenir des espaces : il s'arrête au premier argument « -- ».
-#[cfg(any(unix, test))]
+#[cfg(any(unix, windows, test))]
 #[cfg_attr(debug_assertions, allow(dead_code))]
 fn est_moteur_therese(args: &str) -> bool {
     let args = args.trim();
@@ -60,14 +60,17 @@ fn est_moteur_therese(args: &str) -> bool {
         None => return false,
     };
     // Découpage à la main : `Path` ne connaît pas `\\` hors de Windows.
-    let nom = executable.trim().rsplit(['/', '\\']).next().unwrap_or("");
+    let nom = executable.trim().trim_matches('"').rsplit(['/', '\\']).next().unwrap_or("");
     let nom = nom.strip_suffix(".exe").unwrap_or(nom);
     if nom != "backend" && !nom.starts_with("backend-") {
         return false;
     }
     let mots: Vec<&str> = reste.split_whitespace().collect();
     let port = BACKEND_PORT.to_string();
-    mots.windows(2).any(|w| w[0] == "--host" && w[1] == "127.0.0.1")
+    // Seule la forme émise par le lanceur est sûre : une option répétée
+    // peut changer la valeur effective retenue par le backend.
+    mots.len() == 4
+        && mots.windows(2).any(|w| w[0] == "--host" && w[1] == "127.0.0.1")
         && mots.windows(2).any(|w| w[0] == "--port" && w[1] == port)
 }
 
@@ -132,28 +135,48 @@ fn kill_zombie_backends() {
         let current_pid = std::process::id();
         let mut found_pids: Vec<u32> = Vec::new();
 
-        // Méthode 1 : wmic (disponible sur Windows 10 et 11 < 25H2)
-        // wmic permet un filtre précis par ligne de commande
+        // wmic fournit les lignes de commande quand il est disponible.
+        // Le filtre WMI est approximatif : valider chaque résultat ensuite.
         let wmic_result = std::process::Command::new("wmic")
             .args([
                 "process", "where",
                 // B-1261 : le port de THÉRÈSE en plus de l'hôte.
                 "name='backend.exe' and commandline like '%--host%127.0.0.1%' and commandline like '%--port%17293%'",
-                "get", "processid", "/format:list",
+                "get", "CommandLine,ProcessId", "/format:list",
             ])
             .stdin(std::process::Stdio::null())
             .output();
 
         if let Ok(output) = &wmic_result {
             if output.status.success() {
-                let text = String::from_utf8_lossy(&output.stdout);
-                for line in text.lines() {
-                    if let Some(pid_str) = line.strip_prefix("ProcessId=") {
-                        if let Ok(pid) = pid_str.trim().parse::<u32>() {
-                            if pid != current_pid {
+                // WMIC peut émettre de l'UTF-16LE lorsque sa sortie est redirigée.
+                let text = if output.stdout.starts_with(&[0xff, 0xfe])
+                    || output.stdout.get(1) == Some(&0)
+                {
+                    let octets = output.stdout.strip_prefix(&[0xff, 0xfe]).unwrap_or(&output.stdout);
+                    let unites: Vec<u16> = octets.chunks_exact(2)
+                        .map(|paire| u16::from_le_bytes([paire[0], paire[1]]))
+                        .collect();
+                    String::from_utf16_lossy(&unites)
+                } else {
+                    String::from_utf8_lossy(&output.stdout).into_owned()
+                };
+                let mut command_line = None;
+                let mut process_id = None;
+                for line in text.lines().chain(Some("")) {
+                    let line = line.trim();
+                    if line.is_empty() {
+                        if let (Some(args), Some(pid)) = (command_line, process_id) {
+                            if pid != current_pid && est_moteur_therese(args) {
                                 found_pids.push(pid);
                             }
                         }
+                        command_line = None;
+                        process_id = None;
+                    } else if let Some(args) = line.strip_prefix("CommandLine=") {
+                        command_line = Some(args);
+                    } else if let Some(pid) = line.strip_prefix("ProcessId=") {
+                        process_id = pid.trim().parse::<u32>().ok();
                     }
                 }
                 if !found_pids.is_empty() {
@@ -162,31 +185,38 @@ fn kill_zombie_backends() {
             }
         }
 
-        // Méthode 2 : tasklist (fallback Windows 11 25H2+ où wmic est supprimé)
-        // tasklist ne filtre que par nom d'image, moins précis mais toujours disponible
+        // Sans WMIC, tasklist ne fournit que des candidats : ne jamais arrêter
+        // un PID sans avoir contrôlé sa ligne de commande avec CIM.
         if found_pids.is_empty() {
-            log_sidecar("wmic indisponible ou aucun résultat, fallback tasklist...");
             let tasklist_result = std::process::Command::new("tasklist")
                 .args(["/FI", "IMAGENAME eq backend.exe", "/FO", "CSV", "/NH"])
                 .stdin(std::process::Stdio::null())
                 .output();
 
             if let Ok(output) = tasklist_result {
-                let text = String::from_utf8_lossy(&output.stdout);
-                for line in text.lines() {
-                    // Format CSV : "backend.exe","12345","Console","1","45 000 K"
-                    let parts: Vec<&str> = line.split(',').collect();
-                    if parts.len() >= 2 {
-                        let pid_str = parts[1].trim().trim_matches('"');
-                        if let Ok(pid) = pid_str.parse::<u32>() {
-                            if pid != current_pid {
-                                found_pids.push(pid);
+                if output.status.success() {
+                    let text = String::from_utf8_lossy(&output.stdout);
+                    for line in text.lines() {
+                        let pid = line.split(',').nth(1)
+                            .and_then(|champ| champ.trim().trim_matches('"').parse::<u32>().ok());
+                        if let Some(pid) = pid.filter(|pid| *pid != current_pid) {
+                            let script = format!(
+                                "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new(); (Get-CimInstance -ClassName Win32_Process -Filter 'ProcessId = {}' -ErrorAction Stop).CommandLine",
+                                pid
+                            );
+                            let details = std::process::Command::new("powershell")
+                                .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+                                .stdin(std::process::Stdio::null())
+                                .output();
+                            if let Ok(details) = details {
+                                if details.status.success()
+                                    && est_moteur_therese(&String::from_utf8_lossy(&details.stdout))
+                                {
+                                    found_pids.push(pid);
+                                }
                             }
                         }
                     }
-                }
-                if !found_pids.is_empty() {
-                    log_sidecar(&format!("tasklist : {} zombie(s) détecté(s)", found_pids.len()));
                 }
             }
         }
@@ -253,6 +283,11 @@ pub(crate) struct SidecarState {
     /// (Lu uniquement par le code sidecar, compilé en release.)
     #[cfg_attr(debug_assertions, allow(dead_code))]
     pub(crate) restart_attempts: std::sync::atomic::AtomicU32,
+    /// Invalide les anciennes relances et sérialise leurs lancements.
+    #[cfg_attr(debug_assertions, allow(dead_code))]
+    pub(crate) generation_relance: std::sync::atomic::AtomicU64,
+    #[cfg_attr(debug_assertions, allow(dead_code))]
+    pub(crate) verrou_relance: Mutex<()>,
 }
 
 /// Lance (ou relance) le sidecar backend - release uniquement.
@@ -263,6 +298,9 @@ pub(crate) struct SidecarState {
 pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
     use tauri_plugin_shell::ShellExt;
     use tauri_plugin_shell::process::CommandEvent;
+
+    let generation = app.state::<SidecarState>()
+        .generation_relance.load(std::sync::atomic::Ordering::SeqCst);
 
     // Tuer les anciens process backend zombies AVANT le lancement
     kill_zombie_backends();
@@ -353,7 +391,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                     // Stocker le child pour le kill propre à la fermeture
                     let state = app.state::<SidecarState>();
                     *state.child.lock().unwrap() = Some(child);
-                    emit_sidecar_status(app, "running", 0);
+                    emit_sidecar_status(app, "running", 0, generation);
 
                     // Logger stdout/stderr du sidecar + surveiller sa fin
                     // pour la relance contrôlée (revue 0.40)
@@ -373,6 +411,13 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                                     log_sidecar(&format!("[stderr] {}", text.trim()));
                                 }
                                 CommandEvent::Terminated(payload) => {
+                                    let state = handle.state::<SidecarState>();
+                                    let _garde = state.verrou_relance.lock().unwrap();
+                                    // Une terminaison de l'ancien moteur peut arriver
+                                    // après son remplacement par la relance manuelle.
+                                    if state.generation_relance.load(std::sync::atomic::Ordering::SeqCst) != generation {
+                                        break;
+                                    }
                                     let msg = format!(
                                         "Sidecar terminé (code: {:?}, signal: {:?})",
                                         payload.code, payload.signal
@@ -398,7 +443,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                     eprintln!("[THÉRÈSE] {}", msg);
                     log_sidecar(&msg);
                     if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.emit("sidecar-error", &msg);
+                        let _ = window.emit("sidecar-error", serde_json::json!({ "message": msg, "generation": generation }));
                     }
                     // Revue 0.40.1 (F9) : l'échec de spawn entre dans le
                     // cycle de relance (sinon cul-de-sac muet).
@@ -411,7 +456,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
             eprintln!("[THÉRÈSE] {}", msg);
             log_sidecar(&msg);
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.emit("sidecar-error", &msg);
+                let _ = window.emit("sidecar-error", serde_json::json!({ "message": msg, "generation": generation }));
             }
             // Revue 0.40.1 (F9) : même cul-de-sac -> cycle de relance
             // (utile si le binaire apparaît après coup, sinon état failed).
@@ -432,21 +477,25 @@ fn schedule_sidecar_retry(app: &tauri::AppHandle) {
     if state.shutting_down.load(Ordering::SeqCst) {
         return; // quit ou relance post-update : rien à faire
     }
+    let generation = state.generation_relance.load(Ordering::SeqCst);
     let attempt = state.restart_attempts.fetch_add(1, Ordering::SeqCst) + 1;
     if attempt > 3 {
         log_sidecar("Sidecar : 3 relances épuisées, abandon (bouton Relancer côté interface)");
-        emit_sidecar_status(app, "failed", attempt - 1);
+        emit_sidecar_status(app, "failed", attempt - 1, generation);
         return;
     }
     let delay_s = [1u64, 3, 10][(attempt as usize) - 1];
     log_sidecar(&format!("Relance du sidecar dans {} s (tentative {}/3)", delay_s, attempt));
-    emit_sidecar_status(app, "restarting", attempt);
+    emit_sidecar_status(app, "restarting", attempt, generation);
     let handle = app.clone();
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(delay_s));
         // L'app a pu se fermer pendant l'attente : re-vérifier avant de relancer.
         let state = handle.state::<SidecarState>();
-        if state.shutting_down.load(std::sync::atomic::Ordering::SeqCst) {
+        let _garde = state.verrou_relance.lock().unwrap();
+        if state.shutting_down.load(Ordering::SeqCst)
+            || state.generation_relance.load(Ordering::SeqCst) != generation
+        {
             return;
         }
         spawn_backend_sidecar(&handle);
@@ -484,11 +533,11 @@ fn handle_sidecar_termination(
 
 /// Informe le frontend de l'état du moteur local (bandeau de statut).
 #[cfg(not(debug_assertions))]
-fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32) {
+fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32, generation: u64) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.emit(
             "sidecar-status",
-            serde_json::json!({ "state": status, "attempt": attempt }),
+            serde_json::json!({ "state": status, "attempt": attempt, "generation": generation }),
         );
     }
 }
@@ -536,6 +585,8 @@ pub fn run() {
             shutting_down: std::sync::atomic::AtomicBool::new(false),
             sidecar_termine: std::sync::atomic::AtomicBool::new(false),
             restart_attempts: std::sync::atomic::AtomicU32::new(0),
+            generation_relance: std::sync::atomic::AtomicU64::new(0),
+            verrou_relance: Mutex::new(()),
         })
         .manage(BackendPort(Mutex::new(BACKEND_PORT)))
         .setup(|app| {

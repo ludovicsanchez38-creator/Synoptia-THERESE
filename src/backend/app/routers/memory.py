@@ -47,7 +47,7 @@ from app.services.projet_ensemble import (
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
@@ -321,7 +321,7 @@ async def _delete_embedding(entity_id: str) -> None:
         logger.warning(f"Failed to delete embedding {entity_id}: {e}")
 
 
-async def _purger_le_depot_du_dossier(project_id: str) -> None:
+async def _purger_le_depot_du_dossier(project_id: str) -> bool:
     """Retire du DISQUE le dépôt THÉRÈSE d'un dossier supprimé.
 
     B-021 : la suppression comptait ses fichiers (`cascade_deleted["files"]`)
@@ -336,10 +336,8 @@ async def _purger_le_depot_du_dossier(project_id: str) -> None:
     d'après un chemin que l'application a elle-même construit, jamais d'après
     un chemin qu'elle a seulement lu.
 
-    Best-effort et journalisé : la base est déjà commitée quand on arrive ici,
-    et une purge en échec ne doit pas transformer une suppression réussie en
-    erreur. L'inverse - effacer avant le commit - laisserait une ligne
-    promettant un contenu introuvable.
+    La base est déjà commitée quand on arrive ici. Le résultat indique si le
+    dépôt a bien disparu, pour permettre à l'appelant de signaler un reste.
     """
     import asyncio
     import shutil
@@ -358,22 +356,27 @@ async def _purger_le_depot_du_dossier(project_id: str) -> None:
                 "séparateur de chemin (%r)",
                 project_id,
             )
-            return
+            return False
         depot = (racine / project_id).resolve()
         if depot == racine or not depot.is_relative_to(racine):
             logger.warning(
                 "Purge disque refusée pour un identifiant de dossier suspect : %r",
                 project_id,
             )
-            return
+            return False
         if depot.exists():
             # Leçon D5 (27/08) : le travail DISQUE ne reste pas sur la boucle
             # d'événements. Un dépôt volumineux, ou une racine sur un volume
             # réseau qui se réveille, gèlerait toute l'application.
-            await asyncio.to_thread(shutil.rmtree, depot, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, depot)
+            if depot.exists():
+                logger.error("Le dépôt disque du dossier %s existe encore", project_id)
+                return False
             logger.info("Dépôt disque du dossier %s retiré : %s", project_id, depot)
+        return True
     except Exception:
         logger.exception("Purge disque du dossier %s en échec", project_id)
+        return False
 
 
 async def _nettoyer_et_supprimer_projet(
@@ -508,6 +511,27 @@ async def search_memory(
 
     query_lower = request.query.lower()
 
+    # La base SQL fait autorité sur l'appartenance des fichiers, y compris si
+    # un ancien fragment vectoriel porte encore un périmètre périmé.
+    scope = request.scope or "global"
+    scope_id = request.scope_id if scope == "project" else None
+    conversation_id = None
+    if request.scope and request.conversation_id:
+        conversation = await session.get(Conversation, request.conversation_id)
+        if conversation and (
+            (scope == "project" and scope_id and conversation.project_id == scope_id)
+            or (scope == "global" and not conversation.project_id)
+        ):
+            conversation_id = conversation.id
+    fichiers_visibles = [FileMetadata.scope == "global"]
+    if scope == "project" and scope_id:
+        fichiers_visibles.append((FileMetadata.scope == "project") & (FileMetadata.scope_id == scope_id))
+    if conversation_id:
+        fichiers_visibles.append(
+            (FileMetadata.scope == "conversation") & (FileMetadata.scope_id == conversation_id)
+        )
+    cloison_fichiers = or_(*fichiers_visibles)
+
     # Map entity_types to Qdrant memory_types
     memory_types = None
     if request.entity_types:
@@ -523,6 +547,8 @@ async def search_memory(
             memory_types=memory_types,
             limit=request.limit * 2,  # Get more to merge with keyword results
             score_threshold=0.5,  # Lower threshold for semantic
+            **({"scope": scope, "scope_id": scope_id, "conversation_id": conversation_id}
+               if memory_types == ["file"] else {}),
         ) if request.include_semantic else []
 
         # Lot F : un SELECT par hit. On groupe par type, une requête chacun.
@@ -553,7 +579,9 @@ async def search_memory(
                         if hit.get("type") == "file" and hit.get("entity_id")]
         fichiers_par_id: dict[str, FileMetadata] = {}
         if ids_fichiers:
-            fichiers_semantiques = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(ids_fichiers)))
+            fichiers_semantiques = await session.execute(select(FileMetadata).where(
+                col(FileMetadata.id).in_(ids_fichiers), cloison_fichiers
+            ))
             fichiers_par_id = {f.id: f for f in fichiers_semantiques.scalars().all()}
 
         for hit in semantic_results:
@@ -673,12 +701,15 @@ async def search_memory(
     if not request.entity_types or "file" in request.entity_types:
         try:
             fragments = await get_qdrant_service().async_rechercher_contenu_fichiers(
-                request.query, PLAFOND_ILIKE_MEMOIRE
+                request.query, PLAFOND_ILIKE_MEMOIRE, scope=scope,
+                scope_id=scope_id, conversation_id=conversation_id,
             )
             ilike_tronque |= len(fragments) >= PLAFOND_ILIKE_MEMOIRE
             textes = {f["entity_id"]: f["text"] for f in fragments}
             if textes:
-                charge = await session.execute(select(FileMetadata).where(col(FileMetadata.id).in_(textes)))
+                charge = await session.execute(select(FileMetadata).where(
+                    col(FileMetadata.id).in_(textes), cloison_fichiers
+                ))
                 for fichier in charge.scalars().all():
                     fichiers_exacts.add(fichier.id)
                     results_map[fichier.id] = MemorySearchResult(
@@ -691,7 +722,7 @@ async def search_memory(
 
         # Sans index, le nom reste consultable.
         fichiers_mot_cle = await session.execute(select(FileMetadata).where(
-            col(FileMetadata.name).ilike(f"%{request.query}%")
+            col(FileMetadata.name).ilike(f"%{request.query}%"), cloison_fichiers
         ).limit(PLAFOND_ILIKE_MEMOIRE))
         fichiers = list(fichiers_mot_cle.scalars().all())
         ilike_tronque |= len(fichiers) >= PLAFOND_ILIKE_MEMOIRE
@@ -1240,8 +1271,10 @@ async def delete_contact(
 
     # B-1178 : comme delete_project (B-021), le dépôt disque des projets
     # supprimés en cascade part après le commit, jamais avant.
+    depots_restants = []
     for project_id in projets_supprimes:
-        await _purger_le_depot_du_dossier(project_id)
+        if not await _purger_le_depot_du_dossier(project_id):
+            depots_restants.append(project_id)
 
     # Remove from Qdrant
     await _delete_embedding(contact_id)
@@ -1258,7 +1291,13 @@ async def delete_contact(
     except Exception as e:
         logger.warning("Audit log failed after contact delete: %s", e)
 
-    return {"deleted": True, "id": contact_id, "cascade_deleted": cascade_deleted}
+    resultat = {"deleted": not depots_restants, "id": contact_id, "cascade_deleted": cascade_deleted}
+    if depots_restants:
+        resultat["message"] = (
+            "Le contact a été supprimé en base, mais des fichiers restent à vérifier ou à "
+            "supprimer dans les dépôts des dossiers : " + ", ".join(depots_restants) + "."
+        )
+    return resultat
 
 
 # ============================================================
@@ -1542,7 +1581,7 @@ async def delete_project(
     # B-021 : après le commit, jamais avant. Les lignes ont disparu pour de
     # bon ; le dépôt disque peut suivre sans risquer de promettre un contenu
     # introuvable si la transaction avait échoué.
-    await _purger_le_depot_du_dossier(project_id)
+    depot_purge = await _purger_le_depot_du_dossier(project_id)
 
     # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
     try:
@@ -1556,7 +1595,13 @@ async def delete_project(
     except Exception as e:
         logger.warning("Audit log failed after project delete: %s", e)
 
-    return {"deleted": True, "id": project_id, "cascade_deleted": cascade_deleted}
+    resultat = {"deleted": depot_purge, "id": project_id, "cascade_deleted": cascade_deleted}
+    if not depot_purge:
+        resultat["message"] = (
+            "Le projet a été supprimé en base, mais des fichiers restent à vérifier ou à "
+            f"supprimer dans le dépôt du dossier : {project_id}."
+        )
+    return resultat
 
 
 # R2 : activation du noyau avec sa garde et son écran.

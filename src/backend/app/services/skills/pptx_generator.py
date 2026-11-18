@@ -34,6 +34,35 @@ SYNOPTIA_COLORS = {
 
 _TITRE_DIESE_RE = re.compile(r"^#{1,3}\s+(.+?)\s*$")
 _TITRE_GRAS_RE = re.compile(r"^(?:\*\*|__)(.+?)(?:\*\*|__)\s*:?\s*$")
+_MISE_EN_FORME_RE = re.compile(
+    r"\*\*(?P<gras>[^*\n]+)\*\*|__(?P<gras_s>[^_\n]+)__"
+    r"|(?<!\*)\*(?P<italique>\S(?:[^*\n]*?\S)?)\*(?!\*)"
+    r"|(?<!\w)_(?P<italique_s>\S(?:[^_\n]*?\S)?)_(?!\w)"
+    r"|`(?P<code>[^`\n]+)`|\[(?P<lien>[^\]\n]+)\]\((?P<url>https?://[^\s)]+)\)"
+)
+
+
+def _ecrire_texte_formate(paragraphe: Any, texte: str) -> None:
+    """Convertit les marques usuelles en styles et liens PowerPoint."""
+    paragraphe.clear()
+    debut = 0
+    for occurrence in _MISE_EN_FORME_RE.finditer(texte):
+        if occurrence.start() > debut:
+            paragraphe.add_run().text = texte[debut:occurrence.start()]
+        run = paragraphe.add_run()
+        groupes = occurrence.groupdict()
+        run.text = next(groupes[cle] for cle in (
+            "gras", "gras_s", "italique", "italique_s", "code", "lien"
+        ) if groupes[cle] is not None)
+        if groupes["gras"] is not None or groupes["gras_s"] is not None:
+            run.font.bold = True
+        if groupes["italique"] is not None or groupes["italique_s"] is not None:
+            run.font.italic = True
+        if groupes["url"] is not None:
+            run.hyperlink.address = groupes["url"]
+        debut = occurrence.end()
+    if debut < len(texte):
+        paragraphe.add_run().text = texte[debut:]
 
 
 def _titre_de_diapositive(ligne: str) -> str | None:
@@ -360,7 +389,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
             Inches(0.5), Inches(2.5), Inches(12.333), Inches(1.5)
         )
         title_frame = title_box.text_frame
-        title_frame.paragraphs[0].text = title
+        _ecrire_texte_formate(title_frame.paragraphs[0], title)
         title_frame.paragraphs[0].font.name = "Outfit"
         title_frame.paragraphs[0].font.size = Pt(54)
         title_frame.paragraphs[0].font.bold = True
@@ -383,7 +412,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
             Inches(0.75), Inches(0.5), Inches(11.833), Inches(1)
         )
         title_frame = title_box.text_frame
-        title_frame.paragraphs[0].text = slide_data["title"]
+        _ecrire_texte_formate(title_frame.paragraphs[0], slide_data["title"])
         title_frame.paragraphs[0].font.name = "Outfit"
         title_frame.paragraphs[0].font.size = Pt(36)
         title_frame.paragraphs[0].font.bold = True
@@ -412,7 +441,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
                 p = content_frame.add_paragraph()
 
             # Bullet avec accent
-            p.text = f"  {point}"
+            _ecrire_texte_formate(p, f"  {point}")
             p.font.name = "Inter"
             p.font.size = Pt(24)
             p.font.color.rgb = SYNOPTIA_COLORS["text"]

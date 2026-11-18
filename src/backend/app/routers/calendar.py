@@ -830,6 +830,19 @@ def _id_calendrier_fournisseur(calendar: Calendar) -> str:
     return str((calendar.remote_id or calendar.id) if calendar.provider == "caldav" else calendar.id)
 
 
+def _actualiser_copie_caldav(copie: CalendarEvent, evt: Any, calendar: Calendar) -> None:
+    """Actualise le miroir sans toucher au blocage, qui reste local."""
+    copie.summary, copie.description, copie.location = evt.summary, evt.description, evt.location
+    copie.all_day, copie.status = evt.all_day, evt.status
+    copie.start_date = evt.start.isoformat() if evt.all_day and evt.start else None
+    copie.end_date = evt.end.isoformat() if evt.all_day and evt.end else None
+    copie.start_datetime = _heure_murale_paris(evt.start.isoformat(), calendar.timezone) if isinstance(evt.start, datetime) and not evt.all_day else None
+    copie.end_datetime = _heure_murale_paris(evt.end.isoformat(), calendar.timezone) if isinstance(evt.end, datetime) and not evt.all_day else None
+    copie.attendees = json.dumps(evt.attendees or [])
+    copie.recurrence = json.dumps(evt.recurrence or [])
+    copie.synced_at = datetime.now(UTC)
+
+
 async def _list_events_provider(
     calendar: Calendar,
     session: AsyncSession,
@@ -899,6 +912,7 @@ async def _list_events_provider(
             await session.commit()
         raise
 
+    blocages_caldav: dict[str, str | None] = {}
     if calendar.provider == "caldav":
         # Cache local cloisonné par calendrier, sans collision entre UID DAV.
         # synced_at n'est posé qu'après une vraie lecture d'événements.
@@ -919,15 +933,8 @@ async def _list_events_provider(
             copie = await session.get(CalendarEvent, identifiant)
             if copie is None:
                 copie = CalendarEvent(id=identifiant, calendar_id=calendar.id, summary=evt.summary)
-            copie.summary, copie.description, copie.location = evt.summary, evt.description, evt.location
-            copie.all_day, copie.status = evt.all_day, evt.status
-            copie.start_date = evt.start.isoformat() if evt.all_day and evt.start else None
-            copie.end_date = evt.end.isoformat() if evt.all_day and evt.end else None
-            copie.start_datetime = _heure_murale_paris(evt.start.isoformat(), calendar.timezone) if isinstance(evt.start, datetime) and not evt.all_day else None
-            copie.end_datetime = _heure_murale_paris(evt.end.isoformat(), calendar.timezone) if isinstance(evt.end, datetime) and not evt.all_day else None
-            copie.attendees = json.dumps(evt.attendees or [])
-            copie.recurrence = json.dumps(evt.recurrence or [])
-            copie.synced_at = datetime.now(UTC)
+            _actualiser_copie_caldav(copie, evt, calendar)
+            blocages_caldav[evt.id] = copie.blocage
             session.add(copie)
         calendar.sync_status, calendar.last_sync_error = "idle", None
         calendar.synced_at = datetime.now(UTC)
@@ -951,7 +958,7 @@ async def _list_events_provider(
             recurrence=evt.recurrence,
             recurring_event_id=evt.recurring_event_id,
             status=evt.status,
-            blocage=getattr(evt, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
+            blocage=blocages_caldav.get(evt.id) if calendar.provider == "caldav" else getattr(evt, "blocage", None),
             synced_at=datetime.now(UTC).isoformat(),
         )
         for evt in events_dto
@@ -1106,6 +1113,45 @@ async def _list_events_google(
         raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
+async def _evenement_en_cache(
+    session: AsyncSession, event_id: str, calendar_id: str | None, account_id: str | None,
+) -> CalendarEvent | None:
+    """Résout l'UID DAV dans le bon calendrier, sans croiser les comptes."""
+    def autorise(calendrier: Calendar | None) -> bool:
+        return bool(
+            calendrier is not None
+            and (calendrier.account_id or None) == (account_id or None)
+            and (account_id or calendrier.provider in ("local", "caldav"))
+        )
+
+    if calendar_id and calendar_id != "primary":
+        calendrier = await session.get(Calendar, calendar_id)
+        if calendrier is None or not autorise(calendrier):
+            return None
+        if calendrier.provider == "caldav":
+            copie = await session.get(CalendarEvent, _id_evenement_importe(calendar_id, event_id))
+            if copie and copie.calendar_id == calendar_id:
+                return copie
+        event = await session.get(CalendarEvent, event_id)
+        return event if event and event.calendar_id == calendar_id else None
+
+    event = await session.get(CalendarEvent, event_id)
+    if event is not None:
+        calendrier = await session.get(Calendar, event.calendar_id)
+        return event if autorise(calendrier) else None
+
+    # Sans calendrier explicite, accepter uniquement une correspondance DAV
+    # non ambiguë. Un même UID peut exister dans plusieurs agendas.
+    calendriers = (await session.execute(select(Calendar).where(Calendar.provider == "caldav"))).scalars().all()
+    trouves = []
+    for calendrier in calendriers:
+        if autorise(calendrier):
+            copie = await session.get(CalendarEvent, _id_evenement_importe(calendrier.id, event_id))
+            if copie and copie.calendar_id == calendrier.id:
+                trouves.append(copie)
+    return trouves[0] if len(trouves) == 1 else None
+
+
 @router.get("/events/{event_id}")
 async def get_event(
     event_id: str,
@@ -1120,23 +1166,12 @@ async def get_event(
     n'importe quel événement, y compris celui d'un autre compte connecté. La
     route voisine `GET /calendars/{id}` refusait déjà ce croisement.
     """
-    event = await session.get(CalendarEvent, event_id)
+    event = await _evenement_en_cache(session, event_id, calendar_id, account_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    if calendar_id != "primary" and event.calendar_id != calendar_id:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    calendrier = await session.get(Calendar, event.calendar_id)
-    if calendrier is not None and calendrier.account_id != account_id:
-        raise HTTPException(status_code=404, detail="Event not found")
-    # Un événement dont la ligne de calendrier a disparu n'est rattachable à
-    # aucun compte : il n'y a rien à comparer. Le refuser condamnerait des
-    # données déjà en base sans rien cloisonner de plus - les deux croisements
-    # du défaut (calendrier voisin, compte étranger) sont fermés au-dessus.
+        raise HTTPException(status_code=404, detail="Événement introuvable")
 
     return CalendarEventResponse(
-        id=event.id,
+        id=event_id,
         calendar_id=event.calendar_id,
         summary=event.summary,
         description=event.description,
@@ -1164,6 +1199,8 @@ class BlocageDeSeance(BaseModel):
 async def bloquer_un_evenement(
     event_id: str,
     request: BlocageDeSeance,
+    account_id: str | None = Query(None),
+    calendar_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """Bloque un evenement, ou leve le blocage.
@@ -1173,7 +1210,7 @@ async def bloquer_un_evenement(
     obligatoire pour poser un blocage : un booleen sans raison obligerait a se
     souvenir.
     """
-    evenement = await session.get(CalendarEvent, event_id)
+    evenement = await _evenement_en_cache(session, event_id, calendar_id, account_id)
     if evenement is None:
         raise HTTPException(status_code=404, detail="Événement introuvable")
 
@@ -1186,7 +1223,7 @@ async def bloquer_un_evenement(
     evenement.blocage = motif or None
     session.add(evenement)
     await session.commit()
-    return {"id": evenement.id, "blocage": evenement.blocage, "status": evenement.status}
+    return {"id": event_id, "blocage": evenement.blocage, "status": evenement.status}
 
 
 @router.post("/events")
@@ -1402,6 +1439,9 @@ async def update_event(
         if calendar is not None:
             calendar_id = calendar.id
 
+    if calendar is not None and (calendar.account_id or None) != (account_id or None):
+        raise HTTPException(status_code=404, detail="Événement introuvable")
+
     if calendar and calendar.provider in ("local", "caldav"):
         from app.services.calendar.base_provider import UpdateEventRequest as ProviderUpdateRequest
 
@@ -1428,7 +1468,7 @@ async def update_event(
         # fin avant le début ou un participant sans adresse passaient en 200 et
         # se retrouvaient en base. La fenêtre se vérifie au point de fusion,
         # contre l'événement STOCKÉ quand un seul bord est envoyé.
-        stocke = await session.get(CalendarEvent, event_id)
+        stocke = await _evenement_en_cache(session, event_id, calendar.id, account_id)
         debut_effectif = start if start is not None else (stocke.start_datetime if stocke else None)
         fin_effective = end if end is not None else (stocke.end_datetime if stocke else None)
         # B-586 : comparer des INSTANTS. Un bord conscient est ramené en UTC ;
@@ -1481,6 +1521,11 @@ async def update_event(
                 ),
             ) from e
 
+        if calendar.provider == "caldav" and stocke is not None:
+            _actualiser_copie_caldav(stocke, evt, calendar)
+            session.add(stocke)
+            await session.commit()
+
         return CalendarEventResponse(
             id=evt.id,
             calendar_id=calendar.id,
@@ -1495,7 +1540,7 @@ async def update_event(
             attendees=evt.attendees,
             recurrence=evt.recurrence,
             status=evt.status,
-            blocage=getattr(evt, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
+            blocage=stocke.blocage if calendar.provider == "caldav" and stocke else getattr(evt, "blocage", None),
             synced_at=datetime.now(UTC).isoformat(),
         )
 
@@ -1675,6 +1720,9 @@ async def delete_event(
     calendar = await session.get(Calendar, calendar_id)
     if calendar is None and calendar_id == "primary" and not account_id:
         calendar = await _agenda_principal_local(session)
+
+    if calendar is not None and (calendar.account_id or None) != (account_id or None):
+        raise HTTPException(status_code=404, detail="Événement introuvable")
 
     if calendar and calendar.provider in ("local", "caldav"):
         provider = await _get_provider_for_calendar(calendar, session)

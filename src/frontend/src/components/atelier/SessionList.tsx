@@ -126,8 +126,8 @@ export function SessionList() {
             size="icon"
             onClick={() => fetchSessions()}
             className="h-8 w-8"
-            title="Rafraichir"
-            aria-label="Rafraichir les sessions"
+            title="Rafraîchir"
+            aria-label="Rafraîchir les sessions"
           >
             <RefreshCw size={12} />
           </Button>
@@ -138,8 +138,8 @@ export function SessionList() {
             onClick={openNewTask}
             disabled={!openclawConnected || runningCount >= maxAgents}
             className="h-8 w-8"
-            title={runningCount >= maxAgents ? `${maxAgents} agents max` : "Nouvelle tache"}
-            aria-label={runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une nouvelle tache"}
+            title={runningCount >= maxAgents ? `${maxAgents} agents max` : "Nouvelle tâche"}
+            aria-label={runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une nouvelle tâche"}
           >
             <Plus size={14} />
           </Button>
@@ -201,7 +201,7 @@ export function SessionList() {
                 disabled={!openclawConnected || runningCount >= maxAgents}
                 title={runningCount >= maxAgents ? `${maxAgents} agents max` : undefined}
               >
-                {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tache"}
+                {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tâche"}
               </Button>
             }
           />

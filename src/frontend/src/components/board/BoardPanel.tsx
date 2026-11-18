@@ -102,6 +102,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [isSearchingWeb, setIsSearchingWeb] = useState(false);
+  const [webSearchMessage, setWebSearchMessage] = useState<string | null>(null);
   const [advisorStates, setAdvisorStates] = useState<Map<AdvisorRole, AdvisorState>>(new Map());
   const [synthesis, setSynthesis] = useState<BoardSynthesis | null>(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
@@ -191,6 +192,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
   const resetDeliberation = useCallback(() => {
     setIsSearchingWeb(false);
+    setWebSearchMessage(null);
     setAdvisorStates(new Map());
     setSynthesis(null);
     setIsSynthesizing(false);
@@ -323,10 +325,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
           case 'web_search_start':
             setIsSearchingWeb(true);
+            setWebSearchMessage(null);
             break;
 
           case 'web_search_done':
             setIsSearchingWeb(false);
+            setWebSearchMessage(chunk.content || null);
             break;
 
           case 'advisor_start':
@@ -738,6 +742,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}
+                      webSearchMessage={webSearchMessage}
                       isSovereign={mode === 'sovereign'}
                       advisorStates={advisorStates}
                       synthesis={synthesis}
@@ -787,23 +792,25 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         {decisions.map((decision) => (
                           <div
                             key={decision.id}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={decision.question}
                             className={cn(
-                              'relative p-4 rounded-md',
+                              'relative rounded-md',
                               'bg-surface-elevated border border-border',
-                              'hover:border-accent-cyan/30 transition-colors',
-                              'group cursor-pointer'
+                              'hover:border-accent-cyan/30 transition-colors'
                             )}
-                            onClick={() => handleViewDecision(decision.id)}
-                            // B-876 : la carte s'ouvre aussi au clavier.
-                            onKeyDown={(e) => {
-                              if (e.target !== e.currentTarget) return;
-                              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleViewDecision(decision.id); }
-                            }}
                           >
-                            <p className="font-medium text-text mb-1 line-clamp-2 pr-8">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              aria-label={decision.question}
+                              className="p-4 cursor-pointer"
+                              onClick={() => handleViewDecision(decision.id)}
+                              // B-876 : la carte s'ouvre aussi au clavier.
+                              onKeyDown={(e) => {
+                                if (e.target !== e.currentTarget) return;
+                                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleViewDecision(decision.id); }
+                              }}
+                            >
+                            <p id={`decision-${decision.id}`} className="font-medium text-text mb-1 line-clamp-2 pr-8">
                               {decision.question}
                             </p>
                             <div className="flex items-center gap-3 text-sm text-text-muted">
@@ -817,9 +824,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                                 Confiance {LIBELLES_CONFIANCE[decision.confidence] ?? decision.confidence}
                               </span>
                             </div>
+                            </div>
                             {decisionASupprimer === decision.id && (
                               <div
-                                className="mt-3 flex flex-wrap items-center gap-2 rounded-sm border border-error/30 bg-[var(--color-error-tint)] px-3 py-2"
+                                className="mx-4 mb-4 flex flex-wrap items-center gap-2 rounded-sm border border-error/30 bg-[var(--color-error-tint)] px-3 py-2"
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => e.stopPropagation()}
                               >
@@ -836,10 +844,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                               className={cn(
                                 'absolute top-3 right-3 p-2 rounded-md',
                                 'text-text-muted hover:text-error',
-                                'hover:bg-error/10 transition-colors',
-                                'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                                'hover:bg-error/10 transition-colors'
                               )}
                               title="Supprimer"
+                              aria-label="Supprimer la décision"
+                              aria-describedby={`decision-${decision.id}`}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

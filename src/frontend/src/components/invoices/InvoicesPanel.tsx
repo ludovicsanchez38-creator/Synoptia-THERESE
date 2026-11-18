@@ -18,6 +18,7 @@ import { libellesDeLaPiece } from './libellesPiece';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
@@ -26,7 +27,7 @@ import { EtatVide } from '../ui/EtatVide';
 import { Etiquette } from '../ui/Etiquette';
 import { Segments } from '../ui/Segments';
 import { Squelette } from '../ui/Squelette';
-import { STATUS_CONFIG } from './statutsFacture';
+import { libelleStatutPiece } from './statutsFacture';
 import { cellulesStatut, compteurPieces, libelleAccessiblePiece, numeroAffiche, sousLignePiece } from './presentationFacture';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
@@ -39,7 +40,7 @@ const OPTIONS_TYPE = [
   { id: 'avoir', label: 'Avoirs' },
 ] as const;
 
-const SQUELETTES = ['w-24', 'w-[60%]', 'w-20', 'w-20', 'w-16', 'w-16', 'w-12'] as const;
+const SQUELETTES = ['w-24', 'w-[60%]', 'w-20', 'w-16', 'w-16', 'w-12'] as const;
 
 /**
  * B-1387 (Nathalie, Zoé, cycle 13) : à 125 % ou à 800 px, le tableau débordait
@@ -141,7 +142,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       // liste et son drapeau tombent d'un seul geste : rien ne peut plus
       // décrire des données qui ne sont plus là.
       setInvoices([], false);
-      setLoadError('Impossible de charger les factures pour le moment.');
+      setLoadError('Impossible de charger les devis, factures et avoirs pour le moment.');
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +228,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   function handleCloseForm() {
     setShowForm(false);
     setEditingInvoice(null);
+  }
+
+  // B-1866 : Fermer et le fond démontaient le panneau avant le formulaire,
+  // donc la question d'abandon, qui vit dans le formulaire, ne partait pas.
+  function demanderFermeturePanneau() {
+    if (showForm && sortieRetenueParUneSaisie()) return;
+    setIsInvoicePanelOpen(false);
   }
 
   function handleInvoiceCreatedOrUpdated(invoice: Invoice) {
@@ -343,7 +351,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             size="icon"
             type="button"
             aria-label="Fermer"
-            onClick={() => setIsInvoicePanelOpen(false)}
+            onClick={demanderFermeturePanneau}
           >
             <X className="h-[18px] w-[18px]" />
           </Button>
@@ -379,7 +387,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           valeur={filters.status ?? 'all'}
           options={statutsProposesPour(filters.document_type).map((status) => ({
             id: status,
-            label: status === 'all' ? 'Toutes' : STATUS_CONFIG[status].label,
+            label: status === 'all' ? 'Toutes' : libelleStatutPiece(status, filters.document_type ?? 'facture'),
           }))}
           onChange={(id) => setFilters({ ...filters, status: id as typeof filters.status })}
         />
@@ -395,7 +403,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             <div
               key={rang}
               aria-hidden
-              className="grid grid-cols-7 gap-3 px-4 py-3 border-t border-border"
+              className="grid grid-cols-6 gap-3 px-4 py-3 border-t border-border"
             >
               {SQUELETTES.map((largeur, piste) => (
                 <Squelette key={piste} largeur={largeur} />
@@ -706,7 +714,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     <AnimatePresence>
       <div
         className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center`}
-        onClick={() => setIsInvoicePanelOpen(false)}
+        onClick={demanderFermeturePanneau}
       >
         <motion.div
           initial={{ opacity: 0 }}
@@ -718,7 +726,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         <motion.div
           role="dialog"
           aria-modal="true"
-          aria-label="Factures"
+          aria-label="Devis et factures"
           data-testid="invoices-panel"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

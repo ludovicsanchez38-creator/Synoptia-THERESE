@@ -129,7 +129,7 @@ export function AgentMemoryPanel() {
         <label>Portée<select className={classe} value={scope} onChange={e => { setScope(e.target.value); setOffset(0); }}><option value="">Toutes les portées</option><option value="global">Général</option>{scopes.map(p => <option key={p.id} value={p.id}>{afficher(p.name)}</option>)}</select></label>
       </div>
       {error && <div role="alert">{error} <button className={classe} onClick={() => setRevision(r => r + 1)}>Réessayer</button></div>}
-      {loading ? <p role="status">Lecture de tes fiches…</p> : items.length === 0 && !error ? <p>{query || kind || scope || state !== 'active' ? 'Aucune fiche ne correspond à ta recherche.' : 'Rien de noté pour le moment. Thérèse retiendra tes façons de travailler au fil de tes échanges.'}</p> : <ul className="space-y-2">
+      {loading ? <p role="status">Lecture de tes fiches…</p> : items.length === 0 && !error ? <p>{query || kind || scope || origine || state !== 'active' ? 'Aucune fiche ne correspond à ta recherche.' : 'Rien de noté pour le moment. Thérèse retiendra tes façons de travailler au fil de tes échanges.'}</p> : <ul className="space-y-2">
         {items.map(f => <li key={f.id} className="rounded-md border border-border p-3">
           <button type="button" className="font-semibold text-accent-cyan-ink underline" onClick={() => useAgentMemoryStore.setState({ selectedId: f.id })}>{demo.enabled ? 'Fiche de démonstration' : afficher(f.title)}</button>
           <p className="text-sm text-text-muted">{TYPES[f.kind]} · {afficher(f.scope_name)} · {new Date(f.updated_at).toLocaleDateString('fr-FR')}{f.provenance_documents && f.provenance_documents !== 'sans_document' && ` · ${ORIGINES[f.provenance_documents]}`}</p>

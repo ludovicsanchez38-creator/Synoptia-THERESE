@@ -153,6 +153,11 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
             "OR TRIM(client_name) = '' LIMIT 1"
         ).fetchone() is not None
 
+    # SQLite ne démarre pas de transaction implicite pour ALTER TABLE : les
+    # colonnes et leur remplissage doivent pourtant survivre ensemble.
+    if missing_columns and not conn.in_transaction:
+        conn.execute("BEGIN")
+
     added: list[str] = []
     for column_name, definition in definitions.items():
         if column_name not in invoice_columns:
@@ -162,28 +167,24 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
             added.append(column_name)
 
     if invoice_count and needs_backfill:
-        where_clause = "1 = 1" if missing_columns else (
-            "client_name IS NULL OR TRIM(client_name) = ''"
-        )
-        conn.execute(
-            f"""
-            UPDATE invoices
-            SET client_name = (
-                    SELECT CASE
-                        WHEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) != ''
-                        THEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, ''))
-                        WHEN COALESCE(c.company, '') != '' THEN c.company
-                        ELSE NULL
-                    END
-                    FROM contacts c WHERE c.id = invoices.contact_id
-                ),
-                client_company = (SELECT c.company FROM contacts c WHERE c.id = invoices.contact_id),
-                client_email = (SELECT c.email FROM contacts c WHERE c.id = invoices.contact_id),
-                client_phone = (SELECT c.phone FROM contacts c WHERE c.id = invoices.contact_id),
-                client_address = (SELECT c.address FROM contacts c WHERE c.id = invoices.contact_id)
-            WHERE {where_clause}
-            """
-        )
+        sources = {
+            "client_name": """SELECT CASE
+                WHEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) != ''
+                THEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, ''))
+                WHEN COALESCE(c.company, '') != '' THEN c.company
+                ELSE NULL END FROM contacts c WHERE c.id = invoices.contact_id""",
+            **{
+                f"client_{champ}": f"SELECT c.{champ} FROM contacts c WHERE c.id = invoices.contact_id"
+                for champ in ("company", "email", "phone", "address")
+            },
+        }
+        # Une colonne déjà présente peut avoir un NULL historique intentionnel.
+        affectations = [
+            f"{colonne} = ({source})"
+            for colonne, source in sources.items() if colonne in missing_columns
+        ]
+        if affectations:
+            conn.execute(f"UPDATE invoices SET {', '.join(affectations)}")
         # B-266 : par ligne. Les pièces restées sans destinataire figé sont
         # celles dont la fiche CRM a disparu (ou n'a jamais porté de nom) ;
         # elles sont nommées, avec le geste qui les répare, et n'empêchent pas
@@ -795,140 +796,131 @@ def ensure_alembic_stamp(db_path) -> None:
             has_stamp = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
             ).fetchone()
-            if has_stamp:
-                # Revue adversariale US-015 : une DB trackée à une révision
-                # ANCIENNE dont le schéma a déjà été patché par les migrations
-                # ad-hoc (elles tournent à chaque boot) ferait planter
-                # `upgrade head` en duplicate column. Preuve de schéma au
-                # niveau de la tête épinglée : invoices.validite_jours (la
-                # colonne ajoutée PAR cette révision). Si présente ->
-                # ré-estampiller à la tête.
-                current = conn.execute(
-                    "SELECT version_num FROM alembic_version"
-                ).fetchone()
-                if current and current[0] != ALEMBIC_HEAD_REVISION:
-                    # Incident du 31/08 : les anciens appelants directs du
-                    # filet n'exécutaient pas tous apply_adhoc_migrations.
-                    # Compléter ce snapshot ici empêche de laisser une base à
-                    # l'ancienne tête ; une identité irrécupérable interrompt
-                    # le ré-estampillage, conformément au contrat fail-closed.
-                    _ensure_invoice_client_snapshot(conn)
-                    inv_cols = {
-                        row[1]
-                        for row in conn.execute("PRAGMA table_info(invoices)")
-                    }
-                    # La preuve de schéma doit couvrir CHAQUE élément apporté
-                    # depuis, sinon une base trackée serait ré-estampillée à la
-                    # nouvelle tête et `upgrade head` sauterait les migrations.
-                    # Toute future révision doit étendre cette preuve et les
-                    # migrations ad-hoc ci-dessus.
-                    has_variables = conn.execute(
-                        "SELECT name FROM sqlite_master "
-                        "WHERE type='table' AND name='variables'"
-                    ).fetchone()
-                    board_cols = {
-                        row[1]
-                        for row in conn.execute("PRAGMA table_info(board_decisions)")
-                    }
-                    atelier_cols = {
-                        row[1]
-                        for row in conn.execute("PRAGMA table_info(agent_tasks)")
-                    }
-                    has_board_history = (
-                        BOARD_HISTORY_COLUMN_DEFINITIONS.keys() <= board_cols
-                    )
-                    has_atelier_history = (
-                        ATELIER_HISTORY_COLUMN_DEFINITIONS.keys() <= atelier_cols
-                    )
-                    # 0.45 : la preuve couvre les tables project.sync - sans
-                    # elles, ré-estampiller ferait sauter la migration
-                    # e5f6a7b8c9d0 sur une vraie base 0.44 (revue jalon, B4).
-                    # Passes 2-3 de revue : la preuve dérive du MODÈLE -
-                    # toutes les colonnes, sans liste manuelle qui prend du
-                    # retard. Une table au bon nom mais au schéma incomplet
-                    # ne sera jamais estampillée head.
-                    def _colonnes(table: str) -> set[str]:
-                        return {
-                            row[1]
-                            for row in conn.execute(f"PRAGMA table_info({table})")
-                        }
-
-                    from app.models import entities_sync as _sync  # noqa: F401
-                    from sqlmodel import SQLModel as _SQLModel
-
-                    # B-398 : les noms viennent des modèles, pas d'une liste en
-                    # dur qui se périmait à la première table renommée ou ajoutée.
-                    has_sync_tables = all(
-                        set(_SQLModel.metadata.tables[table].columns.keys())
-                        <= _colonnes(table)
-                        for table in tables_de_synchronisation()
-                    )
-                    # P-039 : les cinq tables de planning sont créées par
-                    # create_all au boot desktop avant cette preuve. Exiger
-                    # toutes leurs colonnes empêche de sauter la migration sur
-                    # une base Alembic ancienne partiellement patchée.
-                    planning_tables = tables_de_planning()
-                    has_planning_tables = all(
-                        table in _SQLModel.metadata.tables
-                        and set(_SQLModel.metadata.tables[table].columns.keys())
-                        <= _colonnes(table)
-                        for table in planning_tables
-                    )
-                    if (
-                        "validite_jours" in inv_cols
-                        # P-139 : colonne apportée par b8c9d0e1f2a3.
-                        and "sent_at" in inv_cols
-                        and {
-                            "client_name",
-                            "client_company",
-                            "client_email",
-                            "client_phone",
-                            "client_address",
-                        } <= inv_cols
-                        and has_variables
-                        and has_board_history
-                        and has_atelier_history
-                        and has_sync_tables
-                        and has_planning_tables
-                        and all(
-                            name in _SQLModel.metadata.tables
-                            and set(_SQLModel.metadata.tables[name].columns.keys()) <= _colonnes(name)
-                            for name in ("memory_cards", "memory_card_uses", "activities", "cloud_consents", "ai_generations")
-                        )
-                        # Une table de mails existante doit aussi porter le lien
-                        # ajouté par t4marque02 avant de sauter cette migration.
-                        and (
-                            not _colonnes("email_messages")
-                            or "ai_generation_id" in _colonnes("email_messages")
-                        )
-                        and not any(r[1] == 'contact_id' and r[3] for r in conn.execute('PRAGMA table_info(activities)'))
-                        # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa
-                        # preuve est l'état des données (aucune phase de
-                        # prestation héritée). Table absente = rien à migrer.
-                        and not reste_des_phases_heritees(conn)
-                    ):
-                        conn.execute(
-                            "UPDATE alembic_version SET version_num = ?",
-                            (ALEMBIC_HEAD_REVISION,),
-                        )
-                        conn.commit()
-                        logger.info(
-                            f"US-015 : alembic_version réaligné {current[0]} -> "
-                            f"{ALEMBIC_HEAD_REVISION} (schéma déjà patché par "
-                            "les migrations ad-hoc)"
-                        )
+            current = (
+                conn.execute("SELECT version_num FROM alembic_version").fetchone()
+                if has_stamp else None
+            )
+            if has_stamp and (not current or current[0] == ALEMBIC_HEAD_REVISION):
                 return
-            conn.execute(
-                "CREATE TABLE alembic_version ("
-                "version_num VARCHAR(32) NOT NULL, "
-                "CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
+            # Incident du 31/08 : les anciens appelants directs du
+            # filet n'exécutaient pas tous apply_adhoc_migrations.
+            # Compléter ce snapshot ici empêche de laisser une base à
+            # l'ancienne tête ; une identité irrécupérable interrompt
+            # le ré-estampillage, conformément au contrat fail-closed.
+            _ensure_invoice_client_snapshot(conn)
+            inv_cols = {
+                row[1]
+                for row in conn.execute("PRAGMA table_info(invoices)")
+            }
+            # La preuve de schéma doit couvrir CHAQUE élément apporté
+            # depuis, sinon une base trackée serait ré-estampillée à la
+            # nouvelle tête et `upgrade head` sauterait les migrations.
+            # Toute future révision doit étendre cette preuve et les
+            # migrations ad-hoc ci-dessus.
+            has_variables = conn.execute(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='variables'"
+            ).fetchone()
+            board_cols = {
+                row[1]
+                for row in conn.execute("PRAGMA table_info(board_decisions)")
+            }
+            atelier_cols = {
+                row[1]
+                for row in conn.execute("PRAGMA table_info(agent_tasks)")
+            }
+            has_board_history = (
+                BOARD_HISTORY_COLUMN_DEFINITIONS.keys() <= board_cols
             )
-            conn.execute(
-                "INSERT INTO alembic_version (version_num) VALUES (?)",
-                (ALEMBIC_HEAD_REVISION,),
+            has_atelier_history = (
+                ATELIER_HISTORY_COLUMN_DEFINITIONS.keys() <= atelier_cols
             )
-            conn.commit()
-            logger.info(f"US-015 : DB estampillée Alembic {ALEMBIC_HEAD_REVISION}")
+            # 0.45 : la preuve couvre les tables project.sync - sans
+            # elles, ré-estampiller ferait sauter la migration
+            # e5f6a7b8c9d0 sur une vraie base 0.44 (revue jalon, B4).
+            # Passes 2-3 de revue : la preuve dérive du MODÈLE -
+            # toutes les colonnes, sans liste manuelle qui prend du
+            # retard. Une table au bon nom mais au schéma incomplet
+            # ne sera jamais estampillée head.
+            def _colonnes(table: str) -> set[str]:
+                return {
+                    row[1]
+                    for row in conn.execute(f"PRAGMA table_info({table})")
+                }
+
+            from app.models import entities_sync as _sync  # noqa: F401
+            from sqlmodel import SQLModel as _SQLModel
+
+            # B-398 : les noms viennent des modèles, pas d'une liste en
+            # dur qui se périmait à la première table renommée ou ajoutée.
+            has_sync_tables = all(
+                set(_SQLModel.metadata.tables[table].columns.keys())
+                <= _colonnes(table)
+                for table in tables_de_synchronisation()
+            )
+            # P-039 : les cinq tables de planning sont créées par
+            # create_all au boot desktop avant cette preuve. Exiger
+            # toutes leurs colonnes empêche de sauter la migration sur
+            # une base Alembic ancienne partiellement patchée.
+            planning_tables = tables_de_planning()
+            has_planning_tables = all(
+                table in _SQLModel.metadata.tables
+                and set(_SQLModel.metadata.tables[table].columns.keys())
+                <= _colonnes(table)
+                for table in planning_tables
+            )
+            if (
+                "invoices" in _SQLModel.metadata.tables
+                and set(_SQLModel.metadata.tables["invoices"].columns.keys()) <= inv_cols
+                and "validite_jours" in inv_cols
+                # P-139 : colonne apportée par b8c9d0e1f2a3.
+                and "sent_at" in inv_cols
+                and {
+                    "client_name",
+                    "client_company",
+                    "client_email",
+                    "client_phone",
+                    "client_address",
+                } <= inv_cols
+                and has_variables
+                and has_board_history
+                and has_atelier_history
+                and has_sync_tables
+                and has_planning_tables
+                and all(
+                    name in _SQLModel.metadata.tables
+                    and set(_SQLModel.metadata.tables[name].columns.keys()) <= _colonnes(name)
+                    for name in ("memory_cards", "memory_card_uses", "activities", "cloud_consents", "ai_generations")
+                )
+                # Une table de mails existante doit aussi porter le lien
+                # ajouté par t4marque02 avant de sauter cette migration.
+                and (
+                    not _colonnes("email_messages")
+                    or "ai_generation_id" in _colonnes("email_messages")
+                )
+                and any(r[1] == 'contact_id' and not r[3] for r in conn.execute('PRAGMA table_info(activities)'))
+                # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa
+                # preuve est l'état des données (aucune phase de
+                # prestation héritée). Table absente = rien à migrer.
+                and not reste_des_phases_heritees(conn)
+            ):
+                if has_stamp:
+                    conn.execute(
+                        "UPDATE alembic_version SET version_num = ?",
+                        (ALEMBIC_HEAD_REVISION,),
+                    )
+                else:
+                    conn.execute(
+                        "CREATE TABLE alembic_version ("
+                        "version_num VARCHAR(32) NOT NULL, "
+                        "CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
+                    )
+                    conn.execute(
+                        "INSERT INTO alembic_version (version_num) VALUES (?)",
+                        (ALEMBIC_HEAD_REVISION,),
+                    )
+                conn.commit()
+                logger.info("Schéma vérifié : base estampillée Alembic %s", ALEMBIC_HEAD_REVISION)
     except Exception as e:
         logger.warning(f"Estampillage Alembic échoué : {e}")
 

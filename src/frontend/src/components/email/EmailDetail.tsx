@@ -283,7 +283,12 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           </Button>
 
           <div className="flex flex-wrap items-center gap-2 max-[840px]:basis-full">
-            <Button variant="ghost" size="sm" onClick={toggleStar}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleStar}
+              aria-label={message.is_starred ? 'Retirer l’étoile' : 'Marquer d’une étoile'}
+            >
               <Star
                 className={`w-4 h-4 ${message.is_starred ? 'fill-yellow-400 text-warning' : ''}`}
               />
@@ -329,6 +334,11 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           {message.to_emails.length > 0 && (
             <div className="text-xs text-text-muted pl-13">
               À : {message.to_emails.join(', ')}
+            </div>
+          )}
+          {!!message.cc_emails?.length && (
+            <div className="text-xs text-text-muted pl-13">
+              Cc : {message.cc_emails.join(', ')}
             </div>
           )}
           {!!message.reply_to_emails?.length && <p className="text-xs text-text-muted">Adresse de réponse : {message.reply_to_emails.join(', ')}</p>}

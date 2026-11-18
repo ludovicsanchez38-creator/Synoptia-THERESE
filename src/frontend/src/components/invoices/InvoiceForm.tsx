@@ -216,6 +216,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // (B-228) : le piège ne le traite pas.
   const dialogueRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogueRef, { active: true });
+  // B-1981 : la confirmation est dans le même dialogue. Sans piège propre,
+  // Tab depuis « Convertir » revient aux champs masqués par le voile.
+  const conversionRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(conversionRef, { active: showConvertDialog });
 
   // B-228 : la modale n'était inscrite NI dans la pile Échap NI dans le
   // panelStore. `consommeEchapUnifie` rendait donc false, la cascade de la coque
@@ -227,7 +231,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // fond, Annuler) ; intacte, Échap ferme la modale seule, comme avant.
   const saisieCourante = JSON.stringify({
     documentType, contactId, currency, issueDate, dueDate, status, notes, validiteJours, lines, lineInputs,
-    clientAddress, clientBillingAddress, serviceDate, purchaseOrder,
+    clientAddress, clientBillingAddress, serviceDate, purchaseOrder, factureOrigineId,
   });
   const saisieInitiale = useRef(saisieCourante);
   const { abandonDemande, demanderFermeture, continuerSaisie, abandonner } = useQuestionDAbandonDeModale({
@@ -238,6 +242,18 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     surfaceDuRegistre: true,
     fermerSiIntact: true,
   });
+  const continuerSaisieRef = useRef<HTMLButtonElement>(null);
+  const annulerRef = useRef<HTMLButtonElement>(null);
+  const questionAffichee = useRef(false);
+  useEffect(() => {
+    if (abandonDemande) {
+      questionAffichee.current = true;
+      continuerSaisieRef.current?.focus();
+    } else if (questionAffichee.current) {
+      questionAffichee.current = false;
+      annulerRef.current?.focus();
+    }
+  }, [abandonDemande]);
 
   // Le dialogue de conversion est une couche AU-DESSUS : la pile étant LIFO, il
   // se ferme le premier et laisse le formulaire ouvert.
@@ -374,16 +390,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     return { subtotalHT, totalTax, totalTTC };
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-
-    // B-1677 : une pièce émise est figée (B-1614) ; seul son statut part,
-    // ses lignes désactivées ne se valident plus (une ligne héritée à
-    // 0,5 jour ou sans description bloquait tout changement de statut).
-    const validLines = pieceEmise ? [] : lignesValidees();
-    if (validLines === null) return;
-
-    function lignesValidees() {
+  function lignesValidees() {
       if (!contactId) {
         setErreurValidation('Sélectionne un contact.');
         dialogueRef.current?.querySelector<HTMLElement>('#contact')?.focus();
@@ -452,31 +459,77 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       }));
     }
 
+    function donneesDuFormulaire(validLines: InvoiceLineRequest[], statut?: string) {
+      return {
+        contact_id: contactId,
+        document_type: documentType,
+        currency,
+        issue_date: issueDate,
+        due_date: dueDate,
+        client_address: clientAddress || contacts.find((c) => c.id === contactId)?.address || null,
+        client_billing_address: clientBillingAddress || null,
+        service_date: serviceDate || null,
+        purchase_order: purchaseOrder || null,
+        lines: validLines,
+        notes: notes || undefined,
+        status: statut,
+        validite_jours: documentType === 'devis' ? validiteJours : undefined,
+        converted_from_id: documentType === 'avoir' ? (factureOrigineId || null) : undefined,
+      };
+    }
+
+    // B-1864 : les actions rapides portaient sur la pièce stockée. Comme
+    // « Mettre à jour » avant un paiement, les retouches partent d'abord.
+    const formulaireModifie = Boolean(invoice) && !pieceEmise && saisieCourante !== saisieInitiale.current;
+
+    function montantDesActions() {
+      if (!invoice) return montantAvecDevise(0, currency);
+      if (formulaireModifie) return montantAvecDevise(calculateInvoiceTotals().totalTTC, currency);
+      return montantAvecDevise(invoice.total_ttc, invoice.currency);
+    }
+
+    function retouchesPretes() {
+      if (!formulaireModifie) return true;
+      return lignesValidees() !== null;
+    }
+
+    async function enregistrerRetouchesAvantAction() {
+      if (!invoice || !formulaireModifie) return true;
+      const validLines = lignesValidees();
+      if (!validLines) return false;
+      try {
+        await updateInvoice(invoice.id, donneesDuFormulaire(validLines, undefined));
+        return true;
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
+        addNotification({ type: 'error', title: 'Erreur', message: msg });
+        return false;
+      }
+    }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (abandonDemande) return;
+
+    // B-1677 : une pièce émise est figée (B-1614) ; seul son statut part,
+    // ses lignes désactivées ne se valident plus (une ligne héritée à
+    // 0,5 jour ou sans description bloquait tout changement de statut).
+    const validLines = pieceEmise ? [] : lignesValidees();
+    if (validLines === null) return;
+
     const passagePaye = invoice && invoice.status !== 'paid' && status === 'paid';
     if (passagePaye && (!datePaiement || datePaiement > localDateKey(new Date()))) {
       setErreurValidation('Indique une date passée ou celle d’aujourd’hui.');
       return;
     }
 
-    const data = {
-      contact_id: contactId,
-      document_type: documentType,
-      currency,
-      issue_date: issueDate,
-      due_date: dueDate,
-      client_address: clientAddress || contacts.find((c) => c.id === contactId)?.address || null,
-      client_billing_address: clientBillingAddress || null,
-      service_date: serviceDate || null,
-      purchase_order: purchaseOrder || null,
-      lines: validLines,
-      notes: notes || undefined,
-      // B-1492 : en modification, le statut part dès qu'il a changé, brouillon
-      // compris (« draft » n'était jamais envoyé : le retour au brouillon était
-      // ignoré en silence) ; à la création, le moteur pose déjà le brouillon.
-      status: (invoice ? status !== invoice.status : status !== 'draft') ? status : undefined,
-      validite_jours: documentType === 'devis' ? validiteJours : undefined,
-      converted_from_id: documentType === 'avoir' ? (factureOrigineId || null) : undefined,
-    };
+    // B-1492 : en modification, le statut part dès qu'il a changé, brouillon
+    // compris (« draft » n'était jamais envoyé : le retour au brouillon était
+    // ignoré en silence) ; à la création, le moteur pose déjà le brouillon.
+    const data = donneesDuFormulaire(
+      validLines,
+      (invoice ? status !== invoice.status : status !== 'draft') ? status : undefined,
+    );
 
     const persistInvoice = async () => {
       setIsSaving(true);
@@ -549,6 +602,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       addNotification({ type: 'error', title: estAvoir ? 'Date du remboursement' : 'Date du paiement', message: 'Indique une date passée ou celle d’aujourd’hui.' });
       return;
     }
+    if (!retouchesPretes()) return;
     const [annee, mois, jour] = datePaiement.split('-');
     // P-138 : un brouillon n'a jamais été émis ; le marquer payé se signale.
     const brouillon = invoice.status === 'draft';
@@ -565,11 +619,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       confirmLabel: estAvoir ? 'Confirmer le remboursement' : 'Confirmer le paiement',
       details: [
         { label: estAvoir ? 'Avoir' : 'Facture', value: numeroAffiche(invoice.invoice_number) },
-        { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
+        { label: 'Montant TTC', value: montantDesActions() },
         { label: estAvoir ? 'Date du remboursement' : 'Date du paiement', value: `${jour}/${mois}/${annee}` },
         { label: 'Nouveau statut', value: libelleStatutPiece('paid', invoice.document_type) },
       ],
     }, async () => {
+      if (!(await enregistrerRetouchesAvantAction())) return;
       try {
         const updatedInvoice = await markInvoicePaid(invoice.id, datePaiement);
         addNotification({ type: 'success', title: estAvoir ? 'Avoir remboursé' : 'Facture payée', message: estAvoir
@@ -584,7 +639,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   }
 
   function handleDevisStatus(nextStatus: 'accepted' | 'refused') {
-    if (!invoice) return;
+    if (!invoice || !retouchesPretes()) return;
 
     const accepted = nextStatus === 'accepted';
     requestExternalAction({
@@ -593,10 +648,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       confirmLabel: accepted ? 'Confirmer l’acceptation' : 'Confirmer le refus',
       details: [
         { label: 'Devis', value: numeroAffiche(invoice.invoice_number) },
-        { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
+        { label: 'Montant TTC', value: montantDesActions() },
         { label: 'Nouveau statut', value: accepted ? 'Accepté' : 'Refusé' },
       ],
     }, async () => {
+      if (!(await enregistrerRetouchesAvantAction())) return;
       try {
         const updated = await updateDevisStatus(invoice.id, nextStatus);
         addNotification({
@@ -617,6 +673,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     setShowConvertDialog(false);
 
     try {
+      if (!(await enregistrerRetouchesAvantAction())) return;
       const newInvoice = await convertDevisToInvoice(invoice.id, {
         payment_terms: '30 jours',
         payment_method: 'Virement bancaire',
@@ -777,6 +834,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                     setContactId(e.target.value);
                     setClientAddress(contacts.find((c) => c.id === e.target.value)?.address || '');
                     setClientBillingAddress('');
+                    // B-1865 : la facture d'origine appartient au client choisi.
+                    setFactureOrigineId('');
                   }}
                   disabled={pieceEmise}
                   required
@@ -1083,7 +1142,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           </p>
         )}
         <div className="px-6 py-4 border-t border-border flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-wrap items-center gap-2">
+          <div hidden={abandonDemande} style={abandonDemande ? { display: 'none' } : undefined} className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
               <div className="flex flex-wrap items-center gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
                 <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted whitespace-nowrap">{invoice.document_type === 'avoir' ? 'Remboursé le' : 'Payée le'}</label>
@@ -1117,7 +1176,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 variant="secondary"
                 size="md"
                 type="button"
-                onClick={() => setShowConvertDialog(true)}
+                onClick={() => { if (retouchesPretes()) setShowConvertDialog(true); }}
                 disabled={isConverting}
               >
                 <FileCheck className="h-[18px] w-[18px]" />
@@ -1129,12 +1188,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           {abandonDemande && (
             <div className="flex w-full basis-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
               <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
-              <Button variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
+              <Button ref={continuerSaisieRef} variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
               <Button variant="danger" size="md" type="button" onClick={abandonner}>Abandonner</Button>
             </div>
           )}
-          <div className="flex items-center gap-3 shrink-0 ml-auto whitespace-nowrap">
-            <Button variant="secondary" size="md" type="button" onClick={demanderFermeture}>
+          <div hidden={abandonDemande} style={abandonDemande ? { display: 'none' } : undefined} className="flex items-center gap-3 shrink-0 ml-auto whitespace-nowrap">
+            <Button ref={annulerRef} variant="secondary" size="md" type="button" onClick={demanderFermeture}>
               Annuler
             </Button>
             <Button variant="primary" size="md" type="submit" form={ID_FORMULAIRE} disabled={isSaving}>
@@ -1153,6 +1212,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           >
             <div className="absolute inset-0 bg-black/60 rounded-md" />
             <div
+              ref={conversionRef}
               role="dialog"
               aria-modal="true"
               aria-label="Confirmer la conversion"

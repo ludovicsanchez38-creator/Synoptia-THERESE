@@ -95,6 +95,8 @@ export function EmailInboxCard({
             <p className="mt-2 text-sm font-semibold text-text">Boîte email indisponible</p>
             <p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
+              {/* Un seul « Ouvrir Email » : celui de l'en-tête. Même choix que
+                  l'agenda, deux contrôles au même nom ne disent pas lequel. */}
               <button
                 type="button"
                 onClick={onRetry}
@@ -103,7 +105,6 @@ export function EmailInboxCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <BoutonOuvrirLaVue vue="email" onOuvrir={onOpenClassic} />
             </div>
           </div>
         </EmailStateShell>
@@ -431,12 +432,12 @@ export function EmailMessageCanvas({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 id="email-draft-title" className="flex items-center gap-2 text-sm font-bold text-text">
-                  <Sparkles className="h-4 w-4 text-domaine-prospects" />
-                  Brouillon de réponse
+                  {!nouvelleRedaction && <Sparkles className="h-4 w-4 text-domaine-prospects" />}
+                  {nouvelleRedaction ? 'Ton message' : 'Brouillon de réponse'}
                 </h3>
                 <p className="mt-1 text-xs text-text-muted">Modifiable avant toute sauvegarde.</p>
               </div>
-              <div className="flex gap-2">
+              {!nouvelleRedaction && <div className="flex gap-2">
                 <select
                   aria-label="Ton du brouillon"
                   value={tone}
@@ -457,7 +458,7 @@ export function EmailMessageCanvas({
                   <option value="medium">Moyen</option>
                   <option value="detailed">Détaillé</option>
                 </select>
-              </div>
+              </div>}
             </div>
 
             <div className="mt-4 grid gap-2">
@@ -499,7 +500,7 @@ export function EmailMessageCanvas({
                 setPreviousDraft(null);
                 if (errorField === 'draft') { setError(null); setErrorField(null); }
               }}
-              placeholder="Écris ta réponse ou génère une proposition…"
+              placeholder={nouvelleRedaction ? 'Écris ton message…' : 'Écris ta réponse ou génère une proposition…'}
               className="mt-3 h-40 w-full resize-y rounded-md border border-border p-3 text-sm leading-6 text-text outline-none focus:border-domaine-prospects"
             />
 

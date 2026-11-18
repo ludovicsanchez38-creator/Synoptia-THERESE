@@ -76,12 +76,18 @@ async def test_moteur_actif_conserve_son_cache(service_et_cles, monkeypatch):
     service, _ = service_et_cles
     ancienne = service._master_key
     monkeypatch.setattr(database, "sync_engine", object())
+    monkeypatch.setattr(database, "async_engine", object())
+    session = AsyncMock()
+    gestionnaire = AsyncMock()
+    gestionnaire.__aenter__.return_value = session
+    monkeypatch.setattr(database, "AsyncSessionLocal", lambda: gestionnaire)
     init = AsyncMock()
     monkeypatch.setattr(database, "init_db", init)
     monkeypatch.setattr(llm, "invalidate_llm_service", lambda: None)
-    await data._rouvrir_la_base_apres_restauration()
+    assert await data._rouvrir_la_base_apres_restauration() is True
     assert service._master_key == ancienne
     init.assert_not_awaited()
+    session.execute.assert_awaited_once()
 
 
 @pytest.mark.asyncio

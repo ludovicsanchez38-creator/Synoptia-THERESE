@@ -35,7 +35,7 @@ def _instant_utc(valeur: str | None) -> datetime | None:
 
 async def _contact(client: Any) -> str:
     response = await client.post("/api/memory/contacts", json={
-        "first_name": "Client", "last_name": "Série commune jetable",
+        "first_name": "Client", "last_name": "Série commune jetable", "address": "Lyon",
     })
     assert response.status_code == 200, response.text
     return response.json()["id"]
@@ -100,6 +100,7 @@ async def test_brouillon_herite_rejoint_la_serie_sans_modifier_les_pieces_emises
         )
         brouillon = Invoice(
             invoice_number=numeros[convention], document_type="facture", contact_id=contact_id,
+            client_address="Lyon",
             status="draft", issue_date=datetime(annee - 1, 1, 2, tzinfo=UTC),
             due_date=datetime.now(UTC) + timedelta(days=30),
         )

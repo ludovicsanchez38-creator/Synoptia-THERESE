@@ -300,14 +300,42 @@ export async function getEmailMessage(accountId: string, messageId: string): Pro
   return response.json();
 }
 
-export async function sendEmail(accountId: string, req: SendEmailRequest): Promise<any> {
+export async function sendEmail(
+  accountId: string,
+  req: SendEmailRequest,
+  signal?: AbortSignal,
+): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/email/messages?account_id=${accountId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
+    signal,
   });
   if (!response.ok) throw new Error('L’envoi du message a échoué');
-  return response.json();
+  const lecture = response.json();
+  if (!signal) return lecture;
+  // Les en-têtes sont arrivés : le délai de apiFetch est déjà désarmé.
+  // L'abandon du composeur doit encore interrompre la lecture du corps.
+  return await new Promise((resolve, reject) => {
+    const surAbandon = () => {
+      reject(signal.reason instanceof Error ? signal.reason : new DOMException('Abandon', 'AbortError'));
+    };
+    if (signal.aborted) {
+      surAbandon();
+      return;
+    }
+    signal.addEventListener('abort', surAbandon, { once: true });
+    void lecture.then(
+      (valeur) => {
+        signal.removeEventListener('abort', surAbandon);
+        resolve(valeur);
+      },
+      (erreur: unknown) => {
+        signal.removeEventListener('abort', surAbandon);
+        reject(erreur);
+      },
+    );
+  });
 }
 
 /**

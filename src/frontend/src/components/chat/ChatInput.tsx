@@ -890,6 +890,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           accordMemoireEnAttente = true;
           repriseMemoireRef.current = { message: trimmed, id: chunk.message_id, conversationId: chunk.conversation_id };
           setInput(trimmed);
+          // B-1837 : accepterMessage a déjà vidé la liste. Sans remise, la
+          // reprise part sans file_paths. Même geste que l'échec d'envoi.
+          setAttachedFiles((current) => {
+            const fichiers = current.length > 0 ? current : sentFiles;
+            for (const file of fichiers) attachedPathsRef.current.add(file.path);
+            return fichiers;
+          });
           setPendingCloudConsent({ action: 'message', purpose: chunk.purpose ?? 'llm',
             provider: chunk.provider, providerLabel: libelleDuFournisseur(chunk.provider),
             memoryOrigin: `${currentProvider}:${currentModel}`,

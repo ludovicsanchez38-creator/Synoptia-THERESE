@@ -44,6 +44,20 @@ canal de mise à jour cassé.
 
 ## Contrôle du manifeste Linux (B-1111)
 
+Le bandeau contrôle aussi la distribution à l'exécution (B-1801) : le type
+Tauri `deb` ne suffit pas. `get_system_info` lit `ID` et `ID_LIKE` dans
+`/etc/os-release`, avec repli sur `/usr/lib/os-release`, et accepte un mot exact
+`debian` ou `ubuntu` dans l'un de ces deux champs. Cela inclut
+`ID=ubuntu` sans `ID_LIKE` et `ID=pop` avec `ID_LIKE=ubuntu`.
+Les autres distributions et les lectures impossibles reçoivent un
+lien de téléchargement manuel. L'OS vient aussi de cette commande native,
+pas de `navigator.platform`. Un OS absent ou inconnu interdit l'installation
+automatique ; macOS exige `app` et Windows exige `nsis` ou `msi`.
+Le repli manuel précise que la disponibilité n'a pas pu être vérifiée,
+sans annoncer une nouvelle version. Ce contrôle est refait au clic, avant tout
+téléchargement ou arrêt du moteur. Le bilan du lot est dans
+[`qualite/c20-front-maj.md`](qualite/c20-front-maj.md).
+
 La matrice Tauri ne publie plus elle-même `latest.json`. Le job final attend
 les trois builds, conserve les signatures et publie uniquement le manifeste
 validé par `scripts/nettoyer_latest_json.py`. Le `.deb` n'a que la cible
@@ -100,6 +114,10 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
 (ou Settings → Secrets and variables → Actions → New repository secret).
 
 ## Limites connues (sans certificat de signature de code)
+
+La signature Developer ID, la notarisation et Authenticode s'activent seules
+dès que leurs secrets existent : voir [SIGNATURE-ET-LICENCES.md](SIGNATURE-ET-LICENCES.md).
+Les limites ci-dessous valent tant qu'ils sont absents.
 
 - **macOS** : le format de mise à jour est produit, mais le parcours N vers N+1
   de la release courante n'a pas été exercé. L'app reste seulement signée

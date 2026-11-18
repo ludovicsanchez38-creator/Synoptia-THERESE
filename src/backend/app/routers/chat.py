@@ -11,6 +11,8 @@ import json
 import logging
 import re
 import time
+import unicodedata
+from contextvars import copy_context
 from copy import copy
 from pathlib import Path
 from typing import Any, AsyncGenerator, Protocol
@@ -41,7 +43,7 @@ from app.services.entity_extractor import (
 )
 from app.services.error_handler import message_pour_ecran
 from app.services.file_parser import (
-    AvisLectureFichier,
+    ERREUR_TAILLE_FICHIER,
     AvisTailleFichier,
     ErreurTailleFichier,
     avis_sans_texte,
@@ -335,13 +337,14 @@ async def _get_file_context(
     # Validation securite du chemin (SEC-002)
     try:
         path = validate_file_path(file_path)
-    except PermissionError as e:
-        return None, str(e)
-    except FileNotFoundError as e:
-        return None, str(e)
-
-    if not path.is_file():
-        return None, f"Ce n'est pas un fichier: {file_path}"
+        if not path.is_file():
+            return None, f"Ce n'est pas un fichier : {Path(file_path).name}"
+    except PermissionError:
+        return None, "Accès refusé : ce fichier ne peut pas être transmis."
+    except FileNotFoundError:
+        return None, f"Fichier non trouvé : {Path(file_path).name}"
+    except (OSError, RuntimeError, ValueError):
+        return None, f"Impossible de lire « {Path(file_path).name} ». Vérifie le fichier et réessaie."
 
     try:
         # Extract text content, hors boucle d'événements : joindre un gros
@@ -455,11 +458,11 @@ async def _get_file_context(
         # « Erreur lors de la lecture » mentait deux fois (au journal et
         # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
         raise
-    except ErreurTailleFichier as e:
-        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name}: {e}")
+    except ErreurTailleFichier:
+        return None, AvisTailleFichier(f"Erreur lors de la lecture de {path.name} : {ERREUR_TAILLE_FICHIER}")
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
-        return None, f"Erreur lors de la lecture de {path.name}: {str(e)}"
+        return None, f"Impossible de lire « {path.name} ». Vérifie le fichier et réessaie."
 
 
 # ============================================================
@@ -2305,8 +2308,7 @@ async def send_message(
         else:
             memory_context = file_context_str
 
-    # Le rejet de taille est annoncé ; les autres erreurs gardent leur traitement.
-    file_errors = [erreur for erreur in file_errors if isinstance(erreur, (AvisTailleFichier, AvisLectureFichier))]
+    # Toute pièce non transmise doit être signalée à l'écran et au modèle.
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 
@@ -2379,6 +2381,8 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
+    # Cette voie n'exécute pas d'outil : signaler seulement une liste suspecte.
+    mention_agenda = _mention_agenda_sans_lecture(llm_user_message, assistant_content)
     avis_reponse.extend(file_errors)
     avis_reponse.extend(getattr(context, "avis_systeme", None) or [])
     # Même annonce que sur le flux : une coupe ou un refus n'est pas une fin ordinaire.
@@ -2387,6 +2391,7 @@ async def send_message(
     # Confirmations des directives inline en tête de réponse (vérité d'exécution)
     if inline_preamble:
         assistant_content = inline_preamble + assistant_content
+    assistant_content += mention_agenda
 
     # BUG-027 : suivi des tokens sur le chemin non-stream (etait absent -> le
     # token tracker restait aveugle et tokens_in/out remontaient null).
@@ -2544,6 +2549,7 @@ async def _stream_response(
     # explicitement le générateur pour propager l'interruption au producteur.
     from app.services.error_handler import ErreurPourEcran
 
+    morceaux_relayes: list[str] = []
     producteur = _do_stream_response(
         conversation_id, user_message, session, history,
         skill_id=skill_id, file_paths=file_paths,
@@ -2563,6 +2569,7 @@ async def _stream_response(
         historique_documents_averes=historique_documents_averes,
         rfc_sources_absentes=rfc_sources_absentes,
         avis=avis,
+        morceaux_relayes=morceaux_relayes,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2571,9 +2578,13 @@ async def _stream_response(
     # `RuntimeError: aclose(): asynchronous generator is already running`.
     prochain: asyncio.Future[str] | None = None
     surveillance: asyncio.Future[None] | None = None
+    # Chaque __anext__ tourne dans une nouvelle tâche pour surveiller l'arrêt.
+    # Partager le contexte du producteur conserve l'agenda et le compte choisis
+    # entre ses yields, sans les partager avec les autres conversations.
+    contexte_flux = copy_context()
     try:
         while True:
-            prochain = asyncio.ensure_future(producteur.__anext__())
+            prochain = asyncio.create_task(producteur.__anext__(), context=contexte_flux)
             surveillance = asyncio.ensure_future(
                 _attendre_annulation(contexte_execution, conversation_id)
             )
@@ -2625,6 +2636,14 @@ async def _stream_response(
                     etat_generation["erreur"] = json.loads(
                         chunk.removeprefix("data: ").strip()
                     ).get("content", "")[:500]
+            # Le producteur accumule avant son yield. Seuls les morceaux que
+            # ce wrapper relaie peuvent être conservés en cas d'arrêt.
+            try:
+                evenement = json.loads(chunk.removeprefix("data: ").strip())
+                if isinstance(evenement, dict) and evenement.get("type") == "text":
+                    morceaux_relayes.append(evenement.get("content") or "")
+            except (ValueError, TypeError):
+                pass
             yield chunk
     except ErreurPourEcran as sortie:
         etat_generation["etat"] = EtatTacheTraitement.FAILED
@@ -2849,6 +2868,7 @@ async def _do_stream_response(
     historique_documents_averes: bool = True,
     rfc_sources_absentes: list[str] | None = None,
     avis: list[str] | None = None,
+    morceaux_relayes: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -3081,8 +3101,7 @@ async def _do_stream_response(
         else:
             memory_context = file_context_str
 
-    # Le statut ci-dessus compte toutes les erreurs, l'avis vise la taille.
-    file_errors = [erreur for erreur in file_errors if isinstance(erreur, (AvisTailleFichier, AvisLectureFichier))]
+    # Le statut compte les erreurs ; les avis expliquent aussi lesquelles.
     if file_errors:
         from app.services.prompt_security import get_prompt_security
 
@@ -3207,6 +3226,13 @@ async def _do_stream_response(
         context.system_prompt += BLOC_PIECES_JOINTES
 
     full_content = ""
+
+    def _texte_partiel() -> str:
+        # Les appels directs au producteur n'ont pas de wrapper et conservent
+        # leur comportement : chaque yield y est remis au consommateur.
+        return full_content if morceaux_relayes is None else "".join(morceaux_relayes)
+
+    plages_limites_recherche: list[tuple[int, int]] = []
     # Tour 11 : le texte produit par le modèle seul, matière des compétences
     # de génération (ni avis, ni confirmations de directives, ni annonce de coupe).
     contenu_modele = ""
@@ -3219,7 +3245,13 @@ async def _do_stream_response(
         preamble_chunk = StreamChunk(
             type="text", content=preamble, conversation_id=conversation_id
         )
-        yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
+        try:
+            yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
+        except (GeneratorExit, asyncio.CancelledError):
+            await _persister_message_partiel(
+                conversation_id, _texte_partiel(), llm_service, marque_reponse(context)
+            )
+            raise
     tool_calls_collected: list[ToolCall] = []
     # 0.48 : content brut du tour (mode reasoning Mistral), a rejouer tel quel
     assistant_brut_collected: list[Any] | None = None
@@ -3328,9 +3360,16 @@ async def _do_stream_response(
                             try:
                                 event_data = json.loads(continued_event[6:].strip())
                                 if event_data.get("type") == "text":
-                                    full_content += event_data.get("content", "")
-                                    if not event_data.get("annonce_arret"):
-                                        contenu_modele += event_data.get("content", "")
+                                    contenu = event_data.get("content", "")
+                                    if contenu and not first_token_recorded:
+                                        stream_metrics.record_first_token()
+                                        first_token_recorded = True
+                                    debut = len(full_content)
+                                    full_content += contenu
+                                    if event_data.get("limite_recherche"):
+                                        plages_limites_recherche.append((debut, len(full_content)))
+                                    elif not event_data.get("annonce_arret"):
+                                        contenu_modele += contenu
                                 elif event_data.get("type") == "error" and echec_suite.get("refus"):
                                     # B-1119 : sauver le texte avant le terminal, qui
                                     # fait cesser la lecture du client. Aucun repli
@@ -3418,7 +3457,7 @@ async def _do_stream_response(
         # (fournisseur bloqué, revue jalon F4) - la garde d'écriture plus bas
         # n'est jamais atteinte. Le texte déjà produit survit ici ; aucun
         # effet (skill, outil) n'est lancé.
-        await _persister_message_partiel(conversation_id, full_content, llm_service, marque_reponse(context))
+        await _persister_message_partiel(conversation_id, _texte_partiel(), llm_service, marque_reponse(context))
         raise
     except Exception as e:
         from app.services.memory_card_context import AccordFichesRequis
@@ -3461,18 +3500,36 @@ async def _do_stream_response(
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
 
+    if not any(nom == "list_calendar_events" for nom, _, _ in tool_outcomes):
+        mention = _mention_agenda_sans_lecture(user_message, contenu_modele)
+        if mention:
+            full_content += mention
+            try:
+                yield f"data: {json.dumps(StreamChunk(type='text', content=mention, conversation_id=conversation_id).model_dump())}\n\n"
+            except (GeneratorExit, asyncio.CancelledError):
+                await _persister_message_partiel(conversation_id, _texte_partiel(), llm_service, marque_reponse(context))
+                raise
+
     # BUG-124 : un modèle faible peut enchaîner des outils (ex. read_emails) sans
     # jamais produire de texte -> réponse vide et muette côté utilisateur
     # (« aucune réaction »). Filet : si aucun texte n'a été généré mais que des
     # outils ont tourné, on remonte leur résultat réel plutôt qu'une bulle vide.
-    if not full_content.strip():
-        fallback = _fallback_from_tool_outcomes(tool_outcomes)
+    contenu_sans_limites = full_content
+    for debut, fin in reversed(plages_limites_recherche):
+        contenu_sans_limites = contenu_sans_limites[:debut] + contenu_sans_limites[fin:]
+    if not contenu_sans_limites.strip():
+        # Un avertissement seul ne doit pas cacher le résultat utile d'un
+        # autre outil si le modèle n'a finalement produit aucun texte.
+        resultats_repli = [
+            outcome for outcome in tool_outcomes if _resultat_exploitable(*outcome)
+        ] if plages_limites_recherche else tool_outcomes
+        fallback = _fallback_from_tool_outcomes(resultats_repli)
         if fallback:
             logger.info(
                 "Réponse vide après %d outil(s) : repli sur le résultat réel (BUG-124)",
                 len(tool_outcomes),
             )
-            full_content = fallback
+            full_content += fallback
             fallback_chunk = StreamChunk(
                 type="text", content=fallback, conversation_id=conversation_id
             )
@@ -3533,7 +3590,7 @@ async def _do_stream_response(
             "Annulation demandée : réponse partielle conservée, aucun effet produit"
         )
         await _persister_message_partiel(
-            conversation_id, full_content, llm_service, marque_reponse(context)
+            conversation_id, _texte_partiel(), llm_service, marque_reponse(context)
         )
         return
 
@@ -3691,6 +3748,47 @@ def _skill_file_error_event(
     return f"data: {json.dumps(payload)}\n\n"
 
 
+def _normaliser_demande_agenda(message: str) -> str:
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", message.casefold())
+        if not unicodedata.combining(c)
+    )
+
+
+def _demande_lecture_agenda(message: str) -> bool:
+    """Reconnaît seulement les formes explicites et datées du tour courant."""
+    texte = _normaliser_demande_agenda(message).replace("’", "'")
+    if re.search(
+        r"\b(?:redig\w*|ecri\w*|reformul\w*|resum\w*|expliqu\w*|"
+        r"branch\w*|configur\w*|synchronis\w*|connect\w*|install\w*|"
+        r"utilis\w*|fonctionn\w*|ajout\w*|cree\w*|modifi\w*|deplac\w*|"
+        r"annul\w*|supprim\w*|planifi\w*|organis\w*|envoi\w*|envoy\w*)\b", texte,
+    ):
+        return False
+    demande = re.search(
+        r"\b(?:mes\s+rendez[ -]?vous|mon\s+agenda|mon\s+planning|"
+        r"qu'est[ -]ce\s+que\s+j'ai\s+de\s+prevu|suis[ -]je\s+disponible)\b", texte,
+    )
+    repere = re.search(
+        r"\b(?:aujourd.hui|demain|apres.demain|lundi|mardi|mercredi|jeudi|"
+        r"vendredi|samedi|dimanche|semaine|mois|annee|matin|apres.midi|soir|"
+        r"janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|"
+        r"novembre|decembre|(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)|"
+        r"\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?)\b", texte,
+    )
+    return bool(demande and repere)
+
+
+def _mention_agenda_sans_lecture(message: str, reponse: str) -> str:
+    """Une réserve uniquement pour une liste horaire et une demande explicite."""
+    if not _demande_lecture_agenda(message):
+        return ""
+    horaire = re.compile(r"\b(?:[01]?\d|2[0-3])\s*(?:h(?:\s*[0-5]\d)?|:[0-5]\d)\b", re.IGNORECASE)
+    if sum(bool(horaire.search(ligne)) for ligne in reponse.splitlines()) < 2:
+        return ""
+    return "\n\nJe n'ai pas consulté ton agenda pour cette réponse : ces rendez-vous ne viennent pas de lui."
+
+
 def _fallback_from_tool_outcomes(
     tool_outcomes: list[tuple[str, str, bool]],
 ) -> str | None:
@@ -3703,13 +3801,11 @@ def _fallback_from_tool_outcomes(
     qu'une bulle vide. None s'il n'y a eu aucun outil (l'appelant garde alors
     son comportement d'origine)."""
     for _name, result, is_error in reversed(tool_outcomes):
+        if not _resultat_exploitable(_name, result, is_error):
+            continue
         if _name == "upsert_memory_card" and not is_error:
             return "Fiche mémoire enregistrée. Tu peux la retrouver dans Mémoire."
-        if is_error:
-            continue
         text = (result or "").strip()
-        if not text or "en attente de confirmation" in text:
-            continue
         return (
             "Je n'ai pas réussi à rédiger une réponse, mais voici ce que j'ai "
             f"trouvé en consultant tes données :\n\n{text}"
@@ -3732,6 +3828,73 @@ class _ResultatOutil(Protocol):
     def error(self) -> str | None: ...
     @property
     def execution_time_ms(self) -> float: ...
+
+
+def _message_recherche_vide(nom: str, resultat: str) -> str | None:
+    """Reconnaît les réponses vides explicites des recherches natives."""
+    if nom == "search_files":
+        try:
+            valeur = json.loads(resultat)
+        except (ValueError, TypeError):
+            return None
+        if (isinstance(valeur, dict) and valeur.get("found") is False
+                and valeur.get("total") == 0 and valeur.get("documents") == []
+                and not valeur.get("error") and "hors_perimetre" not in valeur
+                and "contenu_non_consulte" not in valeur):
+            return "Je n'ai trouvé aucun fichier pour cette recherche."
+    elif nom == "search_emails" and resultat.startswith("Aucun email trouve pour la recherche "):
+        return "Je n'ai trouvé aucun e-mail pour cette recherche."
+    elif nom == "search_invoices" and resultat.startswith("Aucune facture ni devis local ne correspond à "):
+        return "Je n'ai trouvé aucune facture ni aucun devis pour cette recherche."
+    elif nom == "web_search" and resultat.startswith("Aucun résultat trouvé pour: "):
+        return "Je n'ai trouvé aucun résultat pour cette recherche sur le web."
+    return None
+
+
+def _messages_recherche_partielle(nom: str, resultat: str) -> list[str]:
+    """Signale les limites certaines sans masquer les autres résultats du tour."""
+    if nom != "search_files":
+        return []
+    try:
+        valeur = json.loads(resultat)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(valeur, dict) or valeur.get("error"):
+        return []
+    messages = []
+    if (valeur.get("hors_perimetre") and valeur.get("found") is False
+            and valeur.get("documents") == []):
+        messages.append(
+            "Des fichiers indexés existent dans des dossiers hors périmètre de cette conversation. "
+            "Pour les consulter, rattache la conversation à un dossier avec le sélecteur en haut du chat."
+        )
+    contenu_non_consulte = valeur.get("contenu_non_consulte")
+    if contenu_non_consulte:
+        messages.append(
+            contenu_non_consulte if isinstance(contenu_non_consulte, str)
+            else "Le contenu des fichiers n'a pas pu être consulté."
+        )
+    return messages
+
+
+def _recherche_partielle_sans_documents(nom: str, resultat: str) -> bool:
+    if not _messages_recherche_partielle(nom, resultat):
+        return False
+    valeur = json.loads(resultat)
+    return valeur.get("found") is False and valeur.get("documents") == []
+
+
+def _resultat_exploitable(nom: str, resultat: str, erreur: bool) -> bool:
+    if erreur:
+        return False
+    if nom == "upsert_memory_card":
+        return True
+    texte = (resultat or "").strip()
+    return bool(
+        texte and "en attente de confirmation" not in texte
+        and _message_recherche_vide(nom, resultat) is None
+        and not _recherche_partielle_sans_documents(nom, resultat)
+    )
 
 
 async def _execute_tools_and_continue(
@@ -3774,6 +3937,9 @@ async def _execute_tools_and_continue(
     if remaining_iterations <= 0:
         logger.warning("Max tool iterations reached, stopping")
         return
+
+    if tool_outcomes is None:
+        tool_outcomes = []
 
     # Send status about tool execution
     tool_names = [tc.name for tc in tool_calls]
@@ -4200,8 +4366,8 @@ async def _execute_tools_and_continue(
 
     # BUG-124 : mémoriser les résultats d'outils pour l'appelant, comme filet si
     # le modèle enchaîne des outils sans jamais produire de texte final.
-    if tool_outcomes is not None:
-        tool_outcomes.extend(exec_records)
+    resultat_precedent_exploitable = any(_resultat_exploitable(*r) for r in tool_outcomes)
+    tool_outcomes.extend(exec_records)
 
     # Résumé DÉTERMINISTE de ce qui a réellement été créé (indépendant de la prose du LLM)
     recap = summarize_executions(exec_records)
@@ -4222,6 +4388,35 @@ async def _execute_tools_and_continue(
         else _is_cancelled(conversation_id)
     ):
         logger.info("Annulation demandée : pas de nouveau tour après les outils")
+        return
+
+    # Un modèle faible peut inventer le contenu d'un fichier absent.
+    recherches_vides = [
+        message for nom, resultat, erreur in exec_records if not erreur
+        if (message := _message_recherche_vide(nom, resultat)) is not None
+    ]
+    # Une recherche partielle doit être expliquée sans masquer les résultats
+    # utiles, y compris ceux des tours précédents de la même réponse.
+    limites = [
+        message for nom, resultat, erreur in exec_records if not erreur
+        for message in _messages_recherche_partielle(nom, resultat)
+    ]
+    if limites:
+        yield "data: " + json.dumps(
+            StreamChunk(
+                type="text", content="\n".join(dict.fromkeys(limites)) + "\n\n",
+                conversation_id=conversation_id,
+            ).model_dump() | {"limite_recherche": True},
+            ensure_ascii=False,
+        ) + "\n\n"
+
+    if (recherches_vides or limites) and not any(_resultat_exploitable(*r) for r in exec_records):
+        if recherches_vides and not resultat_precedent_exploitable:
+            texte = "\n".join(dict.fromkeys(recherches_vides))
+            yield "data: " + json.dumps(
+                StreamChunk(type="text", content=texte, conversation_id=conversation_id).model_dump(),
+                ensure_ascii=False,
+            ) + "\n\n"
         return
 
     # Le résultat et les tours rejoués peuvent franchir un palier que le
@@ -4404,6 +4599,15 @@ async def _repondre_apres_recherche(
         messages = [LLMMessage(role="user", content=arguments.get("query", ""),
                               contient_documents=arguments.get('_provenance_documents') != 'sans_document')]
     context = llm.prepare_context(messages)
+    recherche_vide = _message_recherche_vide("web_search", resultat)
+    if recherche_vide:
+        if conversation_id:
+            fournisseur, modele = _attribution(llm)
+            await _ecrire_reponse(session, Message(
+                conversation_id=conversation_id, role="assistant", content=recherche_vide,
+                model=modele, provider=fournisseur,
+            ), marque_reponse(context))
+        return recherche_vide
     context.contient_documents = (
         arguments.get('_provenance_documents') != 'sans_document'
         or any(m.contient_documents or m.images for m in messages)

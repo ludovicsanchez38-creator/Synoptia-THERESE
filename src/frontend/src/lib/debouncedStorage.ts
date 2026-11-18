@@ -27,6 +27,11 @@ export function discardAllPendingWrites(): void {
   for (const discard of instances) discard();
 }
 
+/** Réservé aux tests : annule les écritures sans oublier les stores persistants. */
+export function __annulerEcrituresPourTests(): void {
+  for (const discard of instances) discard();
+}
+
 /** Réservé aux tests : réarme la persistance (en prod, seul le reload le fait). */
 export function __resetPersistenceForTests(): void {
   persistenceDisabled = false;

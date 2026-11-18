@@ -85,6 +85,19 @@ describe('PrivacyTab - opérations globales', () => {
     await waitFor(() => expect(deleteAllData).toHaveBeenCalledOnce());
   });
 
+  it('affiche l’échec de réouverture après une restauration', async () => {
+    const message = 'La base restaurée n’a pas pu être rouverte. Vérifie la base avant de reprendre.';
+    vi.mocked(restoreBackup).mockRejectedValueOnce(new Error(message));
+    render(<PrivacyTab />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restaurer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer la restauration' }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.queryByText('Sauvegarde restaurée. Redémarre Thérèse.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmer la restauration' })).toBeInTheDocument();
+  });
+
   it('après effacement global, annonce honnêtement les sauvegardes conservées (revue 0.40)', async () => {
     vi.mocked(deleteAllData).mockResolvedValue({
       deleted: true,

@@ -4,6 +4,9 @@
 
 use serde::Serialize;
 
+#[path = "linux_distribution.rs"]
+mod linux_distribution;
+
 /// Simple greeting command for testing
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -16,6 +19,7 @@ pub struct SystemInfo {
     pub os: String,
     pub arch: String,
     pub version: String,
+    pub linux_debian: bool,
 }
 
 #[tauri::command]
@@ -24,6 +28,7 @@ pub fn get_system_info() -> SystemInfo {
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
+        linux_debian: cfg!(target_os = "linux") && linux_distribution::est_debian(),
     }
 }
 
@@ -57,13 +62,15 @@ pub fn get_session_token() -> Result<String, String> {
 /// relance manuelle qui remet le compteur à zéro. En dev, le backend est géré
 /// par `make dev` : la commande répond une erreur explicite.
 #[tauri::command]
-pub fn restart_backend(app: tauri::AppHandle) -> Result<(), String> {
+pub fn restart_backend(app: tauri::AppHandle) -> Result<u64, String> {
     #[cfg(not(debug_assertions))]
     {
         use std::sync::atomic::Ordering;
         use tauri::Manager;
 
         let state = app.state::<crate::SidecarState>();
+        let _garde = state.verrou_relance.lock().unwrap();
+        let generation = state.generation_relance.fetch_add(1, Ordering::SeqCst) + 1;
         state.shutting_down.store(false, Ordering::SeqCst);
         state.restart_attempts.store(0, Ordering::SeqCst);
         // Un éventuel process suspendu (vivant mais muet) ne doit pas survivre
@@ -72,7 +79,7 @@ pub fn restart_backend(app: tauri::AppHandle) -> Result<(), String> {
             let _ = old.kill();
         }
         crate::spawn_backend_sidecar(&app);
-        Ok(())
+        Ok(generation)
     }
     #[cfg(debug_assertions)]
     {

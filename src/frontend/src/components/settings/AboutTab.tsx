@@ -2,7 +2,7 @@ import { setAutomaticUpdateChecks, useAutomaticUpdateChecks } from '../../lib/up
 // Onglet "À propos" - Version actuelle + Vérification des mises à jour
 // Vérifie les releases GitHub et propose le téléchargement si nouvelle version disponible
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, Download, CheckCircle, ExternalLink, Info, MessageSquareWarning } from 'lucide-react';
 import { Alerte, Button, Carte, Etiquette } from '../ui';
 import { useBackendStore } from '../../hooks/useBackend';
@@ -26,14 +26,48 @@ interface ReleaseInfo {
 
 type UpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'update-available' | 'error';
 
-function compareVersions(current: string, latest: string): number {
-  // Nettoyer les préfixes (v, alpha, etc.)
-  const clean = (v: string) => v.replace(/^v/, '').replace(/-alpha.*$/, '');
-  const a = clean(current).split('.').map(Number);
-  const b = clean(latest).split('.').map(Number);
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const diff = (b[i] || 0) - (a[i] || 0);
-    if (diff !== 0) return diff;
+const VERSION_INCONNUE = 'Impossible de lire la version installée. Réessaie dans un instant.';
+
+/** Positif si la distante est plus récente ; null si une version est illisible. */
+function compareVersions(current: string, latest: string): number | null {
+  const decouper = (brut: string) => {
+    if (typeof brut !== 'string') return null;
+    const parties = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(brut.trim().replace(/^v/i, ''));
+    if (!parties) return null;
+    const pre = parties[4]?.split('.') ?? null;
+    if (pre?.some((identifiant) => /^0\d+$/.test(identifiant))) return null;
+    // Les métadonnées (+...) sont validées mais ne participent pas à l'ordre.
+    return { coeur: parties.slice(1, 4), pre };
+  };
+  // Comparer les chiffres sans perte de précision sur les grands identifiants.
+  const comparerNombres = (a: string, b: string) => a.length !== b.length
+    ? b.length - a.length : a === b ? 0 : a < b ? 1 : -1;
+  const actuel = decouper(current);
+  const distant = decouper(latest);
+  if (!actuel || !distant) return null;
+  for (let i = 0; i < 3; i++) {
+    const ecart = comparerNombres(actuel.coeur[i], distant.coeur[i]);
+    if (ecart !== 0) return ecart;
+  }
+  if (!actuel.pre && !distant.pre) return 0;
+  // Une livraison sans préversion est plus récente que la préversion du même numéro.
+  if (!actuel.pre) return -1;
+  if (!distant.pre) return 1;
+  const identifiants = Math.max(actuel.pre.length, distant.pre.length);
+  for (let i = 0; i < identifiants; i++) {
+    const gauche = actuel.pre[i];
+    const droite = distant.pre[i];
+    if (gauche === undefined) return 1;
+    if (droite === undefined) return -1;
+    const gaucheNombre = /^\d+$/.test(gauche);
+    const droiteNombre = /^\d+$/.test(droite);
+    if (gaucheNombre && droiteNombre) {
+      const ecart = comparerNombres(gauche, droite);
+      if (ecart !== 0) return ecart;
+      continue;
+    }
+    if (gaucheNombre !== droiteNombre) return gaucheNombre ? 1 : -1;
+    if (gauche !== droite) return gauche < droite ? 1 : -1;
   }
   return 0;
 }
@@ -61,23 +95,52 @@ export function AboutTab() {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
   const [latestRelease, setLatestRelease] = useState<ReleaseInfo | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lectureVersionEnCours, setLectureVersionEnCours] = useState(false);
+  const lectureVersion = useRef<ReturnType<typeof checkHealth> | null>(null);
+  const lireVersion = useCallback(() => {
+    // Le clic partage la lecture du montage ; une lecture terminée peut être retentée.
+    if (!lectureVersion.current) {
+      setLectureVersionEnCours(true);
+      lectureVersion.current = checkHealth().finally(() => {
+        lectureVersion.current = null;
+        setLectureVersionEnCours(false);
+      });
+    }
+    return lectureVersion.current;
+  }, []);
 
   // Fetch la version si elle n'est pas encore disponible (panels Tauri = contexte JS séparé)
   useEffect(() => {
-    if (!version) {
-      checkHealth()
-        .then((health) => {
-          useBackendStore.getState().setConnected(health);
-        })
-        .catch(() => {});
-    }
-  }, [version]);
+    if (version) return undefined;
+    let annule = false;
+    lireVersion()
+      .then((health) => {
+        if (!health.version) throw new Error(VERSION_INCONNUE);
+        if (!annule) useBackendStore.getState().setConnected(health);
+      })
+      .catch(() => {
+        if (annule) return;
+        setErrorMsg(VERSION_INCONNUE);
+        setUpdateStatus('error');
+      });
+    return () => {
+      annule = true;
+    };
+  }, [version, lireVersion]);
 
   async function checkForUpdates() {
+    let versionInstallee = version || useBackendStore.getState().version;
     setUpdateStatus('checking');
     setErrorMsg(null);
 
     try {
+      if (!versionInstallee) {
+        const health = await lireVersion().catch(() => { throw new Error(VERSION_INCONNUE); });
+        if (!health.version) throw new Error(VERSION_INCONNUE);
+        useBackendStore.getState().setConnected(health);
+        versionInstallee = health.version;
+        setErrorMsg(null);
+      }
       const response = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/releases`,
         { headers: { Accept: 'application/vnd.github.v3+json' } }
@@ -96,8 +159,19 @@ export function AboutTab() {
       const latest = releases[0];
       setLatestRelease(latest);
 
-      const currentVersion = version || '0.0.0';
-      if (compareVersions(currentVersion, latest.tag_name) > 0) {
+      const comparaison = compareVersions(versionInstallee, latest.tag_name);
+      if (comparaison === null) {
+        throw new Error('Impossible de vérifier les mises à jour : version installée ou publiée illisible.');
+      }
+      // Le moteur historique donne X.Y.Z pour la livraison X.Y.Z-alpha.
+      // Ce numéro ne situe ni une préversion numérotée ni la finale du même cœur.
+      const numero = versionInstallee.trim().replace(/^v/i, '').split('+')[0];
+      const tag = latest.tag_name.trim().replace(/^v/i, '').split('+')[0];
+      if (/^\d+\.\d+\.\d+$/.test(numero) && (tag === numero || (tag.startsWith(`${numero}-`) && tag !== `${numero}-alpha`))) {
+        throw new Error('Impossible de vérifier la version exacte de la livraison installée. Consulte le téléchargement manuel.');
+      }
+
+      if (comparaison > 0) {
         setUpdateStatus('update-available');
       } else {
         setUpdateStatus('up-to-date');
@@ -215,17 +289,23 @@ export function AboutTab() {
             )}
           </Button>
 
-          {/* Résultat : à jour */}
-          {updateStatus === 'up-to-date' && (
-            <div role="status" className="flex items-center gap-2 text-sm text-success bg-[var(--color-success-tint)] rounded-md px-3 py-2">
-              <CheckCircle className="w-4 h-4" />
-              THÉRÈSE est à jour (v{version})
-            </div>
-          )}
+          {/* Région persistante : annonce l'attente puis son résultat. */}
+          <div role="status" aria-live="polite" aria-atomic="true"
+            className={updateStatus === 'up-to-date' || updateStatus === 'update-available' ? undefined : 'sr-only'}>
+            {lectureVersionEnCours ? (
+              <p className="sr-only">Lecture de la version installée en cours...</p>
+            ) : updateStatus === 'checking' && (
+              <p className="sr-only">Vérification des mises à jour en cours...</p>
+            )}
+            {updateStatus === 'up-to-date' && (
+              <div className="flex items-center gap-2 text-sm text-success bg-[var(--color-success-tint)] rounded-md px-3 py-2">
+                <CheckCircle className="w-4 h-4" />
+                THÉRÈSE est à jour (v{version})
+              </div>
+            )}
 
-          {/* Résultat : mise à jour disponible */}
-          {updateStatus === 'update-available' && latestRelease && (
-            <div className="space-y-3">
+            {/* Résultat : mise à jour disponible */}
+            {updateStatus === 'update-available' && latestRelease && (
               <div className="rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
                 <p className="mb-1 text-sm font-medium text-accent">
                   Nouvelle version disponible : {latestRelease.tag_name}
@@ -237,7 +317,11 @@ export function AboutTab() {
                   )}
                 </p>
               </div>
+            )}
+          </div>
 
+          {updateStatus === 'update-available' && latestRelease && (
+            <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs text-text-muted bg-bg/50 rounded-md px-3 py-2">
                 <Info className="w-3.5 h-3.5 shrink-0" />
                 Tes données sont conservées lors de la mise à jour (dossier ~/.therese/).
@@ -268,8 +352,15 @@ export function AboutTab() {
           )}
 
           {/* Résultat : erreur */}
-          {updateStatus === 'error' && (
-            <Alerte titre="Impossible de vérifier">{errorMsg}</Alerte>
+          {errorMsg && (
+            <Alerte titre="Impossible de vérifier">
+              {errorMsg}
+              {' '}
+              <a href="https://synoptia.fr/therese/alpha/" target="_blank" rel="noopener noreferrer"
+                className="underline" onClick={(event) => { event.preventDefault(); openDownload(event.currentTarget.href); }}>
+                Télécharger THÉRÈSE manuellement
+              </a>
+            </Alerte>
           )}
         </div>
       </Carte>

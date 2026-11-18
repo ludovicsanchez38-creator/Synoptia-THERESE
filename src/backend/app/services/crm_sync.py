@@ -520,7 +520,12 @@ def build_sync_message(total_synced: int, has_errors: bool) -> str:
     'feuille existante' (au lieu de la feuille vide auto-creee a la connexion),
     au lieu de laisser un CRM vide sans explication.
     """
-    if total_synced == 0 and not has_errors:
+    if has_errors:
+        return (
+            f"Synchronisation incomplète : {total_synced} élément(s) enregistré(s). "
+            "Vérifie les erreurs signalées."
+        )
+    if total_synced == 0:
         return (
             "Synchronisation terminee : 0 element. La feuille Google synchronisee "
             "est vide. Si tu as deja un CRM dans Google Sheets, renseigne son "

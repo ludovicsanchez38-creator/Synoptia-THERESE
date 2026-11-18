@@ -3,17 +3,19 @@
 
 tauri-bundler 2.8.1 (tauri-cli 2.10.1) télécharge la chaîne NSIS 3.11 et
 nsis_tauri_utils 0.5.3 et les vérifie par SHA-1 (windows/nsis/mod.rs). makensis
-copie leurs greffons tels quels dans l'installeur et dans le désinstalleur
+copie leurs greffons (éventuellement signés) dans l'installeur et le désinstalleur
 ($PLUGINSDIR), et bâtit les deux exécutables sur le même stub, dont il ne
 réécrit que les en-têtes de taille et les ressources (icône, manifeste, version).
 
 Ce qui est prouvé, fermé par défaut :
-- chaque greffon a le nom ET l'empreinte d'un fichier des archives épinglées ;
+- chaque greffon a le nom ET les octets d'un fichier des archives épinglées,
+  hors table Authenticode, entrée Security et checksum si signé ;
 - le stub de l'installeur a le code (.text, .rdata, .data), le point d'entrée et
   les sections du stub NSIS amont, et seule .text est exécutable ;
 - le désinstalleur reconstitué par 7-Zip porte le même stub que l'installeur,
   octet pour octet hors ressources, le drapeau de désinstallation, aucune donnée
-  au-delà de la longueur déclarée, et ne contient que des greffons inventoriés.
+  au-delà de la longueur déclarée hormis signature/alignement contrôlés,
+  et ne contient que des greffons inventoriés.
 Décision de Ludo du 07/11/2026 (carte val-2026-11-07-28).
 """
 from __future__ import annotations
@@ -29,8 +31,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+from windows_pe import authenticode_signed, neutralize_pe_fields, unsigned_pe_body, unsigned_pe_digest
+
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = 'licenses/nsis-installer.lock.json'
+UNSIGNED = '.work-release/nsis-unsigned'
 FIRSTHEADER = b'\xef\xbe\xad\xdeNullsoftInst'
 FH_FLAGS_UNINSTALL = 1
 SCN_MEM_EXECUTE = 0x20000000
@@ -104,13 +109,46 @@ def load_catalog(root=ROOT):
     return validate(json.loads((root / CATALOG).read_text(encoding='utf-8')), root)
 
 
-def plugin(catalog, name, digest):
-    """Greffon admis : même nom et même empreinte qu'un fichier des archives épinglées."""
-    row = next((p for p in catalog['plugins'] if p['name'] == name and p['sha256'] == digest), None)
+def plugin(catalog, name, digest, *, raw=None, root=ROOT):
+    """Même nom et octets épinglés, exacts en l'absence de signature Authenticode."""
+    row = next((p for p in catalog['plugins'] if p['name'] == name), None)
     if row is None:
         return None
+    comparison = {}
+    if digest != row['sha256']:
+        if raw is None or sha(raw) != digest:
+            return None
+        try:
+            if not authenticode_signed(raw):
+                return None
+            reference = (root / UNSIGNED / row['sha256']).read_bytes()
+            if sha(reference) != row['sha256'] or authenticode_signed(reference):
+                return None
+            normalized = unsigned_pe_digest(raw)
+            if normalized is None or normalized != unsigned_pe_digest(reference):
+                return None
+        except (ValueError, OSError):
+            return None
+        comparison = {'inventory_sha256': row['sha256'], 'unsigned_pe_sha256': normalized}
     origin = 'nsis:' + row['archive'] + ('!' + row['member'] if row['member'] else '')
-    return {'sha256': digest, 'origin': origin, 'license': row['license']}
+    return {'sha256': digest, 'origin': origin, 'license': row['license'], **comparison}
+
+
+def capture_plugin(path: Path, catalog: dict, root: Path = ROOT) -> None:
+    """Avant signature : copie locale des seuls greffons dont le SHA-256 est épinglé."""
+    row = next((p for p in catalog['plugins'] if p['name'] == path.name), None)
+    if row is None:
+        return
+    raw = path.read_bytes()
+    digest = sha(raw)
+    if digest != row['sha256']:
+        # Un second appel de signature peut recevoir la copie déjà signée.
+        if plugin(catalog, path.name, digest, raw=raw, root=root) is None:
+            raise ValueError('Greffon NSIS différent du verrou avant signature : ' + path.name)
+        return
+    destination = root / UNSIGNED / row['sha256']
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(raw)
 
 
 def firstheader(raw):
@@ -179,18 +217,26 @@ def verify_installer_stub(installer_head, catalog):
 def verify_uninstaller(installer_head, uninstaller, catalog):
     """Désinstalleur bâti sur le stub de l'installeur : seules les ressources diffèrent."""
     stub_end, _, _ = firstheader(installer_head)
-    offset, flags, length = firstheader(uninstaller)
+    signed = authenticode_signed(uninstaller)
+    body = unsigned_pe_body(uninstaller) if signed else uninstaller
+    offset, flags, length = firstheader(body)
     if not flags & FH_FLAGS_UNINSTALL:
         raise ValueError('uninstall.exe sans drapeau de désinstallation NSIS')
     if offset != stub_end:
         raise ValueError('Stub du désinstalleur de taille différente de celui de l’installeur')
-    if offset + length != len(uninstaller):
+    end = offset + length
+    # makensis déclare la fin des données NSIS, avant la signature. Seul le
+    # remplissage nul minimal pour l'alignement de la table est admis en plus.
+    padding = -end % 8 if signed else 0
+    if length < 28 or end + padding != len(body) or body[end:] != bytes(padding):
         raise ValueError('Données en trop ou manquantes après l’en-tête du désinstalleur')
     stub, own = installer_head[:stub_end], uninstaller[:offset]
     resources = verify_stub(stub, catalog)
     if verify_stub(own, catalog) != resources:
         raise ValueError('Ressources du désinstalleur placées autrement que dans l’installeur')
     start, end = resources['pointer'], resources['pointer'] + resources['size']
+    if signed or authenticode_signed(installer_head):
+        stub, own = neutralize_pe_fields(stub), neutralize_pe_fields(own)
     if stub[:start] != own[:start] or stub[end:] != own[end:]:
         raise ValueError('Stub du désinstalleur différent de celui de l’installeur hors ressources')
     return {'sha256': sha(uninstaller), 'origin': 'nsis:stub de l’installeur + désinstalleur de makensis',
@@ -258,9 +304,14 @@ def reread(root=ROOT):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['check', 'relire'])
+    parser.add_argument('command', choices=['check', 'relire', 'capture'])
+    parser.add_argument('binary', nargs='?', type=Path)
     args = parser.parse_args()
-    if args.command == 'relire':
+    if args.command == 'capture':
+        if args.binary is None:
+            parser.error('capture exige le chemin du fichier avant signature')
+        capture_plugin(args.binary, load_catalog())
+    elif args.command == 'relire':
         print(f'{reread()} greffons, le stub et les notices identiques à l’amont épinglé par Tauri')
     else:
         catalog = load_catalog()

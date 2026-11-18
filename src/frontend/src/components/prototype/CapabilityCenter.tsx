@@ -340,6 +340,7 @@ export function CapabilityCenter({
   const isPresent = useIsPresent();
   useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
 
+  const rechercheActive = query.trim().length > 0;
   const visibleCapabilities = useMemo(() => {
     // P-114 / P-129 : accents et casse repliés des deux côtés (« echeance »
     // trouve « échéance »), et des mots-clés qui disent les mots des gens.
@@ -385,7 +386,7 @@ export function CapabilityCenter({
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <nav role="tablist" className="flex w-full shrink-0 gap-1 overflow-x-auto border-b border-border bg-surface-2 p-2 md:block md:w-[250px] md:overflow-y-auto md:border-b-0 md:border-r md:p-3" aria-label="Intentions">
-            {capabilityGroups.map((group) => {
+            {capabilityGroups.map((group, index) => {
               const Icon = group.icon;
               const selected = selectedGroup === group.id && !query;
               const n = countForGroup(group.id);
@@ -399,7 +400,9 @@ export function CapabilityCenter({
                   // l'attribut suit la même règle que la mise en avant visuelle.
                   aria-selected={selected}
                   aria-controls="capability-results-panel"
-                  tabIndex={selectedGroup === group.id ? 0 : -1}
+                  // B-2064 : sans sélection pendant la recherche, le premier
+                  // onglet reste un point d’entrée clavier dans la liste.
+                  tabIndex={selected || (Boolean(query) && index === 0) ? 0 : -1}
                   onKeyDown={(event) => handleRovingFocus(
                     event,
                     '[role="tab"]',
@@ -423,7 +426,7 @@ export function CapabilityCenter({
             })}
           </nav>
 
-          <div id="capability-results-panel" role="tabpanel" aria-labelledby={`capability-group-${selectedGroup}`} className="flex min-w-0 flex-1 flex-col">
+          <div id="capability-results-panel" role="tabpanel" aria-labelledby={rechercheActive ? undefined : `capability-group-${selectedGroup}`} aria-label={rechercheActive ? 'Résultats de la recherche' : undefined} className="flex min-w-0 flex-1 flex-col">
             <div className="border-b border-border px-4 py-3 sm:px-5 sm:py-4">
               <Input
                 data-dialog-autofocus

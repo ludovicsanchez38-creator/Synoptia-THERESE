@@ -62,7 +62,7 @@ export function createChatStorage(): Storage {
       await request('/api/chat/cache-migration', { method: 'POST', signal: controller.signal, body: JSON.stringify({ conversations: state.conversations }) });
       if (pending === valeur) pending = null;
     } catch (erreur) {
-      if (!persistenceIsDisabled()) window.dispatchEvent(
+      if (!persistenceIsDisabled() && typeof window !== 'undefined') window.dispatchEvent(
         erreur instanceof Error && erreur.name === 'AccordNonEnregistre'
           ? new CustomEvent('therese:chat-save-error', { detail: { message: erreur.message } })
           : new CustomEvent('therese:chat-save-error'),

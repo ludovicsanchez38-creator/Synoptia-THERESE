@@ -36,7 +36,7 @@ import { Alerte } from "../ui/Alerte";
 import { Etiquette } from "../ui/Etiquette";
 import { CloudConsentDialog } from "../shared/CloudConsentDialog";
 import { grantCloudConsent, responseDataCategories } from "../../lib/consent";
-import { AccordNonEnregistre, viderLesAccords } from "../../services/api/core";
+import { AccordNonEnregistre, ApiError, viderLesAccords } from "../../services/api/core";
 import { libelleDuFournisseur } from "../../lib/libellesFournisseurs";
 
 const DONNEES_AGENT = [...responseDataCategories(),
@@ -501,10 +501,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     const profil = localStorage.getItem('therese:data-profile');
     setAccordOccupe(true);
     setErreurAccord(null);
-    let vidageEnCours = true;
     try {
       await viderLesAccords();
-      vidageEnCours = false;
       const destination = await getAgentConsent(profileId, activeModel);
       if (generation !== generationAccord.current) return;
       if (profil !== localStorage.getItem('therese:data-profile')) throw new Error('Profil changé');
@@ -516,8 +514,12 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       }
     } catch (erreur) {
       if (generation === generationAccord.current) setErreurAccord(
-        vidageEnCours && erreur instanceof AccordNonEnregistre
+        erreur instanceof Error && erreur.message === 'Profil changé'
+          ? 'La mission n’a pas démarré. Le profil a changé. Reviens au profil concerné avant de réessayer.'
+          : erreur instanceof AccordNonEnregistre
           ? `La mission n’a pas démarré : ton accord n’a pas été enregistré par le moteur. ${erreur.message}`
+          : erreur instanceof ApiError && erreur.status >= 400 && erreur.status < 500
+          ? `La mission n’a pas démarré : ${erreur.message}`
           : "La mission n’a pas démarré : tes accords ou la destination ne peuvent pas être vérifiés. Vérifie la connexion au moteur, puis réessaie.",
       );
     } finally {
@@ -532,7 +534,6 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     const generation = ++generationAccord.current;
     setAccordOccupe(true);
     setErreurAccord(null);
-    let vidageEnCours = false;
     try {
       if (profil !== localStorage.getItem('therese:data-profile')) throw new Error('Profil changé');
       for (const purpose of destination.purposes) {
@@ -540,13 +541,11 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           grantCloudConsent(purpose, destination.provider, DONNEES_AGENT);
         }
       }
-      vidageEnCours = true;
       await viderLesAccords();
-      vidageEnCours = false;
       const actuelle = await getAgentConsent(profileId, destination.model);
       if (generation !== generationAccord.current) return;
-      if (profil !== localStorage.getItem('therese:data-profile')
-          || actuelle.model !== destination.model || actuelle.provider !== destination.provider
+      if (profil !== localStorage.getItem('therese:data-profile')) throw new Error('Profil changé');
+      if (actuelle.model !== destination.model || actuelle.provider !== destination.provider
           || actuelle.label !== destination.label
           || actuelle.purposes.some(p => !actuelle.granted_purposes.includes(p))) {
         throw new Error('Accord ou destination changé');
@@ -554,8 +553,12 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       demarrer(instruction, actuelle.model);
     } catch (erreur) {
       if (generation === generationAccord.current) setErreurAccord(
-        vidageEnCours && erreur instanceof AccordNonEnregistre
+        erreur instanceof Error && erreur.message === 'Profil changé'
+          ? 'La mission n’a pas démarré. Le profil a changé. Reviens au profil concerné avant de réessayer.'
+          : erreur instanceof AccordNonEnregistre
           ? `La mission n’a pas démarré : ton accord n’a pas été enregistré par le moteur. ${erreur.message}`
+          : erreur instanceof ApiError && erreur.status >= 400 && erreur.status < 500
+          ? `La mission n’a pas démarré : ${erreur.message}`
           : "La mission n’a pas démarré : ton accord n’a pas pu être enregistré ou la destination a changé. Vérifie la connexion au moteur, puis réessaie.",
       );
     } finally {
@@ -770,7 +773,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           onKeyDown={handleKeyDown}
           placeholder={
             needsInitialPrompt
-              ? `Decris ta tache pour ${profile?.name || "l'agent"}...`
+              ? `Décris ta tâche pour ${profile?.name || "l'agent"}...`
               : "Message de suivi..."
           }
           disabled={isStreaming || profilIntrouvable || accordOccupe || !!accordEnAttente}

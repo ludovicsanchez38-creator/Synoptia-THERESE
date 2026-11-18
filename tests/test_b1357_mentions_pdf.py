@@ -57,7 +57,7 @@ def _rendre_pdf(tmp_path, *, document_type="facture", taux=0.0, legal_mentions="
 
 
 def test_les_mentions_de_la_facture_sont_accentuees():
-    texte = generate_legal_mentions(due_date_str="25/10/2026", currency="EUR")
+    texte = generate_legal_mentions(late_penalty_rate=11.62, due_date_str="25/10/2026", currency="EUR")
     for attendu in (
         "Date d'échéance",
         "pénalité",
@@ -70,7 +70,7 @@ def test_les_mentions_de_la_facture_sont_accentuees():
 
 
 def test_le_taux_de_penalite_s_ecrit_a_la_francaise():
-    texte = generate_legal_mentions(due_date_str="25/10/2026", currency="EUR")
+    texte = generate_legal_mentions(late_penalty_rate=11.62, due_date_str="25/10/2026", currency="EUR")
     assert "11,62 %" in texte
     assert "11.62" not in texte
 

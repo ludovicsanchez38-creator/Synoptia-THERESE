@@ -51,4 +51,15 @@ describe('D62 : supprimer un rendez-vous se confirme dans l’application', () =
     await waitFor(() => expect(api.deleteEvent).toHaveBeenCalledTimes(1));
     expect(api.deleteEvent).toHaveBeenCalledWith('e1', 'cal-1', undefined);
   });
+
+  it.each(['local', 'caldav'])('utilise le compte de l’agenda %s pour supprimer', async (provider) => {
+    useCalendarStore.setState({
+      calendars: [{ id: 'cal-1', provider, account_id: null }] as never,
+    });
+    useEmailStore.setState({ currentAccountId: 'autre-compte' });
+    render(<EventDetail />);
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer l’événement' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement' }));
+    await waitFor(() => expect(api.deleteEvent).toHaveBeenCalledWith('e1', 'cal-1', undefined));
+  });
 });

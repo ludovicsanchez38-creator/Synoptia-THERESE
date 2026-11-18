@@ -134,12 +134,18 @@ async def test_champs_identite_passent_par_le_profil(client):
 
 @pytest.mark.asyncio
 async def test_piece_deja_emise_sans_adresse_ne_propose_pas_de_modifier_le_brouillon(
-    client, monkeypatch
+    client, monkeypatch, tmp_path
 ):
+    from datetime import UTC, datetime
+
+    from app.models import database as db
+    from app.models.entities import Invoice
+
     profil = UserProfile(
         name="Camille Exemple", address="Paris", siret="12345678900010", legal_form="EI"
     )
     monkeypatch.setattr(invoices, "get_cached_profile", lambda: profil)
+    monkeypatch.setattr(invoices, "_get_invoice_output_dir", AsyncMock(return_value=str(tmp_path)))
     contact = (await client.post("/api/memory/contacts", json={"first_name": "Alice"})).json()
     piece = await client.post(
         "/api/invoices/",
@@ -151,8 +157,13 @@ async def test_piece_deja_emise_sans_adresse_ne_propose_pas_de_modifier_le_broui
         },
     )
     identifiant = piece.json()["id"]
-    emise = await client.put(f"/api/invoices/{identifiant}", json={"status": "sent"})
-    assert emise.status_code == 200, emise.text
+    # Pièce héritée émise avant la nouvelle vérification de l'adresse.
+    async with db.AsyncSessionLocal() as session:
+        historique = await session.get(Invoice, identifiant)
+        historique.status = "sent"
+        historique.sent_at = datetime.now(UTC)
+        historique.invoice_number = f"FACT-{datetime.now(UTC).year}-001"
+        await session.commit()
     reponse = await client.get(f"/api/invoices/{identifiant}/pdf")
     assert reponse.status_code == 400
     assert "déjà émise" in reponse.text

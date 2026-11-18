@@ -17,6 +17,7 @@ async def _create_contact(client: AsyncClient) -> str:
         "last_name": "Dupont",
         "company": "SARL Test",
         "email": "jean@test.fr",
+        "address": "Lyon",
     })
     assert response.status_code == 200, f"Echec creation contact: {response.text}"
     return response.json()["id"]

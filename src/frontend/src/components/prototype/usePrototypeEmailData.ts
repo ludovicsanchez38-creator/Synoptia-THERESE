@@ -37,9 +37,11 @@ export function usePrototypeEmailData(enabled = true) {
   const refreshInbox = useCallback(async () => {
     const requestId = ++inboxRequestId.current;
     setInboxResource({ status: 'loading', data: null, error: null });
+    let comptesVerifies = false;
     try {
       const status = await getEmailAuthStatus();
       if (requestId !== inboxRequestId.current) return;
+      comptesVerifies = true;
 
       useEmailStore.getState().setAccounts(status.accounts);
       if (status.accounts.length === 0) {
@@ -81,7 +83,9 @@ export function usePrototypeEmailData(enabled = true) {
       setInboxResource({
         status: 'error',
         data: null,
-        error: 'Impossible de charger les messages pour le moment.',
+        error: comptesVerifies
+          ? 'Impossible de charger les messages pour le moment.'
+          : 'Impossible de vérifier la connexion de tes comptes e-mail pour le moment. Réessaie.',
       });
     }
   }, []);

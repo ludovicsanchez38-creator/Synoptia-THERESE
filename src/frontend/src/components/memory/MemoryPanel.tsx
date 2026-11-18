@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type RefObject } from 'react';
-import { contactDisplayName } from '../prototype/prototypeReadModels';
+import { contactDisplayName, contactInitials } from '../prototype/prototypeReadModels';
 import { X, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -332,7 +332,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     }
     setRgpdActionLoading(true);
     try {
-      await api.anonymizeContact(contact.id, reason);
+      const result = await api.anonymizeContact(contact.id, reason);
+      if (!result.success) {
+        addNotification({ type: 'error', title: 'Anonymisation incomplète', message: result.message, duration: 0 });
+      }
       setRgpdAction(null);
       setAnonymizeReason('');
       await loadData(); // Reload to show anonymized contact
@@ -367,7 +370,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     setDeleting(true);
     setDeleteError(null);
     try {
-      await api.deleteContactWithCascade(deleteConfirm.id, true);
+      const resultat = await api.deleteContactWithCascade(deleteConfirm.id, true);
+      if (resultat?.deleted === false) {
+        addNotification({ type: 'error', title: 'Suppression incomplète', message: resultat.message || 'Des fichiers restent à vérifier.', duration: 0 });
+      }
       retourSuppressionRef.current = origine?.isConnected && origine === deleteDialogRef.current
         && origine.contains(document.activeElement) ? origine : null;
       removeLocal(deleteConfirm.id);
@@ -476,7 +482,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   </Button>
                 </div>
               ) : (
-                <Button variant="ghost" size="icon" onClick={onClose}>
+                <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer les contacts">
                   <X className="w-5 h-5" />
                 </Button>
               )}
@@ -687,7 +693,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">
-                          Exporter toutes les données de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> au format JSON.
+                          Exporter toutes les données de <strong>{contactDisplayName(rgpdAction.contact)}</strong> au format JSON.
                         </p>
                         <div className="flex gap-2">
                           <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)} disabled={rgpdActionLoading}>
@@ -771,7 +777,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">
-                          Le consentement de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> sera prolongé de 3 ans à partir d'aujourd'hui.
+                          Le consentement de <strong>{contactDisplayName(rgpdAction.contact)}</strong> sera prolongé de 3 ans à partir d'aujourd'hui.
                         </p>
                         <div className="flex gap-2">
                           <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)} disabled={rgpdActionLoading}>
@@ -971,7 +977,7 @@ function ContactsList({
         return (
           <Ligne
             key={contact.id}
-            puce={getInitials(contact.first_name, contact.last_name)}
+            puce={contactInitials(contact)}
             titre={titre}
             detail={detail}
             onClick={() => onSelect(contact)}
@@ -1079,13 +1085,6 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   const isExpiringSoon = dateExpiration && new Date(dateExpiration) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const isExpired = dateExpiration && new Date(dateExpiration) < new Date();
 
-  const badgeLabels: Record<string, string> = {
-    consentement: 'C',
-    contrat: 'CT',
-    interet_legitime: 'IL',
-    obligation_legale: 'OL',
-  };
-
   const fullLabels: Record<string, string> = {
     consentement: 'Consentement',
     contrat: 'Contrat',
@@ -1106,7 +1105,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   return (
     <span title={title}>
       <Etiquette ton={ton}>
-        {badgeLabels[baseLegale] || baseLegale?.charAt(0).toUpperCase()}
+        {fullLabels[baseLegale] || baseLegale}
         {isExpired && '!'}
         {isExpiringSoon && !isExpired && <AlertTriangle className="ml-0.5 inline h-3 w-3" aria-hidden="true" />}
       </Etiquette>
@@ -1114,9 +1113,3 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   );
 }
 
-// Helper functions
-function getInitials(firstName?: string | null, lastName?: string | null): string {
-  const first = firstName?.charAt(0)?.toUpperCase() || '';
-  const last = lastName?.charAt(0)?.toUpperCase() || '';
-  return first + last || '?';
-}

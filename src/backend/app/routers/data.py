@@ -11,9 +11,13 @@ import asyncio
 import json
 import logging
 import re
+from collections import Counter
+from collections.abc import Iterator
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from tarfile import TarInfo
 from typing import Any, get_args
+from urllib.parse import unquote_plus
 
 from app.config import settings
 from app.models.database import close_db, get_session
@@ -71,7 +75,7 @@ from app.services.preference_security import est_cle_secrete_de_preference
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +121,355 @@ def _export_row(
 # ============================================================
 
 
+def _cle_de_connexion(cle: str) -> bool:
+    nom = cle.lower()
+    return (
+        est_cle_secrete_de_preference(nom)
+        or nom in {"user", "username", "login", "client_id"}
+        or nom.endswith(("_user", "_username", "_login", "_client_id"))
+    )
+
+
+_DEBUT_URL = re.compile(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://")
+_CARACTERES_DE_SCHEMA = re.compile(r"[a-zA-Z0-9+.-]+")
+_INITIALE_DE_SCHEMA = re.compile(r"\b[a-zA-Z]")
+# Un nom de paramètre peut suivre un « ; » (ancien séparateur) ; la valeur d'un secret, elle, va jusqu'au « & » ou au « # ».
+_NOM_DE_PARAMETRE = re.compile(r"(?<=[?&;#])([^=&;#?]+)=")
+_ENTITE_NUMERIQUE = re.compile(r"&#[xX]?[0-9a-fA-F]+;")
+_FIN_AUTORITE = "/?#"
+_FIN_URL_DANS_UN_TEXTE = "\"'<>\\"
+# Ce qui ne peut pas appartenir à un nom d'hôte et ferme une URL dans un texte.
+_SEPARATEURS_DE_TEXTE = _FIN_URL_DANS_UN_TEXTE + ",;(){}|^`"
+_PONCTUATION_FINALE = ".:!»"
+
+
+def _debuts_d_urls(texte: str) -> Iterator[tuple[int, int]]:
+    """Même reconnaissance que `_DEBUT_URL`, sans réexaminer les suffixes après un point.
+
+    Chaque suite de caractères de schéma est parcourue une seule fois ; seul
+    un « :// » à sa fin permet d'y chercher l'initiale à une frontière de mot.
+    """
+    for schema in _CARACTERES_DE_SCHEMA.finditer(texte):
+        if texte[schema.end() : schema.end() + 3] != "://":
+            continue
+        initiale = _INITIALE_DE_SCHEMA.search(texte, schema.start(), schema.end())
+        if initiale:
+            yield initiale.start(), schema.end() + 3
+
+
+def _masquer_parametres_d_une_url(url: str) -> str:
+    """Remplace la valeur de chaque paramètre de connexion, sur toute l'étendue de l'URL.
+
+    La lecture ne s'arrête pas à une URL passée en paramètre : `?suite=http://x&password=…`
+    et `?suite=http://x/?access_token=…` portent leur secret après elle.
+    """
+    depart = min((i for i in (url.find("?"), url.find("#")) if i >= 0), default=-1)
+    if depart < 0:
+        return url
+    morceaux: list[str] = []
+    position = depart
+    for nom in _NOM_DE_PARAMETRE.finditer(url, depart):
+        if nom.start() < position or not _cle_de_connexion(unquote_plus(nom.group(1))):
+            continue
+        fin_valeur = nom.end()
+        while fin_valeur < len(url) and url[fin_valeur] != "#":
+            if url[fin_valeur] == "&":
+                # Dans un attribut HTML, « &#45; » est un caractère de la valeur, pas un séparateur.
+                entite = _ENTITE_NUMERIQUE.match(url, fin_valeur)
+                if not entite:
+                    break
+                fin_valeur = entite.end()
+                continue
+            fin_valeur += 1
+        morceaux.extend((url[position : nom.end()], "[REDACTED]"))
+        position = fin_valeur
+    return url[:depart] + "".join(morceaux) + url[position:]
+
+
+def _port_plausible(autorite: str) -> bool:
+    """`hôte`, `hôte:443`, `hôte:443,` ou une adresse IPv6 entre crochets ; `nom:secret` ne l'est pas."""
+    if autorite.startswith("["):
+        return True
+    _hote, deux_points, suite = autorite.partition(":")
+    port = suite.rstrip(_PONCTUATION_FINALE)
+    return not deux_points or not port or (port.isascii() and port.isdigit())
+
+
+def _guillemet_ouvrant(texte: str, schema: int, plancher: int) -> str:
+    """Le guillemet ou le chevron qui ouvre la valeur où se trouve l'URL, s'il y en a un.
+
+    `plancher` est la fin du jeton précédent : la lecture arrière ne repasse
+    jamais sur un caractère déjà lu, le coût total reste linéaire.
+    """
+    position = schema - 1
+    while position >= plancher and not texte[position].isspace() and texte[position] not in _FIN_URL_DANS_UN_TEXTE:
+        position -= 1
+    if position >= plancher and texte[position] in "\"'<":
+        return texte[position]
+    # Dans un attribut HTML, une espace peut séparer le guillemet ouvrant de l'URL (`href=" https://…"`).
+    while position >= plancher and texte[position].isspace() and texte[position] not in "\r\n":
+        position -= 1
+    return texte[position] if position >= plancher and texte[position] in "\"'" else ""
+
+
+def _debut_de_l_hote(texte: str, debut: int, ouvrant: str, imbriquee: bool) -> int:
+    """Où commence l'hôte d'une URL dont l'autorité commence à `debut`.
+
+    L'autorité est lue au plus étroit : elle s'arrête à tout ce qui ne peut pas
+    appartenir à un nom d'hôte (espace, guillemet, chevron, virgule,
+    parenthèse…), et, pour une URL passée en paramètre d'une autre, au
+    séparateur de paramètres. Ce qui y précède le dernier « @ » est un
+    identifiant. Un lien HTML ou Markdown suivi d'une adresse e-mail n'est donc
+    jamais pris pour un identifiant.
+
+    Un mot de passe saisi tel quel pouvant porter l'un de ces séparateurs, on
+    lit au-delà sur deux indices seulement : ce qui précède ne peut pas être un
+    hôte et son port (`nom:secret`), ou bien l'URL s'arrête sur un guillemet
+    que rien n'a ouvert et qu'une lettre ou un chiffre suit aussitôt. Le « @ »
+    doit alors se trouver dans le mot qui suit, sans nouvelle espace. Sans
+    indice, une URL s'arrête à son séparateur, quoi qu'il y ait derrière. (Un
+    champ qui est une URL entière n'est pas lu ici : voir
+    `_masquer_urls_d_un_texte`.)
+    """
+    fins = _FIN_AUTORITE + ("&;" if imbriquee else "")
+    fin = debut
+    while fin < len(texte) and not texte[fin].isspace() and texte[fin] not in _SEPARATEURS_DE_TEXTE + fins:
+        fin += 1
+    arobase = texte.rfind("@", debut, fin)
+    if arobase >= 0:
+        return arobase + 1
+    if fin >= len(texte) or texte[fin] in fins + "\r\n":
+        return debut
+    fermee = bool(ouvrant) and texte[fin] == (">" if ouvrant == "<" else ouvrant)
+    suite = fin
+    if not _port_plausible(texte[debut:fin]):
+        # `nom:secret` : le mot de passe continue. Derrière le guillemet fermant, il doit suivre aussitôt.
+        suite = fin + 1 if fermee else fin
+        while not fermee and suite < len(texte) and texte[suite] not in fins + "\r\n" and (
+            texte[suite].isspace() or texte[suite] in _SEPARATEURS_DE_TEXTE
+        ):
+            suite += 1
+    elif texte[fin] in "\"'" and not fermee and texte[fin + 1 : fin + 2].isalnum():
+        # Un guillemet que rien n'a ouvert, suivi aussitôt d'une lettre ou d'un
+        # chiffre : il est dans le mot de passe. Un attribut HTML ou un champ
+        # JSON se ferment sur « > », une virgule ou une espace, jamais ainsi.
+        suite = fin + 1
+    else:
+        return debut
+    fin_suite = suite
+    while fin_suite < len(texte) and not texte[fin_suite].isspace() and texte[fin_suite] not in fins:
+        fin_suite += 1
+    arobase = texte.rfind("@", suite, fin_suite)
+    return arobase + 1 if arobase >= 0 else debut
+
+
+def _fin_d_une_url_dans_un_texte(url: str) -> int:
+    """Où s'arrête vraiment une URL prise dans une phrase, un lien Markdown ou un tableau.
+
+    Ce qui suit cette fin n'est plus masqué : on ne raccourcit donc que si la
+    suite est manifestement du texte. Un fermant que l'URL n'a pas ouvert
+    (`[texte](https://…)`, mais pas `Page_(test)`), un accent grave ou une
+    barre verticale ne ferment l'URL que si la suite a la forme d'un texte :
+    plus que de la ponctuation derrière les fermants, un accent grave qui
+    termine un code, ou une barre verticale dans une ligne de tableau (qui se
+    termine par une barre). Et jamais si cette suite porte un paramètre de
+    connexion. Sinon ils font partie de l'URL, et tout part en entier.
+    """
+    fin = len(url)
+    fermants = {")": "(", "]": "[", "}": "{"}
+    ouverts = dict.fromkeys(fermants.values(), 0)
+    for i, caractere in enumerate(url):
+        if caractere in ouverts:
+            ouverts[caractere] += 1
+        elif caractere in fermants and ouverts[fermants[caractere]]:
+            ouverts[fermants[caractere]] -= 1
+        elif caractere in fermants or caractere in "`|":
+            suite = url[i:].lstrip(")]}")
+            ponctuation_seule = not suite.strip(".,;:!?")
+            fin_de_code = suite[:1] == "`" and not suite[1:].strip(".,;:!?")
+            ligne_de_tableau = suite[:1] == "|" and url.rstrip(".,;:!?").endswith("|")
+            porte_un_secret = any(
+                _cle_de_connexion(unquote_plus(nom.group(1))) for nom in _NOM_DE_PARAMETRE.finditer(url, i)
+            )
+            if (ponctuation_seule or fin_de_code or ligne_de_tableau) and not porte_un_secret:
+                fin = i
+            break
+    while fin and url[fin - 1] in ".,;:!?":
+        fin -= 1
+    return fin
+
+
+def _masquer_urls_d_un_texte(valeur: str) -> str:
+    """Deux passes, sans récursion et en temps linéaire : les identifiants de chaque URL, puis ses paramètres.
+
+    Le reste du texte, casse et ponctuation comprises, sort tel qu'il est entré.
+    Un « jeton » est la suite de caractères, sans espace ni guillemet, qui
+    contient une URL : ses bornes, son guillemet ouvrant et le début de sa
+    requête ne sont calculés qu'une fois, même s'il contient mille URL.
+    """
+    morceaux = []
+    position = 0
+    fin_du_jeton = 0
+    requete_du_jeton = -1
+    ouvrant = ""
+    # Un champ qui n'est qu'une URL (adresse d'agenda, hôte de messagerie) se lit
+    # comme une bibliothèque d'URL le lit : l'autorité va jusqu'au premier
+    # « / », « ? » ou « # », et tout ce qui y précède le dernier « @ » est un
+    # identifiant, virgule, guillemet ou parenthèse compris.
+    nu = valeur.strip()
+    debut_du_champ = len(valeur) - len(valeur.lstrip())
+    url_entiere = bool(_DEBUT_URL.match(nu)) and not any(caractere.isspace() for caractere in nu)
+    for debut, fin_schema in _debuts_d_urls(valeur):
+        if debut < position:
+            continue
+        nouveau_jeton = debut >= fin_du_jeton
+        if nouveau_jeton:
+            ouvrant = _guillemet_ouvrant(valeur, debut, fin_du_jeton)
+        # Une URL trouvée dans la requête ou le fragment d'une autre lui est imbriquée.
+        imbriquee = not nouveau_jeton and 0 <= requete_du_jeton < debut
+        morceaux.append(valeur[position:fin_schema])
+        if url_entiere and debut == debut_du_champ:
+            fin_autorite = fin_schema
+            while fin_autorite < len(valeur) and valeur[fin_autorite] not in _FIN_AUTORITE:
+                fin_autorite += 1
+            position = valeur.rfind("@", fin_schema, fin_autorite) + 1 or fin_schema
+        else:
+            position = _debut_de_l_hote(valeur, fin_schema, ouvrant, imbriquee)
+        if nouveau_jeton or position > fin_du_jeton:
+            fin_du_jeton = position
+            while (
+                fin_du_jeton < len(valeur)
+                and not valeur[fin_du_jeton].isspace()
+                and valeur[fin_du_jeton] not in _FIN_URL_DANS_UN_TEXTE
+            ):
+                fin_du_jeton += 1
+            requete_du_jeton = min(
+                (i for i in (valeur.find("?", position, fin_du_jeton), valeur.find("#", position, fin_du_jeton)) if i >= 0),
+                default=-1,
+            )
+    sans_identifiants = "".join(morceaux) + valeur[position:]
+    if url_entiere:
+        fin_du_champ = len(sans_identifiants.rstrip())
+        return _masquer_parametres_d_une_url(sans_identifiants[:fin_du_champ]) + sans_identifiants[fin_du_champ:]
+
+    morceaux = []
+    position = 0
+    for debut, fin_schema in _debuts_d_urls(sans_identifiants):
+        if debut < position:
+            continue
+        fin_url = fin_schema
+        while (
+            fin_url < len(sans_identifiants)
+            and not sans_identifiants[fin_url].isspace()
+            and sans_identifiants[fin_url] not in _FIN_URL_DANS_UN_TEXTE
+        ):
+            fin_url += 1
+        url = sans_identifiants[debut:fin_url]
+        fin = _fin_d_une_url_dans_un_texte(url)
+        morceaux.extend((sans_identifiants[position:debut], _masquer_parametres_d_une_url(url[:fin]), url[fin:]))
+        position = fin_url
+
+    return "".join(morceaux) + sans_identifiants[position:]
+
+
+class _NombreJson(str):
+    """Le texte exact d'un nombre JSON : il ressort caractère pour caractère."""
+
+
+class _ObjetJson(list[Any]):
+    """Les paires d'un objet JSON dans l'ordre du texte, clés en double comprises."""
+
+
+def _lire_json_fidelement(texte: str) -> Any:
+    return json.loads(
+        texte, object_pairs_hook=_ObjetJson, parse_float=_NombreJson, parse_int=_NombreJson, parse_constant=_NombreJson
+    )
+
+
+def _ecrire_json(noeud: Any) -> str:
+    if isinstance(noeud, _ObjetJson):
+        return "{" + ", ".join(f"{json.dumps(cle, ensure_ascii=False)}: {_ecrire_json(v)}" for cle, v in noeud) + "}"
+    if isinstance(noeud, list):
+        return "[" + ", ".join(_ecrire_json(element) for element in noeud) + "]"
+    if isinstance(noeud, _NombreJson):
+        return str(noeud)
+    return json.dumps(noeud, ensure_ascii=False)
+
+
+def _paires_aux_cles_masquees(paires: Any) -> list[tuple[Any, Any]]:
+    """Masque les clés sans jamais en confondre deux qui étaient distinctes.
+
+    Deux adresses qui ne diffèrent que par leurs identifiants deviennent la
+    même une fois masquées : la seconde reçoit un suffixe, aucune entrée ne
+    recouvre l'autre. Une clé que le masquage ne change pas garde son nom.
+    """
+    lues = [(cle, _masquer_urls_d_un_texte(cle) if isinstance(cle, str) else cle, valeur) for cle, valeur in paires]
+    prises = {masquee for cle, masquee, _valeur in lues if masquee == cle}
+    attribuees: dict[Any, Any] = {}
+    sortie = []
+    for cle, masquee, valeur in lues:
+        if masquee != cle:
+            if cle not in attribuees:
+                candidate, rang = masquee, 2
+                while candidate in prises:
+                    candidate, rang = f"{masquee} ({rang})", rang + 1
+                prises.add(candidate)
+                attribuees[cle] = candidate
+            masquee = attribuees[cle]
+        sortie.append((masquee, valeur))
+    return sortie
+
+
+def _masquer_json_lu(noeud: Any) -> Any:
+    if isinstance(noeud, _ObjetJson):
+        return _ObjetJson(_paires_aux_cles_masquees((cle, _masquer_json_lu(valeur)) for cle, valeur in noeud))
+    if isinstance(noeud, list):
+        return [_masquer_json_lu(element) for element in noeud]
+    if isinstance(noeud, _NombreJson) or not isinstance(noeud, str):
+        return noeud
+    return _masquer_urls_export(noeud)
+
+
+def _masquer_urls_export(valeur: Any) -> Any:
+    """Retire les identifiants des URL, y compris dans les textes exportés."""
+    if isinstance(valeur, dict):
+        return dict(_paires_aux_cles_masquees((cle, _masquer_urls_export(element)) for cle, element in valeur.items()))
+    if isinstance(valeur, list):
+        return [_masquer_urls_export(element) for element in valeur]
+    if not isinstance(valeur, str):
+        return valeur
+    # Un JSON déjà sérialisé (la valeur d'une préférence) se masque champ par
+    # champ : lu comme un texte, ses guillemets collent une URL à l'adresse
+    # e-mail du champ suivant. Il est lu fidèlement (nombres en texte, clés en
+    # double gardées) : sans rien à masquer il ressort tel quel, sinon il est
+    # réécrit depuis ce qui a été lu, nombres au caractère près.
+    if valeur.lstrip().startswith(("{", "[")):
+        try:
+            structure = _lire_json_fidelement(valeur)
+            if isinstance(structure, list):
+                masquee = _masquer_json_lu(structure)
+                return valeur if masquee == structure else _ecrire_json(masquee)
+        except (ValueError, RecursionError):
+            pass
+    return _masquer_urls_d_un_texte(valeur)
+
+
+def _masquer_preferences_structurees(valeur: Any) -> Any:
+    if isinstance(valeur, _ObjetJson):
+        return _ObjetJson(
+            (cle, "[REDACTED]" if _cle_de_connexion(cle) else _masquer_preferences_structurees(element))
+            for cle, element in valeur
+        )
+    if isinstance(valeur, dict):
+        return {
+            cle: "[REDACTED]" if _cle_de_connexion(cle) else _masquer_preferences_structurees(element)
+            for cle, element in valeur.items()
+        }
+    if isinstance(valeur, list):
+        return [_masquer_preferences_structurees(element) for element in valeur]
+    return valeur
+
+
 def _valeur_de_preference_exportable(pref: Preference) -> str:
     """La valeur d'une préférence, telle qu'elle peut sortir de l'export."""
     from app.services.user_profile import PROFILE_KEY
@@ -125,10 +478,25 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
     # OAuth du CRM (crm_sheets_access_token, refresh_token), le secret client
     # Google et les mots de passe de messagerie sortaient tels quels dans
     # l'export de portabilité, chiffrés ou non.
-    if est_cle_secrete_de_preference(pref.key):
+    if _cle_de_connexion(pref.key):
         return "[REDACTED]"
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
+    # Trop imbriquée pour être lue ou parcourue (RecursionError) : ne jamais
+    # la rendre telle quelle, elle peut porter un secret jamais atteint.
+    try:
+        structure = _lire_json_fidelement(pref.value)
+    except (TypeError, ValueError):
+        structure = None  # pas un JSON : la valeur est un texte simple
+    except RecursionError:
+        return "[REDACTED]"
+    if isinstance(structure, list):  # un objet (ses paires) ou une liste
+        try:
+            masquee = _masquer_json_lu(_masquer_preferences_structurees(structure))
+        except RecursionError:
+            return "[REDACTED]"
+        if masquee != structure:
+            return _ecrire_json(masquee)
     valeur: str = pref.value
     return valeur
 
@@ -193,8 +561,13 @@ def _assembler_export_rgpd() -> dict[str, Any]:
         conversations = conversations_result.scalars().all()
 
         # Messages
-        messages_result = session.execute(select(Message))
+        messages_result = session.execute(
+            select(Message).order_by(col(Message.created_at), col(Message.id))
+        )
         messages = messages_result.scalars().all()
+        messages_par_conversation: dict[str, list[Message]] = {}
+        for message in messages:
+            messages_par_conversation.setdefault(message.conversation_id, []).append(message)
 
         # Files
         files_result = session.execute(select(FileMetadata))
@@ -289,15 +662,10 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             ],
             "conversations": [
                 {
-                    "id": conv.id,
-                    "title": conv.title,
-                    "summary": conv.summary,
-                    "created_at": conv.created_at.isoformat(),
-                    "updated_at": conv.updated_at.isoformat(),
+                    **_export_row(conv),
                     "messages": [
                         _export_row(m, json_fields=("extra_data",))
-                        for m in messages
-                        if m.conversation_id == conv.id
+                        for m in messages_par_conversation.get(conv.id, [])
                     ],
                 }
                 for conv in conversations
@@ -332,6 +700,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                         "client_secret",
                         "access_token",
                         "refresh_token",
+                        "imap_username",
                         "imap_password",
                     },
                     json_fields=("scopes",),
@@ -348,7 +717,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             "email_labels": [_export_row(item) for item in email_labels],
             "email_follow_ups": [_export_row(item) for item in email_follow_ups],
             "calendars": [
-                _export_row(item, exclude={"caldav_password"}) for item in calendars
+                _export_row(item, exclude={"caldav_username", "caldav_password"}) for item in calendars
             ],
             "calendar_events": [
                 _export_row(item, json_fields=("attendees", "recurrence"))
@@ -430,7 +799,8 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             ],
         }
 
-        return export_data
+        export_masque: dict[str, Any] = _masquer_urls_export(export_data)
+        return export_masque
     finally:
         session.close()
 
@@ -447,7 +817,7 @@ async def export_all_data(
     Retourne un JSON complet avec :
     - Contacts et projets
     - Conversations et messages
-    - Fichiers indexes
+    - Métadonnées des fichiers indexés (pas leur contenu physique)
     - Preferences (sans les cles API)
     - Decisions du Board
     - Logs d'activite
@@ -1317,19 +1687,8 @@ def _membre_est_sur(dest: str | Path, nom: str) -> bool:
     return cible == racine or cible.is_relative_to(racine)
 
 
-def _membre_attendu(dest: str | Path, member: Any) -> bool:
-    """B-1497 : un membre de sauvegarde est un fichier ou un dossier, sous une
-    entrée que la sauvegarde écrit, sans `..` ni chemin absolu.
-
-    `filter="data"` n'écarte que ce qui sort du dossier des données : un
-    `outputs/../x` ou un lien interne `outputs/t -> ../backups` y écrivait
-    ailleurs que dans les entrées attendues (les autres sauvegardes, dont
-    l'archive de sécurité du retour arrière).
-    """
-    from pathlib import PurePosixPath
-
-    nom = member.name
-    if not (member.isfile() or member.isdir()) or nom.startswith("/") or "\\" in nom:
+def _chemin_d_archive_attendu(dest: str | Path, nom: str) -> bool:
+    if nom.startswith("/") or "\\" in nom:
         return False
     segments = [s for s in PurePosixPath(nom).parts if s != "."]
     if not segments or ".." in segments or segments[0] not in NOMS_D_ARCHIVE:
@@ -1337,14 +1696,85 @@ def _membre_attendu(dest: str | Path, member: Any) -> bool:
     return _membre_est_sur(dest, nom)
 
 
+def _membre_attendu(dest: str | Path, member: Any) -> bool:
+    """B-1497 : fichier ou dossier sous une entrée attendue, sans remontée."""
+    return (member.isfile() or member.isdir()) and _chemin_d_archive_attendu(dest, member.name)
+
+
+def _lien_de_publication_sur(
+    member: Any, dest: str | Path, precedents: dict[str, TarInfo],
+    fichiers: dict[str, TarInfo], comptes: Counter[str],
+) -> bool:
+    """Seul un lien vers un PDF provisoire et son compagnon peut être restauré."""
+    source, cible = PurePosixPath(member.linkname), PurePosixPath(member.name)
+    preuves = (f"{source}.therese.json", f"{cible}.therese.json")
+    preuve = next((nom for nom in preuves if comptes[nom] == 1 and nom in fichiers), None)
+    if (
+        preuve is None
+        or str(source) != member.linkname or str(cible) != member.name
+        or source.parent != cible.parent or not cible.name.endswith(".pdf")
+        or cible.name.startswith(".therese-publication-")
+        or not re.fullmatch(r"\.therese-publication-[0-9a-f]{64}-[0-9a-f]{32}\.pdf", source.name)
+        or any(comptes[nom] != 1 for nom in (str(source), str(cible)))
+        or str(source) not in precedents or not precedents[str(source)].isfile()
+        or not all(_chemin_d_archive_attendu(dest, nom) for nom in (str(source), str(cible), preuve))
+    ):
+        return False
+    # Un lien déjà présent sur disque ne doit pas détourner l'extraction vers
+    # une autre entrée, même si celle-ci reste dans le dossier des données.
+    racine = Path(dest).resolve()
+    return all((racine / nom).resolve() == racine / nom for nom in (str(source), str(cible), preuve))
+
+
+def _lien_de_compagnon_sur(
+    member: Any, dest: str | Path, precedents: dict[str, TarInfo],
+    publications: dict[str, str], comptes: Counter[str],
+) -> bool:
+    suffixe = ".therese.json"
+    if not member.name.endswith(suffixe) or not member.linkname.endswith(suffixe):
+        return False
+    source, cible = member.linkname, member.name
+    source_pdf, cible_pdf = source[:-len(suffixe)], cible[:-len(suffixe)]
+    source_path, cible_path = PurePosixPath(source_pdf), PurePosixPath(cible_pdf)
+    if (
+        str(source_path) != source_pdf or str(cible_path) != cible_pdf
+        or source_path.parent != cible_path.parent or not cible_path.name.endswith(".pdf")
+        or cible_path.name.startswith(".therese-publication-")
+        or not re.fullmatch(r"\.therese-publication-[0-9a-f]{64}-[0-9a-f]{32}\.pdf", source_path.name)
+        or any(comptes[nom] != 1 for nom in (source, cible, cible_pdf))
+        or source not in precedents or not precedents[source].isfile()
+        or not (
+            publications.get(cible_pdf) == source_pdf
+            # Les anciennes publications ont pu effacer le PDF provisoire
+            # tout en conservant le compagnon provisoire et son lien final.
+            or (comptes[source_pdf] == 0 and cible_pdf in precedents and precedents[cible_pdf].isfile())
+        )
+        or not all(_chemin_d_archive_attendu(dest, nom) for nom in (source, cible, cible_pdf))
+    ):
+        return False
+    racine = Path(dest).resolve()
+    return all((racine / nom).resolve() == racine / nom for nom in (source, cible, cible_pdf))
+
+
 def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
     """Les membres qu'une sauvegarde peut extraire, et le nombre de liens
     ignorés. Lève HTTPException 400 au premier chemin inattendu (B-1497)."""
     membres = []
     liens_ignores = 0
-    for member in tar.getmembers():
+    precedents: dict[str, TarInfo] = {}
+    publications = {}
+    tous = tar.getmembers()
+    comptes = Counter(str(PurePosixPath(member.name)) for member in tous)
+    fichiers = {member.name: member for member in tous if member.isfile()}
+    for member in tous:
         if member.issym() or member.islnk():
-            liens_ignores += 1
+            if member.islnk() and _lien_de_publication_sur(member, dest, precedents, fichiers, comptes):
+                membres.append(member)
+                publications[member.name] = member.linkname
+            elif member.islnk() and _lien_de_compagnon_sur(member, dest, precedents, publications, comptes):
+                membres.append(member)
+            else:
+                liens_ignores += 1
             continue
         if not _membre_attendu(dest, member):
             raise HTTPException(
@@ -1352,6 +1782,7 @@ def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
                 detail="Archive de sauvegarde non sûre : elle contient un chemin inattendu.",
             )
         membres.append(member)
+        precedents[member.name] = member
     return membres, liens_ignores
 
 
@@ -1360,9 +1791,9 @@ def _safe_extractall(tar, dest) -> None:
     entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
     quand Python le connaît.
 
-    Les liens (symboliques ou physiques) ne sont pas extraits : l'application
-    n'en crée aucun, un lien posé à la main ne doit ni rendre la sauvegarde
-    irrestaurable ni ouvrir un passage vers une autre entrée.
+    Les liens sont ignorés, sauf ceux d'une publication PDF et de son compagnon
+    provisoire, après vérification de leurs noms et de leurs sources uniques
+    dans le même dossier. La reprise vérifie ensuite le contenu de la preuve.
     """
     membres, liens_ignores = _membres_a_extraire(tar, dest)
     if liens_ignores:
@@ -1611,22 +2042,31 @@ def _ecarter_les_compagnons_de_la_base() -> None:
                 logger.warning("Compagnon %s de la base ni supprimé ni vidé", compagnon.name)
 
 
-async def _rouvrir_la_base_apres_restauration() -> None:
+async def _rouvrir_la_base_apres_restauration() -> bool:
     """B-1470 : rouvre la base si la restauration l'a fermée, puis invalide le
     service de modèles (sa configuration a pu être lue sans base)."""
     from app.models import database as base
     from app.services.encryption import invalidate_encryption_service
     from app.services.llm import invalidate_llm_service
 
-    if base.sync_engine is None:
-        # La restauration peut remettre une autre clé maîtresse. Le probe
-        # SQLCipher doit relire cette clé, et aussi celle d'un rollback.
-        invalidate_encryption_service()
-        try:
+    try:
+        if base.sync_engine is None or base.async_engine is None or base.AsyncSessionLocal is None:
+            # La restauration peut remettre une autre clé maîtresse. Le probe
+            # SQLCipher doit relire cette clé, et aussi celle d'un rollback.
+            invalidate_encryption_service()
+            await base.close_db()
             await base.init_db()
-        except Exception:
-            logger.exception("Réouverture de la base après restauration impossible")
-    invalidate_llm_service()
+        if base.sync_engine is None or base.async_engine is None or base.AsyncSessionLocal is None:
+            return False
+        # Un moteur créé mais incapable de servir une requête n'est pas prêt.
+        async with base.AsyncSessionLocal() as session:
+            await session.execute(select(1))
+        return True
+    except Exception:
+        logger.exception("Réouverture de la base après restauration impossible")
+        return False
+    finally:
+        invalidate_llm_service()
 
 @router.post("/restore/{backup_name}")
 async def restore_backup(
@@ -1820,7 +2260,14 @@ async def restore_backup(
                 _verify_restored_db()
             else:
                 shutil.copy2(legacy_db, settings.db_path)
-            await _rouvrir_la_base_apres_restauration()
+            if not await _rouvrir_la_base_apres_restauration():
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "La base restaurée n'a pas pu être rouverte. Les fichiers de "
+                        "l'état précédent vont être remis ; vérifie la base avant de reprendre."
+                    ),
+                )
             terminer_restauration()
         except HTTPException as exc:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
@@ -1876,7 +2323,7 @@ async def restore_backup(
                 safety_kept = _finalize_safety_archive(
                     backup_dir, current_backup_name, safety_archive, password, safety_included
                 )
-            await _rouvrir_la_base_apres_restauration()
+            reouverture_reussie = await _rouvrir_la_base_apres_restauration()
             # Réappliquer aussi après un retour arrière. En cas d'échec, le
             # journal durable continue de bloquer tous les accords cloud.
             from app.services.consentements import terminer_restauration
@@ -1896,6 +2343,15 @@ async def restore_backup(
             # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
             if decrypted_temp is not None:
                 decrypted_temp.unlink(missing_ok=True)
+
+    if not reouverture_reussie:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Les fichiers ont été restaurés, mais la base n'a pas pu être rouverte. "
+                "Redémarre THÉRÈSE et vérifie tes sauvegardes avant de reprendre."
+            ),
+        )
 
     # B-023 : la restauration a remplacé la table `preferences` ENTIÈRE, clés
     # API comprises, sans passer par POST/DELETE /api-key - les deux seules

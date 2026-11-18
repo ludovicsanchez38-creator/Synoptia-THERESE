@@ -119,11 +119,11 @@ describe('Atelier 0.40 conversationnel', () => {
 
     expect(screen.getByTestId('atelier-preflight')).toHaveTextContent('/repo');
     expect(screen.getByTestId('atelier-new-form')).toHaveTextContent('Aucun email, devis, événement');
-    fireEvent.change(screen.getByLabelText('Mission Atelier'), { target: { value: 'Simplifier l’onboarding sans modifier les données.' } });
+    fireEvent.change(screen.getByLabelText('Mission à confier'), { target: { value: 'Simplifier l’onboarding sans modifier les données.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la mission' }));
     expect(screen.getByTestId('atelier-confirmation')).toHaveTextContent('Simplifier l’onboarding sans modifier les données.');
     expect(screen.getByTestId('atelier-confirmation')).toHaveTextContent('/repo');
-    expect(screen.getByLabelText('Mission Atelier')).toBeDisabled();
+    expect(screen.getByLabelText('Mission à confier')).toBeDisabled();
     expect(onStart).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et lancer' }));
     expect(onStart).toHaveBeenCalledWith('Simplifier l’onboarding sans modifier les données.');
@@ -136,7 +136,7 @@ describe('Atelier 0.40 conversationnel', () => {
       actionPending={null} onRetry={vi.fn()} onRetryTask={vi.fn()} onStart={vi.fn()}
       onCancel={vi.fn()} onReset={vi.fn()} onMutate={vi.fn()} onOpenClassic={vi.fn()}
     />);
-    fireEvent.change(screen.getByLabelText('Mission Atelier'), { target: { value: 'Corriger le tri des factures.' } });
+    fireEvent.change(screen.getByLabelText('Mission à confier'), { target: { value: 'Corriger le tri des factures.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la mission' }));
     const carte = screen.getByTestId('atelier-confirmation');
     expect(carte).not.toHaveTextContent(/exécution locale/i);

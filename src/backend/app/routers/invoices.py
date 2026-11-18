@@ -5,12 +5,18 @@ REST API pour la gestion de facturation.
 Phase 4 - Invoicing
 """
 
+import hashlib
+import json
 import logging
+import os
 import re
+import time
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities import Contact, Invoice, InvoiceLine, Preference
@@ -25,10 +31,17 @@ from app.models.schemas import (
 )
 from app.services.civil_time import date_civile_paris
 from app.services.error_handler import message_pour_ecran
-from app.services.invoice_pdf import InvoicePDFGenerator
+from app.services.invoice_pdf import (
+    PENALITES_DEFAUT_EUR,
+    InvoicePDFGenerator,
+    chemin_pdf_a_ouvrir,
+    mention_penalite_taux,
+)
 from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from sqlalchemy import and_, or_, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -329,7 +342,7 @@ async def _attribuer_numero_definitif(
             logger.warning("Numéro %s pris par un concurrent, reprise", numero)
             rechargee = await _get_invoice_with_lines(session, identifiant)
             if rechargee is None:
-                raise HTTPException(status_code=404, detail="Invoice not found") from collision
+                raise HTTPException(status_code=404, detail="Pièce introuvable.") from collision
             invoice = rechargee
             if _facture_emise(invoice):
                 return invoice
@@ -389,6 +402,278 @@ def _premiere_emission(invoice: Invoice, nouveau_statut: str | None) -> bool:
         nouveau_statut in _STATUTS_QUI_EMETTENT
         and invoice.document_type in ("facture", "avoir")
         and not _facture_emise(invoice)
+    )
+
+
+def _verifier_adresse_avant_emission(adresse: str | None) -> None:
+    if not (adresse or "").strip():
+        raise HTTPException(
+            status_code=409,
+            detail="Renseigne l'adresse du client dans le brouillon avant d'émettre cette pièce.",
+        )
+
+
+def _preuve_pdf(chemin: Path) -> Path:
+    return chemin.with_name(f"{chemin.name}.therese.json")
+
+
+def _prefixe_apercu_pdf(invoice_id: str, numero: str) -> str:
+    identite = json.dumps([invoice_id, numero], ensure_ascii=False).encode("utf-8")
+    return f"APERCU-{hashlib.sha256(identite).hexdigest()}-"
+
+
+def _apercus_pdf(dossier: str, invoice_id: str, numero: str) -> list[Path]:
+    prefixe = _prefixe_apercu_pdf(invoice_id, numero)
+    return [
+        chemin for chemin in Path(dossier).glob(f"{prefixe}*.pdf")
+        if not chemin.is_symlink() and chemin.is_file()
+        and not _preuve_pdf(chemin).exists() and not _preuve_pdf(chemin).is_symlink()
+    ]
+
+
+def _dernier_apercu_pdf(dossier: str, invoice_id: str, numero: str) -> Path | None:
+    apercus = _apercus_pdf(dossier, invoice_id, numero)
+    if not apercus:
+        return None
+    chemin: Path = chemin_pdf_a_ouvrir(dossier, max(apercus, key=lambda chemin: chemin.name).stem)
+    return chemin
+
+
+def _empreinte_donnees_pdf(invoice: Invoice, donnees: dict[str, Any]) -> str:
+    contenu = {
+        "invoice_id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+        "issue_date": invoice.issue_date.isoformat(),
+        "document_type": invoice.document_type,
+        **{cle: donnees[cle] for cle in ("statut", "invoice_data", "contact_data", "user_profile", "currency")},
+    }
+    serialise = json.dumps(contenu, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialise.encode("utf-8")).hexdigest()
+
+
+def _verifier_preuve_pdf(chemin: Path, invoice: Invoice) -> dict[str, Any]:
+    """Un ancien fichier au même nom ne prouve pas son origine."""
+    preuve = _preuve_pdf(chemin)
+    try:
+        if preuve.is_symlink():
+            raise ValueError("Lien de preuve interdit")
+        donnees: dict[str, Any] = json.loads(preuve.read_text(encoding="utf-8"))
+        valide = (
+            donnees.get("invoice_id") == invoice.id
+            and donnees.get("invoice_number") == invoice.invoice_number
+            and donnees.get("issue_date") == invoice.issue_date.isoformat()
+            and donnees.get("document_type") == invoice.document_type
+            and donnees.get("sha256") == hashlib.sha256(chemin.read_bytes()).hexdigest()
+        )
+    except (OSError, ValueError, TypeError, AttributeError):
+        valide = False
+    if not valide:
+        raise HTTPException(
+            409,
+            "L'origine de ce PDF ne peut pas être vérifiée. Conserve le fichier et consulte ton archive d'origine.",
+        )
+    return donnees
+
+
+def _verifier_archive_pdf(chemin: Path, invoice: Invoice) -> dict[str, Any]:
+    archive = _verifier_preuve_pdf(chemin, invoice)
+    try:
+        empreinte = _empreinte_donnees_pdf(invoice, archive)
+        metadonnees = PdfReader(chemin).metadata
+        valide = (
+            isinstance(archive["invoice_data"], dict)
+            and archive["invoice_data"].get("status") == archive["statut"]
+            and archive["invoice_data"].get("invoice_number") == invoice.invoice_number
+            and metadonnees is not None
+            and metadonnees.subject == f"THERESE-ARCHIVE-SHA256:{empreinte}"
+        )
+    except (KeyError, TypeError, ValueError, OSError, PdfReadError):
+        valide = False
+    if not valide:
+        raise HTTPException(409, "Les informations de l'archive PDF ne peuvent pas être vérifiées.")
+    return archive
+
+
+def _enregistrer_preuve_pdf(chemin: Path, invoice: Invoice, details: dict[str, Any]) -> None:
+    donnees = {
+        **details,
+        "invoice_id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+        "issue_date": invoice.issue_date.isoformat(),
+        "document_type": invoice.document_type,
+        "sha256": hashlib.sha256(chemin.read_bytes()).hexdigest(),
+    }
+    # Une preuve antérieure ou un lien ne doit jamais être remplacé.
+    descripteur = os.open(_preuve_pdf(chemin), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descripteur, "w", encoding="utf-8") as fichier:
+        json.dump(donnees, fichier, ensure_ascii=False)
+
+
+def _numero_pdf_pour_statut(invoice: Invoice, archive: dict[str, Any], statut: str) -> str:
+    if not isinstance(archive.get("statut"), str):
+        raise HTTPException(409, "Les informations de l'archive PDF sont incomplètes.")
+    if statut == archive["statut"]:
+        numero: str = invoice.invoice_number
+        return numero
+    empreinte = hashlib.sha256(statut.encode("utf-8")).hexdigest()[:16]
+    return f"{invoice.invoice_number}--etat-{empreinte}"
+
+
+def _verifier_edition_pdf(chemin: Path, invoice: Invoice, archive: dict[str, Any], statut: str) -> None:
+    edition = _verifier_preuve_pdf(chemin, invoice)
+    if edition.get("archive_sha256") != archive["sha256"] or edition.get("statut") != statut:
+        raise HTTPException(409, "L'origine de cette édition PDF ne peut pas être vérifiée.")
+
+
+def _prefixe_publication_pdf(invoice: Invoice, chemin: Path) -> str:
+    identite = json.dumps([invoice.id, chemin.name], ensure_ascii=False).encode("utf-8")
+    return f".therese-publication-{hashlib.sha256(identite).hexdigest()}-"
+
+
+def _nettoyer_publication_pdf(provisoire: Path) -> None:
+    for fichier in (_preuve_pdf(provisoire), provisoire):
+        try:
+            fichier.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("Impossible de retirer un fichier provisoire de publication PDF")
+            return
+
+
+def _meme_fichier(premier: Path, second: Path) -> bool:
+    try:
+        return os.path.samefile(premier, second)
+    except OSError:
+        return False
+
+
+def _lier_preuve_pdf(provisoire: Path, chemin: Path) -> None:
+    """Ne finalise que le PDF publié depuis ce fichier provisoire précis."""
+    if not _meme_fichier(provisoire, chemin):
+        raise HTTPException(409, "Le PDF a changé pendant sa publication.")
+    preuve_provisoire = _preuve_pdf(provisoire)
+    preuve = _preuve_pdf(chemin)
+
+    def verifier_apres_lien() -> None:
+        if not _meme_fichier(provisoire, chemin):
+            if _meme_fichier(preuve_provisoire, preuve):
+                preuve.unlink()
+            raise HTTPException(409, "Le PDF a changé pendant sa publication.")
+
+    try:
+        os.link(preuve_provisoire, preuve)
+    except BaseException:
+        verifier_apres_lien()
+        raise
+    verifier_apres_lien()
+
+
+def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Path], object]) -> None:
+    preuve = _preuve_pdf(chemin)
+    if preuve.is_symlink():
+        return
+    preuve_presente = preuve.exists()
+    prefixe = _prefixe_publication_pdf(invoice, chemin)
+    for provisoire in chemin.parent.glob(f"{prefixe}*.pdf"):
+        if provisoire.is_symlink():
+            continue
+        try:
+            identique = os.path.samefile(provisoire, chemin)
+        except OSError:
+            continue
+        if not identique:
+            continue
+        preuve_provisoire = _preuve_pdf(provisoire)
+        if preuve_presente and (
+            preuve_provisoire.is_symlink() or not _meme_fichier(preuve_provisoire, preuve)
+        ):
+            continue
+        verifier(provisoire)
+        if preuve_presente:
+            if _meme_fichier(provisoire, chemin) and _meme_fichier(preuve_provisoire, preuve):
+                _nettoyer_publication_pdf(provisoire)
+            return
+        try:
+            _lier_preuve_pdf(provisoire, chemin)
+        except FileExistsError:
+            # Une autre reprise a publié le compagnon ; l'appelant le vérifie.
+            return
+        _nettoyer_publication_pdf(provisoire)
+        return
+
+
+def _publier_pdf_atteste(
+    output_dir: str, invoice: Invoice, details: dict[str, Any], numero: str, *,
+    donnees: dict[str, Any], contact: dict[str, str | None], profil: dict[str, Any], currency: str,
+    verifier: Callable[[Path], object], empreinte_archive: str | None = None,
+) -> str:
+    generateur = InvoicePDFGenerator(output_dir=output_dir)
+    chemin = Path(output_dir).expanduser().resolve() / f"{numero}.pdf"
+    numero_provisoire = f"{_prefixe_publication_pdf(invoice, chemin)}{uuid.uuid4().hex}"
+    provisoire = Path(generateur.generate_invoice_pdf(
+        invoice_data=donnees, contact_data=contact, user_profile=profil, currency=currency,
+        conserver_existant=True, numero_fichier=numero_provisoire, empreinte_archive=empreinte_archive,
+    ))
+    try:
+        _enregistrer_preuve_pdf(provisoire, invoice, details)
+        verifier(provisoire)
+        os.link(provisoire, chemin)
+        _lier_preuve_pdf(provisoire, chemin)
+    except BaseException:
+        try:
+            publie = os.path.samefile(provisoire, chemin)
+        except OSError:
+            publie = False
+        if not publie:
+            _nettoyer_publication_pdf(provisoire)
+        raise
+    _nettoyer_publication_pdf(provisoire)
+    return str(chemin)
+
+
+def _generer_edition_pdf(output_dir: str, invoice: Invoice, archive: dict[str, Any], statut: str, numero: str) -> str:
+    try:
+        donnees = dict(archive["invoice_data"])
+        donnees["status"] = statut
+        return _publier_pdf_atteste(
+            output_dir, invoice, {"statut": statut, "archive_sha256": archive["sha256"]}, numero,
+            donnees=donnees,
+            contact=archive["contact_data"],
+            profil=archive["user_profile"],
+            currency=archive["currency"],
+            verifier=lambda chemin: _verifier_edition_pdf(chemin, invoice, archive, statut),
+        )
+    except HTTPException:
+        raise
+    except (KeyError, TypeError) as exc:
+        raise HTTPException(409, "Les informations de l'archive PDF sont incomplètes.") from exc
+    except FileExistsError as exc:
+        raise HTTPException(409, "Un fichier existe déjà : conserve-le et consulte ton archive d'origine.") from exc
+    except Exception as exc:
+        logger.error("Erreur génération édition PDF facture %s: %s", invoice.id, exc, exc_info=True)
+        raise HTTPException(500, message_pour_ecran(exc, ou="pendant la génération du PDF de la facture")) from exc
+
+
+async def _verifier_absence_pdf_avant_emission(session: AsyncSession, invoice: Invoice) -> None:
+    """Un PDF présent avant l'émission ne prouve pas le contenu de la pièce émise."""
+    dossier = await _get_invoice_output_dir(session)
+    try:
+        chemin_pdf_a_ouvrir(dossier, invoice.invoice_number)
+    except FileNotFoundError:
+        preuve = _preuve_pdf(Path(dossier).expanduser() / f"{invoice.invoice_number}.pdf")
+        if preuve.exists() or preuve.is_symlink():
+            raise HTTPException(
+                409,
+                "Un fichier compagnon porte déjà ce numéro. Déplace-le avant d'émettre cette pièce, "
+                "pour conserver les deux documents.",
+            )
+        if not _apercus_pdf(dossier, invoice.id, invoice.invoice_number):
+            return
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    raise HTTPException(
+        409,
+        "Un PDF porte déjà ce numéro. Déplace-le avant d'émettre cette pièce, "
+        "pour conserver les deux documents.",
     )
 
 
@@ -636,7 +921,7 @@ async def get_invoice(
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
 
     return _invoice_to_response(invoice)
 
@@ -699,7 +984,7 @@ async def create_invoice(
     # Vérifier que le contact existe
     contact = await session.get(Contact,request.contact_id)
     if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+        raise HTTPException(status_code=404, detail="Contact introuvable.")
 
     # Valider le type de document
     document_type = request.document_type
@@ -796,7 +1081,7 @@ async def update_invoice(
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
 
     # 0.55 : `status` etait une chaine LIBRE sur cette route generique. Poser
     # « accepted » (un statut de DEVIS) sur une facture la sortait de l'encours,
@@ -858,9 +1143,21 @@ async def update_invoice(
             else invoice.converted_from_id
         )
         await _verifier_la_facture_d_origine(session, "avoir", origine_id, obligatoire=True)
+    if emet_maintenant:
+        adresse = invoice.client_address
+        if request.contact_id is not None:
+            contact_emission = await session.get(Contact, request.contact_id)
+            if contact_emission is None:
+                raise HTTPException(status_code=404, detail="Contact introuvable.")
+            adresse = contact_emission.address
+        if "client_address" in request.model_fields_set:
+            adresse = request.client_address
+        _verifier_adresse_avant_emission(adresse)
     invoice = await _attribuer_numero_definitif(
         session, invoice, request.status, emission=instant_emission,
     )
+    if emet_maintenant:
+        await _verifier_absence_pdf_avant_emission(session, invoice)
 
     # Mise à jour des champs
     # B-1614 : une pièce émise est figée (B-1506, numérotation continue) ;
@@ -883,7 +1180,7 @@ async def update_invoice(
         # Vérifier que le nouveau contact existe
         contact = await session.get(Contact, request.contact_id)
         if not contact:
-            raise HTTPException(status_code=404, detail="Contact not found")
+            raise HTTPException(status_code=404, detail="Contact introuvable.")
         invoice.contact_id = request.contact_id
         for field, value in _snapshot_du_contact(contact).items():
             setattr(invoice, field, value)
@@ -988,7 +1285,7 @@ async def delete_invoice(
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
 
     if _facture_emise(invoice):
         raise HTTPException(
@@ -1013,10 +1310,11 @@ async def delete_invoice(
 
     invoice_number = invoice.invoice_number
 
-    # Supprimer le PDF si existant
+    # Ne supprimer que les aperçus de cette pièce, jamais une archive au même numéro.
     output_dir = await _get_invoice_output_dir(session)
     pdf_generator = InvoicePDFGenerator(output_dir=output_dir)
-    pdf_generator.delete_invoice_pdf(invoice_number)
+    for apercu in _apercus_pdf(output_dir, invoice.id, invoice_number):
+        pdf_generator.delete_invoice_pdf(apercu.stem)
 
     # Supprimer la facture (cascade sur lignes)
     await session.delete(invoice)
@@ -1024,7 +1322,7 @@ async def delete_invoice(
 
     logger.info(f"Invoice deleted: {invoice_number}")
 
-    return {"message": "Invoice deleted successfully"}
+    return {"message": "Pièce supprimée."}
 
 
 def _conseil_pour_rectifier(invoice: Invoice) -> str:
@@ -1075,7 +1373,7 @@ async def mark_invoice_paid(
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
 
     # B-162 (02/09/2026) : la porte generique `PUT` refuse « paid » sur un
     # devis depuis la 0.55 ; cette porte laterale posait le meme statut sans
@@ -1110,7 +1408,11 @@ async def mark_invoice_paid(
     instant_emission = datetime.now(UTC) if emet_maintenant else None
     if emet_maintenant and invoice.document_type == "avoir":
         await _verifier_la_facture_d_origine(session, "avoir", invoice.converted_from_id, obligatoire=True)
+    if emet_maintenant:
+        _verifier_adresse_avant_emission(invoice.client_address)
     invoice = await _attribuer_numero_definitif(session, invoice, "paid", emission=instant_emission)
+    if emet_maintenant:
+        await _verifier_absence_pdf_avant_emission(session, invoice)
     if instant_emission is not None:
         _poser_dates_demission(invoice, instant_emission)
     invoice.status = "paid"
@@ -1146,7 +1448,7 @@ async def convert_invoice(
 
     source = await _get_invoice_with_lines(session, invoice_id)
     if not source:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
 
     if source.document_type == target_type:
         raise HTTPException(status_code=400, detail=f"Le document est déjà de type '{target_type}'")
@@ -1259,10 +1561,44 @@ async def generate_invoice_pdf(
     - Récupère les données du contact pour le destinataire
     - Génère un PDF conforme à la réglementation française
     """
+    # Un aperçu de brouillon ne doit pas s'écrire après la première émission
+    # sous le même numéro historique. Le verrou couvre la lecture et l'écriture.
+    await _verrouiller_emission(session)
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
+
+    output_dir = await _get_invoice_output_dir(session)
+    if _facture_emise(invoice):
+        try:
+            existant = chemin_pdf_a_ouvrir(output_dir, invoice.invoice_number)
+        except FileNotFoundError:
+            if _preuve_pdf(Path(output_dir) / f"{invoice.invoice_number}.pdf").exists():
+                raise HTTPException(409, "Le PDF archivé est introuvable. Consulte ton archive d'origine.")
+            if _apercus_pdf(output_dir, invoice.id, invoice.invoice_number):
+                raise HTTPException(409, "L'origine de ce PDF ne peut pas être vérifiée. Consulte ton archive d'origine.")
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        else:
+            _reprendre_preuve_pdf(existant, invoice, lambda chemin: _verifier_archive_pdf(chemin, invoice))
+            archive = _verifier_archive_pdf(existant, invoice)
+            statut = statut_effectif_facture(invoice.status, invoice.document_type, invoice.due_date)
+            numero = _numero_pdf_pour_statut(invoice, archive, statut)
+            if numero == invoice.invoice_number:
+                return {"pdf_path": str(existant), "invoice_number": invoice.invoice_number}
+            try:
+                edition = chemin_pdf_a_ouvrir(output_dir, numero)
+            except FileNotFoundError:
+                edition = _generer_edition_pdf(output_dir, invoice, archive, statut, numero)
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
+            else:
+                _reprendre_preuve_pdf(
+                    edition, invoice, lambda chemin: _verifier_edition_pdf(chemin, invoice, archive, statut),
+                )
+                _verifier_edition_pdf(edition, invoice, archive, statut)
+            return {"pdf_path": str(edition), "invoice_number": invoice.invoice_number}
 
     # Récupérer le profil utilisateur (dataclass → dict pour .get())
     _profile = get_cached_profile()
@@ -1324,6 +1660,7 @@ async def generate_invoice_pdf(
         # imprimait « net à 30 jours » sous une échéance à 90 jours.
         "payment_terms": invoice.payment_terms,
         "payment_method": invoice.payment_method,
+        "late_penalty_rate": invoice.late_penalty_rate,
         "legal_mentions": invoice.legal_mentions,
         "facture_origine": await _facture_d_origine_pour_le_pdf(session, invoice),
         "lines": [
@@ -1359,14 +1696,32 @@ async def generate_invoice_pdf(
 
     # Générer le PDF (dans le dossier de travail si configuré)
     try:
-        output_dir = await _get_invoice_output_dir(session)
-        pdf_generator = InvoicePDFGenerator(output_dir=output_dir)
-        pdf_path = pdf_generator.generate_invoice_pdf(
-            invoice_data=invoice_data,
-            contact_data=contact_data,
-            user_profile=user_profile_data,
-            currency=invoice.currency,
-        )
+        details_archive = {
+            "statut": invoice_data["status"],
+            "invoice_data": invoice_data,
+            "contact_data": contact_data,
+            "user_profile": user_profile_data,
+            "currency": invoice.currency,
+        } if _facture_emise(invoice) else None
+        if details_archive:
+            pdf_path = _publier_pdf_atteste(
+                output_dir, invoice, details_archive, invoice.invoice_number,
+                donnees=invoice_data, contact=contact_data, profil=user_profile_data, currency=invoice.currency,
+                verifier=lambda chemin: _verifier_archive_pdf(chemin, invoice),
+                empreinte_archive=_empreinte_donnees_pdf(invoice, details_archive),
+            )
+        else:
+            pdf_path = InvoicePDFGenerator(output_dir=output_dir).generate_invoice_pdf(
+                invoice_data=invoice_data, contact_data=contact_data, user_profile=user_profile_data,
+                currency=invoice.currency, conserver_existant=True,
+                numero_fichier=(
+                    f"{_prefixe_apercu_pdf(invoice.id, invoice.invoice_number)}{time.time_ns():020d}-{uuid.uuid4().hex}"
+                ),
+            )
+    except HTTPException:
+        raise
+    except FileExistsError as e:
+        raise HTTPException(409, "Un fichier existe déjà : conserve-le et consulte ton archive d'origine.") from e
     except Exception as e:
         # B-334 (05/09/2026) : le détail HTTP recopiait l'exception brute
         # (adresses mémoire ReportLab, chemins du poste). À la limite de
@@ -1390,17 +1745,41 @@ async def pdf_pour_ouverture(invoice_id: str, session: AsyncSession = Depends(ge
     facture = await _get_invoice_with_lines(session, invoice_id)
     if not facture:
         raise HTTPException(404, "Facture introuvable.")
+    output_dir = await _get_invoice_output_dir(session)
     try:
-        chemin = chemin_pdf_a_ouvrir(await _get_invoice_output_dir(session), facture.invoice_number)
+        if _facture_emise(facture):
+            chemin = chemin_pdf_a_ouvrir(output_dir, facture.invoice_number)
+        else:
+            chemin = _dernier_apercu_pdf(output_dir, invoice_id, facture.invoice_number)
+            if chemin is None:
+                raise FileNotFoundError("Génère le PDF de cette facture avant de l’ouvrir.")
     except FileNotFoundError as exc:
+        if _facture_emise(facture) and _apercus_pdf(output_dir, invoice_id, facture.invoice_number):
+            raise HTTPException(409, "L'origine de ce PDF ne peut pas être vérifiée. Consulte ton archive d'origine.") from exc
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+    if _facture_emise(facture):
+        _reprendre_preuve_pdf(chemin, facture, lambda candidat: _verifier_archive_pdf(candidat, facture))
+        archive = _verifier_archive_pdf(chemin, facture)
+        statut = statut_effectif_facture(facture.status, facture.document_type, facture.due_date)
+        numero = _numero_pdf_pour_statut(facture, archive, statut)
+        if numero != facture.invoice_number:
+            try:
+                chemin = chemin_pdf_a_ouvrir(await _get_invoice_output_dir(session), numero)
+            except FileNotFoundError as exc:
+                raise HTTPException(404, str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
+            _reprendre_preuve_pdf(
+                chemin, facture, lambda candidat: _verifier_edition_pdf(candidat, facture, archive, statut),
+            )
+            _verifier_edition_pdf(chemin, facture, archive, statut)
     return {"pdf_path": str(chemin)}
 
 
 def generate_legal_mentions(
-    late_penalty_rate: float = 11.62,
+    late_penalty_rate: float | None = None,
     due_date_str: str = "",
     currency: str = "EUR",
 ) -> str:
@@ -1408,7 +1787,7 @@ def generate_legal_mentions(
     Genere les mentions legales d'une facture.
 
     Args:
-        late_penalty_rate: Taux de penalite de retard (defaut: 3x taux BCE ~3.87% = 11.62%)
+        late_penalty_rate: Taux convenu, ou None pour la règle supplétive.
         due_date_str: Date d'echeance formatee
         currency: Devise du document. Les mentions legales francaises (indemnite 40
             EUR, art. L441-10) ne s'appliquent qu'en EUR / droit FR : on ne les met
@@ -1417,7 +1796,6 @@ def generate_legal_mentions(
     """
     # B-1357 : ce texte est imprimé tel quel sur la facture remise au client,
     # il s'écrit donc en français correct (accents, virgule décimale).
-    taux = f"{late_penalty_rate:.2f}".replace(".", ",")
     lines = [
         f"Date d'échéance : {due_date_str}." if due_date_str else "",
     ]
@@ -1426,8 +1804,10 @@ def generate_legal_mentions(
             # B-1338 : la parenthèse « 3 fois le taux d'intérêt légal » était
             # fausse (3 x 2,75 % = 8,25 % au 2e semestre 2026). Le taux convenu
             # reste imprimé ; L441-10 fixe seulement son plancher.
-            f"En cas de retard de paiement, une pénalité de {taux} % annuel sera appliquée "
-            "(art. L441-10 du Code de commerce).",
+            (
+                mention_penalite_taux(late_penalty_rate)
+                if late_penalty_rate is not None else PENALITES_DEFAUT_EUR
+            ),
             "Une indemnité forfaitaire de 40 EUR pour frais de recouvrement sera exigée "
             "(art. L441-10 du Code de commerce).",
             "Escompte pour paiement anticipé : néant.",
@@ -1486,7 +1866,7 @@ async def convert_devis_to_invoice(
     payment_terms = req.payment_terms
     payment_method = req.payment_method
     payment_days = _parse_payment_terms_days(payment_terms)
-    late_penalty_rate = 11.62  # 3x taux BCE approximatif
+    late_penalty_rate = None  # Aucun taux particulier n'est convenu à la conversion.
 
     # 4. Creer la facture
     issue_date = _date_demission()
@@ -1618,12 +1998,12 @@ async def send_invoice_by_email(
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Pièce introuvable.")
 
     # Récupérer le contact
     contact = await session.get(Contact,invoice.contact_id)
     if not contact or not contact.email:
-        raise HTTPException(status_code=400, detail="Contact has no email address")
+        raise HTTPException(status_code=400, detail="Le contact n’a pas d’adresse e-mail.")
 
     # TODO: Intégration avec le service email (Phase 1)
     # L'envoi par email n'est pas encore implémenté.

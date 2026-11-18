@@ -155,6 +155,11 @@ export function requeteAutorisee(methode, adresse) {
     && url.pathname === '/api/variables/preview' && !url.search;
 }
 
+// B-2029 : acquittement local uniquement, sans autoriser cette écriture réseau.
+export function requeteASimuler(methode, adresse) {
+  return methode === 'POST' && adresse === `${ORIGINE_BACKEND}/api/chat/cache-migration`;
+}
+
 function adresseSansSecrets(adresse) {
   try {
     const url = new URL(adresse);
@@ -175,10 +180,28 @@ export function gesteExclu(nom, { ecran, role, agentId } = {}) {
   return GESTES_A_NE_PAS_CONFIRMER.test(nom);
 }
 
-export function installerGardeReseau(contexte, garde) {
+export function installerGardeReseau(contexte, garde, ecrituresEnCours = new Set()) {
+  garde.ecritures_simulees ??= { nombre: 0, requetes: [] };
   return Promise.all([
-    contexte.route('**/*', (route) => {
+    contexte.route('**/*', async (route) => {
       const requete = route.request();
+      if (requeteASimuler(requete.method(), requete.url())) {
+        const acquittement = (async () => {
+          await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+          garde.ecritures_simulees.nombre += 1;
+          garde.ecritures_simulees.requetes.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
+        })();
+        ecrituresEnCours.add(acquittement);
+        try {
+          await acquittement;
+        } catch {
+          garde.ecritures_simulees.echecs ??= [];
+          garde.ecritures_simulees.echecs.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
+        } finally {
+          ecrituresEnCours.delete(acquittement);
+        }
+        return;
+      }
       if (requeteAutorisee(requete.method(), requete.url())) return route.continue();
       garde.bloquees.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
       try {
@@ -552,13 +575,19 @@ async function principal() {
   mkdirSync(args.sortie, { recursive: true });
   const navigateur = await chromium.launch();
   const combinaisons = [];
-  const garde = { bloquees: [], websockets_bloques: [], telechargements: [], popups: [], portReel: false };
+  const garde = {
+    bloquees: [], websockets_bloques: [], telechargements: [], popups: [], portReel: false,
+    ecritures_simulees: { nombre: 0, requetes: [] },
+  };
+  const ecrituresEnCours = new Set();
   let ecranEnCours = null;
+  let interruption = false;
+  let erreurInterruption;
   try {
     for (const largeur of args.largeurs) {
       for (const theme of args.themes) {
         const contexte = await navigateur.newContext({ viewport: { width: largeur, height: 900 }, colorScheme: theme, serviceWorkers: 'block', acceptDownloads: false });
-        await installerGardeReseau(contexte, garde);
+        await installerGardeReseau(contexte, garde, ecrituresEnCours);
         await contexte.route(`${ORIGINE_BACKEND}/api/auth/token`, async (route) => {
           if (route.request().method() !== 'GET') return route.fallback();
           await route.continue({ headers: {
@@ -627,10 +656,17 @@ async function principal() {
       }
     }
   } catch (erreur) {
-    enregistrerInterruption(args.sortie, erreur, garde, ecranEnCours, preuvePile, combinaisons);
+    interruption = true;
+    erreurInterruption = erreur;
     throw erreur;
   } finally {
-    await navigateur.close();
+    try {
+      await navigateur.close();
+    } finally {
+      // La fermeture peut terminer ou rejeter un acquittement encore en vol.
+      await Promise.allSettled(ecrituresEnCours);
+      if (interruption) enregistrerInterruption(args.sortie, erreurInterruption, garde, ecranEnCours, preuvePile, combinaisons);
+    }
   }
 
   const parId = new Map();

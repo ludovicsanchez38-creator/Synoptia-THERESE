@@ -1,5 +1,5 @@
 /**
- * B-242 — « … soient envoyés à Mistralpour traitement. »
+ * B-242 — « … soient envoyées à Mistralpour traitement. »
  *
  * Le piège n'est pas dans le texte, il est dans la mise en page du source :
  * `{providerLabel}` termine une ligne et « pour traitement » commence la
@@ -25,12 +25,12 @@ function texteDuConsentement(): string {
 describe('SecurityStep — le consentement sépare le nom du fournisseur du mot suivant', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('écrit « envoyés à Mistral pour traitement »', () => {
+  it('écrit « envoyées à Mistral pour traitement »', () => {
     render(<SecurityStep provider="mistral" onNext={vi.fn()} onBack={vi.fn()} />);
 
     const texte = texteDuConsentement();
     expect(texte).not.toMatch(/Mistralpour/);
-    expect(texte).toMatch(/envoyés à Mistral pour traitement/);
+    expect(texte).toMatch(/envoyées à Mistral pour traitement/);
   });
 
   it('vaut pour n’importe quel fournisseur cloud', () => {
@@ -38,6 +38,6 @@ describe('SecurityStep — le consentement sépare le nom du fournisseur du mot 
 
     const texte = texteDuConsentement();
     expect(texte).not.toMatch(/Anthropicpour/);
-    expect(texte).toMatch(/envoyés à Anthropic pour traitement/);
+    expect(texte).toMatch(/envoyées à Anthropic pour traitement/);
   });
 });

@@ -234,6 +234,10 @@ class MemorySearchRequest(BaseModel):
         None
     )
     include_semantic: bool = True
+    # Sans périmètre explicite, la recherche de fichiers reste générale.
+    scope: Literal["global", "project"] | None = None
+    scope_id: str | None = None
+    conversation_id: str | None = None
 
 
 class MemorySearchResult(BaseModel):

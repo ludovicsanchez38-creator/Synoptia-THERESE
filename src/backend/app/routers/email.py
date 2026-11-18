@@ -689,14 +689,11 @@ async def update_oauth_credentials(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Update OAuth credentials for an existing account.
-
-    Stores client_id and client_secret (encrypted) for token refresh.
-    Then attempts to refresh the access token immediately.
+    Enregistre les identifiants OAuth, puis renouvelle le jeton si nécessaire.
     """
     account = await session.get(EmailAccount, account_id)
     if not account:
-        raise HTTPException(status_code=404, detail="Account not found")
+        raise HTTPException(status_code=404, detail="Compte introuvable")
 
     # Store credentials
     account.client_id = encrypt_value(request.client_id)
@@ -705,18 +702,21 @@ async def update_oauth_credentials(
     session.add(account)
     await session.commit()
 
-    # Try to refresh token immediately
+    # Le jeton n'est renouvelé que s'il expire bientôt.
     try:
         await ensure_valid_access_token(account, session)
         return {
             "status": "ok",
-            "message": "Credentials updated and token refreshed",
+            "message": "Identifiants mis à jour.",
             "email": account.email,
         }
     except HTTPException:
         return {
             "status": "credentials_saved",
-            "message": "Credentials saved but token refresh failed. You may need to re-authorize.",
+            "message": (
+                "Identifiants enregistrés, mais le renouvellement du jeton a échoué. "
+                "Tu dois peut-être reconnecter ton compte."
+            ),
             "email": account.email,
         }
 
@@ -803,8 +803,8 @@ async def setup_imap_account(
         smtp_port=request.smtp_port,
         smtp_use_tls=request.smtp_use_tls,
     )
-    verdict = await sonde.test_connection()
-    # Revue COCO 0.68.0 (P1) : `test_connection()` répond `success` (+ `imap_ok`,
+    verdict = await sonde.test_connection_details()
+    # Revue COCO 0.68.0 (P1) : le détail répond `success` (+ `imap_ok`,
     # `smtp_ok`, `message`), pas `ok` ; lire la mauvaise clé refusait tout compte
     # valide en 400 avec le message « Connexion IMAP et SMTP reussie ».
     if not verdict.get("success"):
@@ -883,7 +883,7 @@ async def test_email_connection(
             smtp_port=request.smtp_port,
             smtp_use_tls=request.smtp_use_tls,
         )
-        result = await provider.test_connection()
+        result = await provider.test_connection_details()
         return result
     except Exception as e:
         logger.error(f"Connection test failed: {e}")
@@ -1911,8 +1911,8 @@ async def generate_email_response(
 
     # Get message from DB
     message = await session.get(EmailMessage, message_id)
-    if not message or message.account_id != account_id:
-        raise HTTPException(status_code=404, detail="Message not found")
+    if not account_id or not message or not message.account_id or message.account_id != account_id:
+        raise HTTPException(status_code=404, detail="Message introuvable")
 
     # Get CRM contact context if exists (lookup SQL par email - source de
     # vérité, le payload Qdrant ne contient ni score ni téléphone ni notes)
@@ -1937,6 +1937,8 @@ async def generate_email_response(
     try:
         statement = select(EmailMessage).where(
             EmailMessage.thread_id == message.thread_id,
+            EmailMessage.thread_id != "",
+            EmailMessage.account_id == message.account_id,
             EmailMessage.id != message_id,
         ).order_by(EmailMessage.date.desc()).limit(3)
         result = await session.execute(statement)

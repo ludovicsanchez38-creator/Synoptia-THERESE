@@ -229,7 +229,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       // froid) : un calendrier Google sans account_id renvoyait 400 (recette
       // Ludo 16/07). On dérive donc l'account du calendrier lui-même.
       const currentCal = calendars.find((cal) => cal.id === currentCalendarId);
-      const effectiveAccountId = currentCal?.account_id || currentAccountId || undefined;
+      const effectiveAccountId = currentCal ? currentCal.account_id || undefined : currentAccountId || undefined;
 
       const evts = await api.listEvents(effectiveAccountId, currentCalendarId, {
         time_min: debut.toISOString(),

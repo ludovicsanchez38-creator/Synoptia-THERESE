@@ -17,12 +17,10 @@ from app.routers import invoices as factures
 from httpx import ASGITransport, AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-PREUVES = Path(__file__).resolve().parents[1] / ".app-loop/cycles/15/reprise/lot-c"
-
 
 async def _piece(http: AsyncClient, type_document: str) -> dict[str, Any]:
     contact = await http.post("/api/memory/contacts", json={
-        "first_name": "Client", "last_name": "Courses jetables",
+        "first_name": "Client", "last_name": "Courses jetables", "address": "Lyon",
     })
     assert contact.status_code == 200, contact.text
     creation = await http.post("/api/invoices/", json={
@@ -43,9 +41,8 @@ def _reponse(response: Response) -> dict[str, Any]:
     return {"statut_http": response.status_code, "corps": corps}
 
 
-def _preuve(nom: str, observation: dict[str, Any]) -> None:
-    PREUVES.mkdir(parents=True, exist_ok=True)
-    (PREUVES / f"concurrence-course-{nom}.txt").write_text(
+def _preuve(dossier: Path, nom: str, observation: dict[str, Any]) -> None:
+    (dossier / f"concurrence-course-{nom}.txt").write_text(
         json.dumps(observation, ensure_ascii=False, indent=2, default=str),
     )
 
@@ -59,7 +56,7 @@ def _instant_utc(valeur: str | None) -> datetime | None:
 
 @pytest.mark.asyncio
 async def test_suppression_chargee_avant_emission_ne_supprime_aucun_numero_emis(
-    client: Any, monkeypatch: pytest.MonkeyPatch,
+    client: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://testserver") as http:
@@ -128,7 +125,7 @@ async def test_suppression_chargee_avant_emission_ne_supprime_aucun_numero_emis(
             "emission": _reponse(emission), "suppression": _reponse(effacee),
             "relue": _reponse(relue), "suivante_emise": _reponse(suivante_emise),
         }
-        _preuve("suppression-emission", observation)
+        _preuve(tmp_path, "suppression-emission", observation)
         assert suivante_emise.status_code == 200, observation
         if emission.status_code == 200:
             assert relue.status_code == 200, observation
@@ -145,7 +142,7 @@ async def test_suppression_chargee_avant_emission_ne_supprime_aucun_numero_emis(
 
 @pytest.mark.asyncio
 async def test_deux_conversions_concurrentes_du_meme_devis_ne_creent_qu_une_facture(
-    client: Any, monkeypatch: pytest.MonkeyPatch,
+    client: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://testserver") as http:
@@ -206,7 +203,7 @@ async def test_deux_conversions_concurrentes_du_meme_devis_ne_creent_qu_une_fact
             "reponses": [_reponse(r) for r in reponses],
             "source_relue": _reponse(source_relue), "factures_creees": copies,
         }
-        _preuve("double-conversion", observation)
+        _preuve(tmp_path, "double-conversion", observation)
         assert source_relue.status_code == 200, observation
         assert source_relue.json()["invoice_number"] == devis["invoice_number"], observation
         assert source_relue.json()["status"] == "converted", observation

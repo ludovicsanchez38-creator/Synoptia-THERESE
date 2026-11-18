@@ -44,6 +44,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import func, select
+from starlette.types import Receive, Scope, Send
 
 logger = logging.getLogger(__name__)
 
@@ -685,29 +686,119 @@ async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depend
         model_override=agent_model,
     )
 
+    task = AgentTask(
+        title=request.instruction[:100],
+        description=request.instruction,
+        status="in_progress",
+        source_path=source_path,
+        agent_model=agent_model,
+    )
+    await _save_task(session, task)
+
+    current_async_task: asyncio.Task[Any] | None = None
+    final_status = "cancelled"
+    final_error: str | None = "Mission interrompue : l'écran qui la suivait a été fermé ou rechargé."
+    terminal_recu = False
+    finalise = False
+
+    async def finaliser() -> None:
+        nonlocal finalise
+        if finalise:
+            return
+        with anyio.move_on_after(10, shield=True):
+            if _running_agent_tasks.get(task.id) is current_async_task:
+                _running_agent_tasks.pop(task.id, None)
+            _arrets_demandes.discard(task.id)
+            try:
+                from app.models.database import get_session_context
+
+                async with get_session_context() as update_session:
+                    db_task = await update_session.get(AgentTask, task.id)
+                    if db_task is not None:
+                        db_task.status = final_status
+                        db_task.error = final_error
+                        db_task.updated_at = datetime.now(UTC)
+                        await update_session.commit()
+                finalise = True
+            except Exception:
+                logger.exception("État de la mission de l'agent non consigné")
+
     async def event_stream():
+        nonlocal current_async_task, final_status, final_error, terminal_recu
+        current_async_task = asyncio.current_task()
+        if current_async_task is not None:
+            _running_agent_tasks[task.id] = current_async_task
+        final_status = "error"
+        final_error = "Mission interrompue avant réception d'un résultat final."
+        terminal_recu = False
         try:
             async for event in runtime.run(request.instruction):
+                if event.type == "error":
+                    final_status = "error"
+                    final_error = event.content
+                    terminal_recu = True
+                elif event.type == "done":
+                    final_status = "done"
+                    final_error = None
+                    terminal_recu = True
                 chunk = AgentStreamChunk(
                     type=event.type,
                     agent=profile["id"],
                     content=event.content,
                     tool_name=event.tool_name,
+                    task_id=task.id,
                 )
                 data = chunk.model_dump(exclude_none=True)
                 yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                if terminal_recu:
+                    break
 
+            if not terminal_recu:
+                error_chunk = AgentStreamChunk(
+                    type="error", agent=profile["id"], content=final_error, task_id=task.id,
+                )
+                yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
+
+        except (asyncio.CancelledError, GeneratorExit):
+            if not terminal_recu:
+                final_status = "cancelled"
+                final_error = (
+                    "Mission annulée par l'utilisateur."
+                    if task.id in _arrets_demandes
+                    else "Mission interrompue : l'écran qui la suivait a été fermé ou rechargé."
+                )
+            raise
         except Exception as e:
             logger.error(f"Erreur agent spawn {profile['id']}: {e}", exc_info=True)
+            final_status = "error"
+            final_error = message_pour_ecran(e, ou="pendant la mission de l'agent")
             error_chunk = AgentStreamChunk(
                 type="error",
                 agent=profile["id"],
-                content=message_pour_ecran(e, ou="pendant la mission de l'agent"),
+                content=final_error,
+                task_id=task.id,
             )
             yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
+        finally:
+            await finaliser()
 
-    return StreamingResponse(
-        event_stream(),
+    flux = event_stream()
+
+    class ReponseMission(StreamingResponse):
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+            try:
+                await super().__call__(scope, receive, send)
+            finally:
+                # La réponse peut être interrompue avant même la première
+                # itération : le finally du générateur ne tourne alors pas.
+                with anyio.move_on_after(10, shield=True):
+                    try:
+                        await flux.aclose()
+                    finally:
+                        await finaliser()
+
+    return ReponseMission(
+        flux,
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

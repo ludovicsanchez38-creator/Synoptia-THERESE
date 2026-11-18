@@ -23,6 +23,7 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { useDemoMask } from '../../hooks/useDemoMask';
 import { useDemoStore } from '../../stores/demoStore';
+import { useStatusStore } from '../../stores/statusStore';
 import { buildReplacementMap, maskText as appliquerMasque } from '../../lib/demoMask';
 import { entreeValide } from '../../lib/entreeValide';
 import { demanderLOuvertureDuTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
@@ -67,6 +68,7 @@ const STATUS_OPTIONS = [
 
 export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact = false }: ProjectModalProps) {
   const { enabled: demoEnabled, replacementMap, maskContact, maskProject } = useDemoMask();
+  const addNotification = useStatusStore((state) => state.addNotification);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   // B-1392 : la saisie telle que chargée, pour savoir si elle a changé.
   const [reference, setReference] = useState<FormData>(initialFormData);
@@ -398,7 +400,10 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
     setError(null);
 
     try {
-      await api.deleteProject(project.id);
+      const resultat = await api.deleteProject(project.id);
+      if (resultat?.deleted === false) {
+        addNotification({ type: 'error', title: 'Suppression incomplète', message: resultat.message || 'Des fichiers restent à vérifier.', duration: 0 });
+      }
       onSaved?.();
       onClose();
     } catch (err) {

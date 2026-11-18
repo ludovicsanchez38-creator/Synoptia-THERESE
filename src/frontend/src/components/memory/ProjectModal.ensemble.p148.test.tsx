@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Contact, EnsembleDuProjet, Project } from '../../services/api';
 import { buildReplacementMap, maskContact, maskProject } from '../../lib/demoMask';
 import { useDemoStore } from '../../stores/demoStore';
+import { useStatusStore } from '../../stores/statusStore';
+import { Notifications } from '../ui/Notifications';
 
 const api = vi.hoisted(() => ({
   listContacts: vi.fn(), listProjectFiles: vi.fn(), etatSync: vi.fn(),
@@ -93,6 +95,21 @@ describe('P-148 : la fenêtre du projet, une vue d’ensemble d’abord', () => 
   afterEach(() => {
     cleanup();
     useDemoStore.setState({ enabled: false, replacementMap: new Map() });
+  });
+
+  it('avertit durablement si des fichiers restent après la suppression', async () => {
+    useStatusStore.setState({ notifications: [] });
+    const message = 'Le projet a été supprimé en base. Des fichiers du dossier restent sur disque.';
+    api.deleteProject.mockResolvedValue({ deleted: false, message });
+    const fermer = vi.fn();
+    render(<><ProjectModal isOpen onClose={fermer} project={PROJET} /><Notifications /></>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Supprimer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(fermer).toHaveBeenCalledOnce();
+    expect(useStatusStore.getState().notifications).toEqual(expect.arrayContaining([
+      expect.objectContaining({ message, duration: 0 }),
+    ]));
   });
 
   it('la fenêtre porte le nom du projet et le dit à qui ne la voit pas', async () => {

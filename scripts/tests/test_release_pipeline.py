@@ -240,6 +240,66 @@ class PipelineTests(unittest.TestCase):
         values = result.stdout.split('\0')[2::3]
         self.assertEqual(values, ['lf'] * len(paths))
 
+    def load(self, name):
+        spec = importlib.util.spec_from_file_location(name.removesuffix('.py'), ROOT / 'scripts' / name)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_signing_status_expressions_match_script_secret_sets(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())
+        macos = self.load('sign_macos.py')
+        windows = self.load('prepare_windows_signing.py')
+        env = workflow['env']
+        for name in macos.APPLE_SECRETS:
+            self.assertIn(f"secrets.{name} != ''", env['MACOS_SIGNE'])
+        self.assertIn('||', env['MACOS_SIGNE'])
+        named = set(re.findall(r'secrets\.(\w+)', env['WINDOWS_SIGNE']))
+        self.assertEqual(named, set(windows.SECRETS))
+        steps = workflow['jobs']['build']['steps']
+        prepare = next(s for s in steps if s.get('name') == 'Préparer la signature Apple ou ad hoc')
+        self.assertTrue(set(macos.APPLE_SECRETS) <= set(prepare['env']))
+        self.assertEqual(prepare['env']['SIGNATURE_OBLIGATOIRE'], '${{ vars.SIGNATURE_OBLIGATOIRE }}')
+        prepare_windows = next(s for s in steps if s.get('name') == 'Préparer la signature Microsoft')
+        self.assertEqual(prepare_windows['env']['SIGNATURE_OBLIGATOIRE'], '${{ vars.SIGNATURE_OBLIGATOIRE }}')
+
+    def test_tauri_never_receives_apple_notarization_credentials(self):
+        # Tauri notarise seul s'il voit ces variables : la notarisation doit
+        # rester après la re-signature de sign_macos.py finish, une seule fois.
+        steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
+        tauri = next(s for s in steps if 'tauri-apps/tauri-action@' in s.get('uses', ''))
+        forbidden = {'APPLE_CERTIFICATE', 'APPLE_CERTIFICATE_PASSWORD', 'APPLE_ID', 'APPLE_PASSWORD', 'APPLE_TEAM_ID',
+                     'APPLE_API_KEY', 'APPLE_API_ISSUER', 'APPLE_API_KEY_PATH', 'APPLE_API_PRIVATE_KEY'}
+        self.assertFalse(forbidden & set(tauri.get('env', {})))
+
+    def test_release_notes_unsigned_text_is_frozen_and_signed_text_drops_workarounds(self):
+        notes = self.load('release_notes.py')
+        nom = json.loads((ROOT / 'src/frontend/src-tauri/tauri.conf.json').read_text(encoding='utf-8'))['productName']
+        unsigned = notes.body('v0.0.0-alpha', False, False)
+        self.assertIn("- **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, "
+                      f"ouvre le Terminal et lance : `xattr -cr /Applications/{nom}.app` puis relance l'app.", unsigned)
+        self.assertEqual(set(re.findall(r"/Applications/([^\r\n`]+?)\.app", unsigned)), {nom})
+        self.assertIn("- **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller", unsigned)
+        signed = notes.body('v0.0.0-alpha', True, True)
+        for workaround in ('xattr', 'non signée', 'antivirus'):
+            self.assertNotIn(workaround, signed)
+        self.assertEqual(notes.body_from_env({'RELEASE_TAG': 'v1', 'MACOS_SIGNE': 'true', 'WINDOWS_SIGNE': 'false'}),
+                         notes.body('v1', True, False))
+        steps = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['build']['steps']
+        publish = next(s for s in steps if s.get('name') == 'Publier les artefacts vérifiés')
+        self.assertNotIn('RELEASE_BODY', publish.get('env', {}))
+
+    def test_windows_partial_configuration_is_reported_by_name(self):
+        module = self.load('prepare_windows_signing.py')
+        self.assertEqual(module.diagnostic({}), (None, False))
+        self.assertEqual(module.diagnostic(dict.fromkeys(module.SECRETS, 'valeur-secrete')), (None, False))
+        message, refuse = module.diagnostic({'AZURE_CLIENT_ID': 'valeur-secrete'})
+        self.assertFalse(refuse)
+        self.assertIn('AZURE_CLIENT_SECRET', message)
+        self.assertNotIn('valeur-secrete', message)
+        self.assertTrue(module.diagnostic({'AZURE_CLIENT_ID': 'x', 'SIGNATURE_OBLIGATOIRE': 'true'})[1])
+        self.assertTrue(module.diagnostic({'SIGNATURE_OBLIGATOIRE': 'TRUE'})[1])
+
     def test_windows_no_secrets_never_enables_sign_command(self):
         spec = importlib.util.spec_from_file_location('prepare', ROOT / 'scripts/prepare_windows_signing.py')
         module = importlib.util.module_from_spec(spec)

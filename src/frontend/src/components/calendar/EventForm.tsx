@@ -63,6 +63,7 @@ export function EventForm() {
   const ficheDansLaListe = () => useCalendarStore.getState().events.some((evt) => evt.id === currentEventId);
   const event = events.find((evt) => evt.id === currentEventId);
   const selectedCalendar = calendars.find((calendar) => calendar.id === currentCalendarId);
+  const compteAgenda = selectedCalendar ? selectedCalendar.account_id || undefined : currentAccountId || undefined;
 
   // Load event data for editing.
   // B-979 : une fois par rendez-vous ouvert, pas à chaque nouvel objet de la
@@ -219,7 +220,7 @@ export function EventForm() {
         { label: 'Fin', value: allDay ? endDate : `${endDate} ${endTime}` },
         { label: 'Agenda', value: selectedCalendar?.summary || currentCalendarId },
         { label: 'Fournisseur', value: selectedCalendar?.provider || 'Destination locale' },
-        { label: 'Compte', value: currentAccountId || 'Compte local' },
+        { label: 'Compte', value: compteAgenda || 'Compte local' },
         { label: 'Participants', value: attendees.join(', ') },
         { label: 'Lieu', value: location },
         { label: 'Description', value: description },
@@ -253,7 +254,7 @@ export function EventForm() {
             currentEventId,
             request,
             currentCalendarId,
-            currentAccountId || undefined
+            compteAgenda
           );
           updateEventInStore(currentEventId, updated);
           // B-1005 : hors de la période affichée, la fiche n'est pas dans la
@@ -280,7 +281,7 @@ export function EventForm() {
             request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
           }
 
-          const created = await api.createEvent(request, currentAccountId || undefined);
+          const created = await api.createEvent(request, compteAgenda);
           addEvent(created);
           setCurrentEvent(created.id);
         }

@@ -43,7 +43,8 @@ describe('B-1412 : retoucher un brouillon enregistré le met à jour', () => {
     fireEvent.change(screen.getByLabelText('Description ligne 1'), { target: { value: 'Diagnostic IA approfondi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
     expect(screen.getByText(/Confirmer la mise à jour de DEV-2026-014/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+    // B-1984 : le bouton de mise à jour ne s'appelle plus « Confirmer le brouillon ».
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer la mise à jour' }));
     await screen.findByTestId('devis-draft-saved');
 
     expect(enregistrer).toHaveBeenCalledTimes(2);

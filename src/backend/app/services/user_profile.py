@@ -10,8 +10,10 @@ import json
 import logging
 import re
 import unicodedata
+from collections.abc import Coroutine
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
+from typing import Any
 
 from app.models.entities import Preference
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
@@ -493,46 +495,76 @@ async def delete_user_profile(session: AsyncSession) -> bool:
 
     Returns True if deleted, False if not found.
     """
+    async def terminer_meme_si_annule(operation: Coroutine[Any, Any, Any]) -> bool:
+        """Attend l'opération sous le verrou, puis indique une annulation reçue."""
+        tache = asyncio.create_task(operation)
+        annule = False
+        while True:
+            try:
+                await asyncio.shield(tache)
+                return annule
+            except asyncio.CancelledError:
+                if tache.cancelled():
+                    raise
+                annule = True
+
     try:
-        # BUG-026 : aligner sur key + category (comme get_user_profile)
-        result = await session.execute(
-            select(Preference).where(
-                Preference.key == PROFILE_KEY,
-                Preference.category == PROFILE_CATEGORY,
-            )
-        )
-        pref = result.scalar_one_or_none()
-
-        if not pref:
-            return False
-
-        await session.delete(pref)
-        await session.commit()
-
-        # RGPD : une suppression doit TENIR. Deux protections, car une seule ne
-        # suffit pas.
-        #
-        # Avancer la generation fait renoncer les indexations qui attendent
-        # encore le verrou. Mais une indexation DEJA entree dans la section
-        # critique a franchi ce controle : elle ecrirait apres la suppression,
-        # et les donnees personnelles reapparaitraient. La suppression prend
-        # donc le verrou a son tour - elle attend celle qui est en vol, puis
-        # supprime pour de bon.
         global _GENERATION_PROFIL
-        _GENERATION_PROFIL += 1
+        # Aucune modification avant la prise du verrou : une attente annulée
+        # laisse le profil et les indexations en attente intacts.
+        async with _VERROU_INDEXATION:
+            generation_initiale = _GENERATION_PROFIL
+            result = await session.execute(
+                select(Preference).where(
+                    Preference.key == PROFILE_KEY,
+                    Preference.category == PROFILE_CATEGORY,
+                )
+            )
+            pref = result.scalar_one_or_none()
+            sauvegarde = pref.model_dump() if pref else None
+            annule = False
+            if pref:
+                async def supprimer_sql() -> None:
+                    await session.delete(pref)
+                    await session.commit()
 
-        # Remove from Qdrant
-        try:
-            qdrant = get_qdrant_service()
-            async with _VERROU_INDEXATION:
-                # Appel synchrone deporte : il gelait la boucle d'evenements,
-                # comme le faisait l'indexation avant sa correction.
-                await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
-        except Exception as e:
-            logger.debug("Qdrant operation non critique echouee: %s", e)
+                # Une annulation pendant le commit attend son résultat : si la
+                # ligne est supprimée, le retrait du vecteur doit suivre.
+                annule = await terminer_meme_si_annule(supprimer_sql())
 
-        logger.info("User profile deleted")
-        return True
+            try:
+                qdrant = get_qdrant_service()
+                annule_qdrant = await terminer_meme_si_annule(
+                    asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
+                )
+                annule = annule or annule_qdrant
+            except Exception:
+                if sauvegarde:
+                    async def restaurer_sql() -> None:
+                        # Une nouvelle fiche a pu être enregistrée entre-temps :
+                        # ne jamais l'écraser avec l'ancienne.
+                        actuel = await session.execute(
+                            select(Preference).where(Preference.key == PROFILE_KEY)
+                        )
+                        if actuel.scalar_one_or_none() is None:
+                            session.add(Preference(**sauvegarde))
+                            await session.commit()
+
+                    await terminer_meme_si_annule(restaurer_sql())
+                raise
+
+            # Une fiche enregistrée pendant le retrait a sa propre génération :
+            # laisser son indexation en attente la réécrire après ce verrou.
+            if generation_initiale == _GENERATION_PROFIL:
+                _GENERATION_PROFIL += 1
+                # Le cache peut être obsolète même sans ligne en base.
+                set_cached_profile(None)
+            if annule:
+                raise asyncio.CancelledError
+
+            if pref:
+                logger.info("User profile deleted")
+            return pref is not None
 
     except Exception as e:
         logger.error(f"Failed to delete user profile: {e}")
