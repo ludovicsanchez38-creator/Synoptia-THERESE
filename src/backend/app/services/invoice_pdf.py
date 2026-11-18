@@ -8,13 +8,9 @@ Refonte visuelle : utilise PDFTheme pour un rendu professionnel
 avec la palette Synoptia (primary #2451FF, cyan #22D3EE, dark #0B1226).
 """
 
-import io
 import logging
 import os
-import shutil
 import tempfile
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager, suppress
 from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
@@ -131,59 +127,6 @@ def chemin_pdf_a_ouvrir(dossier: str, numero: str) -> Path:
     if not fichier.is_file():
         raise FileNotFoundError("Génère le PDF de cette facture avant de l’ouvrir.")
     return fichier
-
-
-@contextmanager
-def publier_sans_ecraser(
-    source: Path, destination: Path, *, retirer_lien_sur_erreur: bool = False,
-) -> Iterator[Callable[[], bool]]:
-    """Publie le fichier et permet de contrôler son identité avant de le libérer."""
-    try:
-        os.link(source, destination)
-    except FileExistsError:
-        raise
-    except (OSError, AttributeError):
-        pass
-    else:
-        def lien_inchange() -> bool:
-            try:
-                return source.samefile(destination)
-            except OSError:
-                return False
-
-        try:
-            yield lien_inchange
-        except BaseException:
-            if retirer_lien_sur_erreur and lien_inchange():
-                with suppress(OSError):
-                    destination.unlink()
-            raise
-        return
-
-    # Sans lien physique, le PDF est visible à destination pendant l’écriture, comme en 0.83 : la publication n’est pas atomique.
-    with io.open(destination, "xb", opener=lambda chemin, flags: os.open(chemin, flags, 0o600)) as sortie:
-        def copie_inchangee() -> bool:
-            try:
-                ouvert = os.fstat(sortie.fileno())
-                au_chemin = os.stat(destination, follow_symlinks=False)
-                return ouvert.st_ino != 0 and os.path.samestat(ouvert, au_chemin)
-            except OSError:
-                return False
-
-        try:
-            with source.open("rb") as entree:
-                shutil.copyfileobj(entree, sortie)
-            sortie.flush()
-            os.fsync(sortie.fileno())
-            yield copie_inchangee
-        except BaseException:
-            with suppress(OSError):
-                if copie_inchangee():
-                    destination.unlink()
-            # Une seconde tentative de vidage à la fermeture peut aussi échouer.
-            with suppress(OSError):
-                sortie.close()
-            raise
 
 
 def resolve_invoice_output_dir() -> str:
@@ -1017,19 +960,12 @@ class InvoicePDFGenerator:
         # Build PDF
         doc.build(story, onFirstPage=on_first, onLaterPages=on_later)
         if contenu is not None:
-            source: Path | None = None
-            try:
-                with tempfile.NamedTemporaryFile(dir=self.output_dir, delete=False) as provisoire:
-                    source = Path(provisoire.name)
-                    provisoire.write(contenu.getvalue())
-                with publier_sans_ecraser(source, filepath):
-                    pass
-            except BaseException:
-                if source is not None:
-                    with suppress(OSError):
-                        source.unlink()
-                raise
-            source.unlink()
+            # Publication atomique sans remplacement, même si deux processus
+            # génèrent simultanément la même pièce émise.
+            with tempfile.NamedTemporaryFile(dir=self.output_dir) as provisoire:
+                provisoire.write(contenu.getvalue())
+                provisoire.flush()
+                os.link(provisoire.name, filepath)
             return str(chemin_pdf_a_ouvrir(str(self.output_dir), numero_fichier or invoice_number))
 
         logger.info("Invoice PDF generated: %s", filepath)

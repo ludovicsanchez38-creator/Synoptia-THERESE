@@ -15,7 +15,6 @@ import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
-from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +36,6 @@ from app.services.invoice_pdf import (
     InvoicePDFGenerator,
     chemin_pdf_a_ouvrir,
     mention_penalite_taux,
-    publier_sans_ecraser,
 )
 from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
@@ -543,31 +541,30 @@ def _nettoyer_publication_pdf(provisoire: Path) -> None:
 
 def _meme_fichier(premier: Path, second: Path) -> bool:
     try:
-        identite = premier.stat()
-        return identite.st_ino != 0 and os.path.samestat(identite, second.stat())
+        return os.path.samefile(premier, second)
     except OSError:
         return False
 
 
-def _lier_preuve_pdf(provisoire: Path, chemin: Path, pdf_inchange: Callable[[], bool]) -> None:
+def _lier_preuve_pdf(provisoire: Path, chemin: Path) -> None:
     """Ne finalise que le PDF publié depuis ce fichier provisoire précis."""
-    def verifier_pdf() -> None:
-        if not pdf_inchange():
+    if not _meme_fichier(provisoire, chemin):
+        raise HTTPException(409, "Le PDF a changé pendant sa publication.")
+    preuve_provisoire = _preuve_pdf(provisoire)
+    preuve = _preuve_pdf(chemin)
+
+    def verifier_apres_lien() -> None:
+        if not _meme_fichier(provisoire, chemin):
+            if _meme_fichier(preuve_provisoire, preuve):
+                preuve.unlink()
             raise HTTPException(409, "Le PDF a changé pendant sa publication.")
 
-    verifier_pdf()
     try:
-        with publier_sans_ecraser(
-            _preuve_pdf(provisoire), _preuve_pdf(chemin), retirer_lien_sur_erreur=True,
-        ) as preuve_inchangee:
-            verifier_pdf()
-            if not preuve_inchangee():
-                raise HTTPException(409, "La preuve du PDF a changé pendant sa publication.")
-    except HTTPException:
-        raise
+        os.link(preuve_provisoire, preuve)
     except BaseException:
-        verifier_pdf()
+        verifier_apres_lien()
         raise
+    verifier_apres_lien()
 
 
 def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Path], object]) -> None:
@@ -579,7 +576,11 @@ def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Pa
     for provisoire in chemin.parent.glob(f"{prefixe}*.pdf"):
         if provisoire.is_symlink():
             continue
-        if not _meme_fichier(provisoire, chemin):
+        try:
+            identique = os.path.samefile(provisoire, chemin)
+        except OSError:
+            continue
+        if not identique:
             continue
         preuve_provisoire = _preuve_pdf(provisoire)
         if preuve_presente and (
@@ -592,7 +593,7 @@ def _reprendre_preuve_pdf(chemin: Path, invoice: Invoice, verifier: Callable[[Pa
                 _nettoyer_publication_pdf(provisoire)
             return
         try:
-            _lier_preuve_pdf(provisoire, chemin, partial(_meme_fichier, provisoire, chemin))
+            _lier_preuve_pdf(provisoire, chemin)
         except FileExistsError:
             # Une autre reprise a publié le compagnon ; l'appelant le vérifie.
             return
@@ -615,10 +616,14 @@ def _publier_pdf_atteste(
     try:
         _enregistrer_preuve_pdf(provisoire, invoice, details)
         verifier(provisoire)
-        with publier_sans_ecraser(provisoire, chemin) as pdf_inchange:
-            _lier_preuve_pdf(provisoire, chemin, pdf_inchange)
+        os.link(provisoire, chemin)
+        _lier_preuve_pdf(provisoire, chemin)
     except BaseException:
-        if not _meme_fichier(provisoire, chemin):
+        try:
+            publie = os.path.samefile(provisoire, chemin)
+        except OSError:
+            publie = False
+        if not publie:
             _nettoyer_publication_pdf(provisoire)
         raise
     _nettoyer_publication_pdf(provisoire)
