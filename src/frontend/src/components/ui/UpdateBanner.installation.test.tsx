@@ -1,5 +1,6 @@
 import { installLocalStorageStub } from '../../test/localStorage-stub';
 /** B-1111 : aucune installation automatique Linux hors paquet Debian reconnu. */
+import { createServer, get } from 'node:http';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,6 +50,64 @@ describe('installation des mises à jour', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it('annonce la 0.84.0 depuis un manifeste local pour une 0.83.0 simulée', async () => {
+    const installee = '0.83.0';
+    const chemins: string[] = [];
+    const serveur = createServer((requete, reponse) => {
+      chemins.push(requete.url ?? '');
+      reponse.writeHead(200, { 'content-type': 'application/json' });
+      reponse.end(JSON.stringify({
+        version: '0.84.0',
+        notes: 'La 0.84 vient du serveur de test.',
+        platforms: {
+          'linux-x86_64-deb': { url: 'https://exemple.test/therese-0.84.0.deb', signature: 'factice' },
+        },
+      }));
+    });
+    await new Promise<void>((resoudre, rejeter) => {
+      serveur.once('error', rejeter);
+      serveur.listen(0, '127.0.0.1', resoudre);
+    });
+    try {
+      const adresse = serveur.address();
+      if (!adresse || typeof adresse === 'string') throw new Error('Adresse du serveur de test manquante');
+      const url = `http://127.0.0.1:${adresse.port}/latest.json`;
+      type ManifesteLu = { version: string; notes: string; platforms: Record<string, unknown> };
+      let lecture: Promise<ManifesteLu> | undefined;
+      doubles.getBundleType.mockResolvedValue('deb');
+      doubles.check.mockImplementation(async () => {
+        lecture = new Promise((resoudre, rejeter) => {
+          get(url, (reponse) => {
+            reponse.setEncoding('utf8');
+            let contenu = '';
+            reponse.on('data', (texte) => { contenu += texte; });
+            reponse.on('end', () => {
+              try { resoudre(JSON.parse(contenu) as ManifesteLu); }
+              catch (erreur) { rejeter(erreur); }
+            });
+            reponse.on('error', rejeter);
+          }).on('error', rejeter);
+        });
+        const manifeste = await lecture;
+        expect(manifeste.platforms).toHaveProperty('linux-x86_64-deb');
+        return {
+          available: installee === '0.83.0' && manifeste.version === '0.84.0',
+          version: manifeste.version,
+          body: manifeste.notes,
+        };
+      });
+      await demarrer();
+      expect(doubles.check).toHaveBeenCalledTimes(1);
+      if (!lecture) throw new Error('Le plugin simulé n’a pas lu le manifeste');
+      await act(async () => { await lecture; });
+      expect(chemins).toEqual(['/latest.json']);
+      expect(screen.getByTestId('update-banner')).toHaveTextContent('0.84.0');
+      expect(doubles.downloadAndInstall).not.toHaveBeenCalled();
+    } finally {
+      await new Promise<void>((resoudre) => { serveur.close(() => resoudre()); });
+    }
   });
 
   it('propose un lien manuel sur AppImage, même sans cible updater disponible', async () => {

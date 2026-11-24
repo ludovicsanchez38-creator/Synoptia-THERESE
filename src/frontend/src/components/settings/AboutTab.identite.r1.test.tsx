@@ -8,7 +8,7 @@ import { useBackendStore } from '../../hooks/useBackend';
 import { checkHealth } from '../../services/api';
 import { AboutTab } from './AboutTab';
 
-describe('R1-1 : identité incomplète de la livraison installée', () => {
+describe('R1-1 : numéro sans identification de livraison', () => {
   beforeEach(() => {
     useBackendStore.getState().reset();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -22,7 +22,7 @@ describe('R1-1 : identité incomplète de la livraison installée', () => {
     ['0.83.0', 'v0.83.0-alpha.2'],
     ['0.83.0', 'v0.83.0'],
     ['0.83.0+build.9', 'v0.83.0+autre'],
-  ])('ne conclut pas à jour avec %s face à %s sans identité exacte', async (version, tag) => {
+  ])('reconnaît le même numéro pour %s et %s', async (version, tag) => {
     vi.mocked(checkHealth).mockResolvedValueOnce({ version, status: 'healthy' });
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
@@ -31,9 +31,8 @@ describe('R1-1 : identité incomplète de la livraison installée', () => {
     render(<AboutTab />);
     await screen.findByText(version);
     fireEvent.click(screen.getByRole('button', { name: 'Vérifier les mises à jour' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/version exacte de la livraison installée/);
-    expect(screen.queryByText(/THÉRÈSE est à jour|Nouvelle version disponible/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE manuellement' }))
-      .toHaveAttribute('href', 'https://synoptia.fr/therese/beta/');
+    expect(await screen.findByText(/THÉRÈSE est à jour/)).toBeInTheDocument();
+    expect(screen.queryByText(/Nouvelle version disponible/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

@@ -81,11 +81,20 @@ for f in "${FILES[@]}"; do
     echo "  OK  $REL"
 done
 
-# README : badge de version (suffixe -alpha conventionnel ; shields.io escape '-' en '--')
+# README : le badge Shields échappe les tirets du suffixe avec « -- ».
+# Un bump numérique conserve le suffixe affiché. Un suffixe explicite le remplace.
 README="$ROOT/README.md"
 if [ -f "$README" ]; then
-    sed_inplace 's|(badge/version-)[0-9]+\.[0-9]+\.[0-9]+(--alpha)|\1'"$NEW"'\2|' "$README"
-    if grep -q "badge/version-$NEW--alpha" "$README"; then
+    BADGE_TETE='(badge/version-)[0-9]+\.[0-9]+\.[0-9]+'
+    BADGE_SUFFIXE='(--[a-zA-Z0-9.]+)*'
+    BADGE_COULEUR='(-[a-zA-Z0-9]+)'
+    BADGE_VERSION="${NEW%%-*}"
+    if [ "$BADGE_VERSION" = "$NEW" ]; then
+        sed_inplace "s|${BADGE_TETE}(${BADGE_SUFFIXE})${BADGE_COULEUR}|\1${BADGE_VERSION}\2\4|" "$README"
+    else
+        sed_inplace "s|${BADGE_TETE}${BADGE_SUFFIXE}${BADGE_COULEUR}|\1${BADGE_VERSION}--${NEW#*-}\3|" "$README"
+    fi
+    if grep -qE "badge/version-${BADGE_VERSION//./[.]}${BADGE_SUFFIXE}${BADGE_COULEUR}" "$README"; then
         echo "  OK  README.md (badge version)"
     else
         echo "  ATTENTION  README.md badge non mis a jour (format inattendu, verifier a la main)"

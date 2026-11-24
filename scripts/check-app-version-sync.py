@@ -60,7 +60,7 @@ def collect_versions() -> dict[str, str]:
         raise ValueError("métadonnées de projet TOML invalides")
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    badge_match = re.search(r"badge/version-(\d+\.\d+\.\d+)(?:--alpha)?-", readme)
+    badge_match = re.search(r"badge/version-(\d+\.\d+\.\d+)(?:--[a-zA-Z0-9.]+)*-[a-zA-Z0-9]+(?=[./?\s\x22\x27]|$)", readme)
     if not badge_match:
         raise ValueError("badge de version introuvable dans README.md")
 
@@ -96,7 +96,9 @@ def main() -> int:
     mismatches = {
         source: version
         for source, version in versions.items()
-        if not version or version != expected
+        if not version or version != (
+            expected.split("-", 1)[0] if source == "README.md (badge)" else expected
+        )
     }
 
     print(f"Version de référence : {expected}")

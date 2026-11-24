@@ -54,6 +54,17 @@ describe('B-1844 : les préversions ne se confondent pas', () => {
     expect(screen.queryByText(/Nouvelle version disponible/)).toBeNull();
   });
 
+  it.each(['v0.85.0-beta', 'v0.85.0-beta.1'])('reconnaît le même numéro pour %s', async (tag) => {
+    await verifier('0.85.0', tag);
+    expect(await screen.findByText(/THÉRÈSE est à jour/)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('1.0.0 est proposée à une installation en 0.85.0', async () => {
+    await verifier('0.85.0', 'v1.0.0');
+    expect(await screen.findByText('Nouvelle version disponible : v1.0.0')).toBeInTheDocument();
+  });
+
   it('la même livraison alpha, avec ou sans suffixe, reste à jour', async () => {
     await verifier('0.83.0', 'v0.83.0-alpha');
     expect(await screen.findByText(/THÉRÈSE est à jour/)).toBeInTheDocument();

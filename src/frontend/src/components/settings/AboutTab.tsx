@@ -50,9 +50,9 @@ function compareVersions(current: string, latest: string): number | null {
     const ecart = comparerNombres(actuel.coeur[i], distant.coeur[i]);
     if (ecart !== 0) return ecart;
   }
-  if (!actuel.pre && !distant.pre) return 0;
-  // Une livraison sans préversion est plus récente que la préversion du même numéro.
-  if (!actuel.pre) return -1;
+  // Le moteur peut ne publier que le numéro. Pour le même cœur, un
+  // suffixe distant seul ne permet pas d'établir un écart de version.
+  if (!actuel.pre) return 0;
   if (!distant.pre) return 1;
   const identifiants = Math.max(actuel.pre.length, distant.pre.length);
   for (let i = 0; i < identifiants; i++) {
@@ -164,14 +164,6 @@ export function AboutTab() {
       if (comparaison === null) {
         throw new Error('Impossible de vérifier les mises à jour : version installée ou publiée illisible.');
       }
-      // Le moteur historique donne X.Y.Z pour la livraison X.Y.Z-alpha.
-      // Ce numéro ne situe ni une préversion numérotée ni la finale du même cœur.
-      const numero = versionInstallee.trim().replace(/^v/i, '').split('+')[0];
-      const tag = latest.tag_name.trim().replace(/^v/i, '').split('+')[0];
-      if (/^\d+\.\d+\.\d+$/.test(numero) && (tag === numero || (tag.startsWith(`${numero}-`) && tag !== `${numero}-alpha`))) {
-        throw new Error('Impossible de vérifier la version exacte de la livraison installée. Consulte le téléchargement manuel.');
-      }
-
       if (comparaison > 0) {
         setUpdateStatus('update-available');
       } else {
