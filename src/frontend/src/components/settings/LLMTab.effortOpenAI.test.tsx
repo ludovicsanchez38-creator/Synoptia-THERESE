@@ -69,6 +69,46 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     expect(screen.queryByText(/désactivé pour ce modèle/i)).toBeNull();
   });
 
+  it.each(['gpt-6.2-astra', 'gpt-6.2-sol'])('%s laisse le modèle choisir son effort, y compris avec des outils', async (modele) => {
+    apiMocks.getLLMConfig.mockResolvedValue({ provider: 'openai', model: modele, effort: 'high' });
+    render(<EffortSelector selectedProvider="openai" selectedModel={modele} />);
+
+    const select = screen.getByRole('combobox', { name: 'Effort de raisonnement' });
+    await waitFor(() => expect(apiMocks.getLLMConfig).toHaveBeenCalled());
+    expect(screen.queryByText(/désactivé pour ce modèle/i)).not.toBeInTheDocument();
+    expect(select).toBeDisabled();
+    expect(select).toHaveValue('auto');
+    expect(select).toHaveAccessibleDescription(/le modèle choisit son effort, même avec des outils/i);
+  });
+
+  it.each([
+    ['gpt-6.2-astra', 'auto'],
+    ['gpt-6.2-astra', 'low'],
+    ['gpt-6.2-astra', 'medium'],
+    ['gpt-6.2-astra', 'xhigh'],
+    ['gpt-6.2-astra', 'max'],
+    ['gpt-6.2-sol', 'auto'],
+    ['gpt-6.2-sol', 'low'],
+    ['gpt-6.2-sol', 'medium'],
+    ['gpt-6.2-sol', 'xhigh'],
+    ['gpt-6.2-sol', 'max'],
+  ])('%s affiche Auto après un changement de modèle avec la préférence %s', async (modele, effort) => {
+    const precedent = effort === 'xhigh' ? 'gpt-6.1-sol' : 'gpt-6-sol';
+    apiMocks.setLLMConfig.mockClear();
+    apiMocks.getLLMConfig.mockResolvedValueOnce({ provider: 'openai', model: precedent, effort });
+    const { rerender } = render(<EffortSelector selectedProvider="openai" selectedModel={precedent} />);
+    const select = screen.getByRole('combobox', { name: 'Effort de raisonnement' });
+    await waitFor(() => expect(select).toHaveValue(effort));
+    expect(select).toBeEnabled();
+
+    apiMocks.getLLMConfig.mockResolvedValueOnce({ provider: 'openai', model: modele, effort });
+    rerender(<EffortSelector selectedProvider="openai" selectedModel={modele} />);
+    await waitFor(() => expect(select).toHaveValue('auto'));
+    expect(select).toBeDisabled();
+    fireEvent.change(select, { target: { value: 'high' } });
+    expect(apiMocks.setLLMConfig).not.toHaveBeenCalled();
+  });
+
   it('anthropic, ou gpt-4.1 : aucune mention', async () => {
     const { unmount } = render(<EffortSelector selectedProvider="anthropic" selectedModel="claude-sonnet-4-6" />);
     await screen.findByLabelText('Effort de raisonnement');

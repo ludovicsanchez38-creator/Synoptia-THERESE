@@ -31,6 +31,16 @@ def test_le_transport_avec_outils_est_un_predicat_a_part():
     assert _outils_via_responses("gpt-6-sol") is False
 
 
+def test_gpt_62_laisse_l_api_choisir_l_effort_meme_avec_outils():
+    from app.services.modeles_catalogue import resoudre_effort
+    from app.services.providers.openai import _outils_via_responses
+
+    for modele in ("gpt-6.2-astra", "gpt-6.2-sol"):
+        assert _outils_via_responses(modele)
+        for choix in ("auto", "low", "medium", "high", "xhigh", "max"):
+            assert resoudre_effort(modele, choix, "openai") is None
+
+
 def test_l_effort_sans_outils_n_est_transmis_qu_aux_modeles_du_catalogue():
     from app.services.modeles_catalogue import resoudre_effort
 

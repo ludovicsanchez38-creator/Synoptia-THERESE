@@ -15,7 +15,13 @@ import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, POLITIQUE_SYNTHETIC, type ModeleDecore } from '../../lib/catalogueModeles';
-import { effortConserveAvecOutils, effortTransmisSansOutils, effortXhighPropose, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
+import {
+  effortConserveAvecOutils,
+  effortOpenAIAutomatique,
+  effortTransmisSansOutils,
+  effortXhighPropose,
+  modeleOpenAIRaisonnant,
+} from '../../lib/effortOpenAI';
 
 // Configuration des providers LLM - catalogue centralisé (dette 0.43.4) :
 // la liste statique vit dans lib/catalogueModeles, la liste dynamique vient
@@ -705,9 +711,11 @@ export function EffortSelector({
     };
   }, [selectedProvider, selectedModel]);
 
+  const effortAutomatique = selectedProvider === 'openai' && effortOpenAIAutomatique(selectedModel);
+
   async function handleChange(value: string) {
     // B-1160 : sans modèle, l'effort partait avec un modèle vide.
-    if (!selectedModel) return;
+    if (!selectedModel || effortAutomatique) return;
     const previous = effort;
     setEffort(value);
     setSaving(true);
@@ -748,6 +756,7 @@ export function EffortSelector({
     : EFFORT_OPTIONS;
   const decritPar = [
     'llm-effort-aide',
+    effortAutomatique ? 'llm-effort-auto' : '',
     proposeXhigh ? 'llm-effort-xhigh' : '',
     mentionOutils ? 'llm-effort-outils' : '',
     conserveEffort ? 'llm-effort-conserve' : '',
@@ -761,12 +770,10 @@ export function EffortSelector({
         </label>
         <Select
           id="llm-effort"
-          value={effort}
-          disabled={saving || !selectedModel}
+          value={effortAutomatique ? 'auto' : effort}
+          disabled={saving || !selectedModel || effortAutomatique}
           options={optionsEffort.map((opt) => ({ value: opt.value, label: opt.label }))}
-          /* Deux valeurs, dans cet ordre, et JAMAIS `undefined` : l'aide
-             ci-dessous décrit le champ en toutes circonstances, la mention ne
-             s'y ajoute que lorsqu'elle est rendue. */
+          /* L’aide générale précède les précisions affichées pour ce modèle. */
           aria-describedby={decritPar}
           onChange={(e) => void handleChange(e.target.value)}
         />
@@ -774,6 +781,11 @@ export function EffortSelector({
           Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5,
           modèles Ollama « thinking »). Auto laisse le modèle décider.
         </p>
+        {effortAutomatique && (
+          <p id="llm-effort-auto" className="col-span-2 mt-2 text-sm text-text-muted">
+            Le modèle choisit son effort, même avec des outils.
+          </p>
+        )}
         {proposeXhigh && (
           <p id="llm-effort-xhigh" className="col-span-2 mt-2 text-sm text-text-muted">
             Très élevé est proposé pour ce modèle, entre élevé et maximal.

@@ -15,6 +15,14 @@
  * exige Responses pour les outils (fiche du 26/10/2026). */
 const EFFORT_CONSERVE_AVEC_OUTILS = new Set(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra']);
 
+// Les GPT-6.2 passent par Responses avec les outils. Les niveaux d'effort
+// acceptés ne figurent pas dans le relevé, donc le catalogue laisse l'API décider.
+const EFFORT_AUTOMATIQUE = new Set(['gpt-6.2-astra', 'gpt-6.2-sol']);
+
+export function effortOpenAIAutomatique(modele: string): boolean {
+  return EFFORT_AUTOMATIQUE.has(modele.trim().toLowerCase());
+}
+
 export function effortConserveAvecOutils(modele: string): boolean {
   return EFFORT_CONSERVE_AVEC_OUTILS.has(modele.toLowerCase());
 }
@@ -37,8 +45,8 @@ export function familleDeParametres(modele: string): boolean {
 export function modeleOpenAIRaisonnant(modele: string): boolean {
   const m = modele.toLowerCase();
   // L'écran dit que l'effort est coupé seulement si les outils restent sur
-  // Chat Completions. Responses conserve l'effort : le prédicat est faux.
-  if (effortConserveAvecOutils(m)) return false;
+  // Chat Completions. Responses permet au modèle de raisonner avec ses outils.
+  if (effortConserveAvecOutils(m) || effortOpenAIAutomatique(m)) return false;
   return familleDeParametres(m);
 }
 
