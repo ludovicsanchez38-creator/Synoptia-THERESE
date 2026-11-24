@@ -62,6 +62,14 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   // P-112 : la facturation se réglait ensuite, par une carte de l'Accueil puis
   // un défilement dans Paramètres. Volet facultatif, replié par défaut.
   const [factureAvecTherese, setFactureAvecTherese] = useState(false);
+  const [lectureProfil, setLectureProfil] = useState(true);
+  const champsModifies = useRef(new Set<keyof typeof profileForm>());
+  const choixFacturation = useRef(false);
+
+  function modifierChamp(champ: keyof typeof profileForm, valeur: string) {
+    champsModifies.current.add(champ);
+    setProfileForm((precedent) => ({ ...precedent, [champ]: valeur }));
+  }
 
   // B-1840 : l'assistant démonte l'étape dès qu'on la quitte. Sans relecture,
   // le retour repart d'un formulaire vide et Continuer écrase la fiche.
@@ -72,10 +80,11 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       if (lecture && typeof lecture.then === 'function') {
         lecture.then((profil) => {
           if (!vivant || !profil) return;
-          if (profil.address || profil.siret || profil.tva_intra) setFactureAvecTherese(true);
+          if (!choixFacturation.current && (profil.address || profil.siret || profil.tva_intra)) {
+            setFactureAvecTherese(true);
+          }
           setProfileForm((prev) => {
-            if (Object.values(prev).some((valeur) => valeur.trim() !== '')) return prev;
-            return {
+            const fusion = {
               name: profil.name || '',
               nickname: profil.nickname || '',
               company: profil.company || '',
@@ -87,11 +96,18 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               siret: profil.siret || '',
               tva_intra: profil.tva_intra || '',
             };
+            for (const champ of champsModifies.current) fusion[champ] = prev[champ];
+            return fusion;
           });
-        }).catch(() => undefined);
+        }).catch(() => undefined).finally(() => {
+          if (vivant) setLectureProfil(false);
+        });
+      } else {
+        setLectureProfil(false);
       }
     } catch {
-      /* fiche illisible : le formulaire reste saisissable à la main */
+      /* Fiche illisible : le formulaire reste saisissable à la main. */
+      setLectureProfil(false);
     }
     return () => { vivant = false; };
   }, []);
@@ -145,7 +161,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   }
 
   async function handleSaveAndContinue() {
-    if (savingRef.current) return;
+    if (savingRef.current || lectureProfil) return;
     if (!profileForm.name.trim()) {
       setError('Le nom est obligatoire');
       setSaveState('error');
@@ -218,7 +234,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             <p className="text-sm text-text-muted">THÉRÈSE utilisera ces infos pour mieux te répondre</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading} className="max-[840px]:basis-full max-[840px]:justify-start">
+        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading || lectureProfil} className="max-[840px]:basis-full max-[840px]:justify-start">
           <Upload className="w-4 h-4 mr-2" />
           Importer un profil (THÉRÈSE.md)
         </Button>
@@ -243,7 +259,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               aria-required="true"
               value={profileForm.name}
               onChange={(e) => {
-                setProfileForm((prev) => ({ ...prev, name: e.target.value }));
+                modifierChamp('name', e.target.value);
                 setError(null);
                 setSaveState('idle');
               }}
@@ -256,7 +272,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               id="profile-nickname"
               type="text"
               value={profileForm.nickname}
-              onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
+              onChange={(e) => modifierChamp('nickname', e.target.value)}
               placeholder="Ton surnom"
             />
           </FormField>
@@ -268,7 +284,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               id="profile-company"
               type="text"
               value={profileForm.company}
-              onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
+              onChange={(e) => modifierChamp('company', e.target.value)}
               placeholder="Ton entreprise"
             />
           </FormField>
@@ -277,7 +293,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               id="profile-role"
               type="text"
               value={profileForm.role}
-              onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
+              onChange={(e) => modifierChamp('role', e.target.value)}
               placeholder="Ton rôle"
             />
           </FormField>
@@ -289,7 +305,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               id="profile-email"
               type="email"
               value={profileForm.email}
-              onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => modifierChamp('email', e.target.value)}
               placeholder="ton@email.com"
             />
           </FormField>
@@ -298,7 +314,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               id="profile-location"
               type="text"
               value={profileForm.location}
-              onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
+              onChange={(e) => modifierChamp('location', e.target.value)}
               placeholder="Ta ville"
             />
           </FormField>
@@ -312,7 +328,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
           <Textarea
             id="profile-context"
             value={profileForm.context}
-            onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
+            onChange={(e) => modifierChamp('context', e.target.value)}
             placeholder="Ex : Je dirige une entreprise de plomberie de 4 personnes. Je veux préparer mes devis et organiser les interventions de la semaine."
             rows={3}
             className="resize-none"
@@ -324,7 +340,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             type="button"
             aria-expanded={factureAvecTherese}
             aria-controls="profile-facturation"
-            onClick={() => setFactureAvecTherese((ouvert) => !ouvert)}
+            onClick={() => {
+              choixFacturation.current = true;
+              setFactureAvecTherese((ouvert) => !ouvert);
+            }}
             className="flex min-h-9 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <Receipt className="h-4 w-4 text-text-muted" aria-hidden="true" />
@@ -341,7 +360,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
                   id="profile-address"
                   type="text"
                   value={profileForm.address}
-                  onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
+                  onChange={(e) => modifierChamp('address', e.target.value)}
                   placeholder="Numéro, rue, code postal, ville"
                 />
               </FormField>
@@ -352,7 +371,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
                     type="text"
                     inputMode="numeric"
                     value={profileForm.siret}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
+                    onChange={(e) => modifierChamp('siret', e.target.value)}
                     placeholder="14 chiffres"
                   />
                 </FormField>
@@ -361,7 +380,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
                     id="profile-tva"
                     type="text"
                     value={profileForm.tva_intra}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
+                    onChange={(e) => modifierChamp('tva_intra', e.target.value)}
                     placeholder="Facultatif"
                   />
                 </FormField>
@@ -393,14 +412,16 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
           <Button
             variant="primary"
             onClick={handleSaveAndContinue}
-            disabled={loading || saveState === 'success'}
+            disabled={loading || lectureProfil || saveState === 'success'}
             data-testid="onboarding-next-btn"
           >
             {saveState === 'success'
               ? 'Profil enregistré'
-              : loading
-                ? (<><Spinner taille="bouton" className="mr-2" />Enregistrement en cours...</>)
-                : 'Continuer'}
+              : lectureProfil
+                ? 'Lecture du profil…'
+                : loading
+                  ? (<><Spinner taille="bouton" className="mr-2" />Enregistrement en cours...</>)
+                  : 'Continuer'}
           </Button>
         </div>
       </div>
