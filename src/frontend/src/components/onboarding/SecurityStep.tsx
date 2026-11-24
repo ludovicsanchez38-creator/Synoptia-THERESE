@@ -15,6 +15,7 @@ import { cn } from '../../lib/utils';
 import { grantCloudConsent, TOOL_READ_DATA_CATEGORY } from '../../lib/consent';
 import type { LLMProvider } from '../../services/api';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
+import { POLITIQUE_SYNTHETIC } from '../../lib/catalogueModeles';
 import { TEXTES_ONBOARDING } from './textes';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
@@ -191,6 +192,15 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         <span>En savoir plus sur la sécurité</span>
         <ExternalLink className="w-4 h-4" />
       </a>
+
+      {provider === 'synthetic' && (
+        <p className="text-sm text-text-muted">
+          {POLITIQUE_SYNTHETIC.texte}{' '}
+          <a href={POLITIQUE_SYNTHETIC.url} target="_blank" rel="noopener noreferrer" className="underline">
+            Politique de confidentialité de Synthetic
+          </a>
+        </p>
+      )}
 
       {/* Consentement RGPD uniquement lorsqu'un fournisseur cloud est activé. */}
       {cloudEnabled ? <label className="flex items-start gap-3 p-4 rounded-md bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">

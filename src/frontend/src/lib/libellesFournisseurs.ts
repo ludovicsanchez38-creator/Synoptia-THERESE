@@ -25,6 +25,7 @@ export const LIBELLES_FOURNISSEURS: Record<LLMProvider, string> = {
   kimi: 'Moonshot Kimi',
   qwen: 'Alibaba Qwen',
   minimax: 'MiniMax',
+  synthetic: 'Synthetic',
 };
 
 /** B-1216 : libellés des moteurs d'images, comme à l'écran de génération. */

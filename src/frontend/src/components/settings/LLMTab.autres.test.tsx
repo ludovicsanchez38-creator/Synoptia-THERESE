@@ -29,14 +29,14 @@ const groupe = () => screen.getByRole('group', { name: 'Choix du service d’IA'
 const cartes = () => groupe().querySelectorAll('button[aria-pressed]');
 
 describe('LLMTab - P-085, les fournisseurs secondaires derrière « Autres »', () => {
-  it('au repos : huit cartes et une carte « Autres (+6) » repliée ; un clic déplie les quatorze', () => {
+  it('au repos : huit cartes et une carte « Autres (+7) » repliée et quinze cartes après ouverture', () => {
     rendre();
     expect(cartes()).toHaveLength(8);
-    const autres = screen.getByRole('button', { name: /Autres \(\+6\)/ });
+    const autres = screen.getByRole('button', { name: /Autres \(\+7\)/ });
     expect(autres).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('button', { name: /^Kimi/ })).toBeNull();
     fireEvent.click(autres);
-    expect(cartes()).toHaveLength(14);
+    expect(cartes()).toHaveLength(15);
     expect(screen.getByRole('button', { name: /^Kimi/ })).toBeInTheDocument();
   });
 
@@ -44,17 +44,33 @@ describe('LLMTab - P-085, les fournisseurs secondaires derrière « Autres »', 
     rendre({ selectedProvider: 'qwen', selectedModel: 'qwen-max' });
     expect(screen.getByRole('button', { name: /^Qwen/ })).toHaveAttribute('aria-pressed', 'true');
     expect(cartes()).toHaveLength(9);
-    const bascule = screen.getByRole('button', { name: /Autres \(\+5\)/ });
+    const bascule = screen.getByRole('button', { name: /Autres \(\+6\)/ });
     fireEvent.click(bascule);
-    expect(cartes()).toHaveLength(14);
+    expect(cartes()).toHaveLength(15);
     fireEvent.click(screen.getByRole('button', { name: /Réduire les autres services/ }));
     expect(cartes()).toHaveLength(9);
     expect(screen.getByRole('button', { name: /^Qwen/ })).toBeInTheDocument();
   });
 
+  it('sélectionne un modèle Synthetic en conservant son identifiant API', async () => {
+    const onSelectModel = vi.fn();
+    rendre({
+      selectedProvider: 'synthetic', selectedModel: 'syn:large:text',
+      apiKeys: { synthetic: true }, onSelectModel,
+    });
+    const selecteur = await screen.findByRole('combobox', { name: 'Modèle' });
+    expect(selecteur).toHaveValue('syn:large:text');
+    const modele = screen.getByRole('option', { name: 'Kimi K3.1 Pro' });
+    expect(modele).toHaveValue('hf:moonshotai/Kimi-K3.1-Pro');
+    fireEvent.change(selecteur, { target: { value: 'hf:moonshotai/Kimi-K3.1-Pro' } });
+    expect(onSelectModel).toHaveBeenCalledExactlyOnceWith('hf:moonshotai/Kimi-K3.1-Pro');
+    expect(screen.getByRole('link', { name: 'Politique de confidentialité de Synthetic' }))
+      .toHaveAttribute('href', 'https://synthetic.new/policies/privacy');
+  });
+
   it('la bascule est un seul bouton persistant : le focus ne tombe pas sur body (audit release)', () => {
     rendre();
-    const bascule = screen.getByRole('button', { name: /Autres \(\+6\)/ });
+    const bascule = screen.getByRole('button', { name: /Autres \(\+7\)/ });
     bascule.focus();
     fireEvent.click(bascule);
     expect(document.activeElement).toBe(bascule);

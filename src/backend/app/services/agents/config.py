@@ -10,6 +10,8 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.services.modeles_catalogue import libelle_modele, modeles_ordonnes
+
 logger = logging.getLogger(__name__)
 
 # Chemin des templates livrés avec l'app
@@ -99,6 +101,11 @@ AVAILABLE_MODELS = [
     # MiniMax - la casse des identifiants compte
     {"id": "MiniMax-M3", "name": "MiniMax M3", "provider": "minimax"},
     {"id": "MiniMax-M3.1-Flash", "name": "MiniMax M3.1 Flash", "provider": "minimax"},
+    # Synthetic confirme les appels d'outils pour les entrées du repli.
+    *[
+        {"id": modele, "name": libelle_modele(modele), "provider": "synthetic"}
+        for modele in modeles_ordonnes("synthetic")
+    ],
     # Local (Ollama) - tous porteurs de l'étiquette « tools » d'Ollama, avec la
     # taille du téléchargement, parce que nos testeurs ont des machines modestes.
     {"id": "qwen3.5:9b", "name": "Qwen3.5 9B (local, 6,6 Go)", "provider": "ollama"},

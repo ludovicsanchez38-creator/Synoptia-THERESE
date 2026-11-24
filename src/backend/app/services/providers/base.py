@@ -37,6 +37,7 @@ class LLMProvider(str, Enum):
     KIMI = "kimi"
     QWEN = "qwen"
     MINIMAX = "minimax"
+    SYNTHETIC = "synthetic"
 
 
 def adresse_fournisseur_valide(adresse: str) -> bool:
@@ -243,6 +244,7 @@ NOMS_FOURNISSEURS: dict[LLMProvider, str] = {
     LLMProvider.KIMI: "Kimi",
     LLMProvider.QWEN: "Qwen",
     LLMProvider.MINIMAX: "MiniMax",
+    LLMProvider.SYNTHETIC: "Synthetic",
 }
 
 

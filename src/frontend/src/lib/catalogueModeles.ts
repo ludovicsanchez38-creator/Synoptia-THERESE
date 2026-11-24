@@ -26,6 +26,11 @@ export interface ModeleDecore {
 /** Décorations connues ; les autres noms sont dérivés de leur identifiant. */
 const GENERATION_PRECEDENTE = 'Génération précédente';
 
+export const POLITIQUE_SYNTHETIC = {
+  url: 'https://synthetic.new/policies/privacy',
+  texte: 'Selon Synthetic, les requêtes et réponses de son API sont supprimées après traitement, sauf accord explicite. Synthetic indique que leur contenu ne sert pas à entraîner ses modèles et que les données personnelles sont traitées aux États-Unis.',
+};
+
 export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   // GLM (Z.ai)
   'glm-5.3-flash': { name: 'GLM 5.3 Flash' },
@@ -89,6 +94,7 @@ const modelesGeneres = Object.values(catalogueGenere).flat();
 
 /** B-1097 : mêmes règles que libelle_modele, y compris hors catalogue. */
 function libelleHorsCatalogue(id: string): string {
+  if (id.startsWith('hf:') && id.includes('/')) return libelleHorsCatalogue(id.split('/').at(-1) ?? id);
   // Un identifiant à étiquette (Ollama : « qwen3:8b ») est le nom que
   // l'utilisateur a installé : il s'affiche tel quel, comme avant B-1097.
   if (id.includes(':')) return id;
@@ -295,6 +301,14 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
     description: 'MiniMax M3 - Généraliste économique',
     keyPlaceholder: 'Clé API MiniMax...',
     consoleUrl: 'https://platform.minimax.io',
+    models: [],
+  },
+  {
+    id: 'synthetic',
+    name: 'Synthetic',
+    description: 'Modèles en ligne, avec suppression des requêtes après traitement selon Synthetic',
+    keyPlaceholder: 'Clé API Synthetic…',
+    consoleUrl: 'https://synthetic.new/',
     models: [],
   },
   {

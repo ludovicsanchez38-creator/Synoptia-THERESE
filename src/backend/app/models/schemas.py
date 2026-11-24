@@ -792,6 +792,7 @@ class ApiKeyUpdate(BaseModel):
         # Ajoutés le 24/08/2026 : sans eux, la clé d'API de ces fournisseurs
         # ne peut même pas être enregistrée.
         "glm", "kimi", "qwen", "minimax",
+        "synthetic",
     ]
     api_key: str
 
@@ -922,6 +923,7 @@ class LLMConfigUpdate(BaseModel):
         "kimi",
         "qwen",
         "minimax",
+        "synthetic",
         "ollama",
     ]
     model: str

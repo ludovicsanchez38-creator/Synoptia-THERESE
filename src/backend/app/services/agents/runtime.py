@@ -103,6 +103,7 @@ def _get_llm_for_model(model_id: str):
     reconnu indisponible est un échec explicite, quel que soit son fournisseur.
     """
     from app.services.llm import get_llm_service_for_provider
+    from app.services.providers.synthetic import est_identifiant_synthetic
 
     def exiger_service(provider: str) -> "LLMService":
         service = get_llm_service_for_provider(provider, model_override=model_id)
@@ -142,6 +143,8 @@ def _get_llm_for_model(model_id: str):
 
     # Le catalogue prime sur les heuristiques ; aucune destination de secours.
     fournisseur = _fournisseur_du_catalogue(model_id)
+    if fournisseur is None and est_identifiant_synthetic(model_id):
+        fournisseur = "synthetic"
     if fournisseur is None and _est_un_modele_hugging_face_local(model_id):
         fournisseur = "ollama"
     if fournisseur == "ollama":

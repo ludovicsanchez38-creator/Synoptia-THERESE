@@ -35,6 +35,7 @@ from app.services.providers import (
     OpenRouterProvider,
     PerplexityProvider,
     StreamEvent,
+    SyntheticProvider,
     ToolCall,
     ToolResult,
     ToolTurn,
@@ -717,6 +718,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 LLMProvider.KIMI: KimiProvider,
                 LLMProvider.QWEN: QwenProvider,
                 LLMProvider.MINIMAX: MiniMaxProvider,
+                LLMProvider.SYNTHETIC: SyntheticProvider,
                 LLMProvider.INFOMANIAK: InfomaniakProvider,
                 LLMProvider.OLLAMA: OllamaProvider,
             }
@@ -748,6 +750,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
             LLMProvider.KIMI: KimiProvider,
             LLMProvider.QWEN: QwenProvider,
             LLMProvider.MINIMAX: MiniMaxProvider,
+            LLMProvider.SYNTHETIC: SyntheticProvider,
             LLMProvider.INFOMANIAK: InfomaniakProvider,
             LLMProvider.OLLAMA: OllamaProvider,
         }

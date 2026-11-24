@@ -25,6 +25,7 @@ from .ollama import OllamaProvider
 from .openai import OpenAIProvider
 from .openrouter import OpenRouterProvider
 from .perplexity import PerplexityProvider
+from .synthetic import SyntheticProvider
 
 __all__ = [
     # Enums and types
@@ -48,4 +49,5 @@ __all__ = [
     "GrokProvider",
     "OllamaProvider",
     "InfomaniakProvider",
+    "SyntheticProvider",
 ]

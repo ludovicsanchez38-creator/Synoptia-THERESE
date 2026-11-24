@@ -1140,23 +1140,15 @@ async def get_config(
                 zezette_model = pref.value
 
     # Filtrer les modeles par providers ayant une cle API configuree
-    import os
     import shutil
 
-    from app.services.llm import _get_api_key_from_db
+    from app.services.llm import _cle_depuis_environnement, _get_api_key_from_db
+    from app.services.modeles_catalogue import CATALOGUE
 
     configured_providers: set[str] = set()
-    provider_env_map = {
-        "anthropic": "ANTHROPIC_API_KEY",
-        "openai": "OPENAI_API_KEY",
-        "gemini": "GEMINI_API_KEY",
-        "mistral": "MISTRAL_API_KEY",
-        "grok": "GROK_API_KEY",
-        "openrouter": "OPENROUTER_API_KEY",
-        "deepseek": "DEEPSEEK_API_KEY",
-    }
-    for provider_name, env_var in provider_env_map.items():
-        if _get_api_key_from_db(provider_name) or os.environ.get(env_var):
+    fournisseurs_agents = {modele["provider"] for modele in AVAILABLE_MODELS}
+    for provider_name in (CATALOGUE.keys() & fournisseurs_agents) - {"ollama"}:
+        if _get_api_key_from_db(provider_name) or _cle_depuis_environnement(provider_name):
             configured_providers.add(provider_name)
 
     # Ollama toujours disponible si le binaire existe

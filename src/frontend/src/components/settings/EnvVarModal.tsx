@@ -97,6 +97,10 @@ const ENV_VAR_CONFIG: Record<string, {
     consoleUrl: 'https://platform.deepseek.com/api_keys',
     label: 'DeepSeek API Key',
   },
+  SYNTHETIC_API_KEY: {
+    consoleUrl: 'https://synthetic.new/',
+    label: 'Clé API Synthetic',
+  },
   // CRM (Tier A)
   PIPEDRIVE_API_TOKEN: {
     consoleUrl: 'https://app.pipedrive.com/settings/personal/api',

@@ -207,6 +207,18 @@ TOKEN_PRICES = {
     "deepseek-v4-pro": {"input": 1.32, "output": 3.96},
     "deepseek-flash": {"input": 0.30, "output": 1.20},
     "deepseek-v4-flash": {"input": 0.30, "output": 1.20},
+    # Synthetic à l’usage, relevé du 24/11/2026. Les alias peuvent tourner.
+    "syn:large:text": {"input": 0.60, "output": 1.20},
+    "syn:small:text": {"input": 0.10, "output": 0.50},
+    "syn:large:vision": {"input": 2.00, "output": 10.00},
+    "syn:small:vision": {"input": 0.60, "output": 1.20},
+    "hf:moonshotai/Kimi-K3.1-Pro": {"input": 2.00, "output": 10.00},
+    "hf:deepseek-ai/DeepSeek-V4.1-Flash-1017": {"input": 0.60, "output": 1.20},
+    "hf:zai-org/GLM-5.3": {"input": 1.40, "output": 4.40},
+    "hf:zai-org/GLM-5.3-Flash": {"input": 0.15, "output": 0.50},
+    "hf:Qwen/Qwen3.8-27B": {"input": 0.45, "output": 2.20},
+    "hf:openai/gpt-oss-120b": {"input": 0.10, "output": 0.10},
+    "hf:zai-org/GLM-4.7-Flash": {"input": 0.10, "output": 0.50},
     # Ollama (local, no cost) + fallback
     "default": {"input": 0.0, "output": 0.0},
 }

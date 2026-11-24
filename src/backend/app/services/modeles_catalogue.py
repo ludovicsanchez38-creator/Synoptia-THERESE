@@ -106,6 +106,28 @@ _DEEPSEEK_V4 = FicheModele(
     limite_sortie_fournisseur=384_000,
 )
 
+# Catalogue de secours et tarifs à l'usage relevés sur
+# https://api.synthetic.new/openai/v1/models le 24/11/2026.
+_CONTEXTES_SYNTHETIC = {
+    "syn:large:text": 524_288,
+    "syn:small:text": 196_608,
+    "syn:large:vision": 524_288,
+    "syn:small:vision": 524_288,
+    "hf:moonshotai/Kimi-K3.1-Pro": 524_288,
+    "hf:deepseek-ai/DeepSeek-V4.1-Flash-1017": 524_288,
+    "hf:zai-org/GLM-5.3": 524_288,
+    "hf:zai-org/GLM-5.3-Flash": 524_288,
+    "hf:Qwen/Qwen3.8-27B": 262_144,
+    "hf:openai/gpt-oss-120b": 131_072,
+    "hf:zai-org/GLM-4.7-Flash": 196_608,
+}
+_LIBELLES_ALIAS_SYNTHETIC = {
+    "syn:large:text": "Grand modèle texte (Synthetic)",
+    "syn:small:text": "Petit modèle texte (Synthetic)",
+    "syn:large:vision": "Grand modèle vision (Synthetic)",
+    "syn:small:vision": "Petit modèle vision (Synthetic)",
+}
+
 CATALOGUE: dict[str, FicheFournisseur] = {
     "anthropic": FicheFournisseur(
         provider=LLMProvider.ANTHROPIC,
@@ -412,6 +434,32 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         context_window=128000,
         modeles=("mix",),
     ),
+    "synthetic": FicheFournisseur(
+        provider=LLMProvider.SYNTHETIC,
+        env_vars=("SYNTHETIC_API_KEY",),
+        context_window=131_072,
+        modeles=(
+            "syn:large:text",
+            "syn:small:text",
+            "syn:large:vision",
+            "syn:small:vision",
+            "hf:moonshotai/Kimi-K3.1-Pro",
+            "hf:deepseek-ai/DeepSeek-V4.1-Flash-1017",
+            "hf:zai-org/GLM-5.3",
+            "hf:zai-org/GLM-5.3-Flash",
+            "hf:Qwen/Qwen3.8-27B",
+            "hf:openai/gpt-oss-120b",
+            "hf:zai-org/GLM-4.7-Flash",
+        ),
+        fiches={
+            modele: FicheModele(
+                effort={"low": "low", "medium": "medium", "high": "high", "max": "high"},
+                context_window=contexte,
+                limite_sortie_fournisseur=65_536,
+            )
+            for modele, contexte in _CONTEXTES_SYNTHETIC.items()
+        },
+    ),
     "perplexity": FicheFournisseur(
         provider=LLMProvider.PERPLEXITY,
         env_vars=("PERPLEXITY_API_KEY",),
@@ -525,6 +573,11 @@ def fenetre_de_contexte(provider: str, model: str | None) -> int:
 
 def libelle_modele(modele: str) -> str:
     """Nom lisible dérivé de l'identifiant, partagé par les trois sélecteurs."""
+    if modele in _LIBELLES_ALIAS_SYNTHETIC:
+        return _LIBELLES_ALIAS_SYNTHETIC[modele]
+    if modele.startswith("hf:"):
+        # Un préfixe Synthetic transporte le fournisseur, pas le nom affiché.
+        return libelle_modele(modele.removeprefix("hf:").split("/", 1)[-1])
     # Les espaces de noms connus ne font pas partie du nom. Un fournisseur
     # inconnu reste indiqué pour distinguer deux modèles natifs homonymes.
     prefixe, separateur, natif = modele.rpartition("/")

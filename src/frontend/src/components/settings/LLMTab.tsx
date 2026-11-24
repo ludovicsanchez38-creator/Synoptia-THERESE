@@ -14,7 +14,7 @@ import { FormField } from '../ui/FormField';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
-import { FOURNISSEURS as PROVIDERS, chargerCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
+import { FOURNISSEURS as PROVIDERS, chargerCatalogue, POLITIQUE_SYNTHETIC, type ModeleDecore } from '../../lib/catalogueModeles';
 import { effortConserveAvecOutils, effortTransmisSansOutils, effortXhighPropose, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
 
 // Configuration des providers LLM - catalogue centralisé (dette 0.43.4) :
@@ -27,7 +27,7 @@ import { Spinner } from '../ui/Spinner';
 import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 
 /** P-085 : fournisseurs secondaires, regroupés derrière « Autres » dans la grille. */
-const SECONDAIRES = new Set(['deepseek', 'glm', 'kimi', 'qwen', 'minimax', 'infomaniak']);
+const SECONDAIRES = new Set(['deepseek', 'glm', 'kimi', 'qwen', 'minimax', 'infomaniak', 'synthetic']);
 
 // Configuration des providers de génération d'images
 export interface ImageProviderConfig {
@@ -411,6 +411,14 @@ export function LLMTab({
               </p>
             )}
 
+            {selectedProvider === 'synthetic' && (
+              <p className="text-sm text-text-muted">
+                {POLITIQUE_SYNTHETIC.texte}{' '}
+                <a href={POLITIQUE_SYNTHETIC.url} target="_blank" rel="noopener noreferrer" className="underline">
+                  Politique de confidentialité de Synthetic
+                </a>
+              </p>
+            )}
             {currentProviderConfig?.consoleUrl && (
               <p className="text-sm text-text-muted">
                 Obtiens ta clé sur{' '}
@@ -622,7 +630,8 @@ function ModelSelector({
                 placeholder={
                   selectedProvider === 'anthropic' ? 'claude-opus-4-8' :
                   selectedProvider === 'openai' ? 'gpt-5.5' :
-                  selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-8' :
+                  selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4.8' :
+                  selectedProvider === 'synthetic' ? 'syn:large:text' :
                   'identifiant-du-modele'
                 }
               />

@@ -10,6 +10,7 @@ import os
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
+import httpx
 from app.config import settings
 from app.models.database import get_session
 from app.models.entities import Preference
@@ -58,6 +59,7 @@ CLES_API_PAR_FOURNISSEUR: dict[LLMProvider, tuple[str, str]] = {
     LLMProvider.KIMI: ("KIMI_API_KEY", "kimi_api_key"),
     LLMProvider.QWEN: ("QWEN_API_KEY", "qwen_api_key"),
     LLMProvider.MINIMAX: ("MINIMAX_API_KEY", "minimax_api_key"),
+    LLMProvider.SYNTHETIC: ("SYNTHETIC_API_KEY", "synthetic_api_key"),
     LLMProvider.INFOMANIAK: ("INFOMANIAK_API_KEY", "infomaniak_api_key"),
 }
 
@@ -149,6 +151,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         "kimi": "KIMI_API_KEY",
         "qwen": "QWEN_API_KEY",
         "minimax": "MINIMAX_API_KEY",
+        "synthetic": "SYNTHETIC_API_KEY",
         "infomaniak": "INFOMANIAK_API_KEY",
     }
     autres_cles = ["openai_image", "gemini_image", "fal", "brave"]
@@ -437,6 +440,7 @@ async def delete_api_key(
         "openai_image": "OPENAI_IMAGE_API_KEY",
         "gemini_image": "GEMINI_IMAGE_API_KEY",
         "fal": "FAL_API_KEY",
+        "synthetic": "SYNTHETIC_API_KEY",
     }
     if provider in env_mapping and env_mapping[provider] in os.environ:
         del os.environ[env_mapping[provider]]
@@ -1396,6 +1400,33 @@ async def _available_models_for(provider_value: str) -> list[str]:
         available_models = modeles_ordonnes("qwen")
     elif provider_value == "minimax":
         available_models = modeles_ordonnes("minimax")
+    elif provider_value == "synthetic":
+        from app.services.providers.synthetic import SYNTHETIC_MODELS_URL, est_identifiant_synthetic
+
+        repli = modeles_ordonnes("synthetic")
+        try:
+            client = await get_http_client()
+            reponse = await client.get(SYNTHETIC_MODELS_URL, timeout=3.0)
+            reponse.raise_for_status()
+            lignes = reponse.json().get("data")
+            if isinstance(lignes, list):
+                identifiants = dict.fromkeys(
+                    identifiant
+                    for ligne in lignes
+                    if isinstance(ligne, dict)
+                    and isinstance(identifiant := ligne.get("id"), str)
+                    and est_identifiant_synthetic(identifiant)
+                    and ("supported_features" not in ligne or (
+                        isinstance(ligne["supported_features"], list) and "tools" in ligne["supported_features"]
+                    ))
+                )
+                if identifiants:
+                    # Les alias connus restent en tête et les modèles tournants
+                    # suivent les entrées connues encore servies.
+                    return list(dict.fromkeys([m for m in repli if m in identifiants] + list(identifiants)))
+        except (httpx.HTTPError, ValueError, AttributeError) as erreur:
+            logger.debug("Catalogue Synthetic indisponible (%s)", type(erreur).__name__)
+        available_models = repli
     elif provider_value == "deepseek":
         available_models = modeles_ordonnes("deepseek")
     elif provider_value == "openrouter":

@@ -247,7 +247,8 @@ export type LLMProvider = 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'grok'
   | 'glm'
   | 'kimi'
   | 'qwen'
-  | 'minimax';
+  | 'minimax'
+  | 'synthetic';
 
 export interface LLMConfig {
   /** Destination effective, classée par la garde du moteur. null = local. */

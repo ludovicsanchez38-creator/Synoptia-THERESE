@@ -27,6 +27,11 @@ const PROVIDER_LABELS: Record<string, string> = {
   mistral: 'Mistral',
   openrouter: 'OpenRouter',
   deepseek: 'DeepSeek',
+  glm: 'GLM',
+  kimi: 'Kimi',
+  qwen: 'Qwen',
+  minimax: 'MiniMax',
+  synthetic: 'Synthetic',
   ollama: 'Local (Ollama)',
 };
 
