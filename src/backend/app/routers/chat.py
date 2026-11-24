@@ -3911,7 +3911,7 @@ async def _execute_tools_and_continue(
     usage_totals: dict[str, Any] | None = None,
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
     contexte: ContexteExecution | None = None,
-    assistant_content_brut: list[Any] | None = None,
+    assistant_content_brut: Any | None = None,
     echec_suite: dict[str, bool] | None = None,
     refus_fiches_affiches: set[str] | None = None,
 ) -> AsyncGenerator[str, None]:

@@ -25,6 +25,7 @@ AVAILABLE_MODELS = [
     # Anthropic
     # P-122 (25/09/2026) : Opus 5.5, GPT-6 Sol et Luna, relevés aux sources.
     {"id": "claude-opus-5-5", "name": "Claude Opus 5.5", "provider": "anthropic", "recommended": True},
+    {"id": "claude-fable-5-2", "name": "Claude Fable 5.2", "provider": "anthropic"},
     {"id": "claude-opus-5", "name": "Claude Opus 5", "provider": "anthropic"},
     {"id": "claude-fable-5-1", "name": "Claude Fable 5.1", "provider": "anthropic"},
     {"id": "claude-fable-5", "name": "Claude Fable 5", "provider": "anthropic"},
@@ -37,6 +38,8 @@ AVAILABLE_MODELS = [
     # OpenAI. gpt-5.3-codex est écarté : sa fiche indique qu'il refuse
     # `v1/chat/completions`, le point d'appel utilisé ici.
     {"id": "gpt-6-sol", "name": "GPT-6 Sol", "provider": "openai"},
+    {"id": "gpt-6.2-astra", "name": "GPT-6.2 Astra", "provider": "openai"},
+    {"id": "gpt-6.2-sol", "name": "GPT-6.2 Sol", "provider": "openai"},
     {"id": "gpt-6-luna", "name": "GPT-6 Luna", "provider": "openai"},
     # P-c18-m2 : outils via Responses (tests/test_gpt61_sol_responses.py).
     # Pas en tête : le défaut des agents reste celui d'agent.json.
@@ -49,6 +52,10 @@ AVAILABLE_MODELS = [
     # Google
     # Tête Google (catalogue et Board). Opus reste le seul recommandé global.
     {"id": "gemini-3.8-flash", "name": "Gemini 3.8 Flash", "provider": "gemini"},
+    {"id": "gemini-4-hydrogen", "name": "Gemini 4 Hydrogen", "provider": "gemini"},
+    {"id": "gemini-4-neon", "name": "Gemini 4 Neon", "provider": "gemini"},
+    {"id": "gemini-4-carbon", "name": "Gemini 4 Carbon", "provider": "gemini"},
+    {"id": "gemini-4-argon", "name": "Gemini 4 Argon", "provider": "gemini"},
     {"id": "gemini-3.7-flash", "name": "Gemini 3.7 Flash", "provider": "gemini"},
     {"id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro (préversion)", "provider": "gemini"},
     {"id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash", "provider": "gemini"},
@@ -60,6 +67,7 @@ AVAILABLE_MODELS = [
     {"id": "grok-4.3", "name": "Grok 4.3", "provider": "grok"},
     # Mistral. Large 4 : function calling documenté sur Chat Completions
     # (docs.mistral.ai/models/mistral-large-4), donc éligible aux outils.
+    {"id": "mistral-large-4-0", "name": "Mistral Large 4.0", "provider": "mistral"},
     {"id": "mistral-medium-3-5", "name": "Mistral Medium 3.5", "provider": "mistral"},
     {"id": "mistral-large-4", "name": "Mistral Large 4", "provider": "mistral"},
     {"id": "mistral-large-latest", "name": "Mistral Large", "provider": "mistral"},
@@ -71,18 +79,26 @@ AVAILABLE_MODELS = [
     {"id": "google/gemini-3.7-flash", "name": "Gemini 3.7 Flash (OR)", "provider": "openrouter"},
     # DeepSeek
     {"id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro", "provider": "deepseek"},
+    {"id": "deepseek-flash", "name": "DeepSeek Flash", "provider": "deepseek"},
     {"id": "deepseek-v4-flash", "name": "DeepSeek V4 Flash", "provider": "deepseek"},
     # Z.ai (GLM)
     {"id": "glm-5.3", "name": "GLM-5.3", "provider": "glm"},
+    {"id": "glm-5.3-flash", "name": "GLM 5.3 Flash", "provider": "glm"},
+    {"id": "glm-5.3-flashx", "name": "GLM 5.3 FlashX", "provider": "glm"},
     {"id": "glm-5.2", "name": "GLM-5.2", "provider": "glm"},
     # Moonshot (Kimi) - un million de jetons de contexte sur K3
     {"id": "kimi-k3", "name": "Kimi K3", "provider": "kimi"},
+    {"id": "kimi-k3.1-pro", "name": "Kimi K3.1 Pro", "provider": "kimi"},
+    {"id": "kimi-k3.1-pro-highspeed", "name": "Kimi K3.1 Pro Rapide", "provider": "kimi"},
     {"id": "kimi-k2.7-code", "name": "Kimi K2.7 Code", "provider": "kimi"},
     # Alibaba (Qwen) - l'adresse contient l'espace de travail du compte
     {"id": "qwen3.8-max", "name": "Qwen3.8-Max", "provider": "qwen"},
+    {"id": "qwen4-max", "name": "Qwen 4 Max", "provider": "qwen"},
+    {"id": "qwen3.8-flash", "name": "Qwen 3.8 Flash", "provider": "qwen"},
     {"id": "qwen3-coder-plus", "name": "Qwen3-Coder-Plus", "provider": "qwen"},
     # MiniMax - la casse des identifiants compte
     {"id": "MiniMax-M3", "name": "MiniMax M3", "provider": "minimax"},
+    {"id": "MiniMax-M3.1-Flash", "name": "MiniMax M3.1 Flash", "provider": "minimax"},
     # Local (Ollama) - tous porteurs de l'étiquette « tools » d'Ollama, avec la
     # taille du téléchargement, parce que nos testeurs ont des machines modestes.
     {"id": "qwen3.5:9b", "name": "Qwen3.5 9B (local, 6,6 Go)", "provider": "ollama"},

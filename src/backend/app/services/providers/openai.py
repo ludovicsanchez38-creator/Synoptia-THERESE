@@ -36,7 +36,10 @@ OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 #   reasoning_effort=none. On ne le migre pas.
 # - gpt-6.1-terra (fiche lue le 26/10/2026) : « Tool calling requires the
 #   Responses API ».
-_MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-astra"})
+# Les deux GPT-6.2 exigent aussi Responses pour les outils (17/11/2026).
+_MODELES_OUTILS_RESPONSES = frozenset({
+    "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6.2-astra", "gpt-6.2-sol",
+})
 
 def _sortie_responses(modele: str, demande: int) -> int:
     """Borne la sortie au plafond publié, le même que Chat Completions."""
@@ -271,6 +274,15 @@ class OpenAIProvider(BaseProvider):
             corps["tool_choice"] = "auto"
         return corps
 
+    def _champ_raisonnement_a_rejouer(self) -> str | None:
+        return None
+
+    def _utilise_max_completion_tokens(self) -> bool:
+        return _uses_max_completion_tokens(self.config.model)
+
+    def _inclure_temperature(self) -> bool:
+        return not _refuse_le_sampling(self.config.model)
+
     def _build_request_body(
         self,
         messages: list[dict],
@@ -287,14 +299,14 @@ class OpenAIProvider(BaseProvider):
         }
 
         plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
-        if plafond is not None and _uses_max_completion_tokens(self.config.model):
+        if plafond is not None and self._utilise_max_completion_tokens():
             request_body["max_completion_tokens"] = plafond
         elif plafond is not None:
             request_body["max_tokens"] = plafond
 
         # Le réglage reste utile là où il est accepté : on ne le retire que
         # pour les modèles qui le refusent.
-        if not _refuse_le_sampling(self.config.model):
+        if self._inclure_temperature():
             request_body["temperature"] = self.config.temperature
 
         if tools:
@@ -326,6 +338,7 @@ class OpenAIProvider(BaseProvider):
         # réglage. Sans outil, l'effort demandé part normalement.
         if (
             tools
+            and self.config.provider == LLMProvider.OPENAI
             and _uses_max_completion_tokens(self.config.model)
             and not _outils_via_responses(self.config.model)
         ):
@@ -404,6 +417,8 @@ class OpenAIProvider(BaseProvider):
 
             # Track tool calls being built
             tool_calls: dict[int, dict[str, Any]] = {}
+            champ_raisonnement = self._champ_raisonnement_a_rejouer()
+            raisonnement = ""
             # Usage réel (dette 14/06/2026) : le chunk usage (stream_options.
             # include_usage) arrive APRÈS le chunk finish_reason, choices vide.
             # On mémorise stop_reason et on n'émet "done" qu'à la toute fin
@@ -438,6 +453,13 @@ class OpenAIProvider(BaseProvider):
                         if choices:
                             delta = choices[0].get("delta", {})
                             finish_reason = choices[0].get("finish_reason")
+
+                            if champ_raisonnement and isinstance(fragment := delta.get(champ_raisonnement), str):
+                                # Qwen envoie le chiffré complet dans une trame.
+                                if champ_raisonnement == "encrypted_content":
+                                    raisonnement = fragment
+                                else:
+                                    raisonnement += fragment
 
                             # Handle text content
                             if content := delta.get("content"):
@@ -476,6 +498,10 @@ class OpenAIProvider(BaseProvider):
 
                                     yield StreamEvent(
                                         type="tool_call",
+                                        assistant_content_brut=(
+                                            {champ_raisonnement: raisonnement}
+                                            if champ_raisonnement and raisonnement else None
+                                        ),
                                         tool_call=ToolCall(
                                             id=tc["id"],
                                             name=tc["name"],
@@ -722,7 +748,7 @@ class OpenAIProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list[Any] | None" = None,
+        assistant_content_brut: Any | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue OpenAI conversation with tool results."""
         messages = list(messages)  # copie

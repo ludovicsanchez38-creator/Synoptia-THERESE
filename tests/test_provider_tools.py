@@ -983,3 +983,59 @@ async def test_l_id_d_appel_d_outil_arrive_au_second_fragment(nom: str):
     assert len(tool_events) == 1, [e.type for e in events]
     assert tool_events[0].tool_call.id == "call_abc", f"{nom} : id perdu -> {tool_events[0].tool_call.id!r}"
     assert tool_events[0].tool_call.name == "create_contact"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("fournisseur", "modele", "champ"), [
+    ("kimi", "kimi-k3.1-pro", "reasoning_content"),
+    ("minimax", "MiniMax-M3.1-Flash", "reasoning_content"),
+    ("deepseek", "deepseek-flash", "reasoning_content"),
+    ("qwen", "qwen4-max", "encrypted_content"),
+])
+async def test_le_rejeu_outils_reprend_les_champs_de_raisonnement(fournisseur, modele, champ):
+    from app.services.providers.base import ToolTurn
+    from app.services.providers.deepseek import DeepSeekProvider
+    from app.services.providers.kimi import KimiProvider
+    from app.services.providers.minimax import MiniMaxProvider
+    from app.services.providers.qwen import QwenProvider
+
+    def flux(opaque, id_appel):
+        deltas = [{champ: opaque}] if champ == "encrypted_content" else [
+            {champ: opaque[:3]}, {champ: opaque[3:]},
+        ]
+        deltas.append({
+            "tool_calls": [{
+                "index": 0, "id": id_appel, "type": "function",
+                "function": {"name": "create_contact", "arguments": "{}"},
+            }],
+        })
+        return _FakeStreamResponse([
+            f"data: {json.dumps({'choices': [{'delta': delta}]})}"
+            for delta in deltas
+        ] + ['data: {"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}', "data: [DONE]"])
+
+    classes = {
+        "kimi": KimiProvider, "minimax": MiniMaxProvider, "deepseek": DeepSeekProvider, "qwen": QwenProvider,
+    }
+    client = _FakeClient(responses=[
+        flux(" premier ", "id1"), flux("second+", "id2"), _FakeStreamResponse(["data: [DONE]"]),
+    ])
+    provider = classes[fournisseur](LLMConfig(LLMProvider(fournisseur), modele), client)
+    messages = [{"role": "user", "content": "Prépare la fiche."}]
+    premier = [e for e in await _collect(provider.stream(None, messages, OPENAI_TOOLS)) if e.type == "tool_call"][0]
+    resultats1 = [ToolResult(tool_call_id="id1", result="lu")]
+    deuxieme = [e for e in await _collect(provider.continue_with_tool_results(
+        None, messages, "", [premier.tool_call], resultats1, OPENAI_TOOLS,
+        assistant_content_brut=premier.assistant_content_brut,
+    )) if e.type == "tool_call"][0]
+    await _collect(provider.continue_with_tool_results(
+        None, messages, "", [deuxieme.tool_call], [ToolResult(tool_call_id="id2", result="ok")], OPENAI_TOOLS,
+        prior_turns=[ToolTurn("", [premier.tool_call], resultats1, premier.assistant_content_brut)],
+        assistant_content_brut=deuxieme.assistant_content_brut,
+    ))
+    corps = client.requests[-1]["json"]
+    assert [m[champ] for m in corps["messages"] if m["role"] == "assistant"] == [" premier ", "second+"]
+    if fournisseur == "qwen":
+        assert corps["enable_thinking"] is True
+        assert corps["preserve_thinking"] is True
+        assert corps["thinking_display"] == "summarized"

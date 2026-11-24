@@ -25,3 +25,12 @@ class KimiProvider(OpenAIProvider):
     """Fournisseur Kimi de Moonshot AI, compatible OpenAI, outils inclus."""
 
     API_URL = KIMI_API_URL
+
+    def _utilise_max_completion_tokens(self) -> bool:
+        return self.config.model.startswith("kimi-k3") or super()._utilise_max_completion_tokens()
+
+    def _inclure_temperature(self) -> bool:
+        return not self.config.model.startswith("kimi-k3") and super()._inclure_temperature()
+
+    def _champ_raisonnement_a_rejouer(self) -> str | None:
+        return "reasoning_content" if self.config.model.startswith("kimi-k3") else None

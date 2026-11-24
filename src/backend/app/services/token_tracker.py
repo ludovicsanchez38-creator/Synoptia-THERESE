@@ -101,6 +101,7 @@ TOKEN_PRICES = {
     "claude-sonnet-5": {"input": 2.00, "output": 10.00},
     # M1, 09/10/2026 (platform.claude.com, vues d'ensemble). Haiku : ce
     # couple est le palier court (<= 100 k). Au-delà, PALIERS_TARIF.
+    "claude-fable-5-2": {"input": 8.00, "output": 40.00},
     "claude-fable-5-1": {"input": 10.00, "output": 50.00},
     "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
     "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
@@ -113,6 +114,8 @@ TOKEN_PRICES = {
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
     # OpenAI (juin 2026 ; gpt-6-astra relevé developers.openai.com/api/docs/pricing le 10/09/2026, standard, contexte court)
+    "gpt-6.2-astra": {"input": 8.00, "output": 40.00},
+    "gpt-6.2-sol": {"input": 2.00, "output": 10.00},
     "gpt-6-astra": {"input": 10.00, "output": 50.00},
     # P-122 : relevé developers.openai.com/api/docs/pricing le 25/09/2026 (standard, contexte court).
     "gpt-6-sol": {"input": 2.00, "output": 10.00},
@@ -136,6 +139,10 @@ TOKEN_PRICES = {
     # Gemini (juin 2026)
     # Tarif en vigueur jusqu'au 31/12/2026. Dès le 01/01/2027 inclus,
     # BASCULES_TARIF applique 1,50 / 7,50 (grille officielle).
+    "gemini-4-hydrogen": {"input": 1.50, "output": 7.50},
+    "gemini-4-neon": {"input": 3.00, "output": 15.00},
+    "gemini-4-carbon": {"input": 2.00, "output": 10.00},
+    "gemini-4-argon": {"input": 2.00, "output": 10.00},
     "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
     # M1, 09/10/2026 : couple payant d'avant la bascule. Dès le 01/01/2027
     # inclus, BASCULES_TARIF applique 1,50 / 7,50 (grille officielle).
@@ -150,6 +157,7 @@ TOKEN_PRICES = {
     "gemini-3.5-flash": {"input": 1.50, "output": 9.00},
     "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
     # Mistral (alias evergreen)
+    "mistral-large-4-0": {"input": 0.70, "output": 2.10},
     "mistral-medium-3-5": {"input": 1.50, "output": 7.50},
     # M1 : tarif barré, hors promotion. Le soldé vit dans PROMOTIONS.
     "mistral-large-4": {"input": 1.36, "output": 4.18},
@@ -172,9 +180,33 @@ TOKEN_PRICES = {
     "grok-4.3": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-reasoning": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-non-reasoning": {"input": 1.25, "output": 2.50},
-    # DeepSeek (juin 2026)
-    "deepseek-v4-pro": {"input": 0.435, "output": 0.87},
-    "deepseek-v4-flash": {"input": 0.14, "output": 0.28},
+    # Tarifs standard hors cache, relevés le 24/11/2026.
+    "glm-5.3": {"input": 1.40, "output": 4.40},
+    "glm-5.3-flash": {"input": 0.15, "output": 0.50},
+    "glm-5.3-flashx": {"input": 0.37, "output": 1.25},
+    "glm-5.2": {"input": 1.40, "output": 4.40},
+    "glm-5.1": {"input": 1.40, "output": 4.40},
+    "glm-5": {"input": 1.00, "output": 3.20},
+    "glm-4.7": {"input": 0.60, "output": 2.20},
+    "glm-4.7-flashx": {"input": 0.07, "output": 0.40},
+    "glm-4.7-flash": {"input": 0.0, "output": 0.0},
+    "kimi-k3": {"input": 3.00, "output": 15.00},
+    "kimi-k3.1-pro": {"input": 2.00, "output": 10.00},
+    "kimi-k3.1-pro-highspeed": {"input": 4.00, "output": 20.00},
+    "kimi-k2.7-code": {"input": 0.95, "output": 4.00},
+    "kimi-k2.7-code-highspeed": {"input": 1.90, "output": 8.00},
+    "kimi-k2.6": {"input": 0.95, "output": 4.00},
+    "qwen3.8-max": {"input": 2.00, "output": 6.00},
+    "qwen4-max": {"input": 1.50, "output": 4.50},
+    "qwen3.8-flash": {"input": 0.15, "output": 0.47},
+    "qwen3.7-plus": {"input": 0.40, "output": 1.60},
+    "qwen3.7-flash": {"input": 0.03, "output": 0.13},
+    "MiniMax-M3": {"input": 0.30, "output": 1.20},
+    "MiniMax-M3.1-Flash": {"input": 0.15, "output": 0.60},
+    # DeepSeek : estimation au tarif plein (le compteur ne gère pas le calendrier chinois).
+    "deepseek-v4-pro": {"input": 1.32, "output": 3.96},
+    "deepseek-flash": {"input": 0.30, "output": 1.20},
+    "deepseek-v4-flash": {"input": 0.30, "output": 1.20},
     # Ollama (local, no cost) + fallback
     "default": {"input": 0.0, "output": 0.0},
 }
@@ -211,12 +243,42 @@ PALIERS_TARIF: dict[str, PalierTarif] = {
         multiplicateur_sortie=1.5,
         source="https://developers.openai.com/api/docs/models/gpt-6.1-terra",
     ),
+    **{
+        modele: PalierTarif(
+            seuil_entree=272_000,
+            multiplicateur_entree=2.0,
+            multiplicateur_sortie=1.5,
+            source="https://developers.openai.com/api/docs/pricing",
+        )
+        for modele in (
+            "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna",
+            "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5", "gpt-5.5-pro",
+        )
+    },
+    "qwen3.7-plus": PalierTarif(
+        seuil_entree=256_000, entree=1.20, sortie=4.80,
+        source="https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    ),
+    "MiniMax-M3": PalierTarif(
+        seuil_entree=512_000, entree=0.60, sortie=2.40,
+        source="https://platform.minimax.io/docs/guides/pricing",
+    ),
 }
 
 # Même registre, lu comme une suite (le lot M1 indexe ``[0]``).
 PALIERS_PROMPT: dict[str, tuple[PalierTarif, ...]] = {
     cle: (palier,) for cle, palier in PALIERS_TARIF.items()
 }
+PALIERS_PROMPT["qwen3.7-flash"] = (
+    PalierTarif(
+        seuil_entree=32_000, entree=0.10, sortie=0.40,
+        source="https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    ),
+    PalierTarif(
+        seuil_entree=256_000, entree=0.20, sortie=0.80,
+        source="https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    ),
+)
 
 
 # Bascules datées. ``debut`` inclus. Le couple de TOKEN_PRICES est celui
@@ -224,6 +286,17 @@ PALIERS_PROMPT: dict[str, tuple[PalierTarif, ...]] = {
 # dès le 1er janvier 2027 (0,75 / 3,75 jusqu'au 31 décembre 2026).
 # Source : https://ai.google.dev/gemini-api/docs/pricing
 BASCULES_TARIF: dict[str, BasculeTarif] = {
+    **{
+        modele: BasculeTarif(
+            entree=4.00, sortie=20.00, debut=date(2026, 12, 1),
+            source="https://aistudio.google.com/docs/pricing",
+        )
+        for modele in ("gemini-4-argon", "gemini-4-carbon")
+    },
+    "gemini-3.6-flash": BasculeTarif(
+        entree=1.50, sortie=7.50, debut=date(2027, 1, 1),
+        source="https://aistudio.google.com/docs/pricing",
+    ),
     "gemini-3.8-flash": BasculeTarif(
         entree=1.50,
         sortie=7.50,
@@ -456,6 +529,9 @@ class TokenTracker:
             return model
         if "/" in model:
             reste = model.split("/", 1)[1]
+            # OpenRouter publie des identifiants Anthropic au format 4.6/4.8.
+            if reste in {"claude-sonnet-4.6", "claude-opus-4.8"}:
+                reste = reste.replace(".", "-")
             if self._present_en_grille(reste):
                 return reste
         return model

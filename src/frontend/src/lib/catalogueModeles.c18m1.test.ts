@@ -13,7 +13,9 @@ function modeles(fournisseur: string) {
 }
 
 const NOMS = {
-  'claude-fable-5-1': { name: 'Claude Fable 5.1', badge: 'Le plus capable' },
+  'claude-fable-5-2': { name: 'Claude Fable 5.2', badge: 'Le plus capable' },
+  'claude-fable-5-1': { name: 'Claude Fable 5.1', badge: 'Génération précédente' },
+  'mistral-medium-3-5': { name: 'Mistral Medium 3.5', badge: 'Génération précédente' },
   'claude-sonnet-5-5': { name: 'Claude Sonnet 5.5', badge: 'Équilibré' },
   'claude-haiku-5-5': { name: 'Claude Haiku 5.5', badge: 'Rapide' },
   'grok-4.7': { name: 'Grok 4.7', badge: 'Recommandé' },
@@ -25,7 +27,7 @@ describe('repli et décoration des modèles du 9 octobre', () => {
   it('garde la tête de chaque liste de repli', () => {
     expect(modeles('anthropic')[0].id).toBe('claude-opus-5-5');
     expect(modeles('gemini')[0].id).toBe('gemini-3.8-flash');
-    expect(modeles('mistral')[0].id).toBe('mistral-medium-3-5');
+    expect(modeles('mistral')[0].id).toBe('mistral-large-4-0');
     expect(modeles('grok')[0].id).toBe('grok-4.7');
     expect(modeles('openai')[0].id).toBe('gpt-6-sol');
   });

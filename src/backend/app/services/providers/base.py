@@ -332,7 +332,7 @@ class BaseProvider(ABC):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list[Any] | None" = None,
+        assistant_content_brut: Any | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """
         Continue streaming after tool execution.
@@ -367,7 +367,7 @@ class BaseProvider(ABC):
         Partagé par OpenAI/Grok/Mistral/DeepSeek/Infomaniak/OpenRouter/
         Perplexity.
         """
-        messages.append({
+        assistant = {
             "role": "assistant",
             # BUG-108 (lcjp, 12/06/2026) : Mistral rejette en 400 un message
             # assistant ayant à la fois un content NON vide ET des tool_calls
@@ -400,7 +400,15 @@ class BaseProvider(ABC):
                 }
                 for tc in tool_calls
             ],
-        })
+        }
+        if isinstance(assistant_content_brut, dict):
+            # Champs hors du texte visible, capturés par les fournisseurs
+            # qui exigent leur rejeu pendant la boucle d'outils.
+            for champ in ("reasoning_content", "encrypted_content"):
+                if isinstance(valeur := assistant_content_brut.get(champ), str):
+                    assistant[champ] = valeur
+                    assistant["content"] = assistant_content or None
+        messages.append(assistant)
         for tr in tool_results:
             result_content = tr.result
             if isinstance(result_content, dict):

@@ -20,7 +20,7 @@ describe('catalogue de repli : Opus 5.5, GPT-6 Sol et Luna (P-122)', () => {
   });
 
   it('GPT-6 Sol est en tête d’OpenAI, Astra et Luna suivent', () => {
-    expect(modeles('openai').slice(0, 3).map((m) => m.id)).toEqual(['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna']);
+    expect(modeles('openai').slice(0, 5).map((m) => m.id)).toEqual(['gpt-6-sol', 'gpt-6.2-astra', 'gpt-6.2-sol', 'gpt-6-astra', 'gpt-6-luna']);
     expect(modeles('openai')[0]).toMatchObject({ name: 'GPT-6 Sol', badge: 'Recommandé' });
     expect(modeles('openai').find((m) => m.id === 'gpt-6-luna')?.name).toBe('GPT-6 Luna');
   });

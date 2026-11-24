@@ -1105,7 +1105,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list[Any] | None" = None,
+        assistant_content_brut: Any | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue after tool execution (prior_turns = tours d'outils précédents)."""
         # B-1502 : même fournisseur que le premier appel du tour. Repartir de

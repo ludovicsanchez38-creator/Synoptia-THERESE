@@ -19,6 +19,7 @@ from .base import (
     ToolResult,
     ToolTurn,
     message_erreur_http,
+    plafond_sortie_a_envoyer,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class DeepSeekProvider(BaseProvider):
         """Build request body (OpenAI-compatible format)."""
         request_body: dict[str, Any] = {
             "model": self.config.model,
-            "max_tokens": self.config.max_tokens,
+            "max_tokens": plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens),
             "temperature": self.config.temperature,
             "messages": messages,
             "stream": True,
@@ -46,6 +47,8 @@ class DeepSeekProvider(BaseProvider):
             "stream_options": {"include_usage": True},
         }
 
+        if self.config.effort_resolu:
+            request_body["reasoning_effort"] = self.config.effort_resolu
         if tools:
             request_body["tools"] = tools
             request_body["tool_choice"] = "auto"
@@ -79,6 +82,7 @@ class DeepSeekProvider(BaseProvider):
 
                 # Track tool calls being built
                 tool_calls: dict[int, dict] = {}
+                raisonnement: list[str] = []
                 # Usage réel (dette 14/06/2026) : le chunk usage (stream_options.
                 # include_usage) arrive APRÈS le chunk finish_reason, choices vide.
                 # On mémorise stop_reason et on n'émet "done" qu'à la toute fin
@@ -119,7 +123,10 @@ class DeepSeekProvider(BaseProvider):
                                 # visible ne doit pas le perdre (l'ancien if/elif taisait
                                 # la prose dès que le raisonnement était présent).
                                 content = delta.get("content")
-                                if delta.get("reasoning_content") and not content:
+                                fragment = delta.get("reasoning_content")
+                                if tools and isinstance(fragment, str):
+                                    raisonnement.append(fragment)
+                                if fragment and not content:
                                     yield StreamEvent(type="text", content="")
                                 if content:
                                     yield StreamEvent(type="text", content=content)
@@ -156,6 +163,9 @@ class DeepSeekProvider(BaseProvider):
 
                                         yield StreamEvent(
                                             type="tool_call",
+                                            assistant_content_brut=(
+                                                {"reasoning_content": "".join(raisonnement)} if raisonnement else None
+                                            ),
                                             tool_call=ToolCall(
                                                 id=tc["id"],
                                                 name=tc["name"],
@@ -216,7 +226,7 @@ class DeepSeekProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list[Any] | None" = None,
+        assistant_content_brut: Any | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue DeepSeek conversation with tool results."""
         messages = list(messages)  # copie
@@ -224,9 +234,13 @@ class DeepSeekProvider(BaseProvider):
         # avant le tour courant, sinon le modèle re-demande le même outil.
         for turn in prior_turns or []:
             self._append_openai_tool_turn(
-                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+                messages, turn.assistant_content, turn.tool_calls, turn.tool_results,
+                assistant_content_brut=turn.assistant_content_brut,
             )
-        self._append_openai_tool_turn(messages, assistant_content, tool_calls, tool_results)
+        self._append_openai_tool_turn(
+            messages, assistant_content, tool_calls, tool_results,
+            assistant_content_brut=assistant_content_brut,
+        )
 
         async for event in self.stream(system_prompt, messages, tools):
             yield event

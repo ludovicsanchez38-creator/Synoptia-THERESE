@@ -24,7 +24,9 @@ def test_gpt_6_astra_est_au_catalogue_openai_avec_sa_fiche():
 
     openai = CATALOGUE["openai"]
     assert "gpt-6-astra" in openai.modeles
-    assert openai.modeles[1] == "gpt-6-astra", "même convention qu'Anthropic : le recommandé d'abord, la puissance maximale juste après"
+    assert openai.modeles[:5] == (
+        "gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-luna",
+    )
     for effort in ("low", "medium", "high", "xhigh", "max"):
         assert resoudre_effort("gpt-6-astra", effort, "openai") == effort, effort
     assert resoudre_effort("gpt-6-astra", "none", "openai") is None, "« none » n'est pas documenté pour gpt-6-astra : rien n'est envoyé"
@@ -56,11 +58,10 @@ def test_chaque_modele_du_catalogue_a_un_tarif():
         for modele in fiche.modeles
         if modele not in TOKEN_PRICES
     ]
-    # R1-9 : Syn demande Argon sans inventer son prix. Cette seule exception
-    # doit rester explicitement inconnue, jamais présentée comme gratuite.
-    assert manquants == ["gemini/gemini-4-argon"], manquants
+    # La grille Google du 24 novembre renseigne désormais Argon.
+    assert manquants == [], manquants
     from app.services.token_tracker import get_token_tracker
-    assert get_token_tracker().tarif_connu("gemini-4-argon") is False
+    assert get_token_tracker().tarif_connu("gemini-4-argon") is True
 
 
 @pytest.mark.parametrize(

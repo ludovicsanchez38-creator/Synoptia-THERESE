@@ -17,7 +17,7 @@ vi.mock('../../services/api', () => ({
 import { LLMTab } from './LLMTab';
 
 describe('sélecteur des réglages, lot M1', () => {
-  it('propose Mistral Large 4 en préversion', async () => {
+  it('recommande Large 4.0 et garde les anciennes références', async () => {
     render(
       <LLMTab
         selectedProvider="mistral"
@@ -41,7 +41,8 @@ describe('sélecteur des réglages, lot M1', () => {
     );
     const select = await screen.findByLabelText('Modèle');
     const libelles = Array.from(select.querySelectorAll('option')).map((o) => o.textContent);
-    expect(libelles[0]).toBe('Mistral Medium 3.5 (Équilibré)');
+    expect(libelles[0]).toBe('Mistral Large 4.0 (Recommandé)');
+    expect(libelles).toContain('Mistral Medium 3.5 (Génération précédente)');
     expect(libelles).toContain('Mistral Large 4 (Préversion)');
   });
 });

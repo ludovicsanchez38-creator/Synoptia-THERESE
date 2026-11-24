@@ -24,8 +24,12 @@ export interface ModeleDecore {
 }
 
 /** Décorations connues ; les autres noms sont dérivés de leur identifiant. */
+const GENERATION_PRECEDENTE = 'Génération précédente';
+
 export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   // GLM (Z.ai)
+  'glm-5.3-flash': { name: 'GLM 5.3 Flash' },
+  'glm-5.3-flashx': { name: 'GLM 5.3 FlashX' },
   'glm-5.3': { name: 'GLM 5.3', badge: 'Recommandé' },
   'glm-5.2': { name: 'GLM 5.2' },
   'glm-5.1': { name: 'GLM 5.1' },
@@ -33,29 +37,49 @@ export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   'glm-5-turbo': { name: 'GLM 5 Turbo', badge: 'Agents' },
   'glm-4.7': { name: 'GLM 4.7', badge: 'Économique' },
   // Kimi (Moonshot AI)
+  'kimi-k3.1-pro': { name: 'Kimi K3.1 Pro' },
+  'kimi-k3.1-pro-highspeed': { name: 'Kimi K3.1 Pro Highspeed', badge: 'Rapide' },
   'kimi-k3': { name: 'Kimi K3', badge: 'Recommandé' },
-  'kimi-k2.7-code': { name: 'Kimi K2.7 Code', badge: 'Code' },
-  'kimi-k2.7-code-highspeed': { name: 'Kimi K2.7 Code Rapide' },
-  'kimi-k2.6': { name: 'Kimi K2.6' },
-  'kimi-k2.5': { name: 'Kimi K2.5', badge: 'Économique' },
+  'kimi-k2.7-code': { name: 'Kimi K2.7 Code', badge: GENERATION_PRECEDENTE },
+  'kimi-k2.7-code-highspeed': { name: 'Kimi K2.7 Code Rapide', badge: GENERATION_PRECEDENTE },
+  'kimi-k2.6': { name: 'Kimi K2.6', badge: GENERATION_PRECEDENTE },
+  'kimi-k2.5': { name: 'Kimi K2.5', badge: GENERATION_PRECEDENTE },
   // Qwen (Alibaba)
+  'qwen4-max': { name: 'Qwen 4 Max' },
+  'qwen3.8-flash': { name: 'Qwen 3.8 Flash', badge: 'Économique' },
   'qwen3.8-max': { name: 'Qwen 3.8 Max', badge: 'Recommandé' },
   'qwen3.7-plus': { name: 'Qwen 3.7 Plus' },
   'qwen3.7-flash': { name: 'Qwen 3.7 Flash', badge: 'Économique' },
-  'qwen3-coder-plus': { name: 'Qwen 3 Coder Plus', badge: 'Code' },
+  'qwen3-coder-plus': { name: 'Qwen 3 Coder Plus', badge: GENERATION_PRECEDENTE },
   // MiniMax
+  'MiniMax-M3.1-Flash': { name: 'MiniMax M3.1 Flash', badge: 'Rapide' },
   'MiniMax-M3': { name: 'MiniMax M3', badge: 'Recommandé' },
-  'MiniMax-M2.7': { name: 'MiniMax M2.7' },
-  'MiniMax-M2.7-highspeed': { name: 'MiniMax M2.7 Rapide' },
-  'MiniMax-M2.5': { name: 'MiniMax M2.5' },
-  'MiniMax-M2.5-highspeed': { name: 'MiniMax M2.5 Rapide', badge: 'Économique' },
+  'MiniMax-M2.7': { name: 'MiniMax M2.7', badge: GENERATION_PRECEDENTE },
+  'MiniMax-M2.7-highspeed': { name: 'MiniMax M2.7 Rapide', badge: GENERATION_PRECEDENTE },
+  'MiniMax-M2.5': { name: 'MiniMax M2.5', badge: GENERATION_PRECEDENTE },
+  'MiniMax-M2.5-highspeed': { name: 'MiniMax M2.5 Rapide', badge: GENERATION_PRECEDENTE },
   // M1, 9 octobre 2026. Mêmes noms que le repli hors ligne.
-  'claude-fable-5-1': { name: 'Claude Fable 5.1', badge: 'Le plus capable' },
+  'claude-fable-5-2': { name: 'Claude Fable 5.2', badge: 'Le plus capable' },
+  'claude-fable-5-1': { name: 'Claude Fable 5.1', badge: GENERATION_PRECEDENTE },
+  'gpt-6.2-astra': { name: 'GPT-6.2 Astra', badge: 'Le plus capable' },
+  'gpt-6.2-sol': { name: 'GPT-6.2 Sol', badge: 'Équilibré' },
+  'gemini-4-hydrogen': { name: 'Gemini 4 Hydrogen' },
+  'gemini-4-neon': { name: 'Gemini 4 Neon' },
+  'gemini-4-carbon': { name: 'Gemini 4 Carbon' },
+  'deepseek-flash': { name: 'DeepSeek Flash', badge: 'Rapide' },
+  'deepseek-v4-flash': { name: 'DeepSeek V4 Flash', badge: GENERATION_PRECEDENTE },
   'claude-sonnet-5-5': { name: 'Claude Sonnet 5.5', badge: 'Équilibré' },
   'claude-haiku-5-5': { name: 'Claude Haiku 5.5', badge: 'Rapide' },
   'grok-4.7': { name: 'Grok 4.7', badge: 'Recommandé' },
   'gemini-3.8-flash': { name: 'Gemini 3.8 Flash', badge: 'Recommandé' },
-  'mistral-medium-3-5': { name: 'Mistral Medium 3.5', badge: 'Équilibré' },
+  'gemini-3.7-flash': { name: 'Gemini 3.7 Flash', badge: GENERATION_PRECEDENTE },
+  'gemini-3.5-flash': { name: 'Gemini 3.5 Flash', badge: GENERATION_PRECEDENTE },
+  'gemini-2.5-pro': { name: 'Gemini 2.5 Pro', badge: GENERATION_PRECEDENTE },
+  'gemini-2.5-flash': { name: 'Gemini 2.5 Flash', badge: GENERATION_PRECEDENTE },
+  'mistral-large-4-0': { name: 'Mistral Large 4.0' },
+  'mistral-medium-3-5': { name: 'Mistral Medium 3.5', badge: GENERATION_PRECEDENTE },
+  'mistral-medium-latest': { name: 'Mistral Medium Latest', badge: GENERATION_PRECEDENTE },
+  'mistral-large-2512': { name: 'Mistral Large 2512', badge: GENERATION_PRECEDENTE },
   'mistral-large-4': { name: 'Mistral Large 4', badge: 'Préversion' },
 };
 
@@ -181,7 +205,7 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'openai',
     name: 'GPT (OpenAI)',
-    description: 'GPT-6.1 (Sol, Terra), GPT-6 (Sol, Astra, Luna) et 5.6 - Polyvalent et puissant',
+    description: 'GPT-6.2 (Astra, Sol), GPT-6.1 et GPT-6 - Pour rédiger, analyser et coder',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
@@ -190,7 +214,7 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'gemini',
     name: 'Gemini (Google)',
-    description: 'Gemini 4 Argon et Gemini Flash - Documents et analyse',
+    description: 'Gemini 4 et Gemini Flash - Documents et analyse',
     keyPlaceholder: 'AIza...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
     models: [],
@@ -250,7 +274,7 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'kimi',
     name: 'Kimi (Moonshot AI)',
-    description: 'Kimi K3 - Lit de très longs documents',
+    description: 'Kimi K3 et K3.1 Pro - Pour les longs documents',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.moonshot.ai',
@@ -259,7 +283,7 @@ const METADONNEES_FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'qwen',
     name: 'Qwen (Alibaba)',
-    description: 'Qwen 3.8 - Nécessite l\'adresse de ton espace de travail',
+    description: 'Qwen 4 et 3.8 - Nécessite l\'adresse de ton espace de travail',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://modelstudio.console.alibabacloud.com',

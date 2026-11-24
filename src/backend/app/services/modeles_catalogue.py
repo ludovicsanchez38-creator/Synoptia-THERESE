@@ -77,6 +77,35 @@ _EFFORT_ANTHROPIC_OPUS_55 = {"low": "low", "medium": "medium", "high": "high", "
 
 _EFFORT_GPT6 = {"low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max"}
 
+# Contrats des API relevés le 24/11/2026. La casse de thinkingLevel
+# suit celle du chemin generateContent déjà utilisé.
+_GEMINI_4 = FicheModele(
+    effort=_EFFORT_GEMINI_3,
+    max_tokens_recommande=65_536,
+    context_window=1_048_576,
+    limite_sortie_fournisseur=65_536,
+)
+_GEMINI_4_XHIGH = FicheModele(
+    effort={**_EFFORT_GEMINI_3, "xhigh": "XHIGH", "max": "XHIGH"},
+    max_tokens_recommande=65_536,
+    context_window=1_048_576,
+    limite_sortie_fournisseur=65_536,
+)
+_GPT_62 = FicheModele(context_window=1_050_000, limite_sortie_fournisseur=128_000)
+_KIMI_K3 = FicheModele(
+    effort={"low": "low", "medium": "high", "high": "high", "xhigh": "max", "max": "max"},
+    context_window=1_048_576,
+    limite_sortie_fournisseur=1_048_576,
+)
+_GLM_53_FLASH = FicheModele(
+    effort={"max": "max"}, context_window=1_000_000, limite_sortie_fournisseur=128_000,
+)
+_DEEPSEEK_V4 = FicheModele(
+    effort={"low": "low", "medium": "high", "high": "high", "xhigh": "max", "max": "max"},
+    context_window=1_000_000,
+    limite_sortie_fournisseur=384_000,
+)
+
 CATALOGUE: dict[str, FicheFournisseur] = {
     "anthropic": FicheFournisseur(
         provider=LLMProvider.ANTHROPIC,
@@ -86,7 +115,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # P-122 (Ludo, 25/09/2026) : « start with Claude Opus 5.5 for most
             # workloads » (platform.claude.com, relevé le 25/09/2026).
             "claude-opus-5-5",               # Le plus polyvalent (recommandé)
-            "claude-fable-5-1",              # Puissance maximale (fiche du 09/10/2026)
+            "claude-fable-5-2",              # Puissance maximale
+            "claude-fable-5-1",              # Génération précédente, toujours servie
             "claude-fable-5",                # Génération précédente, toujours servie
             "claude-opus-5",                 # Génération précédente
             "claude-sonnet-5-5",             # Équilibre vitesse/intelligence
@@ -114,6 +144,12 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # Fable 5.1, Sonnet 5.5, Haiku 5.5 (09/10/2026) : cinq niveaux,
             # contexte 1 M, sortie synchrone 128 k. Le défaut documenté
             # (high, high, medium) n'est pas forcé : Auto n'envoie rien.
+            "claude-fable-5-2": FicheModele(
+                effort=_EFFORT_ANTHROPIC_OPUS_55,
+                max_tokens_recommande=128_000,
+                limite_sortie_fournisseur=128_000,
+                context_window=1_000_000,
+            ),
             "claude-fable-5-1": FicheModele(
                 effort=_EFFORT_ANTHROPIC_OPUS_55,
                 max_tokens_recommande=128_000,
@@ -149,6 +185,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # P-122 (Ludo, 25/09/2026) : GPT-6 Sol et Luna, relevés le 25/09 sur
             # developers.openai.com (contexte 1 050 000, sortie 128 000).
             "gpt-6-sol",         # Code et agents, génération 6 (recommandé)
+            "gpt-6.2-astra",
+            "gpt-6.2-sol",
             "gpt-6-astra",       # Puissance maximale, plus cher (P-057, Ludo 09/09/2026 ; contexte 1 050 000, sortie 128 000)
             "gpt-6-luna",        # Le plus économique de la génération 6
             # P-c18-m2 (09/10/2026) : après la tête. Les outils exigent Responses.
@@ -163,6 +201,10 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gpt-5.4-mini",      # Petit, rapide, bon marché
         ),
         fiches={
+            # Les guides des 6.2 excluent « none » sans lister les niveaux
+            # acceptés pour ces deux modèles. L'API choisit son effort.
+            "gpt-6.2-astra": _GPT_62,
+            "gpt-6.2-sol": _GPT_62,
             # gpt-6-astra (doc du 10/09/2026) : reasoning.effort low/medium/high/
             # xhigh/max ; « none » n'est pas documenté, donc jamais envoyé.
             "gpt-6-astra": FicheModele(effort=_EFFORT_GPT6, context_window=1_050_000),
@@ -199,6 +241,9 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         context_window=1000000,
         modeles=(
             "gemini-3.8-flash",           # Défaut dont les capacités sont chiffrées ici
+            "gemini-4-hydrogen",
+            "gemini-4-neon",
+            "gemini-4-carbon",
             # Journal officiel API Gemini du 13/10/2026, vérifié par Syn.
             "gemini-4-argon",             # Ajout proposé, sans changer le défaut
             "gemini-3.7-flash",           # Génération précédente
@@ -210,9 +255,10 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gemini-2.5-flash",
         ),
         fiches={
-            # Fenêtre prudente, à confirmer : aucune capacité chiffrée ni tarif
-            # Argon prouvés dans le dépôt. Effort non forcé ; sortie produit 4096.
-            "gemini-4-argon": FicheModele(context_window=32_000),
+            "gemini-4-hydrogen": _GEMINI_4_XHIGH,
+            "gemini-4-neon": _GEMINI_4_XHIGH,
+            "gemini-4-carbon": _GEMINI_4,
+            "gemini-4-argon": _GEMINI_4,
             # thinkingLevel : Gemini 3+ seulement (erreur API sur les 2.x),
             # MAJUSCULES sur generateContent, pas de xhigh sur 3.7-flash.
             # 3.8 (09/10/2026) : low/medium/high, minimal = erreur, sortie 65 536,
@@ -238,7 +284,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         modeles=(
             # ID ÉPINGLÉ en tête : un alias -latest bouge silencieusement
             # et aveuglerait la sonde de dérive (design 0.48).
-            "mistral-medium-3-5",     # Vaisseau amiral (recommandé)
+            "mistral-large-4-0",      # Version épinglée (recommandée)
+            "mistral-medium-3-5",     # Déprécié, conservé pour les préférences
             "mistral-large-4",        # Préversion publique, 09/10/2026
             "mistral-medium-latest",  # Pointeur perpétuel (choix utilisateur)
             "mistral-large-latest",   # Grand modèle, pointeur à jour
@@ -249,6 +296,11 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "ministral-3b-2512",      # Le plus petit
         ),
         fiches={
+            "mistral-large-4-0": FicheModele(
+                effort={"low": "low", "medium": "medium", "high": "high", "max": "high"},
+                context_window=1_000_000,
+                omettre_max_tokens=True,
+            ),
             # Page Reasoning : seuls high/none documentés pour medium-3-5.
             "mistral-medium-3-5": FicheModele(effort=_EFFORT_MISTRAL_MEDIUM),
             "mistral-medium-latest": FicheModele(effort=_EFFORT_MISTRAL_MEDIUM),
@@ -294,39 +346,62 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("GLM_API_KEY",),
         context_window=200000,
         modeles=(
-            "glm-5.3", "glm-5.2", "glm-5.1", "glm-5",
+            "glm-5.3", "glm-5.3-flash", "glm-5.3-flashx", "glm-5.2", "glm-5.1", "glm-5",
             "glm-5-turbo", "glm-4.7", "glm-4.7-flashx", "glm-4.7-flash",
         ),
+        fiches={
+            "glm-5.3": FicheModele(context_window=1_000_000, limite_sortie_fournisseur=128_000),
+            "glm-5.2": FicheModele(context_window=1_000_000, limite_sortie_fournisseur=128_000),
+            "glm-5.3-flash": _GLM_53_FLASH,
+            "glm-5.3-flashx": _GLM_53_FLASH,
+        },
     ),
     "kimi": FicheFournisseur(
         provider=LLMProvider.KIMI,
         env_vars=("KIMI_API_KEY",),
         context_window=1000000,
         modeles=(
-            "kimi-k3", "kimi-k2.7-code", "kimi-k2.7-code-highspeed",
-            "kimi-k2.6", "kimi-k2.5",
+            "kimi-k3", "kimi-k3.1-pro", "kimi-k3.1-pro-highspeed",
+            "kimi-k2.7-code", "kimi-k2.7-code-highspeed", "kimi-k2.6", "kimi-k2.5",
         ),
+        fiches={modele: _KIMI_K3 for modele in ("kimi-k3", "kimi-k3.1-pro", "kimi-k3.1-pro-highspeed")},
     ),
     "qwen": FicheFournisseur(
         provider=LLMProvider.QWEN,
         env_vars=("QWEN_API_KEY",),
         context_window=1000000,
-        modeles=("qwen3.8-max", "qwen3.7-plus", "qwen3.7-flash", "qwen3-coder-plus"),
+        modeles=("qwen3.8-max", "qwen4-max", "qwen3.8-flash", "qwen3.7-plus", "qwen3.7-flash", "qwen3-coder-plus"),
+        fiches={
+            "qwen4-max": FicheModele(
+                effort={"low": "low", "medium": "high", "high": "high", "xhigh": "xhigh", "max": "xhigh"},
+                limite_sortie_fournisseur=131_072,
+            ),
+            "qwen3.8-flash": FicheModele(limite_sortie_fournisseur=128_000),
+        },
     ),
     "minimax": FicheFournisseur(
         provider=LLMProvider.MINIMAX,
         env_vars=("MINIMAX_API_KEY",),
         context_window=200000,
         modeles=(
-            "MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed",
+            "MiniMax-M3", "MiniMax-M3.1-Flash", "MiniMax-M2.7", "MiniMax-M2.7-highspeed",
             "MiniMax-M2.5", "MiniMax-M2.5-highspeed",
         ),
+        fiches={
+            "MiniMax-M3": FicheModele(context_window=1_000_000),
+            "MiniMax-M3.1-Flash": FicheModele(effort=_EFFORT_GPT6, context_window=1_000_000),
+        },
     ),
     "deepseek": FicheFournisseur(
         provider=LLMProvider.DEEPSEEK,
         env_vars=("DEEPSEEK_API_KEY",),
         context_window=128000,
-        modeles=("deepseek-v4-pro", "deepseek-v4-flash"),
+        modeles=("deepseek-v4-pro", "deepseek-flash", "deepseek-v4-flash"),
+        fiches={
+            "deepseek-v4-pro": _DEEPSEEK_V4,
+            "deepseek-flash": _DEEPSEEK_V4,
+            "deepseek-v4-flash": _DEEPSEEK_V4,
+        },
     ),
     # Revue 0.48 F1 : Infomaniak avait disparu du catalogue (l'enum, le
     # provider et l'API le proposaient toujours) - au redémarrage, la
@@ -349,8 +424,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         context_window=200000,
         # Découverte dynamique - cette liste n'est que le repli.
         modeles=(
-            "anthropic/claude-sonnet-4-6", "anthropic/claude-opus-4-8",
-            "openai/gpt-5.5", "google/gemini-3.1-pro",
+            "anthropic/claude-sonnet-4.6", "anthropic/claude-opus-4.8",
+            "openai/gpt-5.5", "google/gemini-3.1-pro-preview",
             "google/gemini-3.5-flash", "meta-llama/llama-4-maverick",
         ),
     ),
@@ -461,7 +536,7 @@ def libelle_modele(modele: str) -> str:
     texte = re.sub(r"-(?:\d{8}|\d{4})(?=-|$)", "", natif)
     texte = re.sub(r"(\d)-(\d+)(?=-|$)", r"\1.\2", texte)
     morceaux = texte.replace("-", " ").split()
-    marques = {"gpt": "GPT", "glm": "GLM", "qwen": "Qwen", "grok": "Grok",
+    marques = {"kimi": "Kimi", "gpt": "GPT", "glm": "GLM", "qwen": "Qwen", "grok": "Grok",
                "minimax": "MiniMax", "deepseek": "DeepSeek"}
     rendu = " ".join(
         m.upper() if re.fullmatch(r"\d+(?:\.\d+)?b", m, re.IGNORECASE)

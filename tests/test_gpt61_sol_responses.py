@@ -196,7 +196,9 @@ class TestCatalogue:
 
         openai = CATALOGUE["openai"]
         assert frontier("openai") == "gpt-6-sol"
-        assert openai.modeles[:3] == ("gpt-6-sol", "gpt-6-astra", "gpt-6-luna")
+        assert openai.modeles[:5] == (
+            "gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-luna",
+        )
         assert MODELE in openai.modeles
         assert openai.modeles.index(MODELE) > openai.modeles.index("gpt-6-luna")
         assert fenetre_de_contexte("openai", MODELE) == 1_050_000
@@ -699,3 +701,16 @@ class TestResponsesReserveAOpenAI:
         repli = instance.url_responses()
         assert "api.openai.com" not in repli, repli
         assert repli == adresse.removesuffix("/chat/completions") + "/responses"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("modele", ["gpt-6.2-astra", "gpt-6.2-sol"])
+async def test_gpt62_utilise_responses_sans_effort_non_documente(modele):
+    client = _Client(_flux_texte())
+    events = [event async for event in _provider(client, modele).stream(None, MESSAGES, [OUTIL])]
+
+    assert client.requests[0]["url"] == "https://api.openai.com/v1/responses"
+    corps = client.requests[0]["json"]
+    assert {"reasoning", "reasoning_effort", "temperature", "top_p"}.isdisjoint(corps)
+    assert corps["tools"][0]["name"] == "meteo"
+    assert "".join(event.content for event in events if event.type == "text") == "Bonjour Manosque"

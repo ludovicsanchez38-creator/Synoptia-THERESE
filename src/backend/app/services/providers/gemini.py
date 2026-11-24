@@ -176,7 +176,7 @@ def _message_has_payload(msg: dict) -> bool:
 # unexpected behavior, such as looping or degraded performance, particularly
 # in complex mathematical or reasoning tasks ». Le Board délibère en effort
 # maximal sur gemini-3.7-flash : le cas exact. Vérifié en doc le 26/08/2026.
-_SANS_SAMPLING = ("gemini-3",)
+_SANS_SAMPLING = ("gemini-3", "gemini-4-")
 
 
 class GeminiProvider(BaseProvider):

@@ -43,8 +43,9 @@ def test_opus_5_5_prend_la_tete_d_anthropic_avec_sa_fiche():
     assert anthropic.modeles[0] == "claude-opus-5-5"
     # M1 (09/10/2026) : Fable 5.1 prend la place « puissance maximale ».
     # Fable 5 reste servi, juste après. La tête ne bouge pas.
-    assert anthropic.modeles[1] == "claude-fable-5-1", "la puissance maximale juste après"
-    assert anthropic.modeles[2] == "claude-fable-5", "Fable 5 reste disponible"
+    assert anthropic.modeles[1:4] == (
+        "claude-fable-5-2", "claude-fable-5-1", "claude-fable-5",
+    )
     assert "claude-opus-5" in anthropic.modeles, "ajouter n'est pas remplacer"
     for effort in NIVEAUX:
         assert resoudre_effort("claude-opus-5-5", effort, "anthropic") == effort, effort
@@ -64,11 +65,13 @@ def test_gpt_6_sol_et_luna_sont_au_catalogue_openai(modele):
     assert _uses_max_completion_tokens(modele) is True
 
 
-def test_gpt_6_sol_prend_la_tete_d_openai_astra_reste_deuxieme():
+def test_gpt_6_sol_reste_en_tete_et_les_6_2_suivent():
     from app.services.modeles_catalogue import CATALOGUE
 
     openai = CATALOGUE["openai"]
-    assert openai.modeles[:3] == ("gpt-6-sol", "gpt-6-astra", "gpt-6-luna")
+    assert openai.modeles[:5] == (
+        "gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-luna",
+    )
     assert "gpt-5.6-sol" in openai.modeles, "ajouter n'est pas remplacer"
 
 

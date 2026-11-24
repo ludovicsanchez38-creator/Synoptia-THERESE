@@ -18,6 +18,7 @@ Relevé le 24/08/2026 sur alibabacloud.com/help/en/model-studio, page
 """
 
 import logging
+from typing import Any
 
 from .openai import OpenAIProvider
 
@@ -39,3 +40,17 @@ class QwenProvider(OpenAIProvider):
     """
 
     API_URL = QWEN_API_URL
+
+    def _champ_raisonnement_a_rejouer(self) -> str | None:
+        return "encrypted_content" if self.config.model == "qwen4-max" else None
+
+    def _build_request_body(
+        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        corps = super()._build_request_body(messages, tools)
+        if self.config.model == "qwen4-max":
+            # https://www.alibabacloud.com/help/en/model-studio/cot-summary
+            corps.update(
+                enable_thinking=True, thinking_display="summarized", preserve_thinking=True,
+            )
+        return corps

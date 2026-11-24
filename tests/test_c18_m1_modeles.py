@@ -69,13 +69,14 @@ TETES = {
     "anthropic": "claude-opus-5-5",
     "openai": "gpt-6-sol",
     "gemini": "gemini-3.8-flash",
-    "mistral": "mistral-medium-3-5",
+    "mistral": "mistral-large-4-0",
     "grok": "grok-4.7",
 }
 
 ORDRE = {
     "anthropic": (
         "claude-opus-5-5",
+        "claude-fable-5-2",
         "claude-fable-5-1",
         "claude-fable-5",
         "claude-opus-5",
@@ -97,7 +98,7 @@ ORDRE = {
         "grok-4.20-0309-non-reasoning",
     ),
     "gemini": (
-        "gemini-3.8-flash", "gemini-4-argon",
+        "gemini-3.8-flash", "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon", "gemini-4-argon",
         "gemini-3.7-flash",
         "gemini-3.1-pro-preview",
         "gemini-3.6-flash",
@@ -107,6 +108,7 @@ ORDRE = {
         "gemini-2.5-flash",
     ),
     "mistral": (
+        "mistral-large-4-0",
         "mistral-medium-3-5",
         "mistral-large-4",
         "mistral-medium-latest",
@@ -157,7 +159,7 @@ class TestCatalogueM1:
             assert tuple(modeles_ordonnes(fournisseur)) == attendu
         grok = modeles_ordonnes("grok")
         assert "grok-4.7-fast" not in grok
-        assert "mistral-large-4-0" not in modeles_ordonnes("mistral")
+        assert modeles_ordonnes("mistral").count("mistral-large-4-0") == 1
 
     def test_fenetres_et_plafonds_documentes(self):
         for modele in ("claude-fable-5-1", "claude-sonnet-5-5", "claude-haiku-5-5"):
@@ -641,6 +643,6 @@ def test_les_agents_recoivent_les_modeles_a_outils_documentes():
     assert premiers["gemini"] == "gemini-3.8-flash"
     assert premiers["openai"] == "gpt-6-sol"
     assert premiers["anthropic"] == "claude-opus-5-5"
-    assert premiers["mistral"] == "mistral-medium-3-5"
+    assert premiers["mistral"] == "mistral-large-4-0"
     assert par_id["mistral-medium-3-5"]["name"] == "Mistral Medium 3.5"
     assert AgentConfig(id="a", name="a", description="a").default_model == "claude-sonnet-4-6"

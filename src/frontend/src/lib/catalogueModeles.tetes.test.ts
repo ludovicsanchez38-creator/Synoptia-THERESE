@@ -52,7 +52,7 @@ describe('le repli a la même tête que le catalogue', () => {
   const catalogue = tetesDuCatalogue(source);
 
   it('compare la tête de chaque fournisseur du repli à celle du catalogue', () => {
-    expect(catalogue.get('mistral')).toBe('mistral-medium-3-5');
+    expect(catalogue.get('mistral')).toBe('mistral-large-4-0');
     expect(catalogue.get('anthropic')).toBe('claude-opus-5-5');
     expect(FOURNISSEURS.filter((f) => f.models.length === 0).map((f) => f.id)).toEqual(['ollama']);
 

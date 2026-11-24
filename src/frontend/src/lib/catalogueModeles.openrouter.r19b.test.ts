@@ -4,8 +4,8 @@ import { FOURNISSEURS, decorer } from './catalogueModeles';
 
 describe('R1-9b : noms OpenRouter issus du catalogue', () => {
   it.each([
-    ['anthropic/claude-sonnet-4-6', 'Claude Sonnet 4.6'],
-    ['anthropic/claude-opus-4-8', 'Claude Opus 4.8'],
+    ['anthropic/claude-sonnet-4.6', 'Claude Sonnet 4.6'],
+    ['anthropic/claude-opus-4.8', 'Claude Opus 4.8'],
     ['openai/gpt-5.5', 'GPT-5.5'],
     ['google/gemini-3.5-flash', 'Gemini 3.5 Flash'],
   ])('%s reprend le nom lisible connu', (id, name) => {

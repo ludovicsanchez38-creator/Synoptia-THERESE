@@ -6,10 +6,10 @@ from app.services.modeles_catalogue import CATALOGUE, fenetre_de_contexte
 from app.services.token_tracker import get_token_tracker
 
 
-def test_argon_sans_caracteristiques_inventees():
+def test_argon_utilise_les_caracteristiques_synchrones_publiees():
     assert 'gemini-4-argon' in CATALOGUE['gemini'].modeles
-    assert fenetre_de_contexte('gemini', 'gemini-4-argon') == 32000
-    assert not get_token_tracker().tarif_connu('gemini-4-argon')
+    assert fenetre_de_contexte('gemini', 'gemini-4-argon') == 1_048_576
+    assert get_token_tracker().tarif_connu('gemini-4-argon')
 
 
 def test_snapshot_frontend_et_defauts_identiques():

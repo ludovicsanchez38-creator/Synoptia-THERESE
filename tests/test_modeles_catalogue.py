@@ -27,7 +27,7 @@ class TestLesFrontiers:
             # Passe 3 : Grok 4.7 et Gemini 3.8 Flash sont les têtes.
             # Le test figeait grok-4.6 et gemini-3.7-flash.
             "gemini": "gemini-3.8-flash",
-            "mistral": "mistral-medium-3-5",
+            "mistral": "mistral-large-4-0",
             "grok": "grok-4.7",
         }
         for fournisseur, frontier in attendus.items():
@@ -327,3 +327,63 @@ class TestLesFrontiersSontTarifes:
         assert sans_prix == [], (
             f"frontiers sans tarif (coût menti à 0,00 €) : {sans_prix}"
         )
+
+
+@pytest.mark.parametrize(("fournisseur", "modeles"), [
+    ("anthropic", ["claude-opus-5-5", "claude-fable-5-2"]),
+    ("openai", ["gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol"]),
+    ("gemini", ["gemini-3.8-flash", "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon"]),
+    ("mistral", ["mistral-large-4-0"]),
+    ("glm", ["glm-5.3", "glm-5.3-flash", "glm-5.3-flashx"]),
+    ("kimi", ["kimi-k3", "kimi-k3.1-pro", "kimi-k3.1-pro-highspeed"]),
+    ("qwen", ["qwen3.8-max", "qwen4-max", "qwen3.8-flash"]),
+    ("minimax", ["MiniMax-M3", "MiniMax-M3.1-Flash"]),
+    ("deepseek", ["deepseek-v4-pro", "deepseek-flash"]),
+])
+def test_nouveaux_modeles_ordonnes_tarifes_et_utilisables_par_les_agents(fournisseur, modeles):
+    from app.services.agents.config import AVAILABLE_MODELS
+    from app.services.modeles_catalogue import modeles_ordonnes
+    from app.services.token_tracker import TOKEN_PRICES
+
+    assert modeles_ordonnes(fournisseur)[:len(modeles)] == modeles
+    assert set(modeles) <= TOKEN_PRICES.keys()
+    assert set(modeles) <= {m["id"] for m in AVAILABLE_MODELS if m["provider"] == fournisseur}
+
+
+@pytest.mark.parametrize("modele", ["gemini-4-argon", "gemini-4-carbon", "gemini-4-neon", "gemini-4-hydrogen"])
+def test_gemini_4_au_format_synchrone_sans_echantillonnage(modele):
+    from app.services.modeles_catalogue import fenetre_de_contexte
+    from app.services.providers.base import LLMConfig, LLMProvider
+    from app.services.providers.gemini import GeminiProvider
+
+    config = LLMConfig(LLMProvider.GEMINI, modele, max_tokens=100_000, effort="max")
+    generation = GeminiProvider(config, None)._build_request_body([], None, None)["generationConfig"]
+
+    assert fenetre_de_contexte("gemini", modele) == 1_048_576
+    assert generation["maxOutputTokens"] == 65_536
+    assert generation["thinkingConfig"] == {
+        "thinkingLevel": "HIGH" if modele in {"gemini-4-argon", "gemini-4-carbon"} else "XHIGH",
+    }
+    assert {"temperature", "topP", "topK"}.isdisjoint(generation)
+
+
+@pytest.mark.parametrize(("modele", "provider", "effort", "attendu"), [
+    ("kimi-k3", "kimi", "low", "low"),
+    ("kimi-k3.1-pro", "kimi", "high", "high"),
+    ("kimi-k3.1-pro-highspeed", "kimi", "max", "max"),
+    ("MiniMax-M3.1-Flash", "minimax", "xhigh", "xhigh"),
+])
+def test_modeles_compatibles_openai_emettent_le_plafond_de_completion(
+    modele, provider, effort, attendu,
+):
+    from app.services.providers.base import LLMConfig, LLMProvider
+    from app.services.providers.kimi import KimiProvider
+    from app.services.providers.minimax import MiniMaxProvider
+
+    classes = {"kimi": KimiProvider, "minimax": MiniMaxProvider}
+    config = LLMConfig(LLMProvider(provider), modele, max_tokens=100_000, effort=effort)
+    corps = classes[provider](config, None)._build_request_body([])
+
+    assert corps["max_completion_tokens"] == 100_000
+    assert corps["reasoning_effort"] == attendu
+    assert {"max_tokens", "temperature", "top_p", "n", "frequency_penalty", "presence_penalty"}.isdisjoint(corps)
