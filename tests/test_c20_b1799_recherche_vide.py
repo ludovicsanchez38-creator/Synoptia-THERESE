@@ -316,7 +316,8 @@ async def test_limite_sans_resultat_utile_meme_si_un_autre_outil_echoue(monkeypa
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("deux_tours", [False, True], ids=["meme-tour", "deux-tours"])
-async def test_repli_garde_les_emails_avant_une_recherche_vide(monkeypatch, db_session, deux_tours):
+@pytest.mark.parametrize("synthese", [False, True], ids=["repli", "synthese"])
+async def test_repli_garde_les_emails_avant_une_recherche_vide(monkeypatch, db_session, deux_tours, synthese):
     from app.services import memory_card_context, workspace_tools
 
     class ModeleSilencieux:
@@ -346,6 +347,8 @@ async def test_repli_garde_les_emails_avant_une_recherche_vide(monkeypatch, db_s
                 ))
                 yield StreamEvent(type="done", stop_reason="tool_calls")
             else:
+                if synthese:
+                    yield StreamEvent(type="text", content="Synthèse : Rapport Alpha et Rapport Bravo.")
                 yield StreamEvent(type="done", stop_reason="end_turn")
 
     modele = ModeleSilencieux()
@@ -375,6 +378,43 @@ async def test_repli_garde_les_emails_avant_une_recherche_vide(monkeypatch, db_s
     assert "Rapport Alpha" in texte and "Rapport Bravo" in texte
     assert "Rapport Alpha" in enregistre and "Rapport Bravo" in enregistre
     assert "aucun fichier" not in texte.lower() and "aucun fichier" not in enregistre.lower()
+    if synthese:
+        assert modele.continuations == (2 if deux_tours else 1)
+        assert "Synthèse :" in texte and "Synthèse :" in enregistre
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("outil", "resultat", "precedent", "synthese"), [
+    ("search_files", '{"found":false,"total":0,"documents":[]}', ("search_emails", "Courriel confirmé", False), True),
+    ("search_emails", "Aucun email trouve pour la recherche 'dossier'.", ("search_invoices", "Devis 42", False), True),
+    ("search_invoices", "Aucune facture ni devis local ne correspond à « A ».", ("search_files", "note.md", False), True),
+    ("search_files", '{"found":false,"documents":[],"hors_perimetre":2}', ("search_emails", "Courriel lu", False), True),
+    ("search_files", '{"found":false,"documents":[],"contenu_non_consulte":true}', ("search_files", "ancien.txt", False), True),
+    ("search_emails", "Un courriel sur le dossier.", ("search_files", "Timeout", True), True),
+    ("search_files", '{"found":false,"total":0,"documents":[]}', ("search_emails", "Timeout", True), False),
+    ("search_invoices", "Aucune facture ni devis local ne correspond à « B ».", ("search_emails", "", False), False),
+    ("search_files", '{"found":false,"documents":[],"hors_perimetre":1}', ("send_email", "en attente de confirmation", False), False),
+    ("search_emails", "Aucun email trouve pour la recherche 'pièce'.", ("search_invoices", "Aucune facture ni devis local ne correspond à « B ».", False), False),
+])
+async def test_b2065_dix_rejeux_de_la_garde_de_recherche(monkeypatch, outil, resultat, precedent, synthese):
+    modele = ModeleInventeur()
+    monkeypatch.setattr(chat, "_perimetre_de_conversation", AsyncMock(return_value=("global", None)))
+    monkeypatch.setattr(chat, "execute_memory_tool", AsyncMock(return_value=resultat))
+    monkeypatch.setattr(chat, "execute_workspace_tool", AsyncMock(return_value=resultat))
+    appel = ToolCall(id="recherche", name=outil, arguments={"query": "dossier"})
+    outils = [{"type": "function", "function": {"name": outil}}]
+
+    evenements = [json.loads(bloc.removeprefix("data: ")) async for bloc in
+                  chat._execute_tools_and_continue(
+                      modele, None, ContextWindow(messages=[]), "", [appel], outils,
+                      "c-b2065", 3, session=object(), tool_outcomes=[precedent],
+                  )]
+    texte = "".join(e.get("content", "") for e in evenements if e["type"] == "text")
+
+    assert modele.continuations == int(synthese)
+    assert ("comité imaginaire" in texte) is synthese
+    if "hors_perimetre" in resultat or "contenu_non_consulte" in resultat:
+        assert any(e.get("limite_recherche") for e in evenements)
 
 
 @pytest.mark.asyncio

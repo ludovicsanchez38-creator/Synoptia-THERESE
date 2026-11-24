@@ -4410,8 +4410,10 @@ async def _execute_tools_and_continue(
             ensure_ascii=False,
         ) + "\n\n"
 
-    if (recherches_vides or limites) and not any(_resultat_exploitable(*r) for r in exec_records):
-        if recherches_vides and not resultat_precedent_exploitable:
+    if (recherches_vides or limites) and not (
+        resultat_precedent_exploitable or any(_resultat_exploitable(*r) for r in exec_records)
+    ):
+        if recherches_vides:
             texte = "\n".join(dict.fromkeys(recherches_vides))
             yield "data: " + json.dumps(
                 StreamChunk(type="text", content=texte, conversation_id=conversation_id).model_dump(),
