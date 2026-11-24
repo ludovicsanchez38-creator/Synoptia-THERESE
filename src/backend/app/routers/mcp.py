@@ -159,14 +159,16 @@ async def start_server(server_id: str) -> MCPServerResponse:
         raise HTTPException(status_code=404, detail="Server not found")
 
     success = await service.start_server(server_id)
-    if not success:
-        server = service.servers[server_id]
+    server = service.servers.get(server_id)
+    if server is None:
+        raise HTTPException(status_code=404, detail="Server not found")
+    if not success and server.status != MCPServerStatus.STOPPED:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to start server: {server.error}"
         )
 
-    return MCPServerResponse(**service.servers[server_id].to_dict())
+    return MCPServerResponse(**server.to_dict())
 
 
 @router.post("/servers/{server_id}/stop")

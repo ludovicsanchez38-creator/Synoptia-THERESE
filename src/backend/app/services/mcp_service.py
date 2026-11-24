@@ -272,6 +272,8 @@ class MCPService:
         self.config_path = config_path or Path(str(settings.data_dir)) / "mcp_servers.json"
         self.servers: dict[str, MCPServer] = {}
         self._processes: dict[str, asyncio.subprocess.Process] = {}
+        self._demarrages: dict[str, asyncio.Task[bool]] = {}
+        self._arrets_demandes: set[str] = set()
         self._request_id = 0
         self._pending_requests: dict[int, asyncio.Future] = {}
         self._pending_timestamps: dict[int, float] = {}  # Sprint 2 - PERF-2.14
@@ -303,7 +305,7 @@ class MCPService:
         connecteurs lancés sont arrêtés ; rien n'est redémarré ici (l'écran
         demande de redémarrer THÉRÈSE).
         """
-        for server_id in list(self._processes):
+        for server_id in self._processes.keys() | self._demarrages.keys():
             await self.stop_server(server_id)
         self.servers = {}
         await self._load_config()
@@ -449,11 +451,34 @@ class MCPService:
             logger.error(f"Server not found: {server_id}")
             return False
 
-        server = self.servers[server_id]
+        demarrage_en_cours = self._demarrages.get(server_id)
+        if demarrage_en_cours is not None:
+            return await asyncio.shield(demarrage_en_cours)
 
+        server = self.servers[server_id]
         if server.status == MCPServerStatus.RUNNING:
             logger.warning(f"Server already running: {server.name}")
             return True
+
+        demarrage = asyncio.get_running_loop().create_task(self._demarrer_serveur(server))
+        self._demarrages[server_id] = demarrage
+        try:
+            return await asyncio.shield(demarrage)
+        except asyncio.CancelledError:
+            if server_id not in self._arrets_demandes:
+                demarrage.cancel()
+            await asyncio.gather(demarrage, return_exceptions=True)
+            raise
+        finally:
+            self._demarrages.pop(server_id, None)
+            self._arrets_demandes.discard(server_id)
+
+    async def _demarrer_serveur(self, server: MCPServer) -> bool:
+        server_id = server.id
+        if server_id in self._arrets_demandes:
+            server.status = MCPServerStatus.STOPPED
+            server.error = None
+            return False
 
         server.status = MCPServerStatus.STARTING
         server.error = None
@@ -513,6 +538,10 @@ class MCPService:
             )
 
             self._processes[server_id] = process
+            if server_id in self._arrets_demandes:
+                await self._arreter_processus(server_id)
+                return False
+
             server.status = MCPServerStatus.RUNNING
             logger.info(f"Started MCP server: {server.name} (PID {process.pid})")
 
@@ -534,29 +563,43 @@ class MCPService:
             return True
 
         except asyncio.CancelledError:
-            await self.stop_server(server_id)
+            await self._arreter_processus(server_id)
+            if server_id in self._arrets_demandes:
+                server.status = MCPServerStatus.STOPPED
+                return False
             server.status = MCPServerStatus.ERROR
             server.error = "Le démarrage du serveur MCP a été interrompu."
             raise
-        except FileNotFoundError:
-            await self.stop_server(server_id)
-            server.status = MCPServerStatus.ERROR
-            server.error = f"Commande introuvable : {server.command}"
-            logger.error(f"Failed to start {server.name}: {server.error}")
-            return False
         except Exception as e:
-            await self.stop_server(server_id)
+            await self._arreter_processus(server_id)
+            if server_id in self._arrets_demandes:
+                server.status = MCPServerStatus.STOPPED
+                return False
             server.status = MCPServerStatus.ERROR
-            server.error = str(e)
-            logger.error(f"Failed to start {server.name}: {e}")
+            server.error = f"Commande introuvable : {server.command}" if isinstance(e, FileNotFoundError) else str(e)
+            logger.error(f"Failed to start {server.name}: {server.error}")
             return False
 
     async def stop_server(self, server_id: str) -> bool:
-        """Stop an MCP server process."""
-        if server_id not in self._processes:
-            return False
+        """Arrête le processus ou attend que le démarrage cède ses ressources."""
+        demarrage = self._demarrages.get(server_id)
+        if demarrage is not None and not demarrage.done():
+            if server_id not in self._arrets_demandes:
+                self._arrets_demandes.add(server_id)
+                # Avant d'avoir le processus, laisser sa création rendre le
+                # descripteur. Ensuite, interrompre l'initialisation MCP.
+                if server_id in self._processes:
+                    demarrage.cancel()
+            await asyncio.shield(demarrage)
+            return True
+        return await self._arreter_processus(server_id)
 
-        process = self._processes[server_id]
+    async def _arreter_processus(self, server_id: str) -> bool:
+        # Le premier appel prend le processus avant d'attendre sa fin.
+        # Un arrêt concurrent ne doit pas annuler ce nettoyage en cours.
+        process = self._processes.pop(server_id, None)
+        if process is None:
+            return False
 
         try:
             process.terminate()
@@ -583,8 +626,6 @@ class MCPService:
             lecteur.cancel()
         if lecteurs:
             await asyncio.gather(*lecteurs, return_exceptions=True)
-
-        del self._processes[server_id]
 
         if server_id in self.servers:
             self.servers[server_id].status = MCPServerStatus.STOPPED
@@ -961,7 +1002,7 @@ class MCPService:
             self._cleanup_task.cancel()
             self._cleanup_task = None
 
-        for server_id in list(self._processes.keys()):
+        for server_id in self._processes.keys() | self._demarrages.keys():
             await self.stop_server(server_id)
 
         # Clear any remaining pending requests
