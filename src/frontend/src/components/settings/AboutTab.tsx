@@ -1,3 +1,4 @@
+import { PAGE_TELECHARGEMENT, PHASE_APPLICATION } from '../../lib/phaseApplication';
 import { setAutomaticUpdateChecks, useAutomaticUpdateChecks } from '../../lib/updatePreference';
 // Onglet "À propos" - Version actuelle + Vérification des mises à jour
 // Vérifie les releases GitHub et propose le téléchargement si nouvelle version disponible
@@ -232,7 +233,7 @@ export function AboutTab() {
           </div>
           <div className="bg-bg/50 rounded-md px-3 py-2">
             <span className="text-text-muted">Phase</span>
-            <Etiquette className="ml-2">Alpha</Etiquette>
+            <Etiquette className="ml-2">{PHASE_APPLICATION.libelle}</Etiquette>
           </div>
         </div>
       </Carte>
@@ -247,7 +248,7 @@ export function AboutTab() {
           Un bug ? Une idée ?
         </h4>
         <p className="text-sm text-text-muted mb-3">
-          La communauté alpha vit sur Discord : signale les bugs dans
+          La communauté {PHASE_APPLICATION.suffixe ? PHASE_APPLICATION.libelle.toLocaleLowerCase('fr') : 'THÉRÈSE'} est sur Discord. Signale les bugs dans
           <span className="text-text font-medium"> #bugs</span>, propose tes idées dans
           <span className="text-text font-medium"> #feedback</span>.
         </p>
@@ -356,7 +357,7 @@ export function AboutTab() {
             <Alerte titre="Impossible de vérifier">
               {errorMsg}
               {' '}
-              <a href="https://synoptia.fr/therese/alpha/" target="_blank" rel="noopener noreferrer"
+              <a href={PAGE_TELECHARGEMENT} target="_blank" rel="noopener noreferrer"
                 className="underline" onClick={(event) => { event.preventDefault(); openDownload(event.currentTarget.href); }}>
                 Télécharger THÉRÈSE manuellement
               </a>

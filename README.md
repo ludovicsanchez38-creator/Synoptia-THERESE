@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-blue.svg" alt="AGPL-3.0 License" /></a>
   <a href="https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/actions"><img src="https://img.shields.io/github/actions/workflow/status/ludovicsanchez38-creator/Synoptia-THERESE/ci.yml?branch=main&label=CI" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.84.0--alpha-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.84.0--beta-orange" alt="Version" />
 </p>
 
 <p align="center">
@@ -48,9 +48,9 @@ THÉRÈSE embarque deux agents IA open source qui travaillent ensemble :
 
 **Compatible OpenClaw** : le format de configuration (agent.json + SOUL.md) est compatible avec [OpenClaw](https://github.com/openclaw/openclaw) (MIT).
 
-## Télécharger (alpha)
+## Télécharger (bêta)
 
-> THÉRÈSE est en **alpha** avec 21 testeurs.
+> THÉRÈSE est en **bêta** avec 21 testeurs.
 
 Les installeurs sont disponibles dans les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
 
@@ -77,7 +77,7 @@ Guide complet pour les testeurs : [docs/USER_GUIDE_ALPHA.md](docs/USER_GUIDE_ALP
 
 - **Discord** : mentionne `@Katia bug : [description]` dans `#bugs`
 - **GitHub** : ouvre une [issue](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/issues/new?template=bug_report.md)
-- **Email** : ludo@synoptia.fr avec l'objet `[THÉRÈSE Alpha] Bug`
+- **Email** : ludo@synoptia.fr avec l'objet `[THÉRÈSE Bêta] Bug`
 
 ## Pour les développeurs
 
@@ -139,7 +139,7 @@ Synoptia-THERESE/
 
 | Document | Description |
 |----------|-------------|
-| [Guide Alpha](docs/USER_GUIDE_ALPHA.md) | Guide complet pour les testeurs |
+| [Guide des testeurs](docs/USER_GUIDE_ALPHA.md) | Guide complet pour les testeurs |
 | [Installation](docs/GETTING_STARTED.md) | Installation depuis les sources |
 | [Contribuer](docs/CONTRIBUTING.md) | Guide de contribution |
 | [API](docs/API.md) | Documentation de l'API backend |

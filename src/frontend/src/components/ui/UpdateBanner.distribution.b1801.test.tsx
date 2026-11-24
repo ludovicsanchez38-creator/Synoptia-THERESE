@@ -32,7 +32,7 @@ describe('B-1801 : la distribution Linux doit aussi autoriser la mise à jour', 
       await vi.dynamicImportSettled();
     });
     expect(screen.queryByRole('button', { name: 'Installer maintenant' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE' })).toHaveAttribute('href', 'https://synoptia.fr/therese/alpha/');
+    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE' })).toHaveAttribute('href', 'https://synoptia.fr/therese/beta/');
     expect(doubles.check).not.toHaveBeenCalled();
   });
 

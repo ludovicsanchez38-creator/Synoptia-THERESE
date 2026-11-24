@@ -61,9 +61,9 @@ Conséquences à connaître :
 
 | Version | Supportée |
 |---------|-----------|
-| Alpha (v0.x) | Oui (programme alpha en cours) |
+| Bêta (v0.x) | Oui (programme bêta en cours) |
 
-## Limitations connues (alpha)
+## Limitations connues (bêta)
 
 - L'application n'est pas signée (macOS Gatekeeper, Windows SmartScreen)
 - Le backend écoute sur `127.0.0.1:17293` (localhost uniquement)

@@ -1,3 +1,4 @@
+import { PHASE_APPLICATION } from '../lib/phaseApplication';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { initApiBase, getApiBase } from '../services/api/core';
 import { prefersReducedMotion } from '../lib/accessibility';
@@ -310,7 +311,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
             THÉRÈSE
           </h1>
           {appVersion && (
-            <p className="text-text-muted text-xs mb-4">v{appVersion}-alpha</p>
+            <p className="text-text-muted text-xs mb-4">v{appVersion}{PHASE_APPLICATION.suffixe}</p>
           )}
           <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4 space-y-2">
             <p className="text-error text-sm font-semibold">
@@ -338,7 +339,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
             THÉRÈSE
           </h1>
           {appVersion && (
-            <p className="text-text-muted text-xs mb-4">v{appVersion}-alpha</p>
+            <p className="text-text-muted text-xs mb-4">v{appVersion}{PHASE_APPLICATION.suffixe}</p>
           )}
           <div role="alert" className="bg-error/10 border border-error/30 rounded-md p-4">
             <p className="text-error text-sm">{error}</p>
@@ -364,7 +365,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           THÉRÈSE
         </h1>
         {appVersion && (
-          <p className="text-text-muted text-xs mb-6">v{appVersion}-alpha</p>
+          <p className="text-text-muted text-xs mb-6">v{appVersion}{PHASE_APPLICATION.suffixe}</p>
         )}
 
         {/*

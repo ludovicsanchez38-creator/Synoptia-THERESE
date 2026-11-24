@@ -51,7 +51,7 @@ describe('R1-3 : seul le système natif autorise une installation', () => {
       expect(doubles.check).toHaveBeenCalledTimes(1);
     } else {
       expect(screen.queryByRole('button', { name: 'Installer maintenant' })).not.toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE' })).toHaveAttribute('href', 'https://synoptia.fr/therese/alpha/');
+      expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE' })).toHaveAttribute('href', 'https://synoptia.fr/therese/beta/');
       expect(doubles.check).not.toHaveBeenCalled();
     }
     expect(doubles.invoke).toHaveBeenCalledExactlyOnceWith('get_system_info');

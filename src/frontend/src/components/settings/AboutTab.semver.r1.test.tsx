@@ -41,6 +41,6 @@ describe('R1-2 : SemVer et versions illisibles', () => {
     verifier(version, tag);
     expect(await screen.findByRole('alert')).toHaveTextContent(/version.*illisible/i);
     expect(screen.queryByText(/THÉRÈSE est à jour|Nouvelle version disponible/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).toHaveAttribute('href', 'https://synoptia.fr/therese/alpha/');
+    expect(screen.getByRole('link', { name: 'Télécharger THÉRÈSE manuellement' })).toHaveAttribute('href', 'https://synoptia.fr/therese/beta/');
   });
 });

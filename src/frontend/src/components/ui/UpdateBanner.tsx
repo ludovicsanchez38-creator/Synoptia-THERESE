@@ -1,3 +1,4 @@
+import { PAGE_TELECHARGEMENT } from '../../lib/phaseApplication';
 import { automaticUpdateChecks, checkAutomaticUpdate, useAutomaticUpdateChecks } from '../../lib/updatePreference';
 import { useEffect, useState, useCallback } from 'react';
 import { Download, RefreshCw, X } from 'lucide-react';
@@ -18,8 +19,6 @@ type UpdateState =
   | { phase: 'ready'; version: string }
   | { phase: 'restart-required'; version: string }
   | { phase: 'error'; message: string };
-
-const DOWNLOAD_URL = 'https://synoptia.fr/therese/alpha/';
 
 async function installationAutomatiqueAutorisee(): Promise<boolean> {
   try {
@@ -252,14 +251,14 @@ export function UpdateBanner() {
             Impossible de vérifier automatiquement les mises à jour pour cette installation. Tu peux télécharger THÉRÈSE et l’installer manuellement.
           </span>
           <a
-            href={DOWNLOAD_URL}
+            href={PAGE_TELECHARGEMENT}
             target="_blank"
             rel="noopener noreferrer"
             className="text-accent-cyan-ink underline"
             onClick={(event) => {
               event.preventDefault();
-              import('@tauri-apps/plugin-shell').then(({ open }) => open(DOWNLOAD_URL)).catch(() => {
-                window.open(DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
+              import('@tauri-apps/plugin-shell').then(({ open }) => open(PAGE_TELECHARGEMENT)).catch(() => {
+                window.open(PAGE_TELECHARGEMENT, '_blank', 'noopener,noreferrer');
               });
             }}
           >

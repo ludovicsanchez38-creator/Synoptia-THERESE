@@ -55,13 +55,13 @@ describe('installation des mises à jour', () => {
     doubles.check.mockRejectedValue(new Error('TargetNotFound'));
     await demarrer();
     const lien = screen.getByRole('link', { name: /télécharger/i });
-    expect(lien).toHaveAttribute('href', 'https://synoptia.fr/therese/alpha/');
+    expect(lien).toHaveAttribute('href', 'https://synoptia.fr/therese/beta/');
     expect(screen.getByText(/manuellement/i)).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(lien);
       await vi.dynamicImportSettled();
     });
-    expect(doubles.open).toHaveBeenCalledWith('https://synoptia.fr/therese/alpha/');
+    expect(doubles.open).toHaveBeenCalledWith('https://synoptia.fr/therese/beta/');
     expect(doubles.check).not.toHaveBeenCalled();
     expect(doubles.downloadAndInstall).not.toHaveBeenCalled();
     expect(doubles.invoke).not.toHaveBeenCalled();
@@ -108,7 +108,7 @@ describe('installation des mises à jour', () => {
       await installer();
       expect(doubles.downloadAndInstall).toHaveBeenCalledTimes(1);
     } else {
-      expect(screen.getByRole('link', { name: /télécharger/i })).toHaveAttribute('href', 'https://synoptia.fr/therese/alpha/');
+      expect(screen.getByRole('link', { name: /télécharger/i })).toHaveAttribute('href', 'https://synoptia.fr/therese/beta/');
       expect(doubles.check).not.toHaveBeenCalled();
       expect(doubles.downloadAndInstall).not.toHaveBeenCalled();
       // Un paquet MSI exige maintenant la lecture native pour être refusé sous Linux.
@@ -139,7 +139,7 @@ describe('installation des mises à jour', () => {
       fireEvent.click(screen.getByRole('link', { name: /télécharger/i }));
       await vi.dynamicImportSettled();
     });
-    expect(navigateur).toHaveBeenCalledWith('https://synoptia.fr/therese/alpha/', '_blank', 'noopener,noreferrer');
+    expect(navigateur).toHaveBeenCalledWith('https://synoptia.fr/therese/beta/', '_blank', 'noopener,noreferrer');
     expect(doubles.downloadAndInstall).not.toHaveBeenCalled();
   });
 
