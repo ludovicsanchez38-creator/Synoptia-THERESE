@@ -134,6 +134,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   >([]);
   const [systemResources, setSystemResources] = useState<api.SystemResources | null>(null);
   const [configuring, setConfiguring] = useState(false);
+  const reverificationDesactivee = configuring || Object.values(etatsFournisseurs).some((etat) => etat?.saving);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const loadRequestRef = useRef(0);
@@ -159,7 +160,9 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
   const loadState = useCallback(async () => {
     // B-2058 : une nouvelle sonde pourrait sélectionner Ollama d'office
     // pendant que la configuration d'un autre fournisseur attend sa réponse.
-    if (configuringRef.current) return;
+    // La réponse d'une lecture lancée pendant une écriture peut arriver
+    // après la confirmation et masquer la clé que l'on vient d'enregistrer.
+    if (configuringRef.current || Object.values(demandesCleRef.current).some((demande) => demande?.saving)) return;
     const activeRequest = ++loadRequestRef.current;
     setLoading(true);
     setLoadError(null);
@@ -475,7 +478,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
         </div>
       </div>
 
-      <GuidePremierServiceIA provider={selectedProvider} onRetest={() => void loadState()} retesting={configuring} />
+      <GuidePremierServiceIA provider={selectedProvider} onRetest={() => void loadState()} retesting={reverificationDesactivee} />
 
       {/* Provider Selection */}
       {/* BUG-100 : pas de plafond de hauteur sur cette liste. Avec 10 providers et la
@@ -742,7 +745,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
             variant="secondary"
             size="sm"
             onClick={() => void loadState()}
-            disabled={configuring}
+            disabled={reverificationDesactivee}
             className="mt-3"
           >
             Revérifier la disponibilité
@@ -756,7 +759,7 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
           ton="attention"
           className="mb-6"
           icone={<AlertCircle className="h-4 w-4 text-warning" />}
-          action={<Button variant="secondary" size="sm" onClick={() => void loadState()} disabled={configuring}>Réessayer la vérification</Button>}
+          action={<Button variant="secondary" size="sm" onClick={() => void loadState()} disabled={reverificationDesactivee}>Réessayer la vérification</Button>}
         >{loadError}</Alerte>
       )}
       {error && !erreurDuChampCle && (

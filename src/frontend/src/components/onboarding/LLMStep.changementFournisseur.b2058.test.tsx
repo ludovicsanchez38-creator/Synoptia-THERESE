@@ -165,6 +165,65 @@ describe('B-2058 : chaque réponse reste liée à son fournisseur et à sa deman
     await act(async () => { sauvegarde.resolve(); });
   });
 
+  it('la revérification attend l’écriture pour garder la clé enregistrée', async () => {
+    const sauvegarde = differee<void>();
+    const lectureAvantEcriture = differee<{ keys: Record<string, boolean>; corrupted: string[]; sources: Record<string, string> }>();
+    apiMocks.setApiKey.mockReturnValue(sauvegarde.promise);
+    await afficher();
+    saisir();
+    await sauver();
+    apiMocks.getApiKeysWithCorrupted.mockReturnValueOnce(lectureAvantEcriture.promise);
+
+    const reverifier = screen.getByRole('button', { name: 'Revérifier la disponibilité' });
+    await act(async () => { fireEvent.click(reverifier); });
+    await act(async () => { sauvegarde.resolve(); });
+    await act(async () => { lectureAvantEcriture.resolve({ keys: {}, corrupted: [], sources: {} }); });
+
+    expect(screen.getByTestId('llm-origine-cle')).toHaveTextContent('chiffrée localement');
+    expect(apiMocks.getApiKeysWithCorrupted).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('onboarding-next-btn')).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Revérifier la disponibilité' })).toBeEnabled();
+  });
+
+  it.each([
+    ['anthropic', /Claude \(Anthropic\)/, 'sk-ant-test', true],
+    ['anthropic', /Claude \(Anthropic\)/, 'sk-ant-test', false],
+    ['openai', /GPT \(OpenAI\)/, 'sk-proj-test', true],
+    ['openai', /GPT \(OpenAI\)/, 'sk-proj-test', false],
+    ['gemini', /Gemini \(Google\)/, 'gemini-factice', true],
+    ['gemini', /Gemini \(Google\)/, 'gemini-factice', false],
+    ['mistral', /Mistral AI/, 'mistral-factice', true],
+    ['mistral', /Mistral AI/, 'mistral-factice', false],
+    ['synthetic', /^Synthetic/, 'synthetic-factice', true],
+    ['synthetic', /^Synthetic/, 'synthetic-factice', false],
+  ] as const)('rejoue la lecture du coffre pour %s avec %s et %s (écriture=%s)', async (fournisseur, nom, cle, succes) => {
+    const sauvegarde = differee<void>();
+    apiMocks.setApiKey.mockReturnValue(sauvegarde.promise);
+    await afficher();
+    if (fournisseur !== 'anthropic') await choisir(nom);
+    saisir(cle);
+    await sauver();
+
+    const reverifier = screen.getByRole('button', { name: 'Revérifier la disponibilité' });
+    expect(reverifier).toBeDisabled();
+    await act(async () => { fireEvent.click(reverifier); });
+    expect(apiMocks.getApiKeysWithCorrupted).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      if (succes) sauvegarde.resolve();
+      else sauvegarde.reject(new Error('Écriture du coffre refusée'));
+    });
+    expect(reverifier).toBeEnabled();
+    if (!succes) expect(screen.getByRole('alert')).toHaveTextContent('Écriture du coffre refusée');
+    apiMocks.getApiKeysWithCorrupted.mockResolvedValueOnce({
+      keys: { [fournisseur]: succes }, corrupted: [], sources: succes ? { [fournisseur]: 'coffre' } : {},
+    });
+    await act(async () => { fireEvent.click(reverifier); });
+    expect(apiMocks.getApiKeysWithCorrupted).toHaveBeenCalledTimes(2);
+    if (succes) expect(screen.getByTestId('llm-origine-cle')).toHaveTextContent('chiffrée localement');
+    else expect(screen.queryByTestId('llm-origine-cle')).toBeNull();
+  });
+
   it.each(['acceptee', 'rejet'])('une ancienne vérification (%s) ne remplace pas la nouvelle demande de A', async (etat) => {
     const ancienne = differee<{ etat: string; message: string }>();
     apiMocks.verifierCle.mockReturnValueOnce(ancienne.promise)
