@@ -1,8 +1,10 @@
 # Protocole de test - Persona A3 : Léa Moreau, coach business (power user)
 
+> **Recette de la bêta 0.85, 25/11/2026.** Le banc navigateur utilise un moteur de test sur `127.0.0.1:17394` et une base jetable. Les étapes natives demandent une installation de test sur le système visé. Les écrans et les actions décrits ci-dessous suivent la recette du cycle 6.
+
 > Version : 1.0 | Date : 2026-03-27
 > App : THERESE Desktop (Tauri 2.0, React, Python FastAPI)
-> URL dev : http://localhost:1420 | Backend : http://localhost:17293
+> URL dev : http://localhost:1420 | Moteur du banc : http://127.0.0.1:17394
 > Pré-requis : `make dev` lancé, backend healthy, base SQLite **avec données existantes**
 
 ## Profil persona
@@ -15,7 +17,7 @@
 | OS | macOS |
 | Niveau tech | Power user, à l'aise avec les clés API, les raccourcis clavier, la config avancée |
 | Objectif | Exploiter 100% de l'app : Board IA quotidien, multi-LLM, CRM, facturation, Skills Office |
-| Contexte | 3 clés API (Anthropic, OpenAI, Gemini), contacts en mémoire, conversations existantes, app déjà configurée |
+| Contexte | Profil configuré, contact et tâche fictifs, compte Anthropic sur le banc |
 
 ## Convention de nommage screenshots
 
@@ -30,16 +32,7 @@ mkdir -p /tmp/therese-tests
 
 ## Pré-conditions globales (Léa = app déjà configurée)
 
-Avant de lancer ce protocole, l'app doit contenir :
-- Onboarding déjà complété (localStorage flag)
-- 3 clés API configurées (Anthropic, OpenAI, Gemini) - vraies ou fausses selon le mode de test
-- Au moins 3 contacts en mémoire
-- Au moins 2 conversations existantes dans le chat
-- Au moins 1 projet existant
-- Au moins 1 facture existante (brouillon ou envoyée)
-- Au moins 2 tâches existantes
-
-Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des données de seed.
+Le banc prépare un profil Léa avec la mise en route validée, un contact fictif et une tâche. La clé Anthropic permet le chat et les deux modèles utilisés par la recette. La délibération à cinq exige les comptes des cinq conseillers.
 
 ---
 
@@ -47,7 +40,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 1 : Lancer l'app - Dashboard "Ma journée" avec données
+### Étape 1 : Lire le brief avec un profil configuré
 
 **Priorité** : P0
 **URL** : http://localhost:1420
@@ -57,31 +50,24 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 - Données existantes en base (contacts, tâches, factures, événements)
 
 **Actions Chrome MCP** :
-1. `navigate` -> `http://localhost:1420`
-2. `wait_for` -> `[data-testid="app-main"]` visible (max 10s)
-3. `screenshot` -> `/tmp/therese-tests/A3-01_dashboard.png`
-4. `javascript_tool` -> `document.querySelector('[data-testid="app-main"]') !== null`
-5. `javascript_tool` -> vérifier que le dashboard affiche des données (pas un écran vide, pas l'onboarding)
+1. Démarre avec le profil Léa, un contact fictif et une tâche fictive.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'app démarre directement sur le dashboard "Ma journée" (pas l'onboarding). Le dashboard affiche des données réelles : RDV à venir, tâches en cours, dernières factures. Léa voit immédiatement un résumé de sa journée. Aucun écran blanc, aucune erreur console.
-**États testés** : loaded, filled
+**Résultat attendu** : L’accueil affiche le profil, la date et le résumé permis par les données présentes.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-01_dashboard.png`
 
 ---
 
-### Étape 2 : Dashboard - vérifier les KPIs
+### Étape 2 : Lire la date et les signaux du brief
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> vérifier la présence de blocs KPI (nombre d'événements, tâches, factures)
-2. `javascript_tool` -> vérifier que les valeurs KPI sont > 0 (données pré-existantes)
-3. `screenshot` -> `/tmp/therese-tests/A3-02_dashboard_kpis.png`
-4. `javascript_tool` -> vérifier que les compteurs sont des nombres (pas NaN, pas undefined)
+1. Vérifie la date, le résumé et les actions prioritaires.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le dashboard affiche des KPIs numériques : nombre d'événements du jour, nombre de tâches en cours, nombre de factures récentes. Les valeurs sont cohérentes avec les données injectées. L'affichage est lisible et aligné.
-**États testés** : filled
+**Résultat attendu** : Les données chargées et les sources éventuellement indisponibles se distinguent.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-02_dashboard_kpis.png`
 
 ---
@@ -132,25 +118,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 5 : Changer de modèle LLM via le sélecteur
+### Étape 5 : Changer de modèle depuis le composeur
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> sélecteur de modèle LLM (dropdown ou bouton dans le header du chat)
-2. `click` -> le sélecteur de modèle
-3. `wait_for` -> liste des modèles visible (max 2s)
-4. `screenshot` -> `/tmp/therese-tests/A3-05_model_selector_open.png`
-5. `javascript_tool` -> vérifier que la liste contient au moins 3 providers (Anthropic, OpenAI, Gemini)
-6. `find` -> option contenant "claude" ou "sonnet" dans la liste
-7. `click` -> cette option
-8. `wait_for` -> sélecteur fermé, modèle mis à jour (max 2s)
-9. `screenshot` -> `/tmp/therese-tests/A3-05_model_changed.png`
-10. `javascript_tool` -> vérifier que le modèle affiché a changé (contient "claude" ou "sonnet")
+1. Ouvre Modèle de conversation.
+2. Choisis Claude Haiku 5.5. Lis la puce, puis remets Sonnet 5.5 pour la suite.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le sélecteur de modèle affiche tous les modèles disponibles pour les 3 providers configurés. La sélection de claude-sonnet est immédiate. Le modèle affiché dans le header change. Pas de rechargement de page, pas de perte de contexte.
-**États testés** : loaded, hover (dropdown), filled (nouveau modèle sélectionné)
+**Résultat attendu** : Le sélecteur affiche les modèles du service actif. La puce affiche le nouveau modèle. Le choix est enregistré sans rechargement.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-05_model_changed.png`
 
 ---
@@ -198,22 +176,16 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 8 : Message avec markdown - rendu formaté
+### Étape 8 : Vérifier le rendu Markdown
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="chat-message-input"]`
-2. `type` -> "# Mon programme coaching\n\n**Objectif** : structurer l'activité\n\n- Séance 1 : Bilan\n- Séance 2 : Marché\n- Séance 3 : Business plan\n\n> La clé du succès, c'est la régularité."
-3. `click` -> `[data-testid="chat-send-btn"]`
-4. `wait_for` -> message affiché (max 5s)
-5. `screenshot` -> `/tmp/therese-tests/A3-08_markdown_message.png`
-6. `javascript_tool` -> vérifier la présence d'un `<h1>` ou `<strong>` ou `<ul>` ou `<blockquote>` dans le dernier message
-7. `javascript_tool` -> vérifier que "Objectif" est en gras (dans un `<strong>` ou `<b>`)
+1. Demande une liste de trois tâches de préparation, avec le titre de chaque tâche en gras.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le markdown est rendu correctement : titre H1 "Mon programme coaching" en grand, "Objectif" en gras, liste à puces avec les 3 séances, citation en retrait. L'affichage est cohérent avec le dark mode. Les éléments HTML sont sémantiques.
-**États testés** : filled (rendu markdown)
+**Résultat attendu** : La réponse affiche trois éléments en liste et leurs titres en gras.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-08_markdown_message.png`
 
 ---
@@ -244,25 +216,21 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 10 : Command Palette - sélectionner un résultat pour naviguer
+### Étape 10 : Ouvrir Devis et factures depuis la recherche
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> premier résultat dans la palette contenant "facture" ou "invoice"
-2. `click` -> ce résultat
-3. `wait_for` -> palette fermée ET navigation vers le panel factures (max 3s)
-4. `screenshot` -> `/tmp/therese-tests/A3-10_palette_navigate_invoices.png`
-5. `javascript_tool` -> `document.querySelector('[data-testid="invoices-panel"]') !== null || window.location.href.includes('invoices')`
+1. Dans la recherche de facture, choisis Ouvrir les Devis et factures dans Commandes de l’application.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le clic sur le résultat "Factures" ferme la palette et navigue vers le panel Factures. La transition est fluide. Le panel Factures s'affiche avec les factures existantes de Léa. Aucun double-clic nécessaire.
-**États testés** : loaded, filled (panel factures avec données)
+**Résultat attendu** : La palette se ferme et le panneau Devis et factures s’ouvre. Le résultat distinct Facturer un client mène à la capacité métier.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-10_palette_navigate_invoices.png`
 
 ---
 
-## Phase 4 : Settings complets - 8 onglets (étapes 11-19)
+## Phase 4 : Réglages, neuf rubriques (étapes 11-19)
 
 ---
 
@@ -283,78 +251,47 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 12 : Settings - naviguer les 8 onglets un par un
+### Étape 12 : Parcourir les neuf rubriques des réglages
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-tab-profile"]`
-2. `click` -> `[data-testid="settings-tab-profile"]`
-3. `screenshot` -> `/tmp/therese-tests/A3-12_tab_profile.png`
-4. `find` -> `[data-testid="settings-tab-ai"]`
-5. `click` -> `[data-testid="settings-tab-ai"]`
-6. `screenshot` -> `/tmp/therese-tests/A3-12_tab_ai.png`
-7. `find` -> `[data-testid="settings-tab-services"]`
-8. `click` -> `[data-testid="settings-tab-services"]`
-9. `screenshot` -> `/tmp/therese-tests/A3-12_tab_services.png`
-10. `find` -> `[data-testid="settings-tab-tools"]`
-11. `click` -> `[data-testid="settings-tab-tools"]`
-12. `screenshot` -> `/tmp/therese-tests/A3-12_tab_tools.png`
-13. `find` -> `[data-testid="settings-tab-agents"]`
-14. `click` -> `[data-testid="settings-tab-agents"]`
-15. `screenshot` -> `/tmp/therese-tests/A3-12_tab_agents.png`
-16. `find` -> `[data-testid="settings-tab-privacy"]`
-17. `click` -> `[data-testid="settings-tab-privacy"]`
-18. `screenshot` -> `/tmp/therese-tests/A3-12_tab_privacy.png`
-19. `find` -> `[data-testid="settings-tab-advanced"]`
-20. `click` -> `[data-testid="settings-tab-advanced"]`
-21. `screenshot` -> `/tmp/therese-tests/A3-12_tab_advanced.png`
-22. `find` -> `[data-testid="settings-tab-about"]`
-23. `click` -> `[data-testid="settings-tab-about"]`
-24. `screenshot` -> `/tmp/therese-tests/A3-12_tab_about.png`
+1. Ouvre Paramètres et active le Mode Contributeur pour voir les rubriques avancées.
+2. Ouvre successivement Profil, Service d’IA, Services et connecteurs, Accessibilité et affichage, Outils, Agents, Sécurité et confidentialité, Avancé et À propos et mise à jour.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Les 8 onglets sont cliquables et chacun affiche un contenu distinct : Profil (nom, activité), AI (providers, modèles), Services (Brave Search, etc.), Tools (MCP presets), Agents (config agents), Privacy (RGPD), Advanced (skip dashboard, etc.), About (version, crédits). Aucun onglet ne provoque d'erreur ou d'écran vide. La navigation entre onglets est fluide (pas de rechargement).
-**États testés** : loaded (x8)
+**Résultat attendu** : Les neuf rubriques sont accessibles et présentent chacune leur contenu.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-12_tab_about.png`
 
 ---
 
-### Étape 13 : Settings > AI - vérifier les 3 providers configurés
+### Étape 13 : Identifier Claude dans Service d’IA
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="settings-tab-ai"]`
-2. `wait_for` -> contenu onglet AI visible (max 2s)
-3. `screenshot` -> `/tmp/therese-tests/A3-13_ai_providers.png`
-4. `javascript_tool` -> vérifier que les 3 providers (Anthropic, OpenAI, Gemini) ont un champ de clé API non vide ou un indicateur "configuré"
-5. `javascript_tool` -> compter le nombre de providers avec une clé configurée (doit être >= 3)
+1. Ouvre Paramètres > Service d’IA. Repère le service configuré et son modèle.
+2. Lis l’état des autres services de ce banc à un seul compte.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'onglet AI affiche les 3 providers configurés par Léa. Chaque provider montre un indicateur visuel "actif" ou "configuré" (coche verte, badge, ou champ masqué non vide). Les modèles disponibles pour chaque provider sont listés. Le provider par défaut est clairement identifié.
-**États testés** : filled (3 providers actifs)
+**Résultat attendu** : Claude porte les indications Actif et Clé enregistrée. Les autres services sans compte sont signalés comme tels. Le modèle appartient au service choisi.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-13_ai_providers.png`
 
 ---
 
-### Étape 14 : Settings > AI - changer le modèle par défaut
+### Étape 14 : Modifier le modèle dans Service d’IA
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> sélecteur de modèle par défaut dans l'onglet AI
-2. `javascript_tool` -> noter le modèle actuellement sélectionné
-3. `click` -> le sélecteur
-4. `wait_for` -> liste des modèles visible (max 2s)
-5. `find` -> un modèle différent du modèle actuel
-6. `click` -> ce modèle
-7. `screenshot` -> `/tmp/therese-tests/A3-14_model_default_changed.png`
-8. `javascript_tool` -> vérifier que le modèle par défaut a changé
+1. Choisis Claude Haiku 5.5 et vérifie la persistance.
+2. Reviens à Sonnet 5.5. Règle l’effort sur Faible et envoie un message de recette.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le sélecteur de modèle par défaut affiche tous les modèles des 3 providers. Le changement est immédiat (pas de page reload). Le nouveau modèle sera utilisé pour les prochaines conversations.
-**États testés** : filled, hover (dropdown)
+**Résultat attendu** : Le modèle et l’effort enregistrés sont utilisés par le prochain tour. Les réglages s’appliquent depuis cette rubrique.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-14_model_default_changed.png`
 
 ---
@@ -395,23 +332,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 17 : Settings > Advanced - toggle "Skip dashboard"
+### Étape 17 : Changer le comportement au lancement
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="settings-tab-advanced"]`
-2. `wait_for` -> contenu onglet Advanced visible (max 2s)
-3. `screenshot` -> `/tmp/therese-tests/A3-17_advanced_before.png`
-4. `find` -> toggle ou checkbox "Skip dashboard" ou "Passer le dashboard"
-5. `javascript_tool` -> noter l'état actuel du toggle (on/off)
-6. `click` -> le toggle
-7. `screenshot` -> `/tmp/therese-tests/A3-17_advanced_toggled.png`
-8. `javascript_tool` -> vérifier que l'état du toggle a changé
+1. Dans Paramètres, active le Mode Contributeur.
+2. Ouvre Avancé > Comportement au lancement, puis bascule Ouvrir sur le chat directement.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'onglet Advanced contient un toggle "Skip dashboard" (ou équivalent). Le toggle change d'état visuellement au clic (on <-> off). Le changement sera effectif au prochain lancement de l'app. D'autres options avancées sont potentiellement visibles (mode debug, logs, etc.).
-**États testés** : filled, toggle
+**Résultat attendu** : L’interrupteur change d’état. Le choix détermine la surface initiale au prochain lancement.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-17_advanced_toggled.png`
 
 ---
@@ -434,23 +365,16 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 19 : Sauvegarder et fermer Settings
+### Étape 19 : Fermer les réglages
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-save-btn"]`
-2. `click` -> `[data-testid="settings-save-btn"]`
-3. `wait_for` -> toast ou notification de confirmation (max 3s)
-4. `screenshot` -> `/tmp/therese-tests/A3-19_settings_saved.png`
-5. `find` -> `[data-testid="settings-close-btn"]`
-6. `click` -> `[data-testid="settings-close-btn"]`
-7. `wait_for` -> `[data-testid="settings-modal"]` disparaît (max 2s)
-8. `screenshot` -> `/tmp/therese-tests/A3-19_settings_closed.png`
+1. Après enregistrement du modèle et sélection du comportement, clique sur Fermer.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : La sauvegarde déclenche un toast "Paramètres sauvegardés". La fermeture du modal est fluide. L'interface principale est à nouveau visible et interactive. Les modifications (modèle par défaut, toggle skip dashboard) sont persistées.
-**États testés** : loading (sauvegarde), success, loaded (retour UI)
+**Résultat attendu** : L’interface du paramètre concerné confirme la modification. La fenêtre principale redevient accessible.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-19_settings_closed.png`
 
 ---
@@ -459,20 +383,16 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 20 : Ouvrir Mémoire via header
+### Étape 20 : Ouvrir les contacts de la Mémoire
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> bouton ou lien "Mémoire" dans le header ou la sidebar
-2. `click` -> ce bouton
-3. `wait_for` -> `[data-testid="memory-panel"]` visible (max 5s)
-4. `screenshot` -> `/tmp/therese-tests/A3-20_memory_panel.png`
-5. `javascript_tool` -> `document.querySelector('[data-testid="memory-panel"]') !== null`
+1. Ouvre Mémoire depuis l’espace de travail.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le panneau Mémoire s'ouvre avec les contacts existants de Léa. La liste des contacts est peuplée (au moins 3 contacts). Le champ de recherche est visible. Le bouton "Ajouter un contact" est accessible.
-**États testés** : loaded, filled (contacts existants)
+**Résultat attendu** : Le contact fictif du profil s’affiche. Le champ de recherche et le bouton Nouveau contact sont disponibles.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-20_memory_panel.png`
 
 ---
@@ -539,53 +459,31 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 24 : Créer un projet "Lancement coaching Q2"
+### Étape 24 : Ouvrir la création d’un projet
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> onglet ou section "Projets" dans le panneau Mémoire
-2. `click` -> onglet Projets
-3. `find` -> bouton "Nouveau projet" ou "+"
-4. `click` -> bouton Nouveau projet
-5. `wait_for` -> formulaire de création de projet (max 3s)
-6. `find` -> champ nom du projet
-7. `click` -> champ nom
-8. `type` -> "Lancement coaching Q2"
-9. `find` -> champ description (si existant)
-10. `click` -> champ description
-11. `type` -> "Programme coaching business - Q2 2026 - 6 séances individuelles"
-12. `screenshot` -> `/tmp/therese-tests/A3-24_project_form.png`
-13. `find` -> bouton Sauvegarder
-14. `click` -> bouton Sauvegarder
-15. `wait_for` -> projet créé (max 3s)
-16. `screenshot` -> `/tmp/therese-tests/A3-24_project_created.png`
+1. Ouvre Nouveau projet, puis saisis « Lancement coaching Q2 ».
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le formulaire de création de projet est accessible. Le projet "Lancement coaching Q2" est créé avec sa description. Le projet apparaît dans la liste des projets. Un toast de confirmation s'affiche.
-**États testés** : empty (formulaire), filled (données saisies), success (projet créé)
+**Résultat attendu** : Le titre et le champ Contact associé sont disponibles avant l’enregistrement.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-24_project_created.png`
 
 ---
 
-### Étape 25 : Lier le projet à un contact
+### Étape 25 : Associer le contact au projet
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> le projet "Lancement coaching Q2" dans la liste
-2. `click` -> ce projet (ouvrir la fiche)
-3. `find` -> section "Contacts liés" ou bouton "Lier un contact"
-4. `click` -> bouton Lier
-5. `wait_for` -> sélecteur de contacts (max 2s)
-6. `find` -> un contact dans la liste de sélection
-7. `click` -> ce contact
-8. `screenshot` -> `/tmp/therese-tests/A3-25_project_linked.png`
-9. `javascript_tool` -> vérifier que le contact est affiché dans la fiche du projet
+1. Sélectionne Éva Pilote dans Contact associé, puis clique sur Créer.
+2. Vérifie que le projet est enregistré avec ce contact.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le projet peut être lié à un contact existant. Le contact apparaît dans la section "Contacts liés" du projet. La relation est bidirectionnelle (le projet apparaît aussi dans la fiche du contact). La liaison est persistée en base.
-**États testés** : filled (liaison créée)
+**Résultat attendu** : Le projet est sauvegardé et la relation avec le contact sélectionné est conservée.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-25_project_linked.png`
 
 ---
@@ -594,19 +492,16 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 26 : Ouvrir CRM
+### Étape 26 : Ouvrir Pipeline
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. `navigate` -> `http://localhost:1420/?panel=crm`
-2. `wait_for` -> `[data-testid="crm-panel"]` visible (max 5s)
-3. `screenshot` -> `/tmp/therese-tests/A3-26_crm_panel.png`
-4. `javascript_tool` -> `document.querySelector('[data-testid="crm-panel"]') !== null`
+1. Ouvre Pipeline depuis l’espace de travail.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le panneau CRM s'affiche avec le pipeline de leads. Les colonnes du pipeline sont visibles (Prospect, Qualifié, Proposition, Négociation, Gagné, Perdu). Des leads existants peuvent être présents. L'interface est de type Kanban.
-**États testés** : loaded, filled (si leads existants)
+**Résultat attendu** : Les colonnes Contact, Découverte, Proposition, Signature, Livraison, Actif, Perdu et Archive affichent leurs compteurs.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-26_crm_panel.png`
 
 ---
@@ -628,76 +523,45 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 28 : CRM - créer un lead avec tous les champs
+### Étape 28 : Créer un contact commercial
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. `find` -> bouton "Nouveau lead" ou "+" dans le CRM
-2. `click` -> bouton Nouveau lead
-3. `wait_for` -> formulaire de création visible (max 3s)
-4. `find` -> champ nom/contact
-5. `click` -> champ nom
-6. `type` -> "Marie Lefèvre - Coaching premium"
-7. `find` -> champ montant estimé
-8. `click` -> champ montant
-9. `type` -> "4800"
-10. `find` -> champ email ou contact
-11. `click` -> champ email
-12. `type` -> "marie.lefevre@example.com"
-13. `find` -> sélecteur d'étape/stage
-14. `javascript_tool` -> sélectionner "Qualifié" ou la deuxième étape
-15. `screenshot` -> `/tmp/therese-tests/A3-28_crm_lead_form.png`
-16. `find` -> bouton Sauvegarder
-17. `click` -> bouton Sauvegarder
-18. `wait_for` -> lead créé dans le pipeline (max 3s)
-19. `screenshot` -> `/tmp/therese-tests/A3-28_crm_lead_created.png`
+1. Dans Nouveau contact, renseigne Julie Exemple, Atelier Test, e-mail et téléphone fictifs.
+2. Enregistre la fiche. Pour une prestation chiffrée, utilise Nouvelle prestation dans sa fiche.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le formulaire permet de remplir tous les champs d'un lead. Le lead "Marie Lefèvre - Coaching premium" est créé avec un montant de 4 800 EUR et positionné dans la colonne "Qualifié". La carte apparaît dans le pipeline immédiatement.
-**États testés** : empty (formulaire), filled, success
+**Résultat attendu** : Le contact apparaît dans le Pipeline. Les renseignements d’un contact et ceux d’une prestation ont des formulaires distincts.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-28_crm_lead_created.png`
 
 ---
 
-### Étape 29 : CRM - déplacer un lead dans le pipeline (stage)
+### Étape 29 : Passer le contact en Proposition
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. `find` -> le lead "Marie Lefèvre" dans le pipeline
-2. `click` -> le lead (ouvrir les détails ou le menu)
-3. `find` -> option pour changer de stage (dropdown, bouton "Déplacer", ou drag handle)
-4. `javascript_tool` -> changer le stage du lead (ex: "Qualifié" -> "Proposition")
-5. `wait_for` -> le lead se déplace dans la colonne "Proposition" (max 3s)
-6. `screenshot` -> `/tmp/therese-tests/A3-29_crm_lead_moved.png`
-7. `javascript_tool` -> vérifier que le lead est maintenant dans la colonne "Proposition"
+1. Ouvre Julie Exemple et choisis Proposition dans Étape.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le lead est déplacé de "Qualifié" à "Proposition". Le pipeline se met à jour visuellement (la carte change de colonne). La modification est sauvegardée en base. Le nombre de leads par colonne est mis à jour.
-**États testés** : filled, transition
+**Résultat attendu** : La fiche quitte Contact et figure dans Proposition.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-29_crm_lead_moved.png`
 
 ---
 
-### Étape 30 : CRM - ajouter un scoring/priorité
+### Étape 30 : Lire le score du contact
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. `find` -> le lead "Marie Lefèvre" dans le pipeline
-2. `click` -> le lead (ouvrir les détails)
-3. `find` -> champ scoring, priorité, ou étoiles
-4. `javascript_tool` -> attribuer un score ou une priorité haute
-5. `screenshot` -> `/tmp/therese-tests/A3-30_crm_lead_scoring.png`
-6. `find` -> bouton Sauvegarder (si mode édition)
-7. `click` -> bouton Sauvegarder
-8. `wait_for` -> confirmation (max 3s)
-9. `screenshot` -> `/tmp/therese-tests/A3-30_crm_lead_scored.png`
+1. Lis l’indicateur Score dans le Pipeline et ouvre la fiche.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le lead a un score ou une priorité attribuée. L'indicateur visuel est visible sur la carte du lead dans le pipeline. La modification est persistée. Les leads peuvent être triés par score/priorité.
-**États testés** : filled, success
+**Résultat attendu** : Le CRM affiche le score calculé. La priorité ou le score ne se saisissent pas dans la fiche.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-30_crm_lead_scored.png`
 
 ---
@@ -724,84 +588,44 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 32 : Créer une facture (pas un devis) directement
+### Étape 32 : Créer une facture directe
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. `find` -> bouton "Nouveau" ou "Créer"
-2. `click` -> bouton Nouveau
-3. `wait_for` -> formulaire InvoiceForm visible (max 3s)
-4. `find` -> sélecteur type (devis/facture/avoir)
-5. `javascript_tool` -> sélectionner "facture" dans le select
-6. `screenshot` -> `/tmp/therese-tests/A3-32_invoice_type_facture.png`
-7. `javascript_tool` -> vérifier que le type sélectionné est "facture" (pas "devis")
+1. Ouvre Nouveau devis ou facture, puis sélectionne Facture.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le formulaire de création s'ouvre. Le type "facture" est sélectionnable directement (pas obligé de créer un devis d'abord). Le numéro de facture est pré-généré (ex: FAC-2026-001). Les champs client et lignes sont vides et prêts à remplir.
-**États testés** : empty (formulaire), filled (type sélectionné)
+**Résultat attendu** : Le formulaire de facture s’ouvre. Le client et les lignes sont éditables. Le numéro définitif vient à l’émission.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-32_invoice_type_facture.png`
 
 ---
 
-### Étape 33 : Facture - ajouter 3 lignes de produits/services
+### Étape 33 : Ajouter trois prestations
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. `find` -> champ description ligne 1
-2. `click` -> champ description
-3. `type` -> "Coaching individuel - séance 1"
-4. `find` -> champ quantité ligne 1
-5. `click` -> champ quantité
-6. `javascript_tool` -> vider et taper "1"
-7. `find` -> champ prix unitaire ligne 1
-8. `click` -> champ prix unitaire
-9. `type` -> "400"
-10. `find` -> bouton "Ajouter une ligne" ou "+"
-11. `click` -> bouton Ajouter ligne
-12. `find` -> champ description ligne 2
-13. `click` -> champ description
-14. `type` -> "Coaching individuel - séance 2"
-15. `find` -> champ quantité ligne 2
-16. `click` -> champ quantité
-17. `javascript_tool` -> vider et taper "1"
-18. `find` -> champ prix unitaire ligne 2
-19. `click` -> champ prix unitaire
-20. `type` -> "400"
-21. `click` -> bouton Ajouter ligne
-22. `find` -> champ description ligne 3
-23. `click` -> champ description
-24. `type` -> "Support de formation personnalisé"
-25. `find` -> champ quantité ligne 3
-26. `click` -> champ quantité
-27. `javascript_tool` -> vider et taper "2"
-28. `find` -> champ prix unitaire ligne 3
-29. `click` -> champ prix unitaire
-30. `type` -> "150"
-31. `screenshot` -> `/tmp/therese-tests/A3-33_invoice_3_lines.png`
+1. Saisis une séance de cadrage à 250 €, un coaching d’équipe à 400 € et une restitution à 180 €, quantité 1.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : La facture contient 3 lignes : "Coaching séance 1" (1x400), "Coaching séance 2" (1x400), "Support formation" (2x150). Le bouton "Ajouter une ligne" fonctionne pour chaque ajout. Chaque ligne a ses propres champs description, quantité, prix unitaire.
-**États testés** : filled (3 lignes)
+**Résultat attendu** : Les trois lignes conservent leurs champs indépendants de description, quantité et prix HT.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-33_invoice_3_lines.png`
 
 ---
 
-### Étape 34 : Facture - vérifier le calcul HT/TVA/TTC
+### Étape 34 : Vérifier les totaux de la facture
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> récupérer le montant HT affiché (attendu : 400 + 400 + 300 = 1 100 EUR)
-2. `javascript_tool` -> récupérer le montant TVA affiché (attendu : 1 100 x 20% = 220 EUR)
-3. `javascript_tool` -> récupérer le montant TTC affiché (attendu : 1 100 + 220 = 1 320 EUR)
-4. `screenshot` -> `/tmp/therese-tests/A3-34_invoice_totals.png`
-5. `javascript_tool` -> vérifier la cohérence : HT + TVA === TTC
+1. Lis le HT, la TVA et le TTC avant d’enregistrer le brouillon.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Les totaux sont calculés automatiquement : HT = 1 100 EUR, TVA (20%) = 220 EUR, TTC = 1 320 EUR. Le calcul est correct et mis à jour en temps réel à chaque modification de ligne. Les montants sont formatés avec 2 décimales et le symbole EUR.
-**États testés** : filled (calculs automatiques)
+**Résultat attendu** : Pour 830 € HT et 20 % de TVA, le formulaire affiche 166 € de TVA et 996 € TTC.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-34_invoice_totals.png`
 
 ---
@@ -828,23 +652,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 36 : Facture - modifier le statut (brouillon -> envoyée)
+### Étape 36 : Enregistrer le passage du brouillon en Envoyée
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. `find` -> la facture dans la liste
-2. `click` -> la facture (ouvrir détails)
-3. `find` -> sélecteur de statut ou bouton "Marquer comme envoyée"
-4. `javascript_tool` -> vérifier le statut actuel ("brouillon" ou "draft")
-5. `click` -> bouton ou option pour passer à "envoyée"
-6. `wait_for` -> confirmation de changement de statut (max 3s)
-7. `screenshot` -> `/tmp/therese-tests/A3-36_invoice_status_sent.png`
-8. `javascript_tool` -> vérifier que le statut est maintenant "envoyée" ou "sent"
+1. Ouvre la ligne « Brouillon, numéro à l’émission » et choisis Envoyée dans Statut.
+2. Utilise Mettre à jour, puis vérifie le numéro et le statut.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le statut de la facture passe de "Brouillon" à "Envoyée". Le badge de statut change de couleur (gris -> bleu/vert). La date d'envoi est enregistrée. La facture ne peut plus être modifiée librement (verrouillage partiel). Le changement est persisté.
-**États testés** : filled, transition (changement de statut)
+**Résultat attendu** : La facture porte un numéro définitif et le statut enregistré. La manipulation simule le suivi de l’envoi sans envoyer de message.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-36_invoice_status_sent.png`
 
 ---
@@ -1052,21 +870,16 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 44 : Trier les tâches par deadline
+### Étape 44 : Consulter les échéances en vue Liste
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=tasks
 
 **Actions Chrome MCP** :
-1. `find` -> bouton ou header de colonne "Deadline" ou "Échéance" pour trier
-2. `click` -> bouton tri par deadline
-3. `wait_for` -> liste triée (max 1s)
-4. `screenshot` -> `/tmp/therese-tests/A3-44_tasks_sorted_deadline.png`
-5. `javascript_tool` -> vérifier que "Envoyer facture Marie L." (deadline demain) est en haut
-6. `javascript_tool` -> vérifier l'ordre croissant des deadlines
+1. Ouvre Liste et relève les échéances affichées dans chaque ligne.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Les tâches sont triées par deadline croissante : "Envoyer facture" (demain) en premier, puis "Préparer support" (3 jours), etc. Le tri est visuel et immédiat. L'indicateur de tri (flèche) est visible. Les tâches sans deadline sont en fin de liste.
-**États testés** : filled (triée)
+**Résultat attendu** : Les dates sont lisibles. La liste ne propose pas de commande de tri par échéance.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-44_tasks_sorted_deadline.png`
 
 ---
@@ -1075,7 +888,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 45 : Board IA - question stratégique
+### Étape 45 : Préparer la question stratégique
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=board
@@ -1083,19 +896,11 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **Pré-condition** : Clé API valide configurée (au moins 1 provider)
 
 **Actions Chrome MCP** :
-1. `navigate` -> `http://localhost:1420/?panel=board`
-2. `wait_for` -> `[data-testid="board-panel"]` visible (max 5s)
-3. `screenshot` -> `/tmp/therese-tests/A3-45_board_panel.png`
-4. `find` -> champ de saisie de la question (textarea ou input dans le board)
-5. `click` -> champ de saisie
-6. `type` -> "Quel tarif pour mon nouveau programme coaching business de 6 séances sur 3 mois ? Mon positionnement est premium, ma cible sont des consultants et freelances avec 1-5 ans d'activité."
-7. `find` -> `[data-testid="board-submit-btn"]`
-8. `click` -> `[data-testid="board-submit-btn"]`
-9. `wait_for` -> début des réponses des conseillers (max 20s)
-10. `screenshot` -> `/tmp/therese-tests/A3-45_board_question_sent.png`
+1. Autorise le Board cloud dans Sécurité et confidentialité si nécessaire.
+2. Saisis la question de tarification, puis clique sur Préparer le Board.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le Board IA s'affiche avec un champ de saisie pour la question. La question de Léa est envoyée et le Board lance les 5 conseillers en parallèle. Des indicateurs de chargement apparaissent pour chaque conseiller. L'interface montre que le traitement est en cours.
-**États testés** : empty (board vierge), filled (question), loading (attente réponses)
+**Résultat attendu** : La confirmation précise ce qui sera partagé. Le lancement effectif dépend des cinq services accessibles.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-45_board_question_sent.png`
 
 ---
@@ -1139,20 +944,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 48 : Board - exporter le résultat (si disponible)
+### Étape 48 : Lire la disponibilité de l’export du Board
 
 **Priorité** : P2
 **URL** : http://localhost:1420/?panel=board
 
 **Actions Chrome MCP** :
-1. `find` -> bouton "Exporter" ou "Télécharger" ou "Copier" dans le board
-2. `screenshot` -> `/tmp/therese-tests/A3-48_board_export_btn.png`
-3. `click` -> bouton Export (si existant)
-4. `wait_for` -> téléchargement ou copie dans le presse-papiers (max 5s)
-5. `screenshot` -> `/tmp/therese-tests/A3-48_board_exported.png`
+1. Ouvre Historique sur le Board.
+2. Repère le bouton PDF.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Si un bouton d'export existe, il permet de télécharger les résultats du Board en format PDF, Markdown ou DOCX. Si seul un bouton "Copier" existe, le contenu est copié dans le presse-papiers. Si aucun bouton d'export n'est présent, noter comme fonctionnalité manquante (P2).
-**États testés** : loaded (bouton visible ou non)
+**Résultat attendu** : Le bouton « PDF Bientôt » est visible et désactivé. L’export PDF sera vérifié quand il sera disponible.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-48_board_exported.png`
 
 ---
@@ -1161,7 +963,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 49 : Skills - demander un document Word récapitulatif des tâches
+### Étape 49 : Générer le document Word des tâches
 
 **Priorité** : P1
 **URL** : http://localhost:1420
@@ -1169,36 +971,26 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **Pré-condition** : Clé API valide, tâches existantes en mémoire
 
 **Actions Chrome MCP** :
-1. `navigate` -> `http://localhost:1420`
-2. `wait_for` -> `[data-testid="chat-message-input"]` visible (max 5s)
-3. `click` -> `[data-testid="chat-message-input"]`
-4. `type` -> "Génère un document Word récapitulatif de mes tâches en cours avec leur priorité et deadline"
-5. `click` -> `[data-testid="chat-send-btn"]`
-6. `wait_for` -> réponse avec lien ou aperçu du document (max 30s)
-7. `screenshot` -> `/tmp/therese-tests/A3-49_skill_docx.png`
-8. `javascript_tool` -> vérifier la présence d'un lien de téléchargement (.docx) ou d'un message confirmant la génération
+1. Demande toutes les tâches fictives à faire et en cours. Demande un Word avec titre, priorité, échéance et la mention non renseigné si une valeur manque.
+2. Vérifie le format et le contenu dans « Confirmer la création du document ». Confirme, puis utilise la commande de téléchargement du fichier local.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'IA reconnaît la demande comme un skill Office (DOCX). Le document Word est généré avec la liste des tâches de Léa, les priorités et les deadlines. Un lien de téléchargement est affiché dans le chat. Le document est conforme (python-docx).
-**États testés** : loading (génération), success (lien téléchargement)
+**Résultat attendu** : Le moteur génère un DOCX contenant les tâches. La carte propose Télécharger. Le dialogue d’enregistrement se vérifie dans une installation Tauri.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-49_skill_docx.png`
 
 ---
 
-### Étape 50 : Skills - demander un tableur Excel de suivi financier
+### Étape 50 : Générer le tableur Excel des factures
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="chat-message-input"]`
-2. `type` -> "Crée un tableur Excel de suivi financier avec mes factures en cours, le montant HT, la TVA et le TTC pour chaque client"
-3. `click` -> `[data-testid="chat-send-btn"]`
-4. `wait_for` -> réponse avec lien ou aperçu du tableur (max 30s)
-5. `screenshot` -> `/tmp/therese-tests/A3-50_skill_xlsx.png`
-6. `javascript_tool` -> vérifier la présence d'un lien de téléchargement (.xlsx) ou d'un message confirmant la génération
+1. Demande les factures d’Éva Pilote, brouillons compris, et les colonnes Client, Description, HT, TVA, TTC et Statut.
+2. Vérifie le format dans « Confirmer la création du document », puis confirme et utilise le téléchargement.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'IA génère un tableur Excel avec les données financières de Léa. Le fichier contient les colonnes : Client, Description, HT, TVA, TTC, Statut. Les données proviennent des factures existantes. Le lien de téléchargement est affiché dans le chat.
-**États testés** : loading (génération), success (lien téléchargement)
+**Résultat attendu** : Le moteur génère un XLSX avec les colonnes et les valeurs disponibles. La carte propose Télécharger. Le dialogue d’enregistrement se vérifie dans une installation Tauri.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-50_skill_xlsx.png`
 
 ---
@@ -1301,28 +1093,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 55 : Export RGPD - settings > data > exporter tout
+### Étape 55 : Exporter les données de Léa
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `button[aria-label="Paramètres"]`
-2. `click` -> `button[aria-label="Paramètres"]`
-3. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
-4. `find` -> `[data-testid="settings-tab-privacy"]`
-5. `click` -> `[data-testid="settings-tab-privacy"]`
-6. `wait_for` -> contenu onglet Privacy visible (max 2s)
-7. `screenshot` -> `/tmp/therese-tests/A3-55_privacy_export.png`
-8. `find` -> bouton "Exporter toutes mes données" ou "Export RGPD" ou "Télécharger mes données"
-9. `click` -> bouton Export
-10. `wait_for` -> téléchargement ou confirmation (max 15s)
-11. `screenshot` -> `/tmp/therese-tests/A3-55_rgpd_export_done.png`
-12. `javascript_tool` -> vérifier qu'un fichier a été téléchargé ou qu'un message de confirmation apparaît
-13. `javascript_tool` -> si possible, vérifier que le fichier exporté contient : contacts, conversations, tâches, factures, projets
+1. Ouvre Paramètres > Sécurité et confidentialité, puis Exporter toutes mes données.
+2. Ouvre le fichier exporté hors réseau.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'export RGPD génère un fichier JSON ou ZIP contenant toutes les données de Léa : profil, contacts (dont le numéro modifié), conversations, tâches (les 5 créées), factures (avec les 3 lignes), projets ("Lancement coaching Q2"), événements calendrier. Le fichier est complet et lisible. Un toast de confirmation s'affiche. Le format est conforme au droit à la portabilité RGPD.
-**États testés** : loading (export en cours), success (fichier téléchargé)
+**Résultat attendu** : L’export local s’enregistre et reste lisible.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-55_rgpd_export_done.png`
 
 ---
@@ -1339,24 +1120,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 56 : Clé API invalide - l'erreur est nommée, aucun faux succès
+### Étape 56 : Lire l’erreur de clé refusée dans le chat
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
-2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
-3. `click` -> `[data-testid="settings-tab-ai"]`
-4. choisir un fournisseur cloud (Anthropic ou OpenAI), saisir la clé `sk-invalide-A3-56` dans le champ de clé
-5. `click` -> le bouton d'enregistrement ou de vérification de la clé
-6. `wait_for` -> `[data-testid="settings-modal"] [role="alert"]` visible (max 15s)
-7. `screenshot` -> `/tmp/therese-tests/A3-56_cle_invalide.png`
-8. `javascript_tool` -> `document.querySelector('[data-testid="settings-modal"] [role="alert"]')?.textContent`
-9. `javascript_tool` -> `[...document.querySelectorAll('[role="status"]')].map(n => n.textContent).join(' | ')` (aucune notification de succès)
+1. Simule un HTTP 401 sur le transport d’Anthropic.
+2. Envoie un message fictif et lis le résultat.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Un message d'erreur visible dans la modale nomme la cause (clé refusée par le fournisseur, réseau) sans jargon ni trace technique. Aucun toast de succès. La clé invalide n'est pas annoncée comme enregistrée « dans le coffre ». Le fournisseur précédent reste utilisable.
-**États testés** : error (clé refusée)
+**Résultat attendu** : L’erreur indique qu’une clé Anthropic est invalide ou expirée. Aucun texte de succès ne tient lieu de réponse.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-56_cle_invalide.png`
 
 ---
@@ -1405,23 +1179,17 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-### Étape 59 : Agenda - rafraîchissement échoué, données conservées
+### Étape 59 : Conserver l’agenda lors d’un échec de rafraîchissement
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. moteur actif : ouvrir l'agenda (`window.__therese.runAction('calendar.open')` ou la palette) et attendre l'affichage des événements créés en Phase 8
-2. arrêter le backend (comme à l'étape 58)
-3. `click` -> le bouton de rafraîchissement de l'agenda
-4. `wait_for` -> `[data-testid="calendar-stale-warning"]` visible (max 10s)
-5. `screenshot` -> `/tmp/therese-tests/A3-59_agenda_conserve.png`
-6. `javascript_tool` -> `document.querySelector('[data-testid="calendar-stale-warning"]').textContent`
-7. `javascript_tool` -> les événements affichés avant la coupure sont toujours présents dans le DOM
-8. relancer le backend, `click` -> rafraîchir, `wait_for` -> `[data-testid="calendar-stale-warning"]` absent (max 15s)
+1. Vérifie que Séance A est visible avant de simuler un échec.
+2. Clique sur Synchroniser l’agenda. Lis l’état puis cherche à nouveau Séance A.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'échec du rafraîchissement est annoncé (« Dernier rafraîchissement échoué : données conservées (synchronisées le …) ») et les événements déjà chargés restent visibles : une panne ne se déguise pas en agenda vide. Au succès suivant, l'avertissement disparaît.
-**États testés** : error (rafraîchissement échoué), stale (données conservées)
+**Résultat attendu** : L’écran signale un échec de synchronisation et conserve le rendez-vous déjà chargé.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-59_agenda_conserve.png`
 
 ---

@@ -1,5 +1,7 @@
 # Protocole de test - Persona A1 : Sophie Martin, graphiste freelance
 
+> **Recette de la bêta 0.85, 25/11/2026.** Le banc navigateur utilise un moteur de test sur `127.0.0.1:17394` et une base jetable. Les étapes natives demandent une installation de test sur le système visé. Les écrans et les actions décrits ci-dessous suivent la recette du cycle 6.
+
 > **Correction du 01/09/2026, revue le 16/09/2026 (relecteurs U1/U3, cycle 9).**
 > Les onglets de la fenêtre Paramètres n'ont pas de `data-testid` : ils portent
 > l'identifiant `settings-tab-<id>` (`#settings-tab-ai`, `#settings-tab-privacy`).
@@ -17,8 +19,8 @@
 
 > Version : 1.0 | Date : 2026-03-27
 > App : THERESE Desktop (Tauri 2.0, React, Python FastAPI)
-> URL dev : http://localhost:1420 | Backend : http://localhost:17293
-> Pré-requis : `make dev` lancé, backend healthy, base SQLite vierge
+> URL dev : http://localhost:1420 | Moteur du banc : http://127.0.0.1:17394
+> Pré-requis : Vite branché sur le moteur de recette, moteur actif et base SQLite jetable vierge
 
 ## Profil persona
 
@@ -88,19 +90,17 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 3 : Cliquer Commencer - transition step 1 (Profil)
+### Étape 3 : Ouvrir le profil
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="onboarding-next-btn"]`
-2. `wait_for` -> `[data-testid="onboarding-step-1"]` visible (max 3s)
-3. `screenshot` -> `/tmp/therese-tests/A1-03_profil_step.png`
-4. `javascript_tool` -> vérifier la présence des champs prénom, nom, activité
+1. Clique sur « Commencer la configuration ».
+2. Repère le champ Nom complet, puis les champs facultatifs.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'animation de transition se joue (slide vers la gauche). L'étape 1 (Profil) s'affiche avec les champs de saisie : prénom, nom, activité. La barre de progression avance à 2/6. Le bouton "Suivant" est visible.
-**États testés** : empty (champs vides)
+**Résultat attendu** : L’étape Profil s’ouvre avec le nom complet et le rôle. Continuer est disponible dès que le profil est lisible.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-03_profil_step.png`
 
 ---
@@ -123,60 +123,46 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 5 : Remplir le profil - prénom, nom, activité
+### Étape 5 : Renseigner le nom et l’activité
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> champ prénom (input[name="firstName"] ou premier input dans step-1)
-2. `click` -> champ prénom
-3. `type` -> "Sophie"
-4. `find` -> champ nom (input[name="lastName"] ou second input)
-5. `click` -> champ nom
-6. `type` -> "Martin"
-7. `find` -> champ activité (input[name="activity"] ou troisième champ)
-8. `click` -> champ activité
-9. `type` -> "Graphiste"
-10. `screenshot` -> `/tmp/therese-tests/A1-05_profil_filled.png`
-11. `javascript_tool` -> vérifier que le bouton Suivant est maintenant enabled
+1. Saisis Sophie Martin dans Nom complet et Graphiste freelance dans Rôle.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Les trois champs sont remplis : "Sophie", "Martin", "Graphiste". Les erreurs de validation ont disparu. Le bouton Suivant est actif (pas grisé). Les champs affichent le texte saisi correctement (accents si besoin).
-**États testés** : filled, focus
+**Résultat attendu** : Les valeurs restent affichées. L’erreur liée au nom vide s’efface.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-05_profil_filled.png`
 
 ---
 
-### Étape 6 : Passer à LLM (step 2) - liste providers
+### Étape 6 : Ouvrir Service d’IA
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="onboarding-next-btn"]`
-2. `wait_for` -> `[data-testid="onboarding-step-2"]` visible (max 3s)
-3. `screenshot` -> `/tmp/therese-tests/A1-06_llm_step.png`
-4. `javascript_tool` -> vérifier la liste des providers (Anthropic, OpenAI, Gemini, etc.)
-5. `find` -> `[data-testid="onboarding-skip-btn"]` (bouton Skip doit être visible)
+1. Clique sur Continuer.
+2. Repère le service et le modèle affichés, puis la liste des services.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'étape 2 (LLM) s'affiche avec la liste des fournisseurs d'IA. Sophie voit les logos/noms des providers mais les champs clé API sont vides. Le bouton "Passer" (Skip) est visible et accessible. L'explication est compréhensible pour une non-tech.
-**États testés** : empty (aucune clé configurée)
+**Résultat attendu** : Une clé d’essai déjà détectée affiche Claude et le modèle. La procédure de première réponse est repliée quand le service est configuré.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-06_llm_step.png`
 
 ---
 
-### Étape 7 : Cliquer Skip (ne sait pas ce qu'est une clé API)
+### Étape 7 : Poursuivre en choisissant Configurer plus tard
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="onboarding-skip-btn"]`
-2. `wait_for` -> `[data-testid="onboarding-step-3"]` visible (max 3s)
-3. `screenshot` -> `/tmp/therese-tests/A1-07_security_step.png`
+1. Clique sur Configurer plus tard.
+2. Vérifie l’affichage de l’étape Sécurité.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'onboarding avance à l'étape 3 (Sécurité) sans bloquer. Sophie n'est pas obligée de configurer une clé API pour continuer. Aucune erreur, aucun avertissement bloquant. Le skip est silencieux et bienveillant.
-**États testés** : empty (skip volontaire)
+**Résultat attendu** : La configuration peut se poursuivre avant le choix définitif d’un service.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-07_security_step.png`
 
 ---
@@ -199,39 +185,32 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 9 : Working Dir (step 4) - garder défaut ~/.therese/
+### Étape 9 : Continuer sans choisir de dossier
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="onboarding-step-4"]`
-2. `javascript_tool` -> vérifier que le chemin par défaut `~/.therese/` ou un équivalent est affiché
-3. `screenshot` -> `/tmp/therese-tests/A1-09_workingdir.png`
-4. `click` -> `[data-testid="onboarding-next-btn"]`
-5. `wait_for` -> `[data-testid="onboarding-step-5"]` visible (max 3s)
+1. Vérifie l’annonce Aucun dossier configuré.
+2. Clique sur Continuer sans dossier.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le répertoire de travail par défaut (`~/.therese/`) est pré-rempli. Sophie n'a pas besoin de le modifier. Le bouton Suivant est actif. Le bouton Skip est aussi disponible. Le clic sur Suivant mène à l'étape finale.
-**États testés** : filled (valeur par défaut)
+**Résultat attendu** : La seule commande de poursuite amène au récapitulatif. Le dossier reste sans choix.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-09_workingdir.png`
 
 ---
 
-### Étape 10 : Complete (step 5) - Terminer - redirect chat
+### Étape 10 : Lire le récapitulatif et ouvrir l’application
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="onboarding-step-5"]`
-2. `find` -> `[data-testid="onboarding-complete-btn"]`
-3. `screenshot` -> `/tmp/therese-tests/A1-10_complete_step.png`
-4. `click` -> `[data-testid="onboarding-complete-btn"]`
-5. `wait_for` -> `[data-testid="chat-message-input"]` visible (max 5s)
-6. `screenshot` -> `/tmp/therese-tests/A1-10_chat_redirect.png`
+1. Lis le résumé de la configuration.
+2. Clique sur Commencer et attends la fermeture du parcours.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'étape finale affiche un résumé et un bouton "Terminer". Après le clic, l'onboarding se ferme et Sophie est redirigée vers l'interface de chat principale. Le wizard disparaît complètement. L'input de chat est visible et prêt à l'emploi. localStorage contient le flag onboarding complété.
-**États testés** : loaded -> transition -> empty (chat vide)
+**Résultat attendu** : Le récapitulatif rappelle le service d’IA à configurer. L’application s’ouvre.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-10_complete_step.png`
 
 ---
@@ -258,22 +237,17 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 12 : Taper "Bonjour" sans clé API - message erreur
+### Étape 12 : Observer le composeur sans service d’IA
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `click` -> `[data-testid="chat-message-input"]`
-2. `type` -> "Bonjour"
-3. `screenshot` -> `/tmp/therese-tests/A1-12_typing.png`
-4. `click` -> `[data-testid="chat-send-btn"]`
-5. `wait_for` -> message d'erreur ou notification (max 5s)
-6. `screenshot` -> `/tmp/therese-tests/A1-12_no_api_key_error.png`
-7. `javascript_tool` -> vérifier qu'une notification, un toast, ou un message d'erreur mentionne "clé API", "API key", ou "configurer"
+1. Ouvre une nouvelle conversation.
+2. Lis l’avertissement et vérifie la disponibilité du champ et du bouton d’envoi.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le message "Bonjour" de Sophie apparaît dans la liste (bulle utilisateur). L'app tente d'appeler le LLM mais échoue car aucune clé API n'est configurée. Un message d'erreur clair apparaît (toast ou message système dans le chat) expliquant qu'il faut configurer une clé API. Le message n'est pas technique/cryptique.
-**États testés** : error
+**Résultat attendu** : La saisie et l’envoi sont désactivés. Le composeur indique où choisir un modèle.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-12_no_api_key_error.png`
 
 ---
@@ -295,35 +269,32 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 14 : Naviguer onglet AI/LLM
+### Étape 14 : Ouvrir la rubrique Service d’IA
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `#settings-tab-ai`
-2. `click` -> `#settings-tab-ai`
-3. `wait_for` -> contenu de l'onglet LLM visible (max 2s)
-4. `screenshot` -> `/tmp/therese-tests/A1-14_settings_llm_tab.png`
+1. Choisis Service d’IA dans la barre latérale de Paramètres.
+2. Repère la grille et le bouton Autres.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'onglet AI/LLM est sélectionné (highlight visuel). Le contenu affiche la liste des providers (Anthropic, OpenAI, Gemini, Mistral, Grok, OpenRouter, Ollama). Chaque provider a un champ pour sa clé API. Le layout est clair et non surchargé.
-**États testés** : loaded, empty (clés vides)
+**Résultat attendu** : La rubrique présente les services et les réglages du fournisseur choisi.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-14_settings_llm_tab.png`
 
 ---
 
-### Étape 15 : Voir les champs clé API vides
+### Étape 15 : Lire le champ de clé d’un service sans clé
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> compter le nombre d'inputs de type password ou text dans l'onglet LLM
-2. `javascript_tool` -> vérifier que tous les champs clé API sont vides (value === "")
-3. `screenshot` -> `/tmp/therese-tests/A1-15_api_keys_empty.png`
+1. Choisis un service sans clé dans la liste, par exemple OpenAI.
+2. Inspecte le champ Clé d’API de ce service.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Tous les champs de clé API sont vides. Les placeholders indiquent le format attendu (ex: "sk-..."). Aucune clé n'est pré-remplie. Les labels sont explicites pour chaque provider.
-**États testés** : empty
+**Résultat attendu** : Le champ est vide. Le service actif et ceux dont la clé est enregistrée se distinguent.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-15_api_keys_empty.png`
 
 ---
@@ -349,20 +320,17 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 17 : Fermer Settings
+### Étape 17 : Fermer les paramètres et revenir au composeur
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-close-btn"]`
-2. `click` -> `[data-testid="settings-close-btn"]`
-3. `wait_for` -> `[data-testid="settings-modal"]` disparaît (max 2s)
-4. `find` -> `[data-testid="chat-message-input"]` (retour au chat)
-5. `screenshot` -> `/tmp/therese-tests/A1-17_settings_closed.png`
+1. Clique sur Fermer dans Paramètres.
+2. Vérifie que le composeur est à nouveau visible.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le modal se ferme avec une animation. L'interface de chat est à nouveau visible et interactive. Le message d'erreur précédent est toujours visible dans l'historique. L'input de chat est focusable.
-**États testés** : loaded
+**Résultat attendu** : La modale se ferme. Si le service ne peut répondre, le composeur conserve l’explication et le chemin vers les réglages.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-17_settings_closed.png`
 
 ---
@@ -503,18 +471,17 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 24 : Ouvrir le panneau Mémoire (via bouton header)
+### Étape 24 : Ouvrir les contacts de la Mémoire
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=memory
 
 **Actions Chrome MCP** :
-1. `navigate` -> `http://localhost:1420/?panel=memory`
-2. `wait_for` -> `[data-testid="memory-panel"]` visible (max 5s)
-3. `screenshot` -> `/tmp/therese-tests/A1-24_memory_panel.png`
+1. Ouvre Mémoire depuis l’espace de travail ou la commande memory.open.
+2. Repère les boutons de périmètre, l’aide et la recherche.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le panneau Mémoire s'ouvre et affiche l'interface de gestion des contacts et projets. La recherche sémantique est visible. Le panneau est structuré avec des sections claires (Contacts, Projets, Recherche).
-**États testés** : loaded
+**Résultat attendu** : La Mémoire ouvre les contacts. Le périmètre est expliqué au filtre actif. La vue Projets est accessible séparément.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-24_memory_panel.png`
 
 ---
@@ -639,43 +606,31 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 31 : CRM vide - pas de pipeline, pas de leads
+### Étape 31 : Retrouver Jean Dupont dans le CRM
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> vérifier que le pipeline ne contient aucun lead/contact (colonnes vides)
-2. `screenshot` -> `/tmp/therese-tests/A1-31_crm_empty.png`
-3. `javascript_tool` -> vérifier qu'un état vide est affiché (texte ou illustration)
+1. Lis la colonne Contact dans le Pipeline après la création de Jean Dupont dans la Mémoire.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Le CRM est vide au premier lancement. Les colonnes du pipeline sont présentes mais sans cartes. Un message ou une illustration invite Sophie à ajouter son premier lead. L'interface est claire sur la marche à suivre.
-**États testés** : empty
+**Résultat attendu** : Le contact créé apparaît déjà dans le CRM.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-31_crm_empty.png`
 
 ---
 
-### Étape 32 : Créer un lead/contact dans le CRM
+### Étape 32 : Créer un deuxième contact CRM
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. `find` -> bouton "Ajouter" ou "+" dans le CRM
-2. `click` -> ce bouton
-3. `wait_for` -> formulaire de création lead visible (max 3s)
-4. `screenshot` -> `/tmp/therese-tests/A1-32_crm_add_lead.png`
-5. `find` -> champ nom du lead
-6. `type` -> "Jean Dupont - Logo"
-7. `find` -> champ montant ou valeur (si présent)
-8. `type` -> "500"
-9. `find` -> bouton Sauvegarder
-10. `click` -> bouton Sauvegarder
-11. `wait_for` -> le lead apparaît dans le pipeline (max 3s)
-12. `screenshot` -> `/tmp/therese-tests/A1-32_crm_lead_created.png`
+1. Ouvre Nouveau contact dans Pipeline.
+2. Saisis Chloé et Atelier Charme, puis enregistre.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : Un formulaire de création de lead s'ouvre. Sophie remplit le nom et le montant. Après sauvegarde, le lead apparaît dans la première colonne du pipeline (Prospect ou Lead). La carte affiche le nom "Jean Dupont - Logo" et le montant "500". Le CRM n'est plus vide.
-**États testés** : empty -> filled -> success
+**Résultat attendu** : La deuxième fiche apparaît dans la colonne Contact. Les montants de prestation se saisissent dans les devis.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-32_crm_lead_created.png`
 
 ---
@@ -806,19 +761,16 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 39 : Calendrier - vue mois, date du jour surlignée
+### Étape 39 : Lire le mois courant et le jour du banc
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=calendar
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> vérifier que la date du jour est mise en évidence (classe CSS `today`, `current`, highlight, ou équivalent)
-2. `javascript_tool` -> `new Date().getDate()` puis vérifier que ce numéro est surligné dans la grille
-3. `screenshot` -> `/tmp/therese-tests/A1-39_calendar_today.png`
-4. `javascript_tool` -> vérifier que le titre du mois correspond au mois courant
+1. Vérifie le mois, la grille et le jour en cours selon l’horloge du banc.
+2. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : La date du jour (27 mars 2026) est visuellement distincte (couleur, bordure, fond). Le mois affiché est "Mars 2026". La grille est correcte (jours de la semaine alignés). Le calendrier est vide (aucun événement encore créé).
-**États testés** : loaded, empty (pas d'événements)
+**Résultat attendu** : Le mois courant apparaît, avec le jour en cours distingué et les rendez-vous de la période.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-39_calendar_today.png`
 
 ---
@@ -937,24 +889,18 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 45 : Poser une question "Dois-je augmenter mes tarifs ?"
+### Étape 45 : Préparer la question du Board
 
 **Priorité** : P0
 **Pré-condition** : Clé API valide configurée (sinon tester uniquement l'envoi et l'erreur)
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> champ de saisie dans le board (textarea ou input)
-2. `click` -> champ de saisie
-3. `type` -> "Dois-je augmenter mes tarifs de graphiste freelance ?"
-4. `screenshot` -> `/tmp/therese-tests/A1-45_board_question.png`
-5. `find` -> `[data-testid="board-submit-btn"]`
-6. `click` -> `[data-testid="board-submit-btn"]`
-7. `wait_for` -> début de la délibération ou erreur (max 15s)
-8. `screenshot` -> `/tmp/therese-tests/A1-45_board_deliberating.png`
+1. Dans le Board, saisis la question sur les tarifs.
+2. Clique sur Préparer le Board. Si l’accord cloud manque, ouvre les consentements dans Paramètres > Sécurité et confidentialité et autorise le Board cloud.
+3. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : La question est saisie dans le champ. Le clic sur le bouton de soumission lance la délibération. Avec une clé valide : les 5 conseillers commencent à répondre (streaming). Sans clé : un message d'erreur explicite apparaît. L'interface montre l'état "en cours de délibération".
-**États testés** : filled, loading
+**Résultat attendu** : L’écran indique le consentement requis ou propose la confirmation. Le lancement demande une action distincte.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-45_board_deliberating.png`
 
 ---
@@ -1007,27 +953,18 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 48 : Export RGPD données - settings > data > exporter
+### Étape 48 : Exporter les données depuis Sécurité et confidentialité
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
-2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
-3. `find` -> `#settings-tab-privacy`
-4. `find` -> `#settings-tab-privacy`
-5. `click` -> `#settings-tab-privacy`
-6. `wait_for` -> contenu onglet Data visible (max 2s)
-7. `screenshot` -> `/tmp/therese-tests/A1-48_settings_data_tab.png`
-8. `find` -> bouton "Exporter" ou "Export RGPD" ou "Télécharger mes données"
-9. `click` -> bouton Export
-10. `wait_for` -> téléchargement ou confirmation (max 10s)
-11. `screenshot` -> `/tmp/therese-tests/A1-48_rgpd_export.png`
-12. `javascript_tool` -> vérifier qu'un fichier a été téléchargé ou qu'un message de confirmation apparaît
+1. Ouvre Paramètres depuis la palette ou l’action settings.open.
+2. Choisis Sécurité et confidentialité et clique sur Exporter toutes mes données.
+3. Vérifie le téléchargement local du fichier JSON.
+4. Enregistre une capture de l’état observé et relève le résultat.
 
-**Résultat attendu** : L'onglet Data des paramètres est accessible. Le bouton d'export RGPD est visible et clairement libellé. Le clic déclenche l'export de toutes les données de Sophie (contacts, conversations, tâches, factures, etc.) au format JSON ou ZIP. Un toast de confirmation apparaît. Le fichier est conforme RGPD (données personnelles incluses, format lisible).
-**États testés** : loaded, loading (export en cours), success
+**Résultat attendu** : Le fichier d’export est proposé au téléchargement par le navigateur.
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-48_rgpd_export.png`
 
 ---
