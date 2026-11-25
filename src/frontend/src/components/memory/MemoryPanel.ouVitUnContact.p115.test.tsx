@@ -70,4 +70,20 @@ describe('P-115 : où vit un contact', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Périmètre des contacts' })).getByRole('button', { name: 'Projet' }));
     expect(await screen.findByText(/Un contact entre dans un projet quand tu le crées depuis une conversation rattachée à ce projet/)).toBeInTheDocument();
   });
+
+  it('P-009 : l’aide immédiate change avec le périmètre sélectionné', async () => {
+    render(<MemoryPanel isOpen onClose={vi.fn()} />);
+    await screen.findByText('Hélène Exemple');
+
+    const filtres = screen.getByRole('group', { name: 'Périmètre des contacts' });
+    const aide = screen.getByTestId('visibilite-perimetre-actif');
+    expect(aide).toHaveTextContent(/selon le périmètre de chaque fiche/);
+
+    fireEvent.click(within(filtres).getByRole('button', { name: 'Global' }));
+    expect(aide).toHaveTextContent('Ces fiches sont disponibles dans toutes les conversations.');
+    fireEvent.click(within(filtres).getByRole('button', { name: 'Projet' }));
+    expect(aide).toHaveTextContent('Ces fiches sont disponibles dans les conversations de leur projet et en mode « Tous les projets ».');
+    fireEvent.click(within(filtres).getByRole('button', { name: 'Conversation' }));
+    expect(aide).toHaveTextContent('Chaque fiche est disponible uniquement dans la conversation où elle a été ajoutée.');
+  });
 });

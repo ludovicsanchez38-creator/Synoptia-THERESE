@@ -40,6 +40,13 @@ const AIDE_PERIMETRE =
   + 'Projet : créé depuis une conversation rattachée à un projet, visible dans les conversations de ce projet et en mode « Tous les projets ». '
   + 'Conversation : créé ou suggéré depuis une conversation sans projet, visible dans cette conversation seulement.';
 
+const VISIBILITE_PAR_PERIMETRE: Record<MemoryScope | 'all', string> = {
+  all: 'Les conversations où un contact est disponible varient selon le périmètre de chaque fiche.',
+  global: 'Ces fiches sont disponibles dans toutes les conversations.',
+  project: 'Ces fiches sont disponibles dans les conversations de leur projet et en mode « Tous les projets ».',
+  conversation: 'Chaque fiche est disponible uniquement dans la conversation où elle a été ajoutée.',
+};
+
 const COMMENT_Y_RANGER: Partial<Record<MemoryScope, string>> = {
   project: 'Un contact entre dans un projet quand tu le crées depuis une conversation rattachée à ce projet.',
   conversation: 'Un contact appartient à une conversation quand tu le crées, ou l’enregistres depuis une suggestion, dans une conversation sans projet.',
@@ -515,7 +522,13 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     { id: 'conversation', label: 'Conversation' },
                   ]}
                 />
-                <p data-testid="aide-perimetre" className="text-sm text-text-muted">{AIDE_PERIMETRE}</p>
+                <p aria-live="polite" data-testid="visibilite-perimetre-actif" className="text-sm text-text-muted">
+                  {VISIBILITE_PAR_PERIMETRE[scopeFilter]}
+                </p>
+                <details className="text-sm text-text-muted">
+                  <summary className="min-h-9 cursor-pointer py-2 font-medium">Comprendre les périmètres</summary>
+                  <p data-testid="aide-perimetre">{AIDE_PERIMETRE}</p>
+                </details>
               </div>
             )}
 
