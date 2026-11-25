@@ -210,6 +210,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             THÉRÈSE adresse à Anthropic le mot « Bonjour », ses consignes de fonctionnement, la date et l’heure,
             la description des outils disponibles et les paramètres de la réponse (modèle, longueur maximale et affichage progressif).
             Ce premier envoi précède tout résultat d’outil.
+            Si tu as rempli ton profil, il accompagne aussi ton message.
           </p>
         </Carte>
       )}

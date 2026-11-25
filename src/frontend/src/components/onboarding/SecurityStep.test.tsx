@@ -59,6 +59,7 @@ it('P-008 : décrit le premier Bonjour observé avec Claude sans modifier l’ac
   expect(exemple).toHaveTextContent(/consignes de fonctionnement, la date et l’heure, la description des outils disponibles/);
   expect(exemple).toHaveTextContent(/modèle, longueur maximale et affichage progressif/);
   expect(exemple).toHaveTextContent('Ce premier envoi précède tout résultat d’outil.');
+  expect(exemple?.querySelector('p')).toHaveTextContent(/Si tu as rempli ton profil, il accompagne aussi ton message\.$/);
 
   const accord = screen.getByRole('checkbox', { name: /Je consens au transfert de mes données vers Anthropic/ });
   expect(accord).not.toHaveAccessibleName(/Exemple avec Claude/);

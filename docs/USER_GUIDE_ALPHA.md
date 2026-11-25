@@ -71,7 +71,7 @@ Au premier lancement, un **assistant de configuration** te guide en 6 étapes :
 1. **Bienvenue**. Découvre un premier exemple, comme préparer une relance pour un devis.
 2. **Profil**. Renseigne ton nom, ton entreprise et ton rôle. Le choix **Importer un profil existant** donne accès à l’import d’un fichier `THÉRÈSE.md`.
 3. **Service d’IA**. Si un service est déjà configuré, son nom et le modèle choisi apparaissent avant la procédure, que tu peux déplier. Sinon, choisis parmi quinze services, dont Synthetic. Ollama peut arriver en tête si le service Ollama répond. Pour un service en ligne, renseigne ton code d’accès (clé API).
-4. **Confidentialité**. Lis les informations sur les connexions et les risques. Avec Claude, un exemple détaille le premier « Bonjour » envoyé avec un profil vierge.
+4. **Confidentialité**. Lis les informations sur les connexions et les risques. Avec Claude, un exemple détaille le premier « Bonjour » envoyé avec un profil vierge. Si tu as rempli ton profil, il accompagne aussi ton message.
 5. **Dossier de travail**. Choisis un dossier dédié pour tes fichiers ou clique sur **Continuer sans dossier** pour poursuivre. Si THÉRÈSE y rencontre un refus de création de lien physique, elle te prévient que les PDF de devis et de factures peuvent échouer. Choisis alors un dossier dédié sur le disque interne, par exemple dans **Documents**. Tu peux changer ce choix dans **Paramètres > Avancé > Stockage des données**. Active le **Mode Contributeur** dans Paramètres si la rubrique Avancé est masquée.
 6. **Terminé** - Résumé de ta configuration
 
