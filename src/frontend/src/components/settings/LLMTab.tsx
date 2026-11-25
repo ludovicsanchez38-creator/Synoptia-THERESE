@@ -795,8 +795,7 @@ export function EffortSelector({
           onChange={(e) => void handleChange(e.target.value)}
         />
         <p id="llm-effort-aide" className="col-start-1 text-sm text-text-muted">
-          Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5,
-          modèles Ollama « thinking »). Auto laisse le modèle décider.
+          L’effort s’applique aux modèles compatibles. En mode Auto, le modèle choisit l’effort.
         </p>
         {effortAutomatique && (
           <p id="llm-effort-auto" className="col-span-2 mt-2 text-sm text-text-muted">

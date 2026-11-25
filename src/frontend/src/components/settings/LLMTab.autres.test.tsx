@@ -7,7 +7,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { LLMTab } from './LLMTab';
+import { LLMTab, PROVIDERS } from './LLMTab';
 
 vi.mock('../../lib/catalogueModeles', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -67,6 +67,18 @@ describe('LLMTab - P-085, les fournisseurs secondaires derrière « Autres »', 
     expect(screen.getByRole('link', { name: 'Politique de confidentialité de Synthetic' }))
       .toHaveAttribute('href', 'https://synthetic.new/policies/privacy');
   });
+
+  it.each(PROVIDERS.filter((fournisseur) => fournisseur.models.length > 0))(
+    'décrit l’effort pour $name sans citer de modèle périmé',
+    async ({ id, models }) => {
+      rendre({ selectedProvider: id, selectedModel: models[0].id });
+
+      const effort = await screen.findByRole('combobox', { name: 'Effort de raisonnement' });
+      expect(effort).toHaveAccessibleDescription(
+        /^L’effort s’applique aux modèles compatibles\. En mode Auto, le modèle choisit l’effort\./,
+      );
+    },
+  );
 
   it('la bascule est un seul bouton persistant : le focus ne tombe pas sur body (audit release)', () => {
     rendre();
