@@ -21,6 +21,18 @@ interface ProfileStepProps {
   onBack: () => void;
 }
 
+function donneesDeFacturationHorsFormulaire(profil: api.UserProfile): Partial<api.UserProfileUpdate> {
+  return {
+    siren: profil.siren ?? undefined,
+    code_ape: profil.code_ape ?? undefined,
+    nda: profil.nda ?? undefined,
+    legal_form: profil.legal_form,
+    share_capital: profil.share_capital,
+    billing_address: profil.billing_address,
+    regime_tva: profil.regime_tva,
+  };
+}
+
 export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   const [loading, setLoading] = useState(false);
   // B-611 : le chemin était écrit en dur (« ~/.therese/ ») alors que le
@@ -62,7 +74,9 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   // P-112 : la facturation se réglait ensuite, par une carte de l'Accueil puis
   // un défilement dans Paramètres. Volet facultatif, replié par défaut.
   const [factureAvecTherese, setFactureAvecTherese] = useState(false);
-  const [lectureProfil, setLectureProfil] = useState(true);
+  const [lectureProfil, setLectureProfil] = useState<'en_cours' | 'terminee' | 'echec'>('en_cours');
+  const [tentativeLecture, setTentativeLecture] = useState(0);
+  const facturationHorsFormulaire = useRef<Partial<api.UserProfileUpdate>>({});
   const champsModifies = useRef(new Set<keyof typeof profileForm>());
   const choixFacturation = useRef(false);
 
@@ -76,10 +90,13 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   useEffect(() => {
     let vivant = true;
     try {
-      const lecture = typeof api.getProfile === 'function' ? api.getProfile() : null;
+      const lecture = 'getProfile' in api && typeof api.getProfile === 'function' ? api.getProfile() : null;
       if (lecture && typeof lecture.then === 'function') {
         lecture.then((profil) => {
-          if (!vivant || !profil) return;
+          if (!vivant) return;
+          setLectureProfil('terminee');
+          if (!profil) return;
+          facturationHorsFormulaire.current = donneesDeFacturationHorsFormulaire(profil);
           if (!choixFacturation.current && (profil.address || profil.siret || profil.tva_intra)) {
             setFactureAvecTherese(true);
           }
@@ -99,18 +116,17 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             for (const champ of champsModifies.current) fusion[champ] = prev[champ];
             return fusion;
           });
-        }).catch(() => undefined).finally(() => {
-          if (vivant) setLectureProfil(false);
+        }).catch(() => {
+          if (vivant) setLectureProfil('echec');
         });
       } else {
-        setLectureProfil(false);
+        setLectureProfil('terminee');
       }
     } catch {
-      /* Fiche illisible : le formulaire reste saisissable à la main. */
-      setLectureProfil(false);
+      setLectureProfil('echec');
     }
     return () => { vivant = false; };
-  }, []);
+  }, [tentativeLecture]);
 
   useEffect(() => () => {
     if (continueTimerRef.current) clearTimeout(continueTimerRef.current);
@@ -136,6 +152,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         setLoading(true);
         setError(null);
         const importedProfile = await api.importClaudeMd(selected);
+        facturationHorsFormulaire.current = donneesDeFacturationHorsFormulaire(importedProfile);
         setProfileForm((prev) => ({
           name: importedProfile.name || '',
           nickname: importedProfile.nickname || '',
@@ -161,7 +178,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   }
 
   async function handleSaveAndContinue() {
-    if (savingRef.current || lectureProfil) return;
+    if (savingRef.current || lectureProfil !== 'terminee') return;
     if (!profileForm.name.trim()) {
       setError('Le nom est obligatoire');
       setSaveState('error');
@@ -187,6 +204,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
 
     try {
       await api.setProfile({
+        ...facturationHorsFormulaire.current,
         name: profileForm.name,
         nickname: profileForm.nickname,
         company: profileForm.company,
@@ -234,7 +252,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             <p className="text-sm text-text-muted">THÉRÈSE utilisera ces infos pour mieux te répondre</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading || lectureProfil} className="max-[840px]:basis-full max-[840px]:justify-start">
+        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading || lectureProfil !== 'terminee'} className="max-[840px]:basis-full max-[840px]:justify-start">
           <Upload className="w-4 h-4 mr-2" />
           Importer un profil (THÉRÈSE.md)
         </Button>
@@ -246,6 +264,19 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       <p className="text-sm text-text-muted mb-4 px-1">
         Ces informations sont stockées localement{dossierDeDonnees ? ` dans ${dossierDeDonnees}` : ''}. Avec un modèle local, elles restent sur ta machine ; avec un service en ligne, elles accompagnent tes demandes.
       </p>
+
+      {lectureProfil === 'echec' && (
+        <Alerte
+          className="mb-4"
+          titre="Le profil n’a pas pu être lu"
+          action={<Button variant="secondary" size="sm" onClick={() => {
+            setLectureProfil('en_cours');
+            setTentativeLecture((precedente) => precedente + 1);
+          }}>Relire le profil</Button>}
+        >
+          Relis le profil pour conserver les informations déjà enregistrées, ou passe cette étape.
+        </Alerte>
+      )}
 
       {/* Form */}
       <div className="space-y-4">
@@ -412,12 +443,12 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
           <Button
             variant="primary"
             onClick={handleSaveAndContinue}
-            disabled={loading || lectureProfil || saveState === 'success'}
+            disabled={loading || lectureProfil !== 'terminee' || saveState === 'success'}
             data-testid="onboarding-next-btn"
           >
             {saveState === 'success'
               ? 'Profil enregistré'
-              : lectureProfil
+              : lectureProfil === 'en_cours'
                 ? 'Lecture du profil…'
                 : loading
                   ? (<><Spinner taille="bouton" className="mr-2" />Enregistrement en cours...</>)

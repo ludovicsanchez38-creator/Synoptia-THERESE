@@ -104,3 +104,50 @@ describe('ProfileStep recharge la fiche au montage (B-1840)', () => {
     await waitFor(() => expect(apiMocks.setProfile).toHaveBeenCalledExactlyOnceWith({ ...fiche, [cle]: valeur }));
   });
 });
+
+describe('conserver les données du profil hors formulaire de mise en route', () => {
+  const donneesRetenues = {
+    siren: '123456789',
+    code_ape: '4322A',
+    nda: '76123456789',
+    legal_form: 'SARL',
+    share_capital: '1000',
+    billing_address: '10 rue des Tests',
+    regime_tva: 'franchise',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMocks.getProfile.mockResolvedValue({ ...fiche, ...donneesRetenues });
+    apiMocks.setProfile.mockResolvedValue(fiche);
+  });
+
+  it('une édition de mise en route conserve les champs de facturation hors écran', async () => {
+    render(<ProfileStep onNext={vi.fn()} onBack={vi.fn()} />);
+    expect(await screen.findByDisplayValue(fiche.name)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Nom complet/), { target: { value: 'Camille Révisée' } });
+    fireEvent.click(screen.getByTestId('onboarding-next-btn'));
+
+    await waitFor(() => expect(apiMocks.setProfile).toHaveBeenCalledExactlyOnceWith({
+      ...fiche, ...donneesRetenues, name: 'Camille Révisée',
+    }));
+  });
+
+  it('une lecture en échec demande une nouvelle lecture avant de réécrire la fiche', async () => {
+    apiMocks.getProfile.mockRejectedValueOnce(new Error('Lecture indisponible'));
+    render(<ProfileStep onNext={vi.fn()} onBack={vi.fn()} />);
+    const champ = screen.getByLabelText(/Nom complet/);
+    fireEvent.change(champ, { target: { value: 'Camille Révisée' } });
+    await act(async () => { await Promise.resolve(); });
+
+    fireEvent.click(screen.getByTestId('onboarding-next-btn'));
+    expect(apiMocks.setProfile).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Relire le profil' }));
+    expect(await screen.findByDisplayValue(fiche.company)).toBeInTheDocument();
+    expect(champ).toHaveValue('Camille Révisée');
+    fireEvent.click(screen.getByTestId('onboarding-next-btn'));
+    await waitFor(() => expect(apiMocks.setProfile).toHaveBeenCalledExactlyOnceWith({
+      ...fiche, ...donneesRetenues, name: 'Camille Révisée',
+    }));
+  });
+});
