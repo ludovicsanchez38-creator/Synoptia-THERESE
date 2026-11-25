@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : ea0e4a63b230e087f9e4410891a7f8386b84b0decd0a9d24747e3a175f63fec2
+Empreinte des verrous : dd9091b6c5089b23c4aa422c794fcb26ee2aed49e8be26fb9b0709bc5563be06
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -105194,11 +105194,11 @@ Distribution : Ubuntu 22.04 amd64
 Licence : LicenseRef-Public-Domain
 SHA-256 : 3147e2cb512d17a4064d34f61e69591b6473543db2ec63cd797f766cd3b09037
 Source : xz-utils 5.2.5-2ubuntu1.2
-libmvec.so.1 — libc6 2.35-0ubuntu3.15
+libmvec.so.1 — libc6 2.35-0ubuntu3.18
 Distribution : Ubuntu 22.04 amd64
 Licence : LGPL-2.1-or-later
-SHA-256 : 44e31b0cd6dcb6f8147ffc820f51e7140c429a6e0e7724dd00ad0ea4d18f4f51
-Source : glibc 2.35-0ubuntu3.15
+SHA-256 : e07a4307ab7c2552119fcf92e590936c55bba932ce239c45e3666432174557f2
+Source : glibc 2.35-0ubuntu3.18
 ATTENTION COPYLEFT — sources jointes
 libncursesw.so.6 — libncursesw6 6.3-2ubuntu0.3
 Distribution : Ubuntu 22.04 amd64

@@ -82,13 +82,13 @@
     },
     "libmvec.so.1": {
       "paquet": "libc6",
-      "version": "2.35-0ubuntu3.15",
+      "version": "2.35-0ubuntu3.18",
       "suite": "jammy-security",
       "source": "glibc",
       "fichier": "lib/x86_64-linux-gnu/libmvec.so.1",
-      "deb": "pool/main/g/glibc/libc6_2.35-0ubuntu3.15_amd64.deb",
-      "deb_sha256": "79e35256227e16a607c154cdeb8d76ff12d20e31de286ea7fd9ad3b96fe0452d",
-      "sha256_dans_le_deb": "44e31b0cd6dcb6f8147ffc820f51e7140c429a6e0e7724dd00ad0ea4d18f4f51"
+      "deb": "pool/main/g/glibc/libc6_2.35-0ubuntu3.18_amd64.deb",
+      "deb_sha256": "cbed4dfa159019c759edae73ece1af67817e163686ad8925a26c90849ba1660a",
+      "sha256_dans_le_deb": "e07a4307ab7c2552119fcf92e590936c55bba932ce239c45e3666432174557f2"
     },
     "libncursesw.so.6": {
       "paquet": "libncursesw6",
@@ -237,7 +237,7 @@
     },
     {
       "paquet_source": "glibc",
-      "version": "2.35-0ubuntu3.15",
+      "version": "2.35-0ubuntu3.18",
       "suite": "jammy-security",
       "fichier": "glibc_2.35.orig.tar.xz",
       "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35.orig.tar.xz",
@@ -246,7 +246,7 @@
     },
     {
       "paquet_source": "glibc",
-      "version": "2.35-0ubuntu3.15",
+      "version": "2.35-0ubuntu3.18",
       "suite": "jammy-security",
       "fichier": "glibc_2.35.orig.tar.xz.asc",
       "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35.orig.tar.xz.asc",
@@ -255,21 +255,41 @@
     },
     {
       "paquet_source": "glibc",
-      "version": "2.35-0ubuntu3.15",
+      "version": "2.35-0ubuntu3.18",
       "suite": "jammy-security",
-      "fichier": "glibc_2.35-0ubuntu3.15.debian.tar.xz",
-      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.15.debian.tar.xz",
-      "sha256": "ea3f016b1987d995addb1c2b093a8f2679179d9bb3ebb9e2ea086469d56498c5",
-      "octets": 962196
+      "fichier": "glibc_2.35-0ubuntu3.18.debian.tar.xz",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.18.debian.tar.xz",
+      "sha256": "2c29a9cd1f2167e4c051fb176bc6e465d27ad12ac12f0b2013e63d78b2a84838",
+      "octets": 976436
     },
     {
       "paquet_source": "glibc",
-      "version": "2.35-0ubuntu3.15",
+      "version": "2.35-0ubuntu3.18",
       "suite": "jammy-security",
-      "fichier": "glibc_2.35-0ubuntu3.15.dsc",
-      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.15.dsc",
-      "sha256": "7b3e318ea5ac8b039a0fb5ef2e78b1812346bb753365d6d09622f698427cee56",
+      "fichier": "glibc_2.35-0ubuntu3.18.dsc",
+      "url": "http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.35-0ubuntu3.18.dsc",
+      "sha256": "0d3bbdf965ca027d7cba53a565e08e73d0efcb869a881f6d346682c5ee7bb050",
       "octets": 8888
     }
-  ]
+  ],
+  "rapprochement_c8": {
+    "date": "2026-11-25",
+    "run_id": 45670187545,
+    "run_url": "https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/actions/runs/45670187545",
+    "head_sha": "9b6774fdfe039139e5df2ca45343d8c3cfb59ee0",
+    "chemin_runner": "/usr/lib/x86_64-linux-gnu/libmvec.so.1",
+    "copie": "fichiers/e07a4307ab7c2552119fcf92e590936c55bba932ce239c45e3666432174557f2/libmvec.so.1",
+    "sha256_releve": "e07a4307ab7c2552119fcf92e590936c55bba932ce239c45e3666432174557f2",
+    "octets_releve": 1031720,
+    "octets_deb": 3235596,
+    "notice_dans_le_deb": "usr/share/doc/libc6/copyright",
+    "notice_sha256": "d3c95b56fa33e28b57860580f0baf4e4f4de2a268a2b80f1d031a5191bade265",
+    "suite": "jammy-security",
+    "cle_signature_archive": "F6ECB3762474EDA9D21B7022871920D1991BC93C",
+    "indexes": {
+      "InRelease": "e90df30ed91fc91ba326aa53a2eeafb6fe6d254bf87b53f11e213f9ef0dfd106",
+      "main/binary-amd64/Packages.xz": "69c8c81d092fb69a80973f6b61d9ad681ee071de2ae36280386eaf1c2f7e113f",
+      "main/source/Sources.xz": "a9ea7a3eed691baccae50c82eb5046253d6220453576259bd36c71c5b1d8b875"
+    }
+  }
 }

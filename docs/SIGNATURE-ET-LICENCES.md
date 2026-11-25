@@ -335,10 +335,17 @@ le contrôle en conservant un nom sous une autre version. Les entrées CPython e
 les règles de licence relues dans le script doivent également être actualisées.
 
 Le complément exige les sources de **readline 8.1.2-1**, **gdbm 1.23-1** et
-**glibc 2.35-0ubuntu3.15** : 11 fichiers, 23 299 768 octets (dsc, orig, correctifs
+**glibc 2.35-0ubuntu3.18** : 11 fichiers, 23 314 008 octets (dsc, orig, correctifs
 Debian/Ubuntu et signatures amont). Le job de sources les assemble et joint
 `THERESE-sources-systeme-linux.tar.gz` avant les installeurs. Le catalogue couvre
 également les licences permissives et l'exception GCC des autres fichiers.
+
+Le relevé du 25/11/2026 (run `45670187545`) rapproche `libmvec.so.1` du membre
+`lib/x86_64-linux-gnu/libmvec.so.1` de `libc6 2.35-0ubuntu3.18` pour Jammy amd64.
+Les index signés de `jammy-security` et `jammy-updates` donnent les mêmes
+empreintes pour le `.deb` et le paquet source `glibc`. La notice extraite du
+`.deb` a la même empreinte que celle du dépôt. Le schéma lie chaque nom Linux
+à une seule version de paquet.
 
 Si une URL verrouillée du miroir `https://archive.ubuntu.com/ubuntu/` répond
 **404**, l'assembleur essaie une seule fois l'archive permanente Ubuntu de

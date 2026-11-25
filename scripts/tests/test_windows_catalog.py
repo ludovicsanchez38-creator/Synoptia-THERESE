@@ -159,13 +159,13 @@ class WindowsCatalogTests(unittest.TestCase):
             return tail[:end].encode('utf-8')
 
         expected = {
-            'licenses/system-libraries.lock.json:libraries': 'e66c6dcbb43399a84dcaa92a68272c3098440221c1c3a2a50225509459d48a3f',
+            'licenses/system-libraries.lock.json:libraries': '6266c3147705564218a63f40ecac536dbacf4f63206a74d164df542846a6e096',
             'licenses/system-libraries.lock.json:macos_libraries': '348871bb2245e775d7a8b54f358dfe5c98ecdf5d0de3fd3527436e261a067c2a',
             'licenses/cpython-components.lock.json:components': 'bbce12bd0a722ef7ba9d91ff851685cb8571180e75345fc445b0768ad6c22647',
             'licenses/cpython-components.lock.json:files': '446a02c3f2acfef8df12d0d6b8ebd7aee5adbc0d0bf344e6bfca61f742bd5583',
             'licenses/cpython-components.lock.json:macos_components': '7df04effeedb9754fcc482f6a8d077ee9176f20878db3aec3768608e9ce532c9',
             'licenses/cpython-components.lock.json:macos_files': 'f686d164a8854478a0a209a643b385bbd2ad210bbc72babe6879016b0c9de604',
-            'licenses/system-linux/evidence-v0820.json': '4f07135c401682864b09c69d89c23b28852a712106c8088ba0dced64ca5b02c6',
+            'licenses/system-linux/evidence-v0820.json': 'a93a212c2277e454a1483dd7ce3874679e6763711fc6f85280cfc1a032976d4f',
             'licenses/cpython/evidence-v0820.json': '11116ab401bbff6d8e2c09c3292d9385bc7f1682a448bbfb98a0b0b778dcb151',
             'licenses/system-macos/evidence-v0830.json': 'f27d2e7e6df3847f4c88b6f59517e4c625fa2b55dc88788f5ce6c9fb4234d624',
             'licenses/cpython/evidence-v0830-macos.json': 'e960f6fa65026e40ae37af91ae64b0cea16a09ce2ea5bc21caaca1aabd4ed786',

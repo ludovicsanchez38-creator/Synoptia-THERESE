@@ -4,7 +4,7 @@ Les deux archives de la même release sont complémentaires :
 - THERESE-sources-copyleft.tar.gz : composants des verrous Python/Cargo/npm,
   recettes des roues, correctifs et archives de construction épinglés ;
 - THERESE-sources-systeme-linux.tar.gz : paquets source Ubuntu complets
-  readline 8.1.2-1, gdbm 1.23-1, glibc 2.35-0ubuntu3.15, notices et preuve
+  readline 8.1.2-1, gdbm 1.23-1, glibc 2.35-0ubuntu3.18, notices et preuve
   de rapprochement SHA-256 des bibliothèques Linux.
 
 Les versions viennent des paquets et des recettes ; un SONAME ne donne pas
@@ -25,9 +25,9 @@ les outils de construction Debian (build-essential, dpkg-dev, devscripts).
 Exemple glibc, dont libmvec.so.1 est la bibliothèque distribuée :
 
   cd sources
-  dpkg-source -x glibc_2.35-0ubuntu3.15.dsc glibc-modifiee
+  dpkg-source -x glibc_2.35-0ubuntu3.18.dsc glibc-modifiee
   cd glibc-modifiee
-  sudo apt-get build-dep glibc=2.35-0ubuntu3.15
+  sudo apt-get build-dep glibc=2.35-0ubuntu3.18
 
 La dernière commande suppose les entrées deb-src de la même version Ubuntu
 et un index qui conserve cette version ; sinon installer les Build-Depends

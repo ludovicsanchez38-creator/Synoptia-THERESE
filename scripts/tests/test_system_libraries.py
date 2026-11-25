@@ -90,7 +90,25 @@ class SystemLibraryTests(unittest.TestCase):
         self.assertEqual(len(catalog['libraries']), 18)
         self.assertEqual({s['package'] for s in catalog['sources']}, {'readline', 'gdbm', 'glibc'})
         self.assertEqual(len(catalog['sources']), 11)
-        self.assertEqual(sum(s['size'] for s in catalog['sources']), 23299768)
+        self.assertEqual(sum(s['size'] for s in catalog['sources']), 23314008)
+
+    def test_glibc_runner_octets_link_to_exact_corresponding_sources(self):
+        catalog = self.m.load_catalog(ROOT)
+        version = '2.35-0ubuntu3.18'
+        digest = 'e07a4307ab7c2552119fcf92e590936c55bba932ce239c45e3666432174557f2'
+        path = Path('/usr/lib/x86_64-linux-gnu/libmvec.so.1')
+        with patch.object(self.m, 'dpkg_identity', return_value=('libc6', version, 'glibc', version)):
+            row = self.m.match_system(path, digest, catalog, 'Linux')
+        self.assertEqual(row['origin'], 'system:libc6@' + version)
+        self.assertEqual(row['license'], 'LGPL-2.1-or-later')
+        self.assertTrue(row['source_required'])
+        self.assertEqual(row['source_version'], version)
+        self.assertEqual({(s['version'], s['filename']) for s in catalog['sources'] if s['package'] == 'glibc'}, {
+            (version, f'glibc_{version}.dsc'),
+            (version, f'glibc_{version}.debian.tar.xz'),
+            (version, 'glibc_2.35.orig.tar.xz'),
+            (version, 'glibc_2.35.orig.tar.xz.asc'),
+        })
 
     def test_catalog_omitted_source_or_unknown_license_is_rejected(self):
         original = self.m.load_catalog(ROOT)
@@ -189,7 +207,7 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
         self.source = self.fixture(next(s for s in self.catalog['sources']
                                         if s['filename'].endswith('.dsc') and s['package'] == 'glibc'))
         self.launchpad = ('https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/'
-                          'glibc/2.35-0ubuntu3.15/glibc_2.35-0ubuntu3.15.dsc')
+                          f'glibc/{self.source["version"]}/{self.source["filename"]}')
 
     def fixture(self, source):
         return {**source, 'sha256': self.m.sha(self.raw), 'size': len(self.raw)}
@@ -263,7 +281,7 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
                 self.source['url'].replace('https:', 'http:'),
                 self.launchpad.replace('launchpad.net', 'launchpad.net.example.test'),
                 self.launchpad.replace('/glibc/', '/other/'),
-                self.launchpad.replace('2.35-0ubuntu3.15/', '2.35-0ubuntu3.16/'))):
+                self.launchpad.replace(f'/{self.source["version"]}/', '/0.0/'))):
             with self.subTest(url=url):
                 with (self.responses({}) as requests,
                       self.assertRaisesRegex(ValueError, 'URL Ubuntu')):
@@ -320,7 +338,7 @@ class UbuntuSourceDownloadTests(unittest.TestCase):
     def test_binary_launchpad_url_uses_files_path(self):
         row = next(r for r in self.catalog['libraries'] if r['name'] == 'libmvec.so.1')
         source = {'package': row['source_package'], 'version': row['source_version'],
-                  'filename': 'libc6_2.35-0ubuntu3.15_amd64.deb', 'url': row['binary_package_url']}
+                  'filename': f'libc6_{row["version"]}_amd64.deb', 'url': row['binary_package_url']}
         self.assertEqual(self.m.ubuntu_download_urls(source), (source['url'],
                          'https://launchpad.net/ubuntu/+archive/primary/+files/' + source['filename']))
 
