@@ -202,16 +202,34 @@ PROFILE_KEY = "user_profile"
 PROFILE_CATEGORY = "identity"
 
 
+class ProfilIllisible(RuntimeError):
+    """La lecture a échoué ou la valeur enregistrée est illisible."""
+
+    def __init__(self) -> None:
+        super().__init__("Le profil n’a pas pu être lu. Réessaie.")
+
+
+def _lire_valeur_profil(valeur: str, *, allow_decrypt: bool = True) -> UserProfile | None:
+    if is_value_encrypted(valeur):
+        if not allow_decrypt:
+            # Le préchargement ne doit pas ouvrir le trousseau.
+            logger.info("User profile preload skipped: encrypted profile requires keychain access")
+            return None
+        valeur = decrypt_value(valeur)
+    return UserProfile.from_dict(json.loads(valeur))
+
+
 async def get_user_profile(
     session: AsyncSession,
     *,
     allow_decrypt: bool = True,
+    erreur_si_illisible: bool = False,
 ) -> UserProfile | None:
     """
     Retrieve user profile from database.
 
-    Returns None if no profile is configured.
-    The profile is decrypted automatically if stored encrypted (RGPD compliance).
+    Le profil est déchiffré à la demande. L’édition distingue l’absence
+    d’un profil d’une lecture échouée avec erreur_si_illisible.
     """
     try:
         result = await session.execute(
@@ -222,33 +240,22 @@ async def get_user_profile(
         )
         pref = result.scalar_one_or_none()
 
-        if not pref or not pref.value:
+        if pref is None:
             return None
 
-        # Déchiffrer si le profil est chiffré (migration transparente)
-        value = pref.value
-        if is_value_encrypted(value):
-            if not allow_decrypt:
-                # Evite de déclencher un prompt trousseau bloquant pendant le startup.
-                logger.info("User profile preload skipped: encrypted profile requires keychain access")
-                return None
-            try:
-                value = decrypt_value(value)
-            except Exception as e:
-                logger.error(f"Failed to decrypt user profile: {e}")
-                return None
-
-        data = json.loads(value)
-        profile = UserProfile.from_dict(data)
+        profile = _lire_valeur_profil(pref.value, allow_decrypt=allow_decrypt)
         # Auto-réparation du cache process : le préchargement au démarrage ne
         # déchiffre pas (allow_decrypt=False pour ne pas bloquer sur le
         # trousseau), donc un profil chiffré laissait le cache vide jusqu'à la
         # prochaine sauvegarde et les statuts de facturation mentaient.
-        set_cached_profile(profile)
+        if profile is not None:
+            set_cached_profile(profile)
         return profile
 
     except Exception as e:
         logger.error(f"Failed to load user profile: {e}")
+        if erreur_si_illisible:
+            raise ProfilIllisible from e
         return None
 
 
@@ -256,6 +263,8 @@ async def set_user_profile(
     session: AsyncSession,
     profile: UserProfile,
     embed_in_qdrant: bool = True,
+    *,
+    proteger_profil_existant: bool = False,
 ) -> UserProfile:
     """
     Save user profile to database and optionally embed in Qdrant.
@@ -264,6 +273,7 @@ async def set_user_profile(
         session: Database session
         profile: UserProfile to save
         embed_in_qdrant: Whether to create a searchable embedding
+        proteger_profil_existant: Refuser de remplacer une fiche illisible.
 
     Returns:
         The saved profile
@@ -279,6 +289,11 @@ async def set_user_profile(
             )
         )
         pref = result.scalar_one_or_none()
+        if pref is not None and proteger_profil_existant:
+            try:
+                _lire_valeur_profil(pref.value)
+            except Exception as e:
+                raise ProfilIllisible from e
 
         # Chiffrer le profil avant stockage (RGPD - données personnelles)
         value_json = json.dumps(profile.to_dict(), ensure_ascii=False)

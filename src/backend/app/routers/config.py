@@ -1062,9 +1062,12 @@ async def get_profile(session: AsyncSession = Depends(get_session)):
 
     Returns the configured user profile or null if not set.
     """
-    from app.services.user_profile import get_user_profile
+    from app.services.user_profile import ProfilIllisible, get_user_profile
 
-    profile = await get_user_profile(session)
+    try:
+        profile = await get_user_profile(session, erreur_si_illisible=True)
+    except ProfilIllisible as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
     if not profile:
         return None
@@ -1103,6 +1106,7 @@ async def set_profile(
     issue where the assistant might call the user by wrong names.
     """
     from app.services.user_profile import (
+        ProfilIllisible,
         UserProfile,
         set_cached_profile,
         set_user_profile,
@@ -1128,7 +1132,10 @@ async def set_profile(
         regime_tva=request.regime_tva,
     )
 
-    saved_profile = await set_user_profile(session, profile)
+    try:
+        saved_profile = await set_user_profile(session, profile, proteger_profil_existant=True)
+    except ProfilIllisible as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
     # Update cache for LLM service
     set_cached_profile(saved_profile)

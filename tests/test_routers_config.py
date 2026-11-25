@@ -53,6 +53,52 @@ class TestUserProfile:
         assert profile is None or isinstance(profile, dict)
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("valeur", ["", "{profil incomplet", "null", "[]"])
+    async def test_profil_illisible_ne_peut_pas_etre_remplace(self, client: AsyncClient, valeur):
+        from app.models.database import get_sync_connection
+        from app.models.entities import Preference
+        from app.services.user_profile import PROFILE_CATEGORY, PROFILE_KEY
+        from sqlalchemy import insert, select
+
+        critere = Preference.key == PROFILE_KEY
+        with get_sync_connection() as connexion:
+            connexion.execute(insert(Preference).values(key=PROFILE_KEY, value=valeur, category=PROFILE_CATEGORY))
+            connexion.commit()
+            avant = connexion.execute(select(Preference).where(critere)).one()
+
+        lecture = await client.get("/api/config/profile")
+        assert lecture.status_code == 503, lecture.text
+        assert lecture.json()["message"] == "Le profil n’a pas pu être lu. Réessaie."
+        ecriture = await client.post("/api/config/profile", json={"name": "Profil de remplacement"})
+        assert ecriture.status_code == 503, ecriture.text
+
+        with get_sync_connection() as connexion:
+            assert connexion.execute(select(Preference).where(critere)).one() == avant
+
+    @pytest.mark.asyncio
+    async def test_trousseau_indisponible_laisse_le_profil_relisible_apres_retour(self, client, monkeypatch):
+        from app.services import user_profile
+
+        donnees = {"name": "Personne de test", "company": "Entreprise témoin", "siren": "123456789"}
+        cree = await client.post("/api/config/profile", json=donnees)
+        assert cree.status_code == 200
+
+        def trousseau_indisponible(_valeur):
+            raise RuntimeError("Erreur fictive du trousseau")
+
+        with monkeypatch.context() as panne:
+            panne.setattr(user_profile, "decrypt_value", trousseau_indisponible)
+            lecture = await client.get("/api/config/profile")
+            assert lecture.status_code == 503
+            assert "fictive" not in lecture.text
+            ecriture = await client.post("/api/config/profile", json={"name": "Autre nom"})
+            assert ecriture.status_code == 503
+
+        retour = await client.get("/api/config/profile")
+        assert retour.status_code == 200
+        assert retour.json() == cree.json()
+
+    @pytest.mark.asyncio
     async def test_set_profile(self, client: AsyncClient):
         """US-ONBOARD-02: Configure user profile."""
         profile_data = {
