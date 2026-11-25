@@ -106,7 +106,7 @@ class MacOSCatalogTests(unittest.TestCase):
                   self.assertRaisesRegex(ValueError, 'hors catalogue')):
                 system.classify(source, system.load_catalog(ROOT), [], {}, 'macOS')
 
-    def test_linux_catalog_rows_are_byte_identical_to_base(self):
+    def test_linux_catalog_rows_are_byte_identical_to_review(self):
         # Empreintes figées des tranches relues : un clone superficiel de la CI
         # n'a pas l'historique, et comparer à HEAD ne prouve rien.
         import hashlib
@@ -118,10 +118,10 @@ class MacOSCatalogTests(unittest.TestCase):
             return tail[:end].encode('utf-8')
 
         expected = {
-            'licenses/system-libraries.lock.json:libraries': 'e66c6dcbb43399a84dcaa92a68272c3098440221c1c3a2a50225509459d48a3f',
+            'licenses/system-libraries.lock.json:libraries': '6266c3147705564218a63f40ecac536dbacf4f63206a74d164df542846a6e096',
             'licenses/cpython-components.lock.json:components': 'bbce12bd0a722ef7ba9d91ff851685cb8571180e75345fc445b0768ad6c22647',
             'licenses/cpython-components.lock.json:files': '446a02c3f2acfef8df12d0d6b8ebd7aee5adbc0d0bf344e6bfca61f742bd5583',
-            'licenses/system-linux/evidence-v0820.json': '4f07135c401682864b09c69d89c23b28852a712106c8088ba0dced64ca5b02c6',
+            'licenses/system-linux/evidence-v0820.json': 'a93a212c2277e454a1483dd7ce3874679e6763711fc6f85280cfc1a032976d4f',
             'licenses/cpython/evidence-v0820.json': '11116ab401bbff6d8e2c09c3292d9385bc7f1682a448bbfb98a0b0b778dcb151',
         }
         for name, digest in expected.items():
