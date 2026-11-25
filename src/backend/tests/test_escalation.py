@@ -32,21 +32,21 @@ class TestCostEstimation:
         assert data["output_tokens"] == 500
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(strict=True, reason="01/09 : le test attend EUR, l API repond USD. Meme famille que la facture en dollars etiquetee en euros. A trancher : le test ou l API.")
     async def test_get_token_prices(self, async_client: AsyncClient):
-        """Test getting token prices."""
+        """Les tarifs sont exprimés en USD et cohérents entre leurs deux unités."""
         response = await async_client.get("/api/escalation/prices")
         assert response.status_code == 200
 
         data = response.json()
         assert "prices" in data
         assert "currency" in data
-        assert data["currency"] == "EUR"
+        assert data["currency"] == "USD"
 
-        # Check some models have pricing
-        prices = data["prices"]
-        assert "claude-sonnet-4-6" in prices
-        assert "gpt-5.5" in prices
+        for modele in ("claude-sonnet-4-6", "gpt-5.5"):
+            prix = data["prices"][modele]
+            for sens in ("input", "output"):
+                assert prix[f"{sens}_per_1m"] > 0
+                assert prix[f"{sens}_per_1k"] == pytest.approx(prix[f"{sens}_per_1m"] / 1_000)
 
 
 class TestTokenLimits:
