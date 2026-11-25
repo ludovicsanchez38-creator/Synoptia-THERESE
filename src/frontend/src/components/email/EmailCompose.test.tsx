@@ -70,6 +70,41 @@ describe('EmailCompose - confirmation 0.40', () => {
     });
   });
 
+  it('B-1923 : le composeur garde l’envoi et le brouillon sans bouton Joindre', () => {
+    render(<EmailCompose />);
+
+    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Sauvegarder brouillon' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Joindre' })).not.toBeInTheDocument();
+  });
+
+  const compositions: Array<[string, Partial<ReturnType<typeof useEmailStore.getState>>]> = [
+    ['message vide', { draftRecipients: [], draftSubject: '', draftBody: '' }],
+    ['deux destinataires', { draftRecipients: ['contact@example.fr', 'equipe@example.fr'] }],
+    ['adresse en copie', { draftCc: ['copie@example.fr'] }],
+    ['adresse en copie cachée', { draftBcc: ['archive@example.fr'] }],
+    ['copie et copie cachée', { draftCc: ['copie@example.fr'], draftBcc: ['archive@example.fr'] }],
+    ['adresse de réponse', { draftReplyTo: ['reponse@example.fr'] }],
+    ['texte mis en forme', { draftIsHtml: true, draftBody: '<p>À bientôt</p>' }],
+    ['brouillon repris', { editingDraftId: 'brouillon-test' }],
+    ['texte rédigé avec l’assistant', { draftGenerationId: 'generation-fictive' }],
+    ['objet accentué', { draftSubject: 'Préparation du devis de février' }],
+  ];
+
+  it.each(compositions)('garde le composeur sans Joindre pour %s', (_nom, brouillon) => {
+    useEmailStore.setState({
+      draftReplyTo: [],
+      draftGenerationId: undefined,
+      editingDraftId: null,
+      ...brouillon,
+    });
+    render(<EmailCompose />);
+
+    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Sauvegarder brouillon' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Joindre' })).not.toBeInTheDocument();
+  });
+
   it('conserve l’envoi direct en mode classique', async () => {
     render(<EmailCompose />);
 

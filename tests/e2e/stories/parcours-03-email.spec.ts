@@ -110,3 +110,25 @@ test.describe('Parcours 03 - Email', () => {
     await expect(dialogue.getByText('Étape 2 sur 2')).toBeVisible({ timeout: 5000 });
   });
 });
+
+test('B-1923 : rédiger un e-mail sans bouton Joindre', async ({ page, request }) => {
+  await page.route('**/api/email/auth/status', route => route.fulfill({
+    json: {
+      connected: true,
+      accounts: [{ id: 'compte-factice', email: 'test@example.fr', provider: 'gmail' }],
+    },
+  }));
+  await page.route('**/api/email/labels?**', route => route.fulfill({ json: [] }));
+  await page.route('**/api/email/messages?**', route => route.fulfill({
+    json: { messages: [], resultSizeEstimate: 0 },
+  }));
+  await ouvrirLApplication(page, request);
+  await ouvrirLaSurface(page, 'email.open');
+
+  const panneau = page.getByTestId('email-panel');
+  await panneau.getByRole('button', { name: 'Nouveau', exact: true }).click();
+  await expect(panneau.getByRole('heading', { name: 'Nouveau message' })).toBeVisible();
+  await expect(panneau.getByRole('button', { name: 'Envoyer', exact: true })).toBeEnabled();
+  await expect(panneau.getByRole('button', { name: 'Sauvegarder brouillon' })).toBeEnabled();
+  await expect(panneau.getByRole('button', { name: 'Joindre', exact: true })).toHaveCount(0);
+});

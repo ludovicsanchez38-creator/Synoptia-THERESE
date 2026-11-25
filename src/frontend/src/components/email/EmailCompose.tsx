@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Send, X, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -347,11 +347,6 @@ export function EmailCompose({ draftId, sourceMessageId }: { draftId?: string; s
               Sauvegarder brouillon
             </Button>
           </div>
-
-          <Button variant="ghost" size="sm" disabled>
-            <Paperclip className="w-4 h-4 mr-2" />
-            Joindre
-          </Button>
         </div>
       </div>
     </div>
