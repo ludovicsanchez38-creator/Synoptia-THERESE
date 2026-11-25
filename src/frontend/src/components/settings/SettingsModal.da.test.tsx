@@ -15,6 +15,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsModal } from './SettingsModal';
+import type { LLMEffort } from '../../services/api/config';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 
 vi.mock('../../services/api', async (importOriginal) => ({
@@ -576,4 +577,32 @@ describe('changement de modèle : effort proposé', () => {
     await waitFor(() => expect(modelSelect).toHaveValue('gpt-6.1-sol'));
     await waitFor(() => expect(effortSelect).toHaveValue('auto'));
   });
+});
+
+it('retrouve Très élevé après un aller-retour par GPT-6.2', async () => {
+  const api = await import('../../services/api');
+  let model = 'gpt-6.1-sol';
+  let effort: LLMEffort = 'xhigh';
+  vi.mocked(api.getLLMConfig).mockImplementation(async () => ({
+    provider: 'openai', model, effort, available_models: [],
+  }) as never);
+  vi.mocked(api.setLLMConfig).mockImplementation(async (_provider, nextModel, nextEffort) => {
+    model = nextModel;
+    effort = nextEffort ?? effort;
+    return { provider: 'openai', model, effort, available_models: [] } as never;
+  });
+
+  await ouvrir('ai');
+  const selecteur = screen.getByLabelText('Modèle');
+  const niveau = screen.getByLabelText('Effort de raisonnement');
+  await waitFor(() => expect(niveau).toHaveValue('xhigh'));
+  fireEvent.change(selecteur, { target: { value: 'gpt-6.2-astra' } });
+  await waitFor(() => expect(selecteur).toHaveValue('gpt-6.2-astra'));
+  expect(niveau).toHaveValue('auto');
+  expect(niveau).toBeDisabled();
+
+  fireEvent.change(selecteur, { target: { value: 'gpt-6.1-sol' } });
+  await waitFor(() => expect(selecteur).toHaveValue('gpt-6.1-sol'));
+  await waitFor(() => expect(niveau).toHaveValue('xhigh'));
+  expect(niveau).toBeEnabled();
 });

@@ -24,7 +24,7 @@ import { AccessibilityTab } from './AccessibilityTab';
 import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
-import { effortXhighPropose } from '../../lib/effortOpenAI';
+import { effortOpenAIAutomatique, effortXhighPropose } from '../../lib/effortOpenAI';
 import { modeleParDefaut } from '../../lib/catalogueModeles';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
@@ -603,8 +603,12 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
     setOperationStatus('Enregistrement du modèle IA…');
     setRetryOperation(null);
     try {
-      const effort = (await api.getLLMConfig()).effort as LLMEffort | null;
-      const nouvelEffort = effort === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : effort ?? 'auto';
+      // Le moteur résout l’effort des GPT-6.2 en Auto tout en gardant la préférence.
+      let nouvelEffort: LLMEffort | undefined;
+      if (selectedProvider !== 'openai' || !effortOpenAIAutomatique(modelId)) {
+        const effort = (await api.getLLMConfig()).effort as LLMEffort | null;
+        nouvelEffort = effort === 'xhigh' && !effortXhighPropose(modelId) ? 'auto' : effort ?? 'auto';
+      }
       await api.setLLMConfig(selectedProvider, modelId, nouvelEffort);
       setSelectedModel(modelId);
       modelesParFournisseur.current[selectedProvider] = modelId;
