@@ -12,6 +12,8 @@ US-006 : Circuit breaker LLM avec bascule automatique
 
 import logging
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -47,6 +49,7 @@ class ProviderCircuit:
     total_failures: int = 0
     total_successes: int = 0
     last_state_change: float = field(default_factory=time.time)
+    sonde_active: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         """Sérialise l'état du circuit pour l'API."""
@@ -99,32 +102,39 @@ class CircuitBreakerManager:
         return self._circuits[provider]
 
     def is_available(self, provider: str) -> bool:
-        """Vérifie si un provider est disponible (circuit fermé ou half-open).
-
-        Returns:
-            True si le provider peut recevoir des requêtes.
-        """
+        """Indique si un appel peut partir, sans réserver la sonde."""
         circuit = self._get_circuit(provider)
-
+        if circuit.sonde_active:
+            return False
         if circuit.state == CircuitState.CLOSED:
             return True
+        return (
+            circuit.state == CircuitState.OPEN
+            and time.time() - circuit.last_failure_time >= RECOVERY_TIMEOUT
+        )
 
-        if circuit.state == CircuitState.OPEN:
-            # Vérifier si le timeout de récupération est écoulé
-            elapsed = time.time() - circuit.last_failure_time
-            if elapsed >= RECOVERY_TIMEOUT:
-                # Passer en half-open pour tester
-                self._transition(circuit, CircuitState.HALF_OPEN)
-                logger.info(
-                    "Circuit breaker %s: OPEN -> HALF_OPEN "
-                    "(après %.0fs, tentative de récupération)",
-                    provider, elapsed,
-                )
-                return True
-            return False
+    @contextmanager
+    def autoriser_requete(self, provider: str) -> Iterator[bool]:
+        """Réserve l’unique essai au départ de la requête et libère à sa sortie."""
+        if not self.is_available(provider):
+            yield False
+            return
+        circuit = self._get_circuit(provider)
+        if circuit.state == CircuitState.CLOSED:
+            yield True
+            return
 
-        # HALF_OPEN : on laisse passer UNE requête de test
-        return True
+        circuit.sonde_active = True
+        self._transition(circuit, CircuitState.HALF_OPEN)
+        logger.info("Circuit breaker %s: OPEN -> HALF_OPEN (tentative de récupération)", provider)
+        try:
+            yield True
+        finally:
+            circuit.sonde_active = False
+            # Sans verdict (annulation, par exemple), le délai déjà écoulé
+            # permet au prochain appel d’essayer à son tour.
+            if circuit.state == CircuitState.HALF_OPEN:
+                self._transition(circuit, CircuitState.OPEN)
 
     def record_success(self, provider: str) -> None:
         """Enregistre un succès pour un provider."""

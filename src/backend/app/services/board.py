@@ -9,7 +9,8 @@ import asyncio
 import json
 import logging
 import os
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager
 from typing import Any, AsyncGenerator
 from uuid import uuid4
 
@@ -24,6 +25,7 @@ from app.models.board import (
     BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
+from app.services.circuit_breaker import get_circuit_breaker
 from app.services.error_handler import ErreurPourEcran
 from app.services.llm import (
     LLMProvider,
@@ -45,6 +47,25 @@ _RECHERCHE_WEB_COUPEE = (
     "[Recherche web coupée par l'utilisateur : aucune source externe "
     "n'a été consultée. Paramètres > Services pour la réactiver.]"
 )
+
+
+def _fournisseur_board_indisponible(fournisseur: str) -> ErreurPourEcran:
+    return ErreurPourEcran(
+        f"Le fournisseur {fournisseur} du Board est temporairement indisponible. "
+        "Réessaie plus tard ou choisis explicitement un autre conseiller."
+    )
+
+
+@contextmanager
+def _autoriser_requete_board(fournisseur: str) -> Iterator[None]:
+    if fournisseur == LLMProvider.OLLAMA.value:
+        yield
+        return
+    with get_circuit_breaker().autoriser_requete(fournisseur) as autorisee:
+        if not autorisee:
+            raise _fournisseur_board_indisponible(fournisseur)
+        yield
+
 
 # ============================================================
 # Sonde de dérive du catalogue (lot A2, 0.48)
@@ -431,13 +452,8 @@ class BoardService:
                 actual_provider = default_llm.config.provider.value
                 if preferred_provider:
                     # Aucun autre destinataire ne remplace le conseiller choisi.
-                    from app.services.circuit_breaker import get_circuit_breaker
-
                     if not get_circuit_breaker().is_available(preferred_provider):
-                        raise ErreurPourEcran(
-                            f"Le fournisseur {preferred_provider} du Board est temporairement indisponible. "
-                            "Réessaie plus tard ou choisis explicitement un autre conseiller."
-                        )
+                        raise _fournisseur_board_indisponible(preferred_provider)
                     else:
                         # 0.48 : chaque conseiller cloud reçoit le FRONTIER de
                         # son fournisseur, l'effort max et le max_tokens
@@ -683,16 +699,17 @@ class BoardService:
                     # l'UI montre tous les conseillers « en réflexion » pendant
                     # que les appels s'étalent.
                     async with provider_semaphores[actual_provider]:
-                        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
-                            full_content += chunk
-                            await chunk_queue.put(BoardDeliberationChunk(
-                                type="advisor_chunk",
-                                role=role,
-                                name=config["name"],
-                                emoji=config["emoji"],
-                                provider=actual_provider,
-                                content=chunk,
-                            ))
+                        with _autoriser_requete_board(actual_provider):
+                            async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
+                                full_content += chunk
+                                await chunk_queue.put(BoardDeliberationChunk(
+                                    type="advisor_chunk",
+                                    role=role,
+                                    name=config["name"],
+                                    emoji=config["emoji"],
+                                    provider=actual_provider,
+                                    content=chunk,
+                                ))
                 except ErreurPourEcran as e:
                     # Passe 6 (F2) : ce message est DÉJÀ écrit pour l'écran
                     # (frontière posée à la source des providers) - le
@@ -966,8 +983,9 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         # Generate synthesis
         full_response = ""
         usage_sink: dict = {}
-        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
-            full_response += chunk
+        with _autoriser_requete_board(llm_service.config.provider.value):
+            async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
+                full_response += chunk
         self._last_synthesis_usage = self._track_usage(
             llm_service,
             synthesis_prompt,
