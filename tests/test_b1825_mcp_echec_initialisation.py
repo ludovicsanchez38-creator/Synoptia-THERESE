@@ -309,3 +309,41 @@ async def test_redemarrage_et_second_arret_attendent_la_fin_du_processus(tmp_pat
         fin_processus.set()
         await asyncio.gather(arret, *autres, return_exceptions=True)
         await service.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_arret_survit_a_l_annulation_de_la_premiere_requete(tmp_path):
+    service = MCPService(config_path=tmp_path / "serveurs.json")
+    serveur = MCPServer(id="test", name="Témoin", command="python", status=MCPServerStatus.RUNNING)
+    service.servers[serveur.id] = serveur
+    attente_commencee = asyncio.Event()
+    fin_processus = asyncio.Event()
+    attente_annulee = asyncio.Event()
+
+    async def attendre_fin():
+        attente_commencee.set()
+        try:
+            await fin_processus.wait()
+        except asyncio.CancelledError:
+            attente_annulee.set()
+            raise
+        return 0
+
+    processus = SimpleNamespace(terminate=MagicMock(), kill=MagicMock(), wait=attendre_fin)
+    service._processes[serveur.id] = processus
+    premiere = asyncio.create_task(service.stop_server(serveur.id))
+    try:
+        await asyncio.wait_for(attente_commencee.wait(), timeout=2)
+        premiere.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await premiere
+        assert not attente_annulee.is_set(), "l’annulation de la requête annule le nettoyage partagé"
+
+        fin_processus.set()
+        assert await service.stop_server(serveur.id)
+        assert serveur.status == MCPServerStatus.STOPPED
+        processus.terminate.assert_called_once()
+    finally:
+        fin_processus.set()
+        await asyncio.gather(premiere, return_exceptions=True)
+        await service.shutdown()
