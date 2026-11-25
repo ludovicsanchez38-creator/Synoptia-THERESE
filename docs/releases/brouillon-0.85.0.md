@@ -1,6 +1,13 @@
 # THÉRÈSE 0.85.0 · Brouillon de la bêta
 
-Candidate locale sur `beta/c5-20261125`, à partir de la candidate du cycle 4. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md)
+Candidate locale sur `beta/c6-20261125`, à partir de `0ddefd1a3`. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md) · [Cycle 6](../qualite/boucle-beta-c6.md)
+
+## Mise en route et usage
+
+- Dès l’accueil, THÉRÈSE propose un premier geste utile, comme préparer une relance de devis. Tu peux créer ton profil, importer un profil existant ou continuer sans dossier.
+- Si ton service d’IA est prêt, tu vois tout de suite son nom et le modèle choisi. La procédure de configuration se déplie à la demande. Avant de donner ton accord à Claude, tu peux lire ce qui accompagne un premier « Bonjour ».
+- **Paramètres > Service d’IA** affiche le coût mensuel estimé en dollars et le détail du jour et du mois. Le compteur applique le prix réduit des relectures du cache Anthropic et compte les appels annexes dont l’usage est reçu. Les mesures réelles sur Sonnet 5.5 et Fable 5.2 concordent au millième de dollar.
+- Un filtre de la Mémoire précise où les fiches restent disponibles. Dans Devis et factures, la ligne du brouillon indique près du bouton PDF les mentions émetteur ou destinataire à compléter.
 
 ## Nouveautés
 
@@ -15,8 +22,9 @@ Candidate locale sur `beta/c5-20261125`, à partir de la candidate du cycle 4. L
 - Un arrêt volontaire pendant le lancement d’un connecteur garde l’état arrêté et libère ses processus de préparation.
 - La mise en route conserve les champs déjà saisis et les données légales du profil. Elle propose de relire le profil après un échec de chargement. Le moteur distingue ce cas d’un profil absent et protège la fiche illisible d’un remplacement. La vérification des clés reprend après l’écriture dans le coffre.
 - Un connecteur actif termine son arrêt avant de redémarrer.
+- Avec l’ouverture directe sur le chat activée, un lien vers Mémoire ouvre la vue demandée.
 - Le Board protège la persistance d’une délibération une fois le suivi installé. Le test de déconnexion P24 passe 50 fois sur 50 à quatre processus.
-- Le Board laisse partir un seul appel de récupération à la fois auprès du fournisseur concerné.
+- Le Board laisse partir un seul appel de récupération à la fois auprès du fournisseur concerné. Quand une clé de conseiller manque, le message renvoie vers **Paramètres > Service d’IA**.
 - Passer par GPT-6.2 conserve l’effort enregistré. Le plafond en mode réflexion de Qwen4-Max et le niveau Très élevé de DeepSeek suivent leurs contrats.
 - DeepSeek conserve les outils et l’historique quand une réponse précédente ne contient plus son raisonnement. Le chat signale le passage sans réflexion pour cet échange. [Contrat DeepSeek](https://api-docs.deepseek.com/guides/thinking_mode/)
 - Le guide d’installation dirige les testeurs de la bêta vers les téléchargements. L’aide embarque le guide des testeurs 0.85, avec les écrans de démarrage, À propos et Synthetic. [Source du guide](../USER_GUIDE_ALPHA.md)
@@ -25,11 +33,12 @@ Candidate locale sur `beta/c5-20261125`, à partir de la candidate du cycle 4. L
 
 ## Points à vérifier avant diffusion
 
-- Produire le PDF 0.85 à partir de la source du guide. Le canal de mise à jour des installations existantes utilise `/therese/alpha/latest.json`.
+- Produire le PDF 0.85 à partir de la source de novembre 2026. Le canal de mise à jour des installations existantes utilise `/therese/alpha/latest.json`.
 - Les PDF de facturation demandent un dossier où les liens physiques sont possibles. Essayer le choix du dossier et la génération PDF sur les trois systèmes, avec un volume interne et un volume externe incompatible. La reprise durable de l’anonymisation est au stade du design.
 - Avec les comptes de Ludo, vérifier Synthetic, DeepSeek au deuxième message avec outil, Perplexity et Infomaniak. Le banc Linux a contrôlé les parcours Synthetic et DeepSeek avec des transports simulés.
-- Vérifier les builds Tauri, les signatures, l’installation native et la mise à jour de la 0.84 à la 0.85.
-- Rejouer le Board cloud jusqu’à la synthèse avec les comptes des conseillers. Le banc Anthropic a accepté l’appel de l’Analyste et atteint son délai de recette avant la fin de l’avis.
+- Vérifier les builds Tauri, l’installation native, le trousseau, l’enregistrement des fichiers Office et la mise à jour de la 0.84 à la 0.85.
+- L’application macOS attend sa signature Apple. Ludo a décidé de diffuser la bêta pendant cette attente. Le guide explique comment ouvrir le téléchargement officiel si Gatekeeper le bloque.
+- Rejouer le Board cloud avec les cinq comptes des conseillers. Sur le banc Anthropic, l’avis de l’Analyste et la synthèse sont terminés et consultables dans l’historique. Une délibération à cinq signale les comptes indisponibles avant de contacter les services.
 
 ## Carte proposée
 
@@ -37,7 +46,7 @@ Candidate locale sur `beta/c5-20261125`, à partir de la candidate du cycle 4. L
 - Synthetic rejoint les services d’IA. La connexion réelle reste à essayer.
 - THÉRÈSE s’affiche en bêta, avec le lien de téléchargement mis à jour.
 - À propos reconnaît les numéros publiés sur le canal bêta.
-- La mise en route conserve mieux les informations que tu viens de saisir.
+- La mise en route montre l’IA utilisable, propose une relance comme premier geste et te permet de continuer sans dossier.
 - Le chat peut finir sa réponse quand une recherche suivante ne trouve rien.
-- Le guide 0.85 se lit directement dans l’aide. Pour les PDF de devis et de factures, THÉRÈSE peut te prévenir au choix du dossier.
-- Pour Anthropic, le compteur prend en compte l’économie du cache et le coût de l’extraction automatique.
+- Le guide 0.85 se lit dans l’aide. Il indique le geste d’ouverture sur macOS en attendant la signature Apple.
+- Les réglages standard affichent le coût estimé en dollars, avec le prix des relectures du cache Anthropic.
