@@ -1,6 +1,6 @@
 # THÉRÈSE 0.85.0 · Brouillon de la bêta
 
-Candidate locale sur `beta/c4-20261125`, à partir de la tête retenue au cycle 3. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md)
+Candidate locale sur `beta/c5-20261125`, à partir de la candidate du cycle 4. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md)
 
 ## Nouveautés
 
@@ -11,6 +11,7 @@ Candidate locale sur `beta/c4-20261125`, à partir de la tête retenue au cycle 
 ## Réparations
 
 - Le chat peut terminer la synthèse lorsqu’une première recherche utile est suivie d’une recherche vide.
+- Les coûts Anthropic tiennent compte du prix de lecture et d’écriture du cache. Le total des réglages inclut l’extraction automatique du chat quand le fournisseur en renvoie l’usage.
 - Un arrêt volontaire pendant le lancement d’un connecteur garde l’état arrêté et libère ses processus de préparation.
 - La mise en route conserve les champs déjà saisis et les données légales du profil. Elle propose de relire le profil après un échec de chargement. Le moteur distingue ce cas d’un profil absent et protège la fiche illisible d’un remplacement. La vérification des clés reprend après l’écriture dans le coffre.
 - Un connecteur actif termine son arrêt avant de redémarrer.
@@ -28,6 +29,7 @@ Candidate locale sur `beta/c4-20261125`, à partir de la tête retenue au cycle 
 - Les PDF de facturation demandent un dossier où les liens physiques sont possibles. Essayer le choix du dossier et la génération PDF sur les trois systèmes, avec un volume interne et un volume externe incompatible. La reprise durable de l’anonymisation est au stade du design.
 - Avec les comptes de Ludo, vérifier Synthetic, DeepSeek au deuxième message avec outil, Perplexity et Infomaniak. Le banc Linux a contrôlé les parcours Synthetic et DeepSeek avec des transports simulés.
 - Vérifier les builds Tauri, les signatures, l’installation native et la mise à jour de la 0.84 à la 0.85.
+- Rejouer le Board cloud jusqu’à la synthèse avec les comptes des conseillers. Le banc Anthropic a accepté l’appel de l’Analyste et atteint son délai de recette avant la fin de l’avis.
 
 ## Carte proposée
 
@@ -38,3 +40,4 @@ Candidate locale sur `beta/c4-20261125`, à partir de la tête retenue au cycle 
 - La mise en route conserve mieux les informations que tu viens de saisir.
 - Le chat peut finir sa réponse quand une recherche suivante ne trouve rien.
 - Le guide 0.85 se lit directement dans l’aide. Pour les PDF de devis et de factures, THÉRÈSE peut te prévenir au choix du dossier.
+- Pour Anthropic, le compteur prend en compte l’économie du cache et le coût de l’extraction automatique.
