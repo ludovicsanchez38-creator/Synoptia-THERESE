@@ -3,6 +3,8 @@ THERESE v2 - Images Router Tests
 
 Tests for US-IMG-01 to US-IMG-05.
 """
+from unittest.mock import AsyncMock
+
 import pytest
 from httpx import AsyncClient
 
@@ -19,6 +21,32 @@ _IMAGE_ENV_KEYS = (
 def _no_image_api_keys(monkeypatch):
     for key in _IMAGE_ENV_KEYS:
         monkeypatch.delenv(key, raising=False)
+
+
+@pytest.fixture
+def adaptateurs_images_simules(monkeypatch, tmp_path):
+    from app.services.image_generator import GeneratedImage, ImageGeneratorService, ImageProvider
+
+    def adaptateur(fournisseur):
+        return AsyncMock(return_value=GeneratedImage(
+            id="image-test",
+            provider=fournisseur.value,
+            file_path=tmp_path / "image-test.png",
+            file_name="image-test.png",
+            file_size=42,
+            mime_type="image/png",
+            created_at="2026-11-25T00:00:00Z",
+            prompt="Image de contrôle",
+        ))
+
+    openai = adaptateur(ImageProvider.OPENAI)
+    gemini = adaptateur(ImageProvider.GEMINI)
+    monkeypatch.setattr(ImageGeneratorService, "_generate_openai", openai)
+    monkeypatch.setattr(ImageGeneratorService, "_generate_gemini", gemini)
+    monkeypatch.setattr(ImageGeneratorService, "_generate_fal", AsyncMock(
+        side_effect=AssertionError("Un adaptateur imprévu a été choisi."),
+    ))
+    return openai, gemini
 
 
 class TestImageGeneration:
@@ -64,29 +92,48 @@ class TestImageReference:
 class TestImageProviders:
     """Tests for US-IMG-03: Provider selection."""
 
-    @pytest.mark.skip(reason="Déclenche une génération d'image réelle (appel externe non mocké) -> hang/timeout en CI. À remplacer par un mock du service image_generator.")
     @pytest.mark.asyncio
-    async def test_select_openai_provider(self, client: AsyncClient):
-        """Test selecting OpenAI (GPT Image 2) provider."""
+    async def test_select_openai_provider(self, client: AsyncClient, adaptateurs_images_simules):
+        from app.services.consentements import enregistrer_accord
+        from app.services.image_generator import ImageConfig, ImageProvider
+
+        openai, gemini = adaptateurs_images_simules
+        enregistrer_accord("images", "gpt-image-2", True, "3", [])
         response = await client.post("/api/images/generate", json={
-            "prompt": "Test image",
+            "prompt": "Image de contrôle",
             "provider": "gpt-image-2",
-            "size": "1024x1024",
+            "size": "1536x1024",
         })
 
-        # Will fail without key, but validates request structure
-        assert response.status_code in [200, 400, 422, 503]
+        assert response.status_code == 200, response.text
+        assert response.json()["provider"] == "gpt-image-2"
+        assert response.json()["download_url"] == "/api/images/download/image-test"
+        openai.assert_awaited_once_with(
+            "Image de contrôle", ImageConfig(provider=ImageProvider.OPENAI, size="1536x1024"), None,
+        )
+        gemini.assert_not_awaited()
 
-    @pytest.mark.skip(reason="Déclenche une génération d'image réelle (appel externe non mocké) -> hang/timeout en CI. À remplacer par un mock du service image_generator.")
     @pytest.mark.asyncio
-    async def test_select_gemini_provider(self, client: AsyncClient):
-        """Test selecting Gemini (Nano Banana Pro) provider."""
+    async def test_select_gemini_provider(self, client: AsyncClient, adaptateurs_images_simules):
+        from app.services.consentements import enregistrer_accord
+        from app.services.image_generator import ImageConfig, ImageProvider
+
+        openai, gemini = adaptateurs_images_simules
+        enregistrer_accord("images", "nanobanan-pro", True, "3", [])
         response = await client.post("/api/images/generate", json={
-            "prompt": "Test image",
+            "prompt": "Image de contrôle",
             "provider": "nanobanan-pro",
+            "aspect_ratio": "16:9",
+            "image_size": "4K",
         })
 
-        assert response.status_code in [200, 400, 422, 503]
+        assert response.status_code == 200, response.text
+        assert response.json()["provider"] == "nanobanan-pro"
+        assert response.json()["mime_type"] == "image/png"
+        gemini.assert_awaited_once_with(
+            "Image de contrôle", ImageConfig(provider=ImageProvider.GEMINI, aspect_ratio="16:9", image_size="4K"), None,
+        )
+        openai.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_invalid_provider(self, client: AsyncClient):
