@@ -138,17 +138,18 @@ class TestLLMBehavior:
     """Tests for US-PERS-04: LLM behavior customization."""
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(strict=True, reason="01/09 : attend un champ language que la reponse ne porte plus. Vraisemblablement un test perime.")
     async def test_get_llm_behavior_defaults(self, async_client: AsyncClient):
-        """Test getting default LLM behavior."""
+        """La route expose les valeurs par défaut du comportement encore réglable."""
         response = await async_client.get("/api/personalisation/llm-behavior")
         assert response.status_code == 200
 
         data = response.json()
-        assert "custom_system_prompt" in data
-        assert "response_style" in data
-        assert "language" in data
+        assert data["custom_system_prompt"] == ""
+        assert data["response_style"] == "detailed"
+        assert "language" not in data
         assert data["use_custom_system_prompt"] is False
+        assert data["include_memory_context"] is True
+        assert data["max_history_messages"] == 50
 
     @pytest.mark.asyncio
     async def test_set_llm_behavior(self, async_client: AsyncClient):
