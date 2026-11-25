@@ -30,6 +30,7 @@ vi.mock('../../services/api', async (importOriginal) => ({
   }),
   setLLMConfig: vi.fn().mockResolvedValue({}),
   getPreferences: vi.fn().mockResolvedValue({}),
+  getEscalationStatus: vi.fn(),
   getStats: vi.fn().mockResolvedValue(null),
   getProfile: vi.fn().mockResolvedValue(null),
   setWorkingDirectory: vi.fn(),
@@ -632,4 +633,30 @@ it('B-2062 : Paramètres avertit à côté du dossier sélectionné et laisse le
   fireEvent.click(parcourir);
   await screen.findByText('/Users/camille/Documents/THÉRÈSE');
   expect(alerte).not.toBeInTheDocument();
+});
+
+it('P-004 : montre le total mensuel et son détail sans passer en mode Contributeur', async () => {
+  const { getEscalationStatus } = await import('../../services/api');
+  vi.mocked(getEscalationStatus).mockResolvedValueOnce({
+    daily_usage: { date: '2026-11-25', input_tokens: 310, output_tokens: 95, total_tokens: 405, cost_eur: 0.0123,
+      input_limit: 2000, output_limit: 1000, input_usage_pct: 15.5, output_usage_pct: 9.5 },
+    monthly_usage: { month: '2026-11', input_tokens: 3000, output_tokens: 1200, total_tokens: 4200, cost_eur: 0.1234,
+      budget_eur: 10, budget_usage_pct: 1.234 },
+    limits: { max_input_tokens: 2000, max_output_tokens: 1000, daily_input_limit: 2000, daily_output_limit: 1000,
+      monthly_budget_eur: 10, warn_at_percentage: 80 },
+    recent_history_count: 4,
+  });
+  usePersonalisationStore.setState({ uxMode: 'standard' });
+  await ouvrir('ai');
+
+  const consommation = await screen.findByRole('region', { name: 'Consommation des services d’IA' });
+  expect(await within(consommation).findByText(/Coût estimé ce mois/)).toHaveTextContent('0.1234 $');
+  expect(screen.queryByTestId('settings-tab-advanced')).toBeNull();
+  const commande = within(consommation).getByText('Voir le détail de la consommation');
+  expect(commande.closest('details')).not.toHaveAttribute('open');
+  fireEvent.click(commande);
+  expect(commande.closest('details')).toHaveAttribute('open');
+  expect(consommation).toHaveTextContent('0.0123 $');
+  expect(consommation).toHaveTextContent(/4\s200/);
+  expect(screen.queryByRole('spinbutton')).toBeNull();
 });

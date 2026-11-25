@@ -1,14 +1,15 @@
 // Onglet Limites & Consommation - Paramètres THÉRÈSE
 // Usage quotidien/mensuel, limites configurables, budget (US-ESC-01 à US-ESC-05)
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formaterCout, UNITE_COUT } from '../../lib/coutAffiche';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
 
-export function LimitsTab() {
+export function LimitsTab({ lectureSeule = false }: { lectureSeule?: boolean } = {}) {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<api.EscalationStatus | null>(null);
   const [limits, setLimits] = useState<api.TokenLimits | null>(null);
@@ -16,27 +17,27 @@ export function LimitsTab() {
   /** #187 : une panne de lecture ou d'enregistrement se dit, elle ne se logue pas seulement. */
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [statusData, limitsData] = await Promise.all([
         api.getEscalationStatus(),
-        api.getTokenLimits(),
+        lectureSeule ? null : api.getTokenLimits(),
       ]);
       setStatus(statusData);
       setLimits(limitsData);
     } catch (err) {
       console.error('Échec du chargement des données de limites:', err);
-      setError('Les limites n’ont pas pu être lues.');
+      setError(lectureSeule ? 'La consommation n’a pas pu être lue.' : 'Les limites n’ont pas pu être lues.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [lectureSeule]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   async function handleSaveLimits() {
     if (!limits) return;
@@ -51,6 +52,36 @@ export function LimitsTab() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (lectureSeule) {
+    const mois = status?.monthly_usage;
+    const jour = status?.daily_usage;
+    return (
+      <Carte as="section" aria-label="Consommation des services d’IA" className="mb-4 space-y-2 p-4 text-sm">
+        {loading && <p role="status" className="text-text-muted">Lecture de la consommation…</p>}
+        {error && <div className="flex flex-wrap items-center gap-2">
+          <p role="status">{error}</p>
+          <Button variant="ghost" size="sm" onClick={() => void loadData()}>Réessayer</Button>
+        </div>}
+        {!loading && !error && mois && <>
+          <p>Coût estimé ce mois <strong className="ml-1 tabular-nums">{formaterCout(mois.cost_eur, 4)}</strong></p>
+          <details>
+            <summary className="min-h-9 cursor-pointer py-2 text-accent-cyan-ink underline">Voir le détail de la consommation</summary>
+            <dl className="space-y-1 text-text-muted">
+              {jour && <div className="grid grid-cols-[1fr_auto] gap-3">
+                <dt>Aujourd’hui</dt>
+                <dd>{jour.total_tokens.toLocaleString('fr-FR')} jetons · {formaterCout(jour.cost_eur, 4)}</dd>
+              </div>}
+              <div className="grid grid-cols-[1fr_auto] gap-3">
+                <dt>Ce mois</dt>
+                <dd>{mois.total_tokens.toLocaleString('fr-FR')} jetons · {formaterCout(mois.cost_eur, 4)}</dd>
+              </div>
+            </dl>
+          </details>
+        </>}
+      </Carte>
+    );
   }
 
   if (loading) {

@@ -118,6 +118,18 @@ test.describe('Parcours 05 - Settings', () => {
     await ouvrirLOnglet(page, 'ai');
   });
 
+  test('P-004 : consulter la consommation IA en mode standard', async ({ page }) => {
+    await ouvrirLOnglet(page, 'ai');
+
+    const consommation = page.getByRole('region', { name: 'Consommation des services d’IA' });
+    await expect(consommation.getByText(/Coût estimé ce mois/)).toHaveText(/\d+\.\d{4} \$/);
+    const détails = consommation.getByText('Voir le détail de la consommation');
+    await expect(consommation.getByText('Aujourd’hui', { exact: true })).toBeHidden();
+    await détails.click();
+    await expect(consommation.getByText('Aujourd’hui', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('ux-mode-toggle')).not.toBeChecked();
+  });
+
   test("US-603.HP : cliquer sur l'onglet Services affiche le contenu Services", async ({ page }) => {
     await ouvrirLOnglet(page, 'services');
   });

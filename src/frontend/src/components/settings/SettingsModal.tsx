@@ -19,6 +19,7 @@ import { LLMTab, PROVIDERS, IMAGE_PROVIDERS } from './LLMTab';
 import { ServicesTab } from './ServicesTab';
 import { ToolsPanel } from './ToolsPanel';
 import { AdvancedTab } from './AdvancedTab';
+import { LimitsTab } from './LimitsTab';
 import { AboutTab } from './AboutTab';
 import { AccessibilityTab } from './AccessibilityTab';
 import { AgentsTab } from './AgentsTab';
@@ -783,29 +784,32 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         );
       case 'ai':
         return (
-          <LLMTab
-            selectedProvider={selectedProvider}
-            selectedModel={selectedModel}
-            apiKeys={apiKeys}
-            corruptedKeys={corruptedKeys}
-            apiKeyInput={apiKeyInput}
-            setApiKeyInput={setApiKeyInput}
-            showApiKey={clesVisibles.llm ?? false}
-            setShowApiKey={(v) => setClesVisibles((c) => ({ ...c, llm: v }))}
-            ollamaStatus={ollamaStatus}
-            ollamaModels={ollamaModels}
-            systemResources={systemResources}
-            saving={saving}
-            saved={saved}
-            error={error}
-            cleInvalide={cleInvalide}
-            setError={setError}
-            onSelectProvider={handleSelectProvider}
-            onSelectModel={handleSelectModel}
-            onSaveApiKey={handleSaveApiKey}
-            onRetestOllama={retestOllama}
-            retestingOllama={retestingOllama}
-          />
+          <>
+            {!isContributeur && <LimitsTab lectureSeule />}
+            <LLMTab
+              selectedProvider={selectedProvider}
+              selectedModel={selectedModel}
+              apiKeys={apiKeys}
+              corruptedKeys={corruptedKeys}
+              apiKeyInput={apiKeyInput}
+              setApiKeyInput={setApiKeyInput}
+              showApiKey={clesVisibles.llm ?? false}
+              setShowApiKey={(v) => setClesVisibles((c) => ({ ...c, llm: v }))}
+              ollamaStatus={ollamaStatus}
+              ollamaModels={ollamaModels}
+              systemResources={systemResources}
+              saving={saving}
+              saved={saved}
+              error={error}
+              cleInvalide={cleInvalide}
+              setError={setError}
+              onSelectProvider={handleSelectProvider}
+              onSelectModel={handleSelectModel}
+              onSaveApiKey={handleSaveApiKey}
+              onRetestOllama={retestOllama}
+              retestingOllama={retestingOllama}
+            />
+          </>
         );
       case 'services':
         return (
