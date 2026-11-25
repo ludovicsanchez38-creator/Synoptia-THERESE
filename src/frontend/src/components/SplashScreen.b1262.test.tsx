@@ -200,3 +200,17 @@ describe('Audit bêta : la commande de secours suit le système', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('xattr -cr /Applications/THERESE.app');
   });
 });
+
+it.each(['attente', 'erreur', 'arrêt'])('affiche la version bêta en état %s', async (etat) => {
+  harness.getVersion.mockResolvedValueOnce('0.85.0');
+  await monter();
+  if (etat === 'erreur') {
+    act(() => harness.handlers['sidecar-error']({ payload: 'Erreur de contrôle' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Erreur de contrôle');
+  }
+  if (etat === 'arrêt') {
+    act(() => harness.handlers['sidecar-status']({ payload: { state: 'failed', attempt: 3 } }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/s’est arrêté au démarrage/);
+  }
+  expect(await screen.findByText('v0.85.0-beta')).toBeInTheDocument();
+});
