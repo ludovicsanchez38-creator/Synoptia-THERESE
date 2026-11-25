@@ -1,10 +1,8 @@
 # Protocole de test - Persona A2 : Marc Lefèvre, consultant RH
 
-> **Recette de la bêta 0.85, 25/11/2026.** Le banc navigateur utilise un moteur de test sur `127.0.0.1:17394` et une base jetable. Les étapes natives demandent une installation de test sur le système visé. Les écrans et les actions décrits ci-dessous suivent la recette du cycle 6.
-
 > Version : 1.0 | Date : 2026-03-27
 > App : THERESE Desktop (Tauri 2.0, React, Python FastAPI)
-> URL dev : http://localhost:1420 | Moteur du banc : http://127.0.0.1:17394
+> URL dev : http://localhost:1420 | Backend : http://localhost:17293
 > Pré-requis : `make dev` lancé, backend healthy, onboarding déjà complété, clé API OpenAI configurée
 
 ## Profil persona
@@ -36,36 +34,42 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 1 : Retrouver l’accueil Ma journée
+### Étape 1 : Lancer l'app - Dashboard "Ma journée" visible
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Pré-conditions** :
-- Mise en route validée sur le moteur de recette
-- Compte Anthropic disponible pour le chat
+- Onboarding déjà complété (localStorage flag présent)
+- Clé API OpenAI configurée et sauvegardée
 - Base SQLite existante (pas vierge)
 
 **Actions Chrome MCP** :
-1. Ouvre l’application avec le profil Marc déjà configuré.
-2. Lis le résumé affiché avant d’aller au chat.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `navigate` -> `http://localhost:1420`
+2. `wait_for` -> `[data-testid="app-main"]` visible (max 10s)
+3. `screenshot` -> `/tmp/therese-tests/A2-01_dashboard.png`
+4. `javascript_tool` -> vérifier que l'onboarding wizard n'est PAS affiché (pas de `[data-testid="onboarding-wizard"]`)
+5. `javascript_tool` -> vérifier la présence d'un message d'accueil contenant "Bonjour" ou "Bonsoir" (selon l'heure)
 
-**Résultat attendu** : L’accueil s’ouvre sans parcours de configuration. Il affiche le nom du profil, la date et un résumé. Le thème suit le réglage d’affichage du banc.
+**Résultat attendu** : L'app se lance directement sur le dashboard "Ma journée" (pas d'onboarding). Un message d'accueil contextuel ("Bonjour Marc" ou "Bonsoir Marc") est visible. Le dashboard affiche les compteurs : RDV du jour, tâches urgentes, factures en retard. L'interface est en dark mode cohérent.
+**États testés** : loaded
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-01_dashboard.png`
 
 ---
 
-### Étape 2 : Lire le résumé du jour
+### Étape 2 : Vérifier le dashboard - date du jour, compteurs, bouton chat
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. Lis la date, les actions proposées et le brief selon les données disponibles.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `javascript_tool` -> vérifier que la date du jour "27 mars 2026" (ou format FR) est affichée quelque part dans le dashboard
+2. `javascript_tool` -> vérifier la présence de compteurs (tâches, RDV, factures) - éléments `.counter`, `.stat`, `.badge` ou équivalent
+3. `find` -> bouton ou lien "Passer au chat" ou "Commencer" ou accès direct au chat
+4. `screenshot` -> `/tmp/therese-tests/A2-02_dashboard_details.png`
 
-**Résultat attendu** : Les entrées utiles sont lisibles. Les données indisponibles sont signalées et les compteurs dépendent de l’état du jour.
+**Résultat attendu** : Le dashboard affiche la date du jour, des compteurs (même à zéro) pour les tâches, RDV et factures. Un bouton ou lien permet de basculer rapidement vers le chat. L'interface est lisible pour Marc (55 ans, pas de texte trop petit).
+**États testés** : loaded, empty (compteurs à zéro si DB fraîche)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-02_dashboard_details.png`
 
 ---
@@ -231,16 +235,22 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 11 : Filtrer les conversations par leur nom
+### Étape 11 : Rechercher "Durand" dans la sidebar
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. Dans Conversations, cherche « Durand » après l’étape de renommage.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> `[data-testid="sidebar-search-input"]`
+2. `click` -> `[data-testid="sidebar-search-input"]`
+3. `type` -> "Durand"
+4. `wait_for` -> filtrage de la liste (max 2s)
+5. `screenshot` -> `/tmp/therese-tests/A2-11_sidebar_search_durand.png`
+6. `javascript_tool` -> vérifier que la liste filtrée contient au moins la conversation avec "Durand"
+7. `javascript_tool` -> `document.querySelectorAll('[data-testid="sidebar-conversation-item"]').length >= 1`
 
-**Résultat attendu** : Les conversations dont le titre contient Durand s’affichent, y compris le compte rendu nommé « Compte rendu Société Durand ».
+**Résultat attendu** : La recherche "Durand" filtre les conversations et affiche celle contenant ce mot (la relance email). La conversation "compte-rendu RH" n'apparaît pas (ne contient pas "Durand"). Le filtre est insensible à la casse.
+**États testés** : filled (résultats filtrés)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-11_sidebar_search_durand.png`
 
 ---
@@ -249,16 +259,18 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 12 : Ouvrir Pipeline
+### Étape 12 : Ouvrir le CRM
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. Ouvre le Pipeline depuis l’espace de travail.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `navigate` -> `http://localhost:1420/?panel=crm`
+2. `wait_for` -> `[data-testid="crm-panel"]` visible (max 5s)
+3. `screenshot` -> `/tmp/therese-tests/A2-12_crm_panel.png`
 
-**Résultat attendu** : Le Pipeline s’ouvre. Les étapes visibles sont Contact, Découverte, Proposition, Signature, Livraison, Actif, Perdu et Archive.
+**Résultat attendu** : Le panneau CRM s'ouvre et affiche l'interface de gestion commerciale. Les colonnes du pipeline sont visibles (Prospect, Qualifié, Proposition, Gagné, Perdu). L'interface est en dark mode cohérent. Un bouton d'ajout de contact est visible.
+**États testés** : loaded
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-12_crm_panel.png`
 
 ---
@@ -299,46 +311,67 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 15 : Renseigner la fiche rapide CRM
+### Étape 15 : Remplir le contact complet (nom, email, téléphone, adresse, notes)
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. Renseigne le prénom, le nom, l’entreprise, l’e-mail et le téléphone fictifs.
-2. Pour l’adresse, utilise la fiche dans Mémoire. Ajoute les notes par le journal d’activités.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> champ contact / personne (si séparé de l'entreprise)
+2. `javascript_tool` -> si champ "contact" ou "nom du contact" existe, cliquer et taper "Marie Durand"
+3. `find` -> champ rôle / poste
+4. `javascript_tool` -> si le champ existe, taper "DRH"
+5. `find` -> champ email
+6. `click` -> champ email
+7. `type` -> "m.durand@societedurand.fr"
+8. `find` -> champ téléphone
+9. `click` -> champ téléphone
+10. `type` -> "01 23 45 67 89"
+11. `find` -> champ adresse (si présent)
+12. `javascript_tool` -> si le champ existe, taper "12 rue des Lilas, 75001 Paris"
+13. `find` -> champ notes (si présent)
+14. `javascript_tool` -> si le champ existe, taper "Prospect via recommandation. Besoin audit RH."
+15. `screenshot` -> `/tmp/therese-tests/A2-15_crm_contact_filled.png`
 
-**Résultat attendu** : Le formulaire CRM affiche les valeurs saisies. Les champs d’adresse et de notes se gèrent dans les surfaces indiquées.
+**Résultat attendu** : Le formulaire est rempli avec les informations de la Société Durand. Les champs obligatoires sont remplis (nom, email). Les champs optionnels (téléphone, adresse, notes) sont remplis si disponibles. Marc voit les données saisies avant de sauvegarder.
+**États testés** : filled
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-15_crm_contact_filled.png`
 
 ---
 
-### Étape 16 : Enregistrer Célia Durand
+### Étape 16 : Sauvegarder le contact - visible dans la liste
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. Enregistre la fiche rapide, puis lis la première colonne du Pipeline.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> bouton Sauvegarder / Créer dans le formulaire CRM
+2. `click` -> bouton Sauvegarder
+3. `wait_for` -> le formulaire se ferme et le contact apparaît dans le pipeline (max 5s)
+4. `screenshot` -> `/tmp/therese-tests/A2-16_crm_contact_saved.png`
+5. `javascript_tool` -> vérifier qu'un élément contenant "Société Durand" ou "Durand" est visible dans le pipeline
 
-**Résultat attendu** : Le formulaire se ferme. Célia Durand, société Société Durand, figure dans la colonne Contact.
+**Résultat attendu** : Le contact est sauvegardé en base SQLite. Le formulaire se ferme. Le contact "Société Durand" apparaît dans la première colonne du pipeline (Prospect). Un toast de confirmation peut apparaître. Le CRM n'est plus vide.
+**États testés** : loading (sauvegarde), success, filled (pipeline avec 1 carte)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-16_crm_contact_saved.png`
 
 ---
 
-### Étape 17 : Placer la fiche en Proposition
+### Étape 17 : Déplacer le contact dans la colonne "Proposition"
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=crm
 
 **Actions Chrome MCP** :
-1. Ouvre la fiche CRM, puis sélectionne Proposition dans Étape.
-2. Vérifie la colonne après fermeture de la fiche.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> carte "Société Durand" dans la colonne Prospect
+2. `javascript_tool` -> tenter un drag & drop de la carte vers la colonne "Proposition" : `const card = document.querySelector('[data-testid="crm-panel"]').querySelector(':scope *:has(> *)')` (adapter au sélecteur réel)
+3. `screenshot` -> `/tmp/therese-tests/A2-17_crm_drag_attempt.png`
+4. `javascript_tool` -> si drag & drop échoue, chercher un sélecteur de statut (select, dropdown) sur la carte et changer vers "Proposition"
+5. `wait_for` -> le contact change de colonne ou de statut (max 3s)
+6. `screenshot` -> `/tmp/therese-tests/A2-17_crm_moved.png`
 
-**Résultat attendu** : La fiche passe de Contact à Proposition et la nouvelle étape reste enregistrée.
+**Résultat attendu** : Le contact "Société Durand" passe de la colonne "Prospect" à la colonne "Proposition" via drag & drop ou via un sélecteur de statut. La carte est visuellement dans la bonne colonne. La modification est persistée en base. Marc voit son pipeline avancer.
+**États testés** : filled -> filled (changement de colonne)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-17_crm_moved.png`
 
 ---
@@ -405,16 +438,23 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 21 : Ouvrir un brouillon de devis pour Durand
+### Étape 21 : Créer un devis pour Société Durand
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. Ouvre Nouveau devis ou facture, garde Devis et sélectionne Célia Durand.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> bouton "Nouveau" ou "Créer" dans le panneau factures
+2. `click` -> ce bouton
+3. `wait_for` -> formulaire InvoiceForm visible (max 3s)
+4. `screenshot` -> `/tmp/therese-tests/A2-21_invoice_form_open.png`
+5. `find` -> sélecteur type de document (devis/facture/avoir)
+6. `javascript_tool` -> sélectionner "devis" dans le select
+7. `find` -> sélecteur client/contact
+8. `javascript_tool` -> sélectionner "Société Durand" dans la liste des contacts (ou taper le nom)
 
-**Résultat attendu** : Le devis est créé en brouillon. Le client est sélectionnable depuis les contacts. Le numéro est visible après la sauvegarde.
+**Résultat attendu** : Le formulaire de création s'ouvre. Le type "devis" est sélectionné. Le client "Société Durand" est sélectionnable depuis la liste des contacts existants (lien avec le CRM). Le numéro de devis est pré-généré automatiquement.
+**États testés** : empty -> filled (partiel)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-21_invoice_form_open.png`
 
 ---
@@ -479,16 +519,22 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 25 : Convertir le devis en facture
+### Étape 25 : Convertir le devis en facture (si disponible)
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. Ouvre le devis, utilise Convertir en facture, puis confirme cette action de création.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> le devis dans la liste
+2. `click` -> le devis (pour ouvrir les options)
+3. `find` -> bouton "Convertir en facture" ou "Facturer" ou icône de conversion
+4. `screenshot` -> `/tmp/therese-tests/A2-25_convert_btn.png`
+5. `javascript_tool` -> si le bouton existe, cliquer dessus
+6. `wait_for` -> confirmation ou nouveau document facture (max 5s)
+7. `screenshot` -> `/tmp/therese-tests/A2-25_converted.png`
 
-**Résultat attendu** : Le devis passe à Converti. Une facture brouillon reprend le client, les lignes et les montants. Son numéro définitif vient à l’émission.
+**Résultat attendu** : Si la fonctionnalité existe : le devis est converti en facture avec les mêmes informations (client, lignes, montants). Le numéro change (FAC-2026-001). Le statut passe à "Émise" ou "En attente". Si la fonctionnalité n'existe pas : documenter l'absence et passer à l'étape suivante.
+**États testés** : loaded -> success (si conversion disponible)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-25_convert_btn.png`
 
 ---
@@ -499,11 +545,16 @@ mkdir -p /tmp/therese-tests
 **URL** : http://localhost:1420/?panel=invoices
 
 **Actions Chrome MCP** :
-1. Complète le profil émetteur fictif et l’adresse du destinataire avant de cliquer sur PDF.
-2. Vérifie la génération et lis le fichier.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> le devis (ou facture) dans la liste
+2. `click` -> le document (pour ouvrir les options)
+3. `find` -> bouton "PDF" ou "Télécharger" ou icône PDF
+4. `click` -> bouton PDF
+5. `wait_for` -> téléchargement ou aperçu PDF (max 10s)
+6. `screenshot` -> `/tmp/therese-tests/A2-26_pdf_generated.png`
+7. `javascript_tool` -> vérifier qu'un fichier a été téléchargé ou qu'un aperçu est affiché
 
-**Résultat attendu** : Le PDF local reprend le client, les trois jours de prestation, les montants HT, TVA, TTC et les mentions émetteur saisies.
+**Résultat attendu** : Le PDF du devis est généré avec les informations correctes : coordonnées de Marc Lefèvre (consultant RH), client Société Durand, ligne "Audit RH - 3 jours x 800 EUR = 2 400 EUR HT", TVA 20%, total TTC 2 880 EUR. Le PDF est conforme aux obligations légales françaises (mentions obligatoires, numéro, date, conditions de règlement). Le fichier est téléchargé ou affiché dans un viewer.
+**États testés** : loading (génération), success (PDF disponible)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-26_pdf_generated.png`
 
 ---
@@ -544,18 +595,22 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 29 : Ouvrir un nouveau message avec le compte simulé
+### Étape 29 : Email configuré - liste emails et bouton composer
 
 **Priorité** : P1
 **Pré-condition** : Email configuré (sinon skip)
 **URL** : http://localhost:1420/?panel=email
 
 **Actions Chrome MCP** :
-1. Configure le compte fictif dans le transport de recette.
-2. Ouvre Nouveau message, lis les champs, puis ferme le formulaire.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `javascript_tool` -> vérifier si une liste d'emails est visible (éléments .email-item, .message-row ou équivalent)
+2. `find` -> bouton "Nouveau message" ou "Composer" ou icône crayon
+3. `screenshot` -> `/tmp/therese-tests/A2-29_email_inbox.png`
+4. `javascript_tool` -> si le bouton composer existe, cliquer dessus
+5. `wait_for` -> formulaire de composition visible (max 3s)
+6. `screenshot` -> `/tmp/therese-tests/A2-29_email_compose.png`
 
-**Résultat attendu** : Le compte simulé rend le bouton Nouveau message accessible. Le formulaire contient un destinataire, un objet et un corps. Le banc ne réalise aucun envoi.
+**Résultat attendu** : La boîte de réception affiche les emails récents. Un bouton "Composer" permet d'ouvrir un formulaire de nouveau message (destinataire, objet, corps). Marc peut envoyer un email directement depuis l'app sans ouvrir un autre logiciel. L'interface est similaire à ce qu'il connaît (Gmail, Outlook).
+**États testés** : loaded (inbox), empty (composition)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-29_email_inbox.png`
 
 ---
@@ -580,16 +635,20 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 31 : Afficher la semaine courante
+### Étape 31 : Vue semaine - voir les jours
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=calendar
 
 **Actions Chrome MCP** :
-1. Clique sur Semaine et lis les sept jours à partir de la date du banc.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `javascript_tool` -> chercher un bouton "Semaine" ou "Week" pour basculer en vue semaine (si pas par défaut)
+2. `javascript_tool` -> cliquer sur le bouton vue semaine si trouvé
+3. `screenshot` -> `/tmp/therese-tests/A2-31_calendar_week.png`
+4. `javascript_tool` -> vérifier que les 7 jours de la semaine sont affichés (lundi à dimanche)
+5. `javascript_tool` -> vérifier que la date du jour est mise en évidence
 
-**Résultat attendu** : Les sept jours et les créneaux sont visibles. Le jour courant se distingue.
+**Résultat attendu** : La vue semaine affiche les 7 jours de la semaine courante. Le jour actuel (27 mars 2026) est visuellement distinct (couleur, bordure). Les créneaux horaires sont visibles. Le calendrier est vide (aucun événement encore créé).
+**États testés** : loaded, empty
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-31_calendar_week.png`
 
 ---
@@ -622,16 +681,24 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 33 : Afficher le mois suivant
+### Étape 33 : Naviguer au mois suivant
 
 **Priorité** : P1
 **URL** : http://localhost:1420/?panel=calendar
 
 **Actions Chrome MCP** :
-1. Choisis Mois, puis utilise la navigation vers le mois suivant.
-2. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> bouton "Suivant" ou ">" ou flèche droite pour naviguer au mois suivant
+2. `click` -> bouton suivant
+3. `wait_for` -> changement de mois visible (max 2s)
+4. `screenshot` -> `/tmp/therese-tests/A2-33_calendar_next_month.png`
+5. `javascript_tool` -> vérifier que le titre du calendrier affiche "Avril 2026" (ou le mois suivant)
+6. `find` -> bouton "Précédent" ou "<" pour revenir
+7. `click` -> bouton précédent
+8. `wait_for` -> retour au mois de mars (max 2s)
+9. `screenshot` -> `/tmp/therese-tests/A2-33_calendar_back.png`
 
-**Résultat attendu** : La période avance d’un mois et affiche le rendez-vous créé s’il tombe dans ce mois.
+**Résultat attendu** : La navigation mois suivant fonctionne (Mars -> Avril 2026). Le titre du calendrier change. La grille se met à jour. Le bouton retour ramène au mois de mars. La navigation est fluide et sans rechargement de page.
+**États testés** : loaded (transitions)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-33_calendar_next_month.png`
 
 ---
@@ -728,17 +795,22 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 38 : Changer la tâche de colonne par son formulaire
+### Étape 38 : Déplacer une tâche en "En cours"
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=tasks
 
 **Actions Chrome MCP** :
-1. En vue Liste, ouvre Préparer proposition Durand puis Modifier.
-2. Choisis En cours et enregistre. Reviens aux Colonnes.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `find` -> tâche "Préparer proposition Durand"
+2. `javascript_tool` -> tenter un drag & drop vers la colonne "En cours"
+3. `screenshot` -> `/tmp/therese-tests/A2-38_task_drag.png`
+4. `javascript_tool` -> si drag & drop échoue, chercher un sélecteur de statut sur la tâche et changer vers "En cours"
+5. `wait_for` -> la tâche change de colonne (max 3s)
+6. `screenshot` -> `/tmp/therese-tests/A2-38_task_in_progress.png`
+7. `javascript_tool` -> vérifier que la colonne "En cours" contient 1 tâche et la colonne "À faire" contient 1 tâche
 
-**Résultat attendu** : Préparer proposition Durand apparaît dans En cours. Relancer Martin reste dans À faire.
+**Résultat attendu** : La tâche "Préparer proposition Durand" passe de "À faire" à "En cours" via drag & drop ou sélecteur. La colonne "En cours" contient maintenant 1 tâche. La colonne "À faire" en contient 1 ("Relancer Martin"). La modification est persistée.
+**États testés** : filled -> filled (changement de colonne)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-38_task_in_progress.png`
 
 ---
@@ -747,18 +819,30 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 39 : Préparer la délibération du Board
+### Étape 39 : Ouvrir Board IA - question business
 
 **Priorité** : P0
 **Pré-condition** : Clé API valide configurée
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. Autorise le Board cloud dans Paramètres > Sécurité et confidentialité si nécessaire.
-2. Saisis la question stratégique et clique sur Préparer le Board.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `navigate` -> `http://localhost:1420`
+2. `wait_for` -> page principale chargée (max 5s)
+3. `find` -> bouton Board dans le header (icône Gavel ou texte "Board")
+4. `click` -> bouton Board
+5. `wait_for` -> `[data-testid="board-panel"]` visible (max 5s)
+6. `screenshot` -> `/tmp/therese-tests/A2-39_board_panel.png`
+7. `find` -> champ de saisie dans le board (textarea ou input)
+8. `click` -> champ de saisie
+9. `type` -> "Dois-je accepter une mission à 600 euros/jour pour un grand compte ?"
+10. `screenshot` -> `/tmp/therese-tests/A2-39_board_question.png`
+11. `find` -> `[data-testid="board-submit-btn"]`
+12. `click` -> `[data-testid="board-submit-btn"]`
+13. `wait_for` -> début de la délibération (max 15s)
+14. `screenshot` -> `/tmp/therese-tests/A2-39_board_deliberating.png`
 
-**Résultat attendu** : Un écran de confirmation montre le mode choisi et les transferts associés avant tout appel. L’étape suivante exige les comptes des cinq conseillers.
+**Résultat attendu** : Le Board IA s'ouvre. Marc pose une question business stratégique. Le clic sur le bouton de soumission lance la délibération des 5 conseillers. L'interface montre l'état "en cours de délibération" avec un indicateur de progression.
+**États testés** : loaded, filled, loading
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-39_board_deliberating.png`
 
 ---
@@ -852,17 +936,22 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 43 : Conserver l’erreur d’une clé refusée
+### Étape 43 : Clé API invalide - l'erreur est nommée, aucun faux succès
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. Simule un HTTP 401 sur le transport Anthropic avec des données fictives.
-2. Envoie un message de recette, puis lis le message dans le chat.
-3. Enregistre une capture de l’état observé et relève le résultat.
+1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
+2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
+3. `click` -> `[data-testid="settings-tab-ai"]`
+4. choisir un fournisseur cloud, saisir la clé `sk-invalide-A2-43`, valider
+5. `wait_for` -> `[data-testid="settings-modal"] [role="alert"]` visible (max 15s)
+6. `screenshot` -> `/tmp/therese-tests/A2-43_cle_invalide.png`
+7. `javascript_tool` -> `[...document.querySelectorAll('[role="status"]')].map(n => n.textContent).join(' | ')` (aucune notification de succès)
 
-**Résultat attendu** : Le chat affiche « Clé API Anthropic invalide ou expirée. Vérifie tes paramètres. » sans afficher de réponse réussie.
+**Résultat attendu** : un message d'erreur lisible dans la modale, aucun toast de succès, le fournisseur précédent reste utilisable.
+**États testés** : error
 **Si FAIL** : Screenshot `/tmp/therese-tests/A2-43_cle_invalide.png`
 
 ---
