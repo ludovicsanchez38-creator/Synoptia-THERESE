@@ -1,6 +1,6 @@
 # THÉRÈSE 0.85.0 · Brouillon de la bêta
 
-Cette candidate est préparée sur la branche `beta/c2-20261125`. Ludo décide du numéro et du tag public après lecture des deux rapports et du rendu du banc. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md)
+Cette candidate est préparée sur la branche `beta/c3-20261125`. Ludo décide du numéro et du tag public à partir des trois rapports et du rendu du banc. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md)
 
 ## Nouveautés
 
@@ -12,16 +12,19 @@ Cette candidate est préparée sur la branche `beta/c2-20261125`. Ludo décide d
 
 - Le chat peut terminer la synthèse lorsqu’une première recherche utile est suivie d’une recherche vide.
 - Un arrêt volontaire pendant le lancement d’un connecteur garde l’état arrêté et libère ses processus de préparation.
-- La mise en route conserve les champs déjà saisis et les données légales du profil. Elle demande une nouvelle lecture après un échec de chargement. La vérification des clés reprend après l’écriture dans le coffre.
+- La mise en route conserve les champs déjà saisis et les données légales du profil. Elle propose de relire le profil après un échec de chargement. Le moteur distingue ce cas d’un profil absent et protège la fiche illisible d’un remplacement. La vérification des clés reprend après l’écriture dans le coffre.
 - Un connecteur actif termine son arrêt avant de redémarrer.
 - Le Board protège la persistance d’une délibération une fois le suivi installé. Le test de déconnexion P24 passe 50 fois sur 50 à quatre processus.
+- Le Board laisse partir un seul appel de récupération à la fois auprès du fournisseur concerné.
 - Passer par GPT-6.2 conserve l’effort enregistré. Le plafond en mode réflexion de Qwen4-Max et le niveau Très élevé de DeepSeek suivent leurs contrats.
+- DeepSeek conserve les outils et l’historique quand une réponse précédente ne contient plus son raisonnement. Le chat signale le passage sans réflexion pour cet échange. [Contrat DeepSeek](https://api-docs.deepseek.com/guides/thinking_mode/)
+- Le guide d’installation dirige les testeurs de la bêta vers les téléchargements.
 
 ## Points à vérifier avant diffusion
 
 - Le guide embarqué reste celui de la 0.83. Le guide 0.85 est à produire et le canal de mise à jour des installations existantes reste `/therese/alpha/latest.json`.
 - Les PDF de facturation demandent encore un volume prenant en charge les liens physiques. Le report de la reprise RGPD, celui de la commande Joindre et les migrations des fournisseurs historiques figurent dans le rapport du cycle.
-- Sur DeepSeek, une nouvelle question avec outils peut être refusée si la conversation contient une réponse précédente. Le second appel du banc simulé montre l’absence de `reasoning_content` dans l’historique renvoyé au fournisseur. Régler ce cas avant diffusion. [Contrat DeepSeek](https://api-docs.deepseek.com/guides/thinking_mode/)
+- Vérifier le repli DeepSeek avec deux questions et un outil sur le service réel. Le banc Linux a contrôlé ce parcours avec un transport simulé.
 - Les installations natives Windows et macOS, les signatures, la mise à jour de la 0.83 en natif et la clé Synthetic restent à éprouver en dehors de ce banc Linux.
 
 ## Carte proposée
