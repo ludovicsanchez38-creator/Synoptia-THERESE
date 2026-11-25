@@ -1,6 +1,6 @@
 # THÉRÈSE v2 - Guide d'installation (développeurs)
 
-> Guide pour installer THÉRÈSE v2 depuis les sources. Si tu es testeur alpha, télécharge plutôt le .dmg, le .exe ou le .deb depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
+> Guide pour installer THÉRÈSE v2 depuis les sources. Si tu testes la bêta, télécharge le .dmg, le .exe ou le .deb depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
 
 ---
 
