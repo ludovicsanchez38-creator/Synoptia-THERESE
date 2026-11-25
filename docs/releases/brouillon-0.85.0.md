@@ -1,10 +1,10 @@
 # THÉRÈSE 0.85.0 · Brouillon de la bêta
 
-Cette candidate est préparée sur la branche `beta/c3-20261125`. Ludo décide du numéro et du tag public à partir des trois rapports et du rendu du banc. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md)
+Candidate locale sur `beta/c4-20261125`, à partir de la tête retenue au cycle 3. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md)
 
 ## Nouveautés
 
-- Quinze modèles récents rejoignent le catalogue, dont Claude Fable 5.2, GPT-6.2 Astra et Sol, de nouveaux Gemini 4, Mistral Large 4.0 et Kimi K3.1 Pro. Les anciennes préférences de modèle restent utilisables dans l’application. Avec GPT-6.2, le modèle choisit son effort de raisonnement, même avec les outils. Mistral Large 4.0 devient la recommandation Mistral.
+- Quinze modèles récents rejoignent le catalogue, dont Claude Fable 5.2, GPT-6.2 Astra et Sol, de nouveaux Gemini 4, Mistral Large 4.0 et Kimi K3.1 Pro. GPT-6.2 Sol devient le choix par défaut d’OpenAI et GPT-6.2 Astra reste proposé pour les tâches complexes. Si GPT-6 Sol est déjà enregistré, le chat conserve ce choix. Les anciennes préférences de modèle restent utilisables dans l’application. Avec GPT-6.2, le modèle choisit son effort de raisonnement, même avec les outils. Mistral Large 4.0 devient la recommandation Mistral.
 - Synthetic rejoint les services d’IA disponibles. Ses identifiants, sa notice de confidentialité et l’accord d’envoi par fournisseur ont été éprouvés sans réseau. La connexion au service avec un compte réel reste à vérifier.
 - La phase Bêta apparaît dans l’application. Les liens de téléchargement manuel mènent à la page bêta. L’onglet À propos traite un tag de préversion du même numéro comme la même version numérique lorsque le moteur ne donne que ce numéro.
 
@@ -18,21 +18,23 @@ Cette candidate est préparée sur la branche `beta/c3-20261125`. Ludo décide d
 - Le Board laisse partir un seul appel de récupération à la fois auprès du fournisseur concerné.
 - Passer par GPT-6.2 conserve l’effort enregistré. Le plafond en mode réflexion de Qwen4-Max et le niveau Très élevé de DeepSeek suivent leurs contrats.
 - DeepSeek conserve les outils et l’historique quand une réponse précédente ne contient plus son raisonnement. Le chat signale le passage sans réflexion pour cet échange. [Contrat DeepSeek](https://api-docs.deepseek.com/guides/thinking_mode/)
-- Le guide d’installation dirige les testeurs de la bêta vers les téléchargements.
+- Le guide d’installation dirige les testeurs de la bêta vers les téléchargements. L’aide embarque le guide des testeurs 0.85, avec les écrans de démarrage, À propos et Synthetic. [Source du guide](../USER_GUIDE_ALPHA.md)
+- Le composeur d’e-mail masque la commande Joindre jusqu’à la prise en charge des pièces jointes.
+- La mise en route et les paramètres préviennent si THÉRÈSE rencontre un refus de création de lien physique dans le dossier des PDF. L’application propose de choisir un dossier dédié sur le disque interne.
 
 ## Points à vérifier avant diffusion
 
-- Le guide embarqué reste celui de la 0.83. Le guide 0.85 est à produire et le canal de mise à jour des installations existantes reste `/therese/alpha/latest.json`.
-- Les PDF de facturation demandent encore un volume prenant en charge les liens physiques. Le report de la reprise RGPD, celui de la commande Joindre et les migrations des fournisseurs historiques figurent dans le rapport du cycle.
-- Vérifier le repli DeepSeek avec deux questions et un outil sur le service réel. Le banc Linux a contrôlé ce parcours avec un transport simulé.
-- Les installations natives Windows et macOS, les signatures, la mise à jour de la 0.83 en natif et la clé Synthetic restent à éprouver en dehors de ce banc Linux.
+- Produire le PDF 0.85 à partir de la source du guide. Le canal de mise à jour des installations existantes utilise `/therese/alpha/latest.json`.
+- Les PDF de facturation demandent un dossier où les liens physiques sont possibles. Essayer le choix du dossier et la génération PDF sur les trois systèmes, avec un volume interne et un volume externe incompatible. La reprise durable de l’anonymisation est au stade du design.
+- Avec les comptes de Ludo, vérifier Synthetic, DeepSeek au deuxième message avec outil, Perplexity et Infomaniak. Le banc Linux a contrôlé les parcours Synthetic et DeepSeek avec des transports simulés.
+- Vérifier les builds Tauri, les signatures, l’installation native et la mise à jour de la 0.84 à la 0.85.
 
 ## Carte proposée
 
-- Plus de modèles sont disponibles dans THÉRÈSE, dont les nouveaux Claude, GPT et Gemini.
+- De nouveaux Claude, GPT et Gemini rejoignent le catalogue. OpenAI propose GPT-6.2 Sol par défaut et GPT-6.2 Astra pour les tâches complexes.
 - Synthetic rejoint les services d’IA. La connexion réelle reste à essayer.
 - THÉRÈSE s’affiche en bêta, avec le lien de téléchargement mis à jour.
 - À propos reconnaît les numéros publiés sur le canal bêta.
 - La mise en route conserve mieux les informations que tu viens de saisir.
 - Le chat peut finir sa réponse quand une recherche suivante ne trouve rien.
-- Le guide reste en 0.83. Pour les PDF de factures, garde un dossier de travail sur un disque compatible.
+- Le guide 0.85 se lit directement dans l’aide. Pour les PDF de devis et de factures, THÉRÈSE peut te prévenir au choix du dossier.
