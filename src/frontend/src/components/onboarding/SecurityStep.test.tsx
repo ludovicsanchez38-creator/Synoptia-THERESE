@@ -50,3 +50,25 @@ describe('SecurityStep - consentement cloud conditionnel', () => {
     expect(screen.getByTestId('onboarding-next-btn')).toBeEnabled();
   });
 });
+
+it('P-008 : décrit le premier Bonjour observé avec Claude sans modifier l’accord', () => {
+  const onNext = vi.fn();
+  const { rerender } = render(<SecurityStep provider="anthropic" onNext={onNext} onBack={vi.fn()} />);
+  const exemple = screen.getByRole('heading', { name: 'Exemple avec Claude' }).closest('section');
+  expect(exemple).toHaveTextContent(/premier message est « Bonjour ».*profil vierge.*sans document joint.*sans messagerie connectée/);
+  expect(exemple).toHaveTextContent(/consignes de fonctionnement, la date et l’heure, la description des outils disponibles/);
+  expect(exemple).toHaveTextContent(/modèle, longueur maximale et affichage progressif/);
+  expect(exemple).toHaveTextContent('Ce premier envoi précède tout résultat d’outil.');
+
+  const accord = screen.getByRole('checkbox', { name: /Je consens au transfert de mes données vers Anthropic/ });
+  expect(accord).not.toHaveAccessibleName(/Exemple avec Claude/);
+  const continuer = screen.getByTestId('onboarding-next-btn');
+  expect(continuer).toBeDisabled();
+  fireEvent.click(accord);
+  fireEvent.click(continuer);
+  expect(onNext).toHaveBeenCalledTimes(1);
+  expect(localStorage.setItem).toHaveBeenCalledWith('therese-cloud-consent', expect.stringContaining('"llm:anthropic"'));
+
+  rerender(<SecurityStep provider="openai" onNext={onNext} onBack={vi.fn()} />);
+  expect(screen.queryByRole('heading', { name: 'Exemple avec Claude' })).toBeNull();
+});

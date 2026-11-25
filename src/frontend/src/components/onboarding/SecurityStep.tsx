@@ -202,6 +202,18 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         </p>
       )}
 
+      {provider === 'anthropic' && (
+        <Carte as="section" className="space-y-1 p-4 text-sm">
+          <h3 className="font-medium text-text">Exemple avec Claude</h3>
+          <p className="text-text-muted">
+            Si ton premier message est « Bonjour », avec un profil vierge, sans document joint et sans messagerie connectée,
+            THÉRÈSE adresse à Anthropic le mot « Bonjour », ses consignes de fonctionnement, la date et l’heure,
+            la description des outils disponibles et les paramètres de la réponse (modèle, longueur maximale et affichage progressif).
+            Ce premier envoi précède tout résultat d’outil.
+          </p>
+        </Carte>
+      )}
+
       {/* Consentement RGPD uniquement lorsqu'un fournisseur cloud est activé. */}
       {cloudEnabled ? <label className="flex items-start gap-3 p-4 rounded-md bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">
         <input
