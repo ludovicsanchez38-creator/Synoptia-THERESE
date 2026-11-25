@@ -252,10 +252,6 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             <p className="text-sm text-text-muted">THÉRÈSE utilisera ces infos pour mieux te répondre</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading || lectureProfil !== 'terminee'} className="max-[840px]:basis-full max-[840px]:justify-start">
-          <Upload className="w-4 h-4 mr-2" />
-          Importer un profil (THÉRÈSE.md)
-        </Button>
       </div>
 
       {/* Info stockage. B-1345 : « ne quittent jamais ta machine » était faux
@@ -419,6 +415,14 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             </div>
           )}
         </div>
+
+        <details>
+          <summary className="min-h-9 cursor-pointer py-2 text-sm font-medium text-text">Importer un profil existant</summary>
+          <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading || lectureProfil !== 'terminee'}>
+            <Upload aria-hidden="true" className="mr-2 h-4 w-4" />
+            Importer un profil (THÉRÈSE.md)
+          </Button>
+        </details>
 
         {/* Error */}
         {error && !nomEnFaute && <Alerte id="profile-step-erreur" icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>}
