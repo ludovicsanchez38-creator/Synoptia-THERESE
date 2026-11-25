@@ -57,11 +57,11 @@ class WindowsCatalogTests(unittest.TestCase):
 
     # Décision de Ludo du 06/11/2026 (carte val-2026-11-06-24) : livrer le runtime
     # VC++ du redistribuable Visual Studio, notice « Distributable Code » jointe.
-    # Empreintes des octets du runner (run 42266635353, artefact releve-Windows).
+    # Empreintes des octets du runner (run 45670187545, artefact releve-Windows).
     VISUAL_STUDIO = {
-        'msvcp140.dll': '7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca',
-        'msvcp140_1.dll': '206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982',
-        'vcomp140.dll': '95d4ce4a6802d1e18b5e0e1722cc30ea72ca7e033f83828f05c0b7b993fe7cbf',
+        'msvcp140.dll': '59d325227321d52b9a523ea401ce6787a5d59f78229a0ff3a6f124e5d3445685',
+        'msvcp140_1.dll': '1c6522f4d005539109aa040f063659704bfda94a224142f50942573cfbcf7ec9',
+        'vcomp140.dll': '294397f642d824a97de354aa625f993a97f34d729eca1bde56d5a897ae574888',
     }
 
     def test_visual_studio_runtime_is_cataloged_with_microsoft_notice(self):
@@ -71,16 +71,17 @@ class WindowsCatalogTests(unittest.TestCase):
         notice = (ROOT / system.VS_REDIST_NOTICE).read_text(encoding='utf-8')
         rendered = system.render_notices(ROOT)
         for name, digest in self.VISUAL_STUDIO.items():
-            row = rows[name]
-            self.assertEqual((row['sha256'], row['version']), (digest, '14.51.36247.0'))
-            self.assertEqual(row['notice']['path'], system.VS_REDIST_NOTICE)
-            with patch.object(system, 'dpkg_identity', side_effect=AssertionError('Linux only')):
-                record = system.match_system(Path(name), digest, catalog, 'Windows')
-            self.assertEqual(record['origin'], 'system:Microsoft Visual C++ Redistributable@14.51.36247.0')
-            self.assertEqual(record['license'], 'LicenseRef-Microsoft-Distributable-Code')
-            self.assertFalse(record['source_required'])
-            self.assertIn(name, notice)
-            self.assertIn('SHA-256 : ' + digest, rendered)
+            with self.subTest(name=name):
+                row = rows[name]
+                self.assertEqual((row['sha256'], row['version']), (digest, '14.52.37029.0'))
+                self.assertEqual(row['notice']['path'], system.VS_REDIST_NOTICE)
+                with patch.object(system, 'dpkg_identity', side_effect=AssertionError('Linux only')):
+                    record = system.match_system(Path(name), digest, catalog, 'Windows')
+                self.assertEqual(record['origin'], 'system:Microsoft Visual C++ Redistributable@14.52.37029.0')
+                self.assertEqual(record['license'], 'LicenseRef-Microsoft-Distributable-Code')
+                self.assertFalse(record['source_required'])
+                self.assertIn(name, notice)
+                self.assertIn('SHA-256 : ' + digest, rendered)
         for passage in ('8. DISTRIBUTABLE CODE.', 'Distribution Requirements.', 'Distribution Restrictions.',
                         'Visual C++ Runtime Files', 'debug_nonredist', 'EULAID: VS2026_Comm_ENU.1033'):
             self.assertIn(passage, notice)
@@ -122,7 +123,7 @@ class WindowsCatalogTests(unittest.TestCase):
             extra['catalog_row']['name'] = 'concrt140.dll'
             data['visual_studio_redist']['libraries'].append(extra)
 
-        vs_root = r'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Redist\MSVC\14.51.36231'
+        vs_root = r'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Redist\MSVC\14.52.37025'
         self._validate_with_windows_evidence(lambda data: None)
         sabotages = {
             'refus remis': lambda d: d['excluded'].append({'name': 'msvcp140.dll'}),
@@ -134,7 +135,7 @@ class WindowsCatalogTests(unittest.TestCase):
                 'redist_root', vs_root + r'\debug_nonredist\x64'),
             'autre version MSVC': lambda d: d['visual_studio_redist'].__setitem__('redist_version', '14.52.0'),
             'version observée': lambda d: entry(d, 'msvcp140.dll')['version_observation'].__setitem__(
-                'value', '14.51.36231.0'),
+                'value', '14.52.37025.0'),
             'sans signataire': lambda d: entry(d, 'vcomp140.dll').__setitem__('authenticode_certificates', []),
             'notice modifiée': lambda d: d['visual_studio_redist']['notice'].__setitem__('sha256', '0' * 64),
             'conditions modifiées': lambda d: d['visual_studio_redist']['license_terms'].__setitem__(

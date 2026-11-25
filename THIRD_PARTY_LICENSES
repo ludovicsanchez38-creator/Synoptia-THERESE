@@ -1,6 +1,6 @@
 THÉRÈSE — Licences des composants tiers
 Sources correspondantes : pièce jointe THERESE-sources-copyleft.tar.gz de la release de la même version, https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases. Disponibilité : pendant toute la distribution des binaires, au minimum trois ans après leur dernière distribution et aussi longtemps qu'un support ou des pièces de rechange sont proposés pour cette version (engagement conservateur GPL-3.0, §6b ; fourniture par téléchargement simultané selon §6d).
-Empreinte des verrous : dd9091b6c5089b23c4aa422c794fcb26ee2aed49e8be26fb9b0709bc5563be06
+Empreinte des verrous : a5705c922dab70bf410898940de31c5c92a09ba0af8ce858486b5e4a5d7d527c
 Inventaire conservateur : dépendances de production, de build, de test et variantes de plateformes verrouillées.
 La présence dans ce document ne signifie pas que le composant est embarqué.
 Les notices des roues natives sélectionnées complètent celles des sources.
@@ -105308,21 +105308,21 @@ Distribution : python.org CPython 3.13.17 Windows x64
 Licence : LicenseRef-Microsoft-Distributable-Code
 SHA-256 : a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e
 Source : microsoft-distributable-code 14.51.36247.0
-msvcp140.dll — Microsoft Visual C++ Redistributable 14.51.36247.0
-Distribution : Visual Studio 18, redistribuable MSVC 14.51.36231 x64
+msvcp140.dll — Microsoft Visual C++ Redistributable 14.52.37029.0
+Distribution : Visual Studio 18, redistribuable MSVC 14.52.37025 x64
 Licence : LicenseRef-Microsoft-Distributable-Code
-SHA-256 : 7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca
-Source : visual-studio-redist 14.51.36247.0
-msvcp140_1.dll — Microsoft Visual C++ Redistributable 14.51.36247.0
-Distribution : Visual Studio 18, redistribuable MSVC 14.51.36231 x64
+SHA-256 : 59d325227321d52b9a523ea401ce6787a5d59f78229a0ff3a6f124e5d3445685
+Source : visual-studio-redist 14.52.37029.0
+msvcp140_1.dll — Microsoft Visual C++ Redistributable 14.52.37029.0
+Distribution : Visual Studio 18, redistribuable MSVC 14.52.37025 x64
 Licence : LicenseRef-Microsoft-Distributable-Code
-SHA-256 : 206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982
-Source : visual-studio-redist 14.51.36247.0
-vcomp140.dll — Microsoft Visual C++ Redistributable 14.51.36247.0
-Distribution : Visual Studio 18, redistribuable MSVC 14.51.36231 x64
+SHA-256 : 1c6522f4d005539109aa040f063659704bfda94a224142f50942573cfbcf7ec9
+Source : visual-studio-redist 14.52.37029.0
+vcomp140.dll — Microsoft Visual C++ Redistributable 14.52.37029.0
+Distribution : Visual Studio 18, redistribuable MSVC 14.52.37025 x64
 Licence : LicenseRef-Microsoft-Distributable-Code
-SHA-256 : 95d4ce4a6802d1e18b5e0e1722cc30ea72ca7e033f83828f05c0b7b993fe7cbf
-Source : visual-studio-redist 14.51.36247.0
+SHA-256 : 294397f642d824a97de354aa625f993a97f34d729eca1bde56d5a897ae574888
+Source : visual-studio-redist 14.52.37029.0
 
 ========================================================================
 licence complète/GCC-exception-3.1.txt
@@ -112902,11 +112902,11 @@ Runtime Visual C++ de Visual Studio : conditions « Distributable Code » de Mic
 Le moteur Windows de THÉRÈSE embarque, sans modification, trois fichiers du
 redistribuable Visual C++ de Microsoft Visual Studio :
 
-  msvcp140.dll     14.51.36247.0   Microsoft.VC145.CRT
-  msvcp140_1.dll   14.51.36247.0   Microsoft.VC145.CRT
-  vcomp140.dll     14.51.36247.0   Microsoft.VC145.OpenMP
+  msvcp140.dll     14.52.37029.0   Microsoft.VC145.CRT
+  msvcp140_1.dll   14.52.37029.0   Microsoft.VC145.CRT
+  vcomp140.dll     14.52.37029.0   Microsoft.VC145.OpenMP
 
-Ils proviennent du dossier de redistribution VC\Redist\MSVC\14.51.36231\x64
+Ils proviennent du dossier de redistribution VC\Redist\MSVC\14.52.37025\x64
 de Visual Studio 18 installé sur le runner GitHub windows-latest. Leurs
 empreintes SHA-256 figurent dans les entrées de ce catalogue ; la provenance
 complète (chemin, version, signataire, relevé) est dans

@@ -517,7 +517,7 @@ membres et les notices versionnées. Un nouveau fichier ou un octet modifié res
 refusé par le catalogue. Le contrôle porte sur les octets relevés ; l'inventaire
 d'un nouveau build macOS et son installeur exigent leur propre vérification.
 
-### Catalogue Windows du moteur 0.83
+### Catalogue Windows du moteur
 
 Le relevé `windows-latest` de CPython 3.13.17 python.org contient 30 natifs hors
 RECORD. `licenses/cpython/evidence-v0830-windows.json` lie 21 fichiers CPython
@@ -528,16 +528,17 @@ Les 27 fichiers python.org sont rapprochés par SHA-256 du relevé et des membre
 des MSI officiels.
 
 Les trois autres natifs viennent du redistribuable de Visual Studio
-(`msvcp140.dll`, `msvcp140_1.dll`, `vcomp140.dll`, version 14.51.36247.0) :
+(`msvcp140.dll`, `msvcp140_1.dll`, `vcomp140.dll`, version 14.52.37029.0) :
 ctranslate2, onnxruntime, scikit-learn et torch les importent. Sur décision de
 Ludo du 06/11/2026 (carte `val-2026-11-06-24`), ils sont livrés avec THÉRÈSE
 sous les conditions « Distributable Code » de Visual Studio Community 2026.
 `scripts/windows_runtime.py` les prend dans le dossier de redistribution trouvé
-par vswhere (`VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC145.CRT` et
+par vswhere (`VC\Redist\MSVC\14.52.37025\x64\Microsoft.VC145.CRT` et
 `.OpenMP`) et fait échouer le build si une autre source s'impose. Le bloc
 `visual_studio_redist` de `evidence-v0830.json` porte la preuve : décision,
-relevé (run 42266635353), chemin du runner, empreintes, ressource de version,
-certificats, et les copies datées des deux textes Microsoft
+relevé du 25/11/2026 (run `45670187545`), chemin du runner, empreintes,
+ressource de version et signatures Authenticode et horodatages vérifiés.
+Les versions alors relues sont rattachées aux copies datées des textes Microsoft
 (`visual-studio-2026-community-license-ENU-20261106.docx`, section « 8.
 DISTRIBUTABLE CODE », et `visual-studio-2026-redistribution-20261106.html`,
 rubrique « Visual C++ Runtime Files »). La notice
@@ -547,6 +548,13 @@ La garde exige le dossier MSVC exact, CRT ou OpenMP seulement (jamais
 `debug_nonredist` ni `OpenMP.LLVM`, qui relèvent des « Utilities ») ; une
 nouvelle version de Visual Studio sur le runner change les octets et demande
 un nouveau relevé.
+
+Le runner utilise Visual Studio 18 Enterprise, comme au relevé `42266635353`.
+Le document Community de référence est identique à la copie du 06/11/2026 et
+la rubrique Microsoft « Visual C++ Runtime Files » est identique. Les clauses
+Enterprise 2026 applicables à la redistribution de ces DLL concordent avec
+celles de Community. La comparaison et les certificats racines sont consignés
+dans `review_2026_11_25` du bloc de preuve.
 
 Les PE n'exposent pas les symboles locaux comme les ELF/Mach-O. La preuve de
 composition associe la configuration de build du tag CPython exact et une

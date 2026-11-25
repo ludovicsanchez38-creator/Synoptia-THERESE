@@ -52,7 +52,7 @@ WINDOWS_IDENTITY = {
 # Runtime VC++ pris dans le redistribuable de Visual Studio (windows_runtime.py),
 # livré sur décision de Ludo du 06/11/2026 (carte val-2026-11-06-24) sous les
 # conditions « Distributable Code » de Visual Studio Community 2026, notice jointe.
-VS_REDIST_VERSION = '14.51.36231'
+VS_REDIST_VERSION = '14.52.37025'
 VS_REDIST_MEMBERS = {
     'msvcp140.dll': 'Microsoft.VC145.CRT',
     'msvcp140_1.dll': 'Microsoft.VC145.CRT',

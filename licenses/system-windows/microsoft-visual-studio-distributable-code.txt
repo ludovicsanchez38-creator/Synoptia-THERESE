@@ -4,11 +4,11 @@ Runtime Visual C++ de Visual Studio : conditions « Distributable Code » de Mic
 Le moteur Windows de THÉRÈSE embarque, sans modification, trois fichiers du
 redistribuable Visual C++ de Microsoft Visual Studio :
 
-  msvcp140.dll     14.51.36247.0   Microsoft.VC145.CRT
-  msvcp140_1.dll   14.51.36247.0   Microsoft.VC145.CRT
-  vcomp140.dll     14.51.36247.0   Microsoft.VC145.OpenMP
+  msvcp140.dll     14.52.37029.0   Microsoft.VC145.CRT
+  msvcp140_1.dll   14.52.37029.0   Microsoft.VC145.CRT
+  vcomp140.dll     14.52.37029.0   Microsoft.VC145.OpenMP
 
-Ils proviennent du dossier de redistribution VC\Redist\MSVC\14.51.36231\x64
+Ils proviennent du dossier de redistribution VC\Redist\MSVC\14.52.37025\x64
 de Visual Studio 18 installé sur le runner GitHub windows-latest. Leurs
 empreintes SHA-256 figurent dans les entrées de ce catalogue ; la provenance
 complète (chemin, version, signataire, relevé) est dans
