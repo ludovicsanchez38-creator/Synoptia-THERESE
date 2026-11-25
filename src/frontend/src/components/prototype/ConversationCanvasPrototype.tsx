@@ -1563,7 +1563,12 @@ export function ConversationCanvasPrototype() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const navigationInitialeAppliquee = useRef(false);
   useEffect(() => {
+    // StrictMode rejoue le montage. Au second passage, l’URL ne porte
+    // plus le lien consommé et l’ouverture par défaut écraserait sa vue.
+    if (navigationInitialeAppliquee.current) return;
+    navigationInitialeAppliquee.current = true;
     // F3 : la préférence « ignorer l'accueil » n'avait plus aucun effet depuis
     // le retrait du classic. On l'honore ici sans appeler `initializeView`, qui
     // poserait la vue 'home' et écraserait l'accueil conversationnel natif de

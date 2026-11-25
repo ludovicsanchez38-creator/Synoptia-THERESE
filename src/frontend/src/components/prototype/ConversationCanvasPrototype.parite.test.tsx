@@ -12,6 +12,7 @@
  * Ce fichier verrouille le contrat. Toute action de navigation ajoutée au
  * registre sans être servie par la coque fera échouer la suite.
  */
+import { StrictMode } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -418,6 +419,35 @@ describe('Gate de parité par source d’action', () => {
       // Le paramètre qui identifie la coque, lui, doit rester.
       expect(window.location.search).toContain('interface=conversation-canvas');
     });
+
+    it('garde le lien vers Mémoire quand le démarrage ouvre le chat par défaut', async () => {
+      usePersonalisationStore.setState({ skipDashboard: true });
+      window.history.replaceState({}, '', '/?view=memory');
+
+      render(<StrictMode><ConversationCanvasPrototype /></StrictMode>);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype'))
+          .toHaveAttribute('data-embedded-view', 'memory');
+      });
+      expect(window.location.search).toBe('');
+    });
+
+    it.each(VUES_CONNUES.filter((vue) => vue !== 'memory'))(
+      'garde la vue %s quand le montage se rejoue',
+      async (vue) => {
+        usePersonalisationStore.setState({ skipDashboard: true });
+        window.history.replaceState({}, '', `/?view=${vue}`);
+
+        render(<StrictMode><ConversationCanvasPrototype /></StrictMode>);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('conversation-canvas-prototype'))
+            .toHaveAttribute('data-embedded-view', vue);
+        });
+        expect(window.location.search).toBe('');
+      },
+    );
 
     it('rouvre le chat quand un résultat arrive après sa fermeture', async () => {
       // Finding MAJEUR n°7 de la revue Soso. Fermer le chat ne touchait que

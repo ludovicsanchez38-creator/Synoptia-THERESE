@@ -71,6 +71,21 @@ test.describe('Parcours 06 - Navigation', () => {
     await expect(page.getByTestId('chat-message-input')).toBeVisible({ timeout: 10000 });
   });
 
+  test('L’ouverture directe sur le chat laisse le lien vers Mémoire ouvrir sa vue', async ({ page }) => {
+    await ouvrirLaSurface(page, 'settings.open');
+    const réglages = page.getByTestId('settings-modal');
+    await réglages.getByText('Mode Contributeur', { exact: true }).click();
+    await réglages.getByRole('tab', { name: 'Avancé', exact: true }).click();
+    await réglages.getByRole('button', { name: 'Comportement au lancement' }).click();
+    const lancement = réglages.getByRole('switch', { name: 'Ouvrir sur le chat directement' });
+    await lancement.click();
+    await expect(lancement).toBeChecked();
+
+    await page.goto('/?view=memory');
+    await expect(page.getByTestId('memory-panel')).toBeVisible();
+    await expect(page.getByTestId('chat-message-input')).toBeHidden();
+  });
+
   test('US-023.HP : une recherche sans correspondance vide la liste', async ({ page }) => {
     const tiroir = await ouvrirLeTiroir(page);
     const recherche = tiroir.getByPlaceholder(/rechercher/i);
