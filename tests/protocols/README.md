@@ -12,6 +12,7 @@ tests/protocols/
       A1-sophie-freelance.md         # Graphiste freelance, non-tech (48 etapes, ~180 tests)
       A2-marc-consultant.md          # Consultant RH, Excel (45 etapes, ~170 tests)
       A3-lea-power-user.md           # Coach business, power user (60 etapes, ~230 tests)
+      A4-critique.md                # Dirigeante de TPE, regard critique (10 étapes)
     modules/                         # Tests par module (a venir)
     catastrophes/                    # Scenarios catastrophe App
 
@@ -50,10 +51,11 @@ tests/protocols/
 | A1 Sophie (freelance) | App | 48 | - | ~180 | 25-35 min | 2h30-3h |
 | A2 Marc (consultant) | App | 45 | - | ~170 | 30-40 min | 2h15-2h45 |
 | A3 Lea (power user) | App | 60 | - | ~230 | 40-55 min | 3h-3h30 |
+| A4 Nora (dirigeante) | App | 10 | - | 10 | Non renseignée | Non renseignée |
 | S1 Agent Municipal | Server | 35 | 7 | ~130 | 25-35 min | 1h30-2h |
 | S2 Chef de Service | Server | 38 | 8 | ~140 | 35-50 min | 1h30-2h |
 | S3 DSI Admin | Server | 42 | - | ~170 | non renseignee | 2h-2h30 |
-| **TOTAL** | | **268** | **15** | **~1000** | **~2h30-3h30 (hors S3)** | **13-16h** |
+| **TOTAL** | | **278** | **15** | **~1010** | **~2h30-3h30 (hors S3 et A4)** | **13-16h** |
 
 ## Comment lancer
 
@@ -96,3 +98,4 @@ ssh -f -N -L 8880:<adresse-du-serveur>:80 ubuntu@<adresse-du-serveur>
 4. A3 Lea (App) - power user, couvre les edge cases
 5. Catastrophes - les 10 scenarios critiques
 6. A2 Marc + S2 Chef de Service - couverture complete
+7. A4 Nora (App) - regard critique après les autres parcours
