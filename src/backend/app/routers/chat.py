@@ -1049,6 +1049,7 @@ async def _extract_entities_background(
             existing_projects=project_names,
             llm=llm_service,
             contient_documents=documentaire,
+            conversation_id=conversation_id,
         )
 
         if extraction_result.contacts or extraction_result.projects:

@@ -10,7 +10,9 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from app.services.llm import ContextWindow, Message, get_llm_service
+from app.services.llm import ContextWindow, LLMService, Message, get_llm_service
+from app.services.providers.base import CacheAnthropic
+from app.services.token_tracker import get_token_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +111,8 @@ class EntityExtractor:
         existing_projects: list[str] | None = None,
         llm: Any | None = None,
         contient_documents: bool = False,
+        *,
+        conversation_id: str | None = None,
     ) -> ExtractionResult:
         if len(user_message.strip()) < 10:
             return ExtractionResult(contacts=[], projects=[])
@@ -126,8 +130,26 @@ class EntityExtractor:
             )
 
             response_parts = []
-            async for chunk in llm.stream_response(context):
+            usage: dict[str, int] = {}
+            if isinstance(llm, LLMService) and conversation_id is not None:
+                flux = llm.stream_response(context, usage_sink=usage)
+            else:
+                flux = llm.stream_response(context)
+            async for chunk in flux:
                 response_parts.append(chunk)
+
+            if conversation_id is not None and "input_tokens" in usage and "output_tokens" in usage:
+                # Le fournisseur a consommé des jetons même si sa sortie ne
+                # contient aucune entité ou ne peut pas être lue.
+                config = getattr(context, "config_effective", llm.config)
+                get_token_tracker().record_usage(
+                    conversation_id=conversation_id,
+                    model=config.model,
+                    provider=config.provider.value,
+                    input_tokens=usage["input_tokens"],
+                    output_tokens=usage["output_tokens"],
+                    cache_anthropic=CacheAnthropic.depuis_usage(usage),
+                )
 
             response = "".join(response_parts).strip()
             result = await asyncio.to_thread(self._parse_extraction_response, response)
