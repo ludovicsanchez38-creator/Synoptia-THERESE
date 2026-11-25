@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, FileText, Plus, X } from 'lucide-react';
 import { filtresAvecType, statutsProposesPour, useInvoiceStore } from '../../stores/invoiceStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { listInvoices, deleteInvoice, generateInvoicePDF, type Invoice } from '../../services/api';
 import { InvoiceForm } from './InvoiceForm';
 import { libellesDeLaPiece } from './libellesPiece';
@@ -68,6 +69,8 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   } = useInvoiceStore();
 
   const addNotification = useStatusStore((s) => s.addNotification);
+  const profilPdfManquant = useBillingProfileStore((s) => s.missingPdf);
+  const lireProfilFacturation = useBillingProfileStore((s) => s.refresh);
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -81,8 +84,12 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const tableauRef = useRef<HTMLDivElement>(null);
   const contenuTableauRef = useRef<HTMLTableElement>(null);
   const indiceColonnesId = useId();
+  const indicePdfId = useId();
   const [colonnesHorsCadre, setColonnesHorsCadre] = useState({ gauche: false, droite: false });
   const effectiveOpen = standalone || isInvoicePanelOpen;
+  useEffect(() => {
+    if (effectiveOpen) void lireProfilFacturation();
+  }, [effectiveOpen, lireProfilFacturation]);
   useDialogFocusTrap(deleteDialogRef, {
     active: Boolean(deletingInvoice) && effectiveOpen,
     isolateBackground: true,
@@ -506,6 +513,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         <tbody>
           {filteredInvoices.map((invoice) => {
             const { envoi, paiement, echeance } = cellulesStatut(invoice);
+            const prerequisPdf = invoice.status === 'draft' ? [
+              profilPdfManquant.length > 0
+                ? `Dans Paramètres > Profil, renseigne les mentions de l’émetteur (${profilPdfManquant.join(', ')}).`
+                : '',
+              invoice.client_address?.trim() ? '' : 'Renseigne l’adresse du destinataire dans le brouillon.',
+            ].filter(Boolean).join(' ') : '';
+            const descriptionPdfId = `${indicePdfId}-${invoice.id}`;
             return (
               <tr
                 key={invoice.id}
@@ -571,6 +585,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       type="button"
                       title="Générer et ouvrir le PDF"
                       aria-label={`Générer et ouvrir le PDF : ${libelleAccessiblePiece(invoice)}`}
+                      aria-describedby={prerequisPdf ? descriptionPdfId : undefined}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -595,6 +610,9 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       Supprimer
                     </Button>
                   </div>
+                  {prerequisPdf && <p id={descriptionPdfId} className="ml-auto mt-1 max-w-64 text-right text-xs text-text-muted">
+                    {prerequisPdf}
+                  </p>}
                 </td>
               </tr>
             );

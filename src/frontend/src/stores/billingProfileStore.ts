@@ -31,6 +31,8 @@ interface BillingProfileState {
   /** Champs manquants, ou `null` quand le profil est complet. Ne vaut que si
    *  `statutLecture === 'lu'` : sans lecture réussie, il ne dit rien. */
   missing: string[] | null;
+  /** Mentions d’identité requises par la génération du PDF. */
+  missingPdf: string[];
   statutLecture: StatutLectureProfil;
   /** P-136 : le numéro de TVA de l'émetteur est-il au profil ? `null` = inconnu. */
   tvaIntraRenseigne: boolean | null;
@@ -51,6 +53,7 @@ export const useBillingProfileStore = create<BillingProfileState>((set, get) => 
 
   return {
     missing: null,
+    missingPdf: [],
     statutLecture: 'jamais_lu',
     tvaIntraRenseigne: null,
 
@@ -61,6 +64,7 @@ export const useBillingProfileStore = create<BillingProfileState>((set, get) => 
         if (jeton !== dernierJeton) return;
         set({
           missing: status.is_complete ? null : status.missing,
+          missingPdf: status.pdf_missing ?? status.missing,
           statutLecture: 'lu',
           tvaIntraRenseigne: typeof status.tva_intra_renseigne === 'boolean' ? status.tva_intra_renseigne : null,
         });

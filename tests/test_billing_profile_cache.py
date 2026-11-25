@@ -87,3 +87,23 @@ class TestFallbackSessionDansLesStatuts:
         reponse = await client.get("/api/invoices/billing/profile-status")
         assert reponse.status_code == 200, reponse.text
         assert reponse.json()["is_complete"] is True
+
+    @pytest.mark.asyncio
+    async def test_p010_le_profil_distingue_configuration_et_prerequis_du_pdf(self, client):
+        profil = {
+            "name": "Camille Exemple",
+            "company": "Atelier fictif",
+            "address": "1 rue Exemple",
+            "siret": "12345678900010",
+            "legal_form": "SAS",
+        }
+        assert (await client.post("/api/config/profile", json=profil)).status_code == 200
+        reponse = await client.get("/api/invoices/billing/profile-status")
+        assert reponse.status_code == 200
+        etat = reponse.json()
+        assert etat["is_complete"] is True and etat["missing"] == []
+        assert etat["pdf_missing"] == ["capital social"]
+
+        assert (await client.post("/api/config/profile", json={**profil, "share_capital": "1 000,00"})).status_code == 200
+        reponse = await client.get("/api/invoices/billing/profile-status")
+        assert reponse.json()["pdf_missing"] == []

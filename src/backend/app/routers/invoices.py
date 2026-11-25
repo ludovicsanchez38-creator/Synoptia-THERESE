@@ -38,7 +38,7 @@ from app.services.invoice_pdf import (
     mention_penalite_taux,
 )
 from app.services.invoice_status import statut_effectif_facture
-from app.services.user_profile import get_cached_profile
+from app.services.user_profile import UserProfile, get_cached_profile
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
@@ -1514,8 +1514,8 @@ async def billing_profile_status(session: AsyncSession = Depends(get_session)):
     """Statut de complétude du profil émetteur (P0-PROD-2).
 
     Conserve le critère historique de configuration : raison sociale (ou nom),
-    SIRET et adresse. Les mentions supplémentaires du PDF sont contrôlées lors
-    de sa génération, sans déclasser les profils déjà configurés.
+    SIRET et adresse. Les mentions supplémentaires du PDF sont exposées à
+    part, sans déclasser les profils déjà configurés.
     """
     profile = get_cached_profile()
     if profile is None:
@@ -1525,14 +1525,11 @@ async def billing_profile_status(session: AsyncSession = Depends(get_session)):
 
         profile = await get_user_profile(session)
     if profile is None:
-        return {
-            "is_complete": False,
-            "missing": ["raison sociale ou nom", "SIRET", "adresse"],
-            "tva_intra_renseigne": False,
-        }
+        profile = UserProfile(name="")
     return {
         "is_complete": profile.is_billing_complete(),
         "missing": profile.missing_billing_fields(),
+        "pdf_missing": profile.missing_invoice_identity_fields(),
         # P-136 : le formulaire avertit (sans bloquer) d'une facture avec TVA
         # de plus de 150 € HT sans numéro de TVA de l'émetteur (F31808).
         "tva_intra_renseigne": bool((profile.tva_intra or "").strip()),
@@ -1613,12 +1610,8 @@ async def generate_invoice_pdf(
     # P0-PROD-2 : garde-fou émetteur. Un document de facturation sans identité
     # émetteur (raison sociale + SIRET + adresse) n'est pas conforme ni opposable
     # (constat C7 : factures sans SIRET, NDA inventé faute de profil).
-    if _profile is None or _profile.missing_invoice_identity_fields():
-        missing = (
-            _profile.missing_invoice_identity_fields()
-            if _profile
-            else ["raison sociale ou nom", "SIRET", "adresse"]
-        )
+    missing = (_profile or UserProfile(name="")).missing_invoice_identity_fields()
+    if missing:
         raise HTTPException(
             status_code=400,
             detail=(
