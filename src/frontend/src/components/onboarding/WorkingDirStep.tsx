@@ -203,20 +203,9 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
         <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
           Retour
         </Button>
-        <div className="flex flex-wrap gap-3 max-[840px]:basis-full">
-          <Button variant="ghost" onClick={onNext} data-testid="onboarding-skip-btn">
-            Passer
-          </Button>
-          <Button
-            variant="primary"
-            onClick={onNext}
-            disabled={!workingDir}
-            title={!workingDir ? 'Sélectionne un dossier ou clique sur "Passer"' : undefined}
-            data-testid="onboarding-next-btn"
-          >
-            Continuer
-          </Button>
-        </div>
+        <Button variant="primary" onClick={onNext} data-testid="onboarding-next-btn">
+          {workingDir || lectureImpossible ? 'Continuer' : 'Continuer sans dossier'}
+        </Button>
       </div>
     </motion.div>
   );

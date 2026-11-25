@@ -29,3 +29,22 @@ describe('WorkingDirStep - B-771, un nouveau dossier lève l’avertissement « 
     expect(screen.getByText(/Nouveau/)).toBeInTheDocument();
   });
 });
+
+describe('P-005 : une seule action pour avancer depuis le dossier de travail', () => {
+  it.each([
+    [null, 'Continuer sans dossier'],
+    ['/tmp/travail-fictif', 'Continuer'],
+  ])('affiche le bon libellé pour le dossier %s', async (path, libelle) => {
+    apiMocks.setWorkingDirectory.mockClear();
+    apiMocks.getWorkingDirectory.mockResolvedValue({ path, exists: Boolean(path) });
+    const onNext = vi.fn();
+    render(<WorkingDirStep onNext={onNext} onBack={vi.fn()} />);
+
+    const continuer = await screen.findByRole('button', { name: libelle });
+    expect(screen.getAllByRole('button', { name: /^(Continuer|Passer)/ })).toEqual([continuer]);
+    expect(continuer).toBeEnabled();
+    fireEvent.click(continuer);
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(apiMocks.setWorkingDirectory).not.toHaveBeenCalled();
+  });
+});
