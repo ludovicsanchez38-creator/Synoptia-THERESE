@@ -24,6 +24,8 @@ Cette bêta te permet d’essayer les fonctionnalités en cours de finition et d
 
 En revanche, le **service d'intelligence artificielle** qui fait tourner les réponses (Anthropic, OpenAI, Google, Mistral...) est payant à l'usage. Le montant dépend du modèle et de la quantité de texte traitée. Dans **Paramètres > Service d’IA**, le mode standard affiche le coût estimé du mois en dollars. Ouvre **Voir le détail de la consommation** pour lire l’usage du jour et du mois. Pour régler les limites et le budget, active le **Mode Contributeur** puis ouvre **Avancé > Limites & Consommation**.
 
+Après un arrêt manuel d’une réponse, le coût du début de la réponse n’apparaît pas au compteur.
+
 Si tu veux un usage **100% gratuit et sans connexion internet**, tu peux utiliser **Ollama** : un logiciel qui fait tourner l'IA directement sur ton ordinateur, sans rien envoyer à l'extérieur. La qualité des réponses dépend alors de la puissance de ta machine.
 
 ### Comment remonter un problème

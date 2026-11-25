@@ -31,6 +31,10 @@ Candidate locale sur `beta/c6-20261125`, à partir de `0ddefd1a3`. Ludo a choisi
 - Le composeur d’e-mail masque la commande Joindre jusqu’à la prise en charge des pièces jointes.
 - La mise en route et les paramètres préviennent si THÉRÈSE rencontre un refus de création de lien physique dans le dossier des PDF. L’application propose de choisir un dossier dédié sur le disque interne.
 
+## Limites connues de la bêta
+
+- Après un arrêt manuel d’une réponse, le coût du début de la réponse n’apparaît pas au compteur.
+
 ## Points à vérifier avant diffusion
 
 - Produire le PDF 0.85 à partir de la source de novembre 2026. Le canal de mise à jour des installations existantes utilise `/therese/alpha/latest.json`.
