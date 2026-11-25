@@ -400,3 +400,14 @@ def test_qwen4_max_envoie_le_plafond_du_mode_reflexion():
     assert corps["enable_thinking"] is True
     assert corps.get("max_completion_tokens") == 250_000
     assert "max_tokens" not in corps
+
+
+@pytest.mark.parametrize("modele", ["deepseek-flash", "deepseek-v4-flash", "deepseek-v4-pro"])
+def test_deepseek_tres_eleve_suit_le_niveau_high_documente(modele):
+    from app.services.providers.base import LLMConfig, LLMProvider
+    from app.services.providers.deepseek import DeepSeekProvider
+
+    fournisseur = DeepSeekProvider(LLMConfig(LLMProvider.DEEPSEEK, modele, effort="xhigh"), None)
+    corps = fournisseur._build_request_body([{"role": "user", "content": "Bonjour"}])
+
+    assert corps["reasoning_effort"] == "high"

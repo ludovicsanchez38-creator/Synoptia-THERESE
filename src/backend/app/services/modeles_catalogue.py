@@ -101,7 +101,7 @@ _GLM_53_FLASH = FicheModele(
     effort={"max": "max"}, context_window=1_000_000, limite_sortie_fournisseur=128_000,
 )
 _DEEPSEEK_V4 = FicheModele(
-    effort={"low": "low", "medium": "high", "high": "high", "xhigh": "max", "max": "max"},
+    effort={"low": "low", "medium": "high", "high": "high", "xhigh": "high", "max": "max"},
     context_window=1_000_000,
     limite_sortie_fournisseur=384_000,
 )
