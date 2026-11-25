@@ -442,6 +442,13 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
       // L'adresse Qwen n'est pas optionnelle : continuer sans elle livrerait
       // un fournisseur configuré incapable de répondre.
       && (selectedProvider !== 'qwen' || /^https?:\/\//.test(baseUrlInput.trim()));
+  const serviceConfigure = canContinue && selectedModel
+    && (!verification || !ETATS_CLE_BLOQUANTS.has(verification.etat))
+    ? {
+        nom: currentProviderConfig?.name ?? selectedProvider,
+        modele: availableModels.find((modele) => modele.id === selectedModel)?.name ?? selectedModel,
+      }
+    : undefined;
 
   if (loading) {
     return (
@@ -478,7 +485,12 @@ export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps)
         </div>
       </div>
 
-      <GuidePremierServiceIA provider={selectedProvider} onRetest={() => void loadState()} retesting={reverificationDesactivee} />
+      <GuidePremierServiceIA
+        provider={selectedProvider}
+        serviceConfigure={serviceConfigure}
+        onRetest={() => void loadState()}
+        retesting={reverificationDesactivee}
+      />
 
       {/* Provider Selection */}
       {/* BUG-100 : pas de plafond de hauteur sur cette liste. Avec 10 providers et la

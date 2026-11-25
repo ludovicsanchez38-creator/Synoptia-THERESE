@@ -83,3 +83,14 @@ describe('LLMTab - P-085, les fournisseurs secondaires derrière « Autres »', 
     expect(bascule).toHaveAttribute('aria-expanded', 'false');
   });
 });
+
+it('P-003 : indique le modèle configuré et garde la procédure accessible dans les réglages', () => {
+  rendre({ apiKeys: { anthropic: true } });
+  expect(screen.getByText(/Service d’IA configuré/).closest('p')).toHaveTextContent(/Claude.*Sonnet 4\.6/);
+  const resume = screen.getByText('Pour recevoir ta première réponse');
+  const procedure = resume.closest('details')!;
+  expect(procedure).not.toHaveAttribute('open');
+  fireEvent.click(resume);
+  expect(procedure).toHaveAttribute('open');
+  expect(screen.getByRole('link', { name: 'Créer une clé Claude' })).toBeVisible();
+});

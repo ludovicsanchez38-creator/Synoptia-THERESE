@@ -284,3 +284,21 @@ describe('B-2058 : chaque réponse reste liée à son fournisseur et à sa deman
     expect(onNext).toHaveBeenCalledExactlyOnceWith('anthropic');
   });
 });
+
+it('P-003 : annonce le service et le modèle avant la procédure quand la clé est déjà disponible', async () => {
+  apiMocks.getApiKeysWithCorrupted.mockResolvedValue({ keys: { anthropic: true }, corrupted: [], sources: { anthropic: 'env' } });
+  apiMocks.getOllamaStatus.mockResolvedValue({ available: false, models: [] });
+  apiMocks.getSystemResources.mockResolvedValue(null);
+  await afficher();
+
+  const resume = screen.getByText(/Service d’IA configuré/).closest('p')!;
+  expect(resume).toHaveTextContent(/Claude.*Opus 5\.5/);
+  const procedure = screen.getByText('Pour recevoir ta première réponse').closest('details')!;
+  expect(resume.compareDocumentPosition(procedure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(procedure).not.toHaveAttribute('open');
+  expect(screen.getByTestId('onboarding-next-btn')).toBeEnabled();
+
+  await choisir(/GPT \(OpenAI\)/);
+  expect(screen.queryByText(/Service d’IA configuré/)).toBeNull();
+  expect(screen.getByTestId('onboarding-next-btn')).toBeDisabled();
+});

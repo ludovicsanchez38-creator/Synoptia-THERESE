@@ -164,6 +164,7 @@ export function LLMTab({
   // Adresse personnalisée Qwen : l'adresse d'espace de travail est propre au
   // compte - sans elle, le fournisseur ne peut pas fonctionner.
   const [baseUrlInput, setBaseUrlInput] = useState('');
+  const [adresseQwenConfiguree, setAdresseQwenConfiguree] = useState(false);
   const [baseUrlSaved, setBaseUrlSaved] = useState(false);
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
   useEffect(() => {
@@ -171,7 +172,10 @@ export function LLMTab({
     if (selectedProvider !== 'qwen') return;
     let annule = false;
     void api.getLLMConfig().then((config) => {
-      if (!annule && config.provider === 'qwen') setBaseUrlInput(config.base_url ?? '');
+      if (!annule && config.provider === 'qwen') {
+        setBaseUrlInput(config.base_url ?? '');
+        setAdresseQwenConfiguree(Boolean(config.base_url));
+      }
     }).catch(() => {});
     return () => { annule = true; };
   }, [selectedProvider]);
@@ -181,6 +185,7 @@ export function LLMTab({
     setError(null);
     try {
       await api.setLLMConfig(selectedProvider, selectedModel, undefined, baseUrlInput.trim());
+      setAdresseQwenConfiguree(true);
       setBaseUrlSaved(true);
       setTimeout(() => setBaseUrlSaved(false), 3000);
     } catch (err) {
@@ -194,6 +199,13 @@ export function LLMTab({
   const availableModels: { id: string; name: string; badge?: string }[] = selectedProvider === 'ollama'
     ? ollamaModels.map(name => ({ id: name, name, badge: estModeleOllamaCloud(name) ? 'Ollama Cloud, en ligne' : undefined }))
     : catalogueDynamique ?? (currentProviderConfig?.models || []);
+  const serviceDisponible = needsApiKey
+    ? hasApiKey && !corruptedKeys.includes(selectedProvider) && (selectedProvider !== 'qwen' || adresseQwenConfiguree)
+    : ollamaStatus?.available && ollamaStatus.models.some((modele) => modele.name === selectedModel && modele.gere_les_outils);
+  const serviceConfigure = serviceDisponible && selectedModel ? {
+    nom: currentProviderConfig?.name ?? selectedProvider,
+    modele: availableModels.find((modele) => modele.id === selectedModel)?.name ?? selectedModel,
+  } : undefined;
 
   /**
    * La ligne « quoi » de la carte Ollama : UNE chaîne, jamais une
@@ -254,7 +266,12 @@ export function LLMTab({
   return (
     <div className="space-y-4">
       {/* La section : le titre, puis la grille des quatorze services. */}
-      <GuidePremierServiceIA provider={selectedProvider} onRetest={onRetestOllama} retesting={retestingOllama} />
+      <GuidePremierServiceIA
+        provider={selectedProvider}
+        serviceConfigure={serviceConfigure}
+        onRetest={onRetestOllama}
+        retesting={retestingOllama}
+      />
 
       <Carte as="section" aria-labelledby="settings-ia-title">
         <CarteTete

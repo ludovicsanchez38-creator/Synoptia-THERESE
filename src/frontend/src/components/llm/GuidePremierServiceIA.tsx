@@ -2,8 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
 import { Button } from '../ui/Button';
 
-export function GuidePremierServiceIA({ provider, onRetest, retesting = false }: {
+export function GuidePremierServiceIA({ provider, serviceConfigure, onRetest, retesting = false }: {
   provider: string;
+  serviceConfigure?: { nom: string; modele: string };
   onRetest?: () => void;
   retesting?: boolean;
 }) {
@@ -15,8 +16,7 @@ export function GuidePremierServiceIA({ provider, onRetest, retesting = false }:
       void open(href).catch(() => setErreur('Le navigateur n’a pas pu s’ouvrir. Réessaie.'));
     }}>{texte}</a>;
   }
-  return <section aria-label="Obtenir une IA qui répond" className="mb-5 space-y-3 rounded-md border border-border bg-surface p-4 text-sm text-text">
-    <p className="font-semibold">Pour recevoir ta première réponse</p>
+  const procedure = <div className="space-y-3">
     <p>Choisis un service en ligne, payant à l’usage, ou un modèle gratuit à installer sur ton ordinateur.</p>
     <details open={provider === 'anthropic'} className="space-y-2">
       <summary className="cursor-pointer font-medium">Avec Claude : obtenir ta clé, pas à pas</summary>
@@ -41,5 +41,18 @@ export function GuidePremierServiceIA({ provider, onRetest, retesting = false }:
       {onRetest && <Button size="sm" variant="secondary" disabled={retesting} onClick={onRetest}>Vérifier Ollama après l’installation</Button>}
     </details>
     {erreur && <p role="alert" className="text-error">{erreur}</p>}
+  </div>;
+
+  return <section aria-label="Obtenir une IA qui répond" className="mb-5 space-y-3 rounded-md border border-border bg-surface p-4 text-sm text-text">
+    {serviceConfigure ? <>
+      <p role="status"><strong>Service d’IA configuré</strong> · {serviceConfigure.nom} · {serviceConfigure.modele}</p>
+      <details className="space-y-3" key={provider}>
+        <summary className="cursor-pointer font-semibold">Pour recevoir ta première réponse</summary>
+        {procedure}
+      </details>
+    </> : <>
+      <p className="font-semibold">Pour recevoir ta première réponse</p>
+      {procedure}
+    </>}
   </section>;
 }
