@@ -71,7 +71,7 @@ Tu as besoin d'un **code d'accès au service IA** (appelé "clé API") pour util
 2. **Suis l'assistant de configuration** qui te guide étape par étape
 3. **Commence à discuter** avec THÉRÈSE !
 
-Guide complet pour les testeurs : [docs/USER_GUIDE_ALPHA.md](docs/USER_GUIDE_ALPHA.md)
+Consulte le [guide des testeurs](docs/USER_GUIDE_ALPHA.md).
 
 ## Signaler un bug
 
