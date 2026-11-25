@@ -4,9 +4,28 @@ THERESE v2 - Backup & Data Tests
 Tests for US-BAK-01 to US-BAK-05.
 """
 
+import sqlite3
+from contextlib import closing
+from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
+
+PHRASE_SAUVEGARDE_FICTIVE = "phrase fictive du banc local"
+
+
+@pytest.fixture
+def stockage_sauvegarde(tmp_path, monkeypatch):
+    from app.config import settings
+
+    chemin = tmp_path / "therese.db"
+    with closing(sqlite3.connect(chemin)) as base:
+        assert base.execute("PRAGMA journal_mode=WAL").fetchone() == ("wal",)
+        base.execute("CREATE TABLE temoin (texte TEXT NOT NULL)")
+        base.execute("INSERT INTO temoin VALUES ('Sauvegarde de contrôle')")
+        base.commit()
+    monkeypatch.setattr(settings, "db_path", chemin)
+    monkeypatch.setattr(settings, "data_dir", tmp_path)
 
 
 class TestExportConversations:
@@ -100,17 +119,22 @@ class TestBackupOperations:
     """Tests for US-BAK-03, US-BAK-04: Backup and restore."""
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(strict=True, reason="01/09 : jamais execute depuis sa creation, l attente diverge du code actuel. A trier.")
-    async def test_create_backup(self, async_client: AsyncClient):
-        """Test creating a backup."""
-        response = await async_client.post("/api/data/backup")
-        assert response.status_code == 200
+    async def test_create_backup(self, async_client: AsyncClient, stockage_sauvegarde):
+        """La sauvegarde réussit avec une phrase et laisse une seule archive chiffrée."""
+        response = await async_client.post("/api/data/backup", json={"password": PHRASE_SAUVEGARDE_FICTIVE})
+        assert response.status_code == 200, response.text
 
         data = response.json()
         assert data["success"] is True
         assert "backup_name" in data
         assert "path" in data
         assert "created_at" in data
+        assert data["encrypted"] is True
+        assert "therese.db" in data["included"]
+        archive = Path(data["path"])
+        assert archive.name == f"{data['backup_name']}.tar.gz.enc"
+        assert archive.is_file()
+        assert not archive.with_suffix("").exists()
 
     @pytest.mark.asyncio
     async def test_list_backups(self, async_client: AsyncClient):
@@ -184,12 +208,10 @@ class TestBackupIntegration:
     """Integration tests for backup workflow."""
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(strict=True, reason="01/09 : jamais execute depuis sa creation, l attente diverge du code actuel. A trier.")
-    async def test_full_backup_restore_workflow(self, async_client: AsyncClient):
-        """Test complete backup and list workflow."""
-        # Create a backup
-        create_response = await async_client.post("/api/data/backup")
-        assert create_response.status_code == 200
+    async def test_full_backup_restore_workflow(self, async_client: AsyncClient, stockage_sauvegarde):
+        """Créer, lister, vérifier puis supprimer la sauvegarde chiffrée de test."""
+        create_response = await async_client.post("/api/data/backup", json={"password": PHRASE_SAUVEGARDE_FICTIVE})
+        assert create_response.status_code == 200, create_response.text
         backup_name = create_response.json()["backup_name"]
 
         # List backups
@@ -200,6 +222,8 @@ class TestBackupIntegration:
         # Verify our backup is in the list
         backup_names = [b.get("backup_name") for b in backups]
         assert backup_name in backup_names
+        sauvegarde = next(b for b in backups if b["backup_name"] == backup_name)
+        assert sauvegarde["encrypted"] and sauvegarde["exists"]
 
         # Check backup status
         status_response = await async_client.get("/api/data/backup/status")
@@ -209,3 +233,4 @@ class TestBackupIntegration:
         # Clean up - delete the test backup
         delete_response = await async_client.delete(f"/api/data/backups/{backup_name}")
         assert delete_response.status_code == 200
+        assert not Path(sauvegarde["archive_path"]).exists()
