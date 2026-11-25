@@ -936,10 +936,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                 )
             elif event.type == "done":
                 if usage_sink is not None:
-                    if event.input_tokens is not None:
-                        usage_sink["input_tokens"] = event.input_tokens
-                    if event.output_tokens is not None:
-                        usage_sink["output_tokens"] = event.output_tokens
+                    event.renseigner_usage(usage_sink)
                 if motif_sink is not None and event.stop_reason:
                     motif_sink["stop_reason"] = event.stop_reason
 
@@ -1242,10 +1239,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).{therese_md}
                     # B-1066 : ce texte atteint l'écran (ErreurDuModele) : jamais d'anglais.
                     errors.append(event.content or "Le fournisseur a signalé une erreur sans la décrire.")
                 elif event.type == "done" and usage_sink is not None:
-                    if event.input_tokens is not None:
-                        usage_sink["input_tokens"] = event.input_tokens
-                    if event.output_tokens is not None:
-                        usage_sink["output_tokens"] = event.output_tokens
+                    event.renseigner_usage(usage_sink)
         except Exception as exc:
             # B-1092 : le flux compte déjà ses exceptions ; les recompter ici
             # faisait deux échecs d'une panne (seuil 2 : circuit ouvert).

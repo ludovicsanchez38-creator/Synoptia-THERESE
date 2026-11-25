@@ -14,6 +14,7 @@ from app.services.error_handler import ErreurPourEcran
 
 from .base import (
     BaseProvider,
+    CacheAnthropic,
     LLMProvider,
     StreamEvent,
     ToolCall,
@@ -169,6 +170,7 @@ class AnthropicProvider(BaseProvider):
                 # message_start, output_tokens (cumulatif) dans chaque message_delta.
                 input_tokens: int | None = None
                 output_tokens: int | None = None
+                cache: CacheAnthropic | None = None
                 done_emitted = False
                 # P-122 (Opus 5.5) : le contenu du tour tel que reçu, dans
                 # l'ordre. Sur les modèles à réflexion toujours active, la
@@ -193,13 +195,17 @@ class AnthropicProvider(BaseProvider):
                                 usage = event.get("message", {}).get("usage", {})
                                 input_tokens = usage.get("input_tokens")
                                 if input_tokens is not None:
-                                    # Les jetons en cache restent du contexte
-                                    # transmis : ne pas annoncer une fausse
-                                    # baisse du nombre de jetons à l'écran.
-                                    input_tokens += (
-                                        usage.get("cache_creation_input_tokens", 0)
-                                        + usage.get("cache_read_input_tokens", 0)
-                                    )
+                                    ecrits = usage.get("cache_creation_input_tokens", 0)
+                                    lus = usage.get("cache_read_input_tokens", 0)
+                                    # Les jetons en cache restent dans le total
+                                    # transmis. Le traceur ajuste leur tarif.
+                                    input_tokens += ecrits + lus
+                                    if ecrits or lus:
+                                        ecrits_1h = min(
+                                            ecrits,
+                                            (usage.get("cache_creation") or {}).get("ephemeral_1h_input_tokens", 0),
+                                        )
+                                        cache = CacheAnthropic(ecrits - ecrits_1h, ecrits_1h, lus)
 
                             elif event_type == "content_block_start":
                                 content_block = event.get("content_block", {})
@@ -276,6 +282,7 @@ class AnthropicProvider(BaseProvider):
                                     stop_reason=stop_reason or "end_turn",
                                     input_tokens=input_tokens,
                                     output_tokens=output_tokens,
+                                    cache_anthropic=cache,
                                 )
 
                         except json.JSONDecodeError:
@@ -292,6 +299,7 @@ class AnthropicProvider(BaseProvider):
                         stop_reason=stop_reason or "end_turn",
                         input_tokens=input_tokens,
                         output_tokens=output_tokens,
+                        cache_anthropic=cache,
                     )
 
         except httpx.HTTPStatusError as e:

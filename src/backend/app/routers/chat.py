@@ -74,7 +74,7 @@ from app.services.provenance_documents import (
     memoriser_provenance,
     reprendre_messages_differes,
 )
-from app.services.providers.base import LLMProvider, message_fournisseur_pour_ecran
+from app.services.providers.base import CacheAnthropic, LLMProvider, message_fournisseur_pour_ecran
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
 from app.services.slash_commands import (
@@ -82,7 +82,7 @@ from app.services.slash_commands import (
     parse_inline_commands,
     parse_slash_command,
 )
-from app.services.token_tracker import detect_uncertainty, get_token_tracker
+from app.services.token_tracker import AppelModele, detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     _base_tool_name,
     canoniser_arguments,
@@ -1545,8 +1545,8 @@ def _flux_direct(llm_service: Any, contexte: Any, usage_sink: Any, motif_sink: d
 def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
     """Mémorise un appel fournisseur, sans additionner les prompts d'abord.
 
-    ``appels`` garde chaque couple (entrée, sortie). Le coût se calcule
-    ensuite appel par appel. Un tour sans usage réel bascule l'estimation.
+    ``appels`` garde l'entrée, la sortie et l'éventuel cache de chaque appel.
+    Un tour sans usage réel bascule l'estimation.
     """
     entree = getattr(event, "input_tokens", None)
     sortie = getattr(event, "output_tokens", None)
@@ -1555,12 +1555,13 @@ def _noter_usage_d_appel(usage_totals: dict[str, Any], event: Any) -> None:
         return
     usage_totals["input_tokens"] += entree
     usage_totals["output_tokens"] += sortie
-    usage_totals["appels"].append((entree, sortie))
+    cache = getattr(event, "cache_anthropic", None)
+    usage_totals["appels"].append((entree, sortie, cache) if cache else (entree, sortie))
 
 
 def _usage_du_tour(
     usage_totals: dict[str, Any], user_message: str, full_content: str
-) -> tuple[int, int, list[tuple[int, int]] | None]:
+) -> tuple[int, int, list[AppelModele] | None]:
     """Usage réel accumulé sur tous les tours d'outils, sinon estimation.
 
     Estimation ~1 mot = 2 tokens en filet (providers pas encore migrés).
@@ -2406,6 +2407,7 @@ async def send_message(
         provider=fournisseur,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        cache_anthropic=CacheAnthropic.depuis_usage(usage_sink),
     )
 
     assistant_message = Message(

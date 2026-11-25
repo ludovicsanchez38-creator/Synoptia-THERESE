@@ -36,6 +36,7 @@ from app.services.llm import (
 from app.services.llm import Message as LLMMessage
 from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.ollama_capabilites import est_modele_ollama_cloud
+from app.services.providers.base import CacheAnthropic
 from app.services.user_profile import get_cached_profile
 from app.services.web_search import RechercheWebRefusee, get_web_search_service
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -398,6 +399,7 @@ class BoardService:
                 provider=llm_service.config.provider.value,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
+                cache_anthropic=CacheAnthropic.depuis_usage(usage_sink),
             )
             return {
                 "provider": llm_service.config.provider.value,

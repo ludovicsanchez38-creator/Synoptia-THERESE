@@ -14,6 +14,18 @@ from pathlib import Path
 from typing import Any
 
 from app.services.civil_time import date_civile_paris
+from app.services.providers.base import CacheAnthropic
+
+AppelModele = tuple[int, int] | tuple[int, int, CacheAnthropic]
+
+# https://platform.claude.com/docs/en/about-claude/pricing (25/11/2026).
+# Les lectures sont au dixième du tarif d'entrée, sauf ces quatre modèles.
+_RATIOS_LECTURE_ANTHROPIC = {
+    "claude-fable-5-2": 0.025,
+    "claude-fable-5-1": 0.025,
+    "claude-opus-5-5": 0.05,
+    "claude-sonnet-5-5": 0.05,
+}
 
 
 @dataclass(frozen=True)
@@ -621,6 +633,7 @@ class TokenTracker:
         model: str,
         input_tokens: int,
         output_tokens: int,
+        cache_anthropic: CacheAnthropic | None = None,
     ) -> float:
         """
         Estimate cost for a request (US-ESC-02).
@@ -630,23 +643,30 @@ class TokenTracker:
         revue Soso 0.48.1 finding S2-4).
         """
         prices = self._tarif_pour(model, input_tokens)
-        input_cost = (input_tokens / 1_000_000) * prices["input"]
+        entree_ponderee = float(input_tokens)
+        if cache_anthropic is not None:
+            taux_lecture = _RATIOS_LECTURE_ANTHROPIC.get(self._cle_grille(model), 0.1)
+            # Le total inclut déjà ces jetons. On ajuste uniquement leur prix.
+            entree_ponderee += (
+                0.25 * cache_anthropic.ecrits_5m
+                + cache_anthropic.ecrits_1h
+                - (1 - taux_lecture) * cache_anthropic.lus
+            )
+        input_cost = (entree_ponderee / 1_000_000) * prices["input"]
         output_cost = (output_tokens / 1_000_000) * prices["output"]
         return input_cost + output_cost
 
     def cout_des_appels(
         self,
         model: str,
-        appels: list[tuple[int, int]],
+        appels: list[AppelModele],
     ) -> float:
         """Somme des coûts, chaque appel avec sa propre longueur de prompt.
 
         Le palier porte sur une requête fournisseur, pas sur le total de
         plusieurs tours d'outils.
         """
-        return sum(
-            self.estimate_cost(model, entree, sortie) for entree, sortie in appels
-        )
+        return sum(self.estimate_cost(model, *appel) for appel in appels)
 
     def record_usage(
         self,
@@ -657,7 +677,8 @@ class TokenTracker:
         output_tokens: int,
         context_truncated: bool = False,
         truncated_messages: int = 0,
-        appels: list[tuple[int, int]] | None = None,
+        appels: list[AppelModele] | None = None,
+        cache_anthropic: CacheAnthropic | None = None,
     ) -> TokenUsageRecord:
         """
         Record token usage for a request (US-ESC-04).
@@ -668,7 +689,7 @@ class TokenTracker:
         if appels:
             cost = self.cout_des_appels(model, appels)
         else:
-            cost = self.estimate_cost(model, input_tokens, output_tokens)
+            cost = self.estimate_cost(model, input_tokens, output_tokens, cache_anthropic)
 
         record = TokenUsageRecord(
             timestamp=datetime.now(UTC),
@@ -1061,4 +1082,5 @@ def enregistrer_usage_llm(
         provider=fournisseur,
         input_tokens=int(input_tokens),
         output_tokens=int(output_tokens),
+        cache_anthropic=CacheAnthropic.depuis_usage(usage),
     )

@@ -208,6 +208,24 @@ class ToolTurn:
     assistant_content_brut: Any | None = None
 
 
+@dataclass(frozen=True)
+class CacheAnthropic:
+    """Jetons en cache déjà inclus dans le total d'entrée."""
+
+    ecrits_5m: int
+    ecrits_1h: int
+    lus: int
+
+    @classmethod
+    def depuis_usage(cls, usage: dict[str, int]) -> "CacheAnthropic | None":
+        ecrits_5m = usage.get("cache_ecrits_5m", 0)
+        ecrits_1h = usage.get("cache_ecrits_1h", 0)
+        lus = usage.get("cache_lus", 0)
+        if ecrits_5m or ecrits_1h or lus:
+            return cls(ecrits_5m, ecrits_1h, lus)
+        return None
+
+
 @dataclass
 class StreamEvent:
     """An event from the LLM stream."""
@@ -227,6 +245,17 @@ class StreamEvent:
     # l'évènement tool_call quand le tour était en chunks - transporté
     # par chat.py jusqu'au ToolTurn du rejeu.
     assistant_content_brut: Any | None = None
+    cache_anthropic: CacheAnthropic | None = None
+
+    def renseigner_usage(self, usage: dict[str, int]) -> None:
+        if self.input_tokens is not None:
+            usage["input_tokens"] = self.input_tokens
+        if self.output_tokens is not None:
+            usage["output_tokens"] = self.output_tokens
+        if self.cache_anthropic is not None:
+            usage["cache_ecrits_5m"] = self.cache_anthropic.ecrits_5m
+            usage["cache_ecrits_1h"] = self.cache_anthropic.ecrits_1h
+            usage["cache_lus"] = self.cache_anthropic.lus
 
 
 NOMS_FOURNISSEURS: dict[LLMProvider, str] = {
