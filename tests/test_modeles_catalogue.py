@@ -387,3 +387,16 @@ def test_modeles_compatibles_openai_emettent_le_plafond_de_completion(
     assert corps["max_completion_tokens"] == 100_000
     assert corps["reasoning_effort"] == attendu
     assert {"max_tokens", "temperature", "top_p", "n", "frequency_penalty", "presence_penalty"}.isdisjoint(corps)
+
+
+def test_qwen4_max_envoie_le_plafond_du_mode_reflexion():
+    from app.services.providers.base import LLMConfig, LLMProvider
+    from app.services.providers.qwen import QwenProvider
+
+    config = LLMConfig(LLMProvider.QWEN, "qwen4-max", max_tokens=250_000, effort="high")
+    fournisseur = QwenProvider(config, None)
+    corps = fournisseur._build_request_body([{"role": "user", "content": "Bonjour"}])
+
+    assert corps["enable_thinking"] is True
+    assert corps.get("max_completion_tokens") == 250_000
+    assert "max_tokens" not in corps

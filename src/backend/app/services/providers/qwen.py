@@ -41,6 +41,9 @@ class QwenProvider(OpenAIProvider):
 
     API_URL = QWEN_API_URL
 
+    def _utilise_max_completion_tokens(self) -> bool:
+        return self.config.model == "qwen4-max" or super()._utilise_max_completion_tokens()
+
     def _champ_raisonnement_a_rejouer(self) -> str | None:
         return "encrypted_content" if self.config.model == "qwen4-max" else None
 

@@ -396,7 +396,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         fiches={
             "qwen4-max": FicheModele(
                 effort={"low": "low", "medium": "high", "high": "high", "xhigh": "xhigh", "max": "xhigh"},
-                limite_sortie_fournisseur=131_072,
+                # Le fournisseur active la réflexion pour ce modèle.
+                limite_sortie_fournisseur=262_144,
             ),
             "qwen3.8-flash": FicheModele(limite_sortie_fournisseur=128_000),
         },
