@@ -119,7 +119,7 @@ describe('L’accueil est un établi', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Aide' }));
     expect(await screen.findByRole('dialog', { name: 'Aide' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ouvrir le guide (PDF)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ouvrir le guide' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Capacités' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Fermer l’aide' }));
     fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));

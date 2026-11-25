@@ -1,12 +1,12 @@
-# THÉRÈSE v2 - Guide Utilisateur Alpha
+# Guide des testeurs de THÉRÈSE 0.85
 
-> **Version** : Alpha v3.8 - Juin 2026
+> **Édition bêta 0.85.0**, novembre 2026.
 > **Éditeur** : Synoptïa (Ludovic Sanchez)
 > **Contact** : ludo@synoptia.fr
 
 ---
 
-## Bienvenue, testeur alpha !
+## Bienvenue dans la bêta
 
 **THÉRÈSE** est un assistant IA souverain conçu pour les solopreneurs et TPE français. Son ambition : te donner un copilote intelligent qui comprend ton métier, retient tes contacts et projets, et t'accompagne au quotidien - le tout en gardant tes données chez toi.
 
@@ -14,11 +14,7 @@
 
 ### Ce que tu testes
 
-Tu as entre les mains une version **alpha**. Cela signifie :
-
-- Des **bugs sont attendus** (et c'est normal !)
-- Certaines fonctionnalités sont encore en cours de finition
-- Tes retours sont **précieux** pour améliorer le produit
+Cette bêta te permet d’essayer les fonctionnalités en cours de finition et de signaler les problèmes rencontrés.
 
 ---
 
@@ -36,7 +32,7 @@ Tu as trois options (la première est recommandée) :
 
 1. **Discord** (recommandé) : rejoins le serveur des testeurs via [discord.gg/krDGArdbH8](https://discord.gg/krDGArdbH8), puis mentionne `@Thérèse bug : [description du problème]` dans le salon **#bugs**. Le bot crée automatiquement un thread dédié et te demande des précisions. Pour les retours plus généraux (idées, impressions, ergonomie), utilise le salon **#feedback**.
 2. **GitHub Issues** : ouvre une [issue](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/issues/new?template=bug_report.md) avec le template de bug report
-3. **Email** : envoie un message à **ludo@synoptia.fr** avec le sujet `[THÉRÈSE Alpha] Bug`
+3. **Email** : envoie un message à **ludo@synoptia.fr** avec le sujet `[THÉRÈSE Bêta] Bug`
 
 ### Le cycle de correction
 
@@ -52,10 +48,13 @@ Tu as trois options (la première est recommandée) :
 
 ### Installation simple (recommandée)
 
-1. Télécharge l'installeur depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases) :
-   - **macOS** : fichier `.dmg`
-   - **Windows** : fichier `.exe`
-2. Double-clique sur le fichier téléchargé pour lancer l'installation. C'est tout !
+1. Ouvre la [page de téléchargement bêta](https://synoptia.fr/therese/beta/) et choisis le fichier de ton système.
+   - **macOS** · fichier `.dmg`
+   - **Windows** · fichier `.exe`
+   - **Linux (Debian et Ubuntu)** · fichier `.deb`
+2. Ouvre l’installeur. Au démarrage de la 0.85.0, l’application affiche `v0.85.0-beta`.
+
+![Écran de démarrage avec v0.85.0-beta](guide-0.85/demarrage.png)
 
 > **macOS** : l'application n'est pas encore signée (certificat Apple). Au premier lancement : clic droit > **Ouvrir** > **Confirmer**. macOS retiendra ton choix pour les lancements suivants.
 
@@ -63,7 +62,7 @@ Tu as trois options (la première est recommandée) :
 
 ### Installation depuis les sources (développeurs)
 
-Si tu souhaites compiler le projet toi-même, consulte le guide technique : [docs/GETTING_STARTED.md](GETTING_STARTED.md).
+Si tu souhaites compiler le projet toi-même, consulte le guide technique : [guide de démarrage technique](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/blob/main/docs/GETTING_STARTED.md).
 
 ### Configuration initiale
 
@@ -71,9 +70,9 @@ Au premier lancement, un **assistant de configuration** te guide en 6 étapes :
 
 1. **Bienvenue** - Présentation de THÉRÈSE
 2. **Profil** - Ton nom, entreprise, rôle (import possible depuis un fichier CLAUDE.md)
-3. **LLM** - Choix du service IA (provider) et code d'accès (clé API)
+3. **Service d’IA** - Choisis parmi quinze services, dont Synthetic. Ollama peut arriver en tête si le service Ollama répond. Pour un service en ligne, renseigne ton code d’accès (clé API).
 4. **Sécurité** - Information sur les connexions cloud et les risques associés
-5. **Dossier de travail** - Répertoire local pour tes fichiers
+5. **Dossier de travail** - Choisis un dossier dédié pour tes fichiers. Si THÉRÈSE y rencontre un refus de création de lien physique, elle te prévient que les PDF de devis et de factures peuvent échouer. Choisis alors un dossier dédié sur le disque interne, par exemple dans **Documents**. Tu peux changer ce choix dans **Paramètres > Avancé > Stockage des données**. Active le **Mode Contributeur** dans Paramètres si la rubrique Avancé est masquée.
 6. **Terminé** - Résumé de ta configuration
 
 ---
@@ -84,16 +83,31 @@ Au premier lancement, un **assistant de configuration** te guide en 6 étapes :
 
 Le cœur de THÉRÈSE : une conversation fluide avec un LLM de ton choix.
 
-**Services IA (providers) supportés** :
+**Exemples de services et de modèles proposés**
 
 | Service IA (provider) | Modèles | Code d'accès (clé API) requis |
 |----------|---------|-----------------|
-| **Anthropic** | Claude Opus 4.5, Sonnet 4.5, Haiku 4.5 | `sk-ant-...` |
-| **OpenAI** | GPT-5.2, GPT-4o, o3 | `sk-...` |
-| **Gemini** | Gemini 3 Pro, 3 Flash, 2.5 Pro, 2.5 Flash | `AIza...` |
-| **Mistral** | Mistral Large, Codestral, Mistral Small | Code Mistral |
-| **Grok** | Grok 3, Grok 3 Fast | `xai-...` |
-| **Ollama** | Tous les modèles locaux installés | Aucun (100% local et gratuit) |
+| **Anthropic** | Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 | `sk-ant-...` |
+| **OpenAI** | GPT-6.2 Sol par défaut, GPT-6.2 Astra pour les tâches complexes, GPT-6 Sol | `sk-...` |
+| **Gemini** | Gemini 3.8 Flash par défaut, Gemini 4 Hydrogen, Neon et Carbon | `AIza...` |
+| **Mistral** | Mistral Large 4.0 par défaut | Code Mistral |
+| **Grok** | Grok 4.7 par défaut | `xai-...` |
+| **Ollama** | Modèles locaux installés | Aucun pour les modèles locaux |
+| **Synthetic** | Grand modèle texte (`syn:large:text`), Kimi K3.1 Pro (`hf:moonshotai/Kimi-K3.1-Pro`) | Code d’accès Synthetic |
+
+Si tu avais enregistré GPT-6 Sol, le chat conserve ce choix. Avec GPT-6.2 Sol ou Astra, le réglage **Auto** laisse le modèle choisir l’effort de raisonnement.
+
+Pour utiliser Claude, choisis **Anthropic**, copie le code d’accès de ton compte Anthropic et renseigne-le dans la mise en route ou dans **Paramètres > Service d’IA**. Tu peux ensuite vérifier la clé et choisir Claude Opus 5.5 ou un autre modèle Claude.
+
+#### Configurer Synthetic
+
+Dans la mise en route, sélectionne **Synthetic** parmi les services d’IA. Si THÉRÈSE est déjà configurée, ouvre **Paramètres > Service d’IA > Autres**, puis sélectionne **Synthetic**. Renseigne ton code d’accès. La présence de la clé dans le coffre et sa validation par le service sont deux états distincts. L’accord de transfert s’applique au service et à l’usage indiqués à l’écran.
+
+Selon Synthetic, les requêtes et réponses de son API sont supprimées après traitement, sauf accord explicite. Synthetic indique que leur contenu ne sert pas à entraîner ses modèles et que les données personnelles sont traitées aux États-Unis. [Politique de confidentialité de Synthetic](https://synthetic.new/policies/privacy)
+
+![Réglages de Synthetic et notice de confidentialité](guide-0.85/reglages-synthetic.png)
+
+![Sélecteur des modèles Synthetic avec Kimi K3.1 Pro](guide-0.85/selecteur-modeles.png)
 
 **Ce que tu peux tester** :
 - Envoyer des messages et observer l'**affichage progressif** (réponse mot par mot)
@@ -358,7 +372,9 @@ THÉRÈSE vérifie discrètement si une nouvelle version est disponible (au lanc
 2. Clique pour lancer le **téléchargement en arrière-plan** (la progression s'affiche)
 3. Quand c'est prêt, clique sur **Redémarrer** pour appliquer la mise à jour
 
-Aucune popup bloquante : tu choisis le moment. Si le redémarrage automatique échoue, le bandeau te demande de redémarrer THÉRÈSE manuellement.
+Tu peux aussi ouvrir **Paramètres > À propos et mise à jour**, puis choisir **Vérifier les mises à jour**. L’écran affiche le numéro **0.85.0** et la phase **Bêta** séparément. Le suffixe de bêta seul ne change pas le numéro du moteur. Un numéro supérieur est proposé en mise à jour. Si le redémarrage automatique échoue, redémarre THÉRÈSE manuellement. Pour une installation manuelle, ouvre la [page de téléchargement bêta](https://synoptia.fr/therese/beta/).
+
+![À propos avec le numéro 0.85.0 et la phase Bêta](guide-0.85/a-propos.png)
 
 ---
 
@@ -411,7 +427,7 @@ Aucune popup bloquante : tu choisis le moment. Si le redémarrage automatique é
 
 ---
 
-## Limitations connues (version alpha)
+## Limitations connues de la bêta
 
 ### Application desktop
 
@@ -427,6 +443,7 @@ Aucune popup bloquante : tu choisis le moment. Si le redémarrage automatique é
 
 ### Fonctionnalités
 
+- **Pièces jointes aux e-mails** · Pour tes envois avec une pièce jointe, utilise ta messagerie. La commande **Joindre** est masquée dans le composeur de THÉRÈSE pendant la bêta.
 - **Email Gmail - deux approches** :
   1. **Simple (recommandée)** : « SMTP / IMAP classique » dans l'assistant email, preset
      Gmail, avec un **mot de passe d'application** Google (myaccount.google.com/apppasswords,
@@ -532,7 +549,7 @@ R : Tout est local dans `~/.therese/` (base SQLite, embeddings Qdrant, images g�
 R : Uniquement au service IA (provider) que tu as choisi (Anthropic, OpenAI, etc.) pour obtenir les réponses. Avec un modèle local (Ollama), le contenu de tes conversations ne part chez aucun fournisseur de modèle ; la recherche web, la messagerie, l'agenda et les modèles Ollama Cloud passent toujours par leurs services.
 
 **Q : Comment changer de service IA ?**
-R : Paramètres (icône engrenage) -> onglet LLM -> sélectionne un autre service et renseigne ton code d'accès (clé API).
+R · Dans **Paramètres > Service d’IA**, sélectionne un autre service et renseigne ton code d’accès (clé API).
 
 **Q : Comment exporter mes données ?**
 R : Paramètres -> onglet Données. Tu peux exporter tes conversations (JSON ou Markdown) ou toutes tes données (export RGPD).
@@ -541,16 +558,16 @@ R : Paramètres -> onglet Données. Tu peux exporter tes conversations (JSON ou 
 R : Oui ! Chaque conseiller a un service IA préféré. Si le service n'est pas configuré, il utilise ton service IA par défaut. Plus tu configures de services, plus les avis seront diversifiés.
 
 **Q : Comment mettre à jour THÉRÈSE ?**
-R : Tu n'as rien à faire : un bandeau apparaît en haut de l'application quand une nouvelle version est disponible. Clique pour télécharger, puis redémarre quand tu es prêt. Tu peux aussi retélécharger l'installeur depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
+R · Lance la vérification dans **Paramètres > À propos et mise à jour** ou suis le bandeau de mise à jour. L’installeur reste disponible sur la [page de téléchargement bêta](https://synoptia.fr/therese/beta/).
 
 **Q : THÉRÈSE fonctionne sur Windows ?**
-R : Oui ! Télécharge le `.exe` depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases). Les raccourcis utilisent `Ctrl` au lieu de `Cmd`.
+R · Télécharge le `.exe` depuis la [page de téléchargement bêta](https://synoptia.fr/therese/beta/). Les raccourcis utilisent `Ctrl` au lieu de `Cmd`.
 
 **Q : J'ai une idée d'amélioration, où la proposer ?**
 R : Partage ton idée sur le salon **#suggestions** sur Discord, ou envoie un email à ludo@synoptia.fr.
 
 ---
 
-Merci de participer à cette phase alpha ! Tes retours font la différence.
+Merci de participer à la bêta de THÉRÈSE.
 
 **Synoptïa** - "Humain d'abord, IA en soutien."

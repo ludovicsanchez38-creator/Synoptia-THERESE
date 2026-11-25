@@ -1,20 +1,16 @@
 import { test, expect } from '@playwright/test';
 
-test('le guide utilise le chemin du bundle dans un vrai navigateur', async ({ page }) => {
-  await page.addInitScript(() => {
-    (window as any).appelsPdf = [];
-    (window as any).__TAURI_INTERNALS__ = { invoke: async (commande: string, args: unknown) => {
-      (window as any).appelsPdf.push({ commande, args });
-      if (commande === 'plugin:path|resolve_directory') return '/bundle/resources/guide-therese-0.83.pdf';
-      return undefined;
-    } };
-  });
+test('le guide 0.85 embarqué se lit sans appel à un lecteur externe', async ({ page }) => {
+  await page.route(/^https?:\/\/(?!localhost:|127\.0\.0\.1:)/, route => route.abort());
   await page.goto('/tests/recette-c22a.html');
   await page.getByRole('button', { name: 'Aide', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Aide' })).toBeVisible();
-  await page.getByRole('button', { name: 'Ouvrir le guide (PDF)' }).click();
-  await expect.poll(() => page.evaluate(() => (window as any).appelsPdf.some((a: any) =>
-    a.commande === 'plugin:opener|open_path' && a.args.path === '/bundle/resources/guide-therese-0.83.pdf'))).toBe(true);
+  const aide = page.getByRole('dialog', { name: 'Aide' });
+  await expect(aide).toBeVisible();
+  await aide.getByRole('button', { name: 'Ouvrir le guide' }).click();
+  const guide = aide.getByRole('article', { name: 'Guide des testeurs' });
+  await expect(guide.getByRole('heading', { name: 'Guide des testeurs de THÉRÈSE 0.85' })).toBeVisible();
+  const demarrage = guide.getByRole('img', { name: 'Écran de démarrage avec v0.85.0-beta' });
+  await expect.poll(() => demarrage.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
 });
 
 for (const hauteur of [640, 800]) {
