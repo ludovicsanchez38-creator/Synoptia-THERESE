@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authentifierAmorcageNavigateur, BACKEND_URL } from './helpers/backend';
-import { passerLaMiseEnRoute } from './helpers/surfaces';
+import { ouvrirLaSurface, passerLaMiseEnRoute } from './helpers/surfaces';
 import { installReadOnlyShell, json } from './helpers/garde-lecture-seule';
 
 async function chooseCapability(page: Page, name: string) {
@@ -45,6 +45,24 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     await authentifierAmorcageNavigateur(page);
     await page.goto('/?prototype=conversation-canvas&scenario=today');
     await expect(page.getByTestId('conversation-canvas-prototype')).toBeVisible();
+  });
+
+  test('Devis et factures : le bouton PDF du brouillon indique les mentions manquantes', async ({ page }) => {
+    await page.route((url) => url.pathname === '/api/invoices', (route) => json(route, [{
+      id: 'brouillon-c6', invoice_number: 'DEV-2026-001', contact_id: 'contact-1',
+      contact_name: 'Camille Exemple', document_type: 'devis', currency: 'EUR',
+      status: 'draft', client_address: '', issue_date: '2026-11-25',
+      due_date: '2026-12-25', subtotal_ht: 100, total_tax: 20, total_ttc: 120, lines: [],
+    }]));
+    await page.route(`${BACKEND_URL}/api/invoices/billing/profile-status`, (route) => json(route, {
+      is_complete: false, missing: ['SIRET'], pdf_missing: ['SIRET'],
+    }));
+
+    await ouvrirLaSurface(page, 'invoices.open');
+    const brouillon = page.getByTestId('invoice-item').filter({ hasText: 'DEV-2026-001' });
+    const pdf = brouillon.getByTitle('Générer et ouvrir le PDF');
+    await expect(pdf).toBeEnabled();
+    await expect(pdf).toHaveAccessibleDescription(/Paramètres > Profil.*SIRET.*adresse du destinataire/);
   });
 
   // DA lot 1 (10/09/2026) : l'établi « Par où commencer » vit désormais DANS

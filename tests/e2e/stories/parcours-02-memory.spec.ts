@@ -38,9 +38,11 @@ test.describe('Parcours 02 - Mémoire', () => {
     // vue, ou par l'action `project.new`. Ce que la mémoire offre ici, ce
     // sont ses filtres de périmètre.
     const panneau = page.getByTestId('memory-panel');
-    for (const filtre of ['Tout', 'Global', 'Projet']) {
+    for (const filtre of ['Tout', 'Global', 'Projet', 'Conversation']) {
       await expect(panneau.getByRole('button', { name: filtre, exact: true })).toBeVisible();
     }
+    await panneau.getByRole('button', { name: 'Global', exact: true }).click();
+    await expect(panneau.getByText('Ces fiches sont disponibles dans toutes les conversations.')).toBeVisible();
   });
 
   test('US-506.HP : le champ de recherche accepte une saisie', async ({ page }) => {

@@ -22,6 +22,8 @@
 
 import { test, expect } from '@playwright/test';
 
+import { authentifierAmorcageNavigateur, BACKEND_URL } from './helpers/backend';
+import { json } from './helpers/garde-lecture-seule';
 import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
 
 /** Ouvrir le composeur de chat par l'action du registre. */
@@ -29,6 +31,62 @@ async function ouvrirLeChat(page: import('@playwright/test').Page) {
   await ouvrirLaSurface(page, 'chat.new');
   await expect(page.getByTestId('chat-message-input')).toBeVisible({ timeout: 10000 });
 }
+
+test('Mise en route avec Claude déjà disponible, sans import ni dossier', async ({ page }) => {
+  await authentifierAmorcageNavigateur(page);
+  await page.route(`${BACKEND_URL}/api/config/onboarding-complete`, (route) =>
+    json(route, { completed: route.request().method() === 'POST' }),
+  );
+  await page.route(`${BACKEND_URL}/api/config/profile`, (route) =>
+    json(route, route.request().method() === 'POST' ? route.request().postDataJSON() : null),
+  );
+  await page.route(`${BACKEND_URL}/api/config/`, (route) => json(route, {
+    has_anthropic_key: true,
+    corrupted_keys: [],
+    api_keys_source: { anthropic: 'coffre' },
+  }));
+  await page.route(`${BACKEND_URL}/api/config/llm`, (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    return json(route, { ...route.request().postDataJSON(), available: true });
+  });
+  await page.route(`${BACKEND_URL}/api/consents`, (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    return json(route, route.request().postDataJSON());
+  });
+  await page.route(`${BACKEND_URL}/api/config/working-directory`, (route) =>
+    json(route, { path: null, exists: false }),
+  );
+
+  await page.goto('/');
+  const accueil = page.getByTestId('onboarding-step-0');
+  await expect(accueil.getByText(/Préparer une relance pour un devis resté sans réponse/)).toBeVisible();
+  await accueil.getByRole('button', { name: 'Commencer la configuration' }).click();
+
+  const profil = page.getByTestId('onboarding-step-1');
+  await expect(profil.getByText('Importer un profil existant', { exact: true })).toBeVisible();
+  await expect(profil.getByRole('button', { name: 'Importer un profil (THÉRÈSE.md)' })).toBeHidden();
+  await profil.getByRole('textbox', { name: /Nom complet/ }).fill('Camille Exemple');
+  await profil.getByTestId('onboarding-next-btn').click();
+
+  const ia = page.getByTestId('onboarding-step-2');
+  await expect(ia.getByRole('status').filter({ hasText: 'Service d’IA configuré' })).toContainText(/Claude \(Anthropic\).*Claude Opus 5\.5/);
+  const procédure = ia.locator('summary').filter({ hasText: 'Pour recevoir ta première réponse' });
+  await expect(procédure).toBeVisible();
+  await expect(procédure.locator('..')).toHaveJSProperty('open', false);
+  await ia.getByTestId('onboarding-next-btn').click();
+
+  const accord = page.getByTestId('onboarding-step-3');
+  await expect(accord.getByRole('heading', { name: 'Exemple avec Claude' })).toBeVisible();
+  await expect(accord.getByText(/THÉRÈSE adresse à Anthropic le mot « Bonjour »/)).toBeVisible();
+  await accord.getByRole('checkbox').check();
+  await accord.getByTestId('onboarding-next-btn').click();
+
+  const dossier = page.getByTestId('onboarding-step-4');
+  await expect(dossier.getByRole('button', { name: /^(Continuer|Passer)/ })).toHaveCount(1);
+  await dossier.getByRole('button', { name: 'Continuer sans dossier', exact: true }).click();
+  await page.getByTestId('onboarding-complete-btn').click();
+  await expect(page.getByTestId('onboarding-wizard')).toBeHidden();
+});
 
 test.describe('Parcours 01 - Premier lancement', () => {
   test.beforeEach(async ({ page, request }) => {
