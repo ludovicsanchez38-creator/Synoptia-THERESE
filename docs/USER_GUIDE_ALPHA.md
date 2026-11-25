@@ -22,7 +22,7 @@ Cette bêta te permet d’essayer les fonctionnalités en cours de finition et d
 
 **THÉRÈSE est 100% gratuite**, open source, et le restera.
 
-En revanche, le **service d'intelligence artificielle** qui fait tourner les réponses (Anthropic, OpenAI, Google, Mistral...) est payant à l'usage. Concrètement, cela représente environ **3 à 15 euros par mois** selon ton utilisation (nombre de messages, longueur des conversations, génération de documents...).
+En revanche, le **service d'intelligence artificielle** qui fait tourner les réponses (Anthropic, OpenAI, Google, Mistral...) est payant à l'usage. Le montant dépend du modèle et de la quantité de texte traitée. Dans **Paramètres > Service d’IA**, le mode standard affiche le coût estimé du mois en dollars. Ouvre **Voir le détail de la consommation** pour lire l’usage du jour et du mois. Pour régler les limites et le budget, active le **Mode Contributeur** puis ouvre **Avancé > Limites & Consommation**.
 
 Si tu veux un usage **100% gratuit et sans connexion internet**, tu peux utiliser **Ollama** : un logiciel qui fait tourner l'IA directement sur ton ordinateur, sans rien envoyer à l'extérieur. La qualité des réponses dépend alors de la puissance de ta machine.
 
@@ -56,7 +56,7 @@ Tu as trois options (la première est recommandée) :
 
 ![Écran de démarrage avec v0.85.0-beta](guide-0.85/demarrage.png)
 
-> **macOS** : l'application n'est pas encore signée (certificat Apple). Au premier lancement : clic droit > **Ouvrir** > **Confirmer**. macOS retiendra ton choix pour les lancements suivants.
+> **macOS**. L’application attend encore sa signature Apple. Après un premier essai d’ouverture, si Gatekeeper bloque l’application téléchargée depuis la page bêta officielle, ouvre **Réglages Système > Confidentialité et sécurité**. Utilise **Ouvrir quand même** pour THÉRÈSE, puis confirme l’ouverture. [Marche à suivre officielle d’Apple](https://support.apple.com/fr-fr/102445)
 
 > **Windows** : si SmartScreen affiche un avertissement, clique sur **"Plus d'infos"** puis **"Exécuter quand même"**.
 
@@ -68,11 +68,11 @@ Si tu souhaites compiler le projet toi-même, consulte le guide technique : [gui
 
 Au premier lancement, un **assistant de configuration** te guide en 6 étapes :
 
-1. **Bienvenue** - Présentation de THÉRÈSE
-2. **Profil** - Ton nom, entreprise, rôle (import possible depuis un fichier CLAUDE.md)
-3. **Service d’IA** - Choisis parmi quinze services, dont Synthetic. Ollama peut arriver en tête si le service Ollama répond. Pour un service en ligne, renseigne ton code d’accès (clé API).
-4. **Sécurité** - Information sur les connexions cloud et les risques associés
-5. **Dossier de travail** - Choisis un dossier dédié pour tes fichiers. Si THÉRÈSE y rencontre un refus de création de lien physique, elle te prévient que les PDF de devis et de factures peuvent échouer. Choisis alors un dossier dédié sur le disque interne, par exemple dans **Documents**. Tu peux changer ce choix dans **Paramètres > Avancé > Stockage des données**. Active le **Mode Contributeur** dans Paramètres si la rubrique Avancé est masquée.
+1. **Bienvenue**. Découvre un premier exemple, comme préparer une relance pour un devis.
+2. **Profil**. Renseigne ton nom, ton entreprise et ton rôle. Le choix **Importer un profil existant** donne accès à l’import d’un fichier `THÉRÈSE.md`.
+3. **Service d’IA**. Si un service est déjà configuré, son nom et le modèle choisi apparaissent avant la procédure, que tu peux déplier. Sinon, choisis parmi quinze services, dont Synthetic. Ollama peut arriver en tête si le service Ollama répond. Pour un service en ligne, renseigne ton code d’accès (clé API).
+4. **Confidentialité**. Lis les informations sur les connexions et les risques. Avec Claude, un exemple détaille le premier « Bonjour » envoyé avec un profil vierge.
+5. **Dossier de travail**. Choisis un dossier dédié pour tes fichiers ou clique sur **Continuer sans dossier** pour poursuivre. Si THÉRÈSE y rencontre un refus de création de lien physique, elle te prévient que les PDF de devis et de factures peuvent échouer. Choisis alors un dossier dédié sur le disque interne, par exemple dans **Documents**. Tu peux changer ce choix dans **Paramètres > Avancé > Stockage des données**. Active le **Mode Contributeur** dans Paramètres si la rubrique Avancé est masquée.
 6. **Terminé** - Résumé de ta configuration
 
 ---
@@ -134,7 +134,7 @@ THÉRÈSE retient tes contacts, tes projets et les informations importantes.
 - **Extraction automatique d'entités** : parle d'une personne ou d'un projet dans le chat, THÉRÈSE détecte les entités et te propose de les sauvegarder (bandeau sous le message)
 - **Injection automatique du contexte** : quand tu poses une question sur un contact ou un projet connu, THÉRÈSE injecte les informations pertinentes dans sa réponse
 - **Recherche intelligente** : la recherche combine recherche par sens (comprend le contexte, pas seulement les mots exacts) et recherche par mots-clés
-- **Portée (scope)** : les entités peuvent être globales, liées à un projet, ou liées à une conversation
+- **Périmètre**. Dans **Contacts**, les filtres **Tout**, **Global**, **Projet** et **Conversation** expliquent dans quelles conversations tu peux retrouver une fiche. Ouvre **Comprendre les périmètres** pour relire les règles.
 
 ---
 
@@ -154,7 +154,7 @@ THÉRÈSE génère des fichiers Office professionnels directement depuis le chat
 1. Sur l'écran d'accueil, clique sur **Produire**
 2. Choisis **Document Word**, **Présentation PPT** ou **Tableur Excel**
 3. Décris ce que tu veux dans le prompt (ex: "Crée une présentation de 10 slides sur les tendances IA 2026")
-4. THÉRÈSE génère le fichier - tu peux le **télécharger** directement
+4. Si la carte **Confirmer la création du document** apparaît, vérifie le format et le contenu puis confirme. Dans l’application installée, **Télécharger** ouvre la boîte de dialogue d’enregistrement du fichier généré.
 
 **Note technique** : les modèles puissants (Claude, GPT) utilisent la génération par code Python (meilleure qualité). Les modèles plus légers (Ollama, Gemini Flash) utilisent un pipeline Markdown avec conversion automatique.
 
@@ -183,7 +183,7 @@ Pour tes décisions stratégiques, convoque un **board de 5 conseillers IA**. Ch
 |------------|------|-----------------|
 | L'Analyste | Données, chiffres, ROI, métriques | Anthropic (Claude) |
 | Le Stratège | Vision long terme, positionnement | OpenAI (GPT) |
-| L'Avocat du Diable | Contre-arguments, risques | Anthropic (Claude) |
+| L’Avocat du Diable | Contre-arguments, risques | xAI (Grok) |
 | Le Pragmatique | Faisabilité, actions concrètes | Mistral |
 | Le Visionnaire | Innovation, tendances futures | Gemini |
 
@@ -195,7 +195,7 @@ Pour tes décisions stratégiques, convoque un **board de 5 conseillers IA**. Ch
 5. Observe chaque conseiller répondre progressivement
 6. Lis la **synthèse** avec les points de consensus, divergences et recommandation finale
 
-**Note** : si un service IA n'est pas configuré (pas de code d'accès), le conseiller utilise automatiquement ton service IA par défaut.
+Le Board cloud vérifie les cinq services avant de lancer la délibération. En cas de service indisponible, le message nomme le fournisseur dont la configuration doit être vérifiée.
 
 L'historique des décisions est sauvegardé et consultable.
 
@@ -225,7 +225,7 @@ THÉRÈSE peut chercher des informations actuelles sur le web pour répondre à 
 - **Gemini** : utilise le Google Search Grounding nativement
 - **Autres providers** (Claude, GPT, Mistral, Grok) : utilisent un tool DuckDuckGo (gratuit, sans clé API)
 
-**Activation** : Paramètres -> LLM -> Toggle "Recherche Web"
+**Activation**. Ouvre **Paramètres > Services et connecteurs > Recherche Web**.
 
 **Ce que tu peux tester** : pose une question d'actualité (ex: "Quelles sont les dernières annonces d'Apple ?") et observe THÉRÈSE chercher sur le web avant de répondre.
 
@@ -237,7 +237,7 @@ Dicte tes messages au lieu de les taper. THÉRÈSE utilise **Groq Whisper** (mod
 
 **Configuration requise** :
 - Code d'accès Groq (clé API, gratuite sur [console.groq.com](https://console.groq.com))
-- À configurer dans Paramètres -> LLM -> Transcription vocale (le code commence par `gsk_`)
+- Configure le code dans **Paramètres > Services et connecteurs > Transcription vocale**. Il commence par `gsk_`.
 
 **Comment tester** :
 1. Clique sur le bouton **micro** à droite du champ de saisie
@@ -263,7 +263,7 @@ THÉRÈSE génère des images via deux providers :
 2. Décris l'image souhaitée
 3. Télécharge le résultat
 
-**Configuration** : Paramètres -> section "Génération d'images" - les codes d'accès (clés API) pour les images sont séparés de ceux du chat IA.
+**Configuration**. Ouvre **Paramètres > Services et connecteurs > Génération d’images**. Les codes d’accès des images sont distincts de ceux du chat.
 
 ---
 
@@ -271,7 +271,7 @@ THÉRÈSE génère des images via deux providers :
 
 Les **connexions externes** (protocole MCP) permettent à THÉRÈSE de se connecter à des services tiers. L'IA peut utiliser ces services automatiquement pendant la conversation.
 
-**19 presets disponibles** organisés en 8 catégories :
+**18 presets disponibles** organisés en 8 catégories :
 
 | Catégorie | Presets |
 |-----------|---------|
@@ -285,7 +285,7 @@ Les **connexions externes** (protocole MCP) permettent à THÉRÈSE de se connec
 | **Avancé** | Sequential Thinking, Slack, Playwright |
 
 **Comment tester** :
-1. Paramètres -> onglet **Tools**
+1. Ouvre **Paramètres**, active le **Mode Contributeur**, puis choisis **Outils > Presets**.
 2. Installe un service (ex: Filesystem pour la gestion de fichiers, aucun code d'accès requis)
 3. Démarre la connexion
 4. Dans le chat, l'IA peut maintenant utiliser ces services automatiquement
@@ -303,13 +303,13 @@ THÉRÈSE peut synchroniser tes données CRM depuis un Google Sheets.
 - **Projets** : ID, Client lié, Nom, Description, Statut, Budget
 - **Livrables** : ID, Projet lié, Titre, Description, Statut, Date d'échéance
 
-**Configuration** : Paramètres -> Données -> Synchronisation CRM -> renseigne ton Spreadsheet ID.
+**Configuration**. Active le **Mode Contributeur** dans Paramètres. Ouvre **Avancé > Synchronisation CRM**, puis renseigne l’identifiant du tableur.
 
 ---
 
-### 12. Panneaux auxiliaires (fenêtres séparées)
+### 12. Espace de travail
 
-THÉRÈSE ouvre certains panneaux dans des **fenêtres indépendantes** (la fenêtre de chat reste intacte) :
+Ouvre les modules depuis **Espace de travail**. Utilise **Retour** pour retrouver l’écran depuis lequel tu les as ouverts.
 
 | Panneau | Raccourci macOS | Raccourci Windows | Description |
 |---------|----------------|-------------------|-------------|
@@ -319,7 +319,12 @@ THÉRÈSE ouvre certains panneaux dans des **fenêtres indépendantes** (la fen�
 | **Factures** | `Cmd+I` | `Ctrl+I` | Gestion de factures |
 | **CRM Pipeline** | `Cmd+P` | `Ctrl+P` | Vue pipeline CRM |
 
-**Note** : ces panneaux sont fonctionnels de manière indépendante. Les données sont sauvegardées dans la mémoire locale de l'application et se rechargent instantanément à la réouverture.
+Les données de ces modules sont sauvegardées sur cet ordinateur.
+
+**Générer un devis en PDF**. Ouvre **Devis et factures**, enregistre ton
+brouillon, puis repère le bouton **PDF** sur sa ligne. Les mentions manquantes
+s’affichent près du bouton. Complète celles de l’émetteur dans
+**Paramètres > Profil** et celles du destinataire dans le brouillon.
 
 ---
 
@@ -435,9 +440,9 @@ Tu peux aussi ouvrir **Paramètres > À propos et mise à jour**, puis choisir *
   d'une version >= 0.23, ta base de données est chiffrée (SQLCipher). Une version
   antérieure de THÉRÈSE ne peut plus la lire (erreur « file is not a database ») :
   ne réinstalle pas une version plus ancienne après ce premier lancement. Tes
-  backups (Paramètres > Données) contiennent tout ce qu'il faut pour restaurer,
+  sauvegardes (**Paramètres > Avancé > Stockage des données** en mode Contributeur) contiennent tout ce qu'il faut pour restaurer,
   y compris la clé de chiffrement - protège ces fichiers comme la base elle-même.
-- **Pas de code signing macOS** : au premier lancement du `.app`, macOS affiche un avertissement Gatekeeper ("application non vérifiée"). Pour l'ouvrir : clic droit -> Ouvrir, puis confirmer.
+- **Signature macOS**. L’application attend encore sa signature Apple. Suis la procédure de la section Installation pour autoriser l’ouverture du téléchargement officiel.
 - **Pas de notifications push** : les notifications ne sont pas encore implémentées.
 - **La compilation nécessite Xcode CLI tools (macOS)** : installe-les avec `xcode-select --install` avant de compiler. Sur Windows, il faut Visual Studio Build Tools.
 
@@ -476,7 +481,7 @@ Tu peux aussi ouvrir **Paramètres > À propos et mise à jour**, puis choisir *
 
 Pour nous aider à corriger rapidement, réponds simplement à ces 3 questions :
 
-### 1. Que faisiez-vous ?
+### 1. Que faisais-tu ?
 
 Décris ce que tu étais en train de faire, étape par étape. Par exemple :
 > 1. J'ai ouvert l'application
@@ -499,7 +504,7 @@ Si possible, fais une capture d'écran de l'erreur (sur Mac : `Cmd+Shift+4`, sur
 ```
 ## Bug : [titre court]
 
-**Que faisiez-vous ?**
+**Que faisais-tu ?**
 1. ...
 2. ...
 3. ...
@@ -552,10 +557,10 @@ R : Uniquement au service IA (provider) que tu as choisi (Anthropic, OpenAI, etc
 R · Dans **Paramètres > Service d’IA**, sélectionne un autre service et renseigne ton code d’accès (clé API).
 
 **Q : Comment exporter mes données ?**
-R : Paramètres -> onglet Données. Tu peux exporter tes conversations (JSON ou Markdown) ou toutes tes données (export RGPD).
+Dans **Paramètres > Sécurité et confidentialité**, choisis **Exporter toutes mes données** pour l’export RGPD. Pour une conversation seule, ouvre son menu dans le tiroir des conversations et utilise **Exporter**.
 
 **Q : Le board de décision utilise plusieurs LLMs en même temps ?**
-R : Oui ! Chaque conseiller a un service IA préféré. Si le service n'est pas configuré, il utilise ton service IA par défaut. Plus tu configures de services, plus les avis seront diversifiés.
+Oui. En mode cloud, chaque conseiller utilise le fournisseur indiqué dans le Board. Les cinq services doivent être disponibles pour lancer la délibération.
 
 **Q : Comment mettre à jour THÉRÈSE ?**
 R · Lance la vérification dans **Paramètres > À propos et mise à jour** ou suis le bandeau de mise à jour. L’installeur reste disponible sur la [page de téléchargement bêta](https://synoptia.fr/therese/beta/).
@@ -564,7 +569,7 @@ R · Lance la vérification dans **Paramètres > À propos et mise à jour** ou 
 R · Télécharge le `.exe` depuis la [page de téléchargement bêta](https://synoptia.fr/therese/beta/). Les raccourcis utilisent `Ctrl` au lieu de `Cmd`.
 
 **Q : J'ai une idée d'amélioration, où la proposer ?**
-R : Partage ton idée sur le salon **#suggestions** sur Discord, ou envoie un email à ludo@synoptia.fr.
+R : Partage ton idée sur le salon **#feedback** sur Discord, ou envoie un email à ludo@synoptia.fr.
 
 ---
 
