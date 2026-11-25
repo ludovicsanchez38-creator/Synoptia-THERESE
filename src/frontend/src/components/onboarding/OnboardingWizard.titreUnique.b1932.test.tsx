@@ -33,3 +33,10 @@ describe('un seul titre de niveau 1 dans la mise en route (B-1932)', () => {
     expect(titre.tagName).toBe('H2');
   });
 });
+
+it('P-006 : un exemple métier est lisible dès l’accueil du parcours', () => {
+  render(<OnboardingWizard isOpen onComplete={vi.fn()} />);
+  const accueil = screen.getByTestId('onboarding-step-0');
+  expect(accueil).toHaveTextContent(/Préparer une relance pour un devis resté sans réponse/);
+  expect(screen.getByRole('button', { name: 'Commencer la configuration' })).toBeEnabled();
+});

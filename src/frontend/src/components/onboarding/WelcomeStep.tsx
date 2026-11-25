@@ -59,6 +59,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         <p className="text-text-muted text-lg max-w-md">
           Tes données sont stockées sur ton ordinateur. Tu choisis le service d’IA qui traite tes demandes.
         </p>
+        <p className="mt-3 text-sm text-text">Préparer une relance pour un devis resté sans réponse est un premier exemple.</p>
       </motion.div>
 
       {/* Features */}
