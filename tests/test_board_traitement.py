@@ -603,3 +603,68 @@ class TestLaPasse3Board:
             )
 
         assert await _decision_existe()
+
+
+@pytest.mark.asyncio
+async def test_b2069_la_persistance_attend_le_suivi_et_le_premier_evenement(
+    client, board_rapide, monkeypatch
+):
+    from unittest.mock import AsyncMock
+
+    from app.models.board import BoardRequest
+    from app.routers import board as board_router
+    from app.services.board import BoardService
+    from app.services.traitements import TraitementHandle
+
+    liaison_commencee = asyncio.Event()
+    autoriser_liaison = asyncio.Event()
+    synthese_prete = asyncio.Event()
+    persistance_commencee = asyncio.Event()
+    lier = TraitementHandle.lier_adaptateur
+    generer_synthese = BoardService._generate_synthesis
+    persister = BoardService._persister_decision
+
+    async def liaison_suspendue(self, adaptateur):
+        liaison_commencee.set()
+        await autoriser_liaison.wait()
+        await lier(self, adaptateur)
+
+    async def synthese_observee(self, *args, **kwargs):
+        synthese = await generer_synthese(self, *args, **kwargs)
+        synthese_prete.set()
+        return synthese
+
+    async def persistance_observee(self, *args, **kwargs):
+        persistance_commencee.set()
+        await persister(self, *args, **kwargs)
+
+    monkeypatch.setattr(TraitementHandle, "lier_adaptateur", liaison_suspendue)
+    monkeypatch.setattr(TraitementHandle, "annulation_demandee", AsyncMock(return_value=False))
+    monkeypatch.setattr(BoardService, "_generate_synthesis", synthese_observee)
+    monkeypatch.setattr(BoardService, "_persister_decision", persistance_observee)
+    reponse = await board_router.deliberate(BoardRequest(**REQUETE))
+    flux = reponse.body_iterator
+    ouverture = asyncio.create_task(anext(flux))
+    try:
+        await asyncio.wait_for(liaison_commencee.wait(), timeout=2)
+        await asyncio.wait_for(synthese_prete.wait(), timeout=2)
+        await asyncio.sleep(0)
+        assert not persistance_commencee.is_set(), (
+            "une décision est écrite avant la liaison de l’adaptateur"
+        )
+
+        autoriser_liaison.set()
+        premiere = await asyncio.wait_for(ouverture, timeout=2)
+        assert _evenements(premiere)[0]["type"] == "task"
+        await asyncio.sleep(0)
+        assert not persistance_commencee.is_set(), "le client n’a reçu que le premier événement"
+
+        evenements = _evenements("".join([message async for message in flux]))
+        assert persistance_commencee.is_set()
+        assert any(evenement["type"] == "done" for evenement in evenements)
+        traitement = await _traitement_board()
+        assert traitement is not None and traitement.state == EtatTache.DONE
+    finally:
+        autoriser_liaison.set()
+        await asyncio.gather(ouverture, return_exceptions=True)
+        await flux.aclose()

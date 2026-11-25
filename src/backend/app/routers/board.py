@@ -230,6 +230,11 @@ async def deliberate(
         file_evenements: asyncio.Queue[BoardDeliberationChunk | None] = (
             asyncio.Queue()
         )
+        persistance_autorisee = asyncio.Event()
+
+        async def arret_avant_persistance() -> bool:
+            await persistance_autorisee.wait()
+            return handle is not None and await handle.annulation_demandee()
 
         # B-653 : la session n'est plus tenue par un `async with` dans le
         # générateur. À la déconnexion du client, sa fermeture aurait lieu dans
@@ -246,9 +251,7 @@ async def deliberate(
                     async for chunk in board_service.deliberate(
                         request,
                         decision_id=decision_id,
-                        annulation_demandee=(
-                            handle.annulation_demandee if handle else None
-                        ),
+                        annulation_demandee=arret_avant_persistance,
                     ):
                         await file_evenements.put(chunk)
                 finally:
@@ -291,6 +294,9 @@ async def deliberate(
 
             try:
                 pris_en_charge = True
+                # Dès maintenant la clôture attend le commit protégé, même
+                # si le client quitte pendant que la décision s’écrit.
+                persistance_autorisee.set()
                 while True:
                     chunk = await file_evenements.get()
                     if chunk is None:
