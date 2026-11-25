@@ -310,6 +310,33 @@ class TestLeBoardNeBasculePasEnSilence:
         assert service.bascule_circuit is False
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("conseiller", ["analyst", "strategist", "devil", "pragmatic", "visionary"])
+    @pytest.mark.parametrize("service_principal", ["anthropic", "openai"])
+    async def test_la_cle_du_conseiller_manquante_oriente_vers_service_d_ia(
+        self, monkeypatch, conseiller, service_principal,
+    ):
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.services import board as board_module
+        from app.services.error_handler import ErreurPourEcran
+        from app.services.llm import LLMProvider
+
+        principal = SimpleNamespace(config=SimpleNamespace(provider=LLMProvider(service_principal)))
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: principal)
+        monkeypatch.setattr(board_module, "get_llm_service_for_provider", lambda *a, **k: None)
+        monkeypatch.setattr(
+            board_module, "get_circuit_breaker",
+            lambda: SimpleNamespace(is_available=lambda _fournisseur: True),
+        )
+        demande = BoardRequest(
+            question="Faut-il grouper les livraisons de l’atelier ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole(conseiller)],
+        )
+
+        with pytest.raises(ErreurPourEcran, match="Paramètres > Service d’IA"):
+            _ = [trame async for trame in board_module.BoardService(None).deliberate(demande)]
+
+    @pytest.mark.asyncio
     async def test_circuit_ouvert_au_prechargement_refuse_sans_repli(self, monkeypatch):
         """Circuit ouvert : aucun conseiller ni service principal ne reçoit la question."""
         import contextlib

@@ -488,7 +488,7 @@ class BoardService:
                     else:
                         raise ErreurPourEcran(
                             f"Le fournisseur {preferred_provider} du Board est indisponible. "
-                            "Vérifie sa clé dans Paramètres, Modèles IA, puis réessaie."
+                            "Vérifie sa clé dans Paramètres > Service d’IA, puis réessaie."
                         )
                 llm_service = advisor_llm or default_llm
                 advisor_services[role] = (llm_service, actual_provider)
