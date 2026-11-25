@@ -59,6 +59,8 @@ Conséquences à connaître :
 
 ## Versions supportées
 
+Le programme bêta prend en charge les versions 0.x. Les limitations connues ci-dessous s’appliquent à ces versions.
+
 | Version | Supportée |
 |---------|-----------|
 | Bêta (v0.x) | Oui (programme bêta en cours) |
