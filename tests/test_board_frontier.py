@@ -63,15 +63,15 @@ class TestLeHelperOverrides:
         assert service.config.max_tokens == max_tokens_recommande(service.config.model)
 
     def test_preferences_non_frontier_ignorees_par_l_override(self, client, monkeypatch):
-        """Design : préférence utilisateur gpt-5.5 -> le conseiller reçoit
-        quand même la tête du catalogue, gpt-6-sol depuis P-122 (model_override
+        """Design : préférence utilisateur gpt-6-sol -> le conseiller reçoit
+        quand même la tête du catalogue, gpt-6.2-sol (model_override
         gagne sur user_model)."""
         from app.models.database import get_sync_connection
         from app.services.llm import get_llm_service_for_provider
         from sqlalchemy import text
 
         with get_sync_connection() as conn:
-            for cle, valeur in (("llm_provider", "openai"), ("llm_model", "gpt-5.5")):
+            for cle, valeur in (("llm_provider", "openai"), ("llm_model", "gpt-6-sol")):
                 conn.execute(
                     text(
                         "INSERT OR REPLACE INTO preferences"
@@ -90,9 +90,9 @@ class TestLeHelperOverrides:
             effort_override="max",
         )
         assert service is not None
-        assert service.config.model == "gpt-6-sol"
-        # gpt-6-sol (P-122) : reasoning_effort max transmis tel quel
-        assert service.config.effort_resolu == "max"
+        assert service.config.model == "gpt-6.2-sol"
+        assert service.config.effort == "max"
+        assert service.config.effort_resolu is None
 
 
 class TestPrepareContextLitLaConfig:

@@ -37,11 +37,10 @@ AVAILABLE_MODELS = [
     {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic"},
     {"id": "claude-haiku-5-5", "name": "Claude Haiku 5.5", "provider": "anthropic"},
     {"id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5", "provider": "anthropic"},
-    # OpenAI. gpt-5.3-codex est écarté : sa fiche indique qu'il refuse
-    # `v1/chat/completions`, le point d'appel utilisé ici.
-    {"id": "gpt-6-sol", "name": "GPT-6 Sol", "provider": "openai"},
-    {"id": "gpt-6.2-astra", "name": "GPT-6.2 Astra", "provider": "openai"},
+    # Ordre OpenAI du catalogue (décision du 25/11/2026).
     {"id": "gpt-6.2-sol", "name": "GPT-6.2 Sol", "provider": "openai"},
+    {"id": "gpt-6.2-astra", "name": "GPT-6.2 Astra", "provider": "openai"},
+    {"id": "gpt-6-sol", "name": "GPT-6 Sol", "provider": "openai"},
     {"id": "gpt-6-luna", "name": "GPT-6 Luna", "provider": "openai"},
     # P-c18-m2 : outils via Responses (tests/test_gpt61_sol_responses.py).
     # Pas en tête : le défaut des agents reste celui d'agent.json.

@@ -67,7 +67,7 @@ ANCIENS = {
 
 TETES = {
     "anthropic": "claude-opus-5-5",
-    "openai": "gpt-6-sol",
+    "openai": "gpt-6.2-sol",
     "gemini": "gemini-3.8-flash",
     "mistral": "mistral-large-4-0",
     "grok": "grok-4.7",
@@ -641,7 +641,7 @@ def test_les_agents_recoivent_les_modeles_a_outils_documentes():
         premiers.setdefault(modele["provider"], modele["id"])
     assert premiers["grok"] == "grok-4.7"
     assert premiers["gemini"] == "gemini-3.8-flash"
-    assert premiers["openai"] == "gpt-6-sol"
+    assert premiers["openai"] == "gpt-6.2-sol"
     assert premiers["anthropic"] == "claude-opus-5-5"
     assert premiers["mistral"] == "mistral-large-4-0"
     assert par_id["mistral-medium-3-5"]["name"] == "Mistral Medium 3.5"

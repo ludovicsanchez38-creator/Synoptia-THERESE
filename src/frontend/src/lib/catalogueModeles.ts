@@ -66,8 +66,8 @@ export const DECORATIONS: Record<string, { name: string; badge?: string }> = {
   // M1, 9 octobre 2026. Mêmes noms que le repli hors ligne.
   'claude-fable-5-2': { name: 'Claude Fable 5.2', badge: 'Le plus capable' },
   'claude-fable-5-1': { name: 'Claude Fable 5.1', badge: GENERATION_PRECEDENTE },
-  'gpt-6.2-astra': { name: 'GPT-6.2 Astra', badge: 'Le plus capable' },
-  'gpt-6.2-sol': { name: 'GPT-6.2 Sol', badge: 'Équilibré' },
+  'gpt-6.2-astra': { name: 'GPT-6.2 Astra', badge: 'Pour les tâches complexes' },
+  'gpt-6.2-sol': { name: 'GPT-6.2 Sol' },
   'gemini-4-hydrogen': { name: 'Gemini 4 Hydrogen' },
   'gemini-4-neon': { name: 'Gemini 4 Neon' },
   'gemini-4-carbon': { name: 'Gemini 4 Carbon' },

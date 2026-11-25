@@ -83,7 +83,7 @@ class TestLesGenerationsCourantesSontProposees:
 
         for fournisseur, attendu in [
             ("anthropic", "claude-opus-5-5"),  # P-122
-            ("openai", "gpt-6-sol"),  # P-122
+            ("openai", "gpt-6.2-sol"),  # Décision du 25/11/2026
             ("grok", "grok-4.7"),
             ("gemini", "gemini-3.8-flash"),
         ]:

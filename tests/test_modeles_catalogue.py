@@ -20,10 +20,10 @@ class TestLesFrontiers:
     def test_la_tete_de_chaque_liste_est_le_frontier_verifie(self):
         from app.services import modeles_catalogue as cat
 
-        # P-122 (25/09/2026) : Opus 5.5 et GPT-6 Sol, relevés aux sources.
+        # P-122 pour Opus 5.5, décision du 25/11/2026 pour GPT-6.2 Sol.
         attendus = {
             "anthropic": "claude-opus-5-5",
-            "openai": "gpt-6-sol",
+            "openai": "gpt-6.2-sol",
             # Passe 3 : Grok 4.7 et Gemini 3.8 Flash sont les têtes.
             # Le test figeait grok-4.6 et gemini-3.7-flash.
             "gemini": "gemini-3.8-flash",
@@ -198,9 +198,20 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
         self._poser_preference("llm_provider", "openai")
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         config = LLMService()._default_config()
-        assert config.model == frontier("openai")
-        # P-122 : la tête (gpt-6-sol) porte sa propre fenêtre, 1 050 000.
+        assert config.model == frontier("openai") == "gpt-6.2-sol"
         assert config.context_window == fenetre_de_contexte("openai", frontier("openai"))
+
+    def test_openai_conserve_le_modele_gpt_6_sol_enregistre(self, client, monkeypatch):
+        from app.services.llm import LLMService, get_llm_service_for_provider
+
+        self._poser_preference("llm_provider", "openai")
+        self._poser_preference("llm_model", "gpt-6-sol")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+        assert LLMService()._default_config().model == "gpt-6-sol"
+        service = get_llm_service_for_provider("openai")
+        assert service is not None
+        assert service.config.model == "gpt-6-sol"
 
     def test_cle_seule_ne_selectionne_pas_de_fournisseur_cloud(self, client, monkeypatch):
         """Une clé seule ne vaut pas choix du destinataire de la conversation."""
@@ -239,11 +250,8 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
         assert openai_fb.context_window == fenetre_de_contexte("openai", frontier("openai"))
 
 
-class TestSabotageParPermutation:
-    """Design V3.5 : permuter la tête d'une fiche du catalogue doit se
-    refléter PARTOUT (preuve que les tables dérivent, sans copie cachée)."""
-
     def test_permuter_la_tete_change_le_defaut_partout(self, client, monkeypatch):
+        """Le moteur et le helper du Board suivent une permutation du catalogue."""
         import dataclasses
 
         from app.services import modeles_catalogue as mc
@@ -253,21 +261,19 @@ class TestSabotageParPermutation:
         modeles_permutes = (fiche.modeles[1], fiche.modeles[0], *fiche.modeles[2:])
         fiche_permutee = dataclasses.replace(fiche, modeles=modeles_permutes)
         monkeypatch.setitem(mc.CATALOGUE, "openai", fiche_permutee)
-        # 1. frontier() suit
         tete = mc.frontier("openai")
-        # 2. le helper (Board) suit
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+        self._poser_preference("llm_provider", "openai")
         service = get_llm_service_for_provider(
-            "openai", model_override=mc.frontier("openai")
+            "openai", model_override=tete
         )
-        # 3. _default_config suit (repli par clé, sans préférence)
-        for var in ("ANTHROPIC_API_KEY",):
-            monkeypatch.delenv(var, raising=False)
+        defaut = get_llm_service_for_provider("openai")
         config = LLMService()._default_config()
 
-        assert tete != "gpt-5.6-sol"
+        assert tete == fiche.modeles[1]
         assert service is not None and service.config.model == tete
-        assert config.model == tete or config.provider.value != "openai"
+        assert defaut is not None and defaut.config.model == tete
+        assert config.provider.value == "openai" and config.model == tete
 
 
 class TestLaCompletudeDuCatalogue:
@@ -331,7 +337,7 @@ class TestLesFrontiersSontTarifes:
 
 @pytest.mark.parametrize(("fournisseur", "modeles"), [
     ("anthropic", ["claude-opus-5-5", "claude-fable-5-2"]),
-    ("openai", ["gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol"]),
+    ("openai", ["gpt-6.2-sol", "gpt-6.2-astra", "gpt-6-sol"]),
     ("gemini", ["gemini-3.8-flash", "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon"]),
     ("mistral", ["mistral-large-4-0"]),
     ("glm", ["glm-5.3", "glm-5.3-flash", "glm-5.3-flashx"]),

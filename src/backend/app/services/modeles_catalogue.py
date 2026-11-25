@@ -204,11 +204,9 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("OPENAI_API_KEY",),
         context_window=200000,
         modeles=(
-            # P-122 (Ludo, 25/09/2026) : GPT-6 Sol et Luna, relevés le 25/09 sur
-            # developers.openai.com (contexte 1 050 000, sortie 128 000).
-            "gpt-6-sol",         # Code et agents, génération 6 (recommandé)
-            "gpt-6.2-astra",
-            "gpt-6.2-sol",
+            "gpt-6.2-sol",       # Défaut OpenAI confirmé par Ludo le 25/11/2026
+            "gpt-6.2-astra",     # Tâches complexes
+            "gpt-6-sol",         # Choix historique P-122
             "gpt-6-astra",       # Puissance maximale, plus cher (P-057, Ludo 09/09/2026 ; contexte 1 050 000, sortie 128 000)
             "gpt-6-luna",        # Le plus économique de la génération 6
             # P-c18-m2 (09/10/2026) : après la tête. Les outils exigent Responses.
@@ -223,8 +221,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gpt-5.4-mini",      # Petit, rapide, bon marché
         ),
         fiches={
-            # Les guides des 6.2 excluent « none » sans lister les niveaux
-            # acceptés pour ces deux modèles. L'API choisit son effort.
+            # Pour Auto, THÉRÈSE laisse l'API choisir l'effort. Les GPT-6.2
+            # refusent « none » (fiche OpenAI relue le 25/11/2026).
             "gpt-6.2-astra": _GPT_62,
             "gpt-6.2-sol": _GPT_62,
             # gpt-6-astra (doc du 10/09/2026) : reasoning.effort low/medium/high/

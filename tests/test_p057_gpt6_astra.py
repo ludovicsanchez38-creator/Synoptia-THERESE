@@ -25,7 +25,7 @@ def test_gpt_6_astra_est_au_catalogue_openai_avec_sa_fiche():
     openai = CATALOGUE["openai"]
     assert "gpt-6-astra" in openai.modeles
     assert openai.modeles[:5] == (
-        "gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-luna",
+        "gpt-6.2-sol", "gpt-6.2-astra", "gpt-6-sol", "gpt-6-astra", "gpt-6-luna",
     )
     for effort in ("low", "medium", "high", "xhigh", "max"):
         assert resoudre_effort("gpt-6-astra", effort, "openai") == effort, effort

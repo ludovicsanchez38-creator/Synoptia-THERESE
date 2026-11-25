@@ -195,9 +195,9 @@ class TestCatalogue:
         from app.services.modeles_catalogue import CATALOGUE, fenetre_de_contexte, frontier
 
         openai = CATALOGUE["openai"]
-        assert frontier("openai") == "gpt-6-sol"
+        assert frontier("openai") == "gpt-6.2-sol"
         assert openai.modeles[:5] == (
-            "gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-luna",
+            "gpt-6.2-sol", "gpt-6.2-astra", "gpt-6-sol", "gpt-6-astra", "gpt-6-luna",
         )
         assert MODELE in openai.modeles
         assert openai.modeles.index(MODELE) > openai.modeles.index("gpt-6-luna")

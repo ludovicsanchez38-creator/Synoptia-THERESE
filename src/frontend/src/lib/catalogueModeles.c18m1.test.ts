@@ -29,7 +29,7 @@ describe('repli et décoration des modèles du 9 octobre', () => {
     expect(modeles('gemini')[0].id).toBe('gemini-3.8-flash');
     expect(modeles('mistral')[0].id).toBe('mistral-large-4-0');
     expect(modeles('grok')[0].id).toBe('grok-4.7');
-    expect(modeles('openai')[0].id).toBe('gpt-6-sol');
+    expect(modeles('openai')[0].id).toBe('gpt-6.2-sol');
   });
 
   it('ajoute les nouveaux identifiants une seule fois, avec le même nom partout', () => {

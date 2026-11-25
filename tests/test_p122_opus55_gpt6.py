@@ -70,7 +70,7 @@ def test_gpt_6_sol_reste_en_tete_et_les_6_2_suivent():
 
     openai = CATALOGUE["openai"]
     assert openai.modeles[:5] == (
-        "gpt-6-sol", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-astra", "gpt-6-luna",
+        "gpt-6.2-sol", "gpt-6.2-astra", "gpt-6-sol", "gpt-6-astra", "gpt-6-luna",
     )
     assert "gpt-5.6-sol" in openai.modeles, "ajouter n'est pas remplacer"
 
