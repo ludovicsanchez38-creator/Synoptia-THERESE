@@ -257,3 +257,55 @@ async def test_pipe_ferme_nettoie_la_requete_avant_un_nouveau_demarrage(tmp_path
     finally:
         if serveur.id in service._processes:
             await service.stop_server(serveur.id)
+
+
+@pytest.mark.asyncio
+async def test_redemarrage_et_second_arret_attendent_la_fin_du_processus(tmp_path, monkeypatch):
+    service = MCPService(config_path=tmp_path / "serveurs.json")
+    serveur = MCPServer(id="test", name="Témoin", command="python", status=MCPServerStatus.RUNNING)
+    service.servers[serveur.id] = serveur
+    entree_attente = asyncio.Event()
+    fin_processus = asyncio.Event()
+
+    async def attendre_fin():
+        entree_attente.set()
+        await fin_processus.wait()
+        return 0
+
+    ancien = SimpleNamespace(
+        pid=123, stdout=None, stderr=None, terminate=MagicMock(),
+        kill=MagicMock(), wait=attendre_fin,
+    )
+    nouveau = SimpleNamespace(
+        pid=124, stdout=None, stderr=None, terminate=MagicMock(),
+        kill=MagicMock(), wait=AsyncMock(return_value=0),
+    )
+    service._processes[serveur.id] = ancien
+    creation = AsyncMock(return_value=nouveau)
+    monkeypatch.setattr(module, "validate_mcp_command", lambda *_: None)
+    monkeypatch.setattr(module, "resolve_mcp_command", lambda *_: "python")
+    monkeypatch.setattr(module.asyncio, "create_subprocess_exec", creation)
+    monkeypatch.setattr(service, "_initialize_server", AsyncMock())
+    monkeypatch.setattr(service, "_list_tools", AsyncMock())
+    arret = asyncio.create_task(service.stop_server(serveur.id))
+    autres = []
+    try:
+        await asyncio.wait_for(entree_attente.wait(), timeout=2)
+        redemarrage = asyncio.create_task(service.start_server(serveur.id))
+        second_arret = asyncio.create_task(service.stop_server(serveur.id))
+        autres.extend([redemarrage, second_arret])
+        await asyncio.sleep(0)
+        assert not redemarrage.done(), "le démarrage est acquitté alors que le processus sort encore"
+        assert not second_arret.done(), "le second arrêt doit partager l’issue du premier"
+        creation.assert_not_awaited()
+        fin_processus.set()
+
+        assert await asyncio.wait_for(asyncio.gather(arret, second_arret, redemarrage), timeout=2) == [True] * 3
+        assert service._processes[serveur.id] is nouveau
+        assert serveur.status == MCPServerStatus.RUNNING
+        ancien.terminate.assert_called_once()
+        creation.assert_awaited_once()
+    finally:
+        fin_processus.set()
+        await asyncio.gather(arret, *autres, return_exceptions=True)
+        await service.shutdown()

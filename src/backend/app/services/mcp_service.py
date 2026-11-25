@@ -274,6 +274,7 @@ class MCPService:
         self._processes: dict[str, asyncio.subprocess.Process] = {}
         self._demarrages: dict[str, asyncio.Task[bool]] = {}
         self._arrets_demandes: set[str] = set()
+        self._arrets: dict[str, asyncio.Task[bool]] = {}
         self._request_id = 0
         self._pending_requests: dict[int, asyncio.Future] = {}
         self._pending_timestamps: dict[int, float] = {}  # Sprint 2 - PERF-2.14
@@ -305,7 +306,7 @@ class MCPService:
         connecteurs lancés sont arrêtés ; rien n'est redémarré ici (l'écran
         demande de redémarrer THÉRÈSE).
         """
-        for server_id in self._processes.keys() | self._demarrages.keys():
+        for server_id in self._processes.keys() | self._demarrages.keys() | self._arrets.keys():
             await self.stop_server(server_id)
         self.servers = {}
         await self._load_config()
@@ -447,6 +448,9 @@ class MCPService:
 
     async def start_server(self, server_id: str) -> bool:
         """Start an MCP server process."""
+        while (arret := self._arrets.get(server_id)) is not None:
+            await asyncio.shield(arret)
+
         if server_id not in self.servers:
             logger.error(f"Server not found: {server_id}")
             return False
@@ -595,44 +599,51 @@ class MCPService:
         return await self._arreter_processus(server_id)
 
     async def _arreter_processus(self, server_id: str) -> bool:
-        # Le premier appel prend le processus avant d'attendre sa fin.
-        # Un arrêt concurrent ne doit pas annuler ce nettoyage en cours.
-        process = self._processes.pop(server_id, None)
-        if process is None:
-            return False
+        # Le nettoyage survit à la requête qui l'a demandé. Les autres
+        # arrêts attendent le même résultat et les démarrages attendent sa fin.
+        arret = self._arrets.get(server_id)
+        if arret is None:
+            process = self._processes.pop(server_id, None)
+            if process is None:
+                return False
+            arret = asyncio.create_task(self._terminer_processus(server_id, process))
+            self._arrets[server_id] = arret
+        return await asyncio.shield(arret)
 
+    async def _terminer_processus(self, server_id: str, process: asyncio.subprocess.Process) -> bool:
         try:
-            process.terminate()
-            await asyncio.wait_for(process.wait(), timeout=5.0)
-        except asyncio.TimeoutError:
             try:
-                process.kill()
-                await process.wait()
+                process.terminate()
+                await asyncio.wait_for(process.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                try:
+                    process.kill()
+                    await process.wait()
+                except ProcessLookupError:
+                    pass
             except ProcessLookupError:
-                # Process already dead, that's fine
                 pass
-        except ProcessLookupError:
-            # Process already dead, that's fine
-            pass
 
-        # Attendre la fin effective des lecteurs avant de rendre la main.
-        lecteurs = [
-            t for t in (
-                self._reader_tasks.pop(server_id, None),
-                self._stderr_reader_tasks.pop(server_id, None),
-            ) if t is not None
-        ]
-        for lecteur in lecteurs:
-            lecteur.cancel()
-        if lecteurs:
-            await asyncio.gather(*lecteurs, return_exceptions=True)
+            # Attendre la fin effective des lecteurs avant de rendre la main.
+            lecteurs = [
+                t for t in (
+                    self._reader_tasks.pop(server_id, None),
+                    self._stderr_reader_tasks.pop(server_id, None),
+                ) if t is not None
+            ]
+            for lecteur in lecteurs:
+                lecteur.cancel()
+            if lecteurs:
+                await asyncio.gather(*lecteurs, return_exceptions=True)
 
-        if server_id in self.servers:
-            self.servers[server_id].status = MCPServerStatus.STOPPED
-            self.servers[server_id].tools = []
+            if server_id in self.servers:
+                self.servers[server_id].status = MCPServerStatus.STOPPED
+                self.servers[server_id].tools = []
 
-        logger.info(f"Stopped MCP server: {server_id}")
-        return True
+            logger.info(f"Stopped MCP server: {server_id}")
+            return True
+        finally:
+            self._arrets.pop(server_id, None)
 
     async def _read_server_output(self, server_id: str):
         """Read and process output from MCP server."""
@@ -1002,7 +1013,7 @@ class MCPService:
             self._cleanup_task.cancel()
             self._cleanup_task = None
 
-        for server_id in self._processes.keys() | self._demarrages.keys():
+        for server_id in self._processes.keys() | self._demarrages.keys() | self._arrets.keys():
             await self.stop_server(server_id)
 
         # Clear any remaining pending requests
