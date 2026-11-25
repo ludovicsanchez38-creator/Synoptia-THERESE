@@ -194,6 +194,7 @@ export interface UserProfileUpdate {
 export interface WorkingDirectory {
   path: string | null;
   exists: boolean;
+  avertissement_facturation?: string | null;
 }
 
 export async function getProfile(): Promise<UserProfile | null> {

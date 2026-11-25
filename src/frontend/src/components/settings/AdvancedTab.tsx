@@ -3,6 +3,7 @@
 
 import { useId, useState } from 'react';
 import { Database, FolderOpen, Check, ChevronDown } from 'lucide-react';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { PerformanceTab } from './PerformanceTab';
 import { LimitsTab } from './LimitsTab';
@@ -13,6 +14,7 @@ import * as api from '../../services/api';
 export interface AdvancedTabProps {
   stats: api.Stats | null;
   workingDir: string | null;
+  avertissementFacturation?: string | null;
   onSelectWorkingDir: () => void;
   onRefreshStats?: () => void;
 }
@@ -53,6 +55,7 @@ function CollapsibleSection({
 export function AdvancedTab({
   stats,
   workingDir,
+  avertissementFacturation,
   onSelectWorkingDir,
   onRefreshStats,
 }: AdvancedTabProps) {
@@ -91,6 +94,7 @@ export function AdvancedTab({
                 {workingDir || 'Non configuré'}
               </p>
             </div>
+            {avertissementFacturation && <Alerte ton="attention">{avertissementFacturation}</Alerte>}
           </div>
 
           {stats && (

@@ -4,10 +4,13 @@ THÉRÈSE v2 - Config Router
 Endpoints for application configuration.
 """
 
+import errno
 import json
 import logging
 import os
 from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Annotated, Any
 
 import httpx
@@ -36,6 +39,7 @@ from app.services.preference_security import est_cle_secrete_de_preference
 from app.services.providers.base import LLMProvider
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
@@ -1272,11 +1276,11 @@ async def import_claude_md(
 # ============================================================
 
 
-@router.get("/working-directory", response_model=WorkingDirectoryResponse)
+@router.get(
+    "/working-directory", response_model=WorkingDirectoryResponse, response_model_exclude_unset=True,
+)
 async def get_working_directory(session: AsyncSession = Depends(get_session)):
     """Get current working directory setting."""
-    from pathlib import Path
-
     result = await session.execute(
         select(Preference).where(Preference.key == "working_directory")
     )
@@ -1292,6 +1296,36 @@ async def get_working_directory(session: AsyncSession = Depends(get_session)):
     )
 
 
+def _avertissement_facturation(dossier: Path) -> str | None:
+    """Sonde le lien dans le dossier des PDF, ou son parent s'il reste à créer."""
+    factures = dossier / "factures"
+    try:
+        if factures.resolve() != factures:
+            return None
+        cible = factures if factures.is_dir() else dossier
+        with TemporaryDirectory(prefix=".therese-liens-", dir=cible) as temporaire:
+            source = Path(temporaire) / "source"
+            source.touch(exist_ok=False)
+            try:
+                os.link(source, source.with_name("lien"))
+            except OSError as erreur:
+                # Sur Linux, EPERM peut aussi indiquer une politique de montage.
+                # Le message décrit le refus observé pour la tentative courante.
+                refus_posix = erreur.errno in (errno.EPERM, errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS)
+                # Win32 : ERROR_INVALID_FUNCTION et ERROR_NOT_SUPPORTED.
+                refus_windows = getattr(erreur, "winerror", None) in (1, 50)
+                if refus_posix or refus_windows:
+                    return (
+                        "THÉRÈSE n’a pas pu créer de lien physique dans ce dossier. "
+                        "Les PDF de devis et de factures peuvent échouer. "
+                        "Choisis un dossier dédié sur le disque interne, par exemple dans Documents."
+                    )
+    except (OSError, RuntimeError):
+        # Une sonde impossible ne permet aucune conclusion sur les liens.
+        return None
+    return None
+
+
 @router.post("/working-directory", response_model=WorkingDirectoryResponse)
 async def set_working_directory(
     request: WorkingDirectoryUpdate,
@@ -1302,8 +1336,6 @@ async def set_working_directory(
 
     Validates that the path exists and is a directory.
     """
-    from pathlib import Path
-
     from app.services.path_security import (
         _dans_le_dossier_temporaire,
         _racines_interdites,
@@ -1345,6 +1377,8 @@ async def set_working_directory(
     ):
         raise HTTPException(status_code=400, detail=refus)
 
+    avertissement = await run_in_threadpool(_avertissement_facturation, resolu)
+
     # Get or create preference
     result = await session.execute(
         select(Preference).where(Preference.key == "working_directory")
@@ -1352,12 +1386,12 @@ async def set_working_directory(
     pref = result.scalar_one_or_none()
 
     if pref:
-        pref.value = str(path.resolve())
+        pref.value = str(resolu)
         pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="working_directory",
-            value=str(path.resolve()),
+            value=str(resolu),
             category="files",
         )
         session.add(pref)
@@ -1365,8 +1399,9 @@ async def set_working_directory(
     await session.commit()
 
     return WorkingDirectoryResponse(
-        path=str(path.resolve()),
+        path=str(resolu),
         exists=True,
+        avertissement_facturation=avertissement,
     )
 
 

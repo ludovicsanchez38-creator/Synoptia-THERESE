@@ -880,6 +880,7 @@ class WorkingDirectoryResponse(BaseModel):
 
     path: str | None
     exists: bool
+    avertissement_facturation: str | None = None
 
 
 # ============================================================

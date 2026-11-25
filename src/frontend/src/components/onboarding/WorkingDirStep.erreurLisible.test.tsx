@@ -74,3 +74,24 @@ it('R1-8 : explique le refus du dossier personnel entier', async () => {
   fireEvent.click(bouton);
   expect((await screen.findByText(raison)).closest('[role=alert]')).not.toBeNull();
 });
+
+it('B-2062 : avertit au choix du dossier et retire le message après un autre choix', async () => {
+  const bouton = await ouvrirLEtape();
+  vi.mocked(open).mockResolvedValueOnce('/Volumes/Externe/Facturation');
+  apiMocks.setWorkingDirectory.mockResolvedValueOnce({
+    path: '/Volumes/Externe/Facturation',
+    exists: true,
+    avertissement_facturation: 'THÉRÈSE n’a pas pu créer de lien physique dans ce dossier. Les PDF de devis et de factures peuvent échouer. Choisis un dossier dédié sur le disque interne, par exemple dans Documents.',
+  });
+  fireEvent.click(bouton);
+
+  const alerte = await screen.findByText(/Les PDF de devis et de factures peuvent échouer/);
+  expect(alerte.closest('[role=alert]')).not.toBeNull();
+  expect(alerte).toHaveTextContent('disque interne');
+
+  vi.mocked(open).mockResolvedValueOnce('/Users/camille/Documents/THÉRÈSE');
+  apiMocks.setWorkingDirectory.mockResolvedValueOnce({ path: '/Users/camille/Documents/THÉRÈSE', exists: true });
+  fireEvent.click(screen.getByRole('button', { name: 'Changer de dossier' }));
+  await screen.findByText('/Users/camille/Documents/THÉRÈSE');
+  expect(alerte).not.toBeInTheDocument();
+});

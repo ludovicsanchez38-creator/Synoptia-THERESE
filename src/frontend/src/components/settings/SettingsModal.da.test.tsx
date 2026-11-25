@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { open } from '@tauri-apps/plugin-dialog';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +32,7 @@ vi.mock('../../services/api', async (importOriginal) => ({
   getPreferences: vi.fn().mockResolvedValue({}),
   getStats: vi.fn().mockResolvedValue(null),
   getProfile: vi.fn().mockResolvedValue(null),
+  setWorkingDirectory: vi.fn(),
   getWorkingDirectory: vi.fn().mockResolvedValue({ path: null, exists: false }),
   getOllamaStatus: vi.fn().mockResolvedValue(null),
   getSystemResources: vi.fn().mockResolvedValue(null),
@@ -605,4 +607,29 @@ it('retrouve Très élevé après un aller-retour par GPT-6.2', async () => {
   await waitFor(() => expect(selecteur).toHaveValue('gpt-6.1-sol'));
   await waitFor(() => expect(niveau).toHaveValue('xhigh'));
   expect(niveau).toBeEnabled();
+});
+
+it('B-2062 : Paramètres avertit à côté du dossier sélectionné et laisse le changer', async () => {
+  const api = await import('../../services/api');
+  await ouvrir('advanced');
+  const parcourir = await screen.findByRole('button', { name: 'Parcourir' });
+  vi.mocked(open).mockResolvedValueOnce('/Volumes/Externe/Facturation');
+  vi.mocked(api.setWorkingDirectory).mockResolvedValueOnce({
+    path: '/Volumes/Externe/Facturation',
+    exists: true,
+    // Le réglage est passé par le moteur, qui renvoie le diagnostic.
+    avertissement_facturation: 'THÉRÈSE n’a pas pu créer de lien physique dans ce dossier. Les PDF de devis et de factures peuvent échouer. Choisis un dossier dédié sur le disque interne, par exemple dans Documents.',
+  });
+  fireEvent.click(parcourir);
+
+  const alerte = await screen.findByRole('alert');
+  expect(alerte).toHaveTextContent('Les PDF de devis et de factures peuvent échouer');
+  expect(alerte).toHaveTextContent('disque interne');
+  expect(parcourir).toBeEnabled();
+
+  vi.mocked(open).mockResolvedValueOnce('/Users/camille/Documents/THÉRÈSE');
+  vi.mocked(api.setWorkingDirectory).mockResolvedValueOnce({ path: '/Users/camille/Documents/THÉRÈSE', exists: true });
+  fireEvent.click(parcourir);
+  await screen.findByText('/Users/camille/Documents/THÉRÈSE');
+  expect(alerte).not.toBeInTheDocument();
 });

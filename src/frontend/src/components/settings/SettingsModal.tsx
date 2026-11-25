@@ -186,7 +186,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
   const [profileSaved, setProfileSaved] = useState(false);
 
   // Dossier de travail
-  const [workingDir, setWorkingDir] = useState<string | null>(null);
+  const [dossierTravail, setDossierTravail] = useState<api.WorkingDirectory | null>(null);
 
   // Statistiques
   const [stats, setStats] = useState<api.Stats | null>(null);
@@ -334,7 +334,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
       modelesParFournisseur.current[loadedProvider] = resolvedModel;
       setStats(statsData);
       setProfile(profileData);
-      setWorkingDir(workingDirData?.path || null);
+      setDossierTravail(workingDirData);
       setHasGroqKey(groqKeyStatus);
       setHasBraveKey(!!keys.brave);
       setWebSearchEnabled(webSearchStatus.enabled);
@@ -741,7 +741,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         setOperationStatus('Enregistrement du dossier de travail…');
         setRetryOperation(null);
         const result = await api.setWorkingDirectory(selected);
-        setWorkingDir(result.path);
+        setDossierTravail(result);
         setOperationStatus('Dossier de travail enregistré.');
       }
     } catch (err) {
@@ -849,7 +849,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection,
         return (
           <AdvancedTab
             stats={stats}
-            workingDir={workingDir}
+            workingDir={dossierTravail?.path ?? null}
+            avertissementFacturation={dossierTravail?.avertissement_facturation}
             onSelectWorkingDir={handleSelectWorkingDir}
             onRefreshStats={refreshStats}
           />

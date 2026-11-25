@@ -24,6 +24,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
   const [workingDir, setWorkingDir] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [avertissementFacturation, setAvertissementFacturation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // B-535 : un dossier disparu et une lecture impossible ne sont ni « configuré » ni « aucun ».
   const [dossierDisparu, setDossierDisparu] = useState(false);
@@ -70,6 +71,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
     try {
       const result = await api.setWorkingDirectory(selected);
       setWorkingDir(result.path);
+      setAvertissementFacturation(result.avertissement_facturation ?? null);
       // B-771 : un dossier retenu par le serveur existe ; l'avertissement
       // « configuré mais introuvable » de l'ancien chemin n'a plus lieu d'être.
       setDossierDisparu(false);
@@ -163,6 +165,10 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
             </div>
           ) : (
             <Alerte ton="attention" className="mb-6 text-left" icone={<AlertCircle className="h-4 w-4 text-warning" />}>Aucun dossier configuré</Alerte>
+          )}
+
+          {avertissementFacturation && (
+            <Alerte ton="attention" className="mb-3 text-left">{avertissementFacturation}</Alerte>
           )}
 
           {/* Select button */}
