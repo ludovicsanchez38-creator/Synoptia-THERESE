@@ -1,6 +1,6 @@
 # THÉRÈSE 0.85.0 · Brouillon de la bêta
 
-Candidate locale sur `beta/c7-20261125`, à partir de `93960957e`. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md) · [Cycle 6](../qualite/boucle-beta-c6.md) · [Cycle 7](../qualite/boucle-beta-c7.md)
+Candidate locale 0.85.0 sur `beta/c8-20261125`, avec les correctifs du catalogue jusqu’à `22f4b0ef7`. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md) · [Cycle 6](../qualite/boucle-beta-c6.md) · [Cycle 7](../qualite/boucle-beta-c7.md) · [Cycle 8](../qualite/boucle-beta-c8.md)
 
 ## Mise en route et usage
 
@@ -37,6 +37,7 @@ Candidate locale sur `beta/c7-20261125`, à partir de `93960957e`. Ludo a choisi
 
 ## Points à vérifier avant diffusion
 
+- Rejouer la construction à blanc sur la candidate du cycle 8. Le catalogue couvre les quatre bibliothèques relevées sur les runners Linux et Windows et l’archive Linux fournit les sources exactes de glibc `2.35-0ubuntu3.18`.
 - Produire le PDF 0.85 à partir de la source de novembre 2026. Le canal de mise à jour des installations existantes utilise `/therese/alpha/latest.json`.
 - Les PDF de facturation demandent un dossier où les liens physiques sont possibles. Essayer le choix du dossier et la génération PDF sur les trois systèmes, avec un volume interne et un volume externe incompatible. La reprise durable de l’anonymisation est au stade du design.
 - Avec les comptes de Ludo, vérifier Synthetic, DeepSeek au deuxième message avec outil, Perplexity et Infomaniak. Le banc Linux a contrôlé les parcours Synthetic et DeepSeek avec des transports simulés.
