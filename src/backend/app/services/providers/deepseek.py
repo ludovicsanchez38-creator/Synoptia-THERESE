@@ -47,7 +47,20 @@ class DeepSeekProvider(BaseProvider):
             "stream_options": {"include_usage": True},
         }
 
-        if self.config.effort_resolu:
+        # En mode réflexion, les outils exigent le raisonnement de chaque
+        # ancien message assistant. Le chat ne conserve que le texte visible.
+        # https://api-docs.deepseek.com/guides/thinking_mode/
+        if tools and any(
+            message.get("role") == "assistant"
+            and (not isinstance(message.get("reasoning_content"), str) or not message["reasoning_content"])
+            for message in messages
+        ):
+            request_body["thinking"] = {"type": "disabled"}
+            request_body["messages"] = [
+                {cle: valeur for cle, valeur in message.items() if cle != "reasoning_content"}
+                for message in messages
+            ]
+        elif self.config.effort_resolu:
             request_body["reasoning_effort"] = self.config.effort_resolu
         if tools:
             request_body["tools"] = tools
@@ -67,6 +80,11 @@ class DeepSeekProvider(BaseProvider):
         (raisonnement interne envoyé séparément du contenu final).
         """
         request_body = self._build_request_body(messages, tools)
+        if "thinking" in request_body and not any(message.get("role") == "tool" for message in messages):
+            yield StreamEvent(
+                type="notice",
+                content="DeepSeek utilise les outils sans réflexion pour cet échange, car l’historique est incomplet.",
+            )
 
         try:
             async with self.client.stream(
