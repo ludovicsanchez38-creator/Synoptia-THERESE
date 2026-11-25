@@ -1,0 +1,12 @@
+# THÉRÈSE 0.85.0 · Boucle bêta, cycle 7
+
+Le cycle applique les quatre décisions de Ludo de la carte `val-2026-11-25-06` (`42bc0829f4d76d5f`) sur `beta/c7-20261125`, à partir de `93960957e`.
+
+- **Accord Claude, P-008.** « Si tu as rempli ton profil, il accompagne aussi ton message. » termine l’exemple à l’écran et figure dans le guide embarqué. `SecurityStep.test.tsx` échoue avant l’ajout puis au retrait de cette seule phrase. Les 17 tests `SecurityStep` passent après restauration. Le sabotage est enregistré sous `B-046`.
+- **Vérification du profil.** Le parcours affiche Profil avant Confidentialité. Le moteur ajoute `format_for_llm()` pour un profil portant un nom. Dix variantes fictives ont vérifié la requête Claude avec un transport simulé. La phrase couvre le profil en termes généraux. Le contexte libre, le SIRET, la TVA intracommunautaire et le numéro de déclaration d’activité font partie des champs que l’exemple ne nomme pas. Le nom, le surnom, le métier, l’entreprise et la localisation peuvent aussi accompagner le message. [Moteur](../../src/backend/app/services/llm.py) · [Champs injectés](../../src/backend/app/services/user_profile.py)
+- **Personas.** A1, A2 et A3 sont identiques à `0ddefd1a3`. La proposition de `731338825` est archivée avec le détail des 61 étapes retouchées, dont 60 titres. Les contrôles ciblés de cohérence, sélecteurs, raccourcis et contrôles de protocoles passent après restauration. [Proposition à relire](protocoles-personas-proposition-c6/LISEZMOI.md)
+- **Compteur.** Après un arrêt manuel d’une réponse, le coût du début de la réponse n’apparaît pas au compteur. La limite figure dans le guide embarqué et le brouillon. Ludo reporte la correction à la version suivante. [Guide](../USER_GUIDE_ALPHA.md) · [Brouillon](../releases/brouillon-0.85.0.md)
+
+Le mode à blanc de `release.yml` accepte un lancement manuel sur une branche avec un libellé `a-blanc-*`. La clé de signature de l’updater est exigée. La matrice construit les installateurs macOS ARM64, Windows x64 et Linux x64 sur les runners. Les fichiers d’installation y restent. Le workflow Actions conserve les preuves de la recette macOS. L’ouverture d’un installateur issu de ce passage nécessite de conserver le fichier de build. [Workflow](../../.github/workflows/release.yml)
+
+Les résultats de la ronde complète et de la porte de release sur la candidate figurent dans `RENDU-C7.md` du dossier de la boucle. Le cycle local s’arrête à la candidate. La construction native et l’essai d’installation relèvent de Syn.

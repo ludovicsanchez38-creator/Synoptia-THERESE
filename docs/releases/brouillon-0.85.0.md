@@ -1,11 +1,11 @@
 # THÉRÈSE 0.85.0 · Brouillon de la bêta
 
-Candidate locale sur `beta/c6-20261125`, à partir de `0ddefd1a3`. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md) · [Cycle 6](../qualite/boucle-beta-c6.md)
+Candidate locale sur `beta/c7-20261125`, à partir de `93960957e`. Ludo a choisi le nom public `v0.85.0-beta`. [Cycle 1](../qualite/boucle-beta-c1.md) · [Cycle 2](../qualite/boucle-beta-c2.md) · [Cycle 3](../qualite/boucle-beta-c3.md) · [Cycle 4](../qualite/boucle-beta-c4.md) · [Cycle 5](../qualite/boucle-beta-c5.md) · [Cycle 6](../qualite/boucle-beta-c6.md) · [Cycle 7](../qualite/boucle-beta-c7.md)
 
 ## Mise en route et usage
 
 - Dès l’accueil, THÉRÈSE propose un premier geste utile, comme préparer une relance de devis. Tu peux créer ton profil, importer un profil existant ou continuer sans dossier.
-- Si ton service d’IA est prêt, tu vois tout de suite son nom et le modèle choisi. La procédure de configuration se déplie à la demande. Avant de donner ton accord à Claude, tu peux lire ce qui accompagne un premier « Bonjour ».
+- Si ton service d’IA est prêt, tu vois tout de suite son nom et le modèle choisi. La procédure de configuration se déplie à la demande. Avant de donner ton accord à Claude, tu peux lire ce qui accompagne un premier « Bonjour », y compris quand tu as rempli ton profil.
 - **Paramètres > Service d’IA** affiche le coût mensuel estimé en dollars et le détail du jour et du mois. Le compteur applique le prix réduit des relectures du cache Anthropic et compte les appels annexes dont l’usage est reçu. Les mesures réelles sur Sonnet 5.5 et Fable 5.2 concordent au millième de dollar.
 - Un filtre de la Mémoire précise où les fiches restent disponibles. Dans Devis et factures, la ligne du brouillon indique près du bouton PDF les mentions émetteur ou destinataire à compléter.
 
